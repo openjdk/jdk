@@ -58,20 +58,15 @@ public:
 // e.g. G1CardSetAllocators::_arena
 class G1MonotonicArenaFreePool {
   using SegmentFreeList = G1MonotonicArena::SegmentFreeList;
-  // The global free pool.
-  static G1MonotonicArenaFreePool _freelist_pool;
 
   const uint _num_free_lists;
   SegmentFreeList* _free_lists;
 
 public:
-  static G1MonotonicArenaFreePool* free_list_pool() { return &_freelist_pool; }
-  static G1MonotonicArenaMemoryStats free_list_sizes() { return _freelist_pool.memory_sizes(); }
-
   class G1ReturnMemoryProcessor;
   typedef GrowableArrayCHeap<G1ReturnMemoryProcessor*, mtGC> G1ReturnMemoryProcessorSet;
 
-  static void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
+  void update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processors);
 
   explicit G1MonotonicArenaFreePool(uint num_free_lists);
   ~G1MonotonicArenaFreePool();
@@ -86,7 +81,7 @@ public:
   G1MonotonicArenaMemoryStats memory_sizes() const;
   size_t mem_size() const;
 
-  void print_on(outputStream* out);
+  void print_on(outputStream* out) const;
 };
 
 // Data structure containing current in-progress state for returning memory to the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ class ObjectSample : public JfrCHeapObj {
   void reset();
 
  public:
-  ObjectSample() : _next(NULL),
-                   _previous(NULL),
+  ObjectSample() : _next(nullptr),
+                   _previous(nullptr),
                    _stacktrace(),
                    _thread(),
                    _type_set(),
@@ -102,7 +102,7 @@ class ObjectSample : public JfrCHeapObj {
 
   bool is_dead() const;
 
-  const oop object() const;
+  oop object() const;
   void set_object(oop object);
 
   const oop* object_addr() const;
@@ -141,7 +141,7 @@ class ObjectSample : public JfrCHeapObj {
     return _allocation_time;
   }
 
-  const void set_allocation_time(const JfrTicks& time) {
+  void set_allocation_time(const JfrTicks& time) {
     _allocation_time = Ticks(time.value());
   }
 

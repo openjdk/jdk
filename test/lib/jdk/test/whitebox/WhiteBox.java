@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,8 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  public native void forceClassLoaderStatsSafepoint();
+
   private native long getConstantPool0(Class<?> aClass);
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -149,6 +151,31 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native int getIndyInfoLength0(Class<?> aClass);
+  public         int getIndyInfoLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getIndyInfoLength0(aClass);
+  }
+
+  private native int getIndyCPIndex0(Class<?> aClass, int index);
+  public         int getIndyCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getIndyCPIndex0(aClass, index);
+  }
+
+  private native String printClasses0(String classNamePattern, int flags);
+  public         String printClasses(String classNamePattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    return printClasses0(classNamePattern, flags);
+  }
+
+  private native String printMethods0(String classNamePattern, String methodPattern, int flags);
+  public         String printMethods(String classNamePattern, String methodPattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    Objects.requireNonNull(methodPattern);
+    return printMethods0(classNamePattern, methodPattern, flags);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -163,7 +190,52 @@ public class WhiteBox {
   }
 
   // G1
+
   public native boolean g1InConcurrentMark();
+  public native int g1CompletedConcurrentMarkCycles();
+
+  // Perform a complete concurrent GC cycle, using concurrent GC breakpoints.
+  // Completes any in-progress cycle before performing the requested cycle.
+  // Returns true if the cycle completed successfully.  If the cycle was not
+  // successful (e.g. it was aborted), then throws RuntimeException if
+  // errorIfFail is true, returning false otherwise.
+  public boolean g1RunConcurrentGC(boolean errorIfFail) {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      int count = g1CompletedConcurrentMarkCycles();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+      concurrentGCRunToIdle();
+      if (count < g1CompletedConcurrentMarkCycles()) {
+        return true;
+      } else if (errorIfFail) {
+        throw new RuntimeException("Concurrent GC aborted");
+      } else {
+        return false;
+      }
+    } finally {
+      concurrentGCReleaseControl();
+    }
+  }
+
+  public void g1RunConcurrentGC() {
+    g1RunConcurrentGC(true);
+  }
+
+  // Start a concurrent GC cycle, using concurrent GC breakpoints.
+  // The concurrent GC will continue in parallel with the caller.
+  // Completes any in-progress cycle before starting the requested cycle.
+  public void g1StartConcurrentGC() {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+    } finally {
+      // Release control, permitting the cycle to complete.
+      concurrentGCReleaseControl();
+    }
+  }
+
   public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
@@ -231,6 +303,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
@@ -538,10 +613,6 @@ public class WhiteBox {
     }
   }
 
-  // Method tries to start concurrent mark cycle.
-  // It returns false if CM Thread is always in concurrent cycle.
-  public native boolean g1StartConcMarkCycle();
-
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
   public native void readFromNoaccessArea();
@@ -553,6 +624,7 @@ public class WhiteBox {
 
   // VM flags
   public native boolean isConstantVMFlag(String name);
+  public native boolean isDefaultVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntVMFlag(String name, long value);
@@ -633,7 +705,6 @@ public class WhiteBox {
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
-  public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsMapped();
   public native boolean isSharedInternedString(String s);
@@ -641,7 +712,6 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
-  public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
@@ -665,6 +735,8 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+  public native long hostPhysicalMemory();
+  public native long hostPhysicalSwap();
 
   // Decoder
   public native void disableElfSectionCache();
@@ -693,4 +765,8 @@ public class WhiteBox {
   public native void lockCritical();
 
   public native void unlockCritical();
+
+  public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
 }

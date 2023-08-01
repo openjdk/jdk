@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import sun.net.util.IPAddressUtil;
-import sun.net.www.http.HttpClient;
 
 /**
  * A class to represent an HTTP connection to a remote object.
@@ -352,8 +351,8 @@ public class HttpsURLConnectionImpl
         return delegate.getResponseMessage();
     }
 
-    public long getHeaderFieldDate(String name, long Default) {
-        return delegate.getHeaderFieldDate(name, Default);
+    public long getHeaderFieldDate(String name, long defaultValue) {
+        return delegate.getHeaderFieldDate(name, defaultValue);
     }
 
     public Permission getPermission() throws IOException {
@@ -392,12 +391,12 @@ public class HttpsURLConnectionImpl
         return delegate.getLastModified();
     }
 
-    public int getHeaderFieldInt(String name, int Default) {
-        return delegate.getHeaderFieldInt(name, Default);
+    public int getHeaderFieldInt(String name, int defaultValue) {
+        return delegate.getHeaderFieldInt(name, defaultValue);
     }
 
-    public long getHeaderFieldLong(String name, long Default) {
-        return delegate.getHeaderFieldLong(name, Default);
+    public long getHeaderFieldLong(String name, long defaultValue) {
+        return delegate.getHeaderFieldLong(name, defaultValue);
     }
 
     public Object getContent() throws IOException {

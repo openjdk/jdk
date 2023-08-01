@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,31 +46,25 @@ inline frame StackChunkFrameStream<frame_kind>::to_frame() const {
 template <ChunkFrames frame_kind>
 inline address StackChunkFrameStream<frame_kind>::get_pc() const {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template <ChunkFrames frame_kind>
 inline intptr_t* StackChunkFrameStream<frame_kind>::fp() const {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template <ChunkFrames frame_kind>
 inline intptr_t* StackChunkFrameStream<frame_kind>::derelativize(int offset) const {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template <ChunkFrames frame_kind>
 inline intptr_t* StackChunkFrameStream<frame_kind>::unextended_sp_for_interpreter_frame() const {
   Unimplemented();
-  return NULL;
-}
-
-template <ChunkFrames frame_kind>
-intptr_t* StackChunkFrameStream<frame_kind>::next_sp_for_interpreter_frame() const {
-  Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 template <ChunkFrames frame_kind>

@@ -290,12 +290,14 @@ Link	America/Tijuana		America/Ensenada
 Link	America/Indiana/Indianapolis	America/Fort_Wayne
 Link	America/Toronto		America/Montreal
 Link	America/Toronto		America/Nipigon
+Link	America/Iqaluit		America/Pangnirtung
 Link	America/Rio_Branco	America/Porto_Acre
 Link	America/Winnipeg	America/Rainy_River
 Link	America/Argentina/Cordoba	America/Rosario
 Link	America/Tijuana		America/Santa_Isabel
 Link	America/Denver		America/Shiprock
 Link	America/Toronto		America/Thunder_Bay
+Link	America/Edmonton	America/Yellowknife
 Link	Pacific/Auckland	Antarctica/South_Pole
 Link	Asia/Shanghai		Asia/Chongqing
 Link	Asia/Shanghai		Asia/Harbin

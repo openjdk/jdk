@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -117,10 +116,10 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
+                .addTab(contents.classes, utils::isNonThrowableClass)
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord(e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
+                .addTab(contents.records, utils::isRecord)
+                .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {
@@ -149,7 +148,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
     protected void addTableRow(Table<TypeElement> table, TypeElement klass) {
         List<Content> rowContents = new ArrayList<>();
         Content classLink = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.INDEX, klass));
+                configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, klass));
         ContentBuilder description = new ContentBuilder();
         Set<ElementFlag> flags = utils.elementFlags(klass);
         if (flags.contains(ElementFlag.PREVIEW)) {

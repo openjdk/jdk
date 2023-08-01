@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,26 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Check toolchain installed'
+        id: toolchain-check
+        run: |
+          set +e
+          '/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/vc/auxiliary/build/vcvars64.bat' -vcvars_ver=${{ inputs.msvc-toolset-version }}
+          if [ $? -eq 0 ]; then
+            echo "Toolchain is already installed"
+            echo "toolchain-installed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Toolchain is not yet installed"
+            echo "toolchain-installed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 'Install toolchain and dependencies'
         run: |
           # Run Visual Studio Installer
           '/c/Program Files (x86)/Microsoft Visual Studio/Installer/vs_installer.exe' \
-            modify --quiet --installPath 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise' \
+            modify --quiet --installPath 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise' \
             --add Microsoft.VisualStudio.Component.VC.${{ inputs.msvc-toolset-version }}.${{ inputs.msvc-toolset-architecture }}
+        if: steps.toolchain-check.outputs.toolchain-installed != 'true'
 
       - name: 'Configure'
         run: >
@@ -114,7 +128,6 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
-          --enable-jtreg-failure-handler
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
           --with-jmod-compress=zip-1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
@@ -125,6 +138,7 @@ jobs:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
+        shell: env /usr/bin/bash --login -eo pipefail {0}
 
       - name: 'Build'
         id: build

@@ -11,7 +11,7 @@ public class X<T> {
    X(T t) {
        this.t = t;
    }
-   public static void main(String[] args) {
+   public static void meth() {
        new X<String>("OUTER").bar();
    }
    void bar() {

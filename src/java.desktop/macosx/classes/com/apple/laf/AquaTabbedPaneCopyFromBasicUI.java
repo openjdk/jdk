@@ -1051,7 +1051,6 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             case TOP:
             default:
                 nudge = isSelected ? -1 : 1;
-                ;
         }
         return nudge;
     }

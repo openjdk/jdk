@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
 
 package sun.swing;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Point;
 import java.lang.invoke.MethodHandles;
-import javax.swing.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -45,6 +48,14 @@ public final class SwingAccessor {
      * and interfaces.
      */
     private SwingAccessor() {
+    }
+
+    /**
+     * This interface provides access to the renderer's accessibility component.
+     * For example, the renderer of a list element, a table cell, or a tree node
+     */
+    public interface AccessibleComponentAccessor {
+        Accessible getCurrentAccessible(AccessibleContext ac);
     }
 
     /**
@@ -138,11 +149,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the javax.swing.JComponent class.
      */
     public static JComponentAccessor getJComponentAccessor() {
-        if (jComponentAccessor == null) {
+        var access = jComponentAccessor;
+        if (access == null) {
             ensureClassInitialized(JComponent.class);
+            access = jComponentAccessor;
         }
-
-        return jComponentAccessor;
+        return access;
     }
 
     /**
@@ -161,11 +173,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the javax.swing.text.JTextComponent class.
      */
     public static JTextComponentAccessor getJTextComponentAccessor() {
-        if (jtextComponentAccessor == null) {
+        var access = jtextComponentAccessor;
+        if (access == null) {
             ensureClassInitialized(JTextComponent.class);
+            access = jtextComponentAccessor;
         }
-
-        return jtextComponentAccessor;
+        return access;
     }
 
     /**
@@ -184,10 +197,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the JLightweightFrame class
      */
     public static JLightweightFrameAccessor getJLightweightFrameAccessor() {
-        if (jLightweightFrameAccessor == null) {
+        var access = jLightweightFrameAccessor;
+        if (access == null) {
             ensureClassInitialized(JLightweightFrame.class);
+            access = jLightweightFrameAccessor;
         }
-        return jLightweightFrameAccessor;
+        return access;
     }
 
     /**
@@ -206,10 +221,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the JLightweightFrame class
      */
     public static UIDefaultsAccessor getUIDefaultsAccessor() {
-        if (uiDefaultsAccessor == null) {
+        var access = uiDefaultsAccessor;
+        if (access == null) {
             ensureClassInitialized(UIDefaults.class);
+            access = uiDefaultsAccessor;
         }
-        return uiDefaultsAccessor;
+        return access;
     }
 
     /**
@@ -228,10 +245,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the RepaintManager class.
      */
     public static RepaintManagerAccessor getRepaintManagerAccessor() {
-        if (repaintManagerAccessor == null) {
+        var access = repaintManagerAccessor;
+        if (access == null) {
             ensureClassInitialized(RepaintManager.class);
+            access = repaintManagerAccessor;
         }
-        return repaintManagerAccessor;
+        return access;
     }
 
     /**
@@ -243,10 +262,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the PopupFactory class.
      */
     public static PopupFactoryAccessor getPopupFactoryAccessor() {
-        if (popupFactoryAccessor == null) {
+        var access = popupFactoryAccessor;
+        if (access == null) {
             ensureClassInitialized(PopupFactory.class);
+            access = popupFactoryAccessor;
         }
-        return popupFactoryAccessor;
+        return access;
     }
 
     /**
@@ -265,10 +286,12 @@ public final class SwingAccessor {
      * Retrieve the accessor object for the KeyStroke class.
      */
     public static KeyStrokeAccessor getKeyStrokeAccessor() {
-        if (keyStrokeAccessor == null) {
+        var access = keyStrokeAccessor;
+        if (access == null) {
             ensureClassInitialized(KeyStroke.class);
+            access = keyStrokeAccessor;
         }
-        return keyStrokeAccessor;
+        return access;
     }
 
     /*
@@ -278,9 +301,39 @@ public final class SwingAccessor {
         SwingAccessor.keyStrokeAccessor = accessor;
     }
 
+    private static AccessibleComponentAccessor accessibleComponentAccessor = null;
+
+    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
+        var access = accessibleComponentAccessor;
+        if (access == null) {
+            ensureClassInitialized(JTree.class);
+            access = accessibleComponentAccessor;
+        }
+        return access;
+    }
+
+    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
+        accessibleComponentAccessor = accessibleAccessor;
+    }
+
     private static void ensureClassInitialized(Class<?> c) {
         try {
             MethodHandles.lookup().ensureInitialized(c);
         } catch (IllegalAccessException e) {}
+    }
+
+    private static ThreadLocal<Boolean> tlObj = new ThreadLocal<Boolean>();
+
+    public static Boolean getAllowHTMLObject() {
+        Boolean b = tlObj.get();
+        if (b == null) {
+            return Boolean.TRUE;
+        } else {
+            return b;
+        }
+    }
+
+    public static void setAllowHTMLObject(Boolean val) {
+        tlObj.set(val);
     }
 }

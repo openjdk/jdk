@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -767,9 +767,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -777,9 +783,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1158,9 +1170,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1168,9 +1186,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1252,9 +1276,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>t.</displayName>
+				<relative type="-1">i tērā tau</relative>
+				<relative type="0">i tēnei tau</relative>
+				<relative type="1">ā tērā tau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>t</displayName>
+				<relative type="-1">i tērā tau</relative>
+				<relative type="0">i tēnei tau</relative>
+				<relative type="1">ā tērā tau</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>hauwhā</displayName>
@@ -1270,11 +1312,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-short">
 				<displayName>hw.</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} hwh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>hw</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} Hwh</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="month">
@@ -1297,6 +1348,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>m</displayName>
+				<relative type="-1">i tērā m.</relative>
+				<relative type="0">i tēnei m.</relative>
+				<relative type="1">ā tērā m.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} m.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} m.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>wiki</displayName>
@@ -1310,10 +1370,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">i tērā w.</relative>
 				<relative type="0">i tēnei w.</relative>
 				<relative type="1">ā tērā w.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>w</displayName>
+				<relative type="-1">i tērā w.</relative>
+				<relative type="0">i tēnei w.</relative>
+				<relative type="1">ā tērā w.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
+				</relativeTime>
+				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>wiki o te marama</displayName>
@@ -1642,6 +1718,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour-narrow">
 				<displayName>hr</displayName>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} h.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} h.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>meneti</displayName>
@@ -1691,6 +1773,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
+				<displayName>hēk</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
 				</relativeTime>

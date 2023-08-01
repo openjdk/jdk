@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,10 +26,12 @@
 package jdk.internal.foreign.abi.aarch64;
 
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
+import java.util.List;
+import java.util.ArrayList;
 
 public enum TypeClass {
     STRUCT_REGISTER,
@@ -48,7 +50,7 @@ public enum TypeClass {
             return INTEGER;
         } else if (carrier == float.class || carrier == double.class) {
             return FLOAT;
-        } else if (carrier == MemoryAddress.class) {
+        } else if (carrier == MemorySegment.class) {
             return POINTER;
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
@@ -56,20 +58,41 @@ public enum TypeClass {
     }
 
     static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
+        return type.byteSize() <= MAX_AGGREGATE_REGS_SIZE * 8;
+    }
+
+    static List<MemoryLayout> scalarLayouts(GroupLayout gl) {
+        List<MemoryLayout> out = new ArrayList<>();
+        scalarLayoutsInternal(out, gl);
+        return out;
+    }
+
+    private static void scalarLayoutsInternal(List<MemoryLayout> out, GroupLayout gl) {
+        for (MemoryLayout member : gl.memberLayouts()) {
+            if (member instanceof GroupLayout memberGl) {
+                scalarLayoutsInternal(out, memberGl);
+            } else if (member instanceof SequenceLayout memberSl) {
+                for (long i = 0; i < memberSl.elementCount(); i++) {
+                    out.add(memberSl.elementLayout());
+                }
+            } else {
+                // padding or value layouts
+                out.add(member);
+            }
+        }
     }
 
     static boolean isHomogeneousFloatAggregate(MemoryLayout type) {
-        if (!(type instanceof GroupLayout))
+        if (!(type instanceof GroupLayout groupLayout))
             return false;
 
-        GroupLayout groupLayout = (GroupLayout)type;
+        List<MemoryLayout> scalarLayouts = scalarLayouts(groupLayout);
 
-        final int numElements = groupLayout.memberLayouts().size();
+        final int numElements = scalarLayouts.size();
         if (numElements > 4 || numElements == 0)
             return false;
 
-        MemoryLayout baseType = groupLayout.memberLayouts().get(0);
+        MemoryLayout baseType = scalarLayouts.get(0);
 
         if (!(baseType instanceof ValueLayout))
             return false;
@@ -78,13 +101,13 @@ public enum TypeClass {
         if (baseArgClass != FLOAT)
            return false;
 
-        for (MemoryLayout elem : groupLayout.memberLayouts()) {
+        for (MemoryLayout elem : scalarLayouts) {
             if (!(elem instanceof ValueLayout))
                 return false;
 
             TypeClass argClass = classifyValueType((ValueLayout) elem);
-            if (elem.bitSize() != baseType.bitSize() ||
-                    elem.bitAlignment() != baseType.bitAlignment() ||
+            if (elem.byteSize() != baseType.byteSize() ||
+                    elem.byteAlignment() != baseType.byteAlignment() ||
                     baseArgClass != argClass) {
                 return false;
             }
@@ -107,10 +130,8 @@ public enum TypeClass {
             return classifyValueType((ValueLayout) type);
         } else if (type instanceof GroupLayout) {
             return classifyStructType(type);
-        } else if (type instanceof SequenceLayout) {
-            return TypeClass.INTEGER;
         } else {
-            throw new IllegalArgumentException("Unhandled type " + type);
+            throw new IllegalArgumentException("Unsupported layout: " + type);
         }
     }
 }

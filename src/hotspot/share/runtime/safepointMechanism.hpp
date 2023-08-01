@@ -73,7 +73,6 @@ class SafepointMechanism : public AllStatic {
     inline uintptr_t get_polling_word();
 
     inline void set_polling_page(uintptr_t poll_value);
-    inline uintptr_t get_polling_page();
   };
 
   // Call this method to see if this thread should block for a safepoint or process handshake.

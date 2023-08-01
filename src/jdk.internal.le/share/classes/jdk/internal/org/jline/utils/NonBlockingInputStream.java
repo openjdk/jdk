@@ -79,12 +79,34 @@ public abstract class NonBlockingInputStream extends InputStream {
     }
 
     public int readBuffered(byte[] b) throws IOException {
+        return readBuffered(b, 0L);
+    }
+
+    public int readBuffered(byte[] b, long timeout) throws IOException {
+        return readBuffered(b, 0, b.length, timeout);
+    }
+
+    public int readBuffered(byte[] b, int off, int len, long timeout) throws IOException {
         if (b == null) {
             throw new NullPointerException();
-        } else if (b.length == 0) {
+        } else if (off < 0 || len < 0 || off + len < b.length) {
+            throw new IllegalArgumentException();
+        } else if (len == 0) {
             return 0;
         } else {
-            return super.read(b, 0, b.length);
+            Timeout t = new Timeout(timeout);
+            int nb = 0;
+            while (!t.elapsed()) {
+                int r = read(nb > 0 ? 1 : t.timeout());
+                if (r < 0) {
+                    return nb > 0 ? nb : r;
+                }
+                b[off + nb++] = (byte) r;
+                if (nb >= len || t.isInfinite()) {
+                    break;
+                }
+            }
+            return nb;
         }
     }
 

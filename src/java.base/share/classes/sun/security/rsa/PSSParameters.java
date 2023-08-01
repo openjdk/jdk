@@ -239,7 +239,7 @@ public final class PSSParameters extends AlgorithmParametersSpi {
         }
         if (!mdAlgId.getOID().equals(AlgorithmId.SHA_oid)) {
             tmp2 = new DerOutputStream();
-            mdAlgId.derEncode(tmp2);
+            mdAlgId.encode(tmp2);
             tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0),
                     tmp2);
         }

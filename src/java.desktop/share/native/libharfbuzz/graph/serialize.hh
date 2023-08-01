@@ -33,6 +33,23 @@ struct overflow_record_t
 {
   unsigned parent;
   unsigned child;
+
+  bool operator != (const overflow_record_t o) const
+  { return !(*this == o); }
+
+  inline bool operator == (const overflow_record_t& o) const
+  {
+    return parent == o.parent &&
+        child == o.child;
+  }
+
+  inline uint32_t hash () const
+  {
+    uint32_t current = 0;
+    current = current * 31 + hb_hash (parent);
+    current = current * 31 + hb_hash (child);
+    return current;
+  }
 };
 
 inline
@@ -94,6 +111,7 @@ will_overflow (graph_t& graph,
   if (overflows) overflows->resize (0);
   graph.update_positions ();
 
+  hb_hashmap_t<overflow_record_t*, bool> record_set;
   const auto& vertices = graph.vertices_;
   for (int parent_idx = vertices.length - 1; parent_idx >= 0; parent_idx--)
   {
@@ -109,7 +127,10 @@ will_overflow (graph_t& graph,
       overflow_record_t r;
       r.parent = parent_idx;
       r.child = link.objidx;
+      if (record_set.has(&r)) continue; // don't keep duplicate overflows.
+
       overflows->push (r);
+      record_set.set(&r, true);
     }
   }
 
@@ -132,8 +153,8 @@ void print_overflows (graph_t& graph,
     const auto& child = graph.vertices_[o.child];
     DEBUG_MSG (SUBSET_REPACK, nullptr,
                "  overflow from "
-               "%4d (%4d in, %4d out, space %2d) => "
-               "%4d (%4d in, %4d out, space %2d)",
+               "%4u (%4u in, %4u out, space %2u) => "
+               "%4u (%4u in, %4u out, space %2u)",
                o.parent,
                parent.incoming_edges (),
                parent.obj.real_links.length + parent.obj.virtual_links.length,
@@ -144,7 +165,7 @@ void print_overflows (graph_t& graph,
                graph.space_for (o.child));
   }
   if (overflows.length > 10) {
-    DEBUG_MSG (SUBSET_REPACK, nullptr, "  ... plus %d more overflows.", overflows.length - 10);
+    DEBUG_MSG (SUBSET_REPACK, nullptr, "  ... plus %u more overflows.", overflows.length - 10);
   }
 }
 
@@ -223,7 +244,7 @@ inline hb_blob_t* serialize (const graph_t& graph)
       return nullptr;
     }
 
-    memcpy (start, vertices[i].obj.head, size);
+    hb_memcpy (start, vertices[i].obj.head, size);
 
     // Only real links needs to be serialized.
     for (const auto& link : vertices[i].obj.real_links)

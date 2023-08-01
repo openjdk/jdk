@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.nio.ByteBuffer;
+import java.util.Optional;
+
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
@@ -39,52 +39,58 @@ import sun.security.action.GetBooleanAction;
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
  * a native long address.
  */
-public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
+public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
 
-    public static final MemorySegment EVERYTHING = new NativeMemorySegmentImpl(0, Long.MAX_VALUE, false, MemorySessionImpl.GLOBAL) {
-        @Override
-        void checkBounds(long offset, long length) {
-            // do nothing
-        }
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-        @Override
-        NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session) {
-            throw new IllegalStateException();
-        }
-    };
-
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-
-    // The maximum alignment supported by malloc - typically 16 on
-    // 64-bit platforms and 8 on 32-bit platforms.
+    // The maximum alignment supported by malloc - typically 16 bytes on
+    // 64-bit platforms and 8 bytes on 32-bit platforms.
     private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
-
-    private static final boolean skipZeroMemory = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
+    private static final boolean SKIP_ZERO_MEMORY = GetBooleanAction.privilegedGetProperty("jdk.internal.foreign.skipZeroMemory");
 
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, boolean readOnly, MemorySession session) {
-        super(length, readOnly, session);
-        this.min = min;
+    NativeMemorySegmentImpl(long min, long length, boolean readOnly, MemorySessionImpl scope) {
+        super(length, readOnly, scope);
+        this.min = (Unsafe.getUnsafe().addressSize() == 4)
+                // On 32-bit systems, normalize the upper unused 32-bits to zero
+                ? min & 0x0000_0000_FFFF_FFFFL
+                // On 64-bit systems, all the bits are used
+                : min;
+    }
+
+    /**
+     * This constructor should only be used when initializing {@link MemorySegment#NULL}. Note: because of the memory
+     * segment class hierarchy, it is possible to end up in a situation where this constructor is called
+     * when the static fields in this class are not yet initialized.
+     */
+    @ForceInline
+    public NativeMemorySegmentImpl() {
+        super(0L, false, new GlobalSession(null));
+        this.min = 0L;
+    }
+
+    @Override
+    public long address() {
+        return min;
+    }
+
+    @Override
+    public Optional<Object> heapBase() {
+        return Optional.empty();
     }
 
     @ForceInline
     @Override
-    public MemoryAddress address() {
-        checkValidState();
-        return MemoryAddress.ofLong(unsafeGetOffset());
-    }
-
-    @Override
-    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session) {
-        return new NativeMemorySegmentImpl(min + offset, size, readOnly, session);
+    NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
+        return new NativeMemorySegmentImpl(min + offset, size, readOnly, scope);
     }
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return nioAccess.newDirectByteBuffer(min, (int) this.length, null,
-                session == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
+                scope == MemorySessionImpl.GLOBAL ? null : this);
     }
 
     @Override
@@ -109,42 +115,59 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     // factories
 
-    public static MemorySegment makeNativeSegment(long bytesSize, long alignmentBytes, MemorySession session) {
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+    public static MemorySegment makeNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl) {
         sessionImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
-            alignmentBytes = Math.max(alignmentBytes, nioAccess.pageSize());
+            byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
         }
-        long alignedSize = Math.max(1L, alignmentBytes > MAX_MALLOC_ALIGN ?
-                bytesSize + (alignmentBytes - 1) :
-                bytesSize);
+        long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
+                byteSize + (byteAlignment - 1) :
+                byteSize);
 
-        nioAccess.reserveMemory(alignedSize, bytesSize);
+        NIO_ACCESS.reserveMemory(alignedSize, byteSize);
 
-        long buf = unsafe.allocateMemory(alignedSize);
-        if (!skipZeroMemory) {
-            unsafe.setMemory(buf, alignedSize, (byte)0);
+        long buf = UNSAFE.allocateMemory(alignedSize);
+        if (!SKIP_ZERO_MEMORY) {
+            UNSAFE.setMemory(buf, alignedSize, (byte)0);
         }
-        long alignedBuf = Utils.alignUp(buf, alignmentBytes);
+        long alignedBuf = Utils.alignUp(buf, byteAlignment);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                false, session);
+                false, sessionImpl);
         sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
-                unsafe.freeMemory(buf);
-                nioAccess.unreserveMemory(alignedSize, bytesSize);
+                UNSAFE.freeMemory(buf);
+                NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
             }
         });
-        if (alignedSize != bytesSize) {
+        if (alignedSize != byteSize) {
             long delta = alignedBuf - buf;
-            segment = segment.asSlice(delta, bytesSize);
+            segment = segment.asSlice(delta, byteSize);
         }
         return segment;
     }
 
-    public static MemorySegment makeNativeSegmentUnchecked(MemoryAddress min, long bytesSize, MemorySession session) {
-        MemorySessionImpl.toSessionImpl(session).checkValidState();
-        AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, false, session);
-        return segment;
+    // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
+    // associated with MemorySegment::ofAddress.
+
+    @ForceInline
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl, Runnable action) {
+        if (action == null) {
+            sessionImpl.checkValidState();
+        } else {
+            sessionImpl.addCloseAction(action);
+        }
+        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
+    }
+
+    @ForceInline
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl) {
+        sessionImpl.checkValidState();
+        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
+    }
+
+    @ForceInline
+    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
+        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
     }
 }

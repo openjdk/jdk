@@ -21,13 +21,15 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.*;
 import javax.xml.crypto.XMLCryptoContext;
 import org.w3c.dom.NamedNodeMap;
@@ -38,6 +40,21 @@ import org.w3c.dom.Node;
  *
  */
 public final class Utils {
+
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(Utils.class);
+    private static final String SECVAL_PROP_NAME =
+        "org.jcp.xml.dsig.secureValidation";
+    private static final boolean SECVAL_SYSPROP_SET;
+    private static final boolean SECVAL_SYSPROP;
+    static {
+        String sysProp = privilegedGetProperty(SECVAL_PROP_NAME);
+        SECVAL_SYSPROP_SET = sysProp != null;
+        SECVAL_SYSPROP = Boolean.parseBoolean(sysProp);
+        if (SECVAL_SYSPROP_SET && !SECVAL_SYSPROP) {
+            LOG.warn("Secure validation mode disabled");
+        }
+    }
 
     private Utils() {}
 
@@ -108,11 +125,25 @@ public final class Utils {
         return uri != null && (uri.length() == 0 || uri.charAt(0) == '#');
     }
 
+    @SuppressWarnings("removal")
+    private static String privilegedGetProperty(String theProp) {
+        if (System.getSecurityManager() == null) {
+            return System.getProperty(theProp);
+        } else {
+            return AccessController.doPrivileged(
+                 (PrivilegedAction<String>) () -> System.getProperty(theProp));
+        }
+    }
+
     static boolean secureValidation(XMLCryptoContext xc) {
+        // If set, system property supersedes XMLCryptoContext property
+        if (SECVAL_SYSPROP_SET) {
+            return SECVAL_SYSPROP;
+        }
         if (xc == null) {
             return false;
         }
-        return getBoolean(xc, "org.jcp.xml.dsig.secureValidation");
+        return getBoolean(xc, SECVAL_PROP_NAME);
     }
 
     private static boolean getBoolean(XMLCryptoContext xc, String name) {

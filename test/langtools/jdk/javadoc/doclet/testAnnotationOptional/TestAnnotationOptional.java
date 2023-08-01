@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javadoc.tester.JavadocTester;
 public class TestAnnotationOptional extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestAnnotationOptional tester = new TestAnnotationOptional();
+        var tester = new TestAnnotationOptional();
         tester.runTests();
     }
 

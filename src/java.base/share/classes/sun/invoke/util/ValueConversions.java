@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,8 +76,8 @@ public class ValueConversions {
         return x;
     }
     static int unboxInteger(Object x, boolean cast) {
-        if (x instanceof Integer)
-            return (Integer) x;
+        if (x instanceof Integer i)
+            return i;
         return primitiveConversion(Wrapper.INT, x, cast).intValue();
     }
 
@@ -85,8 +85,8 @@ public class ValueConversions {
         return x;
     }
     static byte unboxByte(Object x, boolean cast) {
-        if (x instanceof Byte)
-            return (Byte) x;
+        if (x instanceof Byte b)
+            return b;
         return primitiveConversion(Wrapper.BYTE, x, cast).byteValue();
     }
 
@@ -94,8 +94,8 @@ public class ValueConversions {
         return x;
     }
     static short unboxShort(Object x, boolean cast) {
-        if (x instanceof Short)
-            return (Short) x;
+        if (x instanceof Short s)
+            return s;
         return primitiveConversion(Wrapper.SHORT, x, cast).shortValue();
     }
 
@@ -103,8 +103,8 @@ public class ValueConversions {
         return x;
     }
     static boolean unboxBoolean(Object x, boolean cast) {
-        if (x instanceof Boolean)
-            return (Boolean) x;
+        if (x instanceof Boolean b)
+            return b;
         return (primitiveConversion(Wrapper.BOOLEAN, x, cast).intValue() & 1) != 0;
     }
 
@@ -112,8 +112,8 @@ public class ValueConversions {
         return x;
     }
     static char unboxCharacter(Object x, boolean cast) {
-        if (x instanceof Character)
-            return (Character) x;
+        if (x instanceof Character c)
+            return c;
         return (char) primitiveConversion(Wrapper.CHAR, x, cast).intValue();
     }
 
@@ -121,8 +121,8 @@ public class ValueConversions {
         return x;
     }
     static long unboxLong(Object x, boolean cast) {
-        if (x instanceof Long)
-            return (Long) x;
+        if (x instanceof Long l)
+            return l;
         return primitiveConversion(Wrapper.LONG, x, cast).longValue();
     }
 
@@ -130,8 +130,8 @@ public class ValueConversions {
         return x;
     }
     static float unboxFloat(Object x, boolean cast) {
-        if (x instanceof Float)
-            return (Float) x;
+        if (x instanceof Float f)
+            return f;
         return primitiveConversion(Wrapper.FLOAT, x, cast).floatValue();
     }
 
@@ -139,8 +139,8 @@ public class ValueConversions {
         return x;
     }
     static double unboxDouble(Object x, boolean cast) {
-        if (x instanceof Double)
-            return (Double) x;
+        if (x instanceof Double d)
+            return d;
         return primitiveConversion(Wrapper.DOUBLE, x, cast).doubleValue();
     }
 
@@ -236,12 +236,12 @@ public class ValueConversions {
             if (!cast)  return null;
             return ZERO_INT;
         }
-        if (x instanceof Number) {
-            res = (Number) x;
-        } else if (x instanceof Boolean) {
-            res = ((boolean)x ? ONE_INT : ZERO_INT);
-        } else if (x instanceof Character) {
-            res = (int)(char)x;
+        if (x instanceof Number n) {
+            res = n;
+        } else if (x instanceof Boolean b) {
+            res = b ? ONE_INT : ZERO_INT;
+        } else if (x instanceof Character c) {
+            res = (int) c;
         } else {
             // this will fail with the required ClassCastException:
             res = (Number) x;
@@ -259,16 +259,16 @@ public class ValueConversions {
      * Byte, Short, Character, or Integer.
      */
     public static int widenSubword(Object x) {
-        if (x instanceof Integer)
-            return (int) x;
-        else if (x instanceof Boolean)
-            return fromBoolean((boolean) x);
-        else if (x instanceof Character)
-            return (char) x;
-        else if (x instanceof Short)
-            return (short) x;
-        else if (x instanceof Byte)
-            return (byte) x;
+        if (x instanceof Integer i)
+            return i;
+        else if (x instanceof Boolean b)
+            return fromBoolean(b);
+        else if (x instanceof Character c)
+            return c;
+        else if (x instanceof Short s)
+            return s;
+        else if (x instanceof Byte b)
+            return b;
         else
             // Fail with a ClassCastException.
             return (int) x;
@@ -342,73 +342,13 @@ public class ValueConversions {
         // no value to return; this is an unbox of null
     }
 
-    static void empty() {
-    }
-
-    static Object zeroObject() {
-        return null;
-    }
-
-    static int zeroInteger() {
-        return 0;
-    }
-
-    static long zeroLong() {
-        return 0;
-    }
-
-    static float zeroFloat() {
-        return 0;
-    }
-
-    static double zeroDouble() {
-        return 0;
-    }
-
-    private static final WrapperCache[] CONSTANT_FUNCTIONS = newWrapperCaches(2);
-
-    public static MethodHandle zeroConstantFunction(Wrapper wrap) {
-        WrapperCache cache = CONSTANT_FUNCTIONS[0];
-        MethodHandle mh = cache.get(wrap);
-        if (mh != null) {
-            return mh;
-        }
-        // slow path
-        MethodType type = MethodType.methodType(wrap.primitiveType());
-        switch (wrap) {
-            case VOID:
-                mh = Handles.EMPTY;
-                break;
-            case OBJECT:
-            case INT: case LONG: case FLOAT: case DOUBLE:
-                try {
-                    mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "zero"+wrap.wrapperSimpleName(), type);
-                } catch (ReflectiveOperationException ex) {
-                    mh = null;
-                }
-                break;
-        }
-        if (mh != null) {
-            return cache.put(wrap, mh);
-        }
-
-        // use zeroInt and cast the result
-        if (wrap.isSubwordOrInt() && wrap != Wrapper.INT) {
-            mh = MethodHandles.explicitCastArguments(zeroConstantFunction(Wrapper.INT), type);
-            return cache.put(wrap, mh);
-        }
-        throw new IllegalArgumentException("cannot find zero constant for " + wrap);
-    }
-
     private static class Handles {
-        static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
+        static final MethodHandle IGNORE;
         static {
             try {
                 MethodType idType = MethodType.genericMethodType(1);
                 MethodType ignoreType = idType.changeReturnType(void.class);
-                CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
                 IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
-                EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
             } catch (NoSuchMethodException | IllegalAccessException ex) {
                 throw newInternalError("uncaught exception", ex);
             }
@@ -419,10 +359,6 @@ public class ValueConversions {
         return Handles.IGNORE;
     }
 
-    /** Return a method that casts its second argument (an Object) to the given type (a Class). */
-    public static MethodHandle cast() {
-        return Handles.CAST_REFERENCE;
-    }
 
     /// Primitive conversions.
     // These are supported directly by the JVM, usually by a single instruction.
@@ -672,8 +608,5 @@ public class ValueConversions {
     // handy shared exception makers (they simplify the common case code)
     private static InternalError newInternalError(String message, Throwable cause) {
         return new InternalError(message, cause);
-    }
-    private static InternalError newInternalError(Throwable cause) {
-        return new InternalError(cause);
     }
 }

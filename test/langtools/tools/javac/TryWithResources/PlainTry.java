@@ -6,7 +6,7 @@
  * @compile/fail/ref=PlainTry.out  -XDrawDiagnostics                           PlainTry.java
  */
 public class PlainTry {
-    public static void main(String... args) {
+    public static void meth() {
         try {
             ;
         }

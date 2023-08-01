@@ -48,9 +48,13 @@ import com.sun.jdi.StackFrame;
 import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
+import java.util.Optional;
+import java.util.stream.Stream;
+import jdk.jshell.JShellConsole;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionEnv;
 import static jdk.jshell.execution.Util.remoteInputOutput;
+import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
 
 /**
  * The implementation of {@link jdk.jshell.spi.ExecutionControl} that the
@@ -96,10 +100,17 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             // timeout on I/O-socket
             listener.setSoTimeout(timeout);
             int port = listener.getLocalPort();
+            Optional<JShellConsole> console = env.console();
+            String consoleModule = console.isPresent() ? "jdk.jshell" : "java.base";
+            List<String> augmentedremoteVMOptions =
+                    Stream.concat(env.extraRemoteVMOptions().stream(),
+                                  //disable System.console():
+                                  List.of("-Djdk.console=" + consoleModule).stream())
+                          .toList();
 
             // Set-up the JDI connection
             JdiInitiator jdii = new JdiInitiator(port,
-                    env.extraRemoteVMOptions(), remoteAgent, isLaunch, host,
+                    augmentedremoteVMOptions, remoteAgent, isLaunch, host,
                     timeout, Collections.emptyMap());
             VirtualMachine vm = jdii.vm();
             Process process = jdii.process();
@@ -121,6 +132,15 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
             outputs.put("err", env.userErr());
             Map<String, InputStream> input = new HashMap<>();
             input.put("in", env.userIn());
+            if (console.isPresent()) {
+                if (!RemoteExecutionControl.class.getName().equals(remoteAgent)) {
+                    throw new IllegalArgumentException("JShellConsole is only supported for " +
+                                                       "the default remote agent!");
+                }
+                ConsoleOutputStream consoleOutput = new ConsoleOutputStream(console.get());
+                outputs.put("consoleInput", consoleOutput);
+                input.put("consoleOutput", consoleOutput.sinkInput);
+            }
             return remoteInputOutput(socket.getInputStream(), out, outputs, input,
                     (objIn, objOut) -> new JdiDefaultExecutionControl(env,
                                         objOut, objIn, vm, process, remoteAgent, deathListeners));

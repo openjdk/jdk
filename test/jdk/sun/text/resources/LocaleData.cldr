@@ -2185,7 +2185,7 @@ FormatData/ar_YE/arab.NumberElements/8=\u0609
 FormatData/ar_YE/arab.NumberElements/9=\u221e
 FormatData/ar_YE/arab.NumberElements/10=\u0644\u064a\u0633\u00a0\u0631\u0642\u0645
 
-# bug #4113654 (this is obviously not an exchaustive test; I'm trying it here for a single
+# bug #4113654 (this is obviously not an exhaustive test; I'm trying it here for a single
 # inheritance chain only.  This bug fix also gets tested fairly well by the tests for all
 # the other bugs as given above)
 FormatData//latn.NumberPatterns/0=#,##0.###
@@ -3154,7 +3154,7 @@ LocaleNames/ms/ST=Sao Tome dan Principe
 LocaleNames/ms/TC=Kepulauan Turks dan Caicos
 LocaleNames/ms/TD=Chad
 LocaleNames/ms/TJ=Tajikistan
-LocaleNames/ms/TR=Turki
+LocaleNames/ms/TR=Turkiye
 LocaleNames/ms/TT=Trinidad dan Tobago
 LocaleNames/ms/US=Amerika Syarikat
 LocaleNames/ms/VC=Saint Vincent dan Grenadines
@@ -6151,7 +6151,7 @@ CurrencyNames/fr/khr=riel cambodgien
 CurrencyNames/fr/kmf=franc comorien
 CurrencyNames/fr/kwd=dinar kowe\u00eftien
 CurrencyNames/fr/kzt=tenge kazakh
-CurrencyNames/fr/lak=kip loatien
+CurrencyNames/fr/lak=kip laotien
 CurrencyNames/fr/lkr=roupie srilankaise
 CurrencyNames/fr/lsl=loti lesothan
 CurrencyNames/fr/mga=ariary malgache
@@ -7875,3 +7875,6 @@ CalendarData//minimalDaysInFirstWeek=1: 001 GU UM US VI;4: AD AN AT AX BE BG CH 
 # tzdata2022f
 TimeZoneNames/en/America\/Ojinaga/1=Central Standard Time
 TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time
+
+# bug 8303472
+LocaleNames/en/TR=T\u00fcrkiye

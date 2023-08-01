@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ void UnhandledOops::dump_oops(UnhandledOops *list) {
 
 // For debugging unhandled oop detector _in the debugger_
 // You don't want to turn it on in compiled code here.
-static Thread* unhandled_oop_print = NULL;
+static Thread* unhandled_oop_print = nullptr;
 
 void UnhandledOops::register_unhandled_oop(oop* op) {
   if (!_thread->is_in_live_stack((address)op)) {

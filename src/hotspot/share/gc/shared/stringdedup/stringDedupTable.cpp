@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,6 @@ public:
   virtual bool step() = 0;
   virtual TableValue find(typeArrayOop obj, uint hash_code) const = 0;
   virtual void report_end() const = 0;
-  virtual Stat::Phase phase() const = 0;
   virtual void verify() const = 0;
 };
 
@@ -319,10 +318,6 @@ public:
 
   virtual void report_end() const {
     _cur_stat.report_resize_table_end();
-  }
-
-  virtual Stat::Phase phase() const {
-    return Stat::Phase::resize_table;
   }
 
   virtual void verify() const;
@@ -387,10 +382,6 @@ public:
 
   virtual void report_end() const {
     _cur_stat.report_cleanup_table_end();
-  }
-
-  virtual Stat::Phase phase() const {
-    return Stat::Phase::cleanup_table;
   }
 
   virtual void verify() const {} // Nothing to do here.
@@ -716,11 +707,6 @@ void StringDedup::Table::cleanup_end() {
   _cleanup_state = nullptr;
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
   Atomic::store(&_dead_state, DeadState::wait2);
-}
-
-StringDedup::Stat::Phase StringDedup::Table::cleanup_phase() {
-  assert(_cleanup_state != nullptr, "precondition");
-  return _cleanup_state->phase();
 }
 
 void StringDedup::Table::verify() {

@@ -231,7 +231,7 @@ public sealed interface DirectMethodHandleDesc
 
     /**
      * Returns the name of the method or field described by this nominal descriptor.
-     * For constructors, returns the reserved name {@code "<init>"}.
+     * For constructors, returns the reserved name {@value ConstantDescs#INIT_NAME}.
      *
      * @return the name of the method or field
      */

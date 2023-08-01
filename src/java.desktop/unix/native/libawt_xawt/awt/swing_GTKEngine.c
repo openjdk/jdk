@@ -335,6 +335,11 @@ Java_com_sun_java_swing_plaf_gtk_GTKEngine_nativeFinishPainting(
 {
     jint transparency;
     gint *buffer = (gint*) (*env)->GetPrimitiveArrayCritical(env, dest, 0);
+    if (buffer == 0) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not get image buffer");
+        return -1;
+    }
     gtk->gdk_threads_enter();
     transparency = gtk->copy_image(buffer, width, height);
     gtk->gdk_threads_leave();

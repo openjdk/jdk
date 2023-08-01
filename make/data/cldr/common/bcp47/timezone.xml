@@ -96,20 +96,20 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="cacfq" description="Creston, Canada" alias="America/Creston" since="21.0.1"/>
             <type name="caedm" description="Edmonton, Canada" alias="America/Edmonton Canada/Mountain"/>
             <type name="caffs" description="Rainy River, Canada" alias="America/Rainy_River"/>
-            <type name="cafne" description="Fort Nelson, Canada" alias="America/Fort_Nelson"/>
+            <type name="cafne" description="Fort Nelson, Canada" alias="America/Fort_Nelson" since="29"/>
             <type name="caglb" description="Glace Bay, Canada" alias="America/Glace_Bay"/>
             <type name="cagoo" description="Goose Bay, Canada" alias="America/Goose_Bay"/>
             <type name="cahal" description="Halifax, Canada" alias="America/Halifax Canada/Atlantic"/>
             <type name="caiql" description="Iqaluit, Canada" alias="America/Iqaluit"/>
             <type name="camon" description="Moncton, Canada" alias="America/Moncton"/>
-            <type name="camtr" description="Montreal, Canada" deprecated="true" alias="America/Montreal"/>
+            <type name="camtr" description="Montreal, Canada" deprecated="true" preferred="cator"/>
             <type name="capnt" description="Pangnirtung, Canada" alias="America/Pangnirtung"/>
             <type name="careb" description="Resolute, Canada" alias="America/Resolute"/>
             <type name="careg" description="Regina, Canada" alias="America/Regina Canada/East-Saskatchewan Canada/Saskatchewan"/>
             <type name="casjf" description="St. John's, Canada" alias="America/St_Johns Canada/Newfoundland"/>
             <type name="canpg" description="Nipigon, Canada" alias="America/Nipigon"/>
             <type name="cathu" description="Thunder Bay, Canada" alias="America/Thunder_Bay"/>
-            <type name="cator" description="Toronto, Canada" alias="America/Toronto Canada/Eastern"/>
+            <type name="cator" description="Toronto, Canada" alias="America/Toronto America/Montreal Canada/Eastern"/>
             <type name="cavan" description="Vancouver, Canada" alias="America/Vancouver Canada/Pacific"/>
             <type name="cawnp" description="Winnipeg, Canada" alias="America/Winnipeg Canada/Central"/>
             <type name="caybx" description="Blanc-Sablon, Canada" alias="America/Blanc-Sablon"/>
@@ -177,7 +177,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="frpar" description="Paris, France" alias="Europe/Paris"/>
             <type name="galbv" description="Libreville, Gabon" alias="Africa/Libreville"/>
             <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" preferred="gazastrp"/>
-            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza"/>
+            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza" since="40"/>
             <type name="gblon" description="London, United Kingdom" alias="Europe/London Europe/Belfast GB GB-Eire"/>
             <type name="gdgnd" description="Grenada" alias="America/Grenada"/>
             <type name="getbs" description="Tbilisi, Georgia" alias="Asia/Tbilisi"/>
@@ -190,7 +190,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="globy" description="Ittoqqortoormiit (Scoresbysund), Greenland" alias="America/Scoresbysund"/>
             <type name="glthu" description="Qaanaaq (Thule), Greenland" alias="America/Thule"/>
             <type name="gmbjl" description="Banjul, Gambia" alias="Africa/Banjul"/>
-            <type name="gmt" description="Greenwich Mean Time" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich"/>
+            <type name="gmt" description="Greenwich Mean Time" alias="Etc/GMT Etc/GMT+0 Etc/GMT-0 Etc/GMT0 Etc/Greenwich GMT GMT+0 GMT-0 GMT0 Greenwich" since="31"/>
             <type name="gncky" description="Conakry, Guinea" alias="Africa/Conakry"/>
             <type name="gpbbr" description="Guadeloupe" alias="America/Guadeloupe"/>
             <type name="gpmsb" description="Marigot, Saint Martin" alias="America/Marigot"/>
@@ -280,6 +280,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="mwblz" description="Blantyre, Malawi" alias="Africa/Blantyre"/>
             <type name="mxchi" description="Chihuahua, Mexico" alias="America/Chihuahua"/>
             <type name="mxcun" description="Cancún, Mexico" alias="America/Cancun"/>
+            <type name="mxcjs" description="Ciudad Juárez, Mexico" alias="America/Ciudad_Juarez" since="43"/>
             <type name="mxhmo" description="Hermosillo, Mexico" alias="America/Hermosillo"/>
             <type name="mxmam" description="Matamoros, Mexico" alias="America/Matamoros"/>
             <type name="mxmex" description="Mexico City, Mexico" alias="America/Mexico_City Mexico/General"/>
@@ -389,7 +390,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="tmasb" description="Ashgabat, Turkmenistan" alias="Asia/Ashgabat Asia/Ashkhabad"/>
             <type name="tntun" description="Tunis, Tunisia" alias="Africa/Tunis"/>
             <type name="totbu" description="Tongatapu, Tonga" alias="Pacific/Tongatapu"/>
-            <type name="trist" description="Istanbul, Turkey" alias="Europe/Istanbul Asia/Istanbul Turkey"/>
+            <type name="trist" description="Istanbul, Türkiye" alias="Europe/Istanbul Asia/Istanbul Turkey"/>
             <type name="ttpos" description="Port of Spain, Trinidad and Tobago" alias="America/Port_of_Spain"/>
             <type name="tvfun" description="Funafuti, Tuvalu" alias="Pacific/Funafuti"/>
             <type name="twtpe" description="Taipei, Taiwan" alias="Asia/Taipei ROC"/>

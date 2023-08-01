@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ public interface ObjectReference extends Value {
      * Sets the value of a given instance or static field in this object.
      * The {@link Field} must be valid for this ObjectReference; that is,
      * it must be from the mirrored object's class or a superclass of that class.
-     * If static, the field must not be final.
+     * The field must not be final.
      * <p>
      * Object values must be assignment compatible with the field type
      * (This implies that the field type must be loaded through the
@@ -129,7 +129,7 @@ public interface ObjectReference extends Value {
      * @param field the field containing the requested value
      * @param value the new value to assign
      * @throws java.lang.IllegalArgumentException if the field is not valid for
-     * this object's class.
+     * this object's class or the field is final.
      * @throws InvalidTypeException if the value's type does not match
      * the field's type.
      * @throws ClassNotLoadedException if 'value' is not null, and the field

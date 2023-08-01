@@ -85,7 +85,7 @@ DocComment[DOC_COMMENT, pos:1
   block tags: 1
     Erroneous[ERRONEOUS, pos:1, prefPos:26
       code: compiler.err.dc.ref.unexpected.input
-      body: @serialField_fie...ld_String#member_f3_is_a_String
+      body: @serialField_field_String#member_f3_is_a_String
     ]
 ]
 */
@@ -101,7 +101,7 @@ DocComment[DOC_COMMENT, pos:1
   block tags: 1
     Erroneous[ERRONEOUS, pos:1, prefPos:26
       code: compiler.err.dc.ref.unexpected.input
-      body: @serialField_fie...ld_String##fragment_f4_is_a_String
+      body: @serialField_field_String##fragment_f4_is_a_String
     ]
 ]
 */

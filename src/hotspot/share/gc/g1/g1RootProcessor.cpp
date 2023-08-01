@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,9 @@ public:
   StrongRootsClosures(OopClosure* roots, CLDClosure* clds, CodeBlobClosure* blobs) :
       _roots(roots), _clds(clds), _blobs(blobs) {}
 
-  OopClosure* weak_oops()   { return NULL; }
   OopClosure* strong_oops() { return _roots; }
 
-  CLDClosure* weak_clds()        { return NULL; }
+  CLDClosure* weak_clds()        { return nullptr; }
   CLDClosure* strong_clds()      { return _clds; }
 
   CodeBlobClosure* strong_codeblobs() { return _blobs; }
@@ -99,8 +98,8 @@ void G1RootProcessor::process_strong_roots(OopClosure* oops,
                                            CodeBlobClosure* blobs) {
   StrongRootsClosures closures(oops, clds, blobs);
 
-  process_java_roots(&closures, NULL, 0);
-  process_vm_roots(&closures, NULL, 0);
+  process_java_roots(&closures, nullptr, 0);
+  process_vm_roots(&closures, nullptr, 0);
 
   // CodeCache is already processed in java roots
   // refProcessor is not needed since we are inside a safe point
@@ -116,7 +115,6 @@ public:
   AllRootsClosures(OopClosure* roots, CLDClosure* clds) :
       _roots(roots), _clds(clds) {}
 
-  OopClosure* weak_oops() { return _roots; }
   OopClosure* strong_oops() { return _roots; }
 
   // By returning the same CLDClosure for both weak and strong CLDs we ensure
@@ -125,9 +123,9 @@ public:
   CLDClosure* weak_clds() { return _clds; }
   CLDClosure* strong_clds() { return _clds; }
 
-  // We don't want to visit code blobs more than once, so we return NULL for the
+  // We don't want to visit code blobs more than once, so we return null for the
   // strong case and walk the entire code cache as a separate step.
-  CodeBlobClosure* strong_codeblobs() { return NULL; }
+  CodeBlobClosure* strong_codeblobs() { return nullptr; }
 };
 
 void G1RootProcessor::process_all_roots(OopClosure* oops,
@@ -135,10 +133,10 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
                                         CodeBlobClosure* blobs) {
   AllRootsClosures closures(oops, clds);
 
-  process_java_roots(&closures, NULL, 0);
-  process_vm_roots(&closures, NULL, 0);
+  process_java_roots(&closures, nullptr, 0);
+  process_vm_roots(&closures, nullptr, 0);
 
-  process_code_cache_roots(blobs, NULL, 0);
+  process_code_cache_roots(blobs, nullptr, 0);
 
   // refProcessor is not needed since we are inside a safe point
   _process_strong_tasks.all_tasks_claimed(G1RP_PS_refProcessor_oops_do);

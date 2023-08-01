@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -219,6 +219,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hax">Βόρεια Χάιντα</language>
 			<language type="he">Εβραϊκά</language>
 			<language type="hi">Χίντι</language>
+			<language type="hi_Latn">Χίντι (Λατινικό)</language>
 			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hil">Χιλιγκαϊνόν</language>
 			<language type="hit">Χιτίτε</language>
@@ -1044,6 +1045,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Ζιμπάμπουε</territory>
 			<territory type="ZZ">Άγνωστη περιοχή</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Αγγλία</subdivision>
+			<subdivision type="gbsct">Σκοτία</subdivision>
+			<subdivision type="gbwls">Ουαλία</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">Παραδοσιακή γερμανική ορθογραφία</variant>
 			<variant type="1994">Τυποποιημένη ορθογραφία Ρεσιάν</variant>
@@ -1669,9 +1675,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2216,9 +2228,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -4255,6 +4273,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Ερμοσίγιο</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Σιουδάδ Χουάρες</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Μαζατλάν</exemplarCity>
@@ -7668,6 +7689,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" gender="masculine" case="accusative">κυβικούς {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="genitive">κυβικών {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>feminine</gender>
 				<displayName>δύναμη επιτάχυνσης</displayName>
@@ -8475,6 +8499,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<gender>neuter</gender>
+				<displayName>μικρόμετρα</displayName>
 				<unitPattern count="one">{0} μικρόμετρο</unitPattern>
 				<unitPattern count="one" case="accusative">{0} μικρόμετρο</unitPattern>
 				<unitPattern count="one" case="genitive">{0} μικρομέτρου</unitPattern>
@@ -8565,6 +8590,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} σκανδιναβικών μιλίων</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<displayName>στιγμές</displayName>
 				<unitPattern count="one">{0} στιγμή</unitPattern>
 				<unitPattern count="other">{0} στιγμές</unitPattern>
 			</unit>
@@ -8604,6 +8630,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} λούμεν</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
+				<displayName>ηλιακές φωτεινότητες</displayName>
 				<unitPattern count="one">{0} ηλιακή φωτεινότητα</unitPattern>
 				<unitPattern count="other">{0} ηλιακές φωτεινότητες</unitPattern>
 			</unit>
@@ -9262,6 +9289,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
@@ -9644,11 +9675,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} Hz</unitPattern>
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
+			<unit type="graphics-em">
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixel</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapixel</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>κουκ./εκ.</displayName>
@@ -9777,6 +9824,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>ακτίνες Ήλιου</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>λουξ</displayName>
@@ -10276,9 +10325,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="contributed">G</displayName>
@@ -10287,6 +10345,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName draft="contributed">m/s²</displayName>
+				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName draft="contributed">στρφ</displayName>
+				<unitPattern count="one" draft="contributed">{0} στρφ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} στρφ</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName draft="contributed">ακτν</displayName>
+				<unitPattern count="one" draft="contributed">{0} ακτν</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ακτν</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>°</displayName>
@@ -10304,8 +10374,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>τ.χλμ.</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/τ.χλμ.</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ha</displayName>
@@ -10314,18 +10386,62 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>τ.μ.</displayName>
+				<unitPattern count="one">{0} τ.μ.</unitPattern>
+				<unitPattern count="other">{0} τ.μ.</unitPattern>
+				<perUnitPattern>{0}/τ.μ.</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>τ.εκ.</displayName>
+				<unitPattern count="one">{0} τ.εκ.</unitPattern>
+				<unitPattern count="other">{0} τ.εκ.</unitPattern>
+				<perUnitPattern>{0}/τ.εκ.</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>τ.μίλι</displayName>
+				<unitPattern count="one">{0} τ.μίλι</unitPattern>
+				<unitPattern count="other">{0} τ.μίλια</unitPattern>
+				<perUnitPattern>{0}/τ.μίλι</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>ακρ</displayName>
+				<unitPattern count="one">{0} ακρ</unitPattern>
+				<unitPattern count="other">{0} ακρ</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>τ.γρδ</displayName>
+				<unitPattern count="one">{0} τ.γρδ</unitPattern>
+				<unitPattern count="other">{0} τ.γρδ</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>τ.πδ</displayName>
+				<unitPattern count="one">{0} τ.πδ</unitPattern>
+				<unitPattern count="other">{0} τ.πδ</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>τ. ίντσες</displayName>
+				<unitPattern count="one">{0} τ. ίντσα</unitPattern>
+				<unitPattern count="other">{0} τ. ίντσες</unitPattern>
+				<perUnitPattern>{0}/τ. ίντσα</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>ντούναμ</displayName>
+				<unitPattern count="one">{0} ντούναμ</unitPattern>
+				<unitPattern count="other">{0} ντούναμ</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>κρτ</displayName>
+				<unitPattern count="one">{0} κρτ</unitPattern>
+				<unitPattern count="other">{0} κρτ</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>στοιχείο</displayName>
@@ -10334,6 +10450,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
@@ -10342,9 +10460,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>μολ</displayName>
+				<unitPattern count="one">{0} μολ</unitPattern>
+				<unitPattern count="other">{0} μολ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>λ/χλμ</displayName>
@@ -10358,9 +10485,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg</displayName>
+				<unitPattern count="one">{0} mpg</unitPattern>
+				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>μίλια/αγγλ. γαλόνι</displayName>
+				<unitPattern count="one">{0} μίλι/αγγλ. γαλόνι</unitPattern>
+				<unitPattern count="other">{0} μίλια/αγγλ. γαλόνι</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName draft="contributed">PB</displayName>
+				<unitPattern count="one" draft="contributed">{0} PB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName draft="contributed">TB</displayName>
+				<unitPattern count="one" draft="contributed">{0} TB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName draft="contributed">Tb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Tb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName draft="contributed">GB</displayName>
+				<unitPattern count="one" draft="contributed">{0} GB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName draft="contributed">Gb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Gb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName draft="contributed">MB</displayName>
+				<unitPattern count="one" draft="contributed">{0} MB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName draft="contributed">Mb</displayName>
+				<unitPattern count="one" draft="contributed">{0} Mb</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName draft="contributed">kB</displayName>
+				<unitPattern count="one" draft="contributed">{0} kB</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="one">{0} kb</unitPattern>
+				<unitPattern count="other">{0} kb</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>byte</displayName>
+				<unitPattern count="one">{0} byte</unitPattern>
+				<unitPattern count="other">{0} byte</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>bit</displayName>
+				<unitPattern count="one">{0} bit</unitPattern>
+				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>αιών.</displayName>
+				<unitPattern count="one">{0} αιών.</unitPattern>
+				<unitPattern count="other">{0} αιών.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>δεκ.</displayName>
+				<unitPattern count="one">{0} δεκ.</unitPattern>
+				<unitPattern count="other">{0} δεκ.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>έτ.</displayName>
@@ -10369,6 +10565,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/έ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
+				<displayName draft="contributed">τετ.</displayName>
 				<unitPattern count="one">{0} τέτ.</unitPattern>
 				<unitPattern count="other">{0} τέτ.</unitPattern>
 				<perUnitPattern>{0}/τέτ.</perUnitPattern>
@@ -10416,15 +10613,58 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μs</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>ns</displayName>
+				<unitPattern count="one">{0} ns</unitPattern>
+				<unitPattern count="other">{0} ns</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>A</displayName>
+				<unitPattern count="one">{0} A</unitPattern>
+				<unitPattern count="other">{0} A</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>mA</displayName>
+				<unitPattern count="one">{0} mA</unitPattern>
+				<unitPattern count="other">{0} mA</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Ω</displayName>
+				<unitPattern count="one">{0} Ω</unitPattern>
+				<unitPattern count="other">{0} Ω</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>V</displayName>
+				<unitPattern count="one">{0} V</unitPattern>
+				<unitPattern count="other">{0} V</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>kcal</displayName>
+				<unitPattern count="one">{0} kcal</unitPattern>
+				<unitPattern count="other">{0} kcal</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName draft="contributed">θερμ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} θερμ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} θερμ.</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName draft="contributed">θερμ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} θερμ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} θερμ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
+				<unitPattern count="one">{0} kJ</unitPattern>
+				<unitPattern count="other">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>
+				<unitPattern count="one">{0} J</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kW/ώ.</displayName>
@@ -10433,15 +10673,78 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>eV</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>BTU</displayName>
+				<unitPattern count="one">{0} BTU</unitPattern>
+				<unitPattern count="other">{0} BTU</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>θερμ. μονάδες ΗΠΑ</displayName>
+				<unitPattern count="one">{0} θερμ. μονάδα ΗΠΑ</unitPattern>
+				<unitPattern count="other">{0} θερμ. μονάδες ΗΠΑ</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>lbf</displayName>
+				<unitPattern count="one">{0} lbf</unitPattern>
+				<unitPattern count="other">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>N</displayName>
+				<unitPattern count="one">{0} N</unitPattern>
+				<unitPattern count="other">{0} N</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>kWh/100 χλμ.</displayName>
+				<unitPattern count="one">{0} kWh/100 χλμ.</unitPattern>
+				<unitPattern count="other">{0} kWh/100 χλμ.</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>GHz</displayName>
+				<unitPattern count="one">{0} GHz</unitPattern>
+				<unitPattern count="other">{0} GHz</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>MHz</displayName>
+				<unitPattern count="one">{0} MHz</unitPattern>
+				<unitPattern count="other">{0} MHz</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>kHz</displayName>
+				<unitPattern count="one">{0} kHz</unitPattern>
+				<unitPattern count="other">{0} kHz</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName draft="contributed">Hz</displayName>
+				<unitPattern count="one" draft="contributed">{0} Hz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Hz</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>pixel</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>MP</displayName>
+				<unitPattern count="one">{0} MP</unitPattern>
+				<unitPattern count="other">{0} MP</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
+				<unitPattern count="one">{0} ppcm</unitPattern>
+				<unitPattern count="other">{0} ppcm</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
+				<unitPattern count="one">{0} ppi</unitPattern>
+				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
 				<displayName>dpcm</displayName>
@@ -10453,20 +10756,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dpi</unitPattern>
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<displayName>pixel</displayName>
+				<unitPattern count="one">{0} px</unitPattern>
+				<unitPattern count="other">{0} px</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>χλμ.</displayName>
 				<unitPattern count="one">{0} χλμ.</unitPattern>
 				<unitPattern count="other">{0} χλμ.</unitPattern>
+				<perUnitPattern>{0}/χλμ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>μέτρο</displayName>
 				<unitPattern count="one">{0} μ.</unitPattern>
 				<unitPattern count="other">{0} μ.</unitPattern>
+				<perUnitPattern>{0}/μ.</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>δεκ.</displayName>
+				<unitPattern count="one">{0} δεκ.</unitPattern>
+				<unitPattern count="other">{0} δεκ.</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>εκ.</displayName>
 				<unitPattern count="one">{0} εκ.</unitPattern>
 				<unitPattern count="other">{0} εκ.</unitPattern>
+				<perUnitPattern>{0}/εκ.</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>χλστ.</displayName>
@@ -10475,8 +10796,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>μm</displayName>
+				<unitPattern count="one">{0} μm</unitPattern>
+				<unitPattern count="other">{0} μm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>nm</displayName>
+				<unitPattern count="one">{0} nm</unitPattern>
+				<unitPattern count="other">{0} nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<displayName>pm</displayName>
 				<unitPattern count="one">{0} pm</unitPattern>
 				<unitPattern count="other">{0} pm</unitPattern>
 			</unit>
@@ -10494,32 +10823,68 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>πδ</displayName>
 				<unitPattern count="one">{0} ft</unitPattern>
 				<unitPattern count="other">{0} ft</unitPattern>
+				<perUnitPattern>{0}/πδ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>ίν.</displayName>
 				<unitPattern count="one">{0} in</unitPattern>
 				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/ίν.</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>pc</displayName>
+				<unitPattern count="one">{0} pc</unitPattern>
+				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>έ.φ.</displayName>
 				<unitPattern count="one">{0} ly</unitPattern>
 				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>α.μ.</displayName>
+				<unitPattern count="one">{0} α.μ.</unitPattern>
+				<unitPattern count="other">{0} α.μ.</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName>φέρλ.</displayName>
+				<unitPattern count="one">{0} φέρλ.</unitPattern>
+				<unitPattern count="other">{0} φέρλ.</unitPattern>
+			</unit>
 			<unit type="length-fathom">
 				<displayName>οργ.</displayName>
+				<unitPattern count="one">{0} οργ.</unitPattern>
+				<unitPattern count="other">{0} οργ.</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>ν.μ.</displayName>
+				<unitPattern count="one">{0} ν.μ.</unitPattern>
+				<unitPattern count="other">{0} ν.μ.</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
+				<displayName>σκανδ. μίλια</displayName>
 				<unitPattern count="one">{0}smi</unitPattern>
 				<unitPattern count="other">{0}smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>στ.</displayName>
+				<unitPattern count="one">{0} στ.</unitPattern>
+				<unitPattern count="other">{0} στ.</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>λουξ</displayName>
+				<unitPattern count="one">{0} λουξ</unitPattern>
+				<unitPattern count="other">{0} λουξ</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>καντ.</displayName>
+				<unitPattern count="one">{0} καντ.</unitPattern>
+				<unitPattern count="other">{0} καντ.</unitPattern>
 			</unit>
 			<unit type="light-lumen">
 				<displayName>λμ.</displayName>
@@ -10528,6 +10893,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>τ.</displayName>
+				<unitPattern count="one">{0} τ.</unitPattern>
+				<unitPattern count="other">{0} τ.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>kg</displayName>
@@ -10539,33 +10911,79 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>γρ.</displayName>
 				<unitPattern count="one">{0} γρ.</unitPattern>
 				<unitPattern count="other">{0} γρ.</unitPattern>
+				<perUnitPattern>{0}/γρ.</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName draft="contributed">mg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName draft="contributed">μg</displayName>
+				<unitPattern count="one" draft="contributed">{0} μg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="contributed">τ. ΗΠΑ</displayName>
+				<unitPattern count="one" draft="contributed">{0} τ. ΗΠΑ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} τ. ΗΠΑ</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">st</displayName>
+				<unitPattern count="one" draft="contributed">{0} st</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} st</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>λβ</displayName>
+				<unitPattern count="one">{0} λβ</unitPattern>
+				<unitPattern count="other">{0} λβ</unitPattern>
+				<perUnitPattern>{0}/λβ</perUnitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<displayName>oz</displayName>
+				<unitPattern count="one">{0} oz</unitPattern>
+				<unitPattern count="other">{0} oz</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz t</displayName>
+				<unitPattern count="one">{0} oz t</unitPattern>
+				<unitPattern count="other">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName draft="contributed">κρτ</displayName>
+				<unitPattern count="one" draft="contributed">{0} κρτ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κρτ</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName draft="contributed">Da</displayName>
+				<unitPattern count="one" draft="contributed">{0} Da</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName draft="contributed">M⊕</displayName>
+				<unitPattern count="one" draft="contributed">{0} M⊕</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName draft="contributed">M☉</displayName>
+				<unitPattern count="one" draft="contributed">{0} M☉</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName draft="contributed">κόκ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} κόκ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κόκ.</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName>GW</displayName>
+				<unitPattern count="one">{0} GW</unitPattern>
+				<unitPattern count="other">{0} GW</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
 				<displayName>MW</displayName>
+				<unitPattern count="one">{0} MW</unitPattern>
+				<unitPattern count="other">{0} MW</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName>kW</displayName>
@@ -10579,23 +10997,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName>mW</displayName>
+				<unitPattern count="one">{0} mW</unitPattern>
+				<unitPattern count="other">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>hp</displayName>
 				<unitPattern count="one">{0} hp</unitPattern>
 				<unitPattern count="other">{0} hp</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName draft="contributed">mmHg</displayName>
+				<unitPattern count="one" draft="contributed">{0} mmHg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mmHg</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<displayName draft="contributed">psi</displayName>
+				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-ofhg">
+				<displayName draft="contributed">inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<displayName>μπαρ</displayName>
+				<unitPattern count="one">{0} μπαρ</unitPattern>
+				<unitPattern count="other">{0} μπαρ</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
+				<displayName>mbar</displayName>
 				<unitPattern count="one">{0} mbar</unitPattern>
 				<unitPattern count="other">{0} mbar</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName>hPa</displayName>
 				<unitPattern count="one">{0} hPa</unitPattern>
 				<unitPattern count="other">{0} hPa</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>kPa</displayName>
+				<unitPattern count="one" draft="contributed">{0} kPa</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} kPa</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>MPa</displayName>
+				<unitPattern count="one">{0} MPa</unitPattern>
+				<unitPattern count="other">{0} MPa</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>χλμ/ώ.</displayName>
@@ -10612,6 +11070,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} μίλι/ώ.</unitPattern>
 				<unitPattern count="other">{0} μίλια/ώ.</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<displayName draft="contributed">κμβ</displayName>
+				<unitPattern count="one" draft="contributed">{0} κμβ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κμβ</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="one">{0}°C</unitPattern>
@@ -10622,10 +11090,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}°F</unitPattern>
 				<unitPattern count="other">{0}°F</unitPattern>
 			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="one">{0} K</unitPattern>
+				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>λβρ⋅πδ</displayName>
+				<unitPattern count="one">{0} λβρ⋅πδ</unitPattern>
+				<unitPattern count="other">{0} λβρ⋅πδ</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>N⋅m</displayName>
+				<unitPattern count="one">{0} N⋅m</unitPattern>
+				<unitPattern count="other">{0} N⋅m</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>km³</displayName>
 				<unitPattern count="one">{0} km³</unitPattern>
 				<unitPattern count="other">{0} km³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName draft="contributed">m³</displayName>
+				<unitPattern count="one" draft="contributed">{0} m³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m³</unitPattern>
+				<perUnitPattern draft="contributed">{0}/m³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName draft="contributed">cm³</displayName>
+				<unitPattern count="one" draft="contributed">{0} cm³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cm³</unitPattern>
+				<perUnitPattern draft="contributed">{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -10634,11 +11129,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName draft="contributed">yd³</displayName>
+				<unitPattern count="one" draft="contributed">{0} κυβ. γιάρδα</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κυβ. γιάρδες</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName draft="contributed">ft³</displayName>
+				<unitPattern count="one" draft="contributed">{0} ft³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ft³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName draft="contributed">in³</displayName>
+				<unitPattern count="one" draft="contributed">{0} in³</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} in³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName draft="contributed">ML</displayName>
+				<unitPattern count="one" draft="contributed">{0} ML</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} ML</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName draft="contributed">hL</displayName>
+				<unitPattern count="one" draft="contributed">{0} hL</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>λίτρο</displayName>
 				<unitPattern count="one">{0} λ.</unitPattern>
 				<unitPattern count="other">{0} λ.</unitPattern>
+				<perUnitPattern draft="contributed">{0}/λ.</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName draft="contributed">dL</displayName>
+				<unitPattern count="one" draft="contributed">{0} dL</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} dL</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName draft="contributed">cL</displayName>
+				<unitPattern count="one" draft="contributed">{0} cL</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} cL</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>mL</displayName>
+				<unitPattern count="one">{0} mL</unitPattern>
+				<unitPattern count="other">{0} mL</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>μ. πίντες</displayName>
@@ -10652,23 +11185,100 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName draft="contributed">ακρ πδ</displayName>
+				<unitPattern count="one">{0} ακρ πδ</unitPattern>
+				<unitPattern count="other">{0} ακρ πδ</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>μπ.</displayName>
+				<unitPattern count="one">{0} μπ.</unitPattern>
+				<unitPattern count="other">{0} μπ.</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>γαλ.</displayName>
+				<unitPattern count="one">{0} γαλ.</unitPattern>
+				<unitPattern count="other">{0} γαλ.</unitPattern>
+				<perUnitPattern>{0}/γαλ.</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">αγγλοσαξ. γαλόνια</displayName>
+				<unitPattern count="one" draft="contributed">{0} αγγλοσαξ. γαλόνι</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} αγγλοσαξ. γαλόνια</unitPattern>
+				<perUnitPattern draft="contributed">{0}/αγγλοσαξ. γαλόνι</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName draft="contributed">τέτ. γαλ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} τέτ. γαλ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} τέτ. γαλ.</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName draft="contributed">πντ</displayName>
+				<unitPattern count="one" draft="contributed">{0} πντ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} πντ</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName draft="contributed">κύπ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} κύπ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κύπ.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName draft="contributed">fl oz</displayName>
+				<unitPattern count="one" draft="contributed">{0} fl oz</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName draft="contributed">αγγλ. ουγγιές όγκου</displayName>
+				<unitPattern count="one" draft="contributed">{0} αγγλ. ουγγιά όγκου</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} αγγλ. ουγγιές όγκου</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName draft="contributed">κ.σ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} κ.σ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κ.σ.</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName draft="contributed">κ.γ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} κ.γ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κ.γ.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName draft="contributed">βρλ</displayName>
+				<unitPattern count="one" draft="contributed">{0} βρλ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} βρλ</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="contributed">κ.φρ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} κ.φρ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} κ.φρ.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName draft="contributed">αγγλ. κ.φρ.</displayName>
 				<unitPattern count="one" draft="contributed">{0} αγγλ. κ.φρ.</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} αγγλ. κ.φρ.</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName draft="contributed">σταγ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} σταγ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} σταγ.</unitPattern>
+			</unit>
 			<unit type="volume-dram">
 				<displayName draft="contributed">δρ. όγκου</displayName>
+				<unitPattern count="one" draft="contributed">{0} δρ. όγκου</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} δρ. όγκου</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName draft="contributed">μεζ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} μεζ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} μεζ.</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="contributed">πρ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} πρ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} πρ.</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="contributed">αγγλ. τέτ. γαλ.</displayName>
+				<unitPattern count="one" draft="contributed">{0} αγγλ. τέτ. γαλ.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} αγγλ. τέτ. γαλ.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>σημεία</displayName>
@@ -10701,7 +11311,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} ή {1}</listPatternPart>
 			<listPatternPart type="2">{0} ή {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ή {1}</listPatternPart>
+			<listPatternPart type="2">{0} ή {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} ή {1}</listPatternPart>
+			<listPatternPart type="2">{0} ή {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -10911,42 +11535,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</typographicNames>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und el</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
@@ -10955,10 +11623,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
@@ -10966,33 +11640,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
+		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {surname-prefix} {given} {given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Δημήτρης</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">Ειρήνη</nameField>
 			<nameField type="surname">Πολίτη</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">Πέτρος</nameField>
 			<nameField type="given2">Νικόλαος</nameField>
 			<nameField type="surname">Καρατζής</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">Καθ. δρ.</nameField>
-			<nameField type="given">Άννα Μαρία</nameField>
-			<nameField type="given-informal">Σωτήρης</nameField>
-			<nameField type="given2">Βεατρίκη Μαρίνα</nameField>
-			<nameField type="surname-prefix">φαν ντεν</nameField>
-			<nameField type="surname-core">Δεληγιάννης</nameField>
-			<nameField type="surname2">Δημητρίου Αργυρακάκης</nameField>
-			<nameField type="suffix">M.D. Ph.D.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">Κος</nameField>
+			<nameField type="given">Νικόλαος Καρατζής</nameField>
+			<nameField type="given-informal">Νίκος</nameField>
+			<nameField type="given2">Κωνσταντίνος Μάριος</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Χατζής</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Σινμπάντ</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Κάτε</nameField>
+			<nameField type="surname">Μίλερ</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Ζεζίλια</nameField>
+			<nameField type="given2">Χάμις</nameField>
+			<nameField type="surname">Στέμπερ</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">Καθ. δρ.</nameField>
+			<nameField type="given">Άντα Κορνέλια</nameField>
+			<nameField type="given-informal">Νιλ</nameField>
+			<nameField type="given2">Σέσαρ Μαρτίν</nameField>
+			<nameField type="surname-prefix">φον</nameField>
+			<nameField type="surname-core">Μπριλ</nameField>
+			<nameField type="surname2">Γκονθάλεθ Δομίνγκο</nameField>
+			<nameField type="generation">Τζούνιορ</nameField>
+			<nameField type="credentials">Δρ.Ι. Δρ.Χ.Ο</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

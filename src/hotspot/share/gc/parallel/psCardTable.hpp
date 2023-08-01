@@ -81,7 +81,7 @@ class PSCardTable: public CardTable {
   static bool card_is_verify(int value)     { return value == verify_card; }
 
   // Card marking
-  void inline_write_ref_field_gc(void* field, oop new_val) {
+  void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = youngergen_card;
   }

@@ -81,6 +81,7 @@ public class PageRangesDlgTest implements Printable {
                 """;
 
         PassFailJFrame passFailJFrame = new PassFailJFrame(instruction, 10);
+        PassFailJFrame.positionTestWindow(null, PassFailJFrame.Position.HORIZONTAL);
         showPrintDialogs();
         passFailJFrame.awaitAndCheck();
     }

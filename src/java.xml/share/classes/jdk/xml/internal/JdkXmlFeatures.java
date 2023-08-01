@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -407,7 +407,7 @@ public class JdkXmlFeatures {
                 return true;
             }
 
-            value = SecuritySupport.readJAXPProperty(sysPropertyName);
+            value = SecuritySupport.readConfig(sysPropertyName);
             if (value != null && !value.isEmpty()) {
                 setFeature(feature, State.JAXPDOTPROPERTIES, Boolean.parseBoolean(value));
                 return true;

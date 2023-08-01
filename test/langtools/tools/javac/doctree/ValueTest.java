@@ -171,7 +171,7 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc_]
     Erroneous[ERRONEOUS, pos:5, prefPos:37
       code: compiler.err.dc.unexpected.content
-      body: {@value_"%d"_jav...a.awt.Color#RED_j
+      body: {@value_"%d"_java.awt.Color#RED_j
     ]
     Text[TEXT, pos:38, unk}]
   body: empty
@@ -207,7 +207,7 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc_]
     Erroneous[ERRONEOUS, pos:5, prefPos:28
       code: compiler.err.dc.ref.unexpected.input
-      body: {@value_java.awt....Color##fragment
+      body: {@value_java.awt.Color##fragment
     ]
     Text[TEXT, pos:37, }]
   body: empty

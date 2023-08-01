@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ protected:
    * @param user_size the size of the user data to be wrapped.
    * @param tag       optional general purpose tag.
    */
-  GuardedMemory(void* base_ptr, const size_t user_size, const void* tag = NULL) {
+  GuardedMemory(void* base_ptr, const size_t user_size, const void* tag = nullptr) {
     wrap_with_guards(base_ptr, user_size, tag);
   }
 
@@ -192,8 +192,8 @@ protected:
    *
    * @return user data pointer (inner pointer to supplied "base_ptr").
    */
-  void* wrap_with_guards(void* base_ptr, size_t user_size, const void* tag = NULL) {
-    assert(base_ptr != NULL, "Attempt to wrap NULL with memory guard");
+  void* wrap_with_guards(void* base_ptr, size_t user_size, const void* tag = nullptr) {
+    assert(base_ptr != nullptr, "Attempt to wrap null with memory guard");
     _base_addr = (u_char*)base_ptr;
     get_head_guard()->build();
     get_head_guard()->set_user_size(user_size);
@@ -210,7 +210,7 @@ protected:
    * @return true if guards are intact, false would indicate a buffer overrun.
    */
   bool verify_guards() const {
-    if (_base_addr != NULL) {
+    if (_base_addr != nullptr) {
       return (get_head_guard()->verify() && get_tail_guard()->verify());
     }
     return false;
@@ -226,7 +226,7 @@ protected:
   /**
    * Return the general purpose tag.
    *
-   * @return the general purpose tag, defaults to NULL.
+   * @return the general purpose tag, defaults to null.
    */
   void* get_tag() const { return get_head_guard()->get_tag(); }
 
@@ -236,7 +236,7 @@ protected:
    * @return the size of the user data.
    */
   size_t get_user_size() const {
-    assert(_base_addr != NULL, "Not wrapping any memory");
+    assert(_base_addr != nullptr, "Not wrapping any memory");
     return get_head_guard()->get_user_size();
   }
 
@@ -246,7 +246,7 @@ protected:
    * @return the user data pointer.
    */
   u_char* get_user_ptr() const {
-    assert(_base_addr != NULL, "Not wrapping any memory");
+    assert(_base_addr != nullptr, "Not wrapping any memory");
     return _base_addr + sizeof(GuardHeader);
   }
 
@@ -269,7 +269,7 @@ protected:
    */
   void* release() {
     void* p = (void*) _base_addr;
-    _base_addr = NULL;
+    _base_addr = nullptr;
     return p;
   }
 
@@ -303,9 +303,9 @@ protected:
    * @param len the length of the copy
    * @param tag optional general purpose tag (see GuardedMemory::get_tag())
    *
-   * @return guarded wrapped memory pointer to the user area, or NULL if OOM.
+   * @return guarded wrapped memory pointer to the user area, or null if OOM.
    */
-  static void* wrap_copy(const void* p, const size_t len, const void* tag = NULL);
+  static void* wrap_copy(const void* p, const size_t len, const void* tag = nullptr);
 
   /**
    * Free wrapped copy.

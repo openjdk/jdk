@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@
 
 TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {
-  Symbol* sym = NULL;
-  if (name_str != NULL) {
+  Symbol* sym = nullptr;
+  if (name_str != nullptr) {
     sym = SymbolTable::new_permanent_symbol(name_str);
   }
 
@@ -57,7 +57,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
 
   // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (NULL) class loader.
+  // including classes in the bootstrap (null) class loader.
   // Do this step after creating the mirror so that if the
   // mirror creation fails, loaded_classes_do() doesn't find
   // an array class without a mirror.
@@ -171,14 +171,14 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 // create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
       return this;
 
   // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == NULL) {
+  if (higher_dimension_acquire() == nullptr) {
 
     ResourceMark rm;
     JavaThread *jt = THREAD;
@@ -186,7 +186,7 @@ Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
       // Atomic create higher dimension and link into list
       MutexLocker mu(THREAD, MultiArray_lock);
 
-      if (higher_dimension() == NULL) {
+      if (higher_dimension() == nullptr) {
         Klass* oak = ObjArrayKlass::allocate_objArray_klass(
               class_loader_data(), dim + 1, this, CHECK_NULL);
         ObjArrayKlass* h_ak = ObjArrayKlass::cast(oak);
@@ -198,32 +198,32 @@ Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
     }
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   THREAD->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 
 // return existing klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_or_null(int n) {
+ArrayKlass* TypeArrayKlass::array_klass_or_null(int n) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
       return this;
 
   // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == NULL) {
-    return NULL;
+  if (higher_dimension_acquire() == nullptr) {
+    return nullptr;
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   return h_ak->array_klass_or_null(n);
 }
 
-Klass* TypeArrayKlass::array_klass(TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(TRAPS) {
   return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* TypeArrayKlass::array_klass_or_null() {
+ArrayKlass* TypeArrayKlass::array_klass_or_null() {
   return array_klass_or_null(dimension() +  1);
 }
 
@@ -250,7 +250,7 @@ const char* TypeArrayKlass::external_name(BasicType type) {
     case T_LONG:    return "[J";
     default: ShouldNotReachHere();
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -275,8 +275,6 @@ void TypeArrayKlass::print_value_on(outputStream* st) const {
   }
   st->print("}");
 }
-
-#ifndef PRODUCT
 
 static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
@@ -341,7 +339,10 @@ static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
 
 void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
-  typeArrayOop ta = typeArrayOop(obj);
+  oop_print_elements_on(typeArrayOop(obj), st);
+}
+
+void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
   int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
   switch (element_type()) {
     case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
@@ -360,8 +361,6 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
-#endif // PRODUCT
-
 const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();
 }
@@ -372,5 +371,5 @@ ModuleEntry* TypeArrayKlass::module() const {
 }
 
 PackageEntry* TypeArrayKlass::package() const {
-  return NULL;
+  return nullptr;
 }

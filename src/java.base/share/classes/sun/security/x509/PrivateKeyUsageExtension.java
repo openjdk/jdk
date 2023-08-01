@@ -55,10 +55,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class PrivateKeyUsageExtension extends Extension
-        implements CertAttrSet {
+public class PrivateKeyUsageExtension extends Extension {
 
     public static final String NAME = "PrivateKeyUsage";
 
@@ -70,7 +68,7 @@ public class PrivateKeyUsageExtension extends Extension
     private Date        notAfter = null;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (notBefore == null && notAfter == null) {
             this.extensionValue = null;
             return;
@@ -95,15 +93,19 @@ public class PrivateKeyUsageExtension extends Extension
     }
 
     /**
-     * The default constructor for PrivateKeyUsageExtension.
+     * The default constructor for PrivateKeyUsageExtension. At least one
+     * of the arguments must be non null.
      *
      * @param notBefore the date/time before which the private key
-     *         should not be used.
+     *         should not be used
      * @param notAfter the date/time after which the private key
      *         should not be used.
      */
-    public PrivateKeyUsageExtension(Date notBefore, Date notAfter)
-    throws IOException {
+    public PrivateKeyUsageExtension(Date notBefore, Date notAfter) {
+        if (notBefore == null && notAfter == null) {
+            throw new IllegalArgumentException(
+                    "notBefore and notAfter cannot both be null");
+        }
         this.notBefore = notBefore;
         this.notAfter = notAfter;
 
@@ -227,10 +229,9 @@ public class PrivateKeyUsageExtension extends Extension
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.PrivateKeyUsage_Id;
             critical = false;

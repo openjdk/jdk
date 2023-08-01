@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,10 @@
 #include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "waitBarrier_linux.hpp"
 #include <sys/syscall.h>
 #include <linux/futex.h>
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s: error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 // 32-bit RISC-V has no SYS_futex syscall.
 #ifdef RISCV32
@@ -46,7 +38,7 @@
 #endif
 
 static int futex(volatile int *addr, int futex_op, int op_arg) {
-  return syscall(SYS_futex, addr, futex_op, op_arg, NULL, NULL, 0);
+  return syscall(SYS_futex, addr, futex_op, op_arg, nullptr, nullptr, 0);
 }
 
 void LinuxWaitBarrier::arm(int barrier_tag) {

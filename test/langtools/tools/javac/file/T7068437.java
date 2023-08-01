@@ -118,10 +118,8 @@ public class T7068437 {
                 messager.printError("expected file but file not found");
             }
 
-            try {
-                Writer w = filer.createSourceFile("p.C").openWriter();
+            try (Writer w = filer.createSourceFile("p.C").openWriter()) {
                 w.write("/* hello! */ package p; class C {}");
-                w.close();
                 messager.printNote("wrote new content");
             } catch (IOException x) {
                 messager.printError("while writing: " + x);

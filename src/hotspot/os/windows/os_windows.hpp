@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ typedef void (*signal_handler_t)(int);
 
 class os::win32 {
   friend class os;
-  friend unsigned __stdcall thread_native_entry(Thread*);
 
  protected:
   static int    _processor_type;
@@ -49,7 +48,7 @@ class os::win32 {
   static void print_uptime_info(outputStream* st);
 
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size);
+                                          char *buf, int buf_size, address& lastpc);
 
   static bool register_code_area(char *low, char *high);
 
@@ -64,12 +63,17 @@ class os::win32 {
     return _processor_level;
   }
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
  private:
+  // The handler passed to _beginthreadex().
+  // Called with the associated Thread* as the argument.
+  static unsigned __stdcall thread_native_entry(void*);
+
   enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
   // Wrapper around _endthreadex(), exit() and _exit()
   static int exit_process_or_thread(Ept what, int exit_code);

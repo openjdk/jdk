@@ -48,7 +48,6 @@ import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
-import sun.awt.util.IdentityLinkedList;
 
 /**
  * A Dialog is a top-level window with a title and a border
@@ -191,7 +190,7 @@ public class Dialog extends Window {
          * be left unchanged.
          */
         TOOLKIT_MODAL
-    };
+    }
 
     /**
      * Default modality type for modal dialogs. The default modality type is
@@ -272,7 +271,7 @@ public class Dialog extends Window {
          * property will be left unchanged.
          */
         TOOLKIT_EXCLUDE
-    };
+    }
 
     /* operations with this list should be synchronized on tree lock*/
     static transient IdentityArrayList<Dialog> modalDialogs = new IdentityArrayList<Dialog>();
@@ -1417,7 +1416,7 @@ public class Dialog extends Window {
             k++;
         }
 
-        java.util.List<Window> toBlock = new IdentityLinkedList<Window>();
+        java.util.List<Window> toBlock = new IdentityArrayList<Window>();
         // block all windows from scope of blocking except from blockers' hierarchies
         IdentityArrayList<Window> unblockedWindows = Window.getAllUnblockedWindows();
         for (Window w : unblockedWindows) {

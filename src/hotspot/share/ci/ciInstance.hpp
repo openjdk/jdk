@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ protected:
 
 public:
   // If this object is a java mirror, return the corresponding type.
-  // Otherwise, return NULL.
+  // Otherwise, return null.
   // (Remember that a java mirror is an instance of java.lang.Class.)
   ciType* java_mirror_type();
 

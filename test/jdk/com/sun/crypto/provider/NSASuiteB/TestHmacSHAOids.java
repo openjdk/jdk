@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.crypto.SecretKey;
 
 /*
  * @test
- * @bug 8075286
+ * @bug 8075286 8288050
  * @summary Test the HmacSHA algorithm OIDs in JDK.
  *          OID and Algorithm transformation string should match.
  *          Both could be able to be used to generate the algorithm instance.
@@ -49,7 +49,10 @@ public class TestHmacSHAOids {
             new DataTuple("1.2.840.113549.2.8", "HmacSHA224"),
             new DataTuple("1.2.840.113549.2.9", "HmacSHA256"),
             new DataTuple("1.2.840.113549.2.10", "HmacSHA384"),
-            new DataTuple("1.2.840.113549.2.11", "HmacSHA512"));
+            new DataTuple("1.2.840.113549.2.11", "HmacSHA512"),
+            new DataTuple("1.2.840.113549.2.12", "HmacSHA512/224"),
+            new DataTuple("1.2.840.113549.2.13", "HmacSHA512/256")
+    );
 
     public static void main(String[] args) throws Exception {
         for (DataTuple dataTuple : DATA) {

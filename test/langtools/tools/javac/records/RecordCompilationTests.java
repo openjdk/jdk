@@ -2028,7 +2028,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testNoAssigmentInsideCompactRecord() {
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {
@@ -2037,7 +2037,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {

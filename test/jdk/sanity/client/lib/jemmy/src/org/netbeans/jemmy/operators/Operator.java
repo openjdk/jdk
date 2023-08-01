@@ -366,7 +366,7 @@ public abstract class Operator
     }
 
     /**
-     * Returns component visualizer. Visualizer is used from from
+     * Returns component visualizer. Visualizer is used from
      * makeComponentVisible() method.
      *
      * @return a visualizer assigned to this operator.
@@ -378,7 +378,7 @@ public abstract class Operator
     }
 
     /**
-     * Changes component visualizer. Visualizer is used from from
+     * Changes component visualizer. Visualizer is used from
      * makeComponentVisible() method.
      *
      * @param vo a visualizer to assign to this operator.
@@ -1080,7 +1080,7 @@ public abstract class Operator
     }
 
     /**
-     * Interface used to make component visible & ready to to make operations
+     * Interface used to make component visible & ready to make operations
      * with.
      */
     public interface ComponentVisualizer {

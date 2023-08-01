@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.nio.BufferUnderflowException;
 import java.lang.ref.WeakReference;
 import java.nio.charset.CoderMalfunctionError;                  // javadoc
 import java.util.Arrays;
+import jdk.internal.util.ArraysSupport;
 
 
 /**
@@ -791,11 +792,25 @@ public abstract class Charset$Coder$ {
      *          position cannot be mapped to an equivalent $otype$ sequence and
      *          the current unmappable-character action is {@link
      *          CodingErrorAction#REPORT}
+     *
+     * @throws  CharacterCodingException
+     *          {@code MalformedInputException} if the $itype$ sequence starting at the
+     *          input buffer's current position is $notLegal$ and the current
+     *          malformed-input action is {@code CodingErrorAction.REPORT};
+     *          {@code UnmappableCharacterException} if the $itype$ sequence starting at
+     *          the input buffer's current position cannot be mapped to an
+     *          equivalent $otype$ sequence and the current unmappable-character
+     *          action is {@code CodingErrorAction.REPORT}
+     *
+     * @throws  OutOfMemoryError
+     *          If the output $otype$ buffer for the requested size of the input
+     *          $itype$ buffer cannot be allocated
      */
     public final $Otype$Buffer $code$($Itype$Buffer in)
         throws CharacterCodingException
     {
-        int n = (int)(in.remaining() * average$ItypesPerOtype$());
+        int n = Math.min((int)(in.remaining() * average$ItypesPerOtype$()),
+                    ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
         $Otype$Buffer out = $Otype$Buffer.allocate(n);
 
         if ((n == 0) && (in.remaining() == 0))
@@ -810,7 +825,8 @@ public abstract class Charset$Coder$ {
             if (cr.isUnderflow())
                 break;
             if (cr.isOverflow()) {
-                n = 2*n + 1;    // Ensure progress; n might be 0!
+                // Ensure progress; n might be 0!
+                n = ArraysSupport.newLength(n, Math.min(n + 1, 1_024), n + 1);
                 $Otype$Buffer o = $Otype$Buffer.allocate(n);
                 out.flip();
                 o.put(out);

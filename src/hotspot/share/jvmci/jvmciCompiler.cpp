@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,17 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 
-JVMCICompiler* JVMCICompiler::_instance = NULL;
+JVMCICompiler* JVMCICompiler::_instance = nullptr;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
   _bootstrap_compilation_request_handled = false;
   _methods_compiled = 0;
+  _ok_upcalls = 0;
+  _err_upcalls = 0;
+  _disabled = false;
   _global_compilation_ticks = 0;
-  assert(_instance == NULL, "only one instance allowed");
+  assert(_instance == nullptr, "only one instance allowed");
   _instance = this;
 }
 
@@ -48,11 +51,13 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
   if (!EnableJVMCI) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
   }
-  if (_instance == NULL && require_non_null) {
+  if (_instance == nullptr && require_non_null) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
   }
   return _instance;
 }
+
+void compiler_stubs_init(bool in_compiler_thread);
 
 // Initialization
 void JVMCICompiler::initialize() {
@@ -60,7 +65,7 @@ void JVMCICompiler::initialize() {
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
-
+  compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs
   set_state(initialized);
 }
 
@@ -116,6 +121,9 @@ void JVMCICompiler::bootstrap(TRAPS) {
 }
 
 bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
+  if (_disabled) {
+    return true;
+  }
   if (_bootstrapping) {
     // When bootstrapping, the JVMCI compiler can compile its own methods.
     return false;
@@ -127,12 +135,12 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
     return false;
   } else {
     JVMCIRuntime* runtime = JVMCI::java_runtime();
-    if (runtime != NULL) {
+    if (runtime != nullptr) {
       JVMCIObject receiver = runtime->probe_HotSpotJVMCIRuntime();
       if (receiver.is_null()) {
         return false;
       }
-      JVMCIEnv* ignored_env = NULL;
+      JVMCIEnv* ignored_env = nullptr;
       objArrayHandle excludeModules(JavaThread::current(), HotSpotJVMCI::HotSpotJVMCIRuntime::excludeFromJVMCICompilation(ignored_env, HotSpotJVMCI::resolve(receiver)));
       if (excludeModules.not_null()) {
         ModuleEntry* moduleEntry = method->method_holder()->module();
@@ -207,6 +215,39 @@ void JVMCICompiler::CodeInstallStats::on_install(CodeBlob* cb) {
 void JVMCICompiler::inc_methods_compiled() {
   Atomic::inc(&_methods_compiled);
   Atomic::inc(&_global_compilation_ticks);
+}
+
+void JVMCICompiler::on_upcall(const char* error, JVMCICompileState* compile_state) {
+  if (error != nullptr) {
+
+    Atomic::inc(&_err_upcalls);
+    int ok = _ok_upcalls;
+    int err = _err_upcalls;
+    // If there have been at least 10 upcalls with an error
+    // and the number of error upcalls is 10% or more of the
+    // number of non-error upcalls, disable JVMCI compilation.
+    if (err > 10 && err * 10 > ok && !_disabled) {
+      _disabled = true;
+      int total = err + ok;
+      const char* disable_msg = err_msg("JVMCI compiler disabled "
+      "after %d of %d upcalls had errors (Last error: \"%s\"). "
+      "Use -Xlog:jit+compilation for more detail.", err, total, error);
+      log_warning(jit,compilation)("%s", disable_msg);
+      if (compile_state != nullptr) {
+        const char* disable_error = os::strdup(disable_msg);
+        if (disable_error != nullptr) {
+          compile_state->set_failure(true, disable_error, true);
+          JVMCI_event_1("%s", disable_error);
+          return;
+        } else {
+          // Leave failure reason as set by caller when strdup fails
+        }
+      }
+    }
+    JVMCI_event_1("JVMCI upcall had an error: %s", error);
+  } else {
+    Atomic::inc(&_ok_upcalls);
+  }
 }
 
 void JVMCICompiler::inc_global_compilation_ticks() {

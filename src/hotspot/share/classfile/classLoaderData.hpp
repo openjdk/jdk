@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     void oops_do_chunk(OopClosure* f, Chunk* c, const juint size);
 
    public:
-    ChunkedHandleList() : _head(NULL) {}
+    ChunkedHandleList() : _head(nullptr) {}
     ~ChunkedHandleList();
 
     // Only one thread at a time can add, guarded by ClassLoaderData::metaspace_lock().
@@ -143,7 +143,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ModuleEntry* _unnamed_module;          // This class loader's unnamed module.
   Dictionary*  _dictionary;              // The loaded InstanceKlasses, including initiated by this class loader
 
-  // These method IDs are created for the class loader and set to NULL when the
+  // These method IDs are created for the class loader and set to null when the
   // class loader is unloaded.  They are rarely freed, only for redefine classes
   // and if they lose a data race in InstanceKlass.
   JNIMethodBlock*                  _jmethod_ids;
@@ -153,15 +153,41 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   GrowableArray<Metadata*>*      _deallocate_list;
 
   // Support for walking class loader data objects
-  ClassLoaderData* _next; /// Next loader_datas created
+  //
+  // The ClassLoaderDataGraph maintains two lists to keep track of CLDs.
+  //
+  // The first list [_head, _next] is where new CLDs are registered. The CLDs
+  // are only inserted at the _head, and the _next pointers are only rewritten
+  // from unlink_next() which unlinks one unloading CLD by setting _next to
+  // _next->_next. This allows GCs to concurrently walk the list while the CLDs
+  // are being concurrently unlinked.
+  //
+  // The second list [_unloading_head, _unloading_next] is where dead CLDs get
+  // moved to during class unloading. See: ClassLoaderDataGraph::do_unloading().
+  // This list is never modified while other threads are iterating over it.
+  //
+  // After all dead CLDs have been moved to the unloading list, there's a
+  // synchronization point (handshake) to ensure that all threads reading these
+  // CLDs finish their work. This ensures that we don't have a use-after-free
+  // when we later delete the CLDs.
+  //
+  // And finally, when no threads are using the unloading CLDs anymore, we
+  // remove them from the class unloading list and delete them. See:
+  // ClassLoaderDataGraph::purge();
+  ClassLoaderData* _next;
+  ClassLoaderData* _unloading_next;
 
   Klass*  _class_loader_klass;
   Symbol* _name;
   Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
-  void set_next(ClassLoaderData* next) { _next = next; }
-  ClassLoaderData* next() const        { return Atomic::load(&_next); }
+  void set_next(ClassLoaderData* next);
+  ClassLoaderData* next() const;
+  void unlink_next();
+
+  void set_unloading_next(ClassLoaderData* unloading_next);
+  ClassLoaderData* unloading_next() const;
 
   ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder);
   ~ClassLoaderData();
@@ -194,6 +220,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Dictionary* create_dictionary();
 
+  void demote_strong_roots();
+
   void initialize_name(Handle class_loader);
 
  public:
@@ -202,10 +230,12 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The "claim" is typically used to check if oops_do needs to be applied on
   // the CLD or not. Most GCs only perform strong marking during the marking phase.
   enum Claim {
-    _claim_none         = 0,
-    _claim_finalizable  = 2,
-    _claim_strong       = 3,
-    _claim_other        = 4
+    _claim_none              = 0,
+    _claim_finalizable       = 2,
+    _claim_strong            = 3,
+    _claim_stw_fullgc_mark   = 4,
+    _claim_stw_fullgc_adjust = 8,
+    _claim_other             = 16
   };
   void clear_claim() { _claim = 0; }
   void clear_claim(int claim);
@@ -252,7 +282,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   OopHandle class_loader_handle() const { return _class_loader; }
 
-  // The Metaspace is created lazily so may be NULL.  This
+  // The Metaspace is created lazily so may be null.  This
   // method will allocate a Metaspace if needed.
   ClassLoaderMetaspace* metaspace_non_null();
 
@@ -298,11 +328,11 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   PackageEntryTable* packages() { return _packages; }
   ModuleEntry* unnamed_module() { return _unnamed_module; }
   ModuleEntryTable* modules();
-  bool modules_defined() { return (_modules != NULL); }
+  bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return in_ByteSize(offset_of(ClassLoaderData, _holder)); }
-  static ByteSize keep_alive_offset() { return in_ByteSize(offset_of(ClassLoaderData, _keep_alive)); }
+  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }
@@ -312,7 +342,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data(oop loader);
   static ClassLoaderData* class_loader_data_or_null(oop loader);
 
-  // Returns Klass* of associated class loader, or NULL if associated loader is 'bootstrap'.
+  // Returns Klass* of associated class loader, or null if associated loader is 'bootstrap'.
   // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
 
@@ -320,7 +350,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // construction or the class loader's qualified class name.
   // Works during unloading.
   const char* loader_name() const;
-  // Returns the explicitly specified class loader name or NULL.
+  // Returns the explicitly specified class loader name or null.
   Symbol* name() const { return _name; }
 
   // Obtain the class loader's _name_and_id, works during unloading.

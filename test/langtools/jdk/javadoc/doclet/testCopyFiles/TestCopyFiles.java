@@ -36,7 +36,7 @@ import javadoc.tester.JavadocTester;
 public class TestCopyFiles extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestCopyFiles tester = new TestCopyFiles();
+        var tester = new TestCopyFiles();
         tester.runTests();
     }
 

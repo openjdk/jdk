@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,22 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 
-JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_table(NULL),
-                                                    _klass_list(NULL),
+JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_table(nullptr),
+                                                    _klass_list(nullptr),
                                                     _total_count(0) {
   initialize(class_unload);
-  assert(_klass_list != NULL, "invariant");
+  assert(_klass_list != nullptr, "invariant");
 }
 
 static const size_t initial_klass_list_size = 256;
 const int initial_klass_loader_set_size = 64;
 
 void JfrArtifactSet::initialize(bool class_unload) {
-  if (_symbol_table == NULL) {
+  if (_symbol_table == nullptr) {
     _symbol_table = JfrSymbolTable::create();
-    assert(_symbol_table != NULL, "invariant");
+    assert(_symbol_table != nullptr, "invariant");
   }
-  assert(_symbol_table != NULL, "invariant");
+  assert(_symbol_table != nullptr, "invariant");
   _symbol_table->set_class_unload(class_unload);
   _total_count = 0;
   // resource allocation
@@ -54,7 +54,7 @@ void JfrArtifactSet::initialize(bool class_unload) {
 }
 
 void JfrArtifactSet::clear() {
-  if (_symbol_table != NULL) {
+  if (_symbol_table != nullptr) {
     _symbol_table->clear();
   }
 }
@@ -98,14 +98,14 @@ int JfrArtifactSet::entries() const {
 }
 
 bool JfrArtifactSet::should_do_loader_klass(const Klass* k) {
-  assert(k != NULL, "invariant");
-  assert(_klass_loader_set != NULL, "invariant");
+  assert(k != nullptr, "invariant");
+  assert(_klass_loader_set != nullptr, "invariant");
   return !JfrMutablePredicate<const Klass*, compare_klasses>::test(_klass_loader_set, k);
 }
 
 void JfrArtifactSet::register_klass(const Klass* k) {
-  assert(k != NULL, "invariant");
-  assert(_klass_list != NULL, "invariant");
+  assert(k != nullptr, "invariant");
+  assert(_klass_list != nullptr, "invariant");
   _klass_list->append(k);
 }
 
@@ -114,7 +114,7 @@ size_t JfrArtifactSet::total_count() const {
 }
 
 void JfrArtifactSet::increment_checkpoint_id() {
-  assert(_symbol_table != NULL, "invariant");
+  assert(_symbol_table != nullptr, "invariant");
   _symbol_table->increment_checkpoint_id();
 }
 

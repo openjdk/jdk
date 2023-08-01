@@ -232,9 +232,9 @@ public class TestSuppression {
         private void writeSource(String name, String text) {
             try {
                 JavaFileObject fo = f.createSourceFile(name);
-                Writer out = fo.openWriter();
-                out.write(text);
-                out.close();
+                try (Writer out = fo.openWriter()) {
+                    out.write(text);
+                }
             } catch (IOException e) {
                 m.printError(e.toString());
             }

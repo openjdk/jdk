@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -142,7 +142,7 @@ private:
 
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
-    : _name(name), _base(NULL), _top(NULL), _end(NULL),
+    : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
       _max_delta(max_delta), _is_packed(false) {}
 
   char* expand_top_to(char* newtop);
@@ -157,7 +157,7 @@ public:
   size_t used()     const { return _top - _base; }
   bool is_packed()  const { return _is_packed;   }
   bool is_allocatable() const {
-    return !is_packed() && _base != NULL;
+    return !is_packed() && _base != nullptr;
   }
 
   void print(size_t total_bytes) const;
@@ -165,7 +165,7 @@ public:
 
   void init(ReservedSpace* rs, VirtualSpace* vs);
 
-  void pack(DumpRegion* next = NULL);
+  void pack(DumpRegion* next = nullptr);
 
   bool contains(char* p) {
     return base() <= p && p < top();
@@ -184,11 +184,13 @@ public:
     _dump_region = r;
   }
 
-  void do_ptr(void** p) {
-    _dump_region->append_intptr_t((intptr_t)*p, true);
-  }
+  void do_ptr(void** p);
 
   void do_u4(u4* p) {
+    _dump_region->append_intptr_t((intptr_t)(*p));
+  }
+
+  void do_int(int* p) {
     _dump_region->append_intptr_t((intptr_t)(*p));
   }
 
@@ -200,7 +202,6 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
-  void do_oop(oop* o);
   void do_region(u_char* start, size_t size);
   bool reading() const { return false; }
 };
@@ -221,9 +222,9 @@ public:
 
   void do_ptr(void** p);
   void do_u4(u4* p);
+  void do_int(int* p);
   void do_bool(bool *p);
   void do_tag(int tag);
-  void do_oop(oop *p);
   void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
 };

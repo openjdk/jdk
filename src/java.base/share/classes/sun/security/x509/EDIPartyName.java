@@ -26,6 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 /**
@@ -61,7 +63,7 @@ public class EDIPartyName implements GeneralNameInterface {
      */
     public EDIPartyName(String assignerName, String partyName) {
         this.assigner = assignerName;
-        this.party = partyName;
+        this.party = Objects.requireNonNull(partyName);
     }
 
     /**
@@ -70,7 +72,7 @@ public class EDIPartyName implements GeneralNameInterface {
      * @param partyName the name of the EDI party.
      */
     public EDIPartyName(String partyName) {
-        this.party = partyName;
+        this(null, partyName);
     }
 
     /**
@@ -106,6 +108,9 @@ public class EDIPartyName implements GeneralNameInterface {
                 party = opt.getAsString();
             }
         }
+        if (party == null) {
+            throw new IOException("party cannot be missing");
+        }
     }
 
     /**
@@ -119,9 +124,9 @@ public class EDIPartyName implements GeneralNameInterface {
      * Encode the EDI party name into the DerOutputStream.
      *
      * @param out the DER stream to encode the EDIPartyName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tagged = new DerOutputStream();
         DerOutputStream tmp = new DerOutputStream();
 
@@ -132,9 +137,6 @@ public class EDIPartyName implements GeneralNameInterface {
             tagged.write(DerValue.createTag(DerValue.TAG_CONTEXT,
                                  false, TAG_ASSIGNER), tmp2);
         }
-        if (party == null)
-            throw  new IOException("Cannot have null partyName");
-
         // XXX - shd check is chars fit into PrintableString
         tmp.putPrintableString(party);
         tagged.write(DerValue.createTag(DerValue.TAG_CONTEXT,

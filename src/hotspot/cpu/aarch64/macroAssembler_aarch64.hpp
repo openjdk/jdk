@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -57,7 +58,7 @@ class MacroAssembler: public Assembler {
   virtual void call_VM_leaf_base(
     address entry_point,               // the entry point
     int     number_of_arguments,        // the number of arguments to pop after the call
-    Label *retaddr = NULL
+    Label *retaddr = nullptr
   );
 
   virtual void call_VM_leaf_base(
@@ -113,7 +114,6 @@ class MacroAssembler: public Assembler {
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
@@ -514,8 +514,15 @@ public:
     orr(Vd, T, Vn, Vn);
   }
 
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister tmp) {
+    fcvtsh(tmp, src);
+    smov(dst, tmp, H, 0);
+  }
 
-public:
+  void flt16_to_flt(FloatRegister dst, Register src, FloatRegister tmp) {
+    mov(tmp, H, 0, src);
+    fcvths(dst, tmp);
+  }
 
   // Generalized Test Bit And Branch, including a "far" variety which
   // spans more than 32KiB.
@@ -582,15 +589,23 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b001, reg);
   }
 
+  inline void get_nzcv(Register reg) {
+    mrs(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
+  inline void set_nzcv(Register reg) {
+    msr(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
   int corrected_idivq(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
 
-  // Support for NULL-checks
+  // Support for null-checks
   //
-  // Generates code that causes a NULL OS exception if the content of reg is NULL.
+  // Generates code that causes a null OS exception if the content of reg is null.
   // If the accessed location is M[reg + offset] and the offset is known, provide the
   // offset. No explicit code generation is needed if the offset is within a certain
   // range (0 <= offset <= page_size).
@@ -613,7 +628,7 @@ public:
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
   static int pd_patch_instruction_size(address branch, address target);
-  static void pd_patch_instruction(address branch, address target, const char* file = NULL, int line = 0) {
+  static void pd_patch_instruction(address branch, address target, const char* file = nullptr, int line = 0) {
     pd_patch_instruction_size(branch, target);
   }
   static address pd_call_destination(address branch) {
@@ -631,7 +646,9 @@ public:
     return false;
   }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  static int max_trampoline_stub_size();
   void emit_static_call_stub();
+  static int static_call_stub_size();
 
   // The following 4 methods return the offset of the appropriate move instruction
 
@@ -824,6 +841,7 @@ public:
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -855,14 +873,14 @@ public:
                       Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
-  // Used for storing NULL. All other oop constants should be
+  // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
 
   void store_klass_gap(Register dst, Register src);
 
   // This dummy is to prevent a call to store_heap_oop from
-  // converting a zero (like NULL) into a Register by giving
+  // converting a zero (like null) into a Register by giving
   // the compiler two choices it can't resolve
 
   void store_heap_oop(Address dst, void* dummy);
@@ -934,7 +952,7 @@ public:
   // Test sub_klass against super_klass, with fast and slow paths.
 
   // The fast path produces a tri-state answer: yes / no / maybe-slow.
-  // One of the three labels can be NULL, meaning take the fall-through.
+  // One of the three labels can be null, meaning take the fall-through.
   // If super_check_offset is -1, the value is loaded up from super_klass.
   // No registers are killed, except temp_reg.
   void check_klass_subtype_fast_path(Register sub_klass,
@@ -967,8 +985,8 @@ public:
 
   void clinit_barrier(Register klass,
                       Register thread,
-                      Label* L_fast_path = NULL,
-                      Label* L_slow_path = NULL);
+                      Label* L_fast_path = nullptr,
+                      Label* L_slow_path = nullptr);
 
   Address argument_address(RegisterOrConstant arg_slot, int extra_slot_offset = 0);
 
@@ -1085,9 +1103,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-private:
-  void compare_eq(Register rn, Register rm, enum operand_size size);
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below),  when a set of Labels must
@@ -1101,6 +1116,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+  void compare_eq(Register rn, Register rm, enum operand_size size);
 
 public:
   // AArch64 OpenJDK uses four different types of calls:
@@ -1171,14 +1189,14 @@ public:
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or NULL if CodeCache is full.
+  // Return: the call PC or null if CodeCache is full.
   address trampoline_call(Address entry);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Check if branches to the the non nmethod section require a far jump
+  // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
@@ -1376,12 +1394,14 @@ public:
   void char_array_compress(Register src, Register dst, Register len,
                            Register res,
                            FloatRegister vtmp0, FloatRegister vtmp1,
-                           FloatRegister vtmp2, FloatRegister vtmp3);
+                           FloatRegister vtmp2, FloatRegister vtmp3,
+                           FloatRegister vtmp4, FloatRegister vtmp5);
 
   void encode_iso_array(Register src, Register dst,
                         Register len, Register res, bool ascii,
                         FloatRegister vtmp0, FloatRegister vtmp1,
-                        FloatRegister vtmp2, FloatRegister vtmp3);
+                        FloatRegister vtmp2, FloatRegister vtmp3,
+                        FloatRegister vtmp4, FloatRegister vtmp5);
 
   void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
                 FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
@@ -1412,12 +1432,21 @@ public:
                                Register yz_idx1, Register yz_idx2,
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp7, Register product_hi);
+  void kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3);
   void kernel_crc32_using_crc32(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3);
+  void kernel_crc32c_using_crypto_pmull(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+  void kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        size_t table_offset);
 
   void ghash_modmul (FloatRegister result,
                      FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,
@@ -1449,6 +1478,13 @@ public:
                       FloatRegister data = v0, int unrolls = 1);
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  // ChaCha20 functions support block
+  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
+          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+          FloatRegister tbl);
+  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
+          FloatRegister dVec, bool colToDiag);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();
@@ -1546,6 +1582,9 @@ public:
 
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
+
+  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

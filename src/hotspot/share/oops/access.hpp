@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,19 +271,24 @@ public:
 };
 
 // Helper for performing raw accesses (knows only of memory ordering
-// atomicity decorators as well as compressed oops)
+// atomicity decorators as well as compressed oops).
 template <DecoratorSet decorators = DECORATORS_NONE>
 class RawAccess: public Access<AS_RAW | decorators> {};
 
 // Helper for performing normal accesses on the heap. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class HeapAccess: public Access<IN_HEAP | decorators> {};
 
 // Helper for performing normal accesses in roots. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class NativeAccess: public Access<IN_NATIVE | decorators> {};
+
+// Helper for performing accesses in nmethods. These accesses
+// may resolve an accessor on a GC barrier set.
+template <DecoratorSet decorators = DECORATORS_NONE>
+class NMethodAccess: public Access<IN_NMETHOD | decorators> {};
 
 // Helper for array access.
 template <DecoratorSet decorators = DECORATORS_NONE>
@@ -304,7 +309,7 @@ public:
                                          T* dst,
                                          size_t length) {
     AccessT::arraycopy(src_obj, src_offset_in_bytes, static_cast<const T*>(nullptr),
-                       NULL, 0, dst,
+                       nullptr, 0, dst,
                        length);
   }
 
@@ -312,7 +317,7 @@ public:
   static inline void arraycopy_from_native(const T* src,
                                            arrayOop dst_obj, size_t dst_offset_in_bytes,
                                            size_t length) {
-    AccessT::arraycopy(NULL, 0, src,
+    AccessT::arraycopy(nullptr, 0, src,
                        dst_obj, dst_offset_in_bytes, static_cast<T*>(nullptr),
                        length);
   }
@@ -327,8 +332,8 @@ public:
 
   template <typename T>
   static inline bool oop_arraycopy_raw(T* src, T* dst, size_t length) {
-    return AccessT::oop_arraycopy(NULL, 0, src,
-                                  NULL, 0, dst,
+    return AccessT::oop_arraycopy(nullptr, 0, src,
+                                  nullptr, 0, dst,
                                   length);
   }
 
@@ -362,6 +367,7 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet location_decorators = decorators & IN_DECORATOR_MASK;
   STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
     (location_decorators ^ IN_NATIVE) == 0 ||
+    (location_decorators ^ IN_NMETHOD) == 0 ||
     (location_decorators ^ IN_HEAP) == 0
   ));
 }

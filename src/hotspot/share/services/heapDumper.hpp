@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ class HeapDumper : public StackObj {
   elapsedTimer _t;
 
   HeapDumper(bool gc_before_heap_dump, bool oome) :
-    _error(NULL), _gc_before_heap_dump(gc_before_heap_dump), _oome(oome) { }
+    _error(nullptr), _gc_before_heap_dump(gc_before_heap_dump), _oome(oome) { }
 
   // string representation of error
   char* error() const                   { return _error; }
@@ -64,17 +64,17 @@ class HeapDumper : public StackObj {
 
  public:
   HeapDumper(bool gc_before_heap_dump) :
-    _error(NULL), _gc_before_heap_dump(gc_before_heap_dump), _oome(false) { }
+    _error(nullptr), _gc_before_heap_dump(gc_before_heap_dump), _oome(false) { }
 
   ~HeapDumper();
 
   // dumps the heap to the specified file, returns 0 if success.
-  // additional info is written to out if not NULL.
+  // additional info is written to out if not null.
   // compression >= 0 creates a gzipped file with the given compression level.
   // parallel_thread_num >= 0 indicates thread numbers of parallel object dump
-  int dump(const char* path, outputStream* out = NULL, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
+  int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
 
-  // returns error message (resource allocated), or NULL if no error
+  // returns error message (resource allocated), or null if no error
   char* error_as_C_string() const;
 
   static void dump_heap()    NOT_SERVICES_RETURN;

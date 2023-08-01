@@ -60,15 +60,17 @@ public class T8152616 {
         JavacTool javac = JavacTool.create();
         StandardJavaFileManager jfm = javac.getStandardFileManager(null,null,null);
         File file = File.createTempFile("test", ".java");
-        OutputStream outputStream = new FileOutputStream(file);
-        outputStream.write("enum Foo {AA(10), BB, CC { void m() {} }; void m() {};}".getBytes());
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            outputStream.write("enum Foo {AA(10), BB, CC { void m() {} }; void m() {};}".getBytes());
+        }
         JavacTask task = javac.getTask(null, jfm, null, null, null,
                    jfm.getJavaFileObjects(file.getAbsolutePath()));
         Iterable<? extends CompilationUnitTree> trees = task.parse();
         CompilationUnitTree thisTree = trees.iterator().next();
         file.delete();
-        outputStream = new FileOutputStream(file);
-        outputStream.write((obj.PrettyPrint((JCTree)thisTree)).getBytes());
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            outputStream.write((obj.PrettyPrint((JCTree)thisTree)).getBytes());
+        }
         task = javac.getTask(null, jfm, null, null, null,
                    jfm.getJavaFileObjects(file.getAbsolutePath()));
         if(task.parse().toString().contains("ERROR")){

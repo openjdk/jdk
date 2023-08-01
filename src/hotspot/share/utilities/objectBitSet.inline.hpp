@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,15 @@ ObjectBitSet<F>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragmen
 template<MEMFLAGS F>
 ObjectBitSet<F>::ObjectBitSet() :
         _bitmap_fragments(32, 8*K),
-        _fragment_list(NULL),
-        _last_fragment_bits(NULL),
+        _fragment_list(nullptr),
+        _last_fragment_bits(nullptr),
         _last_fragment_granule(UINTPTR_MAX) {
 }
 
 template<MEMFLAGS F>
 ObjectBitSet<F>::~ObjectBitSet() {
   BitMapFragment* current = _fragment_list;
-  while (current != NULL) {
+  while (current != nullptr) {
     BitMapFragment* next = current->next();
     delete current;
     current = next;
@@ -67,10 +67,10 @@ inline CHeapBitMap* ObjectBitSet<F>::get_fragment_bits(uintptr_t addr) {
   if (granule == _last_fragment_granule) {
     return _last_fragment_bits;
   }
-  CHeapBitMap* bits = NULL;
+  CHeapBitMap* bits = nullptr;
 
   CHeapBitMap** found = _bitmap_fragments.get(granule);
-  if (found != NULL) {
+  if (found != nullptr) {
     bits = *found;
   } else {
     BitMapFragment* fragment = new BitMapFragment(granule, _fragment_list);

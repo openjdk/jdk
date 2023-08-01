@@ -15,7 +15,7 @@ class Neg14 {
 
     static void foo(A<String> as) {}
 
-    public static void main(String[] args) {
+    public static void meth() {
 
         // Method invocation context - good <>(){}
         foo(new A<>() {

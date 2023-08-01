@@ -25,16 +25,11 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.*;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -42,7 +37,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
 
@@ -54,47 +48,62 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--enable-preview" })
 public class PointerInvoke extends CLayouts {
 
-    MemorySession session = MemorySession.openConfined();
-    MemorySegment segment = MemorySegment.allocateNative(100, session);
+    Arena arena = Arena.ofConfined();
+    MemorySegment segment = arena.allocate(100, 1);
 
     static {
         System.loadLibrary("Ptr");
     }
 
-    static final MethodHandle F_LONG, F_PTR;
+    static final MethodHandle F_LONG_LONG, F_PTR_LONG, F_LONG_PTR, F_PTR_PTR;
 
     static {
         Linker abi = Linker.nativeLinker();
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        F_LONG = abi.downcallHandle(loaderLibs.lookup("func_as_long").get(),
-                FunctionDescriptor.of(C_INT, C_LONG_LONG));
-        F_PTR = abi.downcallHandle(loaderLibs.lookup("func_as_ptr").get(),
-                FunctionDescriptor.of(C_INT, C_POINTER));
+        F_LONG_LONG = abi.downcallHandle(loaderLibs.find("id_long_long").get(),
+                FunctionDescriptor.of(C_LONG_LONG, C_LONG_LONG));
+        F_PTR_LONG = abi.downcallHandle(loaderLibs.find("id_ptr_long").get(),
+                FunctionDescriptor.of(C_LONG_LONG, C_POINTER));
+        F_LONG_PTR = abi.downcallHandle(loaderLibs.find("id_long_ptr").get(),
+                FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
+        F_PTR_PTR = abi.downcallHandle(loaderLibs.find("id_ptr_ptr").get(),
+                FunctionDescriptor.of(C_POINTER, C_POINTER));
     }
 
     @TearDown
     public void tearDown() {
-        session.close();
+        arena.close();
     }
 
     @Benchmark
-    public int panama_call_as_long() throws Throwable {
-        return (int)F_LONG.invokeExact(segment.address().toRawLongValue());
+    public long long_to_long() throws Throwable {
+        return (long)F_LONG_LONG.invokeExact(segment.address());
     }
 
     @Benchmark
-    public int panama_call_as_address() throws Throwable {
-        return (int)F_PTR.invokeExact((Addressable)segment.address());
+    public long ptr_to_long() throws Throwable {
+        return (long)F_PTR_LONG.invokeExact(segment);
     }
 
     @Benchmark
-    public int panama_call_as_segment() throws Throwable {
-        return (int)F_PTR.invokeExact((Addressable)segment);
+    public long ptr_to_long_new_segment() throws Throwable {
+        MemorySegment newSegment = segment.reinterpret(100, arena, null);
+        return (long)F_PTR_LONG.invokeExact(newSegment);
     }
 
     @Benchmark
-    public int panama_call_as_new_segment() throws Throwable {
-        MemorySegment newSegment = MemorySegment.ofAddress(segment.address(), 100, session);
-        return (int)F_PTR.invokeExact((Addressable)newSegment);
+    public long long_to_ptr() throws Throwable {
+        return ((MemorySegment)F_LONG_PTR.invokeExact(segment.address())).address();
+    }
+
+    @Benchmark
+    public long ptr_to_ptr() throws Throwable {
+        return ((MemorySegment)F_PTR_PTR.invokeExact(segment)).address();
+    }
+
+    @Benchmark
+    public long ptr_to_ptr_new_segment() throws Throwable {
+        MemorySegment newSegment = segment.reinterpret(100, arena, null);
+        return ((MemorySegment)F_PTR_PTR.invokeExact(newSegment)).address();
     }
 }

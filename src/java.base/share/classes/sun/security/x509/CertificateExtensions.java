@@ -38,9 +38,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateExtensions implements CertAttrSet {
+public class CertificateExtensions implements DerEncoder {
 
     public static final String NAME = "extensions";
 
@@ -137,11 +137,9 @@ public class CertificateExtensions implements CertAttrSet {
      * the context specific tag as needed in the X.509 v3 certificate.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception CertificateException on encoding errors.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         encode(out, false);
     }
 
@@ -150,11 +148,8 @@ public class CertificateExtensions implements CertAttrSet {
      *
      * @param out the DerOutputStream to marshal the contents to.
      * @param isCertReq if true then no context specific tag is added.
-     * @exception CertificateException on encoding errors.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out, boolean isCertReq)
-            throws IOException {
+    public void encode(DerOutputStream out, boolean isCertReq) {
         DerOutputStream extOut = new DerOutputStream();
         for (Extension ext : map.values()) {
             ext.encode(extOut);

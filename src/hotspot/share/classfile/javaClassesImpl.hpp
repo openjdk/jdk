@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_JAVACLASSESIMPL_HPP
 #define SHARE_CLASSFILE_JAVACLASSESIMPL_HPP
 
+#include "cds/serializeClosure.hpp"
 #include "classfile/javaClasses.hpp"
 #include "runtime/continuationJavaClasses.hpp"
 #include "utilities/macros.hpp"
@@ -47,12 +48,12 @@
 
 #if INCLUDE_CDS
 #define INJECTED_FIELD_SERIALIZE_OFFSET(klass, name, signature, may_be_java) \
-  f->do_u4((u4*)&_##name##_offset);
+  f->do_int(&_##name##_offset);
 #endif
 
 #if INCLUDE_CDS
 #define FIELD_SERIALIZE_OFFSET(offset, klass, name, signature, is_static) \
-  f->do_u4((u4*)&offset)
+  f->do_int(&offset)
 #endif
 
 #define FIELD_COMPUTE_OFFSET(offset, klass, name, signature, is_static) \

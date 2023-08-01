@@ -1,4 +1,7 @@
-GuardsErrors.java:37:38: compiler.err.cant.ref.non.effectively.final.var: check, (compiler.misc.guard)
-- compiler.note.preview.filename: GuardsErrors.java, DEFAULT
-- compiler.note.preview.recompile
-1 error
+GuardsErrors.java:36:38: compiler.err.cant.ref.non.effectively.final.var: check, (compiler.misc.guard)
+GuardsErrors.java:47:34: compiler.err.cannot.assign.not.declared.guard: i1
+GuardsErrors.java:48:33: compiler.err.cant.ref.non.effectively.final.var: i2, (compiler.misc.guard)
+GuardsErrors.java:49:35: compiler.err.cant.ref.non.effectively.final.var: i2, (compiler.misc.guard)
+GuardsErrors.java:57:33: compiler.err.cant.ref.non.effectively.final.var: v, (compiler.misc.guard)
+GuardsErrors.java:67:34: compiler.err.cannot.assign.not.declared.guard: f
+6 errors

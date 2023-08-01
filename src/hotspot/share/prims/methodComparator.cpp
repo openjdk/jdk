@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/methodComparator.hpp"
@@ -73,8 +75,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_multianewarray : // fall through
   case Bytecodes::_checkcast      : // fall through
   case Bytecodes::_instanceof     : {
-    u2 cpi_old = s_old->get_index_u2();
-    u2 cpi_new = s_new->get_index_u2();
+    int cpi_old = s_old->get_index_u2();
+    int cpi_new = s_new->get_index_u2();
     if (old_cp->klass_at_noresolve(cpi_old) != new_cp->klass_at_noresolve(cpi_new))
         return false;
     if (c_old == Bytecodes::_multianewarray &&
@@ -96,29 +98,34 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->klass_ref_at_noresolve(cpci_old) != new_cp->klass_ref_at_noresolve(cpci_new)) ||
-        (old_cp->name_ref_at(cpci_old) != new_cp->name_ref_at(cpci_new)) ||
-        (old_cp->signature_ref_at(cpci_old) != new_cp->signature_ref_at(cpci_new)))
+    if ((old_cp->klass_ref_at_noresolve(cpci_old, c_old) != new_cp->klass_ref_at_noresolve(cpci_new, c_old)) ||
+        (old_cp->name_ref_at(cpci_old, c_old) != new_cp->name_ref_at(cpci_new, c_old)) ||
+        (old_cp->signature_ref_at(cpci_old, c_old) != new_cp->signature_ref_at(cpci_new, c_old)))
       return false;
     break;
   }
   case Bytecodes::_invokedynamic: {
-    int cpci_old = s_old->get_index_u4();
-    int cpci_new = s_new->get_index_u4();
+    // Encoded indy index, should be negative
+    int index_old = s_old->get_index_u4();
+    int index_new = s_new->get_index_u4();
+
+    int indy_index_old = old_cp->decode_invokedynamic_index(index_old);
+    int indy_index_new = new_cp->decode_invokedynamic_index(index_new);
 
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->name_ref_at(cpci_old) != new_cp->name_ref_at(cpci_new)) ||
-        (old_cp->signature_ref_at(cpci_old) != new_cp->signature_ref_at(cpci_new)))
+    // Currently needs encoded indy_index
+    if ((old_cp->name_ref_at(index_old, c_old) != new_cp->name_ref_at(index_new, c_old)) ||
+        (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
       return false;
 
-    // Translate object indexes to constant pool cache indexes.
-    cpci_old = old_cp->invokedynamic_cp_cache_index(cpci_old);
-    cpci_new = new_cp->invokedynamic_cp_cache_index(cpci_new);
+    int cpi_old = old_cp->cache()->resolved_indy_entry_at(indy_index_old)->constant_pool_index();
+    int cpi_new = new_cp->cache()->resolved_indy_entry_at(indy_index_new)->constant_pool_index();
+    if ((old_cp->uncached_name_ref_at(cpi_old) != new_cp->uncached_name_ref_at(cpi_new)) ||
+        (old_cp->uncached_signature_ref_at(cpi_old) != new_cp->uncached_signature_ref_at(cpi_new)))
+      return false;
 
-    int cpi_old = old_cp->cache()->entry_at(cpci_old)->constant_pool_index();
-    int cpi_new = new_cp->cache()->entry_at(cpci_new)->constant_pool_index();
     int bsm_old = old_cp->bootstrap_method_ref_index_at(cpi_old);
     int bsm_new = new_cp->bootstrap_method_ref_index_at(cpi_new);
     if (!pool_constants_same(bsm_old, bsm_new, old_cp, new_cp))
@@ -148,8 +155,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   }
 
   case Bytecodes::_ldc2_w : {
-    u2 cpi_old = s_old->get_index_u2();
-    u2 cpi_new = s_new->get_index_u2();
+    int cpi_old = s_old->get_index_u2();
+    int cpi_new = s_new->get_index_u2();
     constantTag tag_old = old_cp->tag_at(cpi_old);
     constantTag tag_new = new_cp->tag_at(cpi_new);
     if (tag_old.value() != tag_new.value())

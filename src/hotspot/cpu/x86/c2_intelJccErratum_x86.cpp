@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ int IntelJccErratum::jcc_erratum_taint_node(MachNode* node, PhaseRegAlloc* regal
 int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegAlloc* regalloc) {
   ResourceMark rm;
   int nop_size = 0;
-  MachNode* last_m = NULL;
+  MachNode* last_m = nullptr;
 
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
@@ -86,7 +86,7 @@ int IntelJccErratum::tag_affected_machnodes(Compile* C, PhaseCFG* cfg, PhaseRegA
             }
           }
         }
-        last_m = NULL;
+        last_m = nullptr;
       } else {
         last_m = m;
       }
@@ -100,7 +100,7 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   if (index_in_block < block->number_of_nodes() - 1) {
     Node* next = block->get_node(index_in_block + 1);
     if (next->is_Mach() && (next->as_Mach()->flags() & Node::PD::Flag_intel_jcc_erratum)) {
-      jcc_size += mach->size(regalloc);
+      jcc_size += next->size(regalloc);
     }
   }
   if (jcc_size > largest_jcc_size()) {

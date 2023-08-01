@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,43 +25,25 @@
 #define SHARE_GC_Z_ZSAFEDELETE_HPP
 
 #include "gc/z/zArray.hpp"
-#include "gc/z/zLock.hpp"
-#include "metaprogramming/removeExtent.hpp"
+
+#include <type_traits>
 
 template <typename T>
-class ZSafeDeleteImpl {
+class ZSafeDelete {
 private:
-  typedef typename RemoveExtent<T>::type ItemT;
+  using ItemT = std::remove_extent_t<T>;
 
-  ZLock*         _lock;
-  uint64_t       _enabled;
-  ZArray<ItemT*> _deferred;
+  ZActivatedArray<T> _deferred;
 
-  bool deferred_delete(ItemT* item);
-  void immediate_delete(ItemT* item);
+  static void immediate_delete(ItemT* item);
 
 public:
-  ZSafeDeleteImpl(ZLock* lock);
+  explicit ZSafeDelete(bool locked = true);
 
   void enable_deferred_delete();
   void disable_deferred_delete();
 
-  void operator()(ItemT* item);
-};
-
-template <typename T>
-class ZSafeDelete : public ZSafeDeleteImpl<T> {
-private:
-  ZLock _lock;
-
-public:
-  ZSafeDelete();
-};
-
-template <typename T>
-class ZSafeDeleteNoLock : public ZSafeDeleteImpl<T> {
-public:
-  ZSafeDeleteNoLock();
+  void schedule_delete(ItemT* item);
 };
 
 #endif // SHARE_GC_Z_ZSAFEDELETE_HPP

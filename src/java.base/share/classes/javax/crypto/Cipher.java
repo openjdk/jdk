@@ -158,7 +158,7 @@ import sun.security.util.KnownOIDs;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * Cipher section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
@@ -308,6 +308,8 @@ public class Cipher {
         this.lock = new Object();
     }
 
+    private static final String SHA512TRUNCATED = "SHA512/2";
+
     private static String[] tokenizeTransformation(String transformation)
             throws NoSuchAlgorithmException {
         if (transformation == null) {
@@ -320,27 +322,31 @@ public class Cipher {
          * index 1: feedback component (e.g., CFB)
          * index 2: padding component (e.g., PKCS5Padding)
          */
-        String[] parts = new String[3];
-        int count = 0;
-        StringTokenizer parser = new StringTokenizer(transformation, "/");
-        try {
-            while (parser.hasMoreTokens() && count < 3) {
-                parts[count++] = parser.nextToken().trim();
-            }
-            if (count == 0 || count == 2) {
+        String[] parts = { "", "", "" };
+
+        // check if the transformation contains algorithms with "/" in their
+        // name which can cause the parsing logic to go wrong
+        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH)
+                .indexOf(SHA512TRUNCATED);
+        int startIdx = (sha512Idx == -1 ? 0 :
+                sha512Idx + SHA512TRUNCATED.length());
+        int endIdx = transformation.indexOf('/', startIdx);
+        if (endIdx == -1) {
+            // algorithm
+            parts[0] = transformation.trim();
+        } else {
+            // algorithm/mode/padding
+            parts[0] = transformation.substring(0, endIdx).trim();
+            startIdx = endIdx+1;
+            endIdx = transformation.indexOf('/', startIdx);
+            if (endIdx == -1) {
                 throw new NoSuchAlgorithmException("Invalid transformation"
-                                               + " format:" +
-                                               transformation);
+                            + " format:" + transformation);
             }
-            // treats all subsequent tokens as part of padding
-            if (count == 3 && parser.hasMoreTokens()) {
-                parts[2] = parts[2] + parser.nextToken("\r\n");
-            }
-        } catch (NoSuchElementException e) {
-            throw new NoSuchAlgorithmException("Invalid transformation " +
-                                           "format:" + transformation);
+            parts[1] = transformation.substring(startIdx, endIdx).trim();
+            parts[2] = transformation.substring(endIdx+1).trim();
         }
-        if ((parts[0] == null) || (parts[0].isEmpty())) {
+        if (parts[0].isEmpty()) {
             throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "algorithm not specified-"
                                    + transformation);
@@ -444,19 +450,13 @@ public class Cipher {
         String alg = parts[0];
         String mode = parts[1];
         String pad = parts[2];
-        if ((mode != null) && (mode.isEmpty())) {
-            mode = null;
-        }
-        if ((pad != null) && (pad.isEmpty())) {
-            pad = null;
-        }
 
-        if ((mode == null) && (pad == null)) {
-            // AES
+        if ((mode.length() == 0) && (pad.length() == 0)) {
+            // Algorithm only
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
-        } else { // if ((mode != null) && (pad != null)) {
-            // AES/CBC/PKCS5Padding
+        } else {
+            // Algorithm w/ at least mode or padding or both
             List<Transform> list = new ArrayList<>(4);
             list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
             list.add(new Transform(alg, "/" + mode, null, pad));
@@ -511,7 +511,7 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -601,7 +601,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -673,7 +673,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *

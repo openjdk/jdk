@@ -102,14 +102,12 @@ public class PKCS10Attribute implements DerEncoder {
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
-     * @param out
-     * the OutputStream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream on which to write the DER encoding.
      */
-    public void derEncode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         PKCS9Attribute attr = new PKCS9Attribute(attributeId, attributeValue);
-        attr.derEncode(out);
+        attr.encode(out);
     }
 
     /**

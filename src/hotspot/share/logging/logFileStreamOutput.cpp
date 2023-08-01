@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,14 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
-#include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
+#include "logging/logDecorators.hpp"
 #include "logging/logFileStreamOutput.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
-LogStdoutOutput* StdoutLog = nullptr;
-LogStderrOutput* StderrLog = nullptr;
 
 bool LogFileStreamOutput::set_option(const char* key, const char* value, outputStream* errstream) {
   bool success = false;
@@ -134,7 +132,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
     char *next;
     do {
       next = strpbrk(cur, "\n\\");
-      if (next == NULL) {
+      if (next == nullptr) {
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", cur), written);
       } else {
         const char *found = (*next == '\n') ? "\\n" : "\\\\";
@@ -142,7 +140,7 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
         WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s%s", cur, found), written);
         cur = next + 1;
       }
-    } while (next != NULL);
+    } while (next != nullptr);
     os::free(dupstr);
   }
   return written;

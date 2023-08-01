@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree.Hierarchy;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -123,7 +122,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                                         TypeElement typeElement,
                                         Content content)
     {
-        SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> interfaces = new TreeSet<>(comparators.generalPurposeComparator());
         typeElement.getInterfaces().forEach(t -> interfaces.add(utils.asTypeElement(t)));
         if (interfaces.size() > (utils.isPlainInterface(typeElement) ? 1 : 0)) {
             boolean isFirst = true;
@@ -142,7 +141,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                         } else {
                             content.add(", ");
                         }
-                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.TREE, intf, content);
+                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, intf, content);
                     }
                 }
             }
@@ -159,6 +158,6 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param content the content to which the information will be added
      */
     protected void addPartialInfo(TypeElement typeElement, Content content) {
-        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.TREE, typeElement, content);
+        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, typeElement, content);
     }
 }

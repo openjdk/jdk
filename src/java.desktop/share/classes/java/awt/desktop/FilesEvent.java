@@ -37,6 +37,7 @@ import java.util.List;
  * Auxiliary event containing a list of files.
  *
  * @since 9
+ * @sealedGraph
  */
 public sealed class FilesEvent extends AppEvent
     permits OpenFilesEvent,

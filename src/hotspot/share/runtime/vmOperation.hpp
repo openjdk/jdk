@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,19 @@
   template(G1PauseRemark)                         \
   template(G1PauseCleanup)                        \
   template(G1TryInitiateConcMark)                 \
-  template(ZMarkStart)                            \
-  template(ZMarkEnd)                              \
-  template(ZRelocateStart)                        \
-  template(ZVerify)                               \
+  template(ZMarkEndOld)                           \
+  template(ZMarkEndYoung)                         \
+  template(ZMarkFlushOperation)                   \
+  template(ZMarkStartYoung)                       \
+  template(ZMarkStartYoungAndOld)                 \
+  template(ZRelocateStartOld)                     \
+  template(ZRelocateStartYoung)                   \
+  template(ZRendezvousGCThreads)                  \
+  template(ZVerifyOld)                            \
+  template(XMarkStart)                            \
+  template(XMarkEnd)                              \
+  template(XRelocateStart)                        \
+  template(XVerify)                               \
   template(HandshakeAllThreads)                   \
   template(PopulateDumpSharedSpace)               \
   template(JNIFunctionTableCopier)                \
@@ -78,6 +87,7 @@
   template(VirtualThreadGetOrSetLocal)            \
   template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
+  template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \
@@ -105,7 +115,8 @@
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
-  template(JvmtiPostObjectFree)
+  template(JvmtiPostObjectFree)                   \
+  template(RendezvousGCThreads)
 
 class Thread;
 class outputStream;
@@ -124,7 +135,7 @@ class VM_Operation : public StackObj {
   static const char* _names[];
 
  public:
-  VM_Operation() : _calling_thread(NULL) {}
+  VM_Operation() : _calling_thread(nullptr) {}
 
   // VM operation support (used by VM thread)
   Thread* calling_thread() const                 { return _calling_thread; }
@@ -163,6 +174,8 @@ class VM_Operation : public StackObj {
     assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
     return _names[type];
   }
+  // Extra information about what triggered this operation.
+  virtual const char* cause() const { return nullptr; }
 #ifndef PRODUCT
   void print_on(outputStream* st) const { print_on_error(st); }
 #endif

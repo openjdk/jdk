@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,7 @@ private:
     EXCEPTION_HANDLER_ENTRY,
     DEOPT_HANDLER_ENTRY,
     FRAME_COMPLETE,
+    ENTRY_BARRIER_PATCH,
     INVOKEINTERFACE,
     INVOKEVIRTUAL,
     INVOKESTATIC,
@@ -184,9 +185,11 @@ private:
     REGISTER_PRIMITIVE,
     REGISTER_OOP,
     REGISTER_NARROW_OOP,
+    REGISTER_VECTOR,
     STACK_SLOT_PRIMITIVE,
     STACK_SLOT_OOP,
     STACK_SLOT_NARROW_OOP,
+    STACK_SLOT_VECTOR,
     VIRTUAL_OBJECT_ID,
     VIRTUAL_OBJECT_ID2,
     NULL_CONSTANT,
@@ -271,6 +274,7 @@ private:
   jint          _sites_count;
 
   CodeOffsets   _offsets;
+  int           _nmethod_entry_patch_offset;
 
   jint          _code_size;
   jint          _total_frame_size;

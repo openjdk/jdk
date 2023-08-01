@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +56,12 @@ inline JvmtiEnvThreadState* JvmtiEnvThreadStateIterator::next(JvmtiEnvThreadStat
 
 JvmtiEnvThreadState* JvmtiThreadState::env_thread_state(JvmtiEnvBase *env) {
   JvmtiEnvThreadStateIterator it(this);
-  for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if ((JvmtiEnvBase*)(ets->get_env()) == env) {
       return ets;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 JvmtiEnvThreadState* JvmtiThreadState::head_env_thread_state() {
@@ -74,27 +74,27 @@ void JvmtiThreadState::set_head_env_thread_state(JvmtiEnvThreadState* ets) {
 
 inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *thread, oop thread_oop) {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-  assert(thread != NULL || thread_oop != NULL, "sanity check");
+  assert(thread != nullptr || thread_oop != nullptr, "sanity check");
 
   NoSafepointVerifier nsv;  // oop is safe to use.
 
-  if (thread_oop == NULL) {  // Then thread should not be NULL (see assert above).
-    thread_oop = thread->jvmti_vthread() != NULL ? thread->jvmti_vthread() : thread->threadObj();
+  if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
+    thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
   }
 
-  // In a case of unmounted virtual thread the thread can be NULL.
-  JvmtiThreadState *state = thread == NULL ? NULL : thread->jvmti_thread_state();
+  // In a case of unmounted virtual thread the thread can be null.
+  JvmtiThreadState *state = thread == nullptr ? nullptr : thread->jvmti_thread_state();
 
-  if (state == NULL && thread != NULL && thread->is_exiting()) {
+  if (state == nullptr && thread != nullptr && thread->is_exiting()) {
     // Don't add a JvmtiThreadState to a thread that is exiting.
-    return NULL;
+    return nullptr;
   }
-  if (state == NULL || state->get_thread_oop() != thread_oop) {
+  if (state == nullptr || state->get_thread_oop() != thread_oop) {
     // Check if java_lang_Thread already has a link to the JvmtiThreadState.
-    if (thread_oop != NULL) {  // thread_oop can be NULL during early VMStart.
+    if (thread_oop != nullptr) {  // thread_oop can be null during early VMStart.
       state = java_lang_Thread::jvmti_thread_state(thread_oop);
     }
-    if (state == NULL) {  // Need to create state.
+    if (state == nullptr) {  // Need to create state.
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
@@ -102,10 +102,10 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
 }
 
 inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread, Handle thread_handle) {
-  // In a case of unmounted virtual thread the thread can be NULL.
-  JvmtiThreadState* state = thread_handle == NULL ? thread->jvmti_thread_state() :
+  // In a case of unmounted virtual thread the thread can be null.
+  JvmtiThreadState* state = thread_handle == nullptr ? thread->jvmti_thread_state() :
                                                 java_lang_Thread::jvmti_thread_state(thread_handle());
-  if (state == NULL) {
+  if (state == nullptr) {
     MutexLocker mu(JvmtiThreadState_lock);
     // check again with the lock held
     state = state_for_while_locked(thread, thread_handle());
@@ -118,8 +118,8 @@ inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread, Handle 
 }
 
 inline JavaThread* JvmtiThreadState::get_thread_or_saved() {
-  // Use _thread_saved if cthread is detached from JavaThread (_thread == NULL).
-  return (_thread == NULL && !is_virtual()) ? _thread_saved : _thread;
+  // Use _thread_saved if cthread is detached from JavaThread (_thread == null).
+  return (_thread == nullptr && !is_virtual()) ? _thread_saved : _thread;
 }
 
 inline void JvmtiThreadState::set_should_post_on_exceptions(bool val) {
@@ -127,17 +127,17 @@ inline void JvmtiThreadState::set_should_post_on_exceptions(bool val) {
 }
 
 inline void JvmtiThreadState::unbind_from(JvmtiThreadState* state, JavaThread* thread) {
-  if (state == NULL) {
+  if (state == nullptr) {
     return;
   }
   // Save thread's interp_only_mode.
   state->_saved_interp_only_mode = thread->get_interp_only_mode();
-  state->set_thread(NULL);  // Make sure stale _thread value is never used.
+  state->set_thread(nullptr);  // Make sure stale _thread value is never used.
 }
 
 inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* thread) {
   // Restore thread's interp_only_mode.
-  thread->set_interp_only_mode(state == NULL ? 0 : state->_saved_interp_only_mode);
+  thread->set_interp_only_mode(state == nullptr ? 0 : state->_saved_interp_only_mode);
 
   // Make continuation notice the interp_only_mode change.
   Continuation::set_cont_fastpath_thread_state(thread);
@@ -145,7 +145,7 @@ inline void JvmtiThreadState::bind_to(JvmtiThreadState* state, JavaThread* threa
   // Bind JavaThread to JvmtiThreadState.
   thread->set_jvmti_thread_state(state);
 
-  if (state != NULL) {
+  if (state != nullptr) {
     // Bind to JavaThread.
     state->set_thread(thread);
   }

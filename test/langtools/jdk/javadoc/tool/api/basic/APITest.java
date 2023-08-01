@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,8 @@ class APITest {
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.6.0.min.js",
+            "link.svg",
+            "script-dir/jquery-3.6.1.min.js",
             "script-dir/jquery-ui.min.js",
             "script-dir/jquery-ui.min.css",
             "search.html",

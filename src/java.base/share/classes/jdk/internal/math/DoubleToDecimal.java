@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import static jdk.internal.math.MathUtils.*;
 /**
  * This class exposes a method to render a {@code double} as a string.
  */
-final public class DoubleToDecimal {
+public final class DoubleToDecimal {
     /*
      * For full details about this code see the following references:
      *
@@ -110,12 +110,13 @@ final public class DoubleToDecimal {
      */
     public static final int MAX_CHARS = H + 7;
 
-    private final byte[] bytes = new byte[MAX_CHARS];
+    private final byte[] bytes;
 
     /* Index into bytes of rightmost valid character */
     private int index;
 
-    private DoubleToDecimal() {
+    private DoubleToDecimal(boolean noChars) {
+        bytes = noChars ? null : new byte[MAX_CHARS];
     }
 
     /**
@@ -127,7 +128,28 @@ final public class DoubleToDecimal {
      * @see Double#toString(double)
      */
     public static String toString(double v) {
-        return new DoubleToDecimal().toDecimalString(v);
+        return new DoubleToDecimal(false).toDecimalString(v);
+    }
+
+    /**
+     * Splits the decimal <i>d</i> described in
+     * {@link Double#toString(double)} in integers <i>f</i> and <i>e</i>
+     * such that <i>d</i> = <i>f</i> 10<sup><i>e</i></sup>.
+     *
+     * <p>Further, determines integer <i>n</i> such that <i>n</i> = 0 when
+     * <i>f</i> = 0, and
+     * 10<sup><i>n</i>-1</sup> &le; <i>f</i> &lt; 10<sup><i>n</i></sup>
+     * otherwise.
+     *
+     * <p>The argument {@code v} is assumed to be a positive finite value or
+     * positive zero.
+     * Further, {@code fd} must not be {@code null}.
+     *
+     * @param v     the finite {@code double} to be split.
+     * @param fd    the object that will carry <i>f</i>, <i>e</i>, and <i>n</i>.
+     */
+    public static void split(double v, FormattedFPDecimal fd) {
+        new DoubleToDecimal(true).toDecimal(v, fd);
     }
 
     /**
@@ -143,11 +165,11 @@ final public class DoubleToDecimal {
      */
     public static Appendable appendTo(double v, Appendable app)
             throws IOException {
-        return new DoubleToDecimal().appendDecimalTo(v, app);
+        return new DoubleToDecimal(false).appendDecimalTo(v, app);
     }
 
     private String toDecimalString(double v) {
-        return switch (toDecimal(v)) {
+        return switch (toDecimal(v, null)) {
             case NON_SPECIAL -> charsToString();
             case PLUS_ZERO -> "0.0";
             case MINUS_ZERO -> "-0.0";
@@ -159,7 +181,7 @@ final public class DoubleToDecimal {
 
     private Appendable appendDecimalTo(double v, Appendable app)
             throws IOException {
-        switch (toDecimal(v)) {
+        switch (toDecimal(v, null)) {
             case NON_SPECIAL:
                 char[] chars = new char[index + 1];
                 for (int i = 0; i < chars.length; ++i) {
@@ -191,7 +213,7 @@ final public class DoubleToDecimal {
      *     MINUS_INF       iff v is NEGATIVE_INFINITY
      *     NAN             iff v is NaN
      */
-    private int toDecimal(double v) {
+    private int toDecimal(double v, FormattedFPDecimal fd) {
         /*
          * For full details see references [2] and [1].
          *
@@ -207,6 +229,10 @@ final public class DoubleToDecimal {
         if (bq < BQ_MASK) {
             index = -1;
             if (bits < 0) {
+                /*
+                 * fd != null implies bytes == null and bits >= 0
+                 * Thus, when fd != null, control never reaches here.
+                 */
                 append('-');
             }
             if (bq != 0) {
@@ -217,16 +243,16 @@ final public class DoubleToDecimal {
                 if (0 < mq & mq < P) {
                     long f = c >> mq;
                     if (f << mq == c) {
-                        return toChars(f, 0);
+                        return toChars(f, 0, fd);
                     }
                 }
-                return toDecimal(-mq, c, 0);
+                return toDecimal(-mq, c, 0, fd);
             }
             if (t != 0) {
                 /* subnormal value */
                 return t < C_TINY
-                       ? toDecimal(Q_MIN, 10 * t, -1)
-                       : toDecimal(Q_MIN, t, 0);
+                       ? toDecimal(Q_MIN, 10 * t, -1, fd)
+                       : toDecimal(Q_MIN, t, 0, fd);
             }
             return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
         }
@@ -236,7 +262,7 @@ final public class DoubleToDecimal {
         return bits > 0 ? PLUS_INF : MINUS_INF;
     }
 
-    private int toDecimal(int q, long c, int dk) {
+    private int toDecimal(int q, long c, int dk, FormattedFPDecimal fd) {
         /*
          * The skeleton corresponds to figure 7 of [1].
          * The efficient computations are those summarized in figure 9.
@@ -301,7 +327,7 @@ final public class DoubleToDecimal {
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
-                return toChars(upin ? sp10 : tp10, k);
+                return toChars(upin ? sp10 : tp10, k, fd);
             }
         }
 
@@ -316,14 +342,14 @@ final public class DoubleToDecimal {
         boolean win = (t << 2) + out <= vbr;
         if (uin != win) {
             /* Exactly one of u or w lies in Rv */
-            return toChars(uin ? s : t, k + dk);
+            return toChars(uin ? s : t, k + dk, fd);
         }
         /*
          * Both u and w lie in Rv: determine the one closest to v.
          * See section 9.3 of [1].
          */
         long cmp = vb - (s + t << 1);
-        return toChars(cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
+        return toChars(cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk, fd);
     }
 
     /*
@@ -342,7 +368,7 @@ final public class DoubleToDecimal {
     /*
      * Formats the decimal f 10^e.
      */
-    private int toChars(long f, int e) {
+    private int toChars(long f, int e, FormattedFPDecimal fd) {
         /*
          * For details not discussed here see section 10 of [1].
          *
@@ -352,6 +378,10 @@ final public class DoubleToDecimal {
         int len = flog10pow2(Long.SIZE - numberOfLeadingZeros(f));
         if (f >= pow10(len)) {
             len += 1;
+        }
+        if (fd != null) {
+            fd.set(f, e, len);
+            return NON_SPECIAL;
         }
 
         /*

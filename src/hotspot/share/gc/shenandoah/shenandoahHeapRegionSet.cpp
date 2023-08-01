@@ -77,7 +77,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::next() {
       return _heap->get_region(index);
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void ShenandoahHeapRegionSet::print_on(outputStream* out) const {

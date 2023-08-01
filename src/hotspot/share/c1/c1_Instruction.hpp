@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == NULL  ) return false;                   \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     return true;                                      \
   }                                                   \
@@ -249,7 +249,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == NULL  ) return false;                   \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     if (f2 != _v->f2) return false;                   \
     return true;                                      \
@@ -263,7 +263,7 @@ class InstructionVisitor: public StackObj {
   virtual bool is_equal(Value v) const {              \
     if (!(enabled)  ) return false;                   \
     class_name* _v = v->as_##class_name();            \
-    if (_v == NULL  ) return false;                   \
+    if (_v == nullptr) return false;                  \
     if (f1 != _v->f1) return false;                   \
     if (f2 != _v->f2) return false;                   \
     if (f3 != _v->f3) return false;                   \
@@ -282,12 +282,12 @@ class Instruction: public CompilationResourceObj {
   int          _use_count;                       // the number of instructions referring to this value (w/o prev/next); only roots can have use count = 0 or > 1
   int          _pin_state;                       // set of PinReason describing the reason for pinning
   ValueType*   _type;                            // the instruction value type
-  Instruction* _next;                            // the next instruction if any (NULL for BlockEnd instructions)
+  Instruction* _next;                            // the next instruction if any (null for BlockEnd instructions)
   Instruction* _subst;                           // the substitution instruction if any
   LIR_Opr      _operand;                         // LIR specific information
   unsigned int _flags;                           // Flag bits
 
-  ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or NULL)
+  ValueStack*  _state_before;                    // Copy of state with input operands still on stack (or null)
   ValueStack*  _exception_state;                 // Copy of state for exception handling
   XHandlers*   _exception_handlers;              // Flat list of exception handlers covering this instruction
 
@@ -299,7 +299,7 @@ class Instruction: public CompilationResourceObj {
   BlockBegin*  _block;                           // Block that contains this instruction
 
   void set_type(ValueType* type) {
-    assert(type != NULL, "type must exist");
+    assert(type != nullptr, "type must exist");
     _type = type;
   }
 
@@ -325,9 +325,9 @@ class Instruction: public CompilationResourceObj {
     void set_arg_needs_null_check(int i, bool check) {
       if (i >= 0 && i < (int)sizeof(_nonnull_state) * BitsPerByte) {
         if (check) {
-          _nonnull_state |= nth_bit(i);
+          _nonnull_state |= (int)nth_bit(i);
         } else {
-          _nonnull_state &= ~(nth_bit(i));
+          _nonnull_state &= (int)~(nth_bit(i));
         }
       }
     }
@@ -395,7 +395,7 @@ class Instruction: public CompilationResourceObj {
   }
 
   // creation
-  Instruction(ValueType* type, ValueStack* state_before = NULL, bool type_is_constant = false)
+  Instruction(ValueType* type, ValueStack* state_before = nullptr, bool type_is_constant = false)
   : _id(Compilation::current()->get_next_id()),
 #ifndef PRODUCT
   _printable_bci(-99),
@@ -403,16 +403,16 @@ class Instruction: public CompilationResourceObj {
     _use_count(0)
   , _pin_state(0)
   , _type(type)
-  , _next(NULL)
-  , _subst(NULL)
+  , _next(nullptr)
+  , _subst(nullptr)
   , _operand(LIR_OprFact::illegalOpr)
   , _flags(0)
   , _state_before(state_before)
-  , _exception_handlers(NULL)
-  , _block(NULL)
+  , _exception_handlers(nullptr)
+  , _block(nullptr)
   {
     check_state(state_before);
-    assert(type != NULL && (!type->is_constant() || type_is_constant), "type must exist");
+    assert(type != nullptr && (!type->is_constant() || type_is_constant), "type must exist");
     update_exception_state(_state_before);
   }
 
@@ -431,16 +431,16 @@ class Instruction: public CompilationResourceObj {
   BlockBegin *block() const                      { return _block; }
   Instruction* prev();                           // use carefully, expensive operation
   Instruction* next() const                      { return _next; }
-  bool has_subst() const                         { return _subst != NULL; }
-  Instruction* subst()                           { return _subst == NULL ? this : _subst->subst(); }
+  bool has_subst() const                         { return _subst != nullptr; }
+  Instruction* subst()                           { return _subst == nullptr ? this : _subst->subst(); }
   LIR_Opr operand() const                        { return _operand; }
 
   void set_needs_null_check(bool f)              { set_flag(NeedsNullCheckFlag, f); }
   bool needs_null_check() const                  { return check_flag(NeedsNullCheckFlag); }
   bool is_linked() const                         { return check_flag(IsLinkedInBlockFlag); }
-  bool can_be_linked()                           { return as_Local() == NULL && as_Phi() == NULL; }
+  bool can_be_linked()                           { return as_Local() == nullptr && as_Phi() == nullptr; }
 
-  bool is_null_obj()                             { return as_Constant() != NULL && type()->as_ObjectType()->constant_value()->is_null_object(); }
+  bool is_null_obj()                             { return as_Constant() != nullptr && type()->as_ObjectType()->constant_value()->is_null_object(); }
 
   bool has_uses() const                          { return use_count() > 0; }
   ValueStack* state_before() const               { return _state_before; }
@@ -456,8 +456,8 @@ class Instruction: public CompilationResourceObj {
 
   Instruction* set_next(Instruction* next) {
     assert(next->has_printable_bci(), "_printable_bci should have been set");
-    assert(next != NULL, "must not be NULL");
-    assert(as_BlockEnd() == NULL, "BlockEnd instructions must have no next");
+    assert(next != nullptr, "must not be null");
+    assert(as_BlockEnd() == nullptr, "BlockEnd instructions must have no next");
     assert(next->can_be_linked(), "shouldn't link these instructions into list");
 
     BlockBegin *block = this->block();
@@ -499,7 +499,7 @@ class Instruction: public CompilationResourceObj {
   }
 
   void set_subst(Instruction* subst)             {
-    assert(subst == NULL ||
+    assert(subst == nullptr ||
            type()->base() == subst->type()->base() ||
            subst->type()->base() == illegalType, "type can't change");
     _subst = subst;
@@ -514,59 +514,59 @@ class Instruction: public CompilationResourceObj {
 
   // generic
   virtual Instruction*      as_Instruction()     { return this; } // to satisfy HASHING1 macro
-  virtual Phi*              as_Phi()             { return NULL; }
-  virtual Local*            as_Local()           { return NULL; }
-  virtual Constant*         as_Constant()        { return NULL; }
-  virtual AccessField*      as_AccessField()     { return NULL; }
-  virtual LoadField*        as_LoadField()       { return NULL; }
-  virtual StoreField*       as_StoreField()      { return NULL; }
-  virtual AccessArray*      as_AccessArray()     { return NULL; }
-  virtual ArrayLength*      as_ArrayLength()     { return NULL; }
-  virtual AccessIndexed*    as_AccessIndexed()   { return NULL; }
-  virtual LoadIndexed*      as_LoadIndexed()     { return NULL; }
-  virtual StoreIndexed*     as_StoreIndexed()    { return NULL; }
-  virtual NegateOp*         as_NegateOp()        { return NULL; }
-  virtual Op2*              as_Op2()             { return NULL; }
-  virtual ArithmeticOp*     as_ArithmeticOp()    { return NULL; }
-  virtual ShiftOp*          as_ShiftOp()         { return NULL; }
-  virtual LogicOp*          as_LogicOp()         { return NULL; }
-  virtual CompareOp*        as_CompareOp()       { return NULL; }
-  virtual IfOp*             as_IfOp()            { return NULL; }
-  virtual Convert*          as_Convert()         { return NULL; }
-  virtual NullCheck*        as_NullCheck()       { return NULL; }
-  virtual OsrEntry*         as_OsrEntry()        { return NULL; }
-  virtual StateSplit*       as_StateSplit()      { return NULL; }
-  virtual Invoke*           as_Invoke()          { return NULL; }
-  virtual NewInstance*      as_NewInstance()     { return NULL; }
-  virtual NewArray*         as_NewArray()        { return NULL; }
-  virtual NewTypeArray*     as_NewTypeArray()    { return NULL; }
-  virtual NewObjectArray*   as_NewObjectArray()  { return NULL; }
-  virtual NewMultiArray*    as_NewMultiArray()   { return NULL; }
-  virtual TypeCheck*        as_TypeCheck()       { return NULL; }
-  virtual CheckCast*        as_CheckCast()       { return NULL; }
-  virtual InstanceOf*       as_InstanceOf()      { return NULL; }
-  virtual TypeCast*         as_TypeCast()        { return NULL; }
-  virtual AccessMonitor*    as_AccessMonitor()   { return NULL; }
-  virtual MonitorEnter*     as_MonitorEnter()    { return NULL; }
-  virtual MonitorExit*      as_MonitorExit()     { return NULL; }
-  virtual Intrinsic*        as_Intrinsic()       { return NULL; }
-  virtual BlockBegin*       as_BlockBegin()      { return NULL; }
-  virtual BlockEnd*         as_BlockEnd()        { return NULL; }
-  virtual Goto*             as_Goto()            { return NULL; }
-  virtual If*               as_If()              { return NULL; }
-  virtual TableSwitch*      as_TableSwitch()     { return NULL; }
-  virtual LookupSwitch*     as_LookupSwitch()    { return NULL; }
-  virtual Return*           as_Return()          { return NULL; }
-  virtual Throw*            as_Throw()           { return NULL; }
-  virtual Base*             as_Base()            { return NULL; }
-  virtual RoundFP*          as_RoundFP()         { return NULL; }
-  virtual ExceptionObject*  as_ExceptionObject() { return NULL; }
-  virtual UnsafeOp*         as_UnsafeOp()        { return NULL; }
-  virtual ProfileInvoke*    as_ProfileInvoke()   { return NULL; }
-  virtual RangeCheckPredicate* as_RangeCheckPredicate() { return NULL; }
+  virtual Phi*              as_Phi()             { return nullptr; }
+  virtual Local*            as_Local()           { return nullptr; }
+  virtual Constant*         as_Constant()        { return nullptr; }
+  virtual AccessField*      as_AccessField()     { return nullptr; }
+  virtual LoadField*        as_LoadField()       { return nullptr; }
+  virtual StoreField*       as_StoreField()      { return nullptr; }
+  virtual AccessArray*      as_AccessArray()     { return nullptr; }
+  virtual ArrayLength*      as_ArrayLength()     { return nullptr; }
+  virtual AccessIndexed*    as_AccessIndexed()   { return nullptr; }
+  virtual LoadIndexed*      as_LoadIndexed()     { return nullptr; }
+  virtual StoreIndexed*     as_StoreIndexed()    { return nullptr; }
+  virtual NegateOp*         as_NegateOp()        { return nullptr; }
+  virtual Op2*              as_Op2()             { return nullptr; }
+  virtual ArithmeticOp*     as_ArithmeticOp()    { return nullptr; }
+  virtual ShiftOp*          as_ShiftOp()         { return nullptr; }
+  virtual LogicOp*          as_LogicOp()         { return nullptr; }
+  virtual CompareOp*        as_CompareOp()       { return nullptr; }
+  virtual IfOp*             as_IfOp()            { return nullptr; }
+  virtual Convert*          as_Convert()         { return nullptr; }
+  virtual NullCheck*        as_NullCheck()       { return nullptr; }
+  virtual OsrEntry*         as_OsrEntry()        { return nullptr; }
+  virtual StateSplit*       as_StateSplit()      { return nullptr; }
+  virtual Invoke*           as_Invoke()          { return nullptr; }
+  virtual NewInstance*      as_NewInstance()     { return nullptr; }
+  virtual NewArray*         as_NewArray()        { return nullptr; }
+  virtual NewTypeArray*     as_NewTypeArray()    { return nullptr; }
+  virtual NewObjectArray*   as_NewObjectArray()  { return nullptr; }
+  virtual NewMultiArray*    as_NewMultiArray()   { return nullptr; }
+  virtual TypeCheck*        as_TypeCheck()       { return nullptr; }
+  virtual CheckCast*        as_CheckCast()       { return nullptr; }
+  virtual InstanceOf*       as_InstanceOf()      { return nullptr; }
+  virtual TypeCast*         as_TypeCast()        { return nullptr; }
+  virtual AccessMonitor*    as_AccessMonitor()   { return nullptr; }
+  virtual MonitorEnter*     as_MonitorEnter()    { return nullptr; }
+  virtual MonitorExit*      as_MonitorExit()     { return nullptr; }
+  virtual Intrinsic*        as_Intrinsic()       { return nullptr; }
+  virtual BlockBegin*       as_BlockBegin()      { return nullptr; }
+  virtual BlockEnd*         as_BlockEnd()        { return nullptr; }
+  virtual Goto*             as_Goto()            { return nullptr; }
+  virtual If*               as_If()              { return nullptr; }
+  virtual TableSwitch*      as_TableSwitch()     { return nullptr; }
+  virtual LookupSwitch*     as_LookupSwitch()    { return nullptr; }
+  virtual Return*           as_Return()          { return nullptr; }
+  virtual Throw*            as_Throw()           { return nullptr; }
+  virtual Base*             as_Base()            { return nullptr; }
+  virtual RoundFP*          as_RoundFP()         { return nullptr; }
+  virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
+  virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
+  virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
+  virtual RangeCheckPredicate* as_RangeCheckPredicate() { return nullptr; }
 
 #ifdef ASSERT
-  virtual Assert*           as_Assert()          { return NULL; }
+  virtual Assert*           as_Assert()          { return nullptr; }
 #endif
 
   virtual void visit(InstructionVisitor* v)      = 0;
@@ -579,7 +579,7 @@ class Instruction: public CompilationResourceObj {
           void       values_do(ValueVisitor* f)   { input_values_do(f); state_values_do(f); other_values_do(f); }
 
   virtual ciType* exact_type() const;
-  virtual ciType* declared_type() const          { return NULL; }
+  virtual ciType* declared_type() const          { return nullptr; }
 
   // hashing
   virtual const char* name() const               = 0;
@@ -615,7 +615,7 @@ class Instruction: public CompilationResourceObj {
 
 #ifdef ASSERT
 class AssertValues: public ValueVisitor {
-  void visit(Value* x)             { assert((*x) != NULL, "value must exist"); }
+  void visit(Value* x)             { assert((*x) != nullptr, "value must exist"); }
 };
   #define ASSERT_VALUES                          { AssertValues assert_value; values_do(&assert_value); }
 #else
@@ -714,7 +714,7 @@ LEAF(Constant, Instruction)
  public:
   // creation
   Constant(ValueType* type):
-      Instruction(type, NULL, /*type_is_constant*/ true)
+      Instruction(type, nullptr, /*type_is_constant*/ true)
   {
     assert(type->is_constant(), "must be a constant");
   }
@@ -722,14 +722,14 @@ LEAF(Constant, Instruction)
   Constant(ValueType* type, ValueStack* state_before, bool kills_memory = false):
     Instruction(type, state_before, /*type_is_constant*/ true)
   {
-    assert(state_before != NULL, "only used for constants which need patching");
+    assert(state_before != nullptr, "only used for constants which need patching");
     assert(type->is_constant(), "must be a constant");
     set_flag(KillsMemoryFlag, kills_memory);
     pin(); // since it's patching it needs to be pinned
   }
 
   // generic
-  virtual bool can_trap() const                  { return state_before() != NULL; }
+  virtual bool can_trap() const                  { return state_before() != nullptr; }
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
 
   virtual intx hash() const;
@@ -746,14 +746,14 @@ LEAF(Constant, Instruction)
                       BlockBegin* true_sux, BlockBegin* false_sux) const {
     switch (compare(cond, right)) {
     case not_comparable:
-      return NULL;
+      return nullptr;
     case cond_false:
       return false_sux;
     case cond_true:
       return true_sux;
     default:
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 };
@@ -774,7 +774,7 @@ BASE(AccessField, Instruction)
   , _obj(obj)
   , _offset(offset)
   , _field(field)
-  , _explicit_null_check(NULL)
+  , _explicit_null_check(nullptr)
   {
     set_needs_null_check(!is_static);
     set_flag(IsStaticFlag, is_static);
@@ -884,7 +884,7 @@ LEAF(ArrayLength, AccessArray)
   // creation
   ArrayLength(Value array, ValueStack* state_before)
   : AccessArray(intType, array, state_before)
-  , _explicit_null_check(NULL) {}
+  , _explicit_null_check(nullptr) {}
 
   // accessors
   NullCheck* explicit_null_check() const         { return _explicit_null_check; }
@@ -924,12 +924,12 @@ BASE(AccessIndexed, AccessArray)
   BasicType elt_type() const                     { return _elt_type; }
   bool mismatched() const                        { return _mismatched; }
 
-  void clear_length()                            { _length = NULL; }
+  void clear_length()                            { _length = nullptr; }
   // perform elimination of range checks involving constants
   bool compute_needs_range_check();
 
   // generic
-  virtual void input_values_do(ValueVisitor* f)   { AccessArray::input_values_do(f); f->visit(&_index); if (_length != NULL) f->visit(&_length); }
+  virtual void input_values_do(ValueVisitor* f)   { AccessArray::input_values_do(f); f->visit(&_index); if (_length != nullptr) f->visit(&_length); }
 };
 
 
@@ -941,7 +941,7 @@ LEAF(LoadIndexed, AccessIndexed)
   // creation
   LoadIndexed(Value array, Value index, Value length, BasicType elt_type, ValueStack* state_before, bool mismatched = false)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _explicit_null_check(NULL) {}
+  , _explicit_null_check(nullptr) {}
 
   // accessors
   NullCheck* explicit_null_check() const         { return _explicit_null_check; }
@@ -971,7 +971,7 @@ LEAF(StoreIndexed, AccessIndexed)
   StoreIndexed(Value array, Value index, Value length, BasicType elt_type, Value value, ValueStack* state_before,
                bool check_boolean, bool mismatched = false)
   : AccessIndexed(array, index, length, elt_type, state_before, mismatched)
-  , _value(value), _profiled_method(NULL), _profiled_bci(0), _check_boolean(check_boolean)
+  , _value(value), _profiled_method(nullptr), _profiled_bci(0), _check_boolean(check_boolean)
   {
     set_flag(NeedsWriteBarrierFlag, (as_ValueType(elt_type)->is_object()));
     set_flag(NeedsStoreCheckFlag, (as_ValueType(elt_type)->is_object()));
@@ -1022,7 +1022,7 @@ BASE(Op2, Instruction)
 
  public:
   // creation
-  Op2(ValueType* type, Bytecodes::Code op, Value x, Value y, ValueStack* state_before = NULL)
+  Op2(ValueType* type, Bytecodes::Code op, Value x, Value y, ValueStack* state_before = nullptr)
   : Instruction(type, state_before)
   , _op(op)
   , _x(x)
@@ -1207,9 +1207,9 @@ BASE(StateSplit, Instruction)
 
  public:
   // creation
-  StateSplit(ValueType* type, ValueStack* state_before = NULL)
+  StateSplit(ValueType* type, ValueStack* state_before = nullptr)
   : Instruction(type, state_before)
-  , _state(NULL)
+  , _state(nullptr)
   {
     pin(PinStateSplitConstructor);
   }
@@ -1219,7 +1219,7 @@ BASE(StateSplit, Instruction)
   IRScope* scope() const;                        // the state's scope
 
   // manipulation
-  void set_state(ValueStack* state)              { assert(_state == NULL, "overwriting existing state"); check_state(state); _state = state; }
+  void set_state(ValueStack* state)              { assert(_state == nullptr, "overwriting existing state"); check_state(state); _state = state; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { /* no values */ }
@@ -1243,7 +1243,7 @@ LEAF(Invoke, StateSplit)
   // accessors
   Bytecodes::Code code() const                   { return _code; }
   Value receiver() const                         { return _recv; }
-  bool has_receiver() const                      { return receiver() != NULL; }
+  bool has_receiver() const                      { return receiver() != nullptr; }
   int number_of_arguments() const                { return _args->length(); }
   Value argument_at(int i) const                 { return _args->at(i); }
   BasicTypeList* signature() const               { return _signature; }
@@ -1307,7 +1307,7 @@ BASE(NewArray, StateSplit)
   : StateSplit(objectType, state_before)
   , _length(length)
   {
-    // Do not ASSERT_VALUES since length is NULL for NewMultiArray
+    // Do not ASSERT_VALUES since length is null for NewMultiArray
   }
 
   // accessors
@@ -1315,7 +1315,7 @@ BASE(NewArray, StateSplit)
 
   virtual bool needs_exception_state() const     { return false; }
 
-  ciType* exact_type() const                     { return NULL; }
+  ciType* exact_type() const                     { return nullptr; }
   ciType* declared_type() const;
 
   // generic
@@ -1362,7 +1362,7 @@ LEAF(NewMultiArray, NewArray)
 
  public:
   // creation
-  NewMultiArray(ciKlass* klass, Values* dims, ValueStack* state_before) : NewArray(NULL, state_before), _klass(klass), _dims(dims) {
+  NewMultiArray(ciKlass* klass, Values* dims, ValueStack* state_before) : NewArray(nullptr, state_before), _klass(klass), _dims(dims) {
     ASSERT_VALUES
   }
 
@@ -1397,7 +1397,7 @@ BASE(TypeCheck, StateSplit)
   // creation
   TypeCheck(ciKlass* klass, Value obj, ValueType* type, ValueStack* state_before)
   : StateSplit(type, state_before), _klass(klass), _obj(obj),
-    _profiled_method(NULL), _profiled_bci(0) {
+    _profiled_method(nullptr), _profiled_bci(0) {
     ASSERT_VALUES
     set_direct_compare(false);
   }
@@ -1405,7 +1405,7 @@ BASE(TypeCheck, StateSplit)
   // accessors
   ciKlass* klass() const                         { return _klass; }
   Value obj() const                              { return _obj; }
-  bool is_loaded() const                         { return klass() != NULL; }
+  bool is_loaded() const                         { return klass() != nullptr; }
   bool direct_compare() const                    { return check_flag(DirectCompareFlag); }
 
   // manipulation
@@ -1468,7 +1468,7 @@ BASE(AccessMonitor, StateSplit)
 
  public:
   // creation
-  AccessMonitor(Value obj, int monitor_no, ValueStack* state_before = NULL)
+  AccessMonitor(Value obj, int monitor_no, ValueStack* state_before = nullptr)
   : StateSplit(illegalType, state_before)
   , _obj(obj)
   , _monitor_no(monitor_no)
@@ -1504,7 +1504,7 @@ LEAF(MonitorExit, AccessMonitor)
  public:
   // creation
   MonitorExit(Value obj, int monitor_no)
-  : AccessMonitor(obj, monitor_no, NULL)
+  : AccessMonitor(obj, monitor_no, nullptr)
   {
     ASSERT_VALUES
   }
@@ -1536,9 +1536,9 @@ LEAF(Intrinsic, StateSplit)
   : StateSplit(type, state_before)
   , _id(id)
   , _args(args)
-  , _recv(NULL)
+  , _recv(nullptr)
   {
-    assert(args != NULL, "args must exist");
+    assert(args != nullptr, "args must exist");
     ASSERT_VALUES
     set_flag(PreservesStateFlag, preserves_state);
     set_flag(CanTrapFlag,        cantrap);
@@ -1558,7 +1558,7 @@ LEAF(Intrinsic, StateSplit)
   int number_of_arguments() const                { return _args->length(); }
   Value argument_at(int i) const                 { return _args->at(i); }
 
-  bool has_receiver() const                      { return (_recv != NULL); }
+  bool has_receiver() const                      { return (_recv != nullptr); }
   Value receiver() const                         { assert(has_receiver(), "must have receiver"); return _recv; }
   bool preserves_state() const                   { return check_flag(PreservesStateFlag); }
 
@@ -1652,18 +1652,18 @@ LEAF(BlockBegin, StateSplit)
   , _stores_to_locals()
   , _predecessors(2)
   , _dominates(2)
-  , _dominator(NULL)
-  , _end(NULL)
+  , _dominator(nullptr)
+  , _end(nullptr)
   , _exception_handlers(1)
-  , _exception_states(NULL)
+  , _exception_states(nullptr)
   , _exception_handler_pco(-1)
-  , _lir(NULL)
+  , _lir(nullptr)
   , _live_in()
   , _live_out()
   , _live_gen()
   , _live_kill()
   , _fpu_register_usage()
-  , _fpu_stack_state(NULL)
+  , _fpu_stack_state(nullptr)
   , _first_lir_instruction_id(-1)
   , _last_lir_instruction_id(-1)
   {
@@ -1739,7 +1739,7 @@ LEAF(BlockBegin, StateSplit)
   BlockBegin* exception_handler_at(int i) const  { return _exception_handlers.at(i); }
 
   // states of the instructions that have an edge to this exception handler
-  int number_of_exception_states()               { assert(is_set(exception_entry_flag), "only for xhandlers"); return _exception_states == NULL ? 0 : _exception_states->length(); }
+  int number_of_exception_states()               { assert(is_set(exception_entry_flag), "only for xhandlers"); return _exception_states == nullptr ? 0 : _exception_states->length(); }
   ValueStack* exception_state_at(int idx) const  { assert(is_set(exception_entry_flag), "only for xhandlers"); return _exception_states->at(idx); }
   int add_exception_state(ValueStack* state);
 
@@ -1801,8 +1801,8 @@ BASE(BlockEnd, StateSplit)
 
   void set_sux(BlockList* sux) {
 #ifdef ASSERT
-    assert(sux != NULL, "sux must exist");
-    for (int i = sux->length() - 1; i >= 0; i--) assert(sux->at(i) != NULL, "sux must exist");
+    assert(sux != nullptr, "sux must exist");
+    for (int i = sux->length() - 1; i >= 0; i--) assert(sux->at(i) != nullptr, "sux must exist");
 #endif
     _sux = sux;
   }
@@ -1811,7 +1811,7 @@ BASE(BlockEnd, StateSplit)
   // creation
   BlockEnd(ValueType* type, ValueStack* state_before, bool is_safepoint)
   : StateSplit(type, state_before)
-  , _sux(NULL)
+  , _sux(nullptr)
   {
     set_flag(IsSafepointFlag, is_safepoint);
   }
@@ -1826,9 +1826,9 @@ BASE(BlockEnd, StateSplit)
   inline int find_sux(BlockBegin* sux) {return _sux->find(sux);}
 
   // successors
-  int number_of_sux() const                      { return _sux != NULL ? _sux->length() : 0; }
+  int number_of_sux() const                      { return _sux != nullptr ? _sux->length() : 0; }
   BlockBegin* sux_at(int i) const                { return _sux->at(i); }
-  bool is_sux(BlockBegin* sux) const             { return _sux == NULL ? false : _sux->contains(sux); }
+  bool is_sux(BlockBegin* sux) const             { return _sux == nullptr ? false : _sux->contains(sux); }
   BlockBegin* default_sux() const                { return sux_at(number_of_sux() - 1); }
   void substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux);
 };
@@ -1848,7 +1848,7 @@ LEAF(Goto, BlockEnd)
   // creation
   Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false)
     : BlockEnd(illegalType, state_before, is_safepoint)
-    , _profiled_method(NULL)
+    , _profiled_method(nullptr)
     , _profiled_bci(0)
     , _direction(none) {
     BlockList* s = new BlockList(1);
@@ -1856,8 +1856,8 @@ LEAF(Goto, BlockEnd)
     set_sux(s);
   }
 
-  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint)
-                                           , _profiled_method(NULL)
+  Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, nullptr, is_safepoint)
+                                           , _profiled_method(nullptr)
                                            , _profiled_bci(0)
                                            , _direction(none) {
     BlockList* s = new BlockList(1);
@@ -1928,7 +1928,7 @@ LEAF(RangeCheckPredicate, StateSplit)
   RangeCheckPredicate(ValueStack* state) : StateSplit(illegalType)
   {
     this->set_state(state);
-    _x = _y = NULL;
+    _x = _y = nullptr;
     check_state();
   }
 
@@ -1938,7 +1938,7 @@ LEAF(RangeCheckPredicate, StateSplit)
   bool unordered_is_true() const                 { return check_flag(UnorderedIsTrueFlag); }
   Value y() const                                { return _y; }
 
-  void always_fail()                             { _x = _y = NULL; }
+  void always_fail()                             { _x = _y = nullptr; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f)  { StateSplit::input_values_do(f); f->visit(&_x); f->visit(&_y); }
@@ -1962,7 +1962,7 @@ LEAF(If, BlockEnd)
   , _x(x)
   , _cond(cond)
   , _y(y)
-  , _profiled_method(NULL)
+  , _profiled_method(nullptr)
   , _profiled_bci(0)
   , _swapped(false)
   {
@@ -2053,7 +2053,7 @@ LEAF(LookupSwitch, Switch)
   LookupSwitch(Value tag, BlockList* sux, intArray* keys, ValueStack* state_before, bool is_safepoint)
   : Switch(tag, sux, state_before, is_safepoint)
   , _keys(keys) {
-    assert(keys != NULL, "keys must exist");
+    assert(keys != nullptr, "keys must exist");
     assert(keys->length() == length(), "sux & keys have incompatible lengths");
   }
 
@@ -2069,12 +2069,12 @@ LEAF(Return, BlockEnd)
  public:
   // creation
   Return(Value result) :
-    BlockEnd(result == NULL ? voidType : result->type()->base(), NULL, true),
+    BlockEnd(result == nullptr ? voidType : result->type()->base(), nullptr, true),
     _result(result) {}
 
   // accessors
   Value result() const                           { return _result; }
-  bool has_result() const                        { return result() != NULL; }
+  bool has_result() const                        { return result() != nullptr; }
 
   // generic
   virtual void input_values_do(ValueVisitor* f) {
@@ -2106,18 +2106,18 @@ LEAF(Throw, BlockEnd)
 LEAF(Base, BlockEnd)
  public:
   // creation
-  Base(BlockBegin* std_entry, BlockBegin* osr_entry) : BlockEnd(illegalType, NULL, false) {
+  Base(BlockBegin* std_entry, BlockBegin* osr_entry) : BlockEnd(illegalType, nullptr, false) {
     assert(std_entry->is_set(BlockBegin::std_entry_flag), "std entry must be flagged");
-    assert(osr_entry == NULL || osr_entry->is_set(BlockBegin::osr_entry_flag), "osr entry must be flagged");
+    assert(osr_entry == nullptr || osr_entry->is_set(BlockBegin::osr_entry_flag), "osr entry must be flagged");
     BlockList* s = new BlockList(2);
-    if (osr_entry != NULL) s->append(osr_entry);
+    if (osr_entry != nullptr) s->append(osr_entry);
     s->append(std_entry); // must be default sux!
     set_sux(s);
   }
 
   // accessors
   BlockBegin* std_entry() const                  { return default_sux(); }
-  BlockBegin* osr_entry() const                  { return number_of_sux() < 2 ? NULL : sux_at(0); }
+  BlockBegin* osr_entry() const                  { return number_of_sux() < 2 ? nullptr : sux_at(0); }
 };
 
 
@@ -2296,7 +2296,7 @@ LEAF(ProfileCall, Instruction)
   ciMethod* callee()             const { return _callee; }
   Value recv()                   const { return _recv; }
   ciKlass* known_holder()        const { return _known_holder; }
-  int nb_profiled_args()         const { return _obj_args == NULL ? 0 : _obj_args->length(); }
+  int nb_profiled_args()         const { return _obj_args == nullptr ? 0 : _obj_args->length(); }
   Value profiled_arg_at(int i)   const { return _obj_args->at(i); }
   bool arg_needs_null_check(int i) const {
     return _nonnull_state.arg_needs_null_check(i);
@@ -2308,7 +2308,7 @@ LEAF(ProfileCall, Instruction)
   }
 
   virtual void input_values_do(ValueVisitor* f)   {
-    if (_recv != NULL) {
+    if (_recv != nullptr) {
       f->visit(&_recv);
     }
     for (int i = 0; i < nb_profiled_args(); i++) {
@@ -2343,7 +2343,7 @@ LEAF(ProfileReturnType, Instruction)
   Value ret()                    const { return _ret; }
 
   virtual void input_values_do(ValueVisitor* f)   {
-    if (_ret != NULL) {
+    if (_ret != nullptr) {
       f->visit(&_ret);
     }
   }
@@ -2436,8 +2436,8 @@ class BlockPair: public CompilationResourceObj {
 
 typedef GrowableArray<BlockPair*> BlockPairList;
 
-inline int         BlockBegin::number_of_sux() const            { assert(_end != NULL, "need end"); return _end->number_of_sux(); }
-inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != NULL , "need end"); return _end->sux_at(i); }
+inline int         BlockBegin::number_of_sux() const            { assert(_end != nullptr, "need end"); return _end->number_of_sux(); }
+inline BlockBegin* BlockBegin::sux_at(int i) const              { assert(_end != nullptr , "need end"); return _end->sux_at(i); }
 
 #undef ASSERT_VALUES
 

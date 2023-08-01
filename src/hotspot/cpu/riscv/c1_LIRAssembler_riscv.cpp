@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ Address LIR_Assembler::stack_slot_address(int index, uint size, int adjust) {
 void LIR_Assembler::osr_entry() {
   offsets()->set_value(CodeOffsets::OSR_Entry, code_offset());
   BlockBegin* osr_entry = compilation()->hir()->osr_entry();
-  guarantee(osr_entry != NULL, "NULL osr_entry!");
+  guarantee(osr_entry != nullptr, "null osr_entry!");
   ValueStack* entry_state = osr_entry->state();
   int number_of_locks = entry_state->locks_size();
 
@@ -251,7 +251,7 @@ void LIR_Assembler::osr_entry() {
         Label L;
         __ ld(t0, Address(OSR_buf, slot_offset + 1 * BytesPerWord));
         __ bnez(t0, L);
-        __ stop("locked object is NULL");
+        __ stop("locked object is null");
         __ bind(L);
       }
 #endif // ASSERT
@@ -288,7 +288,7 @@ int LIR_Assembler::check_icache() {
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
-  if (o == NULL) {
+  if (o == nullptr) {
     __ mv(reg, zr);
   } else {
     __ movoop(reg, o);
@@ -309,7 +309,7 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 int LIR_Assembler::emit_exception_handler() {
   // generate code for exception handler
   address handler_base = __ start_a_stub(exception_handler_size());
-  if (handler_base == NULL) {
+  if (handler_base == nullptr) {
     // not enough space left for the handler
     bailout("exception handler overflow");
     return -1;
@@ -356,11 +356,11 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   // Perform needed unlocking
-  MonitorExitStub* stub = NULL;
+  MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
     stub = new MonitorExitStub(FrameMap::r10_opr, true, 0);
-    if (UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
       __ j(*stub->entry());
     } else {
       __ unlock_object(x15, x14, x10, *stub->entry());
@@ -384,7 +384,7 @@ int LIR_Assembler::emit_unwind_handler() {
   __ far_jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
 
   // Emit the slow path assembly
-  if (stub != NULL) {
+  if (stub != nullptr) {
     stub->emit_code(this);
   }
 
@@ -394,7 +394,7 @@ int LIR_Assembler::emit_unwind_handler() {
 int LIR_Assembler::emit_deopt_handler() {
   // generate code for exception handler
   address handler_base = __ start_a_stub(deopt_handler_size());
-  if (handler_base == NULL) {
+  if (handler_base == nullptr) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
     return -1;
@@ -427,7 +427,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
 }
 
 int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
-  guarantee(info != NULL, "Shouldn't be NULL");
+  guarantee(info != nullptr, "Shouldn't be null");
   __ get_polling_page(t0, relocInfo::poll_type);
   add_debug_info_for_branch(info);  // This isn't just debug info:
                                     // it's the oop map
@@ -445,12 +445,12 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   assert(src->is_constant(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
   LIR_Const* c = src->as_constant_ptr();
-  address const_addr = NULL;
+  address const_addr = nullptr;
 
   switch (c->type()) {
     case T_INT:
       assert(patch_code == lir_patch_none, "no patching handled here");
-      __ mvw(dest->as_register(), c->as_jint());
+      __ mv(dest->as_register(), c->as_jint());
       break;
 
     case T_ADDRESS:
@@ -482,13 +482,13 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_FLOAT:
       const_addr = float_constant(c->as_jfloat());
-      assert(const_addr != NULL, "must create float constant in the constant table");
+      assert(const_addr != nullptr, "must create float constant in the constant table");
       __ flw(dest->as_float_reg(), InternalAddress(const_addr));
       break;
 
     case T_DOUBLE:
       const_addr = double_constant(c->as_jdouble());
-      assert(const_addr != NULL, "must create double constant in the constant table");
+      assert(const_addr != nullptr, "must create double constant in the constant table");
       __ fld(dest->as_double_reg(), InternalAddress(const_addr));
       break;
 
@@ -503,22 +503,22 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
   LIR_Const* c = src->as_constant_ptr();
   switch (c->type()) {
     case T_OBJECT:
-      if (c->as_jobject() == NULL) {
+      if (c->as_jobject() == nullptr) {
         __ sd(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
-        const2reg(src, FrameMap::t1_opr, lir_patch_none, NULL);
+        const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
         reg2stack(FrameMap::t1_opr, dest, c->type(), false);
       }
       break;
     case T_ADDRESS:   // fall through
-      const2reg(src, FrameMap::t1_opr, lir_patch_none, NULL);
+      const2reg(src, FrameMap::t1_opr, lir_patch_none, nullptr);
       reg2stack(FrameMap::t1_opr, dest, c->type(), false);
     case T_INT:       // fall through
     case T_FLOAT:
       if (c->as_jint_bits() == 0) {
         __ sw(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
-        __ mvw(t1, c->as_jint_bits());
+        __ mv(t1, c->as_jint_bits());
         __ sw(t1, frame_map()->address_for_slot(dest->single_stack_ix()));
       }
       break;
@@ -582,7 +582,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       ShouldNotReachHere();
       insn = &MacroAssembler::sd;  // unreachable
   }
-  if (info != NULL) {
+  if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
   (_masm->*insn)(zr, as_Address(to_addr), t0);
@@ -730,7 +730,7 @@ void LIR_Assembler::reg2mem(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       ShouldNotReachHere();
   }
 
-  if (info != NULL) {
+  if (info != nullptr) {
     add_debug_info_for_null_check(null_check_here, info);
   }
 }
@@ -800,7 +800,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     return;
   }
 
-  if (info != NULL) {
+  if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
 
@@ -858,7 +858,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!UseZGC) {
+    if (!(UseZGC && !ZGenerational)) {
       // Load barrier has not yet been applied, so ZGC can't verify the oop here
       __ verify_oop(dest->as_register());
     }
@@ -901,12 +901,12 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
               /* is_unordered */ (condition == lir_cond_greaterEqual || condition == lir_cond_greater) ? false : true);
 
   Label done;
-  move_op(opr2, result, type, lir_patch_none, NULL,
+  move_op(opr2, result, type, lir_patch_none, nullptr,
           false,   // pop_fpu_stack
           false);  // wide
   __ j(done);
   __ bind(label);
-  move_op(opr1, result, type, lir_patch_none, NULL,
+  move_op(opr1, result, type, lir_patch_none, nullptr,
           false,   // pop_fpu_stack
           false);  // wide
   __ bind(done);
@@ -915,7 +915,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
   LIR_Condition condition = op->cond();
   if (condition == lir_cond_always) {
-    if (op->info() != NULL) {
+    if (op->info() != nullptr) {
       add_debug_info_for_branch(op->info());
     }
   } else {
@@ -976,14 +976,13 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_i2c:
       __ zero_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2l:
-      __ addw(dest->as_register_lo(), src->as_register(), zr); break;
+      __ sign_extend(dest->as_register_lo(), src->as_register(), 32); break;
     case Bytecodes::_i2s:
       __ sign_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2b:
       __ sign_extend(dest->as_register(), src->as_register(), 8); break;
     case Bytecodes::_l2i:
-      _masm->block_comment("FIXME: This coulde be no-op");
-      __ addw(dest->as_register(), src->as_register_lo(), zr); break;
+      __ sign_extend(dest->as_register(), src->as_register_lo(), 32); break;
     case Bytecodes::_d2l:
       __ fcvt_l_d_safe(dest->as_register_lo(), src->as_double_reg()); break;
     case Bytecodes::_f2i:
@@ -1001,7 +1000,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     __ lbu(t0, Address(op->klass()->as_register(),
                        InstanceKlass::init_state_offset()));
-    __ mvw(t1, InstanceKlass::fully_initialized);
+    __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
   }
@@ -1078,12 +1077,12 @@ void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfil
 
 void LIR_Assembler::data_check(LIR_OpTypeCheck *op, ciMethodData **md, ciProfileData **data) {
   ciMethod* method = op->profiled_method();
-  assert(method != NULL, "Should have method");
+  assert(method != nullptr, "Should have method");
   int bci = op->profiled_bci();
   *md = method->method_data_or_null();
-  guarantee(*md != NULL, "Sanity");
+  guarantee(*md != nullptr, "Sanity");
   *data = ((*md)->bci_to_data(bci));
-  assert(*data != NULL, "need data for type check");
+  assert(*data != nullptr, "need data for type check");
   assert((*data)->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
 }
 
@@ -1118,7 +1117,7 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
     }
   } else {
     // perform the fast part of the checking logic
-    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
+    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtytpe_slow_path(...)
     __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
     __ sd(klass_RInfo, Address(sp, wordSize));  // sub klass
@@ -1165,8 +1164,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Register Rtmp1 = noreg;
 
   // check if it needs to be profiled
-  ciMethodData* md = NULL;
-  ciProfileData* data = NULL;
+  ciMethodData* md = nullptr;
+  ciProfileData* data = nullptr;
 
   const bool should_profile = op->should_profile();
   if (should_profile) {
@@ -1264,10 +1263,13 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     if (UseCompressedOops) {
       Register tmp1 = op->tmp1()->as_register();
       assert(op->tmp1()->is_valid(), "must be");
+      Register tmp2 = op->tmp2()->as_register();
+      assert(op->tmp2()->is_valid(), "must be");
+
       __ encode_heap_oop(tmp1, cmpval);
       cmpval = tmp1;
-      __ encode_heap_oop(t1, newval);
-      newval = t1;
+      __ encode_heap_oop(tmp2, newval);
+      newval = tmp2;
       caswu(addr, newval, cmpval);
     } else {
       casl(addr, newval, cmpval);
@@ -1276,6 +1278,11 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     casw(addr, newval, cmpval);
   } else {
     casl(addr, newval, cmpval);
+  }
+
+  if (op->result_opr()->is_valid()) {
+    assert(op->result_opr()->is_register(), "need a register");
+    __ mv(as_reg(op->result_opr()), t0); // cas result in t0, and 0 for success
   }
 }
 
@@ -1294,9 +1301,9 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register();
     if (right->is_constant()) {
       int right_const = right->as_jint();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
-        __ addw(Rdst, Rdst, zr);
+        __ sign_extend(Rdst, Rdst, 32);
      } else {
         __ mv(t0, right_const);
         logic_op_reg32(Rdst, Rleft, t0, code);
@@ -1309,7 +1316,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
     Register Rdst = dst->as_register_lo();
     if (right->is_constant()) {
       long right_const = right->as_jlong();
-      if (Assembler::operand_valid_for_add_immediate(right_const)) {
+      if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
       } else {
         __ mv(t0, right_const);
@@ -1354,7 +1361,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   address call = __ trampoline_call(Address(op->addr(), rtype));
-  if (call == NULL) {
+  if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;
   }
@@ -1364,7 +1371,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
-  if (call == NULL) {
+  if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;
   }
@@ -1376,7 +1383,7 @@ void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
   MacroAssembler::assert_alignment(call_pc);
   address stub = __ start_a_stub(call_stub_size());
-  if (stub == NULL) {
+  if (stub == nullptr) {
     bailout("static call stub overflow");
     return;
   }
@@ -1499,8 +1506,8 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (UseHeavyMonitors) {
-    if (op->info() != NULL) {
+  if (LockingMode == LM_MONITOR) {
+    if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);
     }
@@ -1509,7 +1516,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
-    if (op->info() != NULL) {
+    if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
@@ -1526,7 +1533,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   Register result = op->result_opr()->as_pointer_register();
 
   CodeEmitInfo* info = op->info();
-  if (info != NULL) {
+  if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
 
@@ -1544,9 +1551,9 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
-  guarantee(md != NULL, "Sanity");
+  guarantee(md != nullptr, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
-  assert(data != NULL && data->is_CounterData(), "need CounterData for calls");
+  assert(data != nullptr && data->is_CounterData(), "need CounterData for calls");
   assert(op->mdo()->is_single_cpu(),  "mdo must be allocated");
   Register mdo  = op->mdo()->as_register();
   __ mov_metadata(mdo, md->constant_encoding());
@@ -1559,7 +1566,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     assert_different_registers(mdo, recv);
     assert(data->is_VirtualCallData(), "need VirtualCallData for virtual calls");
     ciKlass* known_klass = op->known_holder();
-    if (C1OptimizeVirtualCallProfiling && known_klass != NULL) {
+    if (C1OptimizeVirtualCallProfiling && known_klass != nullptr) {
       // We know the type that will be seen at this call site; we can
       // statically update the MethodData* rather than needing to do
       // dynamic tests on the receiver type
@@ -1582,7 +1589,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       // VirtualCallData rather than just the first time
       for (i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
-        if (receiver == NULL) {
+        if (receiver == nullptr) {
           Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
           __ mov_metadata(t1, known_klass->constant_encoding());
           __ sd(t1, recv_addr);
@@ -1618,8 +1625,8 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) { Unimplemented(); }
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
                                    Register tmp, Label &next, Label &none,
                                    Address mdo_addr) {
-  if (exact_klass == NULL || TypeEntries::is_type_none(current_klass)) {
-    if (exact_klass != NULL) {
+  if (exact_klass == nullptr || TypeEntries::is_type_none(current_klass)) {
+    if (exact_klass != nullptr) {
       __ mov_metadata(tmp, exact_klass->constant_encoding());
     } else {
       __ load_klass(tmp, tmp);
@@ -1633,7 +1640,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ beqz(t0, next);
 
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     if (TypeEntries::is_type_none(current_klass)) {
@@ -1650,12 +1657,12 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
       __ beqz(t0, next);
     }
   } else {
-    assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+    assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
            ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
   }
 
@@ -1676,7 +1683,7 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
 void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_klass, Register tmp,
                                       Address mdo_addr, Label &next) {
   // There's a single possible klass at this profile point
-  assert(exact_klass != NULL, "should be");
+  assert(exact_klass != nullptr, "should be");
   if (TypeEntries::is_type_none(current_klass)) {
     __ mov_metadata(tmp, exact_klass->constant_encoding());
     __ ld(t1, mdo_addr);
@@ -1705,12 +1712,12 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
   } else {
-    assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
+    assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
            ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
 
     __ ld(tmp, mdo_addr);
     // already unknown. Nothing to do anymore.
-    __ andi(t0, tmp, TypeEntries::type_unknown);
+    __ test_bit(t0, tmp, exact_log2(TypeEntries::type_unknown));
     __ bnez(t0, next);
 
     __ ori(tmp, tmp, TypeEntries::type_unknown);
@@ -1744,7 +1751,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   Label update, next, none;
 
   bool do_null = !not_null;
-  bool exact_klass_set = exact_klass != NULL && ciTypeEntries::valid_ciklass(current_klass) == exact_klass;
+  bool exact_klass_set = exact_klass != nullptr && ciTypeEntries::valid_ciklass(current_klass) == exact_klass;
   bool do_update = !TypeEntries::is_type_unknown(current_klass) && !exact_klass_set;
 
   assert(do_null || do_update, "why are we here?");
@@ -1769,7 +1776,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
   if (do_update) {
 #ifdef ASSERT
-    if (exact_klass != NULL) {
+    if (exact_klass != nullptr) {
       check_exact_klass(tmp, exact_klass);
     }
 #endif
@@ -1825,7 +1832,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
       offset += ((intptr_t)index_op->as_constant_ptr()->as_jint()) << scale;
     }
 
-    if (!is_imm_in_range(offset, 12, 0)) {
+    if (!Assembler::is_simm12(offset)) {
       __ la(t0, as_Address(adr));
       __ mv(dst, t0);
       return;
@@ -1840,7 +1847,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
   assert(!tmp->is_valid(), "don't need temporary");
 
   CodeBlob *cb = CodeCache::find_blob(dest);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     __ far_call(RuntimeAddress(dest));
   } else {
     RuntimeAddress target(dest);
@@ -1851,7 +1858,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     });
   }
 
-  if (info != NULL) {
+  if (info != nullptr) {
     add_call_info_here(info);
   }
   __ post_call_nop();
@@ -1924,7 +1931,7 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  __ pause();
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {
@@ -1967,7 +1974,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
           __ encode_heap_oop(t0, obj);
           obj = t0;
         }
-        assert_different_registers(obj, addr.base(), tmp, dst);
+        assert_different_registers(obj, addr.base(), tmp);
+        assert_different_registers(dst, addr.base(), tmp);
         __ la(tmp, addr);
         (_masm->*xchg)(dst, obj, tmp);
         if (is_oop && UseCompressedOops) {
@@ -1991,7 +1999,7 @@ int LIR_Assembler::array_element_size(BasicType type) const {
 // bailout case the pointer won't be to unique storage.
 address LIR_Assembler::float_constant(float f) {
   address const_addr = __ float_constant(f);
-  if (const_addr == NULL) {
+  if (const_addr == nullptr) {
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -2001,7 +2009,7 @@ address LIR_Assembler::float_constant(float f) {
 
 address LIR_Assembler::double_constant(double d) {
   address const_addr = __ double_constant(d);
-  if (const_addr == NULL) {
+  if (const_addr == nullptr) {
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -2011,7 +2019,7 @@ address LIR_Assembler::double_constant(double d) {
 
 address LIR_Assembler::int_constant(jlong n) {
   address const_addr = __ long_constant(n);
-  if (const_addr == NULL) {
+  if (const_addr == nullptr) {
     bailout("const section overflow");
     return __ code()->consts()->start();
   } else {
@@ -2041,7 +2049,7 @@ void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
 }
 
 void LIR_Assembler::deoptimize_trap(CodeEmitInfo *info) {
-  address target = NULL;
+  address target = nullptr;
 
   switch (patching_id(info)) {
     case PatchingStub::access_field_id:
@@ -2108,8 +2116,8 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   CodeStub* stub = op->stub();
 
   // check if it needs to be profiled
-  ciMethodData* md = NULL;
-  ciProfileData* data = NULL;
+  ciMethodData* md = nullptr;
+  ciProfileData* data = nullptr;
 
   if (should_profile) {
     data_check(op, &md, &data);
@@ -2178,7 +2186,7 @@ void LIR_Assembler::lir_store_slowcheck(Register k_RInfo, Register klass_RInfo, 
   // get instance klass (it's already uncompressed)
   __ ld(k_RInfo, Address(k_RInfo, ObjArrayKlass::element_klass_offset()));
   // perform the fast part of the checking logic
-  __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, NULL);
+  __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
   // call out-of-line instance of __ check_klass_subtype_slow_path(...)
   __ addi(sp, sp, -2 * wordSize); // 2: store k_RInfo and klass_RInfo
   __ sd(klass_RInfo, Address(sp, wordSize));  // sub klass
@@ -2198,10 +2206,10 @@ void LIR_Assembler::const2reg_helper(LIR_Opr src) {
     case T_OBJECT:
     case T_ARRAY:
     case T_METADATA:
-        const2reg(src, FrameMap::t0_opr, lir_patch_none, NULL);
+        const2reg(src, FrameMap::t0_opr, lir_patch_none, nullptr);
         break;
     case T_LONG:
-        const2reg(src, FrameMap::t0_long_opr, lir_patch_none, NULL);
+        const2reg(src, FrameMap::t0_long_opr, lir_patch_none, nullptr);
         break;
     case T_FLOAT:
     case T_DOUBLE:

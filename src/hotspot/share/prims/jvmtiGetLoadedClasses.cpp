@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public:
     if (_dictionary_walk) {
       // Collect array classes this way when walking the dictionary (because array classes are
       // not in the dictionary).
-      for (Klass* l = k->array_klass_or_null(); l != NULL; l = l->array_klass_or_null()) {
+      for (Klass* l = k->array_klass_or_null(); l != nullptr; l = l->array_klass_or_null()) {
         _classStack.push((jclass) _env->jni_reference(Handle(_cur_thread, l->java_mirror())));
       }
     }
@@ -128,11 +128,11 @@ JvmtiGetLoadedClasses::getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLo
     oop loader = JNIHandles::resolve(initiatingLoader);
     // All classes loaded from this loader as initiating loader are
     // requested, so only need to walk this loader's ClassLoaderData
-    // dictionary, or the NULL ClassLoaderData dictionary for bootstrap loader.
-    if (loader != NULL) {
+    // dictionary, or the null ClassLoaderData dictionary for bootstrap loader.
+    if (loader != nullptr) {
       ClassLoaderData* data = java_lang_ClassLoader::loader_data_acquire(loader);
       // ClassLoader may not be used yet for loading.
-      if (data != NULL && data->dictionary() != NULL) {
+      if (data != nullptr && data->dictionary() != nullptr) {
         data->dictionary()->all_entries_do(&closure);
       }
     } else {

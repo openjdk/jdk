@@ -97,14 +97,14 @@
   }
 
   // Prefer ConN+DecodeN over ConP.
-  static const bool const_oop_prefer_decode() {
+  static bool const_oop_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     // Prefer ConN+DecodeN over ConP.
     return true;
   }
 
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  static const bool const_klass_prefer_decode() {
+  static bool const_klass_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     return false;
   }
@@ -165,12 +165,12 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return VM_Version::supports_evex();
   }
 
@@ -182,6 +182,25 @@
 
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
+
+  // Without predicated input, an all-one vector is needed for the alltrue vector test
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return is_alltrue && !is_predicate;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    if (!is_alltrue) {
+      return BoolTest::ne;
+    }
+    if (!is_predicate) {
+      return BoolTest::lt;
+    }
+    if ((vlen == 8 && !VM_Version::supports_avx512dq()) || vlen < 8) {
+      return BoolTest::eq;
+    }
+    return BoolTest::lt;
+  }
 
   // Returns pre-selection estimated size of a vector operation.
   // Currently, it's a rudimentary heuristic based on emitted code size for complex

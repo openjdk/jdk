@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2021 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -228,15 +228,15 @@ typedef struct {
 
     cmsHTRANSFORM hInput;               // From whatever input color space. 16 bits to DBL
     cmsHTRANSFORM hForward, hReverse;   // Transforms going from Lab to colorant and back
-    cmsFloat64Number Thereshold;        // The thereshold after which is considered out of gamut
+    cmsFloat64Number Threshold;         // The threshold after which is considered out of gamut
 
     } GAMUTCHAIN;
 
 // This sampler does compute gamut boundaries by comparing original
-// values with a transform going back and forth. Values above ERR_THERESHOLD
+// values with a transform going back and forth. Values above ERR_THRESHOLD
 // of maximum are considered out of gamut.
 
-#define ERR_THERESHOLD      5
+#define ERR_THRESHOLD      5
 
 
 static
@@ -275,17 +275,17 @@ int GamutSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Nu
 
 
     // if dE1 is small and dE2 is small, value is likely to be in gamut
-    if (dE1 < t->Thereshold && dE2 < t->Thereshold)
+    if (dE1 < t->Threshold && dE2 < t->Threshold)
         Out[0] = 0;
     else {
 
         // if dE1 is small and dE2 is big, undefined. Assume in gamut
-        if (dE1 < t->Thereshold && dE2 > t->Thereshold)
+        if (dE1 < t->Threshold && dE2 > t->Threshold)
             Out[0] = 0;
         else
             // dE1 is big and dE2 is small, clearly out of gamut
-            if (dE1 > t->Thereshold && dE2 < t->Thereshold)
-                Out[0] = (cmsUInt16Number) _cmsQuickFloor((dE1 - t->Thereshold) + .5);
+            if (dE1 > t->Threshold && dE2 < t->Threshold)
+                Out[0] = (cmsUInt16Number) _cmsQuickFloor((dE1 - t->Threshold) + .5);
             else  {
 
                 // dE1 is big and dE2 is also big, could be due to perceptual mapping
@@ -295,8 +295,8 @@ int GamutSampler(CMSREGISTER const cmsUInt16Number In[], CMSREGISTER cmsUInt16Nu
                 else
                     ErrorRatio = dE1 / dE2;
 
-                if (ErrorRatio > t->Thereshold)
-                    Out[0] = (cmsUInt16Number)  _cmsQuickFloor((ErrorRatio - t->Thereshold) + .5);
+                if (ErrorRatio > t->Threshold)
+                    Out[0] = (cmsUInt16Number)  _cmsQuickFloor((ErrorRatio - t->Threshold) + .5);
                 else
                     Out[0] = 0;
             }
@@ -326,7 +326,8 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
     cmsStage* CLUT;
     cmsUInt32Number dwFormat;
     GAMUTCHAIN Chain;
-    cmsUInt32Number nChannels, nGridpoints;
+    cmsUInt32Number nGridpoints;
+    cmsInt32Number nChannels;
     cmsColorSpaceSignature ColorSpace;
     cmsUInt32Number i;
     cmsHPROFILE ProfileList[256];
@@ -352,10 +353,10 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
     if (cmsIsMatrixShaper(hGamut)) {
 
-        Chain.Thereshold = 1.0;
+        Chain.Threshold = 1.0;
     }
     else {
-        Chain.Thereshold = ERR_THERESHOLD;
+        Chain.Threshold = ERR_THRESHOLD;
     }
 
 
@@ -375,8 +376,7 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
 
     ColorSpace  = cmsGetColorSpace(hGamut);
-
-    nChannels   = cmsChannelsOf(ColorSpace);
+    nChannels   = cmsChannelsOfColorSpace(ColorSpace);
     nGridpoints = _cmsReasonableGridpointsByColorspace(ColorSpace, cmsFLAGS_HIGHRESPRECALC);
     dwFormat    = (CHANNELS_SH(nChannels)|BYTES_SH(2));
 
@@ -501,6 +501,9 @@ cmsFloat64Number CMSEXPORT cmsDetectTAC(cmsHPROFILE hProfile)
     // Create a fake formatter for result
     dwFormatter = cmsFormatterForColorspaceOfProfile(hProfile, 4, TRUE);
 
+    // Unsupported color space?
+    if (dwFormatter == 0) return 0;
+
     bp.nOutputChans = T_CHANNELS(dwFormatter);
     bp.MaxTAC = 0;    // Initial TAC is 0
 
@@ -617,3 +620,69 @@ cmsBool CMSEXPORT cmsDesaturateLab(cmsCIELab* Lab,
 
     return TRUE;
 }
+
+// Detect whatever a given ICC profile works in linear (gamma 1.0) space
+// Actually, doing that "well" is quite hard, since every component may behave completely different.
+// Since the true point of this function is to detect suitable optimizations, I am imposing some requirements
+// that simplifies things: only RGB, and only profiles that can got in both directions.
+// The algorithm obtains Y from a syntetical gray R=G=B. Then least squares fitting is used to estimate gamma.
+// For gamma close to 1.0, RGB is linear. On profiles not supported, -1 is returned.
+
+cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFloat64Number threshold)
+{
+    cmsContext ContextID;
+    cmsHPROFILE hXYZ;
+    cmsHTRANSFORM xform;
+    cmsToneCurve* Y_curve;
+    cmsUInt16Number rgb[256][3];
+    cmsCIEXYZ XYZ[256];
+    cmsFloat32Number Y_normalized[256];
+    cmsFloat64Number gamma;
+    cmsProfileClassSignature cl;
+    int i;
+
+    if (cmsGetColorSpace(hProfile) != cmsSigRgbData)
+        return -1;
+
+    cl = cmsGetDeviceClass(hProfile);
+    if (cl != cmsSigInputClass && cl != cmsSigDisplayClass &&
+        cl != cmsSigOutputClass && cl != cmsSigColorSpaceClass)
+        return -1;
+
+    ContextID = cmsGetProfileContextID(hProfile);
+    hXYZ = cmsCreateXYZProfileTHR(ContextID);
+    if (hXYZ == NULL)
+        return -1;
+    xform = cmsCreateTransformTHR(ContextID, hProfile, TYPE_RGB_16, hXYZ, TYPE_XYZ_DBL,
+                                    INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOOPTIMIZE);
+
+    if (xform == NULL) { // If not RGB or forward direction is not supported, regret with the previous error
+
+        cmsCloseProfile(hXYZ);
+        return -1;
+    }
+
+    for (i = 0; i < 256; i++) {
+        rgb[i][0] = rgb[i][1] = rgb[i][2] = FROM_8_TO_16(i);
+    }
+
+    cmsDoTransform(xform, rgb, XYZ, 256);
+
+    cmsDeleteTransform(xform);
+    cmsCloseProfile(hXYZ);
+
+    for (i = 0; i < 256; i++) {
+        Y_normalized[i] = (cmsFloat32Number) XYZ[i].Y;
+    }
+
+    Y_curve = cmsBuildTabulatedToneCurveFloat(ContextID, 256, Y_normalized);
+    if (Y_curve == NULL)
+        return -1;
+
+    gamma = cmsEstimateGamma(Y_curve, threshold);
+
+    cmsFreeToneCurve(Y_curve);
+
+    return gamma;
+}
+

@@ -225,7 +225,7 @@ public class TestHostnameChecker {
     }
 
     private static X509Certificate mock(String domain) {
-        return new X509CertImpl() {
+        return new X509CertImpl(null, null, null, new byte[0]) {
             @Override
             public Collection<List<?>> getSubjectAlternativeNames() {
                 return List.of(List.of(2, domain));

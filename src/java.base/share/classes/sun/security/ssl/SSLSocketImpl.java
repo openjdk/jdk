@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -650,8 +650,10 @@ public final class SSLSocketImpl
             // Use user_canceled alert regardless the protocol versions.
             useUserCanceled = true;
 
-            // The protocol version may have been negotiated.
-            ProtocolVersion pv = conContext.handshakeContext.negotiatedProtocol;
+            // The protocol version may have been negotiated.  The
+            // conContext.handshakeContext.negotiatedProtocol is not used as there
+            // may be a race to set it to null.
+            ProtocolVersion pv = conContext.protocolVersion;
             if (pv == null || (!pv.useTLS13PlusSpec())) {
                 hasCloseReceipt = true;
             }
@@ -1386,7 +1388,6 @@ public final class SSLSocketImpl
         } finally {
             socketLock.unlock();
         }
-
         return null;
     }
 
@@ -1537,11 +1538,11 @@ public final class SSLSocketImpl
      * wrapped.
      */
     private void tryKeyUpdate() throws IOException {
-        // Don't bother to kickstart if handshaking is in progress, or if the
-        // connection is not duplex-open.
+        // Don't bother to kickstart if handshaking is in progress, or if
+        // the write side of the connection is not open.  We allow a half-
+        // duplex write-only connection for key updates.
         if ((conContext.handshakeContext == null) &&
                 !conContext.isOutboundClosed() &&
-                !conContext.isInboundClosed() &&
                 !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger key update");

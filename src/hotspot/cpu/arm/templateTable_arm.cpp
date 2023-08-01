@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -166,7 +167,7 @@ AsmCondition convNegCond(TemplateTable::Condition cc) {
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous helper routines
 
-// Store an oop (or NULL) at the address described by obj.
+// Store an oop (or null) at the address described by obj.
 // Blows all volatile registers R0-R3, Rtemp, LR).
 // Also destroys new_val and obj.base().
 static void do_oop_store(InterpreterMacroAssembler* _masm,
@@ -364,7 +365,7 @@ void TemplateTable::sipush() {
 }
 
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Label fastCase, Condy, Done;
 
@@ -373,7 +374,7 @@ void TemplateTable::ldc(bool wide) {
   const Register Rtags  = R3_tmp;
   const Register RtagType = R3_tmp;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(Rindex, 1);
   } else {
     __ ldrb(Rindex, at_bcp(1));
@@ -401,7 +402,7 @@ void TemplateTable::ldc(bool wide) {
   __ b(fastCase, ne);
 
   // slow case - call runtime
-  __ mov(R1, wide);
+  __ mov(R1, is_ldc_wide(type) ? 1 : 0);
   call_VM(R0_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R1);
   __ push(atos);
   __ b(Done);
@@ -429,9 +430,9 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label resolved;
 
   // We are resolved if the resolved reference cache entry contains a
@@ -462,7 +463,7 @@ void TemplateTable::fast_aldc(bool wide) {
     __ resolve_oop_handle(tmp);
     __ cmp(result, tmp);
     __ b(notNull, ne);
-    __ mov(result, 0);  // NULL object reference
+    __ mov(result, 0);  // null object reference
     __ bind(notNull);
   }
 
@@ -812,8 +813,6 @@ void TemplateTable::index_check(Register array, Register index) {
 
 void TemplateTable::index_check_without_pop(Register array, Register index) {
   assert_different_registers(array, index, Rtemp);
-  // check array
-  __ null_check(array, Rtemp, arrayOopDesc::length_offset_in_bytes());
   // check index
   __ ldr_s32(Rtemp, Address(array, arrayOopDesc::length_offset_in_bytes()));
   __ cmp_32(index, Rtemp);
@@ -1224,7 +1223,7 @@ void TemplateTable::aastore() {
   // Compute the array base
   __ add(Raddr_1, Rarray_3, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
 
-  // do array store check - check for NULL value first
+  // do array store check - check for null value first
   __ cbz(Rvalue_2, is_null);
 
   // Load subklass
@@ -1251,11 +1250,11 @@ void TemplateTable::aastore() {
   // object is at TOS
   __ b(Interpreter::_throw_ArrayStoreException_entry);
 
-  // Have a NULL in Rvalue_2, store NULL at array[index].
+  // Have a null in Rvalue_2, store null at array[index].
   __ bind(is_null);
   __ profile_null_seen(R0_tmp);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IS_ARRAY);
 
   // Pop stack arguments
@@ -2121,7 +2120,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ sub(R1, Rbcp, Rdisp);                   // branch bcp
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R1);
 
-    // R0: osr nmethod (osr ok) or NULL (osr not possible)
+    // R0: osr nmethod (osr ok) or null (osr not possible)
     const Register Rnmethod = R0;
 
     __ ldrb(R3_bytecode, Address(Rbcp));       // reload next bytecode
@@ -2610,6 +2609,66 @@ void TemplateTable::load_field_cp_cache_entry(Register Rcache,
   }
 }
 
+// The rmethod register is input and overwritten to be the adapter method for the
+// indy call. Link Register (lr) is set to the return address for the adapter and
+// an appendix may be pushed to the stack. Registers R1-R3, Rtemp (R12) are clobbered
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  // setup registers
+  const Register appendix = R1;
+  const Register cache = R2_tmp;
+  const Register index = R3_tmp;
+  assert_different_registers(method, appendix, cache, index);
+
+  __ save_bcp();
+
+  Label resolved;
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
+  // Compare the method to zero
+  __ cbnz(method, resolved);
+
+  Bytecodes::Code code = bytecode();
+
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mov(R1, code); // this is essentially Bytecodes::_invokedynamic, call_VM requires R1
+  __ call_VM(noreg, entry, R1);
+  // Update registers with resolved info
+  __ load_resolved_indy_entry(cache, index);
+  // Load-acquire the adapter method to match store-release in ResolvedIndyEntry::fill_in()
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
+  TemplateTable::volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), noreg, true);
+
+#ifdef ASSERT
+  __ cbnz(method, resolved);
+  __ stop("Should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  // Check if there is an appendix
+  __ ldrb(index, Address(cache, in_bytes(ResolvedIndyEntry::flags_offset())));
+  __ tbz(index, ResolvedIndyEntry::has_appendix_shift, L_no_push);
+  // Get appendix
+  __ ldrh(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter
+  // since the parameter_size includes it.
+  __ load_resolved_reference_at_index(appendix, index);
+  __ verify_oop(appendix);
+  __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
+
+  // compute return type
+  __ ldrb(index, Address(cache, in_bytes(ResolvedIndyEntry::result_type_offset())));
+  // load return address
+  {
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+    __ mov_address(Rtemp, table_addr);
+    __ ldr(LR, Address(Rtemp, index, lsl, Interpreter::logStackElementSize));
+  }
+}
 
 // Blows all volatile registers: R0-R3, Rtemp, LR.
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
@@ -2618,7 +2677,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register flags,
                                                bool is_invokevirtual,
                                                bool is_invokevfinal/*unused*/,
-                                               bool is_invokedynamic) {
+                                               bool is_invokedynamic /*unused*/) {
   // setup registers
   const Register cache = R2_tmp;
   const Register index = R3_tmp;
@@ -2641,7 +2700,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   const int index_offset = in_bytes(ConstantPoolCache::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
-  size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
+  size_t index_size = sizeof(u2);
   resolve_cache_and_index(byte_no, cache, index, index_size);
     __ add(temp_reg, cache, AsmOperand(index, lsl, LogBytesPerWord));
     __ ldr(method, Address(temp_reg, method_offset));
@@ -2675,14 +2734,14 @@ void TemplateTable::jvmti_post_field_access(Register Rcache,
     __ add(R2, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
     __ add(R2, R2, in_bytes(ConstantPoolCache::base_offset()));
     if (is_static) {
-      __ mov(R1, 0);        // NULL object reference
+      __ mov(R1, 0);        // null object reference
     } else {
       __ pop(atos);         // Get the object
       __ mov(R1, R0_tos);
       __ verify_oop(R1);
       __ push(atos);        // Restore stack state
     }
-    // R1: object pointer or NULL
+    // R1: object pointer or null
     // R2: cache entry pointer
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
                R1, R2);
@@ -2991,7 +3050,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rindex, bool 
     // object (tos)
     __ mov(R3, Rstack_top);
 
-    // R1: object pointer set up above (NULL if static)
+    // R1: object pointer set up above (null if static)
     // R2: cache entry pointer
     // R3: value object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification),
@@ -3567,7 +3626,7 @@ void TemplateTable::prepare_invoke(int byte_no,
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
 
   // maybe push extra argument
-  if (is_invokedynamic || is_invokehandle) {
+  if (is_invokehandle) {
     Label L_no_push;
     __ tbz(flags, ConstantPoolCacheEntry::has_appendix_shift, L_no_push);
     __ mov(temp, index);
@@ -3625,17 +3684,16 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ null_check(recv, Rtemp, oopDesc::klass_offset_in_bytes());
   __ load_klass(recv_klass, recv);
 
   // profile this call
   __ profile_virtual_call(R0_tmp, recv_klass);
 
   // get target Method* & entry point
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   assert(vtableEntry::size() == 1, "adjust the scaling in the code below");
   __ add(Rtemp, recv_klass, AsmOperand(index, lsl, LogHeapWordSize));
-  __ ldr(Rmethod, Address(Rtemp, base + vtableEntry::method_offset_in_bytes()));
+  __ ldr(Rmethod, Address(Rtemp, base + vtableEntry::method_offset()));
   __ jump_from_interpreted(Rmethod);
 }
 
@@ -3744,7 +3802,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   // Get declaring interface class from method
   __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
-  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset_in_bytes()));
+  __ ldr(Rinterf, Address(Rtemp, ConstantPool::pool_holder_offset()));
 
   // Get itable index from method
   __ ldr_s32(Rtemp, Address(Rmethod, Method::itable_index_offset()));
@@ -3813,7 +3871,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register Rcallsite = R4_tmp;
   const Register R5_method = R5_tmp;  // can't reuse Rmethod!
 
-  prepare_invoke(byte_no, R5_method, Rcallsite);
+  load_invokedynamic_entry(R5_method);
 
   // Rcallsite: CallSite object (from cpool->resolved_references[f1])
   // Rmethod:   MH.linkToCallSite method (from f2)
@@ -4005,7 +4063,6 @@ void TemplateTable::anewarray() {
 
 void TemplateTable::arraylength() {
   transition(atos, itos);
-  __ null_check(R0_tos, Rtemp, arrayOopDesc::length_offset_in_bytes());
   __ ldr_s32(R0_tos, Address(R0_tos, arrayOopDesc::length_offset_in_bytes()));
 }
 
@@ -4065,7 +4122,7 @@ void TemplateTable::checkcast() {
 
   // Come here on success
 
-  // Collect counts on whether this check-cast sees NULLs a lot or not.
+  // Collect counts on whether this check-cast sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -4078,8 +4135,8 @@ void TemplateTable::checkcast() {
 
 
 void TemplateTable::instanceof() {
-  // result = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // result = 1: obj != NULL and obj is     an instanceof the specified klass
+  // result = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // result = 1: obj != nullptr and obj is     an instanceof the specified klass
 
   transition(atos, itos);
   Label done, is_null, not_subtype, quicked, resolved;
@@ -4136,7 +4193,7 @@ void TemplateTable::instanceof() {
   __ profile_typecheck_failed(R1_tmp);
   __ mov(R0_tos, 0);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ b(done);
     __ bind(is_null);
@@ -4211,7 +4268,7 @@ void TemplateTable::monitorenter() {
   const Register Robj = R0_tos;
   const Register Rentry = R1_tmp;
 
-  // check for NULL object
+  // check for null object
   __ null_check(Robj, Rtemp);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
@@ -4219,7 +4276,7 @@ void TemplateTable::monitorenter() {
   Label allocate_monitor, allocated;
 
   // initialize entry pointer
-  __ mov(Rentry, 0);                             // points to free slot or NULL
+  __ mov(Rentry, 0);                             // points to free slot or null
 
   // find a free slot in the monitor block (result in Rentry)
   { Label loop, exit;
@@ -4234,7 +4291,7 @@ void TemplateTable::monitorenter() {
                                  // points to word before bottom of monitor block
 
     __ cmp(Rcur, Rbottom);                       // check if there are no monitors
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the first iteration
     __ b(allocate_monitor, eq);                  // there are no monitors, skip searching
 
@@ -4248,7 +4305,7 @@ void TemplateTable::monitorenter() {
     __ add(Rcur, Rcur, entry_size);              // otherwise advance to next entry
 
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the next iteration
     __ b(loop, ne);                              // if not at bottom then check this entry
     __ bind(exit);
@@ -4301,7 +4358,7 @@ void TemplateTable::monitorenter() {
   // The object has already been popped from the stack, so the expression stack looks correct.
   __ add(Rbcp, Rbcp, 1);
 
-  __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset_in_bytes()));     // store object
+  __ str(Robj, Address(Rentry, BasicObjectLock::obj_offset()));     // store object
   __ lock_object(Rentry);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -4322,7 +4379,7 @@ void TemplateTable::monitorexit() {
   const Register Rcur_obj = Rtemp;
   const Register Rmonitor = R0;      // fixed in unlock_object()
 
-  // check for NULL object
+  // check for null object
   __ null_check(Robj, Rtemp);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
@@ -4338,7 +4395,7 @@ void TemplateTable::monitorexit() {
                                  // points to word before bottom of monitor block
 
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
                                                  // prefetch monitor's object for the first iteration
     __ b(throw_exception, eq);                   // throw exception if there are now monitors
 
@@ -4348,7 +4405,7 @@ void TemplateTable::monitorexit() {
     __ b(found, eq);                             // if same object then stop searching
     __ add(Rcur, Rcur, entry_size);              // otherwise advance to next entry
     __ cmp(Rcur, Rbottom);                       // check if bottom reached
-    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset_in_bytes()), ne);
+    __ ldr(Rcur_obj, Address(Rcur, BasicObjectLock::obj_offset()), ne);
     __ b (loop, ne);                             // if not at bottom then check this entry
   }
 

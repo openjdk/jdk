@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_always_capabilities() {
   jc.can_generate_object_free_events = 1;
   jc.can_generate_resource_exhaustion_heap_events = 1;
   jc.can_generate_resource_exhaustion_threads_events = 1;
+  jc.can_support_virtual_threads = 1;
   return jc;
 }
 
@@ -107,14 +108,6 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
 #ifndef ZERO
   jc.can_pop_frame = 1;
   jc.can_force_early_return = 1;
-  // Workaround for 8195635:
-  // disable pop_frame and force_early_return capabilities with Graal
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    jc.can_pop_frame = 0;
-    jc.can_force_early_return = 0;
-  }
-#endif // INCLUDE_JVMCI
 #endif // !ZERO
   jc.can_get_source_debug_extension = 1;
   jc.can_access_local_variables = 1;
@@ -129,7 +122,6 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_current_contended_monitor = 1;
   jc.can_generate_early_vmstart = 1;
   jc.can_generate_early_class_hook_events = 1;
-  jc.can_support_virtual_threads = 1;
   return jc;
 }
 
@@ -190,7 +182,7 @@ jvmtiCapabilities *JvmtiManageCapabilities::exclude(const jvmtiCapabilities *a, 
   char *resultp = (char *)result;
 
   for (int i = 0; i < CAPA_SIZE; ++i) {
-    *resultp++ = *ap++ & ~*bp++;
+    *resultp++ = *ap++ & (char)~*bp++;
   }
 
   return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class MethodHandlesCastFailureTest {
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
         OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
-        output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesCastFailureTest[$][$]Lambda[$].*/0x.*source:.*shared.*objects.*file")
+        output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesCastFailureTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }
 }

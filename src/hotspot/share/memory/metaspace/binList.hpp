@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -121,7 +121,7 @@ private:
   int index_for_next_non_empty_list(int index) {
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
     int i2 = index;
-    while (i2 < num_lists && _blocks[i2] == NULL) {
+    while (i2 < num_lists && _blocks[i2] == nullptr) {
       i2 ++;
     }
     return i2 == num_lists ? -1 : i2;
@@ -131,7 +131,7 @@ public:
 
   BinListImpl() {
     for (int i = 0; i < num_lists; i++) {
-      _blocks[i] = NULL;
+      _blocks[i] = nullptr;
     }
   }
 
@@ -155,7 +155,7 @@ public:
     if (index != -1) {
       Block* b = _blocks[index];
       const size_t real_word_size = word_size_for_index(index);
-      assert(b != NULL, "Sanity");
+      assert(b != nullptr, "Sanity");
       assert(b->_word_size >= word_size &&
              b->_word_size == real_word_size,
              "bad block size in list[%d] (" BLOCK_FORMAT ")", index, BLOCK_FORMAT_ARGS(b));
@@ -165,7 +165,7 @@ public:
       return (MetaWord*)b;
     } else {
       *p_real_word_size = 0;
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -183,7 +183,7 @@ public:
     for (int i = 0; i < num_lists; i++) {
       const size_t s = MinWordSize + i;
       int pos = 0;
-      for (Block* b = _blocks[i]; b != NULL; b = b->_next, pos++) {
+      for (Block* b = _blocks[i]; b != nullptr; b = b->_next, pos++) {
         assert(b->_word_size == s,
                "bad block size in list[%d] at pos %d (" BLOCK_FORMAT ")",
                i, pos, BLOCK_FORMAT_ARGS(b));

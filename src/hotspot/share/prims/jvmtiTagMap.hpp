@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,9 @@
 
 class JvmtiEnv;
 class JvmtiTagMapTable;
-class JvmtiTagMapEntryClosure;
+class JvmtiTagMapKeyClosure;
 
-class JvmtiTagMap :  public CHeapObj<mtInternal> {
+class JvmtiTagMap :  public CHeapObj<mtServiceability> {
  private:
 
   JvmtiEnv*             _env;                       // the jvmti environment
@@ -53,7 +53,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
 
   void check_hashmap(GrowableArray<jlong>* objects);
 
-  void entry_iterate(JvmtiTagMapEntryClosure* closure);
+  void entry_iterate(JvmtiTagMapKeyClosure* closure);
 
  public:
   // indicates if this tag map is locked

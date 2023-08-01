@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  */
 public final class SunPKCS11 extends AuthProvider {
 
+    @Serial
     private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
@@ -188,7 +189,7 @@ public final class SunPKCS11 extends AuthProvider {
                     if (nssSecmodDirectory != null) {
                         String s = secmod.getConfigDir();
                         if ((s != null) &&
-                                (s.equals(nssSecmodDirectory) == false)) {
+                                (!s.equals(nssSecmodDirectory))) {
                             throw new ProviderException("Secmod directory "
                                 + nssSecmodDirectory
                                 + " invalid, NSS already initialized with "
@@ -198,7 +199,7 @@ public final class SunPKCS11 extends AuthProvider {
                     if (nssLibraryDirectory != null) {
                         String s = secmod.getLibDir();
                         if ((s != null) &&
-                                (s.equals(nssLibraryDirectory) == false)) {
+                                (!s.equals(nssLibraryDirectory))) {
                             throw new ProviderException("NSS library directory "
                                 + nssLibraryDirectory
                                 + " invalid, NSS already initialized with "
@@ -301,8 +302,8 @@ public final class SunPKCS11 extends AuthProvider {
         // (e.g. "libpkcs11.so"), it may refer to a library somewhere on the
         // OS library search path. Omit the test for file existence as that
         // only looks in the current directory.
-        if (libraryFile.getName().equals(library) == false) {
-            if (new File(library).isFile() == false) {
+        if (!libraryFile.getName().equals(library)) {
+            if (!new File(library).isFile()) {
                 String msg = "Library " + library + " does not exist";
                 if (config.getHandleStartupErrors() == Config.ERR_HALT) {
                     throw new ProviderException(msg);
@@ -331,7 +332,7 @@ public final class SunPKCS11 extends AuthProvider {
                 if (debug != null) {
                     debug.println("Multi-threaded initialization failed: " + e);
                 }
-                if (config.getAllowSingleThreadedModules() == false) {
+                if (!config.getAllowSingleThreadedModules()) {
                     throw e;
                 }
                 // fall back to single threaded access
@@ -362,8 +363,8 @@ public final class SunPKCS11 extends AuthProvider {
                 long[] slots = p11.C_GetSlotList(false);
                 if (showInfo) {
                     System.out.println("All slots: " + toString(slots));
-                    slots = p11.C_GetSlotList(true);
-                    System.out.println("Slots with tokens: " + toString(slots));
+                    System.out.println("Slots with tokens: " +
+                            toString(p11.C_GetSlotList(true)));
                 }
                 if (slotID < 0) {
                     if ((slotListIndex < 0)
@@ -420,14 +421,23 @@ public final class SunPKCS11 extends AuthProvider {
         final String className;
         final List<String> aliases;
         final int[] mechanisms;
+        final int[] requiredMechs;
 
         private Descriptor(String type, String algorithm, String className,
-                List<String> aliases, int[] mechanisms) {
+                           List<String> aliases, int[] mechanisms) {
+            this(type, algorithm, className, aliases, mechanisms, null);
+        }
+        // mechanisms is a list of possible mechanisms that implement the
+        // algorithm, at least one of them must be available. requiredMechs
+        // is a list of auxiliary mechanisms, all of them must be available
+        private Descriptor(String type, String algorithm, String className,
+                List<String> aliases, int[] mechanisms, int[] requiredMechs) {
             this.type = type;
             this.algorithm = algorithm;
             this.className = className;
             this.aliases = aliases;
             this.mechanisms = mechanisms;
+            this.requiredMechs = requiredMechs;
         }
         private P11Service service(Token token, int mechanism) {
             return new P11Service
@@ -469,21 +479,29 @@ public final class SunPKCS11 extends AuthProvider {
         register(new Descriptor(type, algorithm, className, aliases, m));
     }
 
+    private static void d(String type, String algorithm, String className,
+            int[] m, int[] requiredMechs) {
+        register(new Descriptor(type, algorithm, className, null, m,
+                requiredMechs));
+    }
+
     private static void dA(String type, String algorithm, String className,
             int[] m) {
         register(new Descriptor(type, algorithm, className,
                 getAliases(algorithm), m));
     }
 
+    private static void dA(String type, String algorithm, String className,
+            int[] m, int[] requiredMechs) {
+        register(new Descriptor(type, algorithm, className,
+                getAliases(algorithm), m, requiredMechs));
+    }
+
     private static void register(Descriptor d) {
         for (int i = 0; i < d.mechanisms.length; i++) {
             int m = d.mechanisms[i];
             Integer key = Integer.valueOf(m);
-            List<Descriptor> list = descriptors.get(key);
-            if (list == null) {
-                list = new ArrayList<Descriptor>();
-                descriptors.put(key, list);
-            }
+            List<Descriptor> list = descriptors.computeIfAbsent(key, k -> new ArrayList<>());
             list.add(d);
         }
     }
@@ -529,6 +547,7 @@ public final class SunPKCS11 extends AuthProvider {
         String P11KeyWrapCipher    = "sun.security.pkcs11.P11KeyWrapCipher";
         String P11RSACipher        = "sun.security.pkcs11.P11RSACipher";
         String P11AEADCipher       = "sun.security.pkcs11.P11AEADCipher";
+        String P11PBECipher        = "sun.security.pkcs11.P11PBECipher";
         String P11Signature        = "sun.security.pkcs11.P11Signature";
         String P11PSSSignature     = "sun.security.pkcs11.P11PSSSignature";
 
@@ -590,6 +609,24 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SSL3_MD5_MAC));
         d(MAC, "SslMacSHA1",    P11Mac,
                 m(CKM_SSL3_SHA1_MAC));
+
+        /*
+        * PBA HMacs
+        *
+        * KeyDerivationMech must be supported
+        * for these services to be available.
+        *
+        */
+        d(MAC, "HmacPBESHA1",       P11Mac, m(CKM_SHA_1_HMAC),
+                m(CKM_PBA_SHA1_WITH_SHA1_HMAC));
+        d(MAC, "HmacPBESHA224",     P11Mac, m(CKM_SHA224_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA256",     P11Mac, m(CKM_SHA256_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA384",     P11Mac, m(CKM_SHA384_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
+        d(MAC, "HmacPBESHA512",     P11Mac, m(CKM_SHA512_HMAC),
+                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
 
         d(KPG, "RSA",           P11KeyPairGenerator,
                 getAliases("PKCS1"),
@@ -689,6 +726,60 @@ public final class SunPKCS11 extends AuthProvider {
         d(SKF, "ChaCha20",      P11SecretKeyFactory,
                 m(CKM_CHACHA20_POLY1305));
 
+        /*
+         * PBE Secret Key Factories
+         *
+         * KeyDerivationPrf must be supported for these services
+         * to be available.
+         *
+        */
+        d(SKF, "PBEWithHmacSHA1AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBEWithHmacSHA224AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBEWithHmacSHA256AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBEWithHmacSHA384AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBEWithHmacSHA512AndAES_128",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
+        d(SKF, "PBEWithHmacSHA1AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBEWithHmacSHA224AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBEWithHmacSHA256AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBEWithHmacSHA384AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBEWithHmacSHA512AndAES_256",
+                P11SecretKeyFactory, m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
+        /*
+         * PBA Secret Key Factories
+         */
+        d(SKF, "HmacPBESHA1",       P11SecretKeyFactory,
+                m(CKM_PBA_SHA1_WITH_SHA1_HMAC));
+        d(SKF, "HmacPBESHA224",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA224_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA256",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA256_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA384",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA384_HMAC_KEY_GEN));
+        d(SKF, "HmacPBESHA512",     P11SecretKeyFactory,
+                m(CKM_NSS_PKCS12_PBE_SHA512_HMAC_KEY_GEN));
+        /*
+         * PBKDF2 Secret Key Factories
+         */
+        dA(SKF, "PBKDF2WithHmacSHA1",  P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA_1_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA224", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA224_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA256", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA256_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA384", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA384_HMAC));
+        d(SKF, "PBKDF2WithHmacSHA512", P11SecretKeyFactory,
+                m(CKM_PKCS5_PBKD2), m(CKM_SHA512_HMAC));
+
         // XXX attributes for Ciphers (supported modes, padding)
         dA(CIP, "ARCFOUR",                      P11Cipher,
                 m(CKM_RC4));
@@ -781,6 +872,44 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_RSA_PKCS));
         d(CIP, "RSA/ECB/NoPadding",             P11RSACipher,
                 m(CKM_RSA_X_509));
+
+        /*
+         * PBE Ciphers
+         *
+         * KeyDerivationMech and KeyDerivationPrf must be supported
+         * for these services to be available.
+         *
+        */
+        d(CIP, "PBEWithHmacSHA1AndAES_128",   P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA_1_HMAC));
+        d(CIP, "PBEWithHmacSHA224AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA224_HMAC));
+        d(CIP, "PBEWithHmacSHA256AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA256_HMAC));
+        d(CIP, "PBEWithHmacSHA384AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA384_HMAC));
+        d(CIP, "PBEWithHmacSHA512AndAES_128", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA512_HMAC));
+        d(CIP, "PBEWithHmacSHA1AndAES_256",   P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA_1_HMAC));
+        d(CIP, "PBEWithHmacSHA224AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA224_HMAC));
+        d(CIP, "PBEWithHmacSHA256AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA256_HMAC));
+        d(CIP, "PBEWithHmacSHA384AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA384_HMAC));
+        d(CIP, "PBEWithHmacSHA512AndAES_256", P11PBECipher,
+                m(CKM_AES_CBC_PAD, CKM_AES_CBC),
+                m(CKM_PKCS5_PBKD2, CKM_SHA512_HMAC));
 
         d(SIG, "RawDSA",        P11Signature,
                 List.of("NONEwithDSA"),
@@ -953,7 +1082,7 @@ public final class SunPKCS11 extends AuthProvider {
                 } catch (InterruptedException e) {
                     break;
                 }
-                if (enabled == false) {
+                if (!enabled) {
                     break;
                 }
                 try {
@@ -1172,9 +1301,21 @@ public final class SunPKCS11 extends AuthProvider {
             if (ds == null) {
                 continue;
             }
+            descLoop:
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
                 if (oldMech == null) {
+                    if (d.requiredMechs != null) {
+                        // Check that other mechanisms required for the
+                        // service are supported before listing it as
+                        // available for the first time.
+                        for (int requiredMech : d.requiredMechs) {
+                            if (token.getMechanismInfo(
+                                    requiredMech & 0xFFFFFFFFL) == null) {
+                                continue descLoop;
+                            }
+                        }
+                    }
                     supportedAlgs.put(d, integerMech);
                     continue;
                 }
@@ -1250,7 +1391,7 @@ public final class SunPKCS11 extends AuthProvider {
         @Override
         public Object newInstance(Object param)
                 throws NoSuchAlgorithmException {
-            if (token.isValid() == false) {
+            if (!token.isValid()) {
                 throw new NoSuchAlgorithmException("Token has been removed");
             }
             try {
@@ -1272,14 +1413,16 @@ public final class SunPKCS11 extends AuthProvider {
                 } else if (algorithm.endsWith("GCM/NoPadding") ||
                            algorithm.startsWith("ChaCha20-Poly1305")) {
                     return new P11AEADCipher(token, algorithm, mechanism);
-                } else if (algorithm.indexOf("/KW/") != -1 ||
-                        algorithm.indexOf("/KWP/") != -1) {
+                } else if (algorithm.contains("/KW/") ||
+                        algorithm.contains("/KWP/")) {
                     return new P11KeyWrapCipher(token, algorithm, mechanism);
+                } else if (algorithm.startsWith("PBE")) {
+                    return new P11PBECipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
                 }
             } else if (type == SIG) {
-                if (algorithm.indexOf("RSASSA-PSS") != -1) {
+                if (algorithm.contains("RSASSA-PSS")) {
                     return new P11PSSSignature(token, algorithm, mechanism);
                 } else {
                     return new P11Signature(token, algorithm, mechanism);
@@ -1338,20 +1481,19 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         public boolean supportsParameter(Object param) {
-            if ((param == null) || (token.isValid() == false)) {
+            if ((param == null) || (!token.isValid())) {
                 return false;
             }
-            if (param instanceof Key == false) {
+            if (!(param instanceof Key key)) {
                 throw new InvalidParameterException("Parameter must be a Key");
             }
             String algorithm = getAlgorithm();
             String type = getType();
-            Key key = (Key)param;
             String keyAlgorithm = key.getAlgorithm();
             // RSA signatures and cipher
             if (((type == CIP) && algorithm.startsWith("RSA"))
-                    || (type == SIG) && (algorithm.indexOf("RSA") != -1)) {
-                if (keyAlgorithm.equals("RSA") == false) {
+                    || (type == SIG) && (algorithm.contains("RSA"))) {
+                if (!keyAlgorithm.equals("RSA")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1361,7 +1503,7 @@ public final class SunPKCS11 extends AuthProvider {
             // EC
             if (((type == KA) && algorithm.equals("ECDH"))
                     || ((type == SIG) && algorithm.contains("ECDSA"))) {
-                if (keyAlgorithm.equals("EC") == false) {
+                if (!keyAlgorithm.equals("EC")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1371,7 +1513,7 @@ public final class SunPKCS11 extends AuthProvider {
             // DSA signatures
             if ((type == SIG) && algorithm.contains("DSA") &&
                     !algorithm.contains("ECDSA")) {
-                if (keyAlgorithm.equals("DSA") == false) {
+                if (!keyAlgorithm.equals("DSA")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1385,7 +1527,7 @@ public final class SunPKCS11 extends AuthProvider {
             }
             // DH key agreement
             if (type == KA) {
-                if (keyAlgorithm.equals("DH") == false) {
+                if (!keyAlgorithm.equals("DH")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1576,7 +1718,7 @@ public final class SunPKCS11 extends AuthProvider {
                 (new SecurityPermission("authProvider." + this.getName()));
         }
 
-        if (hasValidToken() == false) {
+        if (!hasValidToken()) {
             // app may call logout for cleanup, allow
             return;
         }
@@ -1774,7 +1916,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         private Object readResolve() throws ObjectStreamException {
             SunPKCS11 p = (SunPKCS11)Security.getProvider(providerName);
-            if ((p == null) || (p.config.getFileName().equals(configName) == false)) {
+            if ((p == null) || (!p.config.getFileName().equals(configName))) {
                 throw new NotSerializableException("Could not find "
                         + providerName + " in installed providers");
             }

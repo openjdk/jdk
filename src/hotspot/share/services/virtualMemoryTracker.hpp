@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,11 @@ class VirtualMemorySnapshot : public ResourceObj {
     return &_virtual_memory[index];
   }
 
+  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
+    int index = NMTUtil::flag_to_index(flag);
+    return &_virtual_memory[index];
+  }
+
   inline size_t total_reserved() const {
     size_t amount = 0;
     for (int index = 0; index < mt_number_of_types; index ++) {
@@ -177,7 +182,7 @@ class VirtualMemoryRegion {
  public:
   VirtualMemoryRegion(address addr, size_t size) :
     _base_address(addr), _size(size) {
-     assert(addr != NULL, "Invalid address");
+     assert(addr != nullptr, "Invalid address");
      assert(size > 0, "Invalid size");
    }
 
@@ -250,7 +255,7 @@ class VirtualMemoryRegion {
 
  protected:
   void set_base(address base) {
-    assert(base != NULL, "Sanity check");
+    assert(base != nullptr, "Sanity check");
     _base_address = base;
   }
 
@@ -331,7 +336,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     CommittedRegionIterator itr = other.iterate_committed_regions();
     const CommittedMemoryRegion* rgn = itr.next();
-    while (rgn != NULL) {
+    while (rgn != nullptr) {
       _committed_regions.add(*rgn);
       rgn = itr.next();
     }
@@ -348,9 +353,9 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     address addr, size_t sz);
 
   bool add_committed_region(const CommittedMemoryRegion& rgn) {
-    assert(rgn.base() != NULL, "Invalid base address");
+    assert(rgn.base() != nullptr, "Invalid base address");
     assert(size() > 0, "Invalid size");
-    return _committed_regions.add(rgn) != NULL;
+    return _committed_regions.add(rgn) != nullptr;
   }
 };
 

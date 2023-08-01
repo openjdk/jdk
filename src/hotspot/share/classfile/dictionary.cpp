@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ DictionaryEntry::~DictionaryEntry() {
   // pd_set is accessed during a safepoint.
   // This doesn't require a lock because nothing is reading this
   // entry anymore.  The ClassLoader is dead.
-  while (pd_set_acquire() != NULL) {
+  while (pd_set_acquire() != nullptr) {
     ProtectionDomainEntry* to_delete = pd_set_acquire();
     release_set_pd_set(to_delete->next_acquire());
     delete to_delete;
@@ -110,7 +110,7 @@ bool Dictionary::check_if_needs_resize() {
 
 bool DictionaryEntry::is_valid_protection_domain(Handle protection_domain) {
 
-  return protection_domain() == NULL || !java_lang_System::allow_security_manager()
+  return protection_domain() == nullptr || !java_lang_System::allow_security_manager()
         ? true
         : contains_protection_domain(protection_domain());
 }
@@ -133,7 +133,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = pd_set_acquire();
-                                current != NULL;
+                                current != nullptr;
                                 current = current->next_acquire()) {
       if (current->object_no_keepalive() == protection_domain) {
         in_pd_set = true;
@@ -153,7 +153,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   }
 
   for (ProtectionDomainEntry* current = pd_set_acquire();
-                              current != NULL;
+                              current != nullptr;
                               current = current->next_acquire()) {
     if (current->object_no_keepalive() == protection_domain) {
       return true;
@@ -240,7 +240,7 @@ public:
 void Dictionary::add_klass(JavaThread* current, Symbol* class_name,
                            InstanceKlass* obj) {
   assert_locked_or_safepoint(SystemDictionary_lock); // doesn't matter now
-  assert(obj != NULL, "adding NULL obj");
+  assert(obj != nullptr, "adding nullptr obj");
   assert(obj->name() == class_name, "sanity check on name");
 
   DictionaryEntry* entry = new DictionaryEntry(obj);
@@ -296,10 +296,10 @@ InstanceKlass* Dictionary::find(Thread* current, Symbol* name,
   NoSafepointVerifier nsv;
 
   DictionaryEntry* entry = get_entry(current, name);
-  if (entry != NULL && entry->is_valid_protection_domain(protection_domain)) {
+  if (entry != nullptr && entry->is_valid_protection_domain(protection_domain)) {
     return entry->instance_klass();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -307,7 +307,7 @@ InstanceKlass* Dictionary::find_class(Thread* current,
                                       Symbol* name) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   DictionaryEntry* entry = get_entry(current, name);
-  return (entry != NULL) ? entry->instance_klass() : NULL;
+  return (entry != nullptr) ? entry->instance_klass() : nullptr;
 }
 
 void Dictionary::add_protection_domain(JavaThread* current,
@@ -317,8 +317,8 @@ void Dictionary::add_protection_domain(JavaThread* current,
   Symbol*  klass_name = klass->name();
   DictionaryEntry* entry = get_entry(current, klass_name);
 
-  assert(entry != NULL,"entry must be present, we just created it");
-  assert(protection_domain() != NULL,
+  assert(entry != nullptr,"entry must be present, we just created it");
+  assert(protection_domain() != nullptr,
          "real protection domain should be present");
 
   entry->add_protection_domain(loader_data(), protection_domain);
@@ -344,8 +344,8 @@ void Dictionary::validate_protection_domain(InstanceKlass* klass,
                                             Handle protection_domain,
                                             TRAPS) {
 
-  assert(class_loader() != NULL, "Should not call this");
-  assert(protection_domain() != NULL, "Should not call this");
+  assert(class_loader() != nullptr, "Should not call this");
+  assert(protection_domain() != nullptr, "Should not call this");
 
   if (!java_lang_System::allow_security_manager() ||
       is_valid_protection_domain(THREAD, klass->name(), protection_domain)) {
@@ -422,9 +422,9 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
       Klass* e = probe->instance_klass();
 
       ProtectionDomainEntry* current = probe->pd_set_acquire();
-      ProtectionDomainEntry* prev = NULL;
-      while (current != NULL) {
-        if (current->object_no_keepalive() == NULL) {
+      ProtectionDomainEntry* prev = nullptr;
+      while (current != nullptr) {
+        if (current->object_no_keepalive() == nullptr) {
           LogTarget(Debug, protectiondomain) lt;
           if (lt.is_enabled()) {
             ResourceMark rm;
@@ -438,7 +438,7 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
           if (probe->pd_set_acquire() == current) {
             probe->release_set_pd_set(current->next_acquire());
           } else {
-            assert(prev != NULL, "should be set by alive entry");
+            assert(prev != nullptr, "should be set by alive entry");
             prev->release_set_next(current->next_acquire());
           }
           // Mark current for deletion but in the meantime it can still be
@@ -459,7 +459,7 @@ void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainE
 void DictionaryEntry::verify_protection_domain_set() {
   assert(SafepointSynchronize::is_at_safepoint(), "must only be called as safepoint");
   for (ProtectionDomainEntry* current = pd_set_acquire(); // accessed at a safepoint
-                              current != NULL;
+                              current != nullptr;
                               current = current->next_acquire()) {
     guarantee(oopDesc::is_oop_or_null(current->object_no_keepalive()), "Invalid oop");
   }
@@ -469,7 +469,7 @@ void DictionaryEntry::print_count(outputStream *st) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   int count = 0;
   for (ProtectionDomainEntry* current = pd_set_acquire();
-                              current != NULL;
+                              current != nullptr;
                               current = current->next_acquire()) {
     count++;
   }
@@ -486,7 +486,7 @@ void Dictionary::print_size(outputStream* st) const {
 void Dictionary::print_on(outputStream* st) const {
   ResourceMark rm;
 
-  assert(loader_data() != NULL, "loader data should not be null");
+  assert(loader_data() != nullptr, "loader data should not be null");
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");
   print_size(st);
   st->print_cr("^ indicates that initiating loader is different from defining loader");
@@ -532,7 +532,7 @@ void Dictionary::verify() {
   ClassLoaderData* cld = loader_data();
   // class loader must be present;  a null class loader is the
   // bootstrap loader
-  guarantee(cld != NULL &&
+  guarantee(cld != nullptr &&
             (cld->is_the_null_class_loader_data() || cld->class_loader_no_keepalive()->is_instance()),
             "checking type of class_loader");
 

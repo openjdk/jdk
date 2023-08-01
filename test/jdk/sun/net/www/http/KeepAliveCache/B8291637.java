@@ -63,18 +63,28 @@ public class B8291637 {
             } catch (IOException e) {}
         }
 
-        static void readRequest(Socket s) throws IOException {
-            InputStream is = s.getInputStream();
-            is.read();
-            while (is.available() > 0)
-                is.read();
+        static final byte[] requestEnd = new byte[] {'\r', '\n', '\r', '\n' };
+
+        // Read until the end of a HTTP request
+        static void readOneRequest(InputStream is) throws IOException {
+            int requestEndCount = 0, r;
+            while ((r = is.read()) != -1) {
+                if (r == requestEnd[requestEndCount]) {
+                    requestEndCount++;
+                    if (requestEndCount == 4) {
+                        break;
+                    }
+                } else {
+                    requestEndCount = 0;
+                }
+            }
         }
 
         public void run() {
             try {
                 while (true) {
                     s = serverSocket.accept();
-                    readRequest(s);
+                    readOneRequest(s.getInputStream());
                     OutputStream os = s.getOutputStream();
                     String resp = "" +
                             "HTTP/1.1 200 OK\r\n" +
@@ -87,7 +97,10 @@ public class B8291637 {
                     os.flush();
                     InputStream is = s.getInputStream();
                     long l1 = System.currentTimeMillis();
-                    is.read();
+                    int readResult = is.read();
+                    if (readResult != -1) {
+                        System.out.println("Unexpected byte received: " + readResult);
+                    }
                     long l2 = System.currentTimeMillis();
                     long diff = (l2 - l1) / 1000;
                     /*
