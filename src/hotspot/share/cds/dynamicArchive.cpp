@@ -414,9 +414,7 @@ void DynamicArchive::dump_array_klasses() {
     _dynamic_archive_array_klasses =
         ArchiveBuilder::new_ro_array<ObjArrayKlass*>(num_array_klasses);
     for (int i = 0; i < num_array_klasses; i++) {
-      ObjArrayKlass* oak = _array_klasses->at(i);
-      _dynamic_archive_array_klasses->at_put(i, oak);
-      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), oak);
+      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), _array_klasses->at(i));
     }
   }
 }
