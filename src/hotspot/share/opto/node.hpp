@@ -158,6 +158,7 @@ class RegionNode;
 class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
+class SafePointScalarMergeNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -726,6 +727,7 @@ public:
           DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -829,9 +831,9 @@ protected:
   }
 
 public:
-  const juint class_id() const { return _class_id; }
+  juint class_id() const { return _class_id; }
 
-  const juint flags() const { return _flags; }
+  juint flags() const { return _flags; }
 
   void add_flag(juint fl) { init_flags(fl); }
 
@@ -953,6 +955,7 @@ public:
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
+  DEFINE_CLASS_QUERY(SafePointScalarMerge)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
@@ -1215,7 +1218,8 @@ public:
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:
@@ -1551,8 +1555,13 @@ public:
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
     clear();
   }
+  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
-  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
+  NONCOPYABLE(Node_Array);
+  Node_Array& operator=(Node_Array&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_Array(Node_Array&&) = default;
+
   Node *operator[] ( uint i ) const // Lookup, or null for not mapped
   { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
@@ -1576,6 +1585,12 @@ class Node_List : public Node_Array {
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+
+  NONCOPYABLE(Node_List);
+  Node_List& operator=(Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_List(Node_List&&) = default;
+
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1610,6 +1625,11 @@ public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
 
+  NONCOPYABLE(Unique_Node_List);
+  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Unique_Node_List(Unique_Node_List&&) = default;
+
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
@@ -1641,9 +1661,34 @@ public:
     Node_List::clear();
     _clock_index = 0;
   }
+  void ensure_empty() {
+    assert(size() == 0, "must be empty");
+    clear(); // just in case
+  }
 
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
+
+  // If the idx of the Nodes change, we must recompute the VectorSet
+  void recompute_idx_set() {
+    _in_worklist.clear();
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      _in_worklist.set(n->_idx);
+    }
+  }
+
+#ifdef ASSERT
+  bool is_subset_of(Unique_Node_List& other) {
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      if (!other.member(n)) {
+        return false;
+      }
+    }
+    return true;
+  }
+#endif
 
   bool contains(const Node* n) const {
     fatal("use faster member() instead");
@@ -1687,12 +1732,12 @@ private:
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
-  _for_igvn->push(n);
+  _igvn_worklist->push(n);
 }
 
 // Inline definition of Compile::remove_for_igvn must be deferred to this point.
 inline void Compile::remove_for_igvn(Node* n) {
-  _for_igvn->remove(n);
+  _igvn_worklist->remove(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1763,6 +1808,8 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  NONCOPYABLE(Node_Stack);
 };
 
 

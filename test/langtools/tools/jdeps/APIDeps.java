@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,32 +96,26 @@ public class APIDeps {
                            "java.lang.management.ManagementFactory",
                            "java.lang.management.RuntimeMXBean",
                            "b.B", "c.C", "d.D", "f.F", "g.G"},
-             new String[] {"compact1", "compact3", testDirBasename},
-             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose"});
         test(new File(mDir, "Foo.class"),
              new String[] {"c.I", "e.E", "f.F"},
-             new String[] {testDirBasename},
-             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-P"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class"});
         test(new File(mDir, "Foo.class"),
              new String[] {"c.I", "e.E", "f.F", "m.Bar"},
-             new String[] {testDirBasename},
-             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-filter:none", "-P"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-filter:none"});
         test(new File(mDir, "Gee.class"),
              new String[] {"g.G", "sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile",
                            "com.sun.management.ThreadMXBean", "com.sun.source.tree.BinaryTree"},
-             new String[] {testDirBasename, "JDK internal API", "compact3", ""},
-             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose"});
 
         // -jdkinternals
         test(new File(mDir, "Gee.class"),
              new String[] {"sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile"},
-             new String[] {"JDK internal API"},
              new String[] {"-jdkinternals", "-quiet"});
         // -jdkinternals parses all classes on -classpath and the input arguments
         test(new File(mDir, "Gee.class"),
              new String[] {"com.sun.tools.classfile.ClassFile",
                            "sun.security.x509.X509CertInfo"},
-             new String[] {"JDK internal API"},
              // use -classpath tmp/a with no use of JDK internal API
              new String[] {"-classpath", dest.resolve("a").toString(), "-jdkinternals", "-quiet"});
 
@@ -130,29 +124,27 @@ public class APIDeps {
              new String[] {"java.lang.Object", "java.lang.String",
                            "java.util.Set",
                            "c.C", "d.D", "c.I", "e.E"},
-             new String[] {"compact1", testDirBasename},
-             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-P", "-apionly"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-apionly"});
 
         test(mDir,
              new String[] {"java.lang.Object", "java.lang.String",
                            "java.util.Set",
                            "c.C", "d.D", "c.I", "e.E", "m.Bar"},
-             new String[] {"compact1", testDirBasename, mDir.getName()},
-             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P", "--api-only"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "--api-only"});
         return errors;
     }
 
-    void test(File file, String[] expect, String[] profiles) {
-        test(file, expect, profiles, new String[0]);
+    void test(File file, String[] expect) {
+        test(file, expect, new String[0]);
     }
 
-    void test(File file, String[] expect, String[] profiles, String[] options) {
+    void test(File file, String[] expect, String[] options) {
         List<String> args = new ArrayList<>(Arrays.asList(options));
         if (file != null) {
             args.add(file.getPath());
         }
-        checkResult("api-dependencies", expect, profiles,
-                    jdeps(args.toArray(new String[0])));
+        checkResult("api-dependencies", expect,
+                    jdeps(args.toArray(new String[0])).keySet());
     }
 
     Map<String,String> jdeps(String... args) {
@@ -197,33 +189,19 @@ public class APIDeps {
     }
 
     void checkResult(String label, String[] expect, Collection<String> found) {
-        List<String> list = Arrays.asList(expect);
-        if (!isEqual(list, found))
-            error("Unexpected " + label + " found: '" + found + "', expected: '" + list + "'");
-    }
-
-    void checkResult(String label, String[] expect, String[] profiles, Map<String,String> result) {
         // check the dependencies
-        checkResult(label, expect, result.keySet());
-        // check profile information
-        Set<String> values = new TreeSet<>();
-        String internal = "JDK internal API";
-        for (String s: result.values()) {
-            if (s.startsWith(internal)){
-                values.add(internal);
-            } else {
-                values.add(s);
-            }
+        if (!isEqual(expect, found)) {
+            error("Unexpected " + label + " found: '" + found +
+                    "', expected: '" + Arrays.toString(expect) + "'");
         }
-        checkResult(label, profiles, values);
     }
 
-    boolean isEqual(List<String> expected, Collection<String> found) {
-        if (expected.size() != found.size())
+    boolean isEqual(String[] expected, Collection<String> found) {
+        if (expected.length != found.size())
             return false;
 
         List<String> list = new ArrayList<>(found);
-        list.removeAll(expected);
+        list.removeAll(Arrays.asList(expected));
         return list.isEmpty();
     }
 

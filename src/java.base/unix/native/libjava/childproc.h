@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,6 @@ extern char **environ;
 #define MODE_FORK 1
 #define MODE_POSIX_SPAWN 2
 #define MODE_VFORK 3
-#define MODE_CLONE 4
 
 typedef struct _ChildStuff
 {
@@ -128,7 +127,7 @@ typedef struct _SpawnInfo {
  */
 extern const char * const *parentPathv;
 
-ssize_t restartableWrite(int fd, const void *buf, size_t count);
+ssize_t writeFully(int fd, const void *buf, size_t count);
 int restartableDup2(int fd_from, int fd_to);
 int closeSafely(int fd);
 int isAsciiDigit(char c);
@@ -148,5 +147,15 @@ void JDK_execvpe(int mode, const char *file,
                  const char *argv[],
                  const char *const envp[]);
 int childProcess(void *arg);
+
+#ifdef DEBUG
+/* This method is only used in debug builds for testing MODE_POSIX_SPAWN
+ * in the light of abnormal program termination of either the parent JVM
+ * or the newly created jspawnhelper child process during the execution of
+ * Java_java_lang_ProcessImpl_forkAndExec().
+ * See: test/jdk/java/lang/ProcessBuilder/JspawnhelperProtocol.java
+ */
+void jtregSimulateCrash(pid_t child, int stage);
+#endif
 
 #endif

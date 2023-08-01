@@ -914,6 +914,26 @@ reg_class v7_reg(
     V7, V7_H, V7_J, V7_K
 );
 
+// class for vector register v8
+reg_class v8_reg(
+    V8, V8_H, V8_J, V8_K
+);
+
+// class for vector register v9
+reg_class v9_reg(
+    V9, V9_H, V9_J, V9_K
+);
+
+// class for vector register v10
+reg_class v10_reg(
+    V10, V10_H, V10_J, V10_K
+);
+
+// class for vector register v11
+reg_class v11_reg(
+    V11, V11_H, V11_J, V11_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1852,7 +1872,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -1901,7 +1921,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1934,7 +1954,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
@@ -1949,11 +1969,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
@@ -1968,12 +1988,12 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   assert(MaxVectorSize >= len, "");
   if (UseRVV) {
     return Op_VecA;
@@ -1983,7 +2003,7 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -2156,7 +2176,7 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
 encode %{
   // BEGIN Non-volatile memory access
 
-  enc_class riscv_enc_li_imm(iRegIorL dst, immIorL src) %{
+  enc_class riscv_enc_mov_imm(iRegIorL dst, immIorL src) %{
     C2_MacroAssembler _masm(&cbuf);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
@@ -3628,6 +3648,46 @@ operand vReg_V7()
   interface(REG_INTER);
 %}
 
+operand vReg_V8()
+%{
+  constraint(ALLOC_IN_RC(v8_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V9()
+%{
+  constraint(ALLOC_IN_RC(v9_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand vRegMask()
 %{
   constraint(ALLOC_IN_RC(vmask_reg));
@@ -4905,9 +4965,9 @@ instruct loadConI(iRegINoSp dst, immI src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# int, #@loadConI" %}
+  format %{ "mv $dst, $src\t# int, #@loadConI" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -4918,9 +4978,9 @@ instruct loadConL(iRegLNoSp dst, immL src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# long, #@loadConL" %}
+  format %{ "mv $dst, $src\t# long, #@loadConL" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -8159,7 +8219,7 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_cost(ALU_COST);
   format %{ "addw  $dst, $src, zr\t#@convI2L_reg_reg" %}
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8171,7 +8231,7 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   format %{ "addw  $dst, $src, zr\t#@convL2I_reg" %}
 
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -9940,7 +10000,7 @@ instruct string_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
@@ -9958,7 +10018,7 @@ instruct string_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareL" %}
@@ -9975,7 +10035,7 @@ instruct string_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
@@ -9993,7 +10053,7 @@ instruct string_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}

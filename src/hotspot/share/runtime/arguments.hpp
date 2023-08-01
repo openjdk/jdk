@@ -75,6 +75,9 @@ class PathString : public CHeapObj<mtArguments> {
 
   PathString(const char* value);
   ~PathString();
+
+  // for JVM_ReadSystemPropertiesInfo
+  static int value_offset_in_bytes()  { return (int)offset_of(PathString, _value);  }
 };
 
 // ModulePatchPath records the module/path pair as specified to --patch-module.
@@ -136,6 +139,10 @@ class SystemProperty : public PathString {
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
+
+  // for JVM_ReadSystemPropertiesInfo
+  static int key_offset_in_bytes()  { return (int)offset_of(SystemProperty, _key);  }
+  static int next_offset_in_bytes() { return (int)offset_of(SystemProperty, _next); }
 };
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
@@ -242,11 +249,6 @@ class Arguments : AllStatic {
   // Operation modi
   static Mode _mode;
   static void set_mode_flags(Mode mode);
-
-  // -Xdebug flag
-  static bool _xdebug_mode;
-  static void set_xdebug_mode(bool arg) { _xdebug_mode = arg; }
-  static bool xdebug_mode()             { return _xdebug_mode; }
 
   // preview features
   static bool _enable_preview;

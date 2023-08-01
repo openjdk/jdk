@@ -29,6 +29,7 @@ IdentifierTest.java:145:15: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:146:13: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:151:15: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:152:17: compiler.err.use.of.underscore.not.allowed
+IdentifierTest.java:158:16: compiler.err.use.of.underscore.not.allowed.with.brackets
 IdentifierTest.java:160:25: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:169:5: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:173:26: compiler.err.use.of.underscore.not.allowed
@@ -36,4 +37,4 @@ IdentifierTest.java:175:19: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:181:11: compiler.err.use.of.underscore.not.allowed
 - compiler.note.preview.filename: IdentifierTest.java, DEFAULT
 - compiler.note.preview.recompile
-36 errors
+37 errors

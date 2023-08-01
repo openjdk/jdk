@@ -50,7 +50,7 @@
                                                                             \
   /* compiler interface */                                                  \
                                                                             \
-  develop(bool, CIPrintCompilerName, false,                                 \
+  product(bool, CIPrintCompilerName, false, DIAGNOSTIC,                     \
           "when CIPrint is active, print the name of the active compiler")  \
                                                                             \
   product(bool, CIPrintCompileQueue, false, DIAGNOSTIC,                     \
