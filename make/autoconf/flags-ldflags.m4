@@ -72,9 +72,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
     BASIC_LDFLAGS_JVM_ONLY=""
 
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
+
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
         -fPIC"
+
+    LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
+
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
         -Wl,-bernotok -Wl,-bdatapsize:64k -Wl,-btextpsize:64k -Wl,-bstackpsize:64k"
@@ -161,6 +166,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
   # Export some intermediate variables for compatibility
   LDFLAGS_CXX_JDK="$BASIC_LDFLAGS_ONLYCXX $BASIC_LDFLAGS_ONLYCXX_JDK_ONLY $DEBUGLEVEL_LDFLAGS_JDK_ONLY"
   AC_SUBST(LDFLAGS_CXX_JDK)
+  AC_SUBST(LDFLAGS_CXX_PARTIAL_LINKING)
 ])
 
 ################################################################################

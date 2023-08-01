@@ -356,7 +356,6 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
   LogTarget(Debug, gc, phases) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     log_phase(phase, 2 + extra_indent, &ls, true);
   }
@@ -370,7 +369,7 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum,
   }
 }
 
-#define TIME_FORMAT "%.1lfms"
+#define TIME_FORMAT "%.2lfms"
 
 void G1GCPhaseTimes::info_time(const char* name, double value) const {
   log_info(gc, phases)("  %s: " TIME_FORMAT, name, value);
@@ -637,4 +636,3 @@ G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
     _phase_times->record_or_add_time_secs(G1GCPhaseTimes::ObjCopy, _worker_id, _trim_time.seconds());
   }
 }
-

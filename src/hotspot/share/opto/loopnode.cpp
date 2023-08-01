@@ -259,8 +259,8 @@ void PhaseIdealLoop::set_early_ctrl(Node* n, bool update_body) {
 // set missing _ctrl entries on new nodes
 void PhaseIdealLoop::set_subtree_ctrl(Node* n, bool update_body) {
   // Already set?  Get out.
-  if (_nodes[n->_idx]) return;
-  // Recursively set _nodes array to indicate where the Node goes
+  if (_loop_or_ctrl[n->_idx]) return;
+  // Recursively set _loop_or_ctrl array to indicate where the Node goes
   uint i;
   for (i = 0; i < n->req(); ++i) {
     Node *m = n->in(i);
@@ -1089,13 +1089,13 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* c = loop->_body.at(i);
     if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
-      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      IfProjNode* if_proj = c->as_IfProj();
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
       if (call != nullptr) {
         Node* range = nullptr;
         Node* offset = nullptr;
         jlong scale = 0;
-        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
-        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
+        if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
             original_iters_limit / ABS(scale * stride_con) >= min_iters) {
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
@@ -1745,6 +1745,21 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
+
+  if (x->Opcode() == Op_Region) {
+    // x has not yet been transformed to Loop or LongCountedLoop.
+    // This should only happen if we are inside an infinite loop.
+    // It happens like this:
+    //   build_loop_tree -> do not attach infinite loop and nested loops
+    //   beautify_loops  -> does not transform the infinite and nested loops to LoopNode, because not attached yet
+    //   build_loop_tree -> find and attach infinite and nested loops
+    //   counted_loop    -> nested Regions are not yet transformed to LoopNodes, we land here
+    assert(x->as_Region()->is_in_infinite_subgraph(),
+           "x can only be a Region and not Loop if inside infinite loop");
+    // Come back later when Region is transformed to LoopNode
+    return false;
+  }
+
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
@@ -2296,8 +2311,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (jlong)final_int, "final value should be integer");
-    return TypeInt::make(final_int);
+    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
+    // there might be a temporary overflow from PhiNodes see JDK-8309266
+    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    if (final_con == (jlong)final_int) {
+      return TypeInt::make(final_int);
+    } else {
+      return bottom_type();
+    }
   }
 
   return bottom_type(); // TypeInt::INT
@@ -3510,13 +3531,13 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 }
 
 //------------------------------allpaths_check_safepts----------------------------
-// Allpaths backwards scan from loop tail, terminating each path at first safepoint
-// encountered.  Helper for check_safepts.
+// Allpaths backwards scan. Starting at the head, traversing all backedges, and the body. Terminating each path at first
+// safepoint encountered.  Helper for check_safepts.
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
   assert(stack.size() == 0, "empty stack");
-  stack.push(_tail);
+  stack.push(_head);
   visited.clear();
-  visited.set(_tail->_idx);
+  visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
     if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
@@ -3524,12 +3545,13 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
-        _required_safept->push(n);  // save the one closest to the tail
+        // save the first we run into on that path: closest to the tail if the head has a single backedge
+        _required_safept->push(n);
       }
       // Terminate this path
     } else {
       uint start = n->is_Region() ? 1 : 0;
-      uint end   = n->is_Region() && !n->is_Loop() ? n->req() : start + 1;
+      uint end   = n->is_Region() && (!n->is_Loop() || n == _head) ? n->req() : start + 1;
       for (uint i = start; i < end; i++) {
         Node* in = n->in(i);
         assert(in->is_CFG(), "must be");
@@ -3601,53 +3623,55 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   if (_child) _child->check_safepts(visited, stack);
   if (_next)  _next ->check_safepts(visited, stack);
 
-  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr && !_irreducible) {
+  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr) {
     bool  has_call         = false;    // call on dom-path
     bool  has_local_ncsfpt = false;    // ncsfpt on dom-path at this loop depth
     Node* nonlocal_ncsfpt  = nullptr;  // ncsfpt on dom-path at a deeper depth
-    // Scan the dom-path nodes from tail to head
-    for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-      if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
-        has_call = true;
-        _has_sfpt = 1;          // Then no need for a safept!
-        break;
-      } else if (n->Opcode() == Op_SafePoint) {
-        if (_phase->get_loop(n) == this) {
-          has_local_ncsfpt = true;
+    if (!_irreducible) {
+      // Scan the dom-path nodes from tail to head
+      for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
+          has_call = true;
+          _has_sfpt = 1;          // Then no need for a safept!
           break;
-        }
-        if (nonlocal_ncsfpt == nullptr) {
-          nonlocal_ncsfpt = n; // save the one closest to the tail
-        }
-      } else {
-        IdealLoopTree* nlpt = _phase->get_loop(n);
-        if (this != nlpt) {
-          // If at an inner loop tail, see if the inner loop has already
-          // recorded seeing a call on the dom-path (and stop.)  If not,
-          // jump to the head of the inner loop.
-          assert(is_member(nlpt), "nested loop");
-          Node* tail = nlpt->_tail;
-          if (tail->in(0)->is_If()) tail = tail->in(0);
-          if (n == tail) {
-            // If inner loop has call on dom-path, so does outer loop
-            if (nlpt->_has_sfpt) {
-              has_call = true;
-              _has_sfpt = 1;
-              break;
-            }
-            // Skip to head of inner loop
-            assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
-            n = nlpt->_head;
-            if (_head == n) {
-              // this and nlpt (inner loop) have the same loop head. This should not happen because
-              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
-              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
-              // but then attached in the build_loop_tree afterwards, and so still have unmerged
-              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
-              // since we have reached the loop head of this.
-              assert(_head->as_Region()->is_in_infinite_subgraph(),
-                     "only expect unmerged backedges in infinite loops");
-              break;
+        } else if (n->Opcode() == Op_SafePoint) {
+          if (_phase->get_loop(n) == this) {
+            has_local_ncsfpt = true;
+            break;
+          }
+          if (nonlocal_ncsfpt == nullptr) {
+            nonlocal_ncsfpt = n; // save the one closest to the tail
+          }
+        } else {
+          IdealLoopTree* nlpt = _phase->get_loop(n);
+          if (this != nlpt) {
+            // If at an inner loop tail, see if the inner loop has already
+            // recorded seeing a call on the dom-path (and stop.)  If not,
+            // jump to the head of the inner loop.
+            assert(is_member(nlpt), "nested loop");
+            Node* tail = nlpt->_tail;
+            if (tail->in(0)->is_If()) tail = tail->in(0);
+            if (n == tail) {
+              // If inner loop has call on dom-path, so does outer loop
+              if (nlpt->_has_sfpt) {
+                has_call = true;
+                _has_sfpt = 1;
+                break;
+              }
+              // Skip to head of inner loop
+              assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
+              n = nlpt->_head;
+              if (_head == n) {
+                // this and nlpt (inner loop) have the same loop head. This should not happen because
+                // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+                // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+                // but then attached in the build_loop_tree afterwards, and so still have unmerged
+                // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+                // since we have reached the loop head of this.
+                assert(_head->as_Region()->is_in_infinite_subgraph(),
+                       "only expect unmerged backedges in infinite loops");
+                break;
+              }
             }
           }
         }
@@ -3989,7 +4013,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
-    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4301,8 +4324,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   VectorSet visited;
   // Pre-grow the mapping from Nodes to IdealLoopTrees.
-  _nodes.map(C->unique(), nullptr);
-  memset(_nodes.adr(), 0, wordSize * C->unique());
+  _loop_or_ctrl.map(C->unique(), nullptr);
+  memset(_loop_or_ctrl.adr(), 0, wordSize * C->unique());
 
   // Pre-build the top-level outermost loop tree entry
   _ltree_root = new IdealLoopTree( this, C->root(), C->root() );
@@ -4368,7 +4391,7 @@ void PhaseIdealLoop::build_and_optimize() {
     if( _ltree_root->_child->beautify_loops( this ) ) {
       // Re-build loop tree!
       _ltree_root->_child = nullptr;
-      _nodes.clear();
+      _loop_or_ctrl.clear();
       reallocate_preorders();
       build_loop_tree();
       // Check for bailout, and return
@@ -4398,7 +4421,7 @@ void PhaseIdealLoop::build_and_optimize() {
     // into RegionNodes.  It doesn't do this test against Root, so
     // we do it here.
     for( uint i = 1; i < C->root()->req(); i++ ) {
-      if( !_nodes[C->root()->in(i)->_idx] ) {    // Dead path into Root?
+      if (!_loop_or_ctrl[C->root()->in(i)->_idx]) { // Dead path into Root?
         _igvn.delete_input_of(C->root(), i);
         i--;                      // Rerun same iteration on compressed edges
       }
@@ -4412,9 +4435,9 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 
   // Walk the DATA nodes and place into loops.  Find earliest control
-  // node.  For CFG nodes, the _nodes array starts out and remains
+  // node.  For CFG nodes, the _loop_or_ctrl array starts out and remains
   // holding the associated IdealLoopTree pointer.  For DATA nodes, the
-  // _nodes array holds the earliest legal controlling CFG node.
+  // _loop_or_ctrl array holds the earliest legal controlling CFG node.
 
   // Allocate stack with enough space to avoid frequent realloc
   int stack_size = (C->live_nodes() >> 1) + 16; // (live_nodes>>1)+16 from Java2D stats
@@ -4629,29 +4652,7 @@ void PhaseIdealLoop::build_and_optimize() {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-
-        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
-          assert(PostLoopMultiversioning, "multiversioning must be enabled");
-          // Check that the rce'd post loop is encountered first, multiversion after all
-          // major main loop optimization are concluded
-          if (!C->major_progress()) {
-            IdealLoopTree *lpt_next = lpt->_next;
-            if (lpt_next && lpt_next->is_counted()) {
-              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
-                if (!cl->is_multiversioned()) {
-                  if (multi_version_post_loops(lpt, lpt_next) == false) {
-                    // Cause the rce loop to be optimized away if we fail
-                    cl->mark_is_multiversioned();
-                    cl->set_slp_max_unroll(0);
-                    poison_rce_post_loop(lpt);
-                  }
-                }
-              }
-            }
-            sw.transform_loop(lpt, true);
-          }
-        } else if (cl->is_main_loop()) {
+        if (cl->is_main_loop()) {
           if (!sw.transform_loop(lpt, true)) {
             // Instigate more unrolling for optimization when vectorization fails.
             if (cl->has_passed_slp()) {
@@ -4719,7 +4720,7 @@ bool PhaseIdealLoop::verify_idom_and_nodes(Node* root, const PhaseIdealLoop* pha
     Node* n = worklist.at(i);
     // process node
     success &= verify_idom(n, phase_verify);
-    success &= verify_nodes(n, phase_verify);
+    success &= verify_loop_ctrl(n, phase_verify);
     // visit inputs
     for (uint j = 0; j < n->req(); j++) {
       if (n->in(j) != nullptr) {
@@ -4758,20 +4759,20 @@ bool PhaseIdealLoop::verify_idom(Node* n, const PhaseIdealLoop* phase_verify) co
   return true; // pass
 }
 
-// Verify "_nodes": control and loop membership.
-//  (0) _nodes[i] == nullptr -> node not reachable.
+// Verify "_loop_or_ctrl": control and loop membership.
+//  (0) _loop_or_ctrl[i] == nullptr -> node not reachable.
 //  (1) has_ctrl -> check lowest bit. 1 -> data node. 0 -> ctrl node.
 //  (2) has_ctrl true: get_ctrl_no_update returns ctrl of data node.
 //  (3) has_ctrl false: get_loop_idx returns IdealLoopTree for ctrl node.
-bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) const {
+bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verify) const {
   const uint i = n->_idx;
   // The loop-tree was built from def to use (top-down).
   // The verification happens from use to def (bottom-up).
   // We may thus find nodes during verification that are not in the loop-tree.
-  if (_nodes[i] == nullptr || phase_verify->_nodes[i] == nullptr) {
-    if (_nodes[i] != nullptr || phase_verify->_nodes[i] != nullptr) {
+  if (_loop_or_ctrl[i] == nullptr || phase_verify->_loop_or_ctrl[i] == nullptr) {
+    if (_loop_or_ctrl[i] != nullptr || phase_verify->_loop_or_ctrl[i] != nullptr) {
       tty->print_cr("Was reachable in only one. this %d, verify %d.",
-                 _nodes[i] != nullptr, phase_verify->_nodes[i] != nullptr);
+                 _loop_or_ctrl[i] != nullptr, phase_verify->_loop_or_ctrl[i] != nullptr);
       n->dump();
       return false; // fail
     }
@@ -4800,7 +4801,7 @@ bool PhaseIdealLoop::verify_nodes(Node* n, const PhaseIdealLoop* phase_verify) c
     //   PhaseIdealLoop::split_if_with_blocks
     //   at "set_ctrl(x, new_ctrl);"
     /*
-    if( _nodes[i] != loop_verify->_nodes[i] &&
+    if( _loop_or_ctrl[i] != loop_verify->_loop_or_ctrl[i] &&
         get_ctrl_no_update(n) != loop_verify->get_ctrl_no_update(n) ) {
       tty->print("Mismatched control setting for: ");
       n->dump();
@@ -5034,7 +5035,7 @@ void PhaseIdealLoop::recompute_dom_depth() {
     if (_dom_depth[i] > 0 && _idom[i] != nullptr) {
       _dom_depth[i] = no_depth_marker;
 
-      // heal _idom if it has a fwd mapping in _nodes
+      // heal _idom if it has a fwd mapping in _loop_or_ctrl
       if (_idom[i]->in(0) == nullptr) {
         idom(i);
       }
@@ -5105,7 +5106,7 @@ IdealLoopTree *PhaseIdealLoop::sort( IdealLoopTree *loop, IdealLoopTree *innermo
 
 //------------------------------build_loop_tree--------------------------------
 // I use a modified Vick/Tarjan algorithm.  I need pre- and a post- visit
-// bits.  The _nodes[] array is mapped by Node index and holds a null for
+// bits.  The _loop_or_ctrl[] array is mapped by Node index and holds a null for
 // not-yet-pre-walked, pre-order # for pre-but-not-post-walked and holds the
 // tightest enclosing IdealLoopTree for post-walked.
 //
@@ -5231,7 +5232,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         set_loop(m, l);         // Set loop header to loop now
 
     } else {                    // Else not a nested loop
-      if( !_nodes[m->_idx] ) continue; // Dead code has no loop
+      if (!_loop_or_ctrl[m->_idx]) continue; // Dead code has no loop
       l = get_loop(m);          // Get previously determined loop
       // If successor is header of a loop (nest), move up-loop till it
       // is a member of some outer enclosing loop.  Since there are no
@@ -5458,7 +5459,7 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
 #endif
 
 //------------------------------build_loop_early-------------------------------
-// Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
+// Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // First pass computes the earliest controlling node possible.  This is the
 // controlling input with the deepest dominating depth.
 void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
@@ -5487,7 +5488,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
             // Normally I would use a set_loop here.  But in this one special
             // case, it is legal (and expected) to change what loop a Node
             // belongs to.
-            _nodes.map(n->_idx, (Node*)(ilt->_parent) );
+            _loop_or_ctrl.map(n->_idx, (Node*)(ilt->_parent));
           }
           // Remove safepoints ONLY if I've already seen I don't need one.
           // (the old code here would yank a 2nd safepoint after seeing a
@@ -5646,7 +5647,7 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
   Node *LCA = nullptr;
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax && LCA != early; i++) {
     Node* c = n->fast_out(i);
-    if (_nodes[c->_idx] == nullptr)
+    if (_loop_or_ctrl[c->_idx] == nullptr)
       continue;                 // Skip the occasional dead node
     if( c->is_Phi() ) {         // For Phis, we must land above on the path
       for( uint j=1; j<c->req(); j++ ) {// For all inputs
@@ -5909,7 +5910,7 @@ void PhaseIdealLoop::init_dom_lca_tags() {
 }
 
 //------------------------------build_loop_late--------------------------------
-// Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
+// Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, Node_Stack &nstack ) {
   while (worklist.size() != 0) {
@@ -5919,7 +5920,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
     uint cnt = n->outcnt();
     uint   i = 0;
     while (true) {
-      assert( _nodes[n->_idx], "no dead nodes" );
+      assert(_loop_or_ctrl[n->_idx], "no dead nodes");
       // Visit all children
       if (i < cnt) {
         Node* use = n->raw_out(i);
@@ -5927,7 +5928,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
         // Check for dead uses.  Aggressively prune such junk.  It might be
         // dead in the global sense, but still have local uses so I cannot
         // easily call 'remove_dead_node'.
-        if( _nodes[use->_idx] != nullptr || use->is_top() ) { // Not dead?
+        if (_loop_or_ctrl[use->_idx] != nullptr || use->is_top()) { // Not dead?
           // Due to cycles, we might not hit the same fixed point in the verify
           // pass as we do in the regular pass.  Instead, visit such phis as
           // simple uses of the loop head.
@@ -5998,7 +5999,7 @@ void PhaseIdealLoop::verify_strip_mined_scheduling(Node *n, Node* least) {
 
 
 //------------------------------build_loop_late_post---------------------------
-// Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
+// Put Data nodes into some loop nest, by setting the _loop_or_ctrl[]->loop mapping.
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late_post(Node *n) {
   build_loop_late_post_work(n, true);
@@ -6067,7 +6068,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     }
   } else {                      // No slot zero
     if( n->is_CFG() ) {         // CFG with no slot 0 is dead
-      _nodes.map(n->_idx,0);    // No block setting, it's globally dead
+      _loop_or_ctrl.map(n->_idx,0);    // No block setting, it's globally dead
       return;
     }
     assert(!n->is_CFG() || n->outcnt() == 0, "");
@@ -6082,10 +6083,10 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   if( LCA == nullptr ) {
 #ifdef ASSERT
     for (DUIterator i1 = n->outs(); n->has_out(i1); i1++) {
-      assert( _nodes[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
+      assert(_loop_or_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
     }
 #endif
-    _nodes.map(n->_idx, 0);     // This node is useless
+    _loop_or_ctrl.map(n->_idx, 0);     // This node is useless
     _deadlist.push(n);
     return;
   }
@@ -6366,7 +6367,7 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
   // Now scan for CFG nodes in the same loop
   for (uint j = idx; j > 0; j--) {
     Node* n = rpo_list[j-1];
-    if (!_nodes[n->_idx])      // Skip dead nodes
+    if (!_loop_or_ctrl[n->_idx])      // Skip dead nodes
       continue;
 
     if (get_loop(n) != loop) { // Wrong loop nest
@@ -6399,14 +6400,14 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
       }
     }
     // Dump nodes it controls
-    for (uint k = 0; k < _nodes.max(); k++) {
+    for (uint k = 0; k < _loop_or_ctrl.max(); k++) {
       // (k < C->unique() && get_ctrl(find(k)) == n)
-      if (k < C->unique() && _nodes[k] == (Node*)((intptr_t)n + 1)) {
+      if (k < C->unique() && _loop_or_ctrl[k] == (Node*)((intptr_t)n + 1)) {
         Node* m = C->root()->find(k);
         if (m && m->outcnt() > 0) {
           if (!(has_ctrl(m) && get_ctrl_no_update(m) == n)) {
-            tty->print_cr("*** BROKEN CTRL ACCESSOR!  _nodes[k] is %p, ctrl is %p",
-                          _nodes[k], has_ctrl(m) ? get_ctrl_no_update(m) : nullptr);
+            tty->print_cr("*** BROKEN CTRL ACCESSOR!  _loop_or_ctrl[k] is %p, ctrl is %p",
+                          _loop_or_ctrl[k], has_ctrl(m) ? get_ctrl_no_update(m) : nullptr);
           }
           tty->sp(2 * loop->_nest + 1);
           m->dump();

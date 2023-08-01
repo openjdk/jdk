@@ -340,7 +340,7 @@ class Thread: public ThreadShadow {
   // and logging.
   virtual const char* type_name() const { return "Thread"; }
 
-  // Returns the current thread (ASSERTS if nullptr)
+  // Returns the current thread (ASSERTS if null)
   static inline Thread* current();
   // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();

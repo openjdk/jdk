@@ -53,7 +53,7 @@ class ArrayTest {
 
     @Test
     void testArrayNew() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
+        ClassModel cm = Classfile.of().parse(testClassPath);
 
         for (MethodModel mm : cm.methods()) {
             mm.code().ifPresent(code -> {

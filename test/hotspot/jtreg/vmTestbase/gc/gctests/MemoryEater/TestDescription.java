@@ -33,4 +33,3 @@
  *          /test/lib
  * @run main/othervm -XX:-UseGCOverheadLimit gc.gctests.MemoryEaterMT.MemoryEaterMT -t 1
  */
-
