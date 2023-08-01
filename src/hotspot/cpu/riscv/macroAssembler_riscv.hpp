@@ -596,7 +596,7 @@ class MacroAssembler: public Assembler {
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
     assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
-    guarantee(is_simm13(offset) && ((offset % 2) == 0),                                                  \
+    guarantee(is_simm13(offset) && is_even(offset),                                                      \
               "offset is invalid: is_simm_13: %s offset: " INT64_FORMAT,                                 \
               BOOL_TO_STR(is_simm13(offset)), offset);                                                   \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
@@ -774,7 +774,7 @@ public:
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
-  void rol32_imm(Register dst, Register src, uint32_t, Register tmp = t0);
+  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
   void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 

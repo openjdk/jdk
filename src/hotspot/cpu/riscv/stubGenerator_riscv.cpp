@@ -3967,7 +3967,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(a, a, rtmp1);
 
     // a = Integer.rotateLeft(a, s) + b;
-    __ rol32_imm(a, a, s, rtmp1);
+    __ rolw_imm(a, a, s, rtmp1);
     __ addw(a, a, b);
   }
 
