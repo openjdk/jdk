@@ -93,11 +93,14 @@ public final class Arrays {
      */
     @IntrinsicCandidate
     public static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
-        if (elemType == int.class) DualPivotQuicksort.sort((int[]) array, 0, fromIndex, toIndex);
-        else if (elemType == long.class) DualPivotQuicksort.sort((long[]) array, 0, fromIndex, toIndex);
-        else if (elemType == float.class) DualPivotQuicksort.sort((float[]) array, 0, fromIndex, toIndex);
-        else if (elemType == double.class) DualPivotQuicksort.sort((double[]) array, 0, fromIndex, toIndex);
-        else throw new UnsupportedOperationException("arraySort intrinsic not supported for this type: " + elemType.toString());
+        switch (array) {
+            case int[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
+            case long[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
+            case float[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
+            case double[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
+            default -> throw new UnsupportedOperationException(
+                    "arraySort intrinsic not supported for this type: " + elemType);
+        }
     }
 
     /*
