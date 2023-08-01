@@ -47,14 +47,15 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     private VariableElement currentElement;
 
     public EnumConstantWriter(ClassWriter classWriter) {
-        super(classWriter, classWriter.typeElement);
+        super(classWriter, classWriter.typeElement, VisibleMemberTable.Kind.ENUM_CONSTANTS);
     }
 
     public EnumConstantWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 
-    public void build(Content target) {
+    @Override
+    public void buildDetails(Content target) {
         buildEnumConstant(target);
     }
 
@@ -147,7 +148,7 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constantsSummary,
                 HtmlIds.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
