@@ -986,7 +986,7 @@ void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {
     return;
   }
 
-  constexpr size_t MinFreeScratchWords = 100;
+  const size_t MinFreeScratchWords = 100;
 
   ContiguousSpace* to_space = to();
   const size_t free_words = pointer_delta(to_space->end(), to_space->top());
