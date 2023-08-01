@@ -42,7 +42,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
  * This abstract class exists to provide functionality needed in the
- * the formatting of member information.  Since AbstractSubWriter and its
+ * the formatting of member information.  Since AbstractMemberWriter and its
  * subclasses control this, they would be the logical place to put this.
  * However, because each member type has its own subclass, subclassing
  * can not be used effectively to change formatting.  The concrete
@@ -190,22 +190,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public void addClassContent(Content source) {
         bodyContents.addMainContent(source);
-    }
-
-    /**
-     * Add the annotation content.
-     *
-     * @param source annotation content which will be added to the documentation
-     */
-    public void addAnnotationContent(Content source) {
-        addClassContent(source);
-    }
-
-    /**
-     * {@return the member header}
-     */
-    public Content getMemberHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
     }
 
     /**

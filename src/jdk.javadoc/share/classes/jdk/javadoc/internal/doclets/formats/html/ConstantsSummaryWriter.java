@@ -112,7 +112,8 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
         this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
     }
 
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         boolean anyConstants = configuration.packages.stream().anyMatch(this::hasConstantField);
         if (!anyConstants) {
             return;
@@ -160,7 +161,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      */
     protected void buildConstantSummaries() {
         packageGroupHeadings.clear();
-        Content summaries = getConstantSummaries();
+        Content summaries = new ContentBuilder();
         for (PackageElement aPackage : configuration.packages) {
             if (hasConstantField(aPackage)) {
                 currentPackage = aPackage;
@@ -357,12 +358,6 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
         var section = HtmlTree.SECTION(HtmlStyle.packages, heading);
         section.add(content);
         bodyContents.addMainContent(section);
-    }
-
-    //@Override
-    // TODO: inline?
-    public Content getConstantSummaries() {
-        return new ContentBuilder();
     }
 
      void addPackageGroup(String abbrevPackageName, Content toContent) {

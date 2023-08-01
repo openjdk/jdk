@@ -100,12 +100,8 @@ public class PackageWriter extends HtmlDocletWriter {
         computePackageData();
     }
 
-    /**
-     * Build the package summary.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildPackageDoc();
     }
 
@@ -369,7 +365,7 @@ public class PackageWriter extends HtmlDocletWriter {
         }
     }
 
-    public void addPackageSummary(List<PackageElement> packages, Content label,
+    protected void addPackageSummary(List<PackageElement> packages, Content label,
                                   TableHeader tableHeader, Content summaryContent,
                                   boolean showModules) {
         if (!packages.isEmpty()) {
