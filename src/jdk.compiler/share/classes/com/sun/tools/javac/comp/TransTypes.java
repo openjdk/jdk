@@ -838,6 +838,9 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitStringTemplate(JCStringTemplate tree) {
+        if (tree.processor != null) {
+            tree.processor = translate(tree.processor);
+        }
         tree.expressions = tree.expressions.stream()
                 .map(e -> translate(e, erasure(e.type))).collect(List.collector());
         tree.type = erasure(tree.type);
