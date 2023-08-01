@@ -33,6 +33,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -870,6 +871,14 @@ bool MetaspaceShared::is_shared_dynamic(void* p) {
   }
 }
 
+bool MetaspaceShared::is_shared_static(void* p) {
+  if (is_in_shared_metaspace(p) && !is_shared_dynamic(p)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // This function is called when the JVM is unable to load the specified archive(s) due to one
 // of the following conditions.
 // - There's an error that indicates that the archive(s) files were corrupt or otherwise damaged.
@@ -1466,8 +1475,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer);
-    SymbolTable::serialize_shared_table_header(&rc, false);
-    SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
+    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
