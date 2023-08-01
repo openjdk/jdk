@@ -32,6 +32,7 @@
 #include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -2115,7 +2116,22 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   if (is_power_of_2(sizeof(ResolvedIndyEntry))) {
     shll(index, log2i_exact(sizeof(ResolvedIndyEntry))); // Scale index by power of 2
   } else {
-    imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   }
   lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyEntry>::base_offset_in_bytes()));
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+
+  movptr(cache, Address(cache, ConstantPoolCache::field_entries_offset()));
+  // Take shortcut if the size is a power of 2
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    shll(index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
+  } else {
+    imull(index, index, sizeof(ResolvedFieldEntry)); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+  }
+  lea(cache, Address(cache, index, Address::times_1, Array<ResolvedFieldEntry>::base_offset_in_bytes()));
 }
