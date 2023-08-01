@@ -2850,22 +2850,22 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (InterceptOSException) goto exit;
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
+  if (!InterceptOSException) {
+    DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 #if defined(_M_ARM64)
-  address pc = (address)exceptionInfo->ContextRecord->Pc;
+    address pc = (address)exceptionInfo->ContextRecord->Pc;
 #elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
+    address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+    address pc = (address) exceptionInfo->ContextRecord->Eip;
 #endif
-  Thread* t = Thread::current_or_null_safe();
+    Thread* t = Thread::current_or_null_safe();
 
-  if (exception_code != EXCEPTION_BREAKPOINT) {
-    report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
-                exceptionInfo->ContextRecord);
+    if (exception_code != EXCEPTION_BREAKPOINT) {
+      report_error(t, exception_code, pc, exceptionInfo->ExceptionRecord,
+                  exceptionInfo->ContextRecord);
+    }
   }
-exit:
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
