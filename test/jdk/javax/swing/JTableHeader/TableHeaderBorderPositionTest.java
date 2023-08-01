@@ -42,8 +42,6 @@ import java.io.IOException;
  * @run main TableHeaderBorderPositionTest
  */
 public class TableHeaderBorderPositionTest {
-    private static final int WIDTH = 300;
-    private static final int HEIGHT = 150;
     private static final double SCALE = 2.25;
 
     public static void main(String[] args) throws Exception {
@@ -57,15 +55,23 @@ public class TableHeaderBorderPositionTest {
         };
 
         String[] columnNames = {"Size", "Size"};
+
         JTable table = new JTable(data, columnNames);
-        table.setSize(WIDTH, HEIGHT);
+        Dimension tableSize = table.getPreferredSize();
+        table.setSize(tableSize);
 
         final JTableHeader header = table.getTableHeader();
-        Dimension size = header.getPreferredSize();
-        header.setSize(size);
+        Dimension headerSize = header.getPreferredSize();
+        header.setSize(headerSize);
 
-        BufferedImage bufferedImage = new BufferedImage(WIDTH, HEIGHT,
-                BufferedImage.TYPE_INT_RGB);
+        Dimension size = new Dimension(Math.max(headerSize.width, tableSize.width),
+                headerSize.height + tableSize.height);
+
+        BufferedImage bufferedImage =
+                new BufferedImage((int)Math.ceil(size.width * SCALE),
+                        (int)Math.ceil(size.height * SCALE),
+                        BufferedImage.TYPE_INT_RGB);
+
         Graphics2D g2d = bufferedImage.createGraphics();
         g2d.scale(SCALE, SCALE);
 
@@ -77,12 +83,12 @@ public class TableHeaderBorderPositionTest {
             g2d.dispose();
         }
 
-        int verticalLineCol = (int) (table.getTableHeader()
-                                          .getColumnModel()
-                                          .getColumn(0)
-                                          .getWidth() * SCALE) - 2;
+        int verticalLineCol = (int)(table.getTableHeader()
+                                         .getColumnModel()
+                                         .getColumn(0)
+                                         .getWidth() * SCALE) - 2;
         int expectedRGB = bufferedImage.getRGB(verticalLineCol, 0);
-        int maxHeight = (int)(((double)table.getTableHeader().getHeight() * SCALE )
+        int maxHeight = (int)(((double)table.getTableHeader().getHeight() * SCALE)
                 + ((double)table.getRowHeight() * SCALE));
 
         for (int y = 0; y < maxHeight; y++) {
