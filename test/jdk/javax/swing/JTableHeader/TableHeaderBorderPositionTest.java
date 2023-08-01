@@ -94,16 +94,19 @@ public class TableHeaderBorderPositionTest {
         for (int y = 0; y < maxHeight; y++) {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != bufferedImage.getRGB(x, y)) {
-                    try {
-                        ImageIO.write(bufferedImage, "png",
-                                new File("FailureImage.png"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    saveBufferedImage(bufferedImage, "failureImage.png");
                     throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
                 }
             }
         }
         System.out.println("Test Passed");
+    }
+
+    private static void saveBufferedImage(BufferedImage image, String fileName) {
+        try {
+            ImageIO.write(image, "png", new File(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
