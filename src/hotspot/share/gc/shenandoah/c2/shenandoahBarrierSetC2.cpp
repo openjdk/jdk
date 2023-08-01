@@ -251,14 +251,32 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
     if (do_load) {
       // load original value
-      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx, false, MemNode::unordered, LoadNode::Pinned);
+      // alias_idx correct??
+      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
     }
 
     // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
+      Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
+
+      // is the queue for this thread full?
+      __ if_then(index, BoolTest::ne, zeroX, likely); {
+
+        // decrement the index
+        Node* next_index = kit->gvn().transform(new SubXNode(index, __ ConX(sizeof(intptr_t))));
+
+        // Now get the buffer location we will log the previous value into and store it
+        Node *log_addr = __ AddP(no_base, buffer, next_index);
+        __ store(__ ctrl(), log_addr, pre_val, T_OBJECT, Compile::AliasIdxRaw, MemNode::unordered);
+        // update the index
+        __ store(__ ctrl(), index_adr, next_index, index_bt, Compile::AliasIdxRaw, MemNode::unordered);
+
+      } __ else_(); {
+
         // logging buffer is full, call the runtime
-      const TypeFunc *tf = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type();
+        const TypeFunc *tf = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type();
         __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), "shenandoah_wb_pre", pre_val, tls);
+      } __ end_if();  // (!index)
     } __ end_if();  // (pre_val != nullptr)
   } __ end_if();  // (!marking)
 
@@ -267,7 +285,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
   if (ShenandoahSATBBarrier && adr != nullptr) {
     Node* c = kit->control();
-    Node* call = c->in(1)->in(1)->in(0);
+    Node* call = c->in(1)->in(1)->in(1)->in(0);
     assert(is_shenandoah_wb_pre_call(call), "shenandoah_wb_pre call expected");
     call->add_req(adr);
   }

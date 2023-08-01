@@ -354,7 +354,6 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {
   oop obj = cast_to_oop(entry);
-  shenandoah_assert_correct(nullptr, obj);
   return !_marking_context->is_marked_strong(obj);
 }
 
