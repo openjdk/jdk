@@ -81,8 +81,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * </tbody>
  * </table>
  * <p>
- * Alternatively, Locale, Type, and/or Style invariant patterns can be
- * created with {@link #getInstance(String[])}. The String array to the
+ * Alternatively, an instance with Locale, Type, and/or Style invariant patterns
+ * can be created with {@link #getInstance(String[])}. The String array to the
  * method specifies the delimiting patterns for the start/middle/end portion of
  * the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
@@ -228,12 +228,12 @@ public class ListFormat extends Format {
      * Then the input string list with {@code n} elements substitutes these
      * placeholders:
      * <blockquote><pre>
-     * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
+     * n = 1: {0}
+     * n = 2: pattern for "two"
+     * n = 3: pattern for "three"
+     * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
      * </pre></blockquote>
-     * If the number of elements in the input string list is either 2 or 3, and the
-     * pattern for those (either "two" or "three", respectively) is not empty, the
-     * pattern is used as it is.
-     * Following table shows patterns array which is equivalent to
+     * As an example, the following table shows patterns array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
      * <caption style="display:none">Standard/Full Patterns in US English</caption>
@@ -274,7 +274,7 @@ public class ListFormat extends Format {
      * </table>
      *
      * @param patterns array of patterns, not null
-     * @throws IllegalArgumentException if the length {@code patterns} array is less than 5, or
+     * @throws IllegalArgumentException if the length {@code patterns} array is not 5, or
      *          any of {@code start}, {@code middle}, {@code end} patterns cannot be parsed.
      * @throws NullPointerException if {@code patterns} is null.
      */
@@ -411,10 +411,10 @@ public class ListFormat extends Format {
             parsed = new String[]{source};
         }
 
-        if (parsed instanceof String[] strings) {
-            return Arrays.asList(strings);
+        if (parsed instanceof Object[] objs) {
+            return Arrays.asList(objs);
         }
-        throw new InternalError("MessageFormat.parseObject() should return String[]");
+        throw new InternalError("MessageFormat.parseObject() should return Object[]");
     }
 
     @Override

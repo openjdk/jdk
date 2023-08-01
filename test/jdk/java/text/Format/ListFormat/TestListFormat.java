@@ -63,9 +63,6 @@ public class TestListFormat {
             "",
             "",
     };
-    private static final String[] CUSTOM_PATTERNS_IAE_LENGTH = {
-            ""
-    };
     private static final String[] CUSTOM_PATTERNS_IAE_START = {
             "{0}",
             "{0} mid {1}",
@@ -113,7 +110,8 @@ public class TestListFormat {
 
     static Arguments[] getInstance_1Arg_IAE() {
         return new Arguments[] {
-                arguments(CUSTOM_PATTERNS_IAE_LENGTH, "Pattern array length should be 5"),
+                arguments(new String[1], "Pattern array length should be 5"),
+                arguments(new String[6], "Pattern array length should be 5"),
                 arguments(CUSTOM_PATTERNS_IAE_START, "start pattern is incorrect: {0}"),
                 arguments(CUSTOM_PATTERNS_IAE_MIDDLE, "middle pattern is incorrect: {0} {1} {2}"),
                 arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect: error {0} ebet {1}"),
@@ -172,9 +170,9 @@ public class TestListFormat {
     @ParameterizedTest
     @MethodSource
     void getInstance_1Arg_IAE(String[] invalidPatterns, String errorMsg) {
-        Exception e = assertThrows(IllegalArgumentException.class,
+        var ex = assertThrows(IllegalArgumentException.class,
                 () -> ListFormat.getInstance(invalidPatterns));
-        assertEquals(errorMsg, e.getMessage());
+        assertEquals(errorMsg, ex.getMessage());
     }
 
     @ParameterizedTest
@@ -182,6 +180,13 @@ public class TestListFormat {
     void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
         var f = ListFormat.getInstance(l, type, style);
         compareResult(f, SAMPLE3, expected, roundTrip);
+    }
+
+    @Test
+    void format_emptyInput() {
+        var ex = assertThrows(IllegalArgumentException.class,
+                    () -> ListFormat.getInstance().format(List.of()));
+        assertEquals("There should at least be one input string", ex.getMessage());
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
