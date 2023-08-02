@@ -656,7 +656,7 @@ public final class Connection implements Runnable {
                             unpauseReader();
                             if (debug) {
                                 if(sock.isClosed())
-                                    System.err.println("Connection::cleanup - socket closed with no issue");
+                                    System.err.println("Connection::cleanup - socket closed.");
                             }
                         } catch (IOException ioe) {
                             if (debug)
