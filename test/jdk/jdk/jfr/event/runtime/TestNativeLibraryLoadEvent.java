@@ -48,24 +48,25 @@ public class TestNativeLibraryLoadEvent {
     private final static String EVENT_NAME = EventNames.NativeLibraryLoad;
 
     public static void main(String[] args) throws Throwable {
-        Recording recording = new Recording();
-        recording.enable(EVENT_NAME);
-        recording.start();
-        System.loadLibrary("awt");
-        recording.stop();
+        try (Recording recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            System.loadLibrary("awt");
+            recording.stop();
 
-        List<String> expectedLibs = getExpectedLibs();
-        for (RecordedEvent event : Events.fromRecording(recording)) {
-            System.out.println("Event:" + event);
-            String lib = Events.assertField(event, "name").notEmpty().getValue();
-            Events.assertField(event, "success");
-            for (String expectedLib : new ArrayList<>(expectedLibs)) {
-                if (lib.contains(expectedLib)) {
-                    expectedLibs.remove(expectedLib);
+            List<String> expectedLibs = getExpectedLibs();
+            for (RecordedEvent event : Events.fromRecording(recording)) {
+                System.out.println("Event:" + event);
+                String lib = Events.assertField(event, "name").notEmpty().getValue();
+                Events.assertField(event, "success");
+                for (String expectedLib : new ArrayList<>(expectedLibs)) {
+                    if (lib.contains(expectedLib)) {
+                        expectedLibs.remove(expectedLib);
+                    }
                 }
             }
+            assertTrue(expectedLibs.isEmpty(), "Missing libraries:" + expectedLibs.stream().collect(Collectors.joining(", ")));
         }
-        assertTrue(expectedLibs.isEmpty(), "Missing libraries:" + expectedLibs.stream().collect(Collectors.joining(", ")));
     }
 
     private static List<String> getExpectedLibs() throws Throwable {
