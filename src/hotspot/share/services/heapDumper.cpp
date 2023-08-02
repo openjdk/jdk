@@ -1972,7 +1972,7 @@ void VM_HeapDumper::doit() {
   uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
   uint num_requested_dump_thread = _num_dumper_threads;
   bool can_parallel = can_parallel_dump();
-  log_info(heapdump)("Reqeusted dump threads %u, active dump threads %u, " "parallelism %s",
+  log_info(heapdump)("Requested dump threads %u, active dump threads %u, " "parallelism %s",
                       num_requested_dump_thread, num_active_workers, can_parallel ? "true" : "false");
 
   if (num_active_workers <= 1 ||         // serial gc?
