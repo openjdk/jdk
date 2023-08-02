@@ -33,6 +33,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -792,7 +793,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
@@ -864,6 +865,14 @@ void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, v
 bool MetaspaceShared::is_shared_dynamic(void* p) {
   if ((p < MetaspaceObj::shared_metaspace_top()) &&
       (p >= _shared_metaspace_static_top)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool MetaspaceShared::is_shared_static(void* p) {
+  if (is_in_shared_metaspace(p) && !is_shared_dynamic(p)) {
     return true;
   } else {
     return false;
@@ -1466,8 +1475,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer);
-    SymbolTable::serialize_shared_table_header(&rc, false);
-    SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
+    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
