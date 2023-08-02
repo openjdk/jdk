@@ -393,46 +393,26 @@ final class DigitList implements Cloneable {
      }
 
     /**
-     * Determine if a number should create a 1 in the least significant location
-     * if truncating the representation to the given number of digits would
-     * violate the current RoundingMode contract.
-     * @param maximumDigits The maximum number of digits to be shown.
+     * This method sets the Digit List to a state that is either
+     * equivalent to zero, or a state with a 1 in the least significant location
+     * if an underflow to zero would violate the current RoundingMode contract.
      *
-     * Upon return, count will either be one or zero.
+     * This method does not return any value, and instead adjusts
+     * the instance variables that the Digit List is composed of.
+     *
+     * @param maximumDigits The maximum number of digits to be shown.
      */
     private void underflowToZero(int maximumDigits) {
-        switch(roundingMode) {
-            case UP:
-                // RoundingMode.UP can not decrease the magnitude of the value
-                // whether negative or positive.
-                decimalAt = -maximumDigits + 1;
-                digits[0] = '1';
-                count = 1;
-                break;
-            case CEILING:
-                // RoundingMode.CEILING follows RoundingMode.UP behavior when
-                // the value is positive
-                if (!isNegative) {
-                    decimalAt = -maximumDigits + 1;
-                    digits[0] = '1';
-                    count = 1;
-                } else {
-                    count = 0;
-                }
-                break;
-            case FLOOR:
-                // RoundingMode.FLOOR can not increase the value
-                // when negative
-                if (isNegative) {
-                    decimalAt = -maximumDigits + 1;
-                    digits[0] = '1';
-                    count = 1;
-                } else {
-                    count = 0;
-                }
-                break;
-            default:
-                count = 0;
+        // These modes under the right conditions should not
+        // decrease the magnitude of the formatted value
+        if (roundingMode == RoundingMode.UP
+                || (roundingMode == RoundingMode.CEILING && !isNegative)
+                || (roundingMode == RoundingMode.FLOOR && isNegative)) {
+            decimalAt = -maximumDigits + 1;
+            digits[0] = '1';
+            count = 1;
+        } else {
+            count = 0;
         }
     }
 
