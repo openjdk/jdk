@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ XVirtualMemoryManager::XVirtualMemoryManager(size_t max_capacity) :
 
   // Check max supported heap size
   if (max_capacity > XAddressOffsetMax) {
-    log_error_p(gc)("Java heap too large (max supported heap size is " SIZE_FORMAT "G)",
+    log_error_p(gc)("Java heap too large (max supported heap size is %zuG)",
                     XAddressOffsetMax / G);
     return;
   }
@@ -171,7 +171,7 @@ bool XVirtualMemoryManager::reserve(size_t max_capacity) {
                        (contiguous ? "Contiguous" : "Discontiguous"),
                        (limit == XAddressOffsetMax ? "Unrestricted" : "Restricted"),
                        (reserved == size ? "Complete" : "Degraded"));
-  log_info_p(gc, init)("Address Space Size: " SIZE_FORMAT "M x " SIZE_FORMAT " = " SIZE_FORMAT "M",
+  log_info_p(gc, init)("Address Space Size: %zuM x %zu = %zuM",
                        reserved / M, XHeapViews, (reserved * XHeapViews) / M);
 
   // Record reserved

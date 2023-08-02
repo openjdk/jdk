@@ -73,7 +73,7 @@ void Generation::print() const { print_on(tty); }
 
 void Generation::print_on(outputStream* st)  const {
   st->print(" %-20s", name());
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+  st->print(" total %zuK, used %zuK",
              capacity()/K, used()/K);
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
               p2i(_virtual_space.low_boundary()),
@@ -137,7 +137,7 @@ size_t Generation::max_contiguous_available() const {
 bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();
   bool   res = (available >= max_promotion_in_bytes);
-  log_trace(gc)("Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
+  log_trace(gc)("Generation: promo attempt is%s safe: available(%zu) %s max_promo(%zu)",
                 res? "":" not", available, res? ">=":"<", max_promotion_in_bytes);
   return res;
 }

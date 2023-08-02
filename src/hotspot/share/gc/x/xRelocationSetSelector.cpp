@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ void XRelocationSetSelectorGroup::select_inner() {
     }
 
     log_trace(gc, reloc)("Candidate Relocation Set (%s Pages): %d->%d, "
-                         "%.1f%% relative defragmentation, " SIZE_FORMAT " forwarding entries, %s",
+                         "%.1f%% relative defragmentation, %zu forwarding entries, %s",
                          _name, from, to, diff_reclaimable, from_forwarding_entries,
                          (selected_from == from) ? "Selected" : "Rejected");
   }
@@ -161,7 +161,7 @@ void XRelocationSetSelectorGroup::select_inner() {
   _stats._relocate = selected_live_bytes;
   _stats._npages_selected = npages_selected;
 
-  log_trace(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
+  log_trace(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, %zu forwarding entries",
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
 }
 

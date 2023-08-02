@@ -423,7 +423,7 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, _name, get_uint64_t());
   } else if (is_size_t()) {
-    st->print("-XX:%s=" SIZE_FORMAT, _name, get_size_t());
+    st->print("-XX:%s=%zu", _name, get_size_t());
   } else if (is_double()) {
     st->print("-XX:%s=%f", _name, get_double());
   } else if (is_ccstr()) {

@@ -45,18 +45,18 @@ void ShenandoahFreeSet::increase_used(size_t num_bytes) {
   shenandoah_assert_heaplocked();
   _used += num_bytes;
 
-  assert(_used <= _capacity, "must not use more than we have: used: " SIZE_FORMAT
-         ", capacity: " SIZE_FORMAT ", num_bytes: " SIZE_FORMAT, _used, _capacity, num_bytes);
+  assert(_used <= _capacity, "must not use more than we have: used: %zu"
+         ", capacity: %zu, num_bytes: %zu", _used, _capacity, num_bytes);
 }
 
 bool ShenandoahFreeSet::is_mutator_free(size_t idx) const {
-  assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT " (left: " SIZE_FORMAT ", right: " SIZE_FORMAT ")",
+  assert (idx < _max, "index is sane: %zu < %zu (left: %zu, right: %zu)",
           idx, _max, _mutator_leftmost, _mutator_rightmost);
   return _mutator_free_bitmap.at(idx);
 }
 
 bool ShenandoahFreeSet::is_collector_free(size_t idx) const {
-  assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT " (left: " SIZE_FORMAT ", right: " SIZE_FORMAT ")",
+  assert (idx < _max, "index is sane: %zu < %zu (left: %zu, right: %zu)",
           idx, _max, _collector_leftmost, _collector_rightmost);
   return _collector_free_bitmap.at(idx);
 }
@@ -140,7 +140,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
 }
 
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
-  assert (!has_no_alloc_capacity(r), "Performance: should avoid full regions on this path: " SIZE_FORMAT, r->index());
+  assert (!has_no_alloc_capacity(r), "Performance: should avoid full regions on this path: %zu", r->index());
 
   if (_heap->is_concurrent_weak_root_in_progress() &&
       r->is_trash()) {
@@ -161,7 +161,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
     if (size >= req.min_size()) {
       result = r->allocate(size, req.type());
-      assert (result != nullptr, "Allocation must succeed: free " SIZE_FORMAT ", actual " SIZE_FORMAT, free, size);
+      assert (result != nullptr, "Allocation must succeed: free %zu, actual %zu", free, size);
     }
   } else {
     result = r->allocate(size, req.type());
@@ -490,7 +490,7 @@ void ShenandoahFreeSet::log_status() {
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       size_t free = capacity() - used();
 
-      ls.print("Free: " SIZE_FORMAT "%s, Max: " SIZE_FORMAT "%s regular, " SIZE_FORMAT "%s humongous, ",
+      ls.print("Free: %zu%s, Max: %zu%s regular, %zu%s humongous, ",
                byte_size_in_proper_unit(total_free),    proper_unit_for_byte_size(total_free),
                byte_size_in_proper_unit(max),           proper_unit_for_byte_size(max),
                byte_size_in_proper_unit(max_humongous), proper_unit_for_byte_size(max_humongous)
@@ -503,7 +503,7 @@ void ShenandoahFreeSet::log_status() {
       } else {
         frag_ext = 0;
       }
-      ls.print(SIZE_FORMAT "%% external, ", frag_ext);
+      ls.print("%zu%% external, ", frag_ext);
 
       size_t frag_int;
       if (mutator_count() > 0) {
@@ -511,7 +511,7 @@ void ShenandoahFreeSet::log_status() {
       } else {
         frag_int = 0;
       }
-      ls.print(SIZE_FORMAT "%% internal; ", frag_int);
+      ls.print("%zu%% internal; ", frag_int);
     }
 
     {
@@ -527,7 +527,7 @@ void ShenandoahFreeSet::log_status() {
         }
       }
 
-      ls.print_cr("Reserve: " SIZE_FORMAT "%s, Max: " SIZE_FORMAT "%s",
+      ls.print_cr("Reserve: %zu%s, Max: %zu%s",
                   byte_size_in_proper_unit(total_free), proper_unit_for_byte_size(total_free),
                   byte_size_in_proper_unit(max),        proper_unit_for_byte_size(max));
     }
@@ -547,7 +547,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:
         in_new_region = false;
-        assert(false, "Trying to allocate TLAB larger than the humongous threshold: " SIZE_FORMAT " > " SIZE_FORMAT,
+        assert(false, "Trying to allocate TLAB larger than the humongous threshold: %zu > %zu",
                req.size(), ShenandoahHeapRegion::humongous_threshold_words());
         return nullptr;
       default:
@@ -576,13 +576,13 @@ size_t ShenandoahFreeSet::unsafe_peek_free() const {
 }
 
 void ShenandoahFreeSet::print_on(outputStream* out) const {
-  out->print_cr("Mutator Free Set: " SIZE_FORMAT "", mutator_count());
+  out->print_cr("Mutator Free Set: %zu", mutator_count());
   for (size_t index = _mutator_leftmost; index <= _mutator_rightmost; index++) {
     if (is_mutator_free(index)) {
       _heap->get_region(index)->print_on(out);
     }
   }
-  out->print_cr("Collector Free Set: " SIZE_FORMAT "", collector_count());
+  out->print_cr("Collector Free Set: %zu", collector_count());
   for (size_t index = _collector_leftmost; index <= _collector_rightmost; index++) {
     if (is_collector_free(index)) {
       _heap->get_region(index)->print_on(out);
@@ -684,26 +684,26 @@ double ShenandoahFreeSet::external_fragmentation() {
 void ShenandoahFreeSet::assert_bounds() const {
   // Performance invariants. Failing these would not break the free set, but performance
   // would suffer.
-  assert (_mutator_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < " SIZE_FORMAT, _mutator_leftmost,  _max);
-  assert (_mutator_rightmost < _max, "rightmost in bounds: " SIZE_FORMAT " < " SIZE_FORMAT, _mutator_rightmost, _max);
+  assert (_mutator_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < %zu", _mutator_leftmost,  _max);
+  assert (_mutator_rightmost < _max, "rightmost in bounds: %zu < %zu", _mutator_rightmost, _max);
 
-  assert (_mutator_leftmost == _max || is_mutator_free(_mutator_leftmost),  "leftmost region should be free: " SIZE_FORMAT,  _mutator_leftmost);
-  assert (_mutator_rightmost == 0   || is_mutator_free(_mutator_rightmost), "rightmost region should be free: " SIZE_FORMAT, _mutator_rightmost);
+  assert (_mutator_leftmost == _max || is_mutator_free(_mutator_leftmost),  "leftmost region should be free: %zu",  _mutator_leftmost);
+  assert (_mutator_rightmost == 0   || is_mutator_free(_mutator_rightmost), "rightmost region should be free: %zu", _mutator_rightmost);
 
   size_t beg_off = _mutator_free_bitmap.find_first_set_bit(0);
   size_t end_off = _mutator_free_bitmap.find_first_set_bit(_mutator_rightmost + 1);
-  assert (beg_off >= _mutator_leftmost, "free regions before the leftmost: " SIZE_FORMAT ", bound " SIZE_FORMAT, beg_off, _mutator_leftmost);
-  assert (end_off == _max,      "free regions past the rightmost: " SIZE_FORMAT ", bound " SIZE_FORMAT,  end_off, _mutator_rightmost);
+  assert (beg_off >= _mutator_leftmost, "free regions before the leftmost: %zu, bound %zu", beg_off, _mutator_leftmost);
+  assert (end_off == _max,      "free regions past the rightmost: %zu, bound %zu",  end_off, _mutator_rightmost);
 
-  assert (_collector_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < " SIZE_FORMAT, _collector_leftmost,  _max);
-  assert (_collector_rightmost < _max, "rightmost in bounds: " SIZE_FORMAT " < " SIZE_FORMAT, _collector_rightmost, _max);
+  assert (_collector_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < %zu", _collector_leftmost,  _max);
+  assert (_collector_rightmost < _max, "rightmost in bounds: %zu < %zu", _collector_rightmost, _max);
 
-  assert (_collector_leftmost == _max || is_collector_free(_collector_leftmost),  "leftmost region should be free: " SIZE_FORMAT,  _collector_leftmost);
-  assert (_collector_rightmost == 0   || is_collector_free(_collector_rightmost), "rightmost region should be free: " SIZE_FORMAT, _collector_rightmost);
+  assert (_collector_leftmost == _max || is_collector_free(_collector_leftmost),  "leftmost region should be free: %zu",  _collector_leftmost);
+  assert (_collector_rightmost == 0   || is_collector_free(_collector_rightmost), "rightmost region should be free: %zu", _collector_rightmost);
 
   beg_off = _collector_free_bitmap.find_first_set_bit(0);
   end_off = _collector_free_bitmap.find_first_set_bit(_collector_rightmost + 1);
-  assert (beg_off >= _collector_leftmost, "free regions before the leftmost: " SIZE_FORMAT ", bound " SIZE_FORMAT, beg_off, _collector_leftmost);
-  assert (end_off == _max,      "free regions past the rightmost: " SIZE_FORMAT ", bound " SIZE_FORMAT,  end_off, _collector_rightmost);
+  assert (beg_off >= _collector_leftmost, "free regions before the leftmost: %zu, bound %zu", beg_off, _collector_leftmost);
+  assert (end_off == _max,      "free regions past the rightmost: %zu, bound %zu",  end_off, _collector_rightmost);
 }
 #endif

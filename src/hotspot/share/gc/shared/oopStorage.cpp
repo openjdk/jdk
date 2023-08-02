@@ -572,7 +572,7 @@ bool OopStorage::expand_active_array() {
   assert_lock_strong(_allocation_mutex);
   ActiveArray* old_array = _active_array;
   size_t new_size = 2 * old_array->size();
-  log_debug(oopstorage, blocks)("%s: expand active array " SIZE_FORMAT,
+  log_debug(oopstorage, blocks)("%s: expand active array %zu",
                                 name(), new_size);
   ActiveArray* new_array = ActiveArray::create(new_size,
                                                memflags(),
@@ -1132,8 +1132,8 @@ bool OopStorage::BasicParState::claim_next_segment(IterationData* data) {
 
 bool OopStorage::BasicParState::finish_iteration(const IterationData* data) const {
   log_info(oopstorage, blocks, stats)
-          ("Parallel iteration on %s: blocks = " SIZE_FORMAT
-           ", processed = " SIZE_FORMAT " (%2.f%%)",
+          ("Parallel iteration on %s: blocks = %zu"
+           ", processed = %zu (%2.f%%)",
            _storage->name(), _block_count, data->_processed,
            percent_of(data->_processed, _block_count));
   return false;
@@ -1162,7 +1162,7 @@ void OopStorage::print_on(outputStream* st) const {
   double data_size = section_size * section_count;
   double alloc_percentage = percent_of((double)allocations, blocks * data_size);
 
-  st->print("%s: " SIZE_FORMAT " entries in " SIZE_FORMAT " blocks (%.F%%), " SIZE_FORMAT " bytes",
+  st->print("%s: %zu entries in %zu blocks (%.F%%), %zu bytes",
             name(), allocations, blocks, alloc_percentage, total_memory_usage());
   if (_concurrent_iteration_count > 0) {
     st->print(", concurrent iteration active");

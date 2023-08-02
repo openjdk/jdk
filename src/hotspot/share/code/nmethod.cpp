@@ -160,7 +160,7 @@ struct java_nmethod_stats_struct {
     if (nmethod_count == 0)  return;
     tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
     if (total_size != 0)          tty->print_cr(" total in heap  = %u", total_size);
-    if (nmethod_count != 0)       tty->print_cr(" header         = " SIZE_FORMAT, nmethod_count * sizeof(nmethod));
+    if (nmethod_count != 0)       tty->print_cr(" header         = %zu", nmethod_count * sizeof(nmethod));
     if (relocation_size != 0)     tty->print_cr(" relocation     = %u", relocation_size);
     if (consts_size != 0)         tty->print_cr(" constants      = %u", consts_size);
     if (insts_size != 0)          tty->print_cr(" main code      = %u", insts_size);
@@ -1448,7 +1448,7 @@ void nmethod::flush() {
   // completely deallocate this method
   Events::log(Thread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
-                       "/Free CodeCache:" SIZE_FORMAT "Kb",
+                       "/Free CodeCache:%zuKb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                        CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
 

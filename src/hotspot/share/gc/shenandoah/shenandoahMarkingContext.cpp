@@ -83,7 +83,7 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
     _top_bitmaps[r->index()] = bottom;
   }
   assert(is_bitmap_clear_range(bottom, r->end()),
-         "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
+         "Region %zu should have no marks in bitmap", r->index());
 }
 
 bool ShenandoahMarkingContext::is_complete() {

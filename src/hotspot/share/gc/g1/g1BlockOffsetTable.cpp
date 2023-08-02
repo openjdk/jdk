@@ -45,17 +45,17 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
   _offset_array = (u_char*)bot_reserved.start();
 
   log_trace(gc, bot)("G1BlockOffsetTable::G1BlockOffsetTable: ");
-  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
+  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): %zu  rs end(): " PTR_FORMAT,
                      p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> BOTConstants::log_card_size_in_words()),
-         "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
+         "%s - index: %zu, _vs.committed_size: %zu",
          msg, (index), (_reserved.word_size() >> BOTConstants::log_card_size_in_words()));
   assert(G1CollectedHeap::heap()->is_in(address_for_index_raw(index)),
-         "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
+         "Index %zu corresponding to " PTR_FORMAT
          " (%u) is not in committed area.",
          (index),
          p2i(address_for_index_raw(index)),
@@ -261,7 +261,7 @@ void G1BlockOffsetTablePart::verify() const {
         size_t obj_size = _hr->block_size(obj);
         obj_end = obj + obj_size;
         guarantee(obj_end > obj && obj_end <= _hr->top(),
-                  "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
+                  "Invalid object end. obj: " PTR_FORMAT " obj_size: %zu obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
                   p2i(obj), obj_size, p2i(obj_end), p2i(_hr->top()));
       }
     } else {
@@ -273,7 +273,7 @@ void G1BlockOffsetTablePart::verify() const {
 
       size_t max_backskip = current_card - start_card;
       guarantee(backskip <= max_backskip,
-                "Going backwards beyond the start_card. start_card: " SIZE_FORMAT " current_card: " SIZE_FORMAT " backskip: " SIZE_FORMAT,
+                "Going backwards beyond the start_card. start_card: %zu current_card: %zu backskip: %zu",
                 start_card, current_card, backskip);
 
       HeapWord* backskip_address = _bot->address_for_index(current_card - backskip);
@@ -289,7 +289,7 @@ void G1BlockOffsetTablePart::print_on(outputStream* out) {
   size_t from_index = _bot->index_for(_hr->bottom());
   size_t to_index = _bot->index_for(_hr->end());
   out->print_cr(">> BOT for area [" PTR_FORMAT "," PTR_FORMAT ") "
-                "cards [" SIZE_FORMAT "," SIZE_FORMAT ")",
+                "cards [%zu,%zu)",
                 p2i(_hr->bottom()), p2i(_hr->end()), from_index, to_index);
   for (size_t i = from_index; i < to_index; ++i) {
     out->print_cr("  entry " SIZE_FORMAT_W(8) " | " PTR_FORMAT " : %3u",

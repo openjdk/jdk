@@ -115,7 +115,7 @@ public:
       obj->set_mark(obj->mark().set_marked());
 
       assert(dead_length == obj->size(), "bad filler object size");
-      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
+      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", %zub",
           p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
 
       return true;

@@ -150,7 +150,7 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
+         "Gen size; total_reserved=%zu, alignment="
          SIZE_FORMAT, total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
@@ -353,7 +353,7 @@ HeapWord* GenCollectedHeap::mem_allocate_work(size_t size,
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
           log_warning(gc, ergo)("GenCollectedHeap::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+                                " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -403,7 +403,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
   // change top of some spaces.
   record_gen_tops_before_GC();
 
-  log_trace(gc)("%s invoke=%d size=" SIZE_FORMAT, heap()->is_young_gen(gen) ? "Young" : "Old", gen->stat_record()->invocations, size * HeapWordSize);
+  log_trace(gc)("%s invoke=%d size=%zu", heap()->is_young_gen(gen) ? "Young" : "Old", gen->stat_record()->invocations, size * HeapWordSize);
 
   if (run_verification && VerifyBeforeGC) {
     Universe::verify("Before GC");

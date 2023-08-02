@@ -54,7 +54,7 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   // if they see the old or new values.
   Atomic::store(&_nstripes_mask, nstripes - 1);
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", nstripes);
+  log_debug(gc, marking)("Using %zu mark stripes", nstripes);
 }
 
 size_t ZMarkStripeSet::nstripes() const {

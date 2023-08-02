@@ -111,7 +111,7 @@ void ZNMethodTable::rebuild(size_t new_size) {
   assert(is_power_of_2(new_size), "Invalid size");
 
   log_debug(gc, nmethod)("Rebuilding NMethod Table: "
-                         SIZE_FORMAT "->" SIZE_FORMAT " entries, "
+                         SIZE_FORMAT "->%zu entries, "
                          SIZE_FORMAT "(%.0f%%->%.0f%%) registered, "
                          SIZE_FORMAT "(%.0f%%->%.0f%%) unregistered",
                          _size, new_size,

@@ -103,7 +103,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
         ZStatInc(ZCounterMarkSegmentResetContention);
         contention = true;
 
-        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: " SIZE_FORMAT,
+        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: %zu",
                       p2i(Thread::current()), ZUtils::thread_name(), p2i(this), segment);
       }
     }

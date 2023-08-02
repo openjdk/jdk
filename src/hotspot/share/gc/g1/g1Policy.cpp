@@ -570,8 +570,8 @@ void G1Policy::record_full_collection_end() {
 
 static void log_refinement_stats(const char* kind, const G1ConcurrentRefineStats& stats) {
   log_debug(gc, refine, stats)
-           ("%s refinement: %.2fms, refined: " SIZE_FORMAT
-            ", precleaned: " SIZE_FORMAT ", dirtied: " SIZE_FORMAT,
+           ("%s refinement: %.2fms, refined: %zu"
+            ", precleaned: %zu, dirtied: %zu",
             kind,
             stats.refinement_time().seconds() * MILLIUNITS,
             stats.refined_cards(),
@@ -708,7 +708,7 @@ bool G1Policy::need_to_start_conc_mark(const char* source, size_t alloc_word_siz
   bool result = false;
   if (marking_request_bytes > marking_initiating_used_threshold) {
     result = collector_state()->in_young_only_phase();
-    log_debug(gc, ergo, ihop)("%s occupancy: " SIZE_FORMAT "B allocation request: " SIZE_FORMAT "B threshold: " SIZE_FORMAT "B (%1.2f) source: %s",
+    log_debug(gc, ergo, ihop)("%s occupancy: %zuB allocation request: %zuB threshold: %zuB (%1.2f) source: %s",
                               result ? "Request concurrent cycle initiation (occupancy higher than threshold)" : "Do not request concurrent cycle initiation (still doing mixed collections)",
                               cur_used_bytes, alloc_byte_size, marking_initiating_used_threshold, (double) marking_initiating_used_threshold / _g1h->capacity() * 100, source);
   }

@@ -150,7 +150,7 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
 }
 
 void ShenandoahCollectionSet::print_on(outputStream* out) const {
-  out->print_cr("Collection Set : " SIZE_FORMAT "", count());
+  out->print_cr("Collection Set : %zu", count());
 
   debug_only(size_t regions = 0;)
   for (size_t index = 0; index < _heap->num_regions(); index ++) {

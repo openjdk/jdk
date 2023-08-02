@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ void XLiveMap::reset(size_t index) {
       XStatInc(XCounterMarkSeqNumResetContention);
       contention = true;
 
-      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", bit: " SIZE_FORMAT,
+      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", bit: %zu",
                     XThread::id(), XThread::name(), p2i(this), index);
     }
   }
@@ -101,7 +101,7 @@ void XLiveMap::reset_segment(BitMap::idx_t segment) {
         XStatInc(XCounterMarkSegmentResetContention);
         contention = true;
 
-        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: " SIZE_FORMAT,
+        log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: %zu",
                       XThread::id(), XThread::name(), p2i(this), segment);
       }
     }

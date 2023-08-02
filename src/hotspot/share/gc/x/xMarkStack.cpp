@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ void XMarkStripeSet::set_nstripes(size_t nstripes) {
   _nstripes = nstripes;
   _nstripes_mask = nstripes - 1;
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", _nstripes);
+  log_debug(gc, marking)("Using %zu mark stripes", _nstripes);
 }
 
 bool XMarkStripeSet::is_empty() const {

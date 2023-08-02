@@ -93,7 +93,7 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
 
       // Too many live objects in the region; skip compacting it.
       _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
-      log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+      log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: %zu",
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
     }
   }

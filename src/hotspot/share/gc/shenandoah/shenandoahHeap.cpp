@@ -128,7 +128,7 @@ public:
     while (r != nullptr) {
       size_t start = r->index()       * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
       size_t end   = (r->index() + 1) * ShenandoahHeapRegion::region_size_bytes() / MarkBitMap::heap_map_factor();
-      assert (end <= _bitmap_size, "end is sane: " SIZE_FORMAT " < " SIZE_FORMAT, end, _bitmap_size);
+      assert (end <= _bitmap_size, "end is sane: %zu < %zu", end, _bitmap_size);
 
       if (r->is_committed()) {
         os::pretouch_memory(_bitmap_base + start, _bitmap_base + end, _page_size);
@@ -156,7 +156,7 @@ jint ShenandoahHeap::initialize() {
 
   _num_regions = ShenandoahHeapRegion::region_count();
   assert(_num_regions == (max_byte_size / reg_size_bytes),
-         "Regions should cover entire heap exactly: " SIZE_FORMAT " != " SIZE_FORMAT "/" SIZE_FORMAT,
+         "Regions should cover entire heap exactly: %zu != %zu/%zu",
          _num_regions, max_byte_size, reg_size_bytes);
 
   // Now we know the number of regions, initialize the heuristics.
@@ -227,7 +227,7 @@ jint ShenandoahHeap::initialize() {
   guarantee(bitmap_bytes_per_region != 0,
             "Bitmap bytes per region should not be zero");
   guarantee(is_power_of_2(bitmap_bytes_per_region),
-            "Bitmap bytes per region should be power of two: " SIZE_FORMAT, bitmap_bytes_per_region);
+            "Bitmap bytes per region should be power of two: %zu", bitmap_bytes_per_region);
 
   if (bitmap_page_size > bitmap_bytes_per_region) {
     _bitmap_regions_per_slice = bitmap_page_size / bitmap_bytes_per_region;
@@ -238,11 +238,11 @@ jint ShenandoahHeap::initialize() {
   }
 
   guarantee(_bitmap_regions_per_slice >= 1,
-            "Should have at least one region per slice: " SIZE_FORMAT,
+            "Should have at least one region per slice: %zu",
             _bitmap_regions_per_slice);
 
   guarantee(((_bitmap_bytes_per_slice) % bitmap_page_size) == 0,
-            "Bitmap slices should be page-granular: bps = " SIZE_FORMAT ", page size = " SIZE_FORMAT,
+            "Bitmap slices should be page-granular: bps = %zu, page size = %zu",
             _bitmap_bytes_per_slice, bitmap_page_size);
 
   ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
@@ -573,12 +573,12 @@ void ShenandoahHeap::reset_mark_bitmap() {
 
 void ShenandoahHeap::print_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
-  st->print_cr(" " SIZE_FORMAT "%s max, " SIZE_FORMAT "%s soft max, " SIZE_FORMAT "%s committed, " SIZE_FORMAT "%s used",
+  st->print_cr(" %zu%s max, %zu%s soft max, %zu%s committed, %zu%s used",
                byte_size_in_proper_unit(max_capacity()), proper_unit_for_byte_size(max_capacity()),
                byte_size_in_proper_unit(soft_max_capacity()), proper_unit_for_byte_size(soft_max_capacity()),
                byte_size_in_proper_unit(committed()),    proper_unit_for_byte_size(committed()),
                byte_size_in_proper_unit(used()),         proper_unit_for_byte_size(used()));
-  st->print_cr(" " SIZE_FORMAT " x " SIZE_FORMAT"%s regions",
+  st->print_cr(" %zu x " SIZE_FORMAT"%s regions",
                num_regions(),
                byte_size_in_proper_unit(ShenandoahHeapRegion::region_size_bytes()),
                proper_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
@@ -718,14 +718,14 @@ size_t ShenandoahHeap::max_capacity() const {
 size_t ShenandoahHeap::soft_max_capacity() const {
   size_t v = Atomic::load(&_soft_max_size);
   assert(min_capacity() <= v && v <= max_capacity(),
-         "Should be in bounds: " SIZE_FORMAT " <= " SIZE_FORMAT " <= " SIZE_FORMAT,
+         "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
   return v;
 }
 
 void ShenandoahHeap::set_soft_max_capacity(size_t v) {
   assert(min_capacity() <= v && v <= max_capacity(),
-         "Should be in bounds: " SIZE_FORMAT " <= " SIZE_FORMAT " <= " SIZE_FORMAT,
+         "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
   Atomic::store(&_soft_max_size, v);
 }
@@ -904,7 +904,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
     size_t actual = req.actual_size();
 
     assert (req.is_lab_alloc() || (requested == actual),
-            "Only LAB allocations are elastic: %s, requested = " SIZE_FORMAT ", actual = " SIZE_FORMAT,
+            "Only LAB allocations are elastic: %s, requested = %zu, actual = %zu",
             ShenandoahAllocRequest::alloc_type_to_string(req.type()), requested, actual);
 
     if (req.is_mutator_alloc()) {
@@ -1020,7 +1020,7 @@ private:
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
     ShenandoahHeapRegion* r;
     while ((r =_cs->claim_next()) != nullptr) {
-      assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->index());
+      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _sh->marked_object_iterate(r, &cl);
 
       if (ShenandoahPacing) {
@@ -1568,7 +1568,7 @@ public:
   ShenandoahInitMarkUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
-    assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
+    assert(!r->has_live(), "Region %zu should have no live data", r->index());
     if (r->is_active()) {
       // Check if region needs updating its TAMS. We have updated it already during concurrent
       // reset, so it is very likely we don't need to do another write here.
@@ -1577,7 +1577,7 @@ public:
       }
     } else {
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should already have correct TAMS", r->index());
+             "Region %zu should already have correct TAMS", r->index());
     }
   }
 
@@ -1662,9 +1662,9 @@ public:
       // from-space-refs written from here on.
       r->set_update_watermark_at_safepoint(r->top());
     } else {
-      assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
+      assert(!r->has_live(), "Region %zu should have no live data", r->index());
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should have correct TAMS", r->index());
+             "Region %zu should have correct TAMS", r->index());
     }
   }
 
@@ -1943,7 +1943,7 @@ void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {
   ShenandoahHeapRegion* r = heap_region_containing(o);
   assert(r != nullptr, "Sanity");
-  assert(r->pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", r->index());
+  assert(r->pin_count() > 0, "Region %zu should have non-zero pins", r->index());
   r->record_unpin();
 }
 
@@ -1973,7 +1973,7 @@ void ShenandoahHeap::assert_pinned_region_status() {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
     assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-           "Region " SIZE_FORMAT " pinning status is inconsistent", i);
+           "Region %zu pinning status is inconsistent", i);
   }
 }
 #endif

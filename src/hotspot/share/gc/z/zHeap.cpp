@@ -74,7 +74,7 @@ ZHeap::ZHeap()
 
   // Prime cache
   if (!_page_allocator.prime_cache(_old.workers(), InitialHeapSize)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
+    log_error_p(gc)("Failed to allocate initial Java heap (%zuM)", InitialHeapSize / M);
     return;
   }
 
@@ -237,7 +237,7 @@ void ZHeap::undo_alloc_page(ZPage* page) {
   assert(page->is_allocating(), "Invalid page state");
 
   ZStatInc(ZCounterUndoPageAllocation);
-  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
+  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: %zu",
                 p2i(Thread::current()), ZUtils::thread_name(), p2i(page), page->size());
 
   free_page(page);
@@ -329,7 +329,7 @@ ZServiceabilityCounters* ZHeap::serviceability_counters() {
 }
 
 void ZHeap::print_on(outputStream* st) const {
-  st->print_cr(" ZHeap           used " SIZE_FORMAT "M, capacity " SIZE_FORMAT "M, max capacity " SIZE_FORMAT "M",
+  st->print_cr(" ZHeap           used %zuM, capacity %zuM, max capacity %zuM",
                used() / M,
                capacity() / M,
                max_capacity() / M);

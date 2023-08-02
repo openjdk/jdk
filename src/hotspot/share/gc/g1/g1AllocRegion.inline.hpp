@@ -31,7 +31,7 @@
 
 #define assert_alloc_region(p, message)                                  \
   do {                                                                   \
-    assert((p), "[%s] %s c: %u r: " PTR_FORMAT " u: " SIZE_FORMAT,       \
+    assert((p), "[%s] %s c: %u r: " PTR_FORMAT " u: %zu",       \
            _name, (message), _count, p2i(_alloc_region),                 \
            _used_bytes_before);                                          \
   } while (0)

@@ -594,10 +594,10 @@ void ShenandoahReferenceProcessor::collect_statistics() {
                                    discovered[REF_FINAL],
                                    discovered[REF_PHANTOM]);
 
-  log_info(gc,ref)("Encountered references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Encountered references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    encountered[REF_SOFT], encountered[REF_WEAK], encountered[REF_FINAL], encountered[REF_PHANTOM]);
-  log_info(gc,ref)("Discovered  references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Discovered  references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    discovered[REF_SOFT], discovered[REF_WEAK], discovered[REF_FINAL], discovered[REF_PHANTOM]);
-  log_info(gc,ref)("Enqueued    references: Soft: " SIZE_FORMAT ", Weak: " SIZE_FORMAT ", Final: " SIZE_FORMAT ", Phantom: " SIZE_FORMAT,
+  log_info(gc,ref)("Enqueued    references: Soft: %zu, Weak: %zu, Final: %zu, Phantom: %zu",
                    enqueued[REF_SOFT], enqueued[REF_WEAK], enqueued[REF_FINAL], enqueued[REF_PHANTOM]);
 }

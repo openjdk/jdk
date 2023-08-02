@@ -162,7 +162,7 @@ static const char* phase_to_explanatory_string(G1NUMAStats::NodeDataItems phase)
   }
 }
 
-#define RATE_TOTAL_FORMAT "%0.0f%% " SIZE_FORMAT "/" SIZE_FORMAT
+#define RATE_TOTAL_FORMAT "%0.0f%% %zu/%zu"
 
 void G1NUMAStats::print_info(G1NUMAStats::NodeDataItems phase) {
   LogTarget(Info, gc, heap, numa) lt;

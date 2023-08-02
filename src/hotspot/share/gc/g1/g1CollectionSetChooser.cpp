@@ -215,7 +215,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       num_pruned++;
     }
 
-    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving %zu bytes waste (allowed %zu)",
                               num_pruned,
                               num_candidates,
                               wasted_bytes,

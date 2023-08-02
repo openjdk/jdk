@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1209,7 +1209,7 @@ void XStatMark::print() {
                         _ntrycomplete,
                         _ncontinue);
 
-  log_info(gc, marking)("Mark Stack Usage: " SIZE_FORMAT "M", _mark_stack_usage / M);
+  log_info(gc, marking)("Mark Stack Usage: %zuM", _mark_stack_usage / M);
 }
 
 //
@@ -1236,8 +1236,8 @@ void XStatRelocation::set_at_relocate_end(size_t small_in_place_count, size_t me
 void XStatRelocation::print(const char* name,
                             const XRelocationSetSelectorGroupStats& selector_group,
                             size_t in_place_count) {
-  log_info(gc, reloc)("%s Pages: " SIZE_FORMAT " / " SIZE_FORMAT "M, Empty: " SIZE_FORMAT "M, "
-                      "Relocated: " SIZE_FORMAT "M, In-Place: " SIZE_FORMAT,
+  log_info(gc, reloc)("%s Pages: %zu / %zuM, Empty: %zuM, "
+                      "Relocated: %zuM, In-Place: %zu",
                       name,
                       selector_group.npages_candidates(),
                       selector_group.total() / M,
@@ -1253,14 +1253,14 @@ void XStatRelocation::print() {
   }
   print("Large", _selector_stats.large(), 0 /* in_place_count */);
 
-  log_info(gc, reloc)("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
+  log_info(gc, reloc)("Forwarding Usage: %zuM", _forwarding_usage / M);
 }
 
 //
 // Stat nmethods
 //
 void XStatNMethods::print() {
-  log_info(gc, nmethod)("NMethods: " SIZE_FORMAT " registered, " SIZE_FORMAT " unregistered",
+  log_info(gc, nmethod)("NMethods: %zu registered, %zu unregistered",
                         XNMethodTable::registered_nmethods(),
                         XNMethodTable::unregistered_nmethods());
 }
@@ -1272,7 +1272,7 @@ void XStatMetaspace::print() {
   MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
-                          SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
+                          SIZE_FORMAT "M committed, %zuM reserved",
                           stats.used() / M,
                           stats.committed() / M,
                           stats.reserved() / M);

@@ -337,7 +337,7 @@ bool ShenandoahControlThread::check_soft_max_changed() const {
     new_soft_max = MAX2(heap->min_capacity(), new_soft_max);
     new_soft_max = MIN2(heap->max_capacity(), new_soft_max);
     if (new_soft_max != old_soft_max) {
-      log_info(gc)("Soft Max Heap Size: " SIZE_FORMAT "%s -> " SIZE_FORMAT "%s",
+      log_info(gc)("Soft Max Heap Size: %zu%s -> %zu%s",
                    byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
                    byte_size_in_proper_unit(new_soft_max), proper_unit_for_byte_size(new_soft_max)
       );
@@ -531,7 +531,7 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) 
 
   if (try_set_alloc_failure_gc()) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
+    log_info(gc)("Failed to allocate %s, %zu%s",
                  req.type_string(),
                  byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
 
@@ -550,7 +550,7 @@ void ShenandoahControlThread::handle_alloc_failure_evac(size_t words) {
 
   if (try_set_alloc_failure_gc()) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate " SIZE_FORMAT "%s for evacuation",
+    log_info(gc)("Failed to allocate %zu%s for evacuation",
                  byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
   }
 

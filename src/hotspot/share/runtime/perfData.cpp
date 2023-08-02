@@ -168,8 +168,8 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   pdep->data_offset = (jint) data_start;
 
   log_debug(perf, datacreation)("name = %s, dtype = %d, variability = %d,"
-                                " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
-                                " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
+                                " units = %d, dsize = %zu, vlen = %zu,"
+                                " pad_length = %zu, size = %zu, on_c_heap = %s,"
                                 " address = " INTPTR_FORMAT ","
                                 " data address = " INTPTR_FORMAT,
                                 cname, dtype, variability(),

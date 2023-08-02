@@ -43,18 +43,18 @@ void ShenandoahInitLogger::print_heap() {
   log_info(gc, init)("Heuristics: %s",
                      heap->heuristics()->name());
 
-  log_info(gc, init)("Heap Region Count: " SIZE_FORMAT,
+  log_info(gc, init)("Heap Region Count: %zu",
                      ShenandoahHeapRegion::region_count());
 
-  log_info(gc, init)("Heap Region Size: " SIZE_FORMAT "%s",
+  log_info(gc, init)("Heap Region Size: %zu%s",
                      byte_size_in_exact_unit(ShenandoahHeapRegion::region_size_bytes()),
                      exact_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
 
-  log_info(gc, init)("TLAB Size Max: " SIZE_FORMAT "%s",
+  log_info(gc, init)("TLAB Size Max: %zu%s",
                      byte_size_in_exact_unit(ShenandoahHeapRegion::max_tlab_size_bytes()),
                      exact_unit_for_byte_size(ShenandoahHeapRegion::max_tlab_size_bytes()));
 
-  log_info(gc, init)("Humongous Object Threshold: " SIZE_FORMAT "%s",
+  log_info(gc, init)("Humongous Object Threshold: %zu%s",
           byte_size_in_exact_unit(ShenandoahHeapRegion::humongous_threshold_bytes()),
           exact_unit_for_byte_size(ShenandoahHeapRegion::humongous_threshold_bytes()));
 }

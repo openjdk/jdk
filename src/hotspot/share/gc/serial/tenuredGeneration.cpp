@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ bool TenuredGeneration::grow_by(size_t bytes) {
 
     size_t new_mem_size = _virtual_space.committed_size();
     size_t old_mem_size = new_mem_size - bytes;
-    log_trace(gc, heap)("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_trace(gc, heap)("Expanding %s from %zuK by %zuK to %zuK",
                     name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
   return result;
@@ -139,7 +139,7 @@ void TenuredGeneration::shrink(size_t bytes) {
 
   size_t new_mem_size = _virtual_space.committed_size();
   size_t old_mem_size = new_mem_size + size;
-  log_trace(gc, heap)("Shrinking %s from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+  log_trace(gc, heap)("Shrinking %s from %zuK to %zuK",
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
@@ -241,7 +241,7 @@ void TenuredGeneration::compute_new_size_inner() {
       assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
       log_trace(gc, heap)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
                                initial_size() / (double) K, maximum_desired_capacity / (double) K);
-      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
+      log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: %zu  new shrink factor: %zu  _min_heap_delta_bytes: %.1fK",
                                shrink_bytes / (double) K,
                                current_shrink_factor,
                                _shrink_factor,
@@ -359,18 +359,18 @@ bool TenuredGeneration::should_collect(bool  full,
     return true;
   }
   if (should_allocate(size, is_tlab)) {
-    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
+    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(%zu)", size);
     return true;
   }
   // If we don't have very much free space.
   // XXX: 10000 should be a percentage of the capacity!!!
   if (free() < 10000) {
-    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
+    log_trace(gc)("TenuredGeneration::should_collect: because free(): %zu", free());
     return true;
   }
   // If we had to expand to accommodate promotions from the young generation
   if (_capacity_at_prologue < capacity()) {
-    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
+    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: %zu < capacity(): %zu",
         _capacity_at_prologue, capacity());
     return true;
   }
@@ -388,8 +388,8 @@ void TenuredGeneration::compute_new_size() {
   compute_new_size_inner();
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
-         "used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
+         "used: %zu used_after_gc: %zu"
+         " capacity: %zu", used(), used_after_gc, capacity());
 }
 
 void TenuredGeneration::update_gc_stats(Generation* current_generation,
@@ -425,7 +425,7 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
   size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
 
-  log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
+  log_trace(gc)("Tenured: promo attempt is%s safe: available(%zu) %s av_promo(%zu), max_promo(%zu)",
     res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
 
   return res;

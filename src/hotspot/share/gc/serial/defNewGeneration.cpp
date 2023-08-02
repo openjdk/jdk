@@ -612,11 +612,11 @@ void DefNewGeneration::compute_new_size() {
     gch->rem_set()->resize_covered_region(cmr);
 
     log_debug(gc, ergo, heap)(
-        "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
+        "New generation size %zuK->%zuK [eden=%zuK,survivor=%zuK]",
         new_size_before/K, _virtual_space.committed_size()/K,
         eden()->capacity()/K, from()->capacity()/K);
     log_trace(gc, ergo, heap)(
-        "  [allowed " SIZE_FORMAT "K extra for %d threads]",
+        "  [allowed %zuK extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
 }
@@ -690,7 +690,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
     result = from()->allocate(size);
   }
 
-  log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
+  log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(%zu):  will_fail: %s  heap_lock: %s  free: %zu%s%s returns %s",
                         size,
                         GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
                           "true" : "false",
@@ -893,7 +893,7 @@ void DefNewGeneration::restore_preserved_marks() {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  log_debug(gc, promotion)("Promotion failure size = " SIZE_FORMAT ") ", old->size());
+  log_debug(gc, promotion)("Promotion failure size = %zu) ", old->size());
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());

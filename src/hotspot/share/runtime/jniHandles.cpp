@@ -255,7 +255,7 @@ bool JNIHandles::is_weak_global_handle(jobject handle) {
 void JNIHandles::print_on(outputStream* st) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  st->print_cr("JNI global refs: " SIZE_FORMAT ", weak refs: " SIZE_FORMAT,
+  st->print_cr("JNI global refs: %zu, weak refs: %zu",
                global_handles()->allocation_count(),
                weak_global_handles()->allocation_count());
   st->cr();

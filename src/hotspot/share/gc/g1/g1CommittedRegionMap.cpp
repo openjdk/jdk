@@ -233,7 +233,7 @@ void G1CommittedRegionMap::verify_free_range(uint start, uint end) const {
 
 void G1CommittedRegionMap::verify_no_inactive_regons() const {
   BitMap::idx_t first_inactive = _inactive.find_first_set_bit(0);
-  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: " SIZE_FORMAT, first_inactive);
+  assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: %zu", first_inactive);
 }
 
 void G1CommittedRegionMap::verify_active_count(uint start, uint end, uint expected) const {

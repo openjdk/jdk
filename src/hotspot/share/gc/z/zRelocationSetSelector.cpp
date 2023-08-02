@@ -153,7 +153,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     }
 
     log_trace(gc, reloc)("Candidate Relocation Set (%s Pages): %d->%d, "
-                         "%.1f%% relative defragmentation, " SIZE_FORMAT " forwarding entries, %s, live %d",
+                         "%.1f%% relative defragmentation, %zu forwarding entries, %s, live %d",
                          _name, from, to, diff_reclaimable, from_forwarding_entries,
                          (selected_from == from) ? "Selected" : "Rejected",
                          int(page_live_bytes * 100 / page->size()));
@@ -175,7 +175,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     _stats[i]._npages_selected = npages_selected[i];
   }
 
-  log_debug(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, " SIZE_FORMAT " forwarding entries",
+  log_debug(gc, reloc)("Relocation Set (%s Pages): %d->%d, %d skipped, %zu forwarding entries",
                        _name, selected_from, selected_to, npages - selected_from, selected_forwarding_entries);
 }
 

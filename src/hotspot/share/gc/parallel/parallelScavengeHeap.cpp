@@ -386,7 +386,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
     if ((result == nullptr) && (QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
-      log_warning(gc)("\tsize=" SIZE_FORMAT, size);
+      log_warning(gc)("\tsize=%zu", size);
     }
   }
 

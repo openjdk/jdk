@@ -185,7 +185,7 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass() {
 
 void ShenandoahHeapRegion::make_pinned() {
   shenandoah_assert_heaplocked();
-  assert(pin_count() > 0, "Should have pins: " SIZE_FORMAT, pin_count());
+  assert(pin_count() > 0, "Should have pins: %zu", pin_count());
 
   switch (_state) {
     case _regular:
@@ -207,7 +207,7 @@ void ShenandoahHeapRegion::make_pinned() {
 
 void ShenandoahHeapRegion::make_unpinned() {
   shenandoah_assert_heaplocked();
-  assert(pin_count() == 0, "Should not have pins: " SIZE_FORMAT, pin_count());
+  assert(pin_count() == 0, "Should not have pins: %zu", pin_count());
 
   switch (_state) {
     case _pinned:
@@ -483,33 +483,33 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   size_t region_size;
   if (FLAG_IS_DEFAULT(ShenandoahRegionSize)) {
     if (ShenandoahMinRegionSize > max_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
-                      "of regions (" SIZE_FORMAT ") of minimum region size (" SIZE_FORMAT "%s).",
+      err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
+                      "of regions (%zu) of minimum region size (%zu%s).",
                       byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
                       MIN_NUM_REGIONS,
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMinRegionSize < MIN_REGION_SIZE) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than minimum region size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than minimum region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMinRegionSize < MinTLABSize) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than TLAB size size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than TLAB size size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(MinTLABSize),             proper_unit_for_byte_size(MinTLABSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize option", message);
     }
     if (ShenandoahMaxRegionSize < MIN_REGION_SIZE) {
-      err_msg message("" SIZE_FORMAT "%s should not be lower than min region size (" SIZE_FORMAT "%s).",
+      err_msg message("%zu%s should not be lower than min region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize),
                       byte_size_in_proper_unit(MIN_REGION_SIZE),         proper_unit_for_byte_size(MIN_REGION_SIZE));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMaxRegionSize option", message);
     }
     if (ShenandoahMinRegionSize > ShenandoahMaxRegionSize) {
-      err_msg message("Minimum (" SIZE_FORMAT "%s) should be larger than maximum (" SIZE_FORMAT "%s).",
+      err_msg message("Minimum (%zu%s) should be larger than maximum (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahMinRegionSize), proper_unit_for_byte_size(ShenandoahMinRegionSize),
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize), proper_unit_for_byte_size(ShenandoahMaxRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahMinRegionSize or -XX:ShenandoahMaxRegionSize", message);
@@ -525,21 +525,21 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
 
   } else {
     if (ShenandoahRegionSize > max_heap_size / MIN_NUM_REGIONS) {
-      err_msg message("Max heap size (" SIZE_FORMAT "%s) is too low to afford the minimum number "
-                              "of regions (" SIZE_FORMAT ") of requested size (" SIZE_FORMAT "%s).",
+      err_msg message("Max heap size (%zu%s) is too low to afford the minimum number "
+                              "of regions (%zu) of requested size (%zu%s).",
                       byte_size_in_proper_unit(max_heap_size), proper_unit_for_byte_size(max_heap_size),
                       MIN_NUM_REGIONS,
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
     if (ShenandoahRegionSize < ShenandoahMinRegionSize) {
-      err_msg message("Heap region size (" SIZE_FORMAT "%s) should be larger than min region size (" SIZE_FORMAT "%s).",
+      err_msg message("Heap region size (%zu%s) should be larger than min region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMinRegionSize),  proper_unit_for_byte_size(ShenandoahMinRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
     }
     if (ShenandoahRegionSize > ShenandoahMaxRegionSize) {
-      err_msg message("Heap region size (" SIZE_FORMAT "%s) should be lower than max region size (" SIZE_FORMAT "%s).",
+      err_msg message("Heap region size (%zu%s) should be lower than max region size (%zu%s).",
                       byte_size_in_proper_unit(ShenandoahRegionSize), proper_unit_for_byte_size(ShenandoahRegionSize),
                       byte_size_in_proper_unit(ShenandoahMaxRegionSize),  proper_unit_for_byte_size(ShenandoahMaxRegionSize));
       vm_exit_during_initialization("Invalid -XX:ShenandoahRegionSize option", message);
@@ -679,7 +679,7 @@ void ShenandoahHeapRegion::record_pin() {
 }
 
 void ShenandoahHeapRegion::record_unpin() {
-  assert(pin_count() > 0, "Region " SIZE_FORMAT " should have non-zero pins", index());
+  assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
   Atomic::sub(&_critical_pins, (size_t)1);
 }
 

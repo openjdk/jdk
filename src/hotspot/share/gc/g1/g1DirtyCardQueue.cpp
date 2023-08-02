@@ -172,7 +172,7 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
     actual += buffer_capacity() - cur->index();
   }
   assert(actual == Atomic::load(&_num_cards),
-         "Num entries in completed buffers should be " SIZE_FORMAT " but are " SIZE_FORMAT,
+         "Num entries in completed buffers should be %zu but are %zu",
          Atomic::load(&_num_cards), actual);
 }
 #endif // ASSERT
@@ -469,7 +469,7 @@ void G1DirtyCardQueueSet::handle_refined_buffer(BufferNode* node,
                                                 bool fully_processed) {
   if (fully_processed) {
     assert(node->index() == buffer_capacity(),
-           "Buffer not fully consumed: index: " SIZE_FORMAT ", size: " SIZE_FORMAT,
+           "Buffer not fully consumed: index: %zu, size: %zu",
            node->index(), buffer_capacity());
     deallocate_buffer(node);
   } else {

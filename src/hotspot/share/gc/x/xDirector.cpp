@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ static XDriverRequest rule_warmup() {
   const double used_threshold_percent = (XStatCycle::nwarmup_cycles() + 1) * 0.1;
   const size_t used_threshold = soft_max_capacity * used_threshold_percent;
 
-  log_debug(gc, director)("Rule: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
+  log_debug(gc, director)("Rule: Warmup %.0f%%, Used: %zuMB, UsedThreshold: %zuMB",
                           used_threshold_percent * 100, used / M, used_threshold / M);
 
   if (used < used_threshold) {
@@ -215,7 +215,7 @@ XDriverRequest rule_allocation_rate_dynamic() {
   const double time_until_gc = time_until_oom - actual_gc_duration - sample_interval;
 
   log_debug(gc, director)("Rule: Allocation Rate (Dynamic GC Workers), "
-                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "
+                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: %zuMB, GCCPUTime: %.3f, "
                           "GCDuration: %.3fs, TimeUntilOOM: %.3fs, TimeUntilGC: %.3fs, GCWorkers: %u -> %u",
                           alloc_rate / M,
                           alloc_rate_sd_percent * 100,
@@ -275,7 +275,7 @@ static XDriverRequest rule_allocation_rate_static() {
   // time and end up starting the GC too late in the next interval.
   const double time_until_gc = time_until_oom - gc_duration - sample_interval;
 
-  log_debug(gc, director)("Rule: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: " SIZE_FORMAT "MB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: %zuMB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, gc_duration, time_until_gc);
 
   if (time_until_gc > 0) {
@@ -308,7 +308,7 @@ static XDriverRequest rule_high_usage() {
   const size_t free = free_including_headroom - MIN2(free_including_headroom, XHeuristics::relocation_headroom());
   const double free_percent = percent_of(free, soft_max_capacity);
 
-  log_debug(gc, director)("Rule: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
+  log_debug(gc, director)("Rule: High Usage, Free: %zuMB(%.1f%%)",
                           free / M, free_percent);
 
   if (free_percent > 5.0) {
@@ -341,7 +341,7 @@ static XDriverRequest rule_proactive() {
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
-    log_debug(gc, director)("Rule: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3fs",
+    log_debug(gc, director)("Rule: Proactive, UsedUntilEnabled: %zuMB, TimeUntilEnabled: %.3fs",
                             (used_threshold - used) / M,
                             time_since_last_gc_threshold - time_since_last_gc);
     return GCCause::_no_gc;

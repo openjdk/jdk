@@ -175,7 +175,7 @@ size_t ReferenceProcessor::total_count(DiscoveredList lists[]) const {
 #ifdef ASSERT
 void ReferenceProcessor::verify_total_count_zero(DiscoveredList lists[], const char* type) {
   size_t count = total_count(lists);
-  assert(count == 0, "%ss must be empty but has " SIZE_FORMAT " elements", type, count);
+  assert(count == 0, "%ss must be empty but has %zu elements", type, count);
 }
 #endif
 
@@ -365,7 +365,7 @@ size_t ReferenceProcessor::process_discovered_list_work(DiscoveredList&    refs_
     refs_list.clear();
   }
 
-  log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
+  log_develop_trace(gc, ref)(" Dropped %zu active Refs out of %zu"
                              " Refs in discovered list " PTR_FORMAT,
                              iter.removed(), iter.processed(), p2i(&refs_list));
   return iter.removed();
@@ -559,10 +559,10 @@ void ReferenceProcessor::log_reflist(const char* prefix, DiscoveredList list[], 
   LogStream ls(lt);
   ls.print("%s", prefix);
   for (uint i = 0; i < num_active_queues; i++) {
-    ls.print(SIZE_FORMAT " ", list[i].length());
+    ls.print("%zu ", list[i].length());
     total += list[i].length();
   }
-  ls.print_cr("(" SIZE_FORMAT ")", total);
+  ls.print_cr("(%zu)", total);
 }
 
 #ifndef PRODUCT
@@ -1093,7 +1093,7 @@ bool ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_lis
   }
 
   if (iter.processed() > 0) {
-    log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " PTR_FORMAT,
+    log_develop_trace(gc, ref)(" Dropped %zu Refs out of %zu Refs in discovered list " PTR_FORMAT,
                                iter.removed(), iter.processed(), p2i(&refs_list));
   }
   return false;

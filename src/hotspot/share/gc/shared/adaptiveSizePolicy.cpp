@@ -337,12 +337,12 @@ class AdaptiveSizePolicySpaceOverheadTester: public GCOverheadTester {
 
     log_trace(gc, ergo)(
           "AdaptiveSizePolicySpaceOverheadTester::is_exceeded:"
-          " promo_limit: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " total_free_limit: " SIZE_FORMAT
-          " max_old_gen_size: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " mem_free_limit: " SIZE_FORMAT,
+          " promo_limit: %zu"
+          " max_eden_size: %zu"
+          " total_free_limit: %zu"
+          " max_old_gen_size: %zu"
+          " max_eden_size: %zu"
+          " mem_free_limit: %zu",
           promo_limit, _max_eden_size, total_free_limit,
           _max_old_gen_size, _max_eden_size,
           (size_t)mem_free_limit);

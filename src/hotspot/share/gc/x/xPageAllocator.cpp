@@ -157,11 +157,11 @@ XPageAllocator::XPageAllocator(XWorkers* workers,
     return;
   }
 
-  log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
-  log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
-  log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
+  log_info_p(gc, init)("Min Capacity: %zuM", min_capacity / M);
+  log_info_p(gc, init)("Initial Capacity: %zuM", initial_capacity / M);
+  log_info_p(gc, init)("Max Capacity: %zuM", max_capacity / M);
   if (XPageSizeMedium > 0) {
-    log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", XPageSizeMedium / M);
+    log_info_p(gc, init)("Medium Page Size: %zuM", XPageSizeMedium / M);
   } else {
     log_info_p(gc, init)("Medium Page Size: N/A");
   }
@@ -175,7 +175,7 @@ XPageAllocator::XPageAllocator(XWorkers* workers,
 
   // Pre-map initial capacity
   if (!prime_cache(workers, initial_capacity)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", initial_capacity / M);
+    log_error_p(gc)("Failed to allocate initial Java heap (%zuM)", initial_capacity / M);
     return;
   }
 
@@ -313,7 +313,7 @@ void XPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   if (set_max_capacity) {
     // Adjust current max capacity to avoid further attempts to increase capacity
     log_error_p(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
+                    SIZE_FORMAT "M(%.0f%%) to %zuM(%.0f%%)",
                     _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
                     _capacity / M, percent_of(_capacity, _max_capacity));
 
@@ -544,7 +544,7 @@ XPage* XPageAllocator::alloc_page_create(XPageAllocation* allocation) {
 
     // Update statistics
     XStatInc(XCounterPageCacheFlush, flushed);
-    log_debug(gc, heap)("Page Cache Flushed: " SIZE_FORMAT "M", flushed / M);
+    log_debug(gc, heap)("Page Cache Flushed: %zuM", flushed / M);
   }
 
   // Allocate any remaining physical memory. Capacity and used has

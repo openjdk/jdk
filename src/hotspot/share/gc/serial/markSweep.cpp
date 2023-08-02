@@ -205,7 +205,7 @@ void MarkSweep::adjust_marks() {
 }
 
 void MarkSweep::restore_marks() {
-  log_trace(gc)("Restoring " SIZE_FORMAT " marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
+  log_trace(gc)("Restoring %zu marks", _preserved_count + _preserved_overflow_stack_set.get()->size());
 
   // restore the marks we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {

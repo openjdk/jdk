@@ -223,5 +223,5 @@ bool ZRememberedSetContainingInLiveIterator::next(ZRememberedSetContaining* cont
 }
 
 void ZRememberedSetContainingInLiveIterator::print_statistics() const {
-  _page->log_msg(" (remembered iter count: " SIZE_FORMAT " skipped: " SIZE_FORMAT ")", _count, _count_skipped);
+  _page->log_msg(" (remembered iter count: %zu skipped: %zu)", _count, _count_skipped);
 }

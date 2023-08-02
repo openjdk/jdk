@@ -286,7 +286,7 @@ print_generic_summary_data(ParallelCompactData& summary_data,
     ++i;
   }
 
-  log_develop_trace(gc, compaction)("summary_data_bytes=" SIZE_FORMAT, total_words * HeapWordSize);
+  log_develop_trace(gc, compaction)("summary_data_bytes=%zu", total_words * HeapWordSize);
 }
 
 void
@@ -644,7 +644,7 @@ ParallelCompactData::summarize_split_space(size_t src_region,
                                          sr->partial_obj_size()));
     const size_t end_idx = addr_to_region_idx(target_end);
 
-    log_develop_trace(gc, compaction)("split:  clearing source_region field in [" SIZE_FORMAT ", " SIZE_FORMAT ")", beg_idx, end_idx);
+    log_develop_trace(gc, compaction)("split:  clearing source_region field in [%zu, %zu)", beg_idx, end_idx);
     for (size_t idx = beg_idx; idx < end_idx; ++idx) {
       _region_data[idx].set_source_region(0);
     }
@@ -666,9 +666,9 @@ ParallelCompactData::summarize_split_space(size_t src_region,
 
   if (log_develop_is_enabled(Trace, gc, compaction)) {
     const char * split_type = partial_obj_size == 0 ? "easy" : "hard";
-    log_develop_trace(gc, compaction)("%s split:  src=" PTR_FORMAT " src_c=" SIZE_FORMAT " pos=" SIZE_FORMAT,
+    log_develop_trace(gc, compaction)("%s split:  src=" PTR_FORMAT " src_c=%zu pos=%zu",
                                       split_type, p2i(source_next), split_region, partial_obj_size);
-    log_develop_trace(gc, compaction)("%s split:  dst=" PTR_FORMAT " dst_c=" SIZE_FORMAT " tn=" PTR_FORMAT,
+    log_develop_trace(gc, compaction)("%s split:  dst=" PTR_FORMAT " dst_c=%zu tn=" PTR_FORMAT,
                                       split_type, p2i(split_destination),
                                       addr_to_region_idx(split_destination),
                                       p2i(*target_next));
@@ -676,7 +676,7 @@ ParallelCompactData::summarize_split_space(size_t src_region,
     if (partial_obj_size != 0) {
       HeapWord* const po_beg = split_info.destination();
       HeapWord* const po_end = po_beg + split_info.partial_obj_size();
-      log_develop_trace(gc, compaction)("%s split:  po_beg=" PTR_FORMAT " " SIZE_FORMAT " po_end=" PTR_FORMAT " " SIZE_FORMAT,
+      log_develop_trace(gc, compaction)("%s split:  po_beg=" PTR_FORMAT " %zu po_end=" PTR_FORMAT " %zu",
                                         split_type,
                                         p2i(po_beg), addr_to_region_idx(po_beg),
                                         p2i(po_end), addr_to_region_idx(po_end));
@@ -876,16 +876,16 @@ bool PSParallelCompact::initialize() {
 
   if (!_mark_bitmap.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB bitmaps for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB card tables for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
@@ -1085,11 +1085,11 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
   const size_t deadwood_goal = size_t(space_capacity * deadwood_density);
 
   log_develop_debug(gc, compaction)(
-      "cur_dens=%5.3f dw_dens=%5.3f dw_goal=" SIZE_FORMAT,
+      "cur_dens=%5.3f dw_dens=%5.3f dw_goal=%zu",
       cur_density, deadwood_density, deadwood_goal);
   log_develop_debug(gc, compaction)(
-      "space_live=" SIZE_FORMAT " space_used=" SIZE_FORMAT " "
-      "space_cap=" SIZE_FORMAT,
+      "space_live=%zu space_used=%zu "
+      "space_cap=%zu",
       space_live, space_used,
       space_capacity);
 
@@ -1169,9 +1169,9 @@ void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
 
   log_develop_debug(gc, compaction)(
       "%s=" PTR_FORMAT " dpc=" SIZE_FORMAT_W(5) " "
-      "spl=" SIZE_FORMAT " "
-      "d2l=" SIZE_FORMAT " d2l%%=%6.4f "
-      "d2r=" SIZE_FORMAT " l2r=" SIZE_FORMAT " "
+      "spl=%zu "
+      "d2l=%zu d2l%%=%6.4f "
+      "d2r=%zu l2r=%zu "
       "ratio=%10.8f",
       algorithm, p2i(addr), region_idx,
       space_live,
@@ -1387,13 +1387,13 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
                                       dead_wood_max);
 
   log_develop_debug(gc, compaction)(
-      "space_live=" SIZE_FORMAT " space_used=" SIZE_FORMAT " "
-      "space_cap=" SIZE_FORMAT,
+      "space_live=%zu space_used=%zu "
+      "space_cap=%zu",
       space_live, space_used,
       space_capacity);
   log_develop_debug(gc, compaction)(
-      "dead_wood_limiter(%6.4f, " SIZE_FORMAT ")=%6.4f "
-      "dead_wood_max=" SIZE_FORMAT " dead_wood_limit=" SIZE_FORMAT,
+      "dead_wood_limiter(%6.4f, %zu)=%6.4f "
+      "dead_wood_max=%zu dead_wood_limit=%zu",
       density, min_percent_free, limiter,
       dead_wood_max, dead_wood_limit);
 
@@ -1546,9 +1546,9 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
     const HeapWord* nt_aligned_up = _summary_data.region_align_up(new_top);
     const size_t cr_words = pointer_delta(nt_aligned_up, dense_prefix_end);
     log_develop_trace(gc, compaction)(
-        "id=%d cap=" SIZE_FORMAT " dp=" PTR_FORMAT " "
-        "dp_region=" SIZE_FORMAT " " "dp_count=" SIZE_FORMAT " "
-        "cr_count=" SIZE_FORMAT " " "nt=" PTR_FORMAT,
+        "id=%d cap=%zu dp=" PTR_FORMAT " "
+        "dp_region=%zu " "dp_count=%zu "
+        "cr_count=%zu " "nt=" PTR_FORMAT,
         id, space->capacity_in_words(), p2i(dense_prefix_end),
         dp_region, dp_words / region_size,
         cr_words / region_size, p2i(new_top));
@@ -1564,9 +1564,9 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
   log_develop_trace(gc, compaction)(
       "Summarizing %d [%s] into %d [%s]:  "
       "src=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-" SIZE_FORMAT " "
+      SIZE_FORMAT "-%zu "
       "dst=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-" SIZE_FORMAT,
+      SIZE_FORMAT "-%zu",
       src_space_id, space_names[src_space_id],
       dst_space_id, space_names[dst_space_id],
       p2i(src_beg), p2i(src_end),
@@ -1792,7 +1792,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     if (UseAdaptiveSizePolicy) {
       log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
-      log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+      log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                           old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
       // Don't check if the size_policy is ready here.  Let
@@ -2489,7 +2489,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->completed()) {
-      log_warning(gc)("region " SIZE_FORMAT " not filled: destination_count=%u",
+      log_warning(gc)("region %zu not filled: destination_count=%u",
                       cur_region, c->destination_count());
       issued_a_warning = true;
     }
@@ -2498,7 +2498,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->available()) {
-      log_warning(gc)("region " SIZE_FORMAT " not empty: destination_count=%u",
+      log_warning(gc)("region %zu not empty: destination_count=%u",
                       cur_region, c->destination_count());
       issued_a_warning = true;
     }

@@ -33,7 +33,7 @@
 
 HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Type type) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
+  assert(is_object_aligned(size), "alloc size breaks alignment: %zu", size);
 
   HeapWord* obj = top();
   if (pointer_delta(end(), obj) >= size) {
@@ -86,7 +86,7 @@ inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   size_t live_bytes = new_live_data * HeapWordSize;
   size_t used_bytes = used();
   assert(live_bytes <= used_bytes,
-         "can't have more live data than used: " SIZE_FORMAT ", " SIZE_FORMAT, live_bytes, used_bytes);
+         "can't have more live data than used: %zu, %zu", live_bytes, used_bytes);
 #endif
 }
 
@@ -108,7 +108,7 @@ inline bool ShenandoahHeapRegion::has_live() const {
 
 inline size_t ShenandoahHeapRegion::garbage() const {
   assert(used() >= get_live_data_bytes(),
-         "Live Data must be a subset of used() live: " SIZE_FORMAT " used: " SIZE_FORMAT,
+         "Live Data must be a subset of used() live: %zu used: %zu",
          get_live_data_bytes(), used());
 
   size_t result = used() - get_live_data_bytes();

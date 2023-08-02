@@ -92,7 +92,7 @@ G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
 }
 
 void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
-  out->print_cr("  Static structures = " SIZE_FORMAT, HeapRegionRemSet::static_mem_size());
+  out->print_cr("  Static structures = %zu", HeapRegionRemSet::static_mem_size());
 }
 
 // Code roots support

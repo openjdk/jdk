@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ void XMark::start() {
     for (uint worker_id = 0; worker_id < _nworkers; worker_id++) {
       const XMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, worker_id);
       const size_t stripe_id = _stripes.stripe_id(stripe);
-      log.print("  Worker %u(%u) -> Stripe " SIZE_FORMAT "(" SIZE_FORMAT ")",
+      log.print("  Worker %u(%u) -> Stripe %zu(%zu)",
                 worker_id, _nworkers, stripe_id, nstripes);
     }
   }
@@ -176,7 +176,7 @@ void XMark::push_partial_array(uintptr_t addr, size_t size, bool finalizable) {
   const uintptr_t length = size / oopSize;
   const XMarkStackEntry entry(offset, length, finalizable);
 
-  log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (" SIZE_FORMAT "), stripe: " SIZE_FORMAT,
+  log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (%zu), stripe: %zu",
                                  addr, size, _stripes.stripe_id(stripe));
 
   stacks->push(&_allocator, &_stripes, stripe, entry, false /* publish */);
@@ -186,7 +186,7 @@ void XMark::follow_small_array(uintptr_t addr, size_t size, bool finalizable) {
   assert(size <= XMarkPartialArrayMinSize, "Too large, should be split");
   const size_t length = size / oopSize;
 
-  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", addr, size);
+  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (%zu)", addr, size);
 
   XBarrier::mark_barrier_on_oop_array((oop*)addr, length, finalizable);
 }
@@ -204,8 +204,8 @@ void XMark::follow_large_array(uintptr_t addr, size_t size, bool finalizable) {
   const size_t    middle_size = align_down(end - middle_start, XMarkPartialArrayMinSize);
   const uintptr_t middle_end = middle_start + middle_size;
 
-  log_develop_trace(gc, marking)("Array follow large: " PTR_FORMAT "-" PTR_FORMAT" (" SIZE_FORMAT "), "
-                                 "middle: " PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT ")",
+  log_develop_trace(gc, marking)("Array follow large: " PTR_FORMAT "-" PTR_FORMAT" (%zu), "
+                                 "middle: " PTR_FORMAT "-" PTR_FORMAT " (%zu)",
                                  start, end, size, middle_start, middle_end, middle_size);
 
   // Push unaligned trailing part

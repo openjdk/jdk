@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ void XHeap::undo_alloc_page(XPage* page) {
   assert(page->is_allocating(), "Invalid page state");
 
   XStatInc(XCounterUndoPageAllocation);
-  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: " SIZE_FORMAT,
+  log_trace(gc)("Undo page allocation, thread: " PTR_FORMAT " (%s), page: " PTR_FORMAT ", size: %zu",
                 XThread::id(), XThread::name(), p2i(page), page->size());
 
   free_page(page, false /* reclaimed */);
@@ -491,7 +491,7 @@ XServiceabilityCounters* XHeap::serviceability_counters() {
 }
 
 void XHeap::print_on(outputStream* st) const {
-  st->print_cr(" ZHeap           used " SIZE_FORMAT "M, capacity " SIZE_FORMAT "M, max capacity " SIZE_FORMAT "M",
+  st->print_cr(" ZHeap           used %zuM, capacity %zuM, max capacity %zuM",
                used() / M,
                capacity() / M,
                max_capacity() / M);

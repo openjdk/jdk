@@ -105,12 +105,12 @@ G1CMMarkStack::G1CMMarkStack() :
 bool G1CMMarkStack::resize(size_t new_capacity) {
   assert(is_empty(), "Only resize when stack is empty.");
   assert(new_capacity <= _max_chunk_capacity,
-         "Trying to resize stack to " SIZE_FORMAT " chunks when the maximum is " SIZE_FORMAT, new_capacity, _max_chunk_capacity);
+         "Trying to resize stack to %zu chunks when the maximum is %zu", new_capacity, _max_chunk_capacity);
 
   TaskQueueEntryChunk* new_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(new_capacity, mtGC);
 
   if (new_base == nullptr) {
-    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
+    log_warning(gc)("Failed to reserve memory for new overflow mark stack with %zu chunks and size %zuB.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
     return false;
   }
   // Release old mapping.
@@ -138,11 +138,11 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
   size_t initial_chunk_capacity = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
   guarantee(initial_chunk_capacity <= _max_chunk_capacity,
-            "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,
+            "Maximum chunk capacity %zu smaller than initial capacity %zu",
             _max_chunk_capacity,
             initial_chunk_capacity);
 
-  log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
+  log_debug(gc)("Initialize mark stack with %zu chunks, maximum %zu",
                 initial_chunk_capacity, _max_chunk_capacity);
 
   return resize(initial_chunk_capacity);
@@ -150,7 +150,7 @@ bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
 
 void G1CMMarkStack::expand() {
   if (_chunk_capacity == _max_chunk_capacity) {
-    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _chunk_capacity);
+    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of %zu chunks.", _chunk_capacity);
     return;
   }
   size_t old_capacity = _chunk_capacity;
@@ -158,10 +158,10 @@ void G1CMMarkStack::expand() {
   size_t new_capacity = MIN2(old_capacity * 2, _max_chunk_capacity);
 
   if (resize(new_capacity)) {
-    log_debug(gc)("Expanded mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
+    log_debug(gc)("Expanded mark stack capacity from %zu to %zu chunks",
                   old_capacity, new_capacity);
   } else {
-    log_warning(gc)("Failed to expand mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
+    log_warning(gc)("Failed to expand mark stack capacity from %zu to %zu chunks",
                     old_capacity, new_capacity);
   }
 }
@@ -287,7 +287,7 @@ void G1CMRootMemRegions::reset() {
 void G1CMRootMemRegions::add(HeapWord* start, HeapWord* end) {
   assert_at_safepoint();
   size_t idx = Atomic::fetch_then_add(&_num_root_regions, 1u);
-  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space " SIZE_FORMAT, _max_regions);
+  assert(idx < _max_regions, "Trying to add more root MemRegions than there is space %zu", _max_regions);
   assert(start != nullptr && end != nullptr && start <= end, "Start (" PTR_FORMAT ") should be less or equal to "
          "end (" PTR_FORMAT ")", p2i(start), p2i(end));
   _root_regions[idx].set_start(start);
@@ -340,7 +340,7 @@ void G1CMRootMemRegions::scan_finished() {
 
   if (!_should_abort) {
     assert(_claimed_root_regions >= num_root_regions(),
-           "we should have claimed all root regions, claimed " SIZE_FORMAT ", length = %u",
+           "we should have claimed all root regions, claimed %zu, length = %u",
            _claimed_root_regions, num_root_regions());
   }
 
@@ -684,7 +684,7 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
 
   G1ClearBitMapTask cl(this, num_workers, may_yield);
 
-  log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
+  log_debug(gc, ergo)("Running %s with %u workers for %zu work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
   guarantee(may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
@@ -1669,7 +1669,7 @@ void G1ConcurrentMark::weak_refs_work() {
     // We can not trust g1_is_alive and the contents of the heap if the marking stack
     // overflowed while processing references. Exit the VM.
     fatal("Overflow during reference processing, can not continue. Current mark stack depth: "
-          SIZE_FORMAT ", MarkStackSize: " SIZE_FORMAT ", MarkStackSizeMax: " SIZE_FORMAT ". "
+          SIZE_FORMAT ", MarkStackSize: %zu, MarkStackSizeMax: %zu. "
           "Please increase MarkStackSize and/or MarkStackSizeMax and restart.",
           _global_mark_stack.size(), MarkStackSize, MarkStackSizeMax);
     return;
@@ -1821,7 +1821,7 @@ void G1ConcurrentMark::finalize_marking() {
   SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
   guarantee(has_overflown() ||
             satb_mq_set.completed_buffers_num() == 0,
-            "Invariant: has_overflown = %s, num buffers = " SIZE_FORMAT,
+            "Invariant: has_overflown = %s, num buffers = %zu",
             BOOL_TO_STR(has_overflown()),
             satb_mq_set.completed_buffers_num());
 
@@ -1837,7 +1837,7 @@ void G1ConcurrentMark::flush_all_task_caches() {
     misses += stats.second;
   }
   size_t sum = hits + misses;
-  log_debug(gc, stats)("Mark stats cache hits " SIZE_FORMAT " misses " SIZE_FORMAT " ratio %1.3lf",
+  log_debug(gc, stats)("Mark stats cache hits %zu misses %zu ratio %1.3lf",
                        hits, misses, percent_of(hits, sum));
 }
 
@@ -2415,7 +2415,7 @@ void G1CMTask::print_stats() {
                        _step_times_ms.sum());
   size_t const hits = _mark_stats_cache.hits();
   size_t const misses = _mark_stats_cache.misses();
-  log_debug(gc, stats)("  Mark Stats Cache: hits " SIZE_FORMAT " misses " SIZE_FORMAT " ratio %.3f",
+  log_debug(gc, stats)("  Mark Stats Cache: hits %zu misses %zu ratio %.3f",
                        hits, misses, percent_of(hits, hits + misses));
 }
 
@@ -2914,7 +2914,7 @@ G1CMTask::G1CMTask(uint worker_id,
 
 // For summary info
 #define G1PPRL_SUM_ADDR_FORMAT(tag)    "  " tag ":" G1PPRL_ADDR_BASE_FORMAT
-#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  " tag ": " SIZE_FORMAT
+#define G1PPRL_SUM_BYTE_FORMAT(tag)    "  " tag ": %zu"
 #define G1PPRL_SUM_MB_FORMAT(tag)      "  " tag ": %1.2f MB"
 #define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag) " / %1.2f %%"
 

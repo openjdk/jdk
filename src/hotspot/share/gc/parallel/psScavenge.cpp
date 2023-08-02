@@ -517,7 +517,7 @@ bool PSScavenge::invoke_no_policy() {
         // Calculate the new survivor size and tenuring threshold
 
         log_debug(gc, ergo)("AdaptiveSizeStart:  collection: %d ", heap->total_collections());
-        log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+        log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                             old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
         if (UsePerfData) {
@@ -708,12 +708,12 @@ bool PSScavenge::should_attempt_scavenge() {
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
   bool result = promotion_estimate < old_gen->free_in_bytes();
 
-  log_trace(ergo)("%s scavenge: average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
+  log_trace(ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
                 result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
                 (size_t) policy->padded_average_promoted_in_bytes(),
                 old_gen->free_in_bytes());
   if (young_gen->used_in_bytes() < (size_t) policy->padded_average_promoted_in_bytes()) {
-    log_trace(ergo)(" padded_promoted_average is greater than maximum promotion = " SIZE_FORMAT, young_gen->used_in_bytes());
+    log_trace(ergo)(" padded_promoted_average is greater than maximum promotion = %zu", young_gen->used_in_bytes());
   }
 
   if (!result) {

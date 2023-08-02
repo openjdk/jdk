@@ -129,19 +129,19 @@ void ShenandoahMarkBitMap::check_mark(HeapWord* addr) const {
 
 void ShenandoahMarkBitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void ShenandoahMarkBitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif

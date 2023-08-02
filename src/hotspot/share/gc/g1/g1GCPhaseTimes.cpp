@@ -397,7 +397,7 @@ void G1GCPhaseTimes::trace_time(const char* name, double value) const {
 }
 
 void G1GCPhaseTimes::trace_count(const char* name, size_t value) const {
-  log_trace(gc, phases)("      %s: " SIZE_FORMAT, name, value);
+  log_trace(gc, phases)("      %s: %zu", name, value);
 }
 
 double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {

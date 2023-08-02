@@ -309,12 +309,12 @@ void XCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
   st->print_cr(" GlobalPhase:       %u (%s)", XGlobalPhase, XGlobalPhaseToString());
   st->print_cr(" GlobalSeqNum:      %u", XGlobalSeqNum);
-  st->print_cr(" Offset Max:        " SIZE_FORMAT "%s (" PTR_FORMAT ")",
+  st->print_cr(" Offset Max:        %zu%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(XAddressOffsetMax),
                exact_unit_for_byte_size(XAddressOffsetMax),
                XAddressOffsetMax);
-  st->print_cr(" Page Size Small:   " SIZE_FORMAT "M", XPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:  " SIZE_FORMAT "M", XPageSizeMedium / M);
+  st->print_cr(" Page Size Small:   %zuM", XPageSizeSmall / M);
+  st->print_cr(" Page Size Medium:  %zuM", XPageSizeMedium / M);
   st->cr();
   st->print_cr("ZGC Metadata Bits:");
   st->print_cr(" Good:              " PTR_FORMAT, XAddressGoodMask);

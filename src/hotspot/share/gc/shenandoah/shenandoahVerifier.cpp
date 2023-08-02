@@ -684,14 +684,14 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
     _heap->heap_region_iterate(&cl);
     size_t heap_used = _heap->used();
     guarantee(cl.used() == heap_used,
-              "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+              "%s: heap used size must be consistent: heap-used = %zu%s, regions-used = %zu%s",
               label,
               byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
               byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
 
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
-              "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "%s, regions-committed = " SIZE_FORMAT "%s",
+              "%s: heap committed size must be consistent: heap-committed = %zu%s, regions-committed = %zu%s",
               label,
               byte_size_in_proper_unit(heap_committed), proper_unit_for_byte_size(heap_committed),
               byte_size_in_proper_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
@@ -767,13 +767,13 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       if (reg_live != verf_live) {
         stringStream ss;
         r->print_on(&ss);
-        fatal("%s: Live data should match: region-live = " SIZE_FORMAT ", verifier-live = " UINT32_FORMAT "\n%s",
+        fatal("%s: Live data should match: region-live = %zu, verifier-live = " UINT32_FORMAT "\n%s",
               label, reg_live, verf_live, ss.freeze());
       }
     }
   }
 
-  log_info(gc)("Verify %s, Level " INTX_FORMAT " (" SIZE_FORMAT " reachable, " SIZE_FORMAT " marked)",
+  log_info(gc)("Verify %s, Level " INTX_FORMAT " (%zu reachable, %zu marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
   FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);

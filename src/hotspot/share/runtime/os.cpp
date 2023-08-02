@@ -1047,9 +1047,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   size_t mem = physical_memory()/G;
   if (mem == 0) {  // for low memory systems
     mem = physical_memory()/M;
-    st->print("%d cores, " SIZE_FORMAT "M, ", processor_count(), mem);
+    st->print("%d cores, %zuM, ", processor_count(), mem);
   } else {
-    st->print("%d cores, " SIZE_FORMAT "G, ", processor_count(), mem);
+    st->print("%d cores, %zuG, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);
@@ -1660,11 +1660,11 @@ void os::trace_page_sizes(const char* str,
                           const size_t page_size) {
 
   log_info(pagesize)("%s: "
-                     " min=" SIZE_FORMAT "%s"
-                     " max=" SIZE_FORMAT "%s"
+                     " min=%zu%s"
+                     " max=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
@@ -1681,11 +1681,11 @@ void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t page_size) {
 
   log_info(pagesize)("%s:"
-                     " req_size=" SIZE_FORMAT "%s"
-                     " req_page_size=" SIZE_FORMAT "%s"
+                     " req_size=%zu%s"
+                     " req_page_size=%zu%s"
                      " base=" PTR_FORMAT
-                     " size=" SIZE_FORMAT "%s"
-                     " page_size=" SIZE_FORMAT "%s",
+                     " size=%zu%s"
+                     " page_size=%zu%s",
                      str,
                      trace_page_size_params(requested_size),
                      trace_page_size_params(requested_page_size),
@@ -1838,7 +1838,7 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
   }
   return res;
 }
@@ -1979,17 +1979,17 @@ void os::naked_sleep(jlong millis) {
 ////// Implementation of PageSizes
 
 void os::PageSizes::add(size_t page_size) {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   _v |= page_size;
 }
 
 bool os::PageSizes::contains(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   return (_v & page_size) != 0;
 }
 
 size_t os::PageSizes::next_smaller(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   size_t v2 = _v & (page_size - 1);
   if (v2 == 0) {
     return 0;
@@ -1998,7 +1998,7 @@ size_t os::PageSizes::next_smaller(size_t page_size) const {
 }
 
 size_t os::PageSizes::next_larger(size_t page_size) const {
-  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: 0x%zx", page_size);
   if (page_size == max_power_of_2<size_t>()) { // Shift by 32/64 would be UB
     return 0;
   }
@@ -2033,11 +2033,11 @@ void os::PageSizes::print_on(outputStream* st) const {
       st->print_raw(", ");
     }
     if (sz < M) {
-      st->print(SIZE_FORMAT "k", sz / K);
+      st->print("%zuk", sz / K);
     } else if (sz < G) {
-      st->print(SIZE_FORMAT "M", sz / M);
+      st->print("%zuM", sz / M);
     } else {
-      st->print(SIZE_FORMAT "G", sz / G);
+      st->print("%zuG", sz / G);
     }
   }
   if (first) {
@@ -2071,7 +2071,7 @@ jint os::set_minimum_stack_sizes() {
     // ThreadStackSize so we go with "Java thread stack size" instead
     // of "ThreadStackSize" to be more friendly.
     tty->print_cr("\nThe Java thread stack size specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _java_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2092,7 +2092,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _compiler_thread_min_stack_allowed) {
     tty->print_cr("\nThe CompilerThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _compiler_thread_min_stack_allowed / K);
     return JNI_ERR;
   }
@@ -2104,7 +2104,7 @@ jint os::set_minimum_stack_sizes() {
   if (stack_size_in_bytes != 0 &&
       stack_size_in_bytes < _vm_internal_thread_min_stack_allowed) {
     tty->print_cr("\nThe VMThreadStackSize specified is too small. "
-                  "Specify at least " SIZE_FORMAT "k",
+                  "Specify at least %zuk",
                   _vm_internal_thread_min_stack_allowed / K);
     return JNI_ERR;
   }

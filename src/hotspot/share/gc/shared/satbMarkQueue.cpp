@@ -54,8 +54,8 @@ static void print_satb_buffer(const char* name,
                               void** buf,
                               size_t index,
                               size_t capacity) {
-  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT
-                " capacity: " SIZE_FORMAT,
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: %zu"
+                " capacity: %zu",
                 name, p2i(buf), index, capacity);
 }
 

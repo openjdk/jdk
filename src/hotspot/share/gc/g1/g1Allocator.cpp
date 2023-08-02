@@ -214,7 +214,7 @@ HeapWord* G1Allocator::par_allocate_during_gc(G1HeapRegionAttr dest,
   size_t temp = 0;
   HeapWord* result = par_allocate_during_gc(dest, word_size, word_size, &temp, node_index);
   assert(result == nullptr || temp == word_size,
-         "Requested " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+         "Requested %zu words, but got %zu at " PTR_FORMAT,
          word_size, temp, p2i(result));
   return result;
 }

@@ -474,7 +474,7 @@ void ContiguousSpace::compact() {
 void Space::print_short() const { print_short_on(tty); }
 
 void Space::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
+  st->print(" space %zuK, %3d%% used", capacity() / K,
               (int) ((double) used() * 100 / capacity()));
 }
 

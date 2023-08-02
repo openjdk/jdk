@@ -193,7 +193,7 @@ public:
               "Only eagerly reclaiming type arrays is supported, but the object "
               PTR_FORMAT " is not.", p2i(r->bottom()));
 
-    log_debug(gc, humongous)("Reclaimed humongous region %u (object size " SIZE_FORMAT " @ " PTR_FORMAT ")",
+    log_debug(gc, humongous)("Reclaimed humongous region %u (object size %zu @ " PTR_FORMAT ")",
                              region_index,
                              obj->size() * HeapWordSize,
                              p2i(r->bottom())

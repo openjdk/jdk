@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ void XNMethod::log_register(const nmethod* nm) {
   const XNMethodDataOops* const oops = gc_data(nm)->oops();
 
   log.print("Register NMethod: %s.%s (" PTR_FORMAT "), "
-            "Compiler: %s, Oops: %d, ImmediateOops: " SIZE_FORMAT ", NonImmediateOops: %s",
+            "Compiler: %s, Oops: %d, ImmediateOops: %zu, NonImmediateOops: %s",
             nm->method()->method_holder()->external_name(),
             nm->method()->name()->as_C_string(),
             p2i(nm),
@@ -129,7 +129,7 @@ void XNMethod::log_register(const nmethod* nm) {
     for (oop* p = begin; p < end; p++) {
       const oop o = Atomic::load(p); // C1 PatchingStub may replace it concurrently.
       const char* external_name = (o == nullptr) ? "N/A" : o->klass()->external_name();
-      log_oops.print("           Oop[" SIZE_FORMAT "] " PTR_FORMAT " (%s)",
+      log_oops.print("           Oop[%zu] " PTR_FORMAT " (%s)",
                      (p - begin), p2i(o), external_name);
     }
   }
@@ -139,7 +139,7 @@ void XNMethod::log_register(const nmethod* nm) {
     oop** const begin = oops->immediates_begin();
     oop** const end = oops->immediates_end();
     for (oop** p = begin; p < end; p++) {
-      log_oops.print("  ImmediateOop[" SIZE_FORMAT "] " PTR_FORMAT " @ " PTR_FORMAT " (%s)",
+      log_oops.print("  ImmediateOop[%zu] " PTR_FORMAT " @ " PTR_FORMAT " (%s)",
                      (p - begin), p2i(**p), p2i(*p), (**p)->klass()->external_name());
     }
   }

@@ -216,7 +216,7 @@ void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes,
   uint node_index = preferred_node_index_for_index(region_index);
 
   assert(is_aligned(aligned_address, page_size()), "Given address (" PTR_FORMAT ") should be aligned.", p2i(aligned_address));
-  assert(is_aligned(size_in_bytes, page_size()), "Given size (" SIZE_FORMAT ") should be aligned.", size_in_bytes);
+  assert(is_aligned(size_in_bytes, page_size()), "Given size (%zu) should be aligned.", size_in_bytes);
 
   log_trace(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be NUMA id (%d)",
                             p2i(aligned_address), p2i((char*)aligned_address + size_in_bytes), _node_ids[node_index]);

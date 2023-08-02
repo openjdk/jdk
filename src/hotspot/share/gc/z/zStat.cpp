@@ -1453,7 +1453,7 @@ void ZStatMark::print() {
                         _ntrycomplete,
                         _ncontinue);
 
-  log_info(gc, marking)("Mark Stack Usage: " SIZE_FORMAT "M", _mark_stack_usage / M);
+  log_info(gc, marking)("Mark Stack Usage: %zuM", _mark_stack_usage / M);
 }
 
 //
@@ -1538,7 +1538,7 @@ void ZStatRelocation::print_page_summary() {
   }
   print_summary("Large", large_summary, 0 /* in_place_count */);
 
-  lt.print("Forwarding Usage: " SIZE_FORMAT "M", _forwarding_usage / M);
+  lt.print("Forwarding Usage: %zuM", _forwarding_usage / M);
 }
 
 void ZStatRelocation::print_age_table() {
@@ -1604,13 +1604,13 @@ void ZStatRelocation::print_age_table() {
 
     lt.print("%s", create_age_table()
               .left(ZTABLE_ARGS(total[i] - live[i]))
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left(SIZE_FORMAT_W(7) " / %zu",
                     _selector_stats.small(age).npages_candidates(),
                     _selector_stats.small(age).npages_selected())
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left(SIZE_FORMAT_W(7) " / %zu",
                     _selector_stats.medium(age).npages_candidates(),
                     _selector_stats.medium(age).npages_selected())
-              .left(SIZE_FORMAT_W(7) " / " SIZE_FORMAT,
+              .left(SIZE_FORMAT_W(7) " / %zu",
                     _selector_stats.large(age).npages_candidates(),
                     _selector_stats.large(age).npages_selected())
               .end());
@@ -1621,7 +1621,7 @@ void ZStatRelocation::print_age_table() {
 // Stat nmethods
 //
 void ZStatNMethods::print() {
-  log_info(gc, nmethod)("NMethods: " SIZE_FORMAT " registered, " SIZE_FORMAT " unregistered",
+  log_info(gc, nmethod)("NMethods: %zu registered, %zu unregistered",
                         ZNMethodTable::registered_nmethods(),
                         ZNMethodTable::unregistered_nmethods());
 }
@@ -1633,7 +1633,7 @@ void ZStatMetaspace::print() {
   const MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
                           SIZE_FORMAT "M used, "
-                          SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
+                          SIZE_FORMAT "M committed, %zuM reserved",
                           stats.used() / M,
                           stats.committed() / M,
                           stats.reserved() / M);

@@ -305,13 +305,13 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   mem = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &allocation._allocated_tlab_size);
   if (mem == nullptr) {
     assert(allocation._allocated_tlab_size == 0,
-           "Allocation failed, but actual size was updated. min: " SIZE_FORMAT
-           ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
+           "Allocation failed, but actual size was updated. min: %zu"
+           ", desired: %zu, actual: %zu",
            min_tlab_size, new_tlab_size, allocation._allocated_tlab_size);
     return nullptr;
   }
   assert(allocation._allocated_tlab_size != 0, "Allocation succeeded but actual size not updated. mem at: "
-         PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
+         PTR_FORMAT " min: %zu, desired: %zu",
          p2i(mem), min_tlab_size, new_tlab_size);
 
   if (ZeroTLAB) {
