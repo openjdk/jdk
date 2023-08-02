@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
  * @run main/othervm AddPrivateKey
  * @run main/othervm -Djava.security.manager=allow AddPrivateKey sm policy
  */
+
+import jtreg.SkippedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -68,8 +70,8 @@ public class AddPrivateKey extends SecmodTest {
                     BASE + File.separator + args[1]);
         }
 
-        if (initSecmod() == false) {
-            return;
+        if (!initSecmod()) {
+            throw new SkippedException("unable to load NSS lib");
         }
 
         String configName = BASE + SEP + "nss.cfg";

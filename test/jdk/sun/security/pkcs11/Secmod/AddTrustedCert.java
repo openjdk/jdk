@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm -Djava.security.manager=allow AddTrustedCert sm policy
  */
 
+import jtreg.SkippedException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -53,8 +55,8 @@ public class AddTrustedCert extends SecmodTest {
                     BASE + File.separator + args[1]);
         }
 
-        if (initSecmod() == false) {
-            return;
+        if (!initSecmod()) {
+            throw new SkippedException("unable to load NSS lib");
         }
 
         X509Certificate cert;
@@ -68,10 +70,9 @@ public class AddTrustedCert extends SecmodTest {
         Provider p = getSunPKCS11(configName);
 
         if (improperNSSVersion(p)) {
-            System.out.println(
+            throw new SkippedException(
                     "Skip test due to improper NSS version in [3.28, 3.35). "
-                    + "See JDK-8180837 for more detatils.");
-            return;
+                    + "See JDK-8180837 for more details.");
         }
 
         System.out.println(p);

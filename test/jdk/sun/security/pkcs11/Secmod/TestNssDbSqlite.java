@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2017, 2023, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,7 @@ import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Signature;
 
+import jtreg.SkippedException;
 import sun.security.rsa.SunRsaSign;
 import sun.security.jca.ProviderList;
 import sun.security.jca.Providers;
@@ -67,7 +68,7 @@ public final class TestNssDbSqlite extends SecmodTest {
     public static void main(String[] args) throws Exception {
 
         if (!initialize()) {
-            return;
+            throw new SkippedException("Test Skipped, check logs");
         }
 
         if (enableDebug) {

@@ -927,7 +927,7 @@ public abstract class PKCS11Test {
 
     private void premain(Provider p) throws Exception {
         if (skipTest(p)) {
-            return;
+            throw new SkippedException("Test skipped, check logs");
         }
 
         // set a security manager and policy before a test case runs,

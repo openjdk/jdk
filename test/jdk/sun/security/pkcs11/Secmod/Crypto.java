@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
  * @run main/othervm -Djava.security.manager=allow Crypto sm policy
  */
 
+import jtreg.SkippedException;
+
 import java.io.File;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -41,8 +43,8 @@ import java.security.Signature;
 public class Crypto extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (initSecmod() == false) {
-            return;
+        if (!initSecmod()) {
+            throw new SkippedException("unable to load NSS lib");
         }
 
         String configName = BASE + SEP + "nsscrypto.cfg";
@@ -72,8 +74,8 @@ public class Crypto extends SecmodTest {
         sig.initVerify(kp.getPublic());
         sig.update(data);
         boolean ok = sig.verify(s);
-        if (ok == false) {
-            throw new Exception("Signature verification failed");
+        if (!ok) {
+            throw new RuntimeException("Signature verification failed");
         }
 
         System.out.println("OK");
