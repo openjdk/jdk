@@ -39,8 +39,8 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   size_t committed = _heap->committed();
 
   // These asserts can never fail: max is stable, and all updates to other values never overflow max.
-  assert(initial <= max,    "initial: "   "%zu, max: %zu", initial,   max);
-  assert(used <= max,       "used: "      "%zu, max: "%zu", used,      max);
+  assert(initial <= max,    "initial: %zu, max: %zu",   initial,   max);
+  assert(used <= max,       "used: %zu, max: %zu",      used,      max);
   assert(committed <= max,  "committed: %zu, max: %zu", committed, max);
 
   // Committed and used are updated concurrently and independently. They can momentarily break
