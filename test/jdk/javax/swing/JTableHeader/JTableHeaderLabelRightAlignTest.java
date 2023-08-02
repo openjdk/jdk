@@ -74,7 +74,7 @@ public class JTableHeaderLabelRightAlignTest {
             g2d.dispose();
         }
 
-        int x = (int) (table.getTableHeader()
+        int x = (int)(table.getTableHeader()
                             .getColumnModel()
                             .getColumn(0)
                             .getWidth() * SCALE);
