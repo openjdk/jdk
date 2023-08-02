@@ -686,7 +686,7 @@ public:
 
 class CompilerDirectivesRemoveDCmd : public DCmdWithParser {
 protected:
-  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
+  DCmdArgument<bool> _force_update; // true if update should be forced after directives changes.
 public:
   static int num_arguments() { return 1; }
   CompilerDirectivesRemoveDCmd(outputStream* output, bool heap);
@@ -710,7 +710,7 @@ public:
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
+  DCmdArgument<bool> _force_update; // true if update should be forced after directives changes.
 public:
   static int num_arguments() { return 2; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
@@ -734,7 +734,7 @@ public:
 class CompilerDirectivesReplaceDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
+  DCmdArgument<bool> _force_update; // true if update should be forced after directives changes.
 public:
   static int num_arguments() { return 2; }
   CompilerDirectivesReplaceDCmd(outputStream* output, bool heap);
@@ -757,7 +757,7 @@ public:
 
 class CompilerDirectivesClearDCmd : public DCmdWithParser {
 protected:
-  DCmdArgument<bool> _force_deopt; // true if deopt should be forced after directives changes.
+  DCmdArgument<bool> _force_update; // true if update should be forced after directives changes.
 public:
   static int num_arguments() { return 1; }
   CompilerDirectivesClearDCmd(outputStream* output, bool heap);

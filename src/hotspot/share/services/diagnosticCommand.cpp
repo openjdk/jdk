@@ -887,15 +887,15 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
-  _dcmdparser.add_dcmd_option(&_force_deopt);
+  _dcmdparser.add_dcmd_option(&_force_update);
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output(), true);
-  if (_force_deopt.value()) {
+  if (_force_update.value()) {
     CodeCache::mark_directives_matches();
     CodeCache::recompile_marked_directives_matches();
   }
@@ -904,16 +904,16 @@ void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
-  _dcmdparser.add_dcmd_option(&_force_deopt);
+  _dcmdparser.add_dcmd_option(&_force_update);
 }
 
 void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
-  // Need to do it twice, to account for the method that doesn't match
+  // Need to mark the methods twice, to account for the method that doesn't match
   // the directives anymore
-  if (_force_deopt.value()) {
+  if (_force_update.value()) {
     CodeCache::mark_directives_matches();
 
     DirectivesStack::clear();
@@ -930,14 +930,13 @@ void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
 
-  _dcmdparser.add_dcmd_option(&_force_deopt);
+  _dcmdparser.add_dcmd_option(&_force_update);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
-  if (_force_deopt.value()) {
+  if (_force_update.value()) {
     CodeCache::mark_directives_matches();
     DirectivesStack::pop(1);
     CodeCache::recompile_marked_directives_matches();
@@ -949,14 +948,13 @@ void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _force_deopt("-d", "Force deoptimization of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
 
-  _dcmdparser.add_dcmd_option(&_force_deopt);
+  _dcmdparser.add_dcmd_option(&_force_update);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
-  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
-  if (_force_deopt.value()) {
+  if (_force_update.value()) {
     CodeCache::mark_directives_matches();
     DirectivesStack::clear();
     CodeCache::recompile_marked_directives_matches();

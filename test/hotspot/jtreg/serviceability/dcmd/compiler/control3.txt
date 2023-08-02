@@ -1,6 +1,0 @@
-[
-  {
-    match: "java/lang/String.equals",
-    Exclude: true
-  }
-]

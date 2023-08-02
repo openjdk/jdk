@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,6 @@ import org.testng.Assert;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 public class CompilerDirectivesDCMDTest {
 
@@ -57,11 +55,7 @@ public class CompilerDirectivesDCMDTest {
             filename = System.getProperty("test.src", ".") + File.separator + "control1.txt";
         }
         testPrintCommand(executor);
-        testAddAndRemoveCommand(executor, false /*don't force deopt*/);
-        testAddAndRemoveCommand(executor, true /*force deopt*/);
-
-        filename = System.getProperty("test.src", ".") + File.separator + "control3.txt";
-        testForcedDeopt(executor);
+        testAddAndRemoveCommand(executor);
     }
 
     public static void testPrintCommand(CommandExecutor executor) {
@@ -74,29 +68,12 @@ public class CompilerDirectivesDCMDTest {
         }
     }
 
-    public static void testForcedDeopt(CommandExecutor executor) {
-        OutputAnalyzer output;
-
-        // j.l.S.equals is already compiled, so in the output of the Compiler.codelist
-        // command we see the method in state 0 (in use). After forced de-optimisation,
-        // the method will be shown in state 2 (marked for de-optimisation) or
-        // doesn't appear in the output at all.
-
-        output = executor.execute("Compiler.directives_replace " + filename + " -d");
-        output = executor.execute("Compiler.codelist ");
-        int count = findPattern(output, "[0-9]+ 4 0 java.lang.String.equals\\(.*");
-        if (count != 0) {
-            Assert.fail("Expected no c2 compiled instances of j.l.S.equals - found " + count);
-        }
-    }
-
-    public static void testAddAndRemoveCommand(CommandExecutor executor, boolean force_deopt) {
+    public static void testAddAndRemoveCommand(CommandExecutor executor) {
         OutputAnalyzer output;
         int count = 0;
-        String fdeo = (force_deopt) ? " -d" : "";
 
         // Start with clearing stack - expect only default directive left
-        output = executor.execute("Compiler.directives_clear" + fdeo);
+        output = executor.execute("Compiler.directives_clear");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 1) {
@@ -104,7 +81,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test that we can not remove the default directive
-        output = executor.execute("Compiler.directives_remove" + fdeo);
+        output = executor.execute("Compiler.directives_remove");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 1) {
@@ -112,15 +89,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test adding some directives from file
-        output = executor.execute("Compiler.directives_add " + filename + fdeo);
-        output = executor.execute("Compiler.directives_print");
-        count = find(output, "Directive:");
-        if (count != 3) {
-            Assert.fail("Expected three directives - found " + count);
-        }
-
-        // Test replace directives from file
-        output = executor.execute("Compiler.directives_replace " + filename + fdeo);
+        output = executor.execute("Compiler.directives_add " + filename);
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 3) {
@@ -128,7 +97,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test remove one directive
-        output = executor.execute("Compiler.directives_remove" + fdeo);
+        output = executor.execute("Compiler.directives_remove");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 2) {
@@ -136,7 +105,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test adding directives again
-        output = executor.execute("Compiler.directives_add " + filename + fdeo);
+        output = executor.execute("Compiler.directives_add " + filename);
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 4) {
@@ -144,7 +113,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test clearing
-        output = executor.execute("Compiler.directives_clear" + fdeo);
+        output = executor.execute("Compiler.directives_clear");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 1) {
@@ -152,7 +121,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test clear when already cleared
-        output = executor.execute("Compiler.directives_clear" + fdeo);
+        output = executor.execute("Compiler.directives_clear");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 1) {
@@ -160,7 +129,7 @@ public class CompilerDirectivesDCMDTest {
         }
 
         // Test remove one directive when empty
-        output = executor.execute("Compiler.directives_remove" + fdeo);
+        output = executor.execute("Compiler.directives_remove");
         output = executor.execute("Compiler.directives_print");
         count = find(output, "Directive:");
         if (count != 1) {
@@ -178,20 +147,6 @@ public class CompilerDirectivesDCMDTest {
         }
         return count;
     }
-
-    public static int findPattern(OutputAnalyzer output, String regexp) {
-        int count = 0;
-        Pattern pattern = Pattern.compile(regexp);
-
-        for (String line : output.asLines()) {
-            Matcher matcher = pattern.matcher(line);
-            if (matcher.matches()) {
-                count++;
-            }
-        }
-        return count;
-    }
-
 
     @Test
     public void jmx() {
