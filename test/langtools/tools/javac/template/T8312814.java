@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
-#define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+/*
+ * @test T8312814
+ * @summary Verify proper behavior of TransType w.r.t. templated Strings
+ * @enablePreview
+ * @compile T8312814.java
+ */
 
-#include "runtime/flags/jvmFlag.hpp"
-#include "utilities/globalDefinitions.hpp"
 
-// Parallel Subconstraints
-#define PARALLEL_GC_CONSTRAINTS(f)                          \
-  f(uint, InitialTenuringThresholdConstraintFuncParallel)   \
-  f(uint, MaxTenuringThresholdConstraintFuncParallel)
+import java.util.List;
 
-PARALLEL_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
+public class T8312814 {
+    void x(List<? extends StringTemplate.Processor<String, RuntimeException>> list) {
+        list.get(0)."";
+    }
+}
 
-#endif // SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
