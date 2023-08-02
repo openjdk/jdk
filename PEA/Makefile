@@ -14,7 +14,7 @@ CTW_RUNNER_JAVA_OPTIONS := $(subst $(space),$(comma),$(CTW_JAVA_OPTIONS))
 JTREG_COMMON := CONF=linux-x86_64-server-fastdebug  JTREG="JAVA_OPTIONS=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis"
 
 set_jdk:
-	if [ -e ${JAVA_PATH} ]; then \
+	if [ -e ${JAVA_HOME} ]; then \
 		echo "choose ${JAVA_HOME}"; \
 		java -version; \
 	else \

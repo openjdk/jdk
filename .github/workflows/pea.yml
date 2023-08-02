@@ -1,0 +1,335 @@
+name:  "C2 PEA Test"
+on:
+  workflow_dispatch:
+    inputs:
+      configure-arguments:
+        description: 'Additional configure arguments'
+        required: false
+      make-arguments:
+        description: 'Additional make arguments'
+        required: false
+  push:
+    branches:
+      - PEA_beta
+  pull_request:
+    branches:
+      - PEA_beta
+
+jobs:
+  ###
+  ### Build jobs
+  ###
+  build-linux-x64:
+    name: linux-x64
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      debug-levels: '[ "debug" ]'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+
+  smoke-test:
+    needs: build-linux-x64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+          debug-suffix: -debug
+
+      - name: 'Run smoke tests'
+        id: smoke-test
+        run:
+          cd ./PEA && make JAVA_HOME=${{ steps.bundles.outputs.jdk-path }}
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.smoke-test.outputs.error-message }}')
+        if: steps.smoke-test.outputs.failure == 'true'
+
+  ctw-test:
+    needs: smoke-test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+          debug-suffix: -debug
+
+      - name: 'Run CTW java.base'
+        id: ctw-java-base
+        run: |
+          cd PEA/
+          make run-ctw JAVA_HOME=${{ steps.bundles.outputs.jdk-path }}
+          # run without inliner
+          make run-ctw-no-inline JAVA_HOME=${{ steps.bundles.outputs.jdk-path }}
+
+      # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.ctw-java-base.outputs.error-message }}')
+        if: steps.ctw-java-base.outputs.failure == 'true'
+
+  hotspot-tier1:
+    needs: ctw-test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+          debug-suffix: -debug
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Run tests'
+        id: run-tests
+        run: >
+          make test-prebuilt
+          TEST='hotspot:tier1'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
+
+        # This is a separate step, since if the markdown from a step gets bigger than
+        # 1024 kB it is skipped, but then the short summary above is still generated
+      - name: 'Generate test report'
+        run: bash ./.github/scripts/gen-test-results.sh "$GITHUB_STEP_SUMMARY"
+        if: always()
+
+      - name: 'Package test results'
+        id: package
+        run: |
+          # Package test-results and relevant parts of test-support
+          mkdir results
+
+          if [[ -d build/run-test-prebuilt/test-results ]]; then
+            cd build/run-test-prebuilt/test-results/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-results.zip" .
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-results directory'
+          fi
+
+          if [[ -d build/run-test-prebuilt/test-support ]]; then
+            cd build/run-test-prebuilt/test-support/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-support directory'
+          fi
+
+          artifact_name="results-linux-x64-hotspot-tier1"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
+        if: always()
+
+      - name: 'Upload test results'
+        uses: actions/upload-artifact@v3
+        with:
+          path: results
+          name: ${{ steps.package.outputs.artifact-name }}
+        if: always()
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
+        if: steps.run-tests.outputs.failure == 'true'
+
+  jdk-tier1:
+    needs: ctw-test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+          debug-suffix: -debug
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Run tests'
+        id: run-tests
+        run: >
+          make test-prebuilt
+          TEST='jdk:tier1'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
+
+        # This is a separate step, since if the markdown from a step gets bigger than
+        # 1024 kB it is skipped, but then the short summary above is still generated
+      - name: 'Generate test report'
+        run: bash ./.github/scripts/gen-test-results.sh "$GITHUB_STEP_SUMMARY"
+        if: always()
+
+      - name: 'Package test results'
+        id: package
+        run: |
+          # Package test-results and relevant parts of test-support
+          mkdir results
+
+          if [[ -d build/run-test-prebuilt/test-results ]]; then
+            cd build/run-test-prebuilt/test-results/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-results.zip" .
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-results directory'
+          fi
+
+          if [[ -d build/run-test-prebuilt/test-support ]]; then
+            cd build/run-test-prebuilt/test-support/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-support directory'
+          fi
+
+          artifact_name="results-linux-x64-jdk-tier1"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
+        if: always()
+
+      - name: 'Upload test results'
+        uses: actions/upload-artifact@v3
+        with:
+          path: results
+          name: ${{ steps.package.outputs.artifact-name }}
+        if: always()
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
+        if: steps.run-tests.outputs.failure == 'true'
+
+  langtools-tier1:
+    needs: ctw-test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+          debug-suffix: -debug
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Run tests'
+        id: run-tests
+        run: >
+          make test-prebuilt
+          TEST='langtools:tier1'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
+
+        # This is a separate step, since if the markdown from a step gets bigger than
+        # 1024 kB it is skipped, but then the short summary above is still generated
+      - name: 'Generate test report'
+        run: bash ./.github/scripts/gen-test-results.sh "$GITHUB_STEP_SUMMARY"
+        if: always()
+
+      - name: 'Package test results'
+        id: package
+        run: |
+          # Package test-results and relevant parts of test-support
+          mkdir results
+
+          if [[ -d build/run-test-prebuilt/test-results ]]; then
+            cd build/run-test-prebuilt/test-results/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-results.zip" .
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-results directory'
+          fi
+
+          if [[ -d build/run-test-prebuilt/test-support ]]; then
+            cd build/run-test-prebuilt/test-support/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-support directory'
+          fi
+
+          artifact_name="results-linux-x64-langtools-tier1"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
+        if: always()
+
+      - name: 'Upload test results'
+        uses: actions/upload-artifact@v3
+        with:
+          path: results
+          name: ${{ steps.package.outputs.artifact-name }}
+        if: always()
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
+        if: steps.run-tests.outputs.failure == 'true'
