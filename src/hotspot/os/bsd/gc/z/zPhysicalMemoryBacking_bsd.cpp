@@ -102,7 +102,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(offset) + length / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
@@ -149,7 +149,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(offset) + length / M, length / M);
 
   const uintptr_t start = _base + untype(offset);

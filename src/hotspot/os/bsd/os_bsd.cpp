@@ -716,7 +716,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
   return true;
@@ -1379,7 +1379,7 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
@@ -1506,7 +1506,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" INTPTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (errno=%d)", (intptr_t)addr, size, exec,
            os::errno_name(err), err);
 }

@@ -848,7 +848,7 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
     }
   }
 
-  log_info(os, thread)("Stack size adjustment for TLS is " SIZE_FORMAT,
+  log_info(os, thread)("Stack size adjustment for TLS is %zu",
                        tls_size);
   return tls_size;
 }
@@ -953,7 +953,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     // pthread_attr_setstacksize() function can fail
     // if the stack size exceeds a system-imposed limit.
     assert_status(status == EINVAL, status, "pthread_attr_setstacksize");
-    log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
+    log_warning(os, thread)("The %sthread stack size specified is invalid: %zuk",
                             (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
     thread->set_osthread(nullptr);
@@ -1091,7 +1091,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -1383,7 +1383,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     bool primordial = uintptr_t(&rlim) > uintptr_t(_initial_thread_stack_bottom) &&
                       uintptr_t(&rlim) < stack_top;
 
-    log_info(os, thread)("Capturing initial stack in %s thread: req. size: " SIZE_FORMAT "K, actual size: "
+    log_info(os, thread)("Capturing initial stack in %s thread: req. size: %zuK, actual size: "
                          SIZE_FORMAT "K, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
                          primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
                          stack_top, intptr_t(_initial_thread_stack_bottom));
@@ -2167,14 +2167,14 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
       info->rssanon = info->rssfile = info->rssshmem = -1;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
-      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &info->vmsize) == 1) ||
-           (info->vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &info->vmpeak) == 1) ||
-           (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
-           (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
-           (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
-           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
-           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
+      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
+           (info->vmpeak == -1    && sscanf(buf, "VmPeak: %zd kB", &info->vmpeak) == 1) ||
+           (info->vmswap == -1    && sscanf(buf, "VmSwap: %zd kB", &info->vmswap) == 1) ||
+           (info->vmhwm == -1     && sscanf(buf, "VmHWM: %zd kB", &info->vmhwm) == 1) ||
+           (info->vmrss == -1     && sscanf(buf, "VmRSS: %zd kB", &info->vmrss) == 1) ||
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: %zd kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;
@@ -2222,15 +2222,15 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   //  rss its components if the kernel is recent enough.
   meminfo_t info;
   if (query_process_memory_info(&info)) {
-    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
-    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
+    st->print_cr("Virtual Size: %zdK (peak: %zdK)", info.vmsize, info.vmpeak);
+    st->print("Resident Set Size: %zdK (peak: %zdK)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
-      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+      st->print(" (anon: %zdK, file: %zdK, shmem: %zdK)",
                 info.rssanon, info.rssfile, info.rssshmem);
     }
     st->cr();
     if (info.vmswap != -1) { // requires kernel >= 2.6.34
-      st->print_cr("Swapped out: " SSIZE_FORMAT "K", info.vmswap);
+      st->print_cr("Swapped out: %zdK", info.vmswap);
     }
   } else {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
@@ -2251,7 +2251,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
   might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
 #endif
-  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+  st->print_cr("C-Heap outstanding allocations: %zuK, retained: %zuK%s",
                total_allocated / K, free_retained / K,
                might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
@@ -2377,7 +2377,7 @@ void os::Linux::print_steal_info(outputStream* st) {
 void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
@@ -2742,7 +2742,7 @@ static bool recoverable_mmap_error(int err) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
           os::strerror(err), err);
 }
@@ -2750,8 +2750,8 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 static void warn_fail_commit_memory(char* addr, size_t size,
                                     size_t alignment_hint, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
+          ", %zu, %d) failed; error='%s' (errno=%d)", p2i(addr), size,
           alignment_hint, exec, os::strerror(err), err);
 }
 
@@ -3580,7 +3580,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
     munmap(p, page_size);
     return true;
   } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+      log_info(pagesize)("Large page size (%zu%s) failed sanity check, "
                          "checking if smaller large page sizes are usable",
                          byte_size_in_exact_unit(page_size),
                          exact_unit_for_byte_size(page_size));
@@ -3592,7 +3592,7 @@ bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
           munmap(p, page_size_);
-          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+          log_info(pagesize)("Large page size (%zu%s) passed sanity check",
                              byte_size_in_exact_unit(page_size_),
                              exact_unit_for_byte_size(page_size_));
           return true;
@@ -3817,22 +3817,22 @@ void os::large_page_init() {
         LargePageSizeInBytes == 0 ||
         LargePageSizeInBytes == default_large_page_size) {
       _large_page_size = default_large_page_size;
-      log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+      log_info(pagesize)("Using the default large page size: %zu%s",
                          byte_size_in_exact_unit(_large_page_size),
                          exact_unit_for_byte_size(_large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
         _large_page_size = LargePageSizeInBytes;
-        log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
-                           "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+        log_info(pagesize)("Overriding default large page size (%zu%s) "
+                           "using LargePageSizeInBytes: %zu%s",
                            byte_size_in_exact_unit(default_large_page_size),
                            exact_unit_for_byte_size(default_large_page_size),
                            byte_size_in_exact_unit(_large_page_size),
                            exact_unit_for_byte_size(_large_page_size));
       } else {
         _large_page_size = default_large_page_size;
-        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
-                           "using the default large page size: " SIZE_FORMAT "%s",
+        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (%zu%s) "
+                           "using the default large page size: %zu%s",
                            byte_size_in_exact_unit(LargePageSizeInBytes),
                            exact_unit_for_byte_size(LargePageSizeInBytes),
                            byte_size_in_exact_unit(_large_page_size),
@@ -4003,7 +4003,7 @@ static void log_on_commit_special_failure(char* req_addr, size_t bytes,
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
-                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     " size: %zu%s, page size: %zu%s, (errno = %d)",
                      p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
                      byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
@@ -4031,7 +4031,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
     return false;
   }
 
-  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" SIZE_FORMAT "%s, page size="
+  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=%zu%s, page size="
                       SIZE_FORMAT "%s",
                       p2i(addr), byte_size_in_exact_unit(bytes),
                       exact_unit_for_byte_size(bytes),

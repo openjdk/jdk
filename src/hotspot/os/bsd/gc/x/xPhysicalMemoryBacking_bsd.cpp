@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ bool XPhysicalMemoryBacking::commit_inner(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
                       offset / M, (offset + length) / M, length / M);
 
   const uintptr_t addr = _base + offset;
@@ -148,7 +148,7 @@ size_t XPhysicalMemoryBacking::uncommit(size_t offset, size_t length) const {
   assert(is_aligned(offset, os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
                       offset / M, (offset + length) / M, length / M);
 
   const uintptr_t start = _base + offset;

@@ -56,7 +56,7 @@
 // they will be split before being used.
 
 #define fatal_error(msg, addr, size)                  \
-  fatal(msg ": " PTR_FORMAT " " SIZE_FORMAT "M (%d)", \
+  fatal(msg ": " PTR_FORMAT " %zuM (%d)", \
         (addr), (size) / M, GetLastError())
 
 uintptr_t XMapper::reserve(uintptr_t addr, size_t size) {
@@ -250,7 +250,7 @@ void XMapper::unreserve_for_shared_awe(uintptr_t addr, size_t size) {
     );
 
   if (!res) {
-    fatal("Failed to unreserve memory: " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
+    fatal("Failed to unreserve memory: " PTR_FORMAT " %zuM (%d)",
           addr, size / M, GetLastError());
   }
 }

@@ -1096,7 +1096,7 @@ static void unmap_shared(char* addr, size_t bytes) {
     res = ::munmap(addr, bytes);
   }
   if (res != 0) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os)("os::release_memory failed (" PTR_FORMAT ", %zu)", p2i(addr), bytes);
   }
 }
 
@@ -1228,7 +1228,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   *addr = mapAddress;
   *sizep = size;
 
-  log_debug(perf, memops)("mapped " SIZE_FORMAT " bytes for vmid %d at "
+  log_debug(perf, memops)("mapped %zu bytes for vmid %d at "
                           INTPTR_FORMAT, size, vmid, p2i((void*)mapAddress));
 }
 

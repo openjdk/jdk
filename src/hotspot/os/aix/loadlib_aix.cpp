@@ -202,7 +202,7 @@ static bool reload_table() {
     }
   }
 
-  trcVerbose("loadquery buffer size is " SIZE_FORMAT ".", buflen);
+  trcVerbose("loadquery buffer size is %zu.", buflen);
 
   // Iterate over the loadquery result. For details see sys/ldr.h on AIX.
   ldi = (struct ld_info*) buffer;
@@ -259,7 +259,7 @@ static bool reload_table() {
       lm->is_in_vm = true;
     }
 
-    trcVerbose("entry: %p " SIZE_FORMAT ", %p " SIZE_FORMAT ", %s %s %s, %d",
+    trcVerbose("entry: %p %zu, %p %zu, %s %s %s, %d",
       lm->text, lm->text_len,
       lm->data, lm->data_len,
       lm->path, lm->shortname,

@@ -155,7 +155,7 @@ void StaticHugePageSupport::scan_os() {
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
     // sure about the state of hugepage support by the kernel, so we won't use static hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
-      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+      log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
                          "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
       _inconsistent = true;
     }

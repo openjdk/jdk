@@ -287,7 +287,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
   if (framesize != 0) {
-    st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
+    st->print   ("SUB    R_SP, R_SP, %zu",framesize);
   }
 
   if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
@@ -367,7 +367,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
-    st->print("ADD    R_SP, R_SP, " SIZE_FORMAT "\n\t",framesize);
+    st->print("ADD    R_SP, R_SP, %zu\n\t",framesize);
   }
   st->print("POP    R_FP|R_LR_LR");
 
