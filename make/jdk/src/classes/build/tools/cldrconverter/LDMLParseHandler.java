@@ -836,7 +836,11 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
                     case "end" -> 2;
                     case "2" -> 3;
                     case "3" -> 4;
-                    default -> throw new IndexOutOfBoundsException();
+                    default -> throw new IllegalArgumentException(
+                        """
+                        The "type" attribute value for "listPatternPart" element is not recognized: %s
+                        """.formatted(type)
+                    );
                 });
             break;
 

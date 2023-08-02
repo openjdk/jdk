@@ -49,7 +49,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
  * type are provided: {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
  * {@link Style#NARROW NARROW}. The following snippet is an example of formatting
- * the list of Strings {@code ["Foo", "Bar", "Baz"]} in US English with
+ * the list of Strings {@code "Foo", "Bar", "Baz"} in US English with
  * {@code STANDARD} type and {@code FULL} style:
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
@@ -81,7 +81,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * </tbody>
  * </table>
  * <p>
- * Alternatively, an instance with Locale, Type, and/or Style invariant patterns
+ * Alternatively, Locale, Type, and/or Style independent instances
  * can be created with {@link #getInstance(String[])}. The String array to the
  * method specifies the delimiting patterns for the start/middle/end portion of
  * the formatted string, as well as optional specialized patterns for two or three
@@ -123,9 +123,9 @@ public class ListFormat extends Format {
      */
     private final String[] patterns;
 
-    private static final Pattern PARSE_START = Pattern.compile("(?<startBefore>.*?)\\{0}(?<startBetween>.*?)\\{1}");
-    private static final Pattern PARSE_MIDDLE = Pattern.compile("\\{0}(?<middleBetween>.*?)\\{1}");
-    private static final Pattern PARSE_END = Pattern.compile("\\{0}(?<endBetween>.*?)\\{1}(?<endAfter>.*?)");
+    private static final Pattern PARSE_START = Pattern.compile("(.*?)\\{0}(.*?)\\{1}");
+    private static final Pattern PARSE_MIDDLE = Pattern.compile("\\{0}(.*?)\\{1}");
+    private static final Pattern PARSE_END = Pattern.compile("\\{0}(.*?)\\{1}(.*?)");
     private transient Pattern startPattern;
     private transient String middleBetween;
     private transient Pattern endPattern;
@@ -142,14 +142,14 @@ public class ListFormat extends Format {
         String startBefore;
         String startBetween;
         if (m.matches()) {
-            startBefore = m.group("startBefore");
-            startBetween = m.group("startBetween");
+            startBefore = m.group(1);
+            startBetween = m.group(2);
         } else {
             throw new IllegalArgumentException("start pattern is incorrect: " + patterns[START]);
         }
         m = PARSE_MIDDLE.matcher(patterns[MIDDLE]);
         if (m.matches()) {
-            middleBetween = m.group("middleBetween");
+            middleBetween = m.group(1);
         } else {
             throw new IllegalArgumentException("middle pattern is incorrect: " + patterns[MIDDLE]);
         }
@@ -157,8 +157,8 @@ public class ListFormat extends Format {
         String endBetween;
         String endAfter;
         if (m.matches()) {
-            endBetween = m.group("endBetween");
-            endAfter = m.group("endAfter");
+            endBetween = m.group(1);
+            endAfter = m.group(2);
         } else {
             throw new IllegalArgumentException("end pattern is incorrect: " + patterns[END]);
         }
@@ -491,7 +491,7 @@ public class ListFormat extends Format {
     }
 
     private String createMessageFormatString(int count) {
-        var sb = new StringBuilder(patterns[START]);
+        var sb = new StringBuilder(256).append(patterns[START]);
         IntStream.range(2, count - 1).forEach(i -> sb.append(middleBetween).append("{").append(i).append("}"));
         sb.append(patterns[END].replaceFirst("\\{0}", "").replaceFirst("\\{1}", "\\{" + (count - 1) + "\\}"));
         return sb.toString();
