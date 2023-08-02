@@ -1,6 +1,24 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL.  Use is subject to license terms.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 import javax.naming.Context;
@@ -19,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 /*
  * @test
  * @bug 8311299
- * @summary make sure socket is closed when the error happens for flushing
+ * @summary make sure socket is closed when the error happens for OutputStream flushing
  * @library /test/lib
  */
 
@@ -28,10 +46,11 @@ public class SocketCloseTest {
     public static String SOCKET_NOT_CLOSED_MSG = "The socket was not closed.";
     public static String BAD_FLUSH = "Bad flush!";
     private static final int BIND_SIZE = 14;
-    private static final byte[] BIND_RESPONSE = new byte[] {
-            48, 12, 2, 1, 1, 97, 7, 10, 1, 0, 4, 0, 4, 0};
+    private static final byte[] BIND_RESPONSE = new byte[]{
+            48, 12, 2, 1, 1, 97, 7, 10, 1, 0, 4, 0, 4, 0
+    };
     private static final int SEARCH_SIZE = 87;
-    private static final byte[] SEARCH_RESPONSE = new byte[] {
+    private static final byte[] SEARCH_RESPONSE = new byte[]{
             48, -127, -71, 2, 1, 2, 100, -127, -77, 4, 19, 111, 61, 101, 120, 97, 109, 112, 108,
             101, 44, 111, 61, 101, 120, 97, 109, 112, 108, 101, 48, -127, -101, 48, 34, 4, 11,
             111, 98, 106, 101, 99, 116, 99, 108, 97, 115, 115, 49, 19, 4, 12, 111, 114, 103, 97,
@@ -42,10 +61,8 @@ public class SocketCloseTest {
             -19, 0, 5, 115, 114, 0, 20, 77, 97, 105, 110, 36, 69, 118, 105, 108, 67, 108, 97, 115,
             115, 76, 111, 97, 100, 101, 114, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 120, 112, 48, 14,
             4, 1, 111, 49, 9, 4, 7, 101, 120, 97, 109, 112, 108, 101, 48, 12, 2, 1, 2, 101, 7, 10,
-            1, 0, 4, 0, 4, 0};
-
-
-    private static boolean loaded = false;
+            1, 0, 4, 0, 4, 0
+    };
 
     public static void main(String[] args) throws Exception {
 
