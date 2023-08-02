@@ -71,7 +71,7 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
   HeapWord* new_tams = r->top();
 
   assert(new_tams >= old_tams,
-         "Region " SIZE_FORMAT", TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+         "Region %zu, TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
   assert(is_bitmap_clear_range(old_tams, new_tams),
          "Region %zu, bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,

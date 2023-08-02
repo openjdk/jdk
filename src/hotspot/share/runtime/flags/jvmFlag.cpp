@@ -219,7 +219,7 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     } else if (is_uint64_t()) {
       st->print(UINT64_FORMAT, get_uint64_t());
     } else if (is_size_t()) {
-      st->print(SIZE_FORMAT, get_size_t());
+      st->print("%zu", get_size_t());
     } else if (is_double()) {
       st->print("%f", get_double());
     } else if (is_ccstr()) {

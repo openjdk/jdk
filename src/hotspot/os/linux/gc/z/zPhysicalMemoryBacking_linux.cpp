@@ -339,7 +339,7 @@ void ZPhysicalMemoryBacking::warn_max_map_count(size_t max_capacity) const {
   }
 
   size_t actual_max_map_count = 0;
-  const int result = fscanf(file, SIZE_FORMAT, &actual_max_map_count);
+  const int result = fscanf(file, "%zu", &actual_max_map_count);
   fclose(file);
   if (result != 1) {
     // Failed to read file, skip check

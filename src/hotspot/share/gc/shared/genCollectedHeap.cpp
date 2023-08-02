@@ -150,8 +150,8 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=%zu, alignment="
-         SIZE_FORMAT, total_reserved, alignment);
+         "Gen size; total_reserved=%zu, alignment=%zu",
+          total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
   size_t used_page_size = heap_rs.page_size();

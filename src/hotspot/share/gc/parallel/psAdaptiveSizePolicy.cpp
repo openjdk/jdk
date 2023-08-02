@@ -746,7 +746,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
         _old_gen_change_for_major_throughput++;
     }
 
-    log_trace(gc, ergo)("Adjusting tenured gen for throughput (avg %f goal %f). desired_promo_size %zu promo_delta " SIZE_FORMAT ,
+    log_trace(gc, ergo)("Adjusting tenured gen for throughput (avg %f goal %f). desired_promo_size %zu promo_delta %zu",
                         mutator_cost(),
                         _throughput_goal,
                         *desired_promo_size_ptr, scaled_promo_heap_delta);
@@ -1080,7 +1080,7 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
   }
   avg_promoted()->sample(promoted);
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: "  "%zu  promoted: "  SIZE_FORMAT "  overflow: %s",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: %zu  promoted: %zu  overflow: %s",
                       survived, promoted, is_survivor_overflow ? "true" : "false");
 }
 

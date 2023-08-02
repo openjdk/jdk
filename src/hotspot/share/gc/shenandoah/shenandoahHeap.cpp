@@ -578,7 +578,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
                byte_size_in_proper_unit(soft_max_capacity()), proper_unit_for_byte_size(soft_max_capacity()),
                byte_size_in_proper_unit(committed()),    proper_unit_for_byte_size(committed()),
                byte_size_in_proper_unit(used()),         proper_unit_for_byte_size(used()));
-  st->print_cr(" %zu x " SIZE_FORMAT"%s regions",
+  st->print_cr(" %zu x %zu%s regions",
                num_regions(),
                byte_size_in_proper_unit(ShenandoahHeapRegion::region_size_bytes()),
                proper_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));

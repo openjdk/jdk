@@ -95,7 +95,7 @@ static bool read_number_file(const char* file, size_t* out) {
   bool rc = false;
   if (f != nullptr) {
     uint64_t i = 0;
-    if (::fscanf(f, SIZE_FORMAT, out) == 1) {
+    if (::fscanf(f, "%zu", out) == 1) {
       rc = true;
     }
     ::fclose(f);

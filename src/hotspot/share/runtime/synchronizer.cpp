@@ -1954,8 +1954,8 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
   }
 
   if (l_in_use_count == ck_in_use_count) {
-    out->print_cr("in_use_count=%zu equals ck_in_use_count="
-                  SIZE_FORMAT, l_in_use_count, ck_in_use_count);
+    out->print_cr("in_use_count=%zu equals ck_in_use_count=%zu",
+                  l_in_use_count, ck_in_use_count);
   } else {
     out->print_cr("WARNING: in_use_count=%zu is not equal to "
                   "ck_in_use_count=%zu", l_in_use_count,
@@ -1964,8 +1964,8 @@ void ObjectSynchronizer::chk_in_use_list(outputStream* out, int *error_cnt_p) {
 
   size_t ck_in_use_max = _in_use_list.max();
   if (l_in_use_max == ck_in_use_max) {
-    out->print_cr("in_use_max=%zu equals ck_in_use_max="
-                  SIZE_FORMAT, l_in_use_max, ck_in_use_max);
+    out->print_cr("in_use_max=%zu equals ck_in_use_max=%zu",
+                  l_in_use_max, ck_in_use_max);
   } else {
     out->print_cr("WARNING: in_use_max=%zu is not equal to "
                   "ck_in_use_max=%zu", l_in_use_max, ck_in_use_max);
