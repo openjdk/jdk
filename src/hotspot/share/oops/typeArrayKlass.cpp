@@ -171,7 +171,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 // create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -198,13 +198,13 @@ Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
     }
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   THREAD->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 
 // return existing klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_or_null(int n) {
+ArrayKlass* TypeArrayKlass::array_klass_or_null(int n) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -215,15 +215,15 @@ Klass* TypeArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   return h_ak->array_klass_or_null(n);
 }
 
-Klass* TypeArrayKlass::array_klass(TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(TRAPS) {
   return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* TypeArrayKlass::array_klass_or_null() {
+ArrayKlass* TypeArrayKlass::array_klass_or_null() {
   return array_klass_or_null(dimension() +  1);
 }
 
@@ -275,8 +275,6 @@ void TypeArrayKlass::print_value_on(outputStream* st) const {
   }
   st->print("}");
 }
-
-#ifndef PRODUCT
 
 static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
@@ -341,7 +339,10 @@ static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
 
 void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
-  typeArrayOop ta = typeArrayOop(obj);
+  oop_print_elements_on(typeArrayOop(obj), st);
+}
+
+void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
   int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
   switch (element_type()) {
     case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
@@ -359,8 +360,6 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }
 }
-
-#endif // PRODUCT
 
 const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();

@@ -46,8 +46,6 @@ import java.util.List;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class ClassLoadUnloadTest {
-    private static OutputAnalyzer out;
-    private static ProcessBuilder pb;
     private static class ClassUnloadTestMain {
         public static void main(String... args) throws Exception {
             String className = "test.Empty";
@@ -58,65 +56,78 @@ public class ClassLoadUnloadTest {
         }
     }
 
-    static void checkFor(String... outputStrings) throws Exception {
-        out = new OutputAnalyzer(pb.start());
+    static void checkFor(OutputAnalyzer output, String... outputStrings) throws Exception {
         for (String s: outputStrings) {
-            out.shouldContain(s);
+            output.shouldContain(s);
         }
-        out.shouldHaveExitValue(0);
     }
 
-    static void checkAbsent(String... outputStrings) throws Exception {
-        out = new OutputAnalyzer(pb.start());
+    static void checkAbsent(OutputAnalyzer output, String... outputStrings) throws Exception {
         for (String s: outputStrings) {
-            out.shouldNotContain(s);
+            output.shouldNotContain(s);
         }
-        out.shouldHaveExitValue(0);
     }
 
     // Use the same command-line heap size setting as ../ClassUnload/UnloadTest.java
-    static ProcessBuilder exec(String... args) throws Exception {
+    static OutputAnalyzer exec(String... args) throws Exception {
         List<String> argsList = new ArrayList<>();
         Collections.addAll(argsList, args);
-        Collections.addAll(argsList, "-Xmn8m");
-        Collections.addAll(argsList, "-Xbootclasspath/a:.");
-        Collections.addAll(argsList, "-XX:+UnlockDiagnosticVMOptions");
-        Collections.addAll(argsList, "-XX:+WhiteBoxAPI");
-        Collections.addAll(argsList, "-XX:+ClassUnloading");
-        Collections.addAll(argsList, ClassUnloadTestMain.class.getName());
-        return ProcessTools.createJavaProcessBuilder(argsList);
+        Collections.addAll(argsList, "-Xmn8m", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions",
+                           "-XX:+WhiteBoxAPI", "-XX:+ClassUnloading", ClassUnloadTestMain.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(argsList);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        return output;
     }
 
     public static void main(String... args) throws Exception {
 
+        OutputAnalyzer output;
+
         //  -Xlog:class+unload=info
-        pb = exec("-Xlog:class+unload=info");
-        checkFor("[class,unload]", "unloading class");
+        output = exec("-Xlog:class+unload=info");
+        checkFor(output, "[class,unload]", "unloading class");
 
         //  -Xlog:class+unload=off
-        pb = exec("-Xlog:class+unload=off");
-        checkAbsent("[class,unload]");
+        output = exec("-Xlog:class+unload=off");
+        checkAbsent(output,"[class,unload]");
 
         //  -Xlog:class+load=info
-        pb = exec("-Xlog:class+load=info");
-        checkFor("[class,load]", "java.lang.Object", "source:");
+        output = exec("-Xlog:class+load=info");
+        checkFor(output,"[class,load]", "java.lang.Object", "source:");
 
         //  -Xlog:class+load=debug
-        pb = exec("-Xlog:class+load=debug");
-        checkFor("[class,load]", "java.lang.Object", "source:", "klass:", "super:", "loader:", "bytes:");
+        output = exec("-Xlog:class+load=debug");
+        checkFor(output,"[class,load]", "java.lang.Object", "source:", "klass:", "super:", "loader:", "bytes:");
 
         //  -Xlog:class+load=off
-        pb = exec("-Xlog:class+load=off");
-        checkAbsent("[class,load]");
+        output = exec("-Xlog:class+load=off");
+        checkAbsent(output,"[class,load]");
 
         //  -verbose:class
-        pb = exec("-verbose:class");
-        checkFor("[class,load]", "java.lang.Object", "source:");
-        checkFor("[class,unload]", "unloading class");
+        output = exec("-verbose:class");
+        checkFor(output,"[class,load]", "java.lang.Object", "source:");
+        checkFor(output,"[class,unload]", "unloading class");
 
         //  -Xlog:class+loader+data=trace
-        pb = exec("-Xlog:class+loader+data=trace");
-        checkFor("[class,loader,data]", "create loader data");
+        output = exec("-Xlog:class+loader+data=trace");
+        checkFor(output, "[class,loader,data]", "create loader data");
 
+        //  -Xlog:class+load+cause
+        output = exec("-Xlog:class+load+cause");
+        checkAbsent(output,"[class,load,cause]");
+        checkFor(output,"class load cause logging will not produce output without LogClassLoadingCauseFor");
+
+        String x = ClassUnloadTestMain.class.getName();
+
+        output = exec("-Xlog:class+load+cause", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor(output,"[class,load,cause]", "Java stack when loading " + x + ":");
+
+        output = exec("-Xlog:class+load+cause+native", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor(output,"[class,load,cause,native]", "Native stack when loading " + x + ":");
+
+        output = exec("-Xlog:class+load+cause*", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor(output,"[class,load,cause] Java stack when loading " + x + ":");
+        checkFor(output,"[class,load,cause,native] Native stack when loading " + x + ":");
     }
 }

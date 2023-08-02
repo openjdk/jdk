@@ -83,6 +83,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -205,8 +206,8 @@
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
-  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
-  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
+  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
+  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
   nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
@@ -223,6 +224,8 @@
   nonstatic_field(ConstantPoolCache,           _reference_map,                                Array<u2>*)                            \
   nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
   nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
+  nonstatic_field(ConstantPoolCache,           _resolved_field_entries,                       Array<ResolvedFieldEntry>*)            \
+  nonstatic_field(ResolvedFieldEntry,          _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
@@ -325,6 +328,10 @@
   nonstatic_field(Symbol,                      _body[0],                                      u1)                                    \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \
   nonstatic_field(OopHandle,                   _obj,                                          oop*)                                  \
+  nonstatic_field(Annotations,                 _class_annotations,                            Array<u1>*)                            \
+  nonstatic_field(Annotations,                 _fields_annotations,                           Array<Array<u1>*>*)                    \
+  nonstatic_field(Annotations,                 _class_type_annotations,                       Array<u1>*)                            \
+  nonstatic_field(Annotations,                 _fields_type_annotations,                      Array<Array<u1>*>*)                    \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -379,8 +386,8 @@
   /* CompressedKlassPointers */                                                                                                      \
   /***************************/                                                                                                      \
                                                                                                                                      \
-     static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
-     static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
+     static_field(CompressedKlassPointers,     _base,                                         address)                               \
+     static_field(CompressedKlassPointers,     _shift,                                        int)                                   \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \
@@ -475,6 +482,8 @@
                                                                                                                                      \
   nonstatic_field(Array<Klass*>,               _length,                                       int)                                   \
   nonstatic_field(Array<Klass*>,               _data[0],                                      Klass*)                                \
+  nonstatic_field(Array<ResolvedFieldEntry>,   _length,                                       int)                                   \
+  nonstatic_field(Array<ResolvedFieldEntry>,   _data[0],                                      ResolvedFieldEntry)                    \
   nonstatic_field(Array<ResolvedIndyEntry>,    _length,                                       int)                                   \
   nonstatic_field(Array<ResolvedIndyEntry>,    _data[0],                                      ResolvedIndyEntry)                     \
                                                                                                                                      \
@@ -958,13 +967,15 @@
   /* Array<T> */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(Array<int>,                         _length,                                int)                                   \
-  unchecked_nonstatic_field(Array<int>,               _data,                                  sizeof(int))                           \
-  unchecked_nonstatic_field(Array<u1>,                _data,                                  sizeof(u1))                            \
-  unchecked_nonstatic_field(Array<u2>,                _data,                                  sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
-  unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
-  unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
+  nonstatic_field(Array<int>,                          _length,                               int)                                   \
+  unchecked_nonstatic_field(Array<int>,                _data,                                 sizeof(int))                           \
+  unchecked_nonstatic_field(Array<u1>,                 _data,                                 sizeof(u1))                            \
+  unchecked_nonstatic_field(Array<u2>,                 _data,                                 sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<Method*>,            _data,                                 sizeof(Method*))                       \
+  unchecked_nonstatic_field(Array<Klass*>,             _data,                                 sizeof(Klass*))                        \
+  unchecked_nonstatic_field(Array<ResolvedFieldEntry>, _data,                                 sizeof(ResolvedFieldEntry))            \
+  unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
+  unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -1171,6 +1182,7 @@
     declare_type(Method, Metadata)                                        \
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
+    declare_type(Annotations, MetaspaceObj)                               \
                                                                           \
   declare_toplevel_type(MethodData::CompilerCounters)                     \
                                                                           \
@@ -1893,7 +1905,9 @@
             declare_type(Array<u2>, MetaspaceObj)                         \
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
+            declare_type(Array<ResolvedFieldEntry>, MetaspaceObj)         \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
+            declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1910,6 +1924,7 @@
   declare_toplevel_type(RuntimeBlob*)                                     \
   declare_toplevel_type(CompressedWriteStream*)                           \
   declare_toplevel_type(ConstantPoolCacheEntry)                           \
+  declare_toplevel_type(ResolvedFieldEntry)                               \
   declare_toplevel_type(ResolvedIndyEntry)                                \
   declare_toplevel_type(elapsedTimer)                                     \
   declare_toplevel_type(frame)                                            \

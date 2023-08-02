@@ -22,7 +22,8 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6925932 7006126 8037945 8072495 8140449 8254876 8298478
+ * @bug 4313887 6838333 6925932 7006126 8037945 8072495 8140449 8254876 8262742
+ *      8298478
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -179,6 +180,27 @@ public class PathOps {
         out.format("test resolve %s\n", other);
         checkPath();
         check(path.resolve(other), expected);
+        return this;
+    }
+
+    // Note: "expected" is first parameter here
+    PathOps resolve(String expected, String first, String... more) {
+        out.format("test resolve %s varargs (String)\n", path());
+        checkPath();
+        check(path.resolve(first, more), expected);
+        Path[] others = new Path[more.length];
+        int i = 0;
+        for (String s : more) {
+            others[i++] = Path.of(s);
+        }
+        return resolve(expected, Path.of(first), others);
+    }
+
+    // Note: "expected" is first parameter here
+    PathOps resolve(String expected, Path first, Path... more) {
+        out.format("test resolve %s varargs (Path)\n", path());
+        checkPath();
+        check(path.resolve(first, more), expected);
         return this;
     }
 
@@ -542,6 +564,35 @@ public class PathOps {
             .resolve("C:\\", "C:\\")
             .resolve("C:foo", "C:foo")
             .resolve("\\\\server\\share\\bar", "\\\\server\\share\\bar");
+
+        // resolve - varargs
+        test("C:\\tmp")
+            .resolve("C:\\tmp\\foo\\bar\\gus", "foo", "bar", "gus")
+            .resolve("C:\\gus", "\\foo", "bar", "\\gus")
+            .resolve("C:\\tmp\\baz", "", "", "baz");
+        test("C:\\tmp\\foo")
+            .resolve("C:\\tmp\\foo\\bar\\gus", "", "bar\\gus", "")
+            .resolve("C:\\tmp\\foo\\bar\\gus\\foo\\baz",
+                     "", "bar\\gus", "foo\\baz")
+            .resolve("C:\\bar\\gus\\baz", "", "C:\\bar\\gus", "baz")
+            .resolve("C:\\tmp\\bar", "C:\\bar\\gus", "baz", "C:\\tmp\\bar");
+        test("tmp")
+            .resolve("tmp\\foo\\bar\\gus", "foo", "bar", "gus")
+            .resolve("\\gus", "\\foo", "bar", "\\gus")
+            .resolve("tmp\\baz", "", "", "baz");
+        test("")
+            .resolve("", "", "")
+            .resolve("\\bar", "foo", "\\bar", "")
+            .resolve("foo\\bar\\gus", "foo", "bar", "gus")
+            .resolve("baz", "", "", "baz");
+        test("\\")
+            .resolve("\\foo", "foo", "")
+            .resolve("\\foo", "", "foo")
+            .resolve("\\bar", "foo", "", "\\bar");
+        test("C:")
+            .resolve("C:foo\\bar\\gus", "foo", "bar", "gus")
+            .resolve("C:baz", "", "baz")
+            .resolve("C:", "", "");
 
         // resolveSibling
         test("foo")
@@ -1669,6 +1720,31 @@ public class PathOps {
             .resolve("foo", "foo")
             .resolve("/foo", "/foo");
 
+        // resolve - varargs
+        test("/tmp")
+            .resolve("/tmp/foo/bar/gus", "foo", "bar", "gus")
+            .resolve("/gus", "/foo", "bar", "/gus")
+            .resolve("/tmp/baz", "", "", "baz");
+        test("/tmp/foo")
+            .resolve("/tmp/foo/bar/gus", "", "bar/gus", "")
+            .resolve("/tmp/foo/bar/gus/foo/baz", "", "bar/gus", "foo/baz")
+            .resolve("/bar/gus/baz", "", "/bar/gus", "baz")
+            .resolve("/tmp/bar", "/bar/gus", "baz", "/tmp/bar");
+        test("tmp")
+            .resolve("tmp/foo/bar/gus", "foo", "bar", "gus")
+            .resolve("/gus", "/foo", "bar", "/gus")
+            .resolve("tmp/baz", "", "", "baz");
+        test("")
+            .resolve("", "", "")
+            .resolve("/bar", "foo", "/bar", "")
+            .resolve("foo/bar/gus", "foo", "bar", "gus")
+            .resolve("baz", "", "", "baz");
+        test("/")
+            .resolve("/foo", "", "", "foo", "")
+            .resolve("/foo", "foo", "")
+            .resolve("/foo", "", "foo")
+            .resolve("/bar", "foo", "", "/bar");
+
         // resolveSibling
         test("foo")
             .resolveSibling("bar", "bar")
@@ -2077,7 +2153,7 @@ public class PathOps {
         }
 
         try {
-            Path.of("foo", null);
+            Path.of("foo", (String[])null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }

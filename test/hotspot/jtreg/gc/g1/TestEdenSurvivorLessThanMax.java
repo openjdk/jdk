@@ -59,4 +59,3 @@ public class TestEdenSurvivorLessThanMax {
         System.out.println(o.toString());
     }
 }
-
