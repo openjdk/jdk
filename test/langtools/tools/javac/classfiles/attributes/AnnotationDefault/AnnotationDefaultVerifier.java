@@ -23,7 +23,8 @@
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.impl.BoundAttribute;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.impl.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,9 +70,10 @@ public class AnnotationDefaultVerifier {
 
     private abstract class TestElementValue {
         public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            // need API to return unknown AnnotationValue's length
-//            testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), 1 + attr.defaultValue().payloadLen(),
-//                    "attribute_length");
+            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassfileImpl) Classfile.of());
+            attr.defaultValue().writeTo(buf);
+            testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), buf.size(),
+                    "attribute_length");
         }
 
         public String[] getValues(String[] values, int index, int length) {
@@ -246,17 +248,7 @@ public class AnnotationDefaultVerifier {
     }
 
     private class TestArrayElementValue extends TestElementValue {
-        @Override
-        public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            AnnotationValue.OfArray ev =
-                    (AnnotationValue.OfArray) attr.defaultValue();
-            int sizeOfTag = ev.values().get(0).tag() == 'e' ? 0 : 1;
-            // tag (1 byte) + array header (2 byte) + length of entries
-            // need ev.length() api to check length
-//            testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), 1 + 2 +
-//                    (sizeOfTag + ev.length() / ev.values().size()) * ev.values().size(), "attribute_length");
-        }
-
+        // testLength method is the same as in TestElementValue class
         @Override
         public void testElementValue(
                 TestResult testCase,
