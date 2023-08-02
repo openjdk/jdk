@@ -44,7 +44,7 @@ const size_t BlockTree::MinWordSize;
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
   ", next " PTR_FORMAT \
-  ", size " SIZE_FORMAT
+  ", size %zu"
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \

@@ -58,7 +58,7 @@ Dictionary::Dictionary(ClassLoaderData* loader_data, size_t table_size)
 
   size_t start_size_log_2 = MAX2(ceil_log2(table_size), (size_t)2); // 2 is minimum size even though some dictionaries only have one entry
   size_t current_size = ((size_t)1) << start_size_log_2;
-  log_info(class, loader, data)("Dictionary start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_info(class, loader, data)("Dictionary start size: %zu (%zu)",
                                 current_size, start_size_log_2);
   _table = new ConcurrentTable(start_size_log_2, END_SIZE, REHASH_LEN);
 }

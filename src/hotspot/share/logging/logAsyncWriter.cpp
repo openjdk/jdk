@@ -106,7 +106,7 @@ AsyncLogWriter::AsyncLogWriter()
   size_t size = AsyncLogBufferSize / 2;
   _buffer = new Buffer(size);
   _buffer_staging = new Buffer(size);
-  log_info(logging)("AsyncLogBuffer estimates memory use: " SIZE_FORMAT " bytes", size * 2);
+  log_info(logging)("AsyncLogBuffer estimates memory use: %zu bytes", size * 2);
   if (os::create_thread(this, os::asynclog_thread)) {
     _initialized = true;
   } else {

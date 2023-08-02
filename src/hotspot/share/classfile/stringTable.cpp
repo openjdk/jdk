@@ -228,7 +228,7 @@ class StringTableLookupOop : public StackObj {
 void StringTable::create_table() {
   size_t start_size_log_2 = ceil_log2(StringTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
-  log_trace(stringtable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(stringtable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);
   _local_table = new StringTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
   _oop_storage = OopStorageSet::create_weak("StringTable Weak", mtSymbol);
@@ -424,7 +424,7 @@ void StringTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_debug(stringtable)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_debug(stringtable)("Grown to size:%zu", _current_size);
 }
 
 struct StringTableDoDelete : StackObj {
@@ -473,7 +473,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void StringTable::gc_notification(size_t num_dead) {
-  log_trace(stringtable)("Uncleaned items:" SIZE_FORMAT, num_dead);
+  log_trace(stringtable)("Uncleaned items:%zu", num_dead);
 
   if (has_work()) {
     return;
@@ -802,7 +802,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 void StringTable::allocate_shared_strings_array(TRAPS) {
   assert(DumpSharedSpaces, "must be");
   if (_items_count > (size_t)max_jint) {
-    fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+    fatal("Too many strings to be archived: %zu", _items_count);
   }
 
   int total = (int)_items_count;
@@ -825,7 +825,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+      log_error(cds)("Too many strings to be archived: %zu", _items_count);
       MetaspaceShared::unrecoverable_writing_error();
     }
 

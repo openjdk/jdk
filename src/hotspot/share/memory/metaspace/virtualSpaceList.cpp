@@ -150,7 +150,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
     vsn = vsn->next();
     n++;
   }
-  st->print_cr("- total %d nodes, " SIZE_FORMAT " reserved words, " SIZE_FORMAT " committed words.",
+  st->print_cr("- total %d nodes, %zu reserved words, %zu committed words.",
                n, reserved_words(), committed_words());
 }
 

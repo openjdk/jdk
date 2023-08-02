@@ -355,7 +355,7 @@ void stringStream::write(const char* s, size_t len) {
   }
   const size_t reasonable_max_len = 1 * G;
   if (len >= reasonable_max_len) {
-    assert(false, "bad length? (" SIZE_FORMAT ")", len);
+    assert(false, "bad length? (%zu)", len);
     return;
   }
   size_t write_len = 0;

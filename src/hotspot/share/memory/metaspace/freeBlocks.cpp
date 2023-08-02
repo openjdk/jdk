@@ -31,7 +31,7 @@
 namespace metaspace {
 
 void FreeBlocks::add_block(MetaWord* p, size_t word_size) {
-  assert(word_size >= MinWordSize, "sanity (" SIZE_FORMAT ")", word_size);
+  assert(word_size >= MinWordSize, "sanity (%zu)", word_size);
   if (word_size > MaxSmallBlocksWordSize) {
     _tree.add_block(p, word_size);
   } else {
@@ -41,7 +41,7 @@ void FreeBlocks::add_block(MetaWord* p, size_t word_size) {
 
 MetaWord* FreeBlocks::remove_block(size_t requested_word_size) {
   assert(requested_word_size >= MinWordSize,
-      "requested_word_size too small (" SIZE_FORMAT ")", requested_word_size);
+      "requested_word_size too small (%zu)", requested_word_size);
   size_t real_size = 0;
   MetaWord* p = nullptr;
   if (requested_word_size > MaxSmallBlocksWordSize) {

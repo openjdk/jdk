@@ -49,7 +49,7 @@ size_t InstanceMirrorKlass::instance_size(Klass* k) {
 instanceOop InstanceMirrorKlass::allocate_instance(Klass* k, TRAPS) {
   // Query before forming handle.
   size_t size = instance_size(k);
-  assert(size > 0, "total object size must be non-zero: " SIZE_FORMAT, size);
+  assert(size > 0, "total object size must be non-zero: %zu", size);
 
   // Since mirrors can be variable sized because of the static fields, store
   // the size in the mirror itself.

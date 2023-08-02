@@ -36,7 +36,7 @@ using namespace chunklevel;
 
 chunklevel_t chunklevel::level_fitting_word_size(size_t word_size) {
   assert(MAX_CHUNK_WORD_SIZE >= word_size,
-         SIZE_FORMAT " - too large allocation size.", word_size * BytesPerWord);
+         "%zu - too large allocation size.", word_size * BytesPerWord);
   if (word_size <= MIN_CHUNK_WORD_SIZE) {
     return HIGHEST_CHUNK_LEVEL;
   }

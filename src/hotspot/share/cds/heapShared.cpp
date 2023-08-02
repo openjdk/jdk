@@ -270,7 +270,7 @@ bool HeapShared::archive_object(oop obj) {
   }
 
   if (ArchiveHeapWriter::is_too_large_to_archive(obj->size())) {
-    log_debug(cds, heap)("Cannot archive, object (" PTR_FORMAT ") is too large: " SIZE_FORMAT,
+    log_debug(cds, heap)("Cannot archive, object (" PTR_FORMAT ") is too large: %zu",
                          p2i(obj), obj->size());
     return false;
   } else {
@@ -1102,7 +1102,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
 
       if (!_record_klasses_only && log_is_enabled(Debug, cds, heap)) {
         ResourceMark rm;
-        log_debug(cds, heap)("(%d) %s[" SIZE_FORMAT "] ==> " PTR_FORMAT " size " SIZE_FORMAT " %s", _level,
+        log_debug(cds, heap)("(%d) %s[%zu] ==> " PTR_FORMAT " size %zu %s", _level,
                              _referencing_obj->klass()->external_name(), field_delta,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
         if (log_is_enabled(Trace, cds, heap)) {
@@ -1176,7 +1176,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
       ResourceMark rm;
       log_error(cds, heap)(
         "Cannot archive the sub-graph referenced from %s object ("
-        PTR_FORMAT ") size " SIZE_FORMAT ", skipped.",
+        PTR_FORMAT ") size %zu, skipped.",
         orig_obj->klass()->external_name(), p2i(orig_obj), orig_obj->size() * HeapWordSize);
       if (level == 1) {
         // Don't archive a subgraph root that's too big. For archives static fields, that's OK

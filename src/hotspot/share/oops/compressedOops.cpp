@@ -159,7 +159,7 @@ bool CompressedOops::base_overlaps() {
 }
 
 void CompressedOops::print_mode(outputStream* st) {
-  st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+  st->print("Heap address: " PTR_FORMAT ", size: %zu MB",
             p2i(_heap_address_range.start()), _heap_address_range.byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));

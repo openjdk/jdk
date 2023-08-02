@@ -218,7 +218,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
       * arrayOop->obj_at_addr<oop>(i) = o;
     }
   }
-  log_info(cds, heap)("archived obj roots[%d] = " SIZE_FORMAT " bytes, klass = %p, obj = %p", length, byte_size, k, mem);
+  log_info(cds, heap)("archived obj roots[%d] = %zu bytes, klass = %p, obj = %p", length, byte_size, k, mem);
 
   _heap_roots_offset = _buffer_used;
   _buffer_used = new_used;
@@ -237,7 +237,7 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
 
   copy_roots_to_buffer(roots);
 
-  log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots",
+  log_info(cds)("Size of heap region = %zu bytes, %d objects, %d roots",
                 _buffer_used, _source_objs->length() + 1, roots->length());
 }
 
@@ -299,7 +299,7 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
     ensure_buffer_space(filler_end);
 
     int array_length = filler_array_length(fill_bytes);
-    log_info(cds, heap)("Inserting filler obj array of %d elements (" SIZE_FORMAT " bytes total) @ buffer offset " SIZE_FORMAT,
+    log_info(cds, heap)("Inserting filler obj array of %d elements (%zu bytes total) @ buffer offset %zu",
                         array_length, fill_bytes, _buffer_used);
     HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
@@ -582,7 +582,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   }
 
   heap_info->ptrmap()->resize(max_idx + 1);
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (" SIZE_FORMAT " bits)",
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (%zu bits)",
                       num_non_null_ptrs, size_t(heap_info->ptrmap()->size()));
 }
 

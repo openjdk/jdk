@@ -313,10 +313,10 @@ size_t ArchiveBuilder::estimate_archive_size() {
   // allow fragmentation at the end of each dump region
   total += _total_dump_regions * MetaspaceShared::core_region_alignment();
 
-  log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
+  log_info(cds)("_estimated_hashtable_bytes = %zu + %zu = %zu",
                 symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
-  log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
-  log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
+  log_info(cds)("_estimated_metaspaceobj_bytes = %zu", _estimated_metaspaceobj_bytes);
+  log_info(cds)("total estimate bytes = %zu", total);
 
   return align_up(total, MetaspaceShared::core_region_alignment());
 }
@@ -325,14 +325,14 @@ address ArchiveBuilder::reserve_buffer() {
   size_t buffer_size = estimate_archive_size();
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
+    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
+  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
@@ -575,7 +575,7 @@ void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
   size_t used = size_t(top - bottom) + _other_region_used_bytes;
   int diff = int(estimate) - int(used);
 
-  log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
+  log_info(cds)("%s estimate = %zu used = %zu; diff = %d bytes", which, estimate, used, diff);
   assert(diff >= 0, "Estimate is too small");
 
   _last_verified_top = top;
@@ -1020,7 +1020,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
+      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1071,7 +1071,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
       } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
-        st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
+        st.print_cr("filler %zu bytes", byte_size);
       } else {
         ShouldNotReachHere();
       }
@@ -1164,7 +1164,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           print_oop_with_requested_addr_cr(&st, source_obj_array->obj_at(i));
         }
       } else {
-        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
+        st.print_cr(" - fields (%zu words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
       }

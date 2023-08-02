@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -128,7 +128,7 @@ void InUseChunkStats::print_on(outputStream* st, size_t scale) const {
 void InUseChunkStats::verify() const {
   assert(_word_size >= _committed_words &&
       _committed_words == _used_words + _free_words + _waste_words,
-         "Sanity: cap " SIZE_FORMAT ", committed " SIZE_FORMAT ", used " SIZE_FORMAT ", free " SIZE_FORMAT ", waste " SIZE_FORMAT ".",
+         "Sanity: cap %zu, committed %zu, used %zu, free %zu, waste %zu.",
          _word_size, _committed_words, _used_words, _free_words, _waste_words);
 }
 #endif

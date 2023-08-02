@@ -197,8 +197,8 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
     }
   }
 
-  assert(s > 0, "Oop size must be greater than zero, not " SIZE_FORMAT, s);
-  assert(is_object_aligned(s), "Oop size is not properly aligned: " SIZE_FORMAT, s);
+  assert(s > 0, "Oop size must be greater than zero, not %zu", s);
+  assert(is_object_aligned(s), "Oop size is not properly aligned: %zu", s);
   return s;
 }
 

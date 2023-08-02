@@ -150,8 +150,7 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   //   aligning (D)
 
   assert(sizeofChunk == sizeof(Chunk), "weird request size");
-  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
-         SIZE_FORMAT ".", length);
+  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: %zu.", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   if (pool != nullptr) {

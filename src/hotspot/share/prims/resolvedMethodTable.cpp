@@ -102,7 +102,7 @@ volatile size_t          _items_count           = 0;
 
 void ResolvedMethodTable::create_table() {
   _local_table  = new ResolvedMethodTableHash(ResolvedMethodTableSizeLog, END_SIZE, GROW_HINT);
-  log_trace(membername, table)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(membername, table)("Start size: %zu (%zu)",
                                _current_size, ResolvedMethodTableSizeLog);
   _oop_storage = OopStorageSet::create_weak("ResolvedMethodTable Weak", mtClass);
   _oop_storage->register_num_dead_callback(&gc_notification);
@@ -229,7 +229,7 @@ static const double PREF_AVG_LIST_LEN = 2.0;
 static const double CLEAN_DEAD_HIGH_WATER_MARK = 0.5;
 
 void ResolvedMethodTable::gc_notification(size_t num_dead) {
-  log_trace(membername, table)("Uncleaned items:" SIZE_FORMAT, num_dead);
+  log_trace(membername, table)("Uncleaned items:%zu", num_dead);
 
   if (has_work()) {
     return;
@@ -289,7 +289,7 @@ void ResolvedMethodTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_info(membername, table)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_info(membername, table)("Grown to size:%zu", _current_size);
 }
 
 struct ResolvedMethodTableDoDelete : StackObj {

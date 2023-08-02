@@ -264,8 +264,8 @@ WB_ENTRY(jlong, WB_GetCompressedOopsMaxHeapSize(JNIEnv* env, jobject o)) {
 WB_END
 
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
-  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap " SIZE_FORMAT " "
-                "Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
+  tty->print_cr("Minimum heap %zu Initial heap %zu "
+                "Maximum heap %zu Space alignment %zu Heap alignment %zu",
                 MinHeapSize,
                 InitialHeapSize,
                 MaxHeapSize,

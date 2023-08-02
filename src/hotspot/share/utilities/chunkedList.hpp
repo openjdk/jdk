@@ -73,7 +73,7 @@ template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
   }
 
   T at(size_t i) {
-    assert(i < size(), "IOOBE i: " SIZE_FORMAT " size(): " SIZE_FORMAT, i, size());
+    assert(i < size(), "IOOBE i: %zu size(): %zu", i, size());
     return _values[i];
   }
 };

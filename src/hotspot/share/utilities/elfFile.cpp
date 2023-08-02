@@ -1860,7 +1860,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t re
     if (next_byte == 0) {
       if (exceeded_buffer) {
         result[result_len - 1] = '\0'; // Mark end of string.
-        DWARF_LOG_ERROR("Tried to read " SIZE_FORMAT " bytes but exceeded buffer size of " SIZE_FORMAT ". Truncating string.",
+        DWARF_LOG_ERROR("Tried to read %zu bytes but exceeded buffer size of %zu. Truncating string.",
                         char_index, result_len);
       }
       return true;

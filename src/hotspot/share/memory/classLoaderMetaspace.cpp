@@ -121,8 +121,8 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
     Metaspace::tracer()->report_gc_threshold(before, after,
                                   MetaspaceGCThresholdUpdater::ExpandAndAllocate);
     // Keeping both for now until I am sure the old variant (gc + metaspace) is not needed anymore
-    log_trace(gc, metaspace)("Increase capacity to GC from " SIZE_FORMAT " to " SIZE_FORMAT, before, after);
-    UL2(info, "GC threshold increased: " SIZE_FORMAT "->" SIZE_FORMAT ".", before, after);
+    log_trace(gc, metaspace)("Increase capacity to GC from %zu to %zu", before, after);
+    UL2(info, "GC threshold increased: %zu->%zu.", before, after);
   }
 
   return res;

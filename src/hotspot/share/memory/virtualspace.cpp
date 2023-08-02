@@ -147,7 +147,7 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
     // JVM style warning that we did not succeed in using large pages.
     char msg[128];
     jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "
-                                   "req_addr: " PTR_FORMAT " bytes: " SIZE_FORMAT,
+                                   "req_addr: " PTR_FORMAT " bytes: %zu",
                                    req_addr, bytes);
     warning("%s", msg);
   }
@@ -161,7 +161,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
   // important.  If the reservation fails, return null.
   if (requested_address != 0) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
     base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec);
   } else {
@@ -185,8 +185,8 @@ static char* reserve_memory(char* requested_address, const size_t size,
 static char* reserve_memory_special(char* requested_address, const size_t size,
                                     const size_t alignment, const size_t page_size, bool exec) {
 
-  log_trace(pagesize)("Attempt special mapping: size: " SIZE_FORMAT "%s, "
-                      "alignment: " SIZE_FORMAT "%s",
+  log_trace(pagesize)("Attempt special mapping: size: %zu%s, "
+                      "alignment: %zu%s",
                       byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
@@ -195,7 +195,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, base: " PTR_FORMAT
-           " alignment: " SIZE_FORMAT_X,
+           " alignment: 0x%zx",
            p2i(base), alignment);
   }
   return base;
@@ -403,7 +403,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
 
   // Try to reserve the memory for the heap.
   log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
-                             " heap of size " SIZE_FORMAT_X,
+                             " heap of size 0x%zx",
                              p2i(requested_address),
                              size);
 
@@ -596,7 +596,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Last, desperate try without any placement.
     if (_base == nullptr) {
-      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size 0x%zx", size + noaccess_prefix);
       initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
     }
   }
@@ -836,7 +836,7 @@ static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre
 
   debug_only(warning(
       "INFO: os::commit_memory(" PTR_FORMAT ", " PTR_FORMAT
-      " size=" SIZE_FORMAT ", executable=%d) failed",
+      " size=%zu, executable=%d) failed",
       p2i(start), p2i(start + size), size, executable);)
 
   return false;
@@ -1059,8 +1059,8 @@ void VirtualSpace::print_on(outputStream* out) const {
   out->print   ("Virtual space:");
   if (special()) out->print(" (pinned in memory)");
   out->cr();
-  out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
-  out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
+  out->print_cr(" - committed: %zu", committed_size());
+  out->print_cr(" - reserved:  %zu", reserved_size());
   out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
   out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }

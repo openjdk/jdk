@@ -348,7 +348,7 @@ public:
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaWord* p, size_t word_size) {
     DEBUG_ONLY(zap_range(p, word_size));
-    assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
+    assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
     Node* n = new(p) Node(word_size);
     if (_root == nullptr) {
       _root = n;
@@ -362,7 +362,7 @@ public:
   //  larger than that size. Upon return, *p_real_word_size contains the actual
   //  block size.
   MetaWord* remove_block(size_t word_size, size_t* p_real_word_size) {
-    assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
+    assert(word_size >= MinWordSize, "invalid block size %zu", word_size);
 
     Node* n = find_closest_fit(word_size);
 

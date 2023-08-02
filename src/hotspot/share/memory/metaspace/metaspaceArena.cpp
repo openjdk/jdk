@@ -84,7 +84,7 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
 
   // Should this ever happen, we need to increase the maximum possible chunk size.
   guarantee(requested_word_size <= chunklevel::MAX_CHUNK_WORD_SIZE,
-            "Requested size too large (" SIZE_FORMAT ") - max allowed size per allocation is " SIZE_FORMAT ".",
+            "Requested size too large (%zu) - max allowed size per allocation is %zu.",
             requested_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
 
   const chunklevel_t max_level = chunklevel::level_fitting_word_size(requested_word_size);
@@ -152,7 +152,7 @@ MetaspaceArena::~MetaspaceArena() {
     c = c2;
   }
 
-  UL2(info, "returned %d chunks, total capacity " SIZE_FORMAT " words.",
+  UL2(info, "returned %d chunks, total capacity %zu words.",
       return_counter.count(), return_counter.total_size());
 
   _total_used_words_counter->decrement_by(return_counter.total_size());
@@ -221,7 +221,7 @@ bool MetaspaceArena::attempt_enlarge_current_chunk(size_t requested_word_size) {
 // At any point, if we hit a commit limit, we return null.
 MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   MutexLocker cl(lock(), Mutex::_no_safepoint_check_flag);
-  UL2(trace, "requested " SIZE_FORMAT " words.", requested_word_size);
+  UL2(trace, "requested %zu words.", requested_word_size);
 
   MetaWord* p = nullptr;
   const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
@@ -231,7 +231,7 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
     p = _fbl->remove_block(raw_word_size);
     if (p != nullptr) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
-      UL2(trace, "taken from fbl (now: %d, " SIZE_FORMAT ").",
+      UL2(trace, "taken from fbl (now: %d, %zu).",
           _fbl->count(), _fbl->total_size());
       // Note: free blocks in freeblock dictionary still count as "used" as far as statistics go;
       // therefore we have no need to adjust any usage counters (see epilogue of allocate_inner())
@@ -293,7 +293,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
     // chunk.
     if (!current_chunk_too_small) {
       if (!current_chunk()->ensure_committed_additional(raw_word_size)) {
-        UL2(info, "commit failure (requested size: " SIZE_FORMAT ")", raw_word_size);
+        UL2(info, "commit failure (requested size: %zu)", raw_word_size);
         commit_failure = true;
       }
     }
@@ -312,7 +312,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
 
     Metachunk* new_chunk = allocate_new_chunk(raw_word_size);
     if (new_chunk != nullptr) {
-      UL2(debug, "allocated new chunk " METACHUNK_FORMAT " for requested word size " SIZE_FORMAT ".",
+      UL2(debug, "allocated new chunk " METACHUNK_FORMAT " for requested word size %zu.",
           METACHUNK_FORMAT_ARGS(new_chunk), requested_word_size);
 
       assert(new_chunk->free_below_committed_words() >= raw_word_size, "Sanity");
@@ -329,7 +329,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
       p = current_chunk()->allocate(raw_word_size);
       assert(p != nullptr, "Allocation from chunk failed.");
     } else {
-      UL2(info, "failed to allocate new chunk for requested word size " SIZE_FORMAT ".", requested_word_size);
+      UL2(info, "failed to allocate new chunk for requested word size %zu.", requested_word_size);
     }
   }
 
@@ -362,7 +362,7 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
          "Pointer range not part of this Arena and cannot be deallocated: (" PTR_FORMAT ".." PTR_FORMAT ").",
          p2i(p), p2i(p + word_size));
 
-  UL2(trace, "deallocating " PTR_FORMAT ", word size: " SIZE_FORMAT ".",
+  UL2(trace, "deallocating " PTR_FORMAT ", word size: %zu.",
       p2i(p), word_size);
 
   size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size);
@@ -475,7 +475,7 @@ void MetaspaceArena::print_on(outputStream* st) const {
 
 void MetaspaceArena::print_on_locked(outputStream* st) const {
   assert_lock_strong(_lock);
-  st->print_cr("sm %s: %d chunks, total word size: " SIZE_FORMAT ", committed word size: " SIZE_FORMAT, _name,
+  st->print_cr("sm %s: %d chunks, total word size: %zu, committed word size: %zu", _name,
                _chunks.count(), _chunks.calc_word_size(), _chunks.calc_committed_word_size());
   _chunks.print_on(st);
   st->cr();

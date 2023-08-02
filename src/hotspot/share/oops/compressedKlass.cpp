@@ -109,7 +109,7 @@ bool CompressedKlassPointers::is_valid_base(address p) {
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
-               "Narrow klass range: " SIZE_FORMAT_X, p2i(base()), shift(),
+               "Narrow klass range: 0x%zx", p2i(base()), shift(),
                range());
 }
 

@@ -52,7 +52,7 @@ template <typename NodeType, template <typename> class RetrievalPolicy, bool Eag
 inline NodeType* JfrEpochStorageHost<NodeType, RetrievalPolicy, EagerReclaim>::acquire(size_t size, Thread* thread) {
   BufferPtr buffer = mspace_acquire_to_live_list(size, _mspace, thread);
   if (buffer == nullptr) {
-    log_warning(jfr)("Unable to allocate " SIZE_FORMAT " bytes of %s.", _mspace->min_element_size(), "epoch storage");
+    log_warning(jfr)("Unable to allocate %zu bytes of %s.", _mspace->min_element_size(), "epoch storage");
     return nullptr;
   }
   assert(buffer->acquired_by_self(), "invariant");

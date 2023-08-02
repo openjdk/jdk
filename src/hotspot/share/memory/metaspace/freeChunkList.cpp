@@ -155,7 +155,7 @@ void FreeChunkListVector::print_on(outputStream* st) const {
     list_for_level(l)->print_on(st);
     st->cr();
   }
-  st->print_cr("total chunks: %d, total word size: " SIZE_FORMAT ".",
+  st->print_cr("total chunks: %d, total word size: %zu.",
                num_chunks(), word_size());
 }
 

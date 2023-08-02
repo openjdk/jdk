@@ -85,7 +85,7 @@ class BinListImpl {
     {}
   };
 
-#define BLOCK_FORMAT          "Block @" PTR_FORMAT ": size: " SIZE_FORMAT ", next: " PTR_FORMAT
+#define BLOCK_FORMAT          "Block @" PTR_FORMAT ": size: %zu, next: " PTR_FORMAT
 #define BLOCK_FORMAT_ARGS(b)  p2i(b), (b)->_word_size, p2i((b)->_next)
 
   // Smallest block size must be large enough to hold a Block structure.
@@ -149,7 +149,7 @@ public:
   // Block may be larger. Real block size is returned in *p_real_word_size.
   MetaWord* remove_block(size_t word_size, size_t* p_real_word_size) {
     assert(word_size >= MinWordSize &&
-           word_size <= MaxWordSize, "bad block size " SIZE_FORMAT ".", word_size);
+           word_size <= MaxWordSize, "bad block size %zu.", word_size);
     int index = index_for_word_size(word_size);
     index = index_for_next_non_empty_list(index);
     if (index != -1) {

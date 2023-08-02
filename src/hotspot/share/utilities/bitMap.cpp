@@ -149,24 +149,24 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
 #ifdef ASSERT
 void BitMap::verify_size(idx_t size_in_bits) {
   assert(size_in_bits <= max_size_in_bits(),
-         "out of bounds: " SIZE_FORMAT, size_in_bits);
+         "out of bounds: %zu", size_in_bits);
 }
 
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void BitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void BitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif // #ifdef ASSERT
@@ -663,7 +663,7 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 #ifndef PRODUCT
 
 void BitMap::print_on(outputStream* st) const {
-  st->print("Bitmap (" SIZE_FORMAT " bits):", size());
+  st->print("Bitmap (%zu bits):", size());
   for (idx_t index = 0; index < size(); index++) {
     if ((index % 64) == 0) {
       st->cr();

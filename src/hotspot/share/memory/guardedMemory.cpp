@@ -58,7 +58,7 @@ void GuardedMemory::print_on(outputStream* st) const {
     return;
   }
   st->print_cr("GuardedMemory(" PTR_FORMAT ") base_addr=" PTR_FORMAT
-      " tag=" PTR_FORMAT " user_size=" SIZE_FORMAT " user_data=" PTR_FORMAT,
+      " tag=" PTR_FORMAT " user_size=%zu user_data=" PTR_FORMAT,
       p2i(this), p2i(_base_addr), p2i(get_tag()), get_user_size(), p2i(get_user_ptr()));
 
   Guard* guard = get_head_guard();

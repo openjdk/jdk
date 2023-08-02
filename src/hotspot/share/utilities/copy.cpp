@@ -71,9 +71,9 @@ public:
     assert(src != nullptr, "address must not be null");
     assert(dst != nullptr, "address must not be null");
     assert(elem_size == 2 || elem_size == 4 || elem_size == 8,
-           "incorrect element size: " SIZE_FORMAT, elem_size);
+           "incorrect element size: %zu", elem_size);
     assert(is_aligned(byte_count, elem_size),
-           "byte_count " SIZE_FORMAT " must be multiple of element size " SIZE_FORMAT, byte_count, elem_size);
+           "byte_count %zu must be multiple of element size %zu", byte_count, elem_size);
 
     address src_end = (address)src + byte_count;
 
@@ -196,7 +196,7 @@ private:
     case 2: do_conjoint_swap<uint16_t,D,swap>(src, dst, byte_count); break;
     case 4: do_conjoint_swap<uint32_t,D,swap>(src, dst, byte_count); break;
     case 8: do_conjoint_swap<uint64_t,D,swap>(src, dst, byte_count); break;
-    default: guarantee(false, "do_conjoint_swap: Invalid elem_size " SIZE_FORMAT "\n", elem_size);
+    default: guarantee(false, "do_conjoint_swap: Invalid elem_size %zu\n", elem_size);
     }
   }
 };
