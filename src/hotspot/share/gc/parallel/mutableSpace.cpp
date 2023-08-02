@@ -101,7 +101,7 @@ void MutableSpace::initialize(MemRegion mr,
       // Limit the amount of page manipulation if necessary.
       if (NUMASpaceResizeRate > 0 && !AlwaysPreTouch) {
         const size_t change_size = head_size + tail_size;
-        const float setup_rate_words = (float)(NUMASpaceResizeRate >> LogBytesPerWord);
+        const double setup_rate_words = (double)(NUMASpaceResizeRate >> LogBytesPerWord);
         head_size = MIN2((size_t)(setup_rate_words * head_size / change_size),
                          head_size);
         tail_size = MIN2((size_t)(setup_rate_words * tail_size / change_size),
