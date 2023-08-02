@@ -183,32 +183,37 @@ public abstract class PKCS11Test {
         Provider[] oldProviders = Security.getProviders();
         try {
             System.out.println("Beginning test run " + test.getClass().getName() + "...");
-            boolean caughtSE = false;
+            boolean skippedDefault = false;
+            boolean skippedNSS = false;
+            boolean skippedDeimos = false;
 
             // Use separate try-catch for each test to allow all test run
             try {
                 testDefault(test);
             } catch (SkippedException se) {
-                caughtSE = true;
-                se.printStackTrace(System.err);
+                System.out.println("testDefault: Skipped");
+                skippedDefault = true;
+                se.printStackTrace(System.out);
             }
 
             try {
                 testNSS(test);
             } catch (SkippedException se) {
-                caughtSE = true;
-                se.printStackTrace(System.err);
+                System.out.println("testNSS: Skipped");
+                skippedNSS = true;
+                se.printStackTrace(System.out);
             }
 
             try {
                 testDeimos(test);
             } catch (SkippedException se) {
-                caughtSE = true;
-                se.printStackTrace(System.err);
+                System.out.println("testDeimos: Skipped");
+                skippedDeimos = true;
+                se.printStackTrace(System.out);
             }
 
-            if (caughtSE) {
-                throw new SkippedException("One or more tests are skipped, check logs");
+            if (skippedDefault && skippedNSS && skippedDeimos) {
+                throw new SkippedException("All tests are skipped, check logs");
             }
 
         } finally {
