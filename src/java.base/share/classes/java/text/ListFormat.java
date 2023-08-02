@@ -45,7 +45,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
- * Three types of concatenation are provided; {@link Type#STANDARD STANDARD},
+ * Three types of concatenation are provided: {@link Type#STANDARD STANDARD},
  * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
  * type are provided: {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
  * {@link Style#NARROW NARROW}. The following snippet is an example of formatting
@@ -89,6 +89,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *
  * @implSpec This class is immutable and thread-safe
  *
+ * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
  * @since 22
  */
 public class ListFormat extends Format {
