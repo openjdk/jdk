@@ -753,9 +753,9 @@ public interface Map<K, V> {
      * concurrency properties.
      *
      * @param function the function to apply to each entry
-     * @throws UnsupportedOperationException if the {@code set} operation
-     *         is not supported by this map's entry set iterator, or if
-     *         modification of this map is otherwise not permitted
+     * @throws UnsupportedOperationException if the {@code replaceAll} operation
+     *         is not supported by this map
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of a replacement value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -822,7 +822,7 @@ public interface Map<K, V> {
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the {@code put} operation
+     * @throws UnsupportedOperationException if the {@code putIfAbsent} operation
      *         is not supported by this map
      *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the key or value is of an inappropriate
@@ -916,8 +916,9 @@ public interface Map<K, V> {
      * @param oldValue value expected to be associated with the specified key
      * @param newValue value to be associated with the specified key
      * @return {@code true} if the value was replaced
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code replace} operation
+     *         is not supported by this map
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of a specified key or value
      *         prevents it from being stored in this map
      * @throws NullPointerException if a specified key or newValue is null,
@@ -964,7 +965,7 @@ public interface Map<K, V> {
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the {@code put} operation
+     * @throws UnsupportedOperationException if the {@code replace} operation
      *         is not supported by this map
      *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
@@ -1047,9 +1048,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the mappingFunction
      *         is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code computeIfAbsent} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1125,9 +1125,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the
      *         remappingFunction is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code computeIfPresent} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1211,9 +1210,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the
      *         remappingFunction is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-               ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code compute} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1306,9 +1304,8 @@ public interface Map<K, V> {
      *        present
      * @return the new value associated with the specified key, or null if no
      *         value is associated with the key
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code merge} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})

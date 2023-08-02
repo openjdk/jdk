@@ -244,7 +244,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      *         or {@code null} if this map is empty
      *
      * @throws UnsupportedOperationException if the {@code pollFirstEntry}
-     *         operation is not supported by this collection
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollFirstEntry();
 
@@ -257,7 +257,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
      *         or {@code null} if this map is empty
      *
      * @throws UnsupportedOperationException if the {@code pollLastEntry}
-     *         operation is not supported by this collection
+     *         operation is not supported by this map
      */
     Map.Entry<K,V> pollLastEntry();
 
