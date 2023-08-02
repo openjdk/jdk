@@ -117,7 +117,7 @@ public class HeapDumpParallelTest {
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-        return output;        
+        return output;
     }
 
     private static void verifyHeapDump(File dump) {
