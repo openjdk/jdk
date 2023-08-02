@@ -508,28 +508,26 @@ package-tar:
   variables:
     PKG_LICENSE: "GPL-2.0 license"
     PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
+    PKG_DIRECTORIES: "${PKG_DIRECTORY}"
+    BUILD_ARCH: "$PKG_ARCH"
   before_script:
     # PKG_DIRECTORIES must be set
     - test -n "${PKG_DIRECTORIES}" || exit 1
     # PKG_ARCH must be set
     - test -n "${PKG_ARCH}" || exit 1
     # clean up pre-built binaries from the rivos-sdk
-    - rm -rf $(echo "${PKG_DIRECTORIES}" | tr ';' ' ')
+    - rm -rf "${PKG_DIRECTORY}"
+    - mkdir -p "${PKG_DIRECTORY}"
     # move the previous temporary install
     - |
-      cp -av build/linux-${PKG_ARCH}-release/images/jdk /rivos/
-      if [ "${PKG_ARCH}" = "amd64" ]; then
-        # put linux-riscv64 build in sysroot
-        mkdir -p /rivos/sysroot/riscv/rivos
-        cp -av build/linux-riscv64-release/images/jdk /rivos/sysroot/riscv/rivos
-      fi
+      cp -av build/linux-${BUILD_ARCH}-release/images/jdk/ "${PKG_DIRECTORY}"
     - |
       if [ "${PKG_DBG}" = "true" ]; then
-        find $(echo "${PKG_DIRECTORIES}" | tr ';' ' ') \( -xtype f -or -xtype l \) -not -name '*.debuginfo' -exec rm -f {} \; -print
-        find $(echo "${PKG_DIRECTORIES}" | tr ';' ' ') -type d -print | sort -r | xargs -I{} bash -c "rmdir {} || true"
+        find "${PKG_DIRECTORY}" \( -xtype f -or -xtype l \) -not -name '*.debuginfo' -exec rm -f {} \; -print
+        find "${PKG_DIRECTORY}" -type d -print | sort -r | xargs -I{} bash -c "rmdir {} || true"
       else
         # remove *.debuginfo files, they take a lot of space
-        find $(echo "${PKG_DIRECTORIES}" | tr ';' ' ') -type f -name '*.debuginfo' -exec rm -f {} \; -print
+        find "${PKG_DIRECTORY}" -type f -name '*.debuginfo' -exec rm -f {} \; -print
       fi
 
 package-deb-amd64:
@@ -537,13 +535,11 @@ package-deb-amd64:
   dependencies:
     - prepare-version
     - build-linux-amd64-release
-    - build-linux-riscv64-release
   needs:
     - prepare-version
     - build-linux-amd64-release
-    - build-linux-riscv64-release
   variables:
-    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
+    PKG_DIRECTORY: "/rivos/jdk"
     PKG_ARCH: "amd64"
 
 package-deb-riscv64:
@@ -555,22 +551,34 @@ package-deb-riscv64:
     - prepare-version
     - build-linux-riscv64-release
   variables:
-    PKG_DIRECTORIES: "/rivos/jdk"
+    PKG_DIRECTORY: "/rivos/jdk"
     PKG_ARCH: "riscv64"
+
+package-deb-cross-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-cross-riscv64"
+    PKG_DIRECTORY: "/rivos/sysroot/riscv/rivos/jdk"
+    PKG_ARCH: "amd64"
+    BUILD_ARCH: "riscv64"
 
 package-deb-dbg-amd64:
   extends: .package-deb
   dependencies:
     - prepare-version
     - build-linux-amd64-release
-    - build-linux-riscv64-release
   needs:
     - prepare-version
     - build-linux-amd64-release
-    - build-linux-riscv64-release
   variables:
     PKG_NAME: "${PROJECT_NAME}-dbg"
-    PKG_DIRECTORIES: "/rivos/jdk;/rivos/sysroot/riscv/rivos/jdk"
+    PKG_DIRECTORY: "/rivos/jdk"
     PKG_ARCH: "amd64"
     PKG_DBG: "true"
 
@@ -584,8 +592,23 @@ package-deb-dbg-riscv64:
     - build-linux-riscv64-release
   variables:
     PKG_NAME: "${PROJECT_NAME}-dbg"
-    PKG_DIRECTORIES: "/rivos/jdk"
+    PKG_DIRECTORY: "/rivos/jdk"
     PKG_ARCH: "riscv64"
+    PKG_DBG: "true"
+
+package-deb-dbg-cross-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-cross-riscv64-dbg"
+    PKG_DIRECTORY: "/rivos/sysroot/riscv/rivos/jdk"
+    PKG_ARCH: "amd64"
+    BUILD_ARCH: "riscv64"
     PKG_DBG: "true"
 
 # deploy-module-ubuntu:
