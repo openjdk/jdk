@@ -47,7 +47,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryEl
  * Base class for generating a summary page that lists elements with a common characteristic,
  * such as deprecated elements, preview elements, and so on.
  *
- * @param <B> a builder, to build the specific summary information to be written
+ * Note: the use of "Summary" in this context is distinct from the use of "summary" in the
+ * context of {@link AbstractMemberWriter#buildSummary(Content)}.
+ *
+ * @param <B> a builder, to determine the elements to be included in the summary
  */
 public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends SubWriterHolderWriter {
 
@@ -89,7 +92,6 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
 
     /** The summary list builder */
     protected final B builder;
-
 
     /**
      * Constructor.

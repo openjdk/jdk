@@ -133,7 +133,6 @@ public class FieldWriter extends AbstractMemberWriter {
         addTags(currentElement, fieldContent);
     }
 
-
     @Override
     public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_FIELD_SUMMARY);

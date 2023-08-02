@@ -117,7 +117,7 @@ import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 /**
  * The base class for classes that write complete HTML pages to be included in the overall API documentation.
- * The primary method is `{@link #buildPage()}.
+ * The primary method is {@link #buildPage()}.
  */
 public abstract class HtmlDocletWriter {
 

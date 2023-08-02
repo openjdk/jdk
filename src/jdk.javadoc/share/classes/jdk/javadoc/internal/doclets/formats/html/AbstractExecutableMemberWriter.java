@@ -84,7 +84,6 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         super(writer);
     }
 
-
     /**
      * Get the type parameters for the executable member.
      *

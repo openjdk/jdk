@@ -211,7 +211,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
         return HtmlTree.LI(content);
     }
 
-
     /**
      * Returns a list to be used for the list of details for members of a given kind.
      *

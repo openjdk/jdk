@@ -50,7 +50,6 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
         super(configuration, filename);
     }
 
-
     /**
      * {@return the page description, for the {@code <meta>} element}
      */

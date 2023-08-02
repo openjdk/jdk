@@ -90,7 +90,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * Creates a writer for a page listing the uses of a type element.
      *
      * @param configuration the configuration
-     * @param mapper a "mapper' containing the usage information
+     * @param mapper a "mapper" containing the usage information
      * @param typeElement the type element
      */
     public ClassUseWriter(HtmlConfiguration configuration,

@@ -474,7 +474,6 @@ public class HtmlIds {
         return HtmlId.of(tableId.name() + ".tabpanel");
     }
 
-
     /**
      * Returns an id for the "preview" section for an element.
      *

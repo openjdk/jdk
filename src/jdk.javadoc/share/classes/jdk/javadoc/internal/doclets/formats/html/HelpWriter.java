@@ -187,7 +187,6 @@ public class HelpWriter extends HtmlDocletWriter {
         return content;
     }
 
-
     /**
      * Creates the page-specific help, adding an entry into the main table-of-contents.
      *

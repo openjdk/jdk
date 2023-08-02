@@ -146,7 +146,6 @@ public class PropertyWriter extends AbstractMemberWriter {
         }
     }
 
-
     @Override
     public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_PROPERTY_SUMMARY);

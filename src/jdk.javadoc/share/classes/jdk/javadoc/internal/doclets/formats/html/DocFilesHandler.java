@@ -72,7 +72,7 @@ public class DocFilesHandler {
      * @param configuration the configuration of this doclet.
      * @param element the containing element of the doc-files.
      *
-     * @see WriterFactory#newDocFilesHandler(Element)              
+     * @see WriterFactory#newDocFilesHandler(Element)
      */
     public DocFilesHandler(HtmlConfiguration configuration, Element element) {
         this.configuration = configuration;

@@ -170,7 +170,6 @@ public class PackageWriter extends HtmlDocletWriter {
         addAllClassesAndInterfacesSummary(summariesList);
     }
 
-
     /**
      * Build the description of the summary.
      *
@@ -323,7 +322,6 @@ public class PackageWriter extends HtmlDocletWriter {
         addPackageSummary(relatedPackages, contents.relatedPackages, tableHeader,
                 summaryContent, showModules);
     }
-
 
     /**
      * Add all types to the content.
