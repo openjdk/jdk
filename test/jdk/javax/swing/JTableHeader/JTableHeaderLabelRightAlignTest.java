@@ -75,9 +75,9 @@ public class JTableHeaderLabelRightAlignTest {
         }
 
         int x = (int)(table.getTableHeader()
-                            .getColumnModel()
-                            .getColumn(0)
-                            .getWidth() * SCALE);
+                           .getColumnModel()
+                           .getColumn(0)
+                           .getWidth() * SCALE);
         int expectedRGB = imgHeader.getRGB(x, 1);
 
         for (int y = 1; y < (imgHeader.getHeight() - 3); y++) {
