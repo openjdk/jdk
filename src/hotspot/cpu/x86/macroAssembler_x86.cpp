@@ -5774,7 +5774,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
   assert(base==rdi, "base register must be edi for rep stos");
   assert(tmp==rax,   "tmp register must be eax for rep stos");
   assert(cnt==rcx,   "cnt register must be ecx for rep stos");
-  assert(InitArrayShortSize % BytesPerLong == 0,
+  assert(InitArrayShortSize % (intx)BytesPerLong == 0,
     "InitArrayShortSize should be the multiple of BytesPerLong");
 
   Label DONE;
@@ -5784,7 +5784,7 @@ void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, XMMReg
 
   if (!is_large) {
     Label LOOP, LONG;
-    cmpptr(cnt, InitArrayShortSize/BytesPerLong);
+    cmpptr(cnt, (int)(InitArrayShortSize/(intx)BytesPerLong));
     jccb(Assembler::greater, LONG);
 
     NOT_LP64(shlptr(cnt, 1);) // convert to number of 32-bit words for 32-bit VM

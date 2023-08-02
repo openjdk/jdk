@@ -751,7 +751,7 @@ void CodeCache::update_cold_gc_count() {
   _unloading_allocation_rates.add(allocation_rate);
   _unloading_gc_intervals.add(gc_interval);
 
-  size_t aggressive_sweeping_free_threshold = StartAggressiveSweepingAt / 100.0 * max;
+  size_t aggressive_sweeping_free_threshold = (size_t)((double)StartAggressiveSweepingAt / 100.0) * max;
   if (free < aggressive_sweeping_free_threshold) {
     // We are already in the red zone; be very aggressive to avoid disaster
     // But not more aggressive than 2. This ensures that an nmethod must
@@ -768,7 +768,7 @@ void CodeCache::update_cold_gc_count() {
   double average_gc_interval = _unloading_gc_intervals.avg();
   double average_allocation_rate = _unloading_allocation_rates.avg();
   double time_to_aggressive = ((double)(free - aggressive_sweeping_free_threshold)) / average_allocation_rate;
-  double cold_timeout = time_to_aggressive / NmethodSweepActivity;
+  double cold_timeout = time_to_aggressive / (double)NmethodSweepActivity;
 
   // Convert time to GC cycles, and crop at INT_MAX. The reason for
   // that is that the _cold_gc_count will be added to an epoch number
@@ -800,7 +800,7 @@ void CodeCache::gc_on_allocation() {
   size_t max = max_capacity();
   size_t used = max - free;
   double free_ratio = double(free) / double(max);
-  if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
+  if (free_ratio <= (double)StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
     if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);

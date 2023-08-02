@@ -64,7 +64,7 @@ class ICStub: public Stub {
 
   // ICStub_from_destination_address looks up Stub* address from code entry address,
   // which unfortunately means the stub head should be at the same alignment as the code.
-  static  int alignment()                        { return CodeEntryAlignment; }
+  static  intx alignment()                        { return CodeEntryAlignment; }
 
  public:
   // Creation

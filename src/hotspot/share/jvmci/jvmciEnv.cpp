@@ -250,8 +250,8 @@ void JVMCIEnv::describe_pending_exception(outputStream* st) {
     // Use up to half the lines of the JVMCI event log to
     // show the stack trace.
     char* cursor = stack_trace;
-    int line = 0;
-    const int max_lines = LogEventsBufferEntries / 2;
+    uintx line = 0;
+    const uintx max_lines = LogEventsBufferEntries / 2;
     char* last_line = nullptr;
     while (*cursor != '\0') {
       char* eol = strchr(cursor, '\n');
@@ -275,7 +275,7 @@ void JVMCIEnv::describe_pending_exception(outputStream* st) {
     }
     if (last_line != nullptr) {
       if (line > max_lines) {
-        JVMCI_event_1("%s [elided %d more stack trace lines]", last_line, line - max_lines);
+        JVMCI_event_1("%s [elided %ld more stack trace lines]", last_line, line - max_lines);
       } else {
         JVMCI_event_1("%s", last_line);
       }

@@ -438,7 +438,7 @@ void CompilerConfig::set_jvmci_specific_flags() {
         // so that we can then double the computed stack size. Once
         // the stack size requirements of SVM are better understood,
         // this logic can be pushed down into os::create_thread.
-        int stack_size = CompilerThreadStackSize;
+        intx stack_size = CompilerThreadStackSize;
         if (stack_size == 0) {
           stack_size = VMThreadStackSize;
         }

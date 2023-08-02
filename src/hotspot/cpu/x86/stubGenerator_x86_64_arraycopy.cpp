@@ -2393,9 +2393,9 @@ address StubGenerator::generate_generic_copy(const char *name,
   const Register rklass_tmp = rdi;  // load_klass
 #endif
 
-  { int modulus = CodeEntryAlignment;
-    int target  = modulus - 5; // 5 = sizeof jmp(L_failed)
-    int advance = target - (__ offset() % modulus);
+  { intx modulus = CodeEntryAlignment;
+    intx target  = modulus - 5; // 5 = sizeof jmp(L_failed)
+    intx advance = target - (__ offset() % modulus);
     if (advance < 0)  advance += modulus;
     if (advance > 0)  __ nop(advance);
   }

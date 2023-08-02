@@ -433,7 +433,7 @@ void MetaspaceGC::compute_new_size() {
   const size_t used_after_gc = MetaspaceUtils::committed_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
-  const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
+  const double minimum_free_percentage = (double)MinMetaspaceFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
 
   const double min_tmp = used_after_gc / maximum_used_percentage;
@@ -466,7 +466,7 @@ void MetaspaceGC::compute_new_size() {
       log_trace(gc, metaspace)("    expanding:  minimum_desired_capacity: %6.1fKB  expand_bytes: %6.1fKB  MinMetaspaceExpansion: %6.1fKB  new metaspace HWM:  %6.1fKB",
                                minimum_desired_capacity / (double) K,
                                expand_bytes / (double) K,
-                               MinMetaspaceExpansion / (double) K,
+                               (double)MinMetaspaceExpansion / (double) K,
                                new_capacity_until_GC / (double) K);
     }
     return;
@@ -481,7 +481,7 @@ void MetaspaceGC::compute_new_size() {
 
   // Should shrinking be considered?
   if (MaxMetaspaceFreeRatio < 100) {
-    const double maximum_free_percentage = MaxMetaspaceFreeRatio / 100.0;
+    const double maximum_free_percentage = (double)MaxMetaspaceFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(MaxMetaspaceSize));
@@ -517,9 +517,9 @@ void MetaspaceGC::compute_new_size() {
         _shrink_factor = MIN2(current_shrink_factor * 4, (uint) 100);
       }
       log_trace(gc, metaspace)("    shrinking:  initThreshold: %.1fK  maximum_desired_capacity: %.1fK",
-                               MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
+                               (double)MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
       log_trace(gc, metaspace)("    shrink_bytes: %.1fK  current_shrink_factor: %d  new shrink factor: %d  MinMetaspaceExpansion: %.1fK",
-                               shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, MinMetaspaceExpansion / (double) K);
+                               shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, (double)MinMetaspaceExpansion / (double) K);
     }
   }
 
@@ -708,7 +708,7 @@ void Metaspace::ergo_initialize() {
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = MaxMetaspaceSize * 0.8;
+    size_t max_ccs_size = (size_t)((double)MaxMetaspaceSize * 0.8);
     size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
 
     // CCS must be aligned to root chunk size, and be at least the size of one

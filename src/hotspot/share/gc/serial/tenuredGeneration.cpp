@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ void TenuredGeneration::compute_new_size_inner() {
 
   // We don't have floating point command-line arguments
   // Note:  argument processing ensures that MinHeapFreeRatio < 100.
-  const double minimum_free_percentage = MinHeapFreeRatio / 100.0;
+  const double minimum_free_percentage = (double)MinHeapFreeRatio / 100.0;
   const double maximum_used_percentage = 1.0 - minimum_free_percentage;
 
   // Compute some numbers about the state of the heap.
@@ -206,7 +206,7 @@ void TenuredGeneration::compute_new_size_inner() {
   size_t max_shrink_bytes = capacity_after_gc - minimum_desired_capacity;
 
   if (MaxHeapFreeRatio < 100) {
-    const double maximum_free_percentage = MaxHeapFreeRatio / 100.0;
+    const double maximum_free_percentage = (double)MaxHeapFreeRatio / 100.0;
     const double minimum_used_percentage = 1.0 - maximum_free_percentage;
     const double max_tmp = used_after_gc / minimum_used_percentage;
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));

@@ -464,7 +464,7 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
 
   {
     // not sure why this is here, but why not...
-    int alignSize = MAX2((intx) sizeof(jdouble), CodeEntryAlignment);
+    intx alignSize = MAX2((intx) sizeof(jdouble), CodeEntryAlignment);
     assert( (dest->_total_start - _insts.start()) % alignSize == 0, "copy must preserve alignment");
   }
 

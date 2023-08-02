@@ -204,7 +204,7 @@ const int ObjectAlignmentInBytes = 8;
           "Granularity to use for NUMA interleaving on Windows OS")         \
           constraint(NUMAInterleaveGranularityConstraintFunc, AtParse)      \
                                                                             \
-  product(uintx, NUMAChunkResizeWeight, 20,                                 \
+  product(uint, NUMAChunkResizeWeight, 20,                                  \
           "Percentage (0-100) used to weight the current sample when "      \
           "computing exponentially decaying average for "                   \
           "AdaptiveNUMAChunkSizing")                                        \
@@ -553,7 +553,7 @@ const int ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+  product(uint, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
           "level of the dump file. 0 (the default) disables gzip "          \
           "compression. Otherwise the level must be between 1 and 9.")      \
@@ -726,10 +726,10 @@ const int ObjectAlignmentInBytes = 8;
   /* because of overflow issue                                   */         \
   product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
           "The maximum number of monitors to deflate, unlink and delete "   \
-          "at one time (minimum is 1024).")                      \
+          "at one time (minimum is 1024).")                                 \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
+  product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval, "   \
           "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \
@@ -802,7 +802,7 @@ const int ObjectAlignmentInBytes = 8;
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
   /* aggressive prefetching, while still leaving the room for segregating */\
   /* among the distinct pages.                                            */\
-  product(intx, ContendedPaddingWidth, 128,                                 \
+  product(int, ContendedPaddingWidth, 128,                                  \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
           constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
@@ -918,7 +918,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
-  product(intx, CICompilerCount, CI_COMPILER_COUNT,                         \
+  product(int, CICompilerCount, CI_COMPILER_COUNT,                          \
           "Number of compiler threads to run")                              \
           range(0, max_jint)                                                \
           constraint(CICompilerCountConstraintFunc, AfterErgo)              \
@@ -1315,7 +1315,7 @@ const int ObjectAlignmentInBytes = 8;
           "max number of compiled code units to print in error log")        \
           range(0, VMError::max_error_log_print_code)                       \
                                                                             \
-  notproduct(intx, MaxElementPrintSize, 256,                                \
+  notproduct(int, MaxElementPrintSize, 256,                                 \
           "maximum number of elements to print")                            \
                                                                             \
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
@@ -1355,7 +1355,7 @@ const int ObjectAlignmentInBytes = 8;
           "-XX:MallocLimit=2g:oom"                                          \
           "-XX:MallocLimit=compiler:200m:oom,code:100m")                    \
                                                                             \
-  product(intx, TypeProfileWidth, 2,                                        \
+  product(int, TypeProfileWidth, 2,                                         \
           "Number of receiver types to record in call/cast profile")        \
           range(0, 8)                                                       \
                                                                             \

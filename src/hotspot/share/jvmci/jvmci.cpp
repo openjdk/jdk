@@ -140,7 +140,7 @@ void JVMCI::initialize_globals() {
     if (JVMCIEventLogLevel > 0) {
       _events = new StringEventLog("JVMCI Events", "jvmci");
       if (JVMCIEventLogLevel > 1) {
-        int count = LogEventsBufferEntries;
+        uintx count = LogEventsBufferEntries;
         for (int i = 1; i < JVMCIEventLogLevel && i < max_EventLog_level; i++) {
           // Expand event buffer by 10x for each level above 1
           count = count * 10;

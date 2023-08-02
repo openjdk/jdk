@@ -227,7 +227,7 @@ static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
   ResourceMark rm;
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
   // Add extra space for large CodeEntryAlignment
-  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
+  int size = code_size + (int)CodeEntryAlignment * max_aligned_stubs;
   BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
   if (stubs_code == nullptr) {
     vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);

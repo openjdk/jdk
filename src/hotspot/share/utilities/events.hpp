@@ -93,13 +93,13 @@ template <class T> class EventLogBase : public EventLog {
   // Handle is a short specifier used to select this particular event log
   // for printing (see VM.events command).
   const char*     _handle;
-  int             _length;
-  int             _index;
-  int             _count;
+  uintx           _length;
+  uintx           _index;
+  uintx           _count;
   EventRecord<T>* _records;
 
  public:
-  EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
+  EventLogBase<T>(const char* name, const char* handle, uintx length = LogEventsBufferEntries):
     _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
@@ -116,8 +116,8 @@ template <class T> class EventLogBase : public EventLog {
   // move the ring buffer to next open slot and return the index of
   // the slot to use for the current message.  Should only be called
   // while mutex is held.
-  int compute_log_index() {
-    int index = _index;
+  uintx compute_log_index() {
+    uintx index = _index;
     if (_count < _length) _count++;
     _index++;
     if (_index >= _length) _index = 0;
@@ -166,7 +166,7 @@ typedef FormatStringLogMessage<512> ExtendedStringLogMessage;
 template <size_t bufsz>
 class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> > {
  public:
-  FormatStringEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+  FormatStringEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
    : EventLogBase< FormatStringLogMessage<bufsz> >(name, short_name, count) {}
 
   void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
@@ -174,7 +174,7 @@ class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> 
 
     double timestamp = this->fetch_timestamp();
     MutexLocker ml(&this->_mutex, Mutex::_no_safepoint_check_flag);
-    int index = this->compute_log_index();
+    uintx index = this->compute_log_index();
     this->_records[index].thread = thread;
     this->_records[index].timestamp = timestamp;
     this->_records[index].data.printv(format, ap);
@@ -195,7 +195,7 @@ class InstanceKlass;
 // Event log for class unloading events to materialize the class name in place in the log stream.
 class UnloadingEventLog : public EventLogBase<StringLogMessage> {
  public:
-  UnloadingEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+  UnloadingEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
    : EventLogBase<StringLogMessage>(name, short_name, count) {}
 
   void log(Thread* thread, InstanceKlass* ik);
@@ -204,7 +204,7 @@ class UnloadingEventLog : public EventLogBase<StringLogMessage> {
 // Event log for exceptions
 class ExceptionsEventLog : public ExtendedStringEventLog {
  public:
-  ExceptionsEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
+  ExceptionsEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
    : ExtendedStringEventLog(name, short_name, count) {}
 
   void log(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
@@ -396,7 +396,7 @@ inline void EventLogBase<T>::print_log_on(outputStream* out, int max) {
   if (ml._proceed) {
     print_log_impl(out, max);
   } else {
-    out->print_cr("%s (%d events):", _name, _count);
+    out->print_cr("%s (%ld events):", _name, _count);
     out->print_cr("No events printed - crash while holding lock");
     out->cr();
   }
@@ -416,7 +416,7 @@ inline void EventLogBase<T>::print_names(outputStream* out) const {
 // Dump the ring buffer entries that current have entries.
 template <class T>
 inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
-  out->print_cr("%s (%d events):", _name, _count);
+  out->print_cr("%s (%ld events):", _name, _count);
   if (_count == 0) {
     out->print_cr("No events");
     out->cr();
@@ -425,7 +425,7 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
 
   int printed = 0;
   if (_count < _length) {
-    for (int i = 0; i < _count; i++) {
+    for (uintx i = 0; i < _count; i++) {
       if (max > 0 && printed == max) {
         break;
       }
@@ -433,14 +433,14 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
       printed ++;
     }
   } else {
-    for (int i = _index; i < _length; i++) {
+    for (uintx i = _index; i < _length; i++) {
       if (max > 0 && printed == max) {
         break;
       }
       print(out, _records[i]);
       printed ++;
     }
-    for (int i = 0; i < _index; i++) {
+    for (uintx i = 0; i < _index; i++) {
       if (max > 0 && printed == max) {
         break;
       }

@@ -1866,8 +1866,8 @@ void VM_Version::get_processor_features() {
 #endif
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
-     (cache_line_size > ContendedPaddingWidth))
-     ContendedPaddingWidth = cache_line_size;
+     ((int)cache_line_size > ContendedPaddingWidth))
+     ContendedPaddingWidth = (int)cache_line_size;
 
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
