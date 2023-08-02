@@ -145,8 +145,14 @@ public class DocPaths {
     /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
 
+    /** The name of the directory for the resource files. */
+    public static final DocPath RESOURCE_FILES = DocPath.create("resource-files");
+
     /** The name of the directory for the script files. */
     public static final DocPath SCRIPT_DIR = DocPath.create("script-dir");
+
+    /** The name of the directory for the script files. */
+    public static final DocPath SCRIPT_FILES = DocPath.create("script-files");
 
     /** The name of the file for search page. */
     public static final DocPath SEARCH_PAGE = DocPath.create("search.html");

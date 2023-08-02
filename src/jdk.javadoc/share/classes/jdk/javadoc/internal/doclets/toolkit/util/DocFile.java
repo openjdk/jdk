@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.util;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -187,8 +188,9 @@ public abstract class DocFile {
      */
     public void copyResource(DocPath resource, boolean overwrite, boolean replaceNewLine)
             throws DocFileIOException, ResourceIOException {
-        if (exists() && !overwrite)
+        if (exists() && !overwrite) {
             return;
+        }
 
         copyResource(resource, replaceNewLine, null);
     }
@@ -210,8 +212,9 @@ public abstract class DocFile {
                 throws DocFileIOException, ResourceIOException {
         try {
             InputStream in = BaseConfiguration.class.getResourceAsStream(resource.getPath());
-            if (in == null)
-                return;
+            if (in == null) {
+                throw new ResourceIOException(resource, new FileNotFoundException(resource.getPath()));
+            }
 
             try {
                 if (replaceNewLine) {

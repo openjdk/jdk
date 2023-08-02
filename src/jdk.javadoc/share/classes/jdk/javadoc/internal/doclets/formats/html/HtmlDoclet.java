@@ -237,7 +237,7 @@ public class HtmlDoclet extends AbstractDoclet {
             performCopy(stylesheet, DocPath.empty);
         }
         for (String script : options.additionalScripts()) {
-            performCopy(script, DocPaths.SCRIPT_DIR);
+            performCopy(script, DocPaths.SCRIPT_FILES);
         }
         // do early to reduce memory footprint
         if (options.classUse()) {
@@ -301,23 +301,23 @@ public class HtmlDoclet extends AbstractDoclet {
             f = DocFile.createFileForOutput(configuration, DocPaths.STYLESHEET);
             f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.STYLESHEET), true, true);
         }
-        f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
+        f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_FILES.resolve(DocPaths.JAVASCRIPT));
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
-        f = DocFile.createFileForOutput(configuration, DocPaths.CLIPBOARD_SVG);
+        f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG));
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.CLIPBOARD_SVG), true, true);
-        f = DocFile.createFileForOutput(configuration, DocPaths.LINK_SVG);
+        f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG));
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.LINK_SVG), true, true);
         if (options.createIndex()) {
-            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
+            f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);
 
-            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_PAGE_JS);
+            f = DocFile.createFileForOutput(configuration, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_PAGE_JS));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_PAGE_JS), configuration.docResources);
 
-            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
+            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCE_FILES.resolve(DocPaths.GLASS_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.GLASS_IMG), true, false);
 
-            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.X_IMG));
+            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCE_FILES.resolve(DocPaths.X_IMG));
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.X_IMG), true, false);
             copyJqueryFiles();
         }
@@ -342,9 +342,10 @@ public class HtmlDoclet extends AbstractDoclet {
                 DocPaths.JQUERY_UI_CSS.getPath());
         DocFile f;
         for (String file : files) {
-            DocPath filePath = DocPaths.SCRIPT_DIR.resolve(file);
+            DocPath filePath = DocPaths.SCRIPT_FILES.resolve(file);
+            DocPath sourcePath = DocPaths.SCRIPT_DIR.resolve(file);
             f = DocFile.createFileForOutput(configuration, filePath);
-            f.copyResource(DOCLET_RESOURCES.resolve(filePath), true, false);
+            f.copyResource(DOCLET_RESOURCES.resolve(sourcePath), true, false);
         }
     }
 

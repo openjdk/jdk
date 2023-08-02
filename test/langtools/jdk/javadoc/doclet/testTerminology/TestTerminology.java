@@ -141,11 +141,11 @@ public class TestTerminology extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
 
-        checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
+        checkOutput("script-files/search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
                 """
                         types: "Types","""
         );
-        checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
+        checkOutput("script-files/search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
                 """
                         types: "Classes and Interfaces","""
         );

@@ -327,7 +327,7 @@ public class Head extends Content {
         }
 
         if (index) {
-            addStylesheet(head, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
+            addStylesheet(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_UI_CSS));
         }
     }
 
@@ -338,7 +338,7 @@ public class Head extends Content {
 
     private void addScripts(HtmlTree head) {
         if (addDefaultScript) {
-            head.add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
+            addScriptElement(head, DocPaths.JAVASCRIPT);
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
@@ -360,7 +360,7 @@ public class Head extends Content {
     }
 
     private void addScriptElement(HtmlTree head, DocPath filePath) {
-        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_DIR).resolve(filePath);
+        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_FILES).resolve(filePath);
         head.add(HtmlTree.SCRIPT(scriptFile.getPath()));
     }
 }

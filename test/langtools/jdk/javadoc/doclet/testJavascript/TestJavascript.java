@@ -61,7 +61,7 @@ public class TestJavascript extends JavadocTester {
                     //-->
                     """);
 
-        checkOutput("script.js", false,
+        checkOutput("script-files/script.js", false,
                 """
                     $(window).resize(function() {
                             $('.navPadding').css('padding-top', $('.fixedNav').css("height"));

@@ -189,12 +189,12 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("script-dir/additional-script-1.js", true, "Additional script file 1");
-        checkOutput("script-dir/additional-script-2.js", true, "Additional script file 2");
+        checkOutput("script-files/additional-script-1.js", true, "Additional script file 1");
+        checkOutput("script-files/additional-script-2.js", true, "Additional script file 2");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <script type="text/javascript" src="../script-dir/additional-script-1.js"></script>
-                    <script type="text/javascript" src="../script-dir/additional-script-2.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-1.js"></script>
+                    <script type="text/javascript" src="../script-files/additional-script-2.js"></script>
                     """);
     }
 

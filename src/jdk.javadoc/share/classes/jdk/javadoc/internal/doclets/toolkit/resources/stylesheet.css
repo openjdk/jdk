@@ -757,7 +757,7 @@ li.ui-static-link a, li.ui-static-link a:visited {
     font-weight:bold;
 }
 #search-input, #page-search-input {
-    background-image:url('resources/glass.png');
+    background-image:url('resource-files/glass.png');
     background-size:13px;
     background-repeat:no-repeat;
     background-position:2px 3px;
