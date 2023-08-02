@@ -46,13 +46,12 @@ public class JTableHeaderLabelRightAlignTest {
     private static final int WIDTH = 300;
     private static final int HEIGHT = 150;
     private static final double SCALE = 2.25;
-    private static boolean testStatus = true;
     private static String failureMsg;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(JTableHeaderLabelRightAlignTest::test);
-        if (!testStatus) {
+        if (failureMsg != null) {
             throw new RuntimeException(failureMsg);
         }
         System.out.println("Test Passed");
@@ -94,15 +93,14 @@ public class JTableHeaderLabelRightAlignTest {
 
         for (int y = 1; y < (imgHeader.getHeight() - 3); y++) {
             if (expectedRGB != imgHeader.getRGB(x, y)) {
-                saveBufferedImage(imgHeader, "failureImage.png");
+                saveImage(imgHeader, "failureImage.png");
                 failureMsg = "Test Failed at <" + x + ", " + y + ">";
-                testStatus = false;
                 return;
             }
         }
     }
 
-    private static void saveBufferedImage(BufferedImage image, String fileName) {
+    private static void saveImage(BufferedImage image, String fileName) {
         try {
             ImageIO.write(image, "png", new File(fileName));
         } catch (IOException e) {
