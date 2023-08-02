@@ -26,6 +26,8 @@
  * @library /test/lib ..
  * @run testng/othervm SecretKeysBasic
  */
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -62,7 +64,11 @@ public class SecretKeysBasic extends PKCS11Test {
 
     @Test
     public void testBasic() throws Exception {
-        main(new SecretKeysBasic());
+        try {
+            main(new SecretKeysBasic());
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     public void main(Provider p) throws Exception {

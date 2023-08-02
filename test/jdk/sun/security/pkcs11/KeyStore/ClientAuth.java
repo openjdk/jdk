@@ -29,6 +29,8 @@
  * @run testng/othervm ClientAuth
  */
 
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -119,7 +121,11 @@ public class ClientAuth extends PKCS11Test {
     private void runTest(String[] args) throws Exception {
         System.out.println("Running with args: " + Arrays.toString(args));
         parseArguments(args);
-        main(new ClientAuth());
+        try {
+            main(new ClientAuth());
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     /*
