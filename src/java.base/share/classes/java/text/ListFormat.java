@@ -87,8 +87,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
  * <p>
- * On parsing, if some ambiguity found in the input string, such as delimiting
- * sequences are used in the input string, may produce the result that is not a
+ * On parsing, if some ambiguity is found in the input string, such as delimiting
+ * sequences being found in the input string, may produce the result that when formatted is not a
  * round-trip with the corresponding formatting. For example, a String list
  * ["a, b,", "c"] will be formatted as "a, b, and c", but may be parsed as
  * ["a", "b", "c"].
