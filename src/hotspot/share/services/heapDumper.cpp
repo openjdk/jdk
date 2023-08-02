@@ -1969,18 +1969,21 @@ void VM_HeapDumper::doit() {
   set_global_writer();
 
   WorkerThreads* workers = ch->safepoint_workers();
-  uint  num_active_workers = workers != nullptr ? workers->active_workers() : 0;
-  uint requested_num_dump_thread = _num_dumper_threads;
+  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
+  uint num_requested_dump_thread = _num_dumper_threads;
+  bool can_parallel = can_parallel_dump();
+  log_info(heapdump)("Reqeusted dump threads %u, active dump threads %u, " "parallelism %s",
+                      num_requested_dump_thread, num_active_workers, can_parallel ? "true" : "false");
 
   if (num_active_workers <= 1 ||         // serial gc?
-      requested_num_dump_thread <= 1 ||  // request serial dump?
-     !can_parallel_dump()) {             // can not dump in parallel?
+      num_requested_dump_thread <= 1 ||  // request serial dump?
+     !can_parallel) {                    // can not dump in parallel?
     // Use serial dump, set dumper threads and writer threads number to 1.
     _num_dumper_threads = 1;
     work(VMDumperWorkerId);
   } else {
     // Use parallel dump otherwise
-    _num_dumper_threads = clamp(requested_num_dump_thread, 2U, num_active_workers);
+    _num_dumper_threads = clamp(num_requested_dump_thread, 2U, num_active_workers);
     uint heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
     _dumper_controller = new (std::nothrow) DumperController(heap_only_dumper_threads);
     ParallelObjectIterator poi(_num_dumper_threads);

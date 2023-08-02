@@ -31,7 +31,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.SA.SATestUtils;
 
 import jdk.test.lib.hprof.HprofParser;
 
@@ -63,9 +62,17 @@ public class IntegrityHeapDumpTest {
 
         try {
             theApp = new IntegrityTest();
-            LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m");
+            LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
+                                "-XX:-UseDynamicNumberOfGCThreads",
+                                "-XX:ParallelGCThreads=2");
             attachDumpAndVerify(heapDumpFile, theApp.getPid());
         } finally {
+            // Expect parallel heap dump
+            if (Runtime.getRuntime().availableProcessors() > 1) {
+                String output = theApp.getProcessStdout();
+                Asserts.assertTrue(output.contains("Dump heap objects in parallel"));
+                Asserts.assertTrue(output.contains("Merge heap files complete"));
+            }
             LingeredApp.stopApp(theApp);
         }
     }

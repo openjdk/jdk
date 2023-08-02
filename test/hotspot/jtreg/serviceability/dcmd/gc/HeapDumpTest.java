@@ -64,10 +64,13 @@ public class HeapDumpTest {
                     " -parallel=" + parallelNum +
                     " " +
                     dump.getAbsolutePath();
-        executor.execute(cmd);
-
-        verifyHeapDump(dump);
-        dump.delete();
+        OutputAnalyzer output = executor.execute(cmd);
+        if (parallelNum <= 0) {
+            output.shouldContain("Number of parallel dump thread must be > 0");
+        } else {
+            verifyHeapDump(dump);
+            dump.delete();
+        }
     }
 
     private void verifyHeapDump(File dump) {
