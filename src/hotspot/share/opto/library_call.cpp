@@ -2811,6 +2811,11 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
+
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+
   if (callee()->is_static())  return false;  // caller must have the capability!
 
   null_check_receiver();  // null-check, then ignore
@@ -2838,9 +2843,9 @@ bool LibraryCallKit::inline_unsafe_allocate() {
 #if INCLUDE_JVMTI
   {
     Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
-    Node* should_post_vm_object_alloc = make_load(this->control(), addr,  TypeInt::INT, T_INT, MemNode::unordered);
-    Node* chk = _gvn.transform( new CmpINode(should_post_vm_object_alloc, intcon(0)));
-    Node* tst = _gvn.transform( new BoolNode(chk, BoolTest::eq));
+    Node* should_post_vm_object_alloc = make_load(this->control(), addr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
+    Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
     {
       BuildCutout unless(this, tst, PROB_MAX);
       uncommon_trap(Deoptimization::Reason_intrinsic,
