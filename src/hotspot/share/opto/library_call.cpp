@@ -2812,9 +2812,11 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
 
+#if INCLUDE_JVMTI
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
+#endif //INCLUDE_JVMTI
 
   if (callee()->is_static())  return false;  // caller must have the capability!
 
@@ -2842,6 +2844,9 @@ bool LibraryCallKit::inline_unsafe_allocate() {
 
 #if INCLUDE_JVMTI
   {
+    // Don't try to access new allocated obj in the intrinsic.
+    // It causes perfomance issues even when jvmti event VmObjectAlloc is disabled.
+    // Deoptimize and allocate in interpreter instead.
     Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
     Node* should_post_vm_object_alloc = make_load(this->control(), addr, TypeInt::INT, T_INT, MemNode::unordered);
     Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
