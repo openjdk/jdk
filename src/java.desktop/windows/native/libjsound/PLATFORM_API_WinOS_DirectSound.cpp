@@ -254,12 +254,11 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
 
     /* set the deviceID field to the cache index */
     desc->deviceID = findCacheItemByMixerIndex(mixerIndex);
-    if (desc->deviceID < 0) {
+    if (desc->deviceID < 0 || FAILED(::CoInitialize(NULL))) {
         DS_unlockCache();
         return FALSE;
     }
-    if(FAILED(::CoInitialize(NULL)))
-        return false;
+
     desc->maxSimulLines = 0;
     if (g_audioDeviceCache[desc->deviceID].isSource) {
         DirectSoundEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
