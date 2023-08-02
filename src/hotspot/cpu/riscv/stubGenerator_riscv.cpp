@@ -3981,8 +3981,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(rtmp1, b, c);
 
     // rtmp2 = (~b) & d
-    __ notr(rtmp2, b);
-    __ andr(rtmp2, rtmp2, d);
+    __ andnr(rtmp2, d, b);
 
     // rtmp1 = (b & c) | ((~b) & d)
     __ orr(rtmp1, rtmp1, rtmp2);
@@ -4000,9 +3999,8 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = b & d
     __ andr(rtmp1, b, d);
 
-    // rtmp2 = (c & (~d))
-    __ notr(rtmp2, d);
-    __ andr(rtmp2, rtmp2, c);
+    // rtmp2 = c & (~d)
+    __ andnr(rtmp2, c, d);
 
     // rtmp1 = (b & d) | (c & (~d))
     __ orr(rtmp1, rtmp1, rtmp2);
@@ -4032,9 +4030,8 @@ class StubGenerator: public StubCodeGenerator {
               int k, int s, int t,
               Register rtmp1, Register rtmp2, Register rmask32) {
     // rtmp1 = c ^ (b | (~d))
-    __ notr(rtmp2, d);
-    __ orr(rtmp1, b, rtmp2);
-    __ xorr(rtmp1, c, rtmp1);
+    __ ornr(rtmp2, b, d);
+    __ xorr(rtmp1, c, rtmp2);
 
     m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
                             rtmp1, rtmp2, rmask32);
