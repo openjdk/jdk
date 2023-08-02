@@ -239,6 +239,7 @@ public abstract class PKCS11Test {
     }
 
     public static void testDeimos(PKCS11Test test) throws Exception {
+        System.out.println("===> testDeimos: Starting test run");
         if ("true".equals(System.getProperty("NO_DEIMOS"))) {
             System.out.println("Skip Deimos software as test configured with NO_DEIMOS");
             return;
@@ -253,10 +254,12 @@ public abstract class PKCS11Test {
         String p11config = base + SEP + "nss" + SEP + "p11-deimos.txt";
         Provider p = getSunPKCS11(p11config);
         test.premain(p);
+        System.out.println("testDeimos: Completed");
     }
 
     // Run test for default configured PKCS11 providers (if any)
     public static void testDefault(PKCS11Test test) throws Exception {
+        System.out.println("===> testDefault: Starting test run");
         boolean foundPKCS11 = false;
 
         if ("true".equals(System.getProperty("NO_DEFAULT"))) {
@@ -276,6 +279,8 @@ public abstract class PKCS11Test {
             throw new SkippedException("testDefault: Skip default test as SunPKCS11 " +
                     "provider is not configured");
         }
+
+        System.out.println("testDefault: Completed");
     }
 
     public static String getBase() throws Exception {
@@ -542,6 +547,7 @@ public abstract class PKCS11Test {
 
     // Run NSS testing on a Provider p configured with test nss config
     public static void testNSS(PKCS11Test test) throws Exception {
+        System.out.println("===> testNSS: Starting test run");
         String nssConfig = getNssConfig();
         if (nssConfig == null) {
             throw new SkippedException("testNSS: Problem loading NSS libraries");
@@ -549,6 +555,7 @@ public abstract class PKCS11Test {
 
         Provider p = getSunPKCS11(nssConfig);
         test.premain(p);
+        System.out.println("testNSS: Completed");
     }
 
     public static String getNssConfig() throws Exception {
