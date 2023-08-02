@@ -274,7 +274,7 @@ class Bytecode_checkcast: public Bytecode {
   void verify() const { assert(Bytecodes::java_code(code()) == Bytecodes::_checkcast, "check checkcast"); }
 
   // Returns index
-  long index() const   { return get_index_u2(Bytecodes::_checkcast); };
+  int index() const   { return get_index_u2(Bytecodes::_checkcast); };
 };
 
 // Abstraction for instanceof
