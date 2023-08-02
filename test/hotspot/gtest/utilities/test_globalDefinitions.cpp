@@ -264,7 +264,9 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(UINT64_FORMAT_W(-5),    (uint64_t)123,     "123  ");
 
   check_format(SSIZE_FORMAT,           (ssize_t)123,      "123");
+  check_format("%zd",                  (ssize_t)123,      "123");
   check_format(SSIZE_FORMAT,           (ssize_t)-123,     "-123");
+  check_format("%zd",                  (ssize_t)-123,     "-123");
   check_format(SSIZE_FORMAT,           (ssize_t)2147483647, "2147483647");
   check_format(SSIZE_FORMAT,           (ssize_t)-2147483647, "-2147483647");
   check_format(SSIZE_PLUS_FORMAT,      (ssize_t)123,      "+123");
@@ -274,17 +276,20 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(SSIZE_FORMAT_W(5),      (ssize_t)123,      "  123");
   check_format(SSIZE_FORMAT_W(-5),     (ssize_t)123,      "123  ");
   check_format(SIZE_FORMAT,            (size_t)123u,      "123");
+  check_format("%zu",                  (size_t)123u,      "123");
   check_format(SIZE_FORMAT_X,          (size_t)0x123u,    "0x123");
   check_format(SIZE_FORMAT_X_0,        (size_t)0x123u,    "0x" LP64_ONLY("00000000") "00000123");
   check_format(SIZE_FORMAT_W(5),       (size_t)123u,      "  123");
   check_format(SIZE_FORMAT_W(-5),      (size_t)123u,      "123  ");
 
   check_format(INTX_FORMAT,            (intx)123,         "123");
+  check_format("%zd",                  (intx)123,         "123");
   check_format(INTX_FORMAT_X,          (intx)0x123,       "0x123");
   check_format(INTX_FORMAT_W(5),       (intx)123,         "  123");
   check_format(INTX_FORMAT_W(-5),      (intx)123,         "123  ");
 
   check_format(UINTX_FORMAT,           (uintx)123u,       "123");
+  check_format("%zu",                  (uintx)123,        "123");
   check_format(UINTX_FORMAT_X,         (uintx)0x123u,     "0x123");
   check_format(UINTX_FORMAT_W(5),      (uintx)123u,       "  123");
   check_format(UINTX_FORMAT_W(-5),     (uintx)123u,       "123  ");
