@@ -39,18 +39,34 @@ import jdk.test.lib.hprof.HprofParser;
  * @bug 8306441
  * @summary Verify the generated heap dump is valid and complete after parallel heap dump
  * @library /test/lib
- * @run driver IntegrityHeapDumpTest
+ * @run driver HeapDumpParallelTest
  */
 
-class IntegrityTest extends LingeredApp {
+class HeapDumpParallel extends LingeredApp {
     public static void main(String[] args) {
         System.out.println("Hello world");
         LingeredApp.main(args);
     }
 }
 
-public class IntegrityHeapDumpTest {
-    static IntegrityTest theApp;
+public class HeapDumpParallelTest {
+    static HeapDumpParallel theApp;
+
+    private static void checkAndVerify(OutputAnalyzer out, LingeredApp app, File heapDumpFile, boolean expectSerial) {
+        out.shouldHaveExitValue(0);
+        Asserts.assertTrue(out.getStdout().contains("Heap dump file created"));
+        if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
+            Asserts.assertTrue(app.getProcessStdout().contains("Dump heap objects in parallel"));
+            Asserts.assertTrue(app.getProcessStdout().contains("Merge heap files complete"));
+        } else {
+            Asserts.assertFalse(app.getProcessStdout().contains("Dump heap objects in parallel"));
+            Asserts.assertFalse(app.getProcessStdout().contains("Merge heap files complete"));
+        }
+        verifyHeapDump(heapDumpFile);
+        if (heapDumpFile.exists()) {
+            heapDumpFile.delete();
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         String heapDumpFileName = "parallelHeapDump.bin";
@@ -61,47 +77,47 @@ public class IntegrityHeapDumpTest {
         }
 
         try {
-            theApp = new IntegrityTest();
+            theApp = new HeapDumpParallel();
             LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
                                 "-XX:-UseDynamicNumberOfGCThreads",
                                 "-XX:ParallelGCThreads=2");
-            attachDumpAndVerify(heapDumpFile, theApp.getPid());
+            // Expect error message
+            OutputAnalyzer out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + -1);
+            Asserts.assertTrue(out.getStdout().contains("Invalid number of parallel dump threads."));
+
+            // Expect serial dump because 0 implies to disable parallel dump
+            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + 0);
+            checkAndVerify(out, theApp, heapDumpFile, true);
+
+            // Expect serial dump
+            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + 1);
+            checkAndVerify(out, theApp, heapDumpFile, true);
+
+            // Expect parallel dump
+            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + Integer.MAX_VALUE);
+            checkAndVerify(out, theApp, heapDumpFile, false);
+
+            // Expect parallel dump
+            out = attachWith(heapDumpFile, theApp.getPid(), "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors());
+            checkAndVerify(out, theApp, heapDumpFile, false);
         } finally {
-            // Expect parallel heap dump
-            if (Runtime.getRuntime().availableProcessors() > 1) {
-                String output = theApp.getProcessStdout();
-                Asserts.assertTrue(output.contains("Dump heap objects in parallel"));
-                Asserts.assertTrue(output.contains("Merge heap files complete"));
-            }
             LingeredApp.stopApp(theApp);
         }
     }
 
-    private static void attachDumpAndVerify(File heapDumpFile,
-                                            long lingeredAppPid) throws Exception {
-
+    private static OutputAnalyzer attachWith(File heapDumpFile, long lingeredAppPid, String arg) throws Exception {
         //jcmd <pid> GC.heap_dump -parallel=cpucount <file_path>
         JDKToolLauncher launcher = JDKToolLauncher
                 .createUsingTestJDK("jcmd")
                 .addToolArg(Long.toString(lingeredAppPid))
                 .addToolArg("GC.heap_dump")
-                .addToolArg("-parallel=" + Runtime.getRuntime().availableProcessors())
+                .addToolArg(arg)
                 .addToolArg(heapDumpFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-        String stdoutStr = output.getStdout();
-        String stderrStr = output.getStderr();
-        System.out.println("stdout:");
-        System.out.println(stdoutStr);
-        System.out.println("stderr:");
-        System.out.println(stderrStr);
-        output.shouldHaveExitValue(0);
-        Asserts.assertTrue(stdoutStr.contains("Heap dump file created"));
-        Asserts.assertTrue(stderrStr.equals(""));
-
-        verifyHeapDump(heapDumpFile);
+        return output;        
     }
 
     private static void verifyHeapDump(File dump) {
