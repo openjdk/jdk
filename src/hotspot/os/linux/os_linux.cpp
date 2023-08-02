@@ -1814,7 +1814,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription(error_report);
+    event.set_errorMessage(error_report);
     event.commit();
 #endif
   } else {
@@ -1822,7 +1822,7 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     log_info(os)("shared library load of %s was successful", filename);
 #if INCLUDE_JFR
     event.set_success(true);
-    event.set_errorDescription("");
+    event.set_errorMessage(nullptr);
     event.commit();
 #endif
   }

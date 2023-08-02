@@ -1132,7 +1132,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
 #if INCLUDE_JFR
     event.set_success(true);
-    event.set_errorDescription("");
+    event.set_errorMessage(nullptr);
     event.commit();
 #endif
 
@@ -1152,7 +1152,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription(error_report);
+    event.set_errorMessage(error_report);
     event.commit();
 #endif
   }

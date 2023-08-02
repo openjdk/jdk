@@ -1540,7 +1540,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     log_info(os)("shared library load of %s was successful", name);
 #if INCLUDE_JFR
     event.set_success(true);
-    event.set_errorDescription("");
+    event.set_errorMessage(nullptr);
     event.commit();
 #endif
     return result;
@@ -1558,7 +1558,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     ebuf[ebuflen - 1] = '\0';
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription(ebuf);
+    event.set_errorMessage(ebuf);
     event.commit();
 #endif
     return nullptr;
@@ -1573,7 +1573,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (fd < 0) {
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription("open on dll file did not work");
+    event.set_errorMessage("open on dll file did not work");
     event.commit();
 #endif
     return nullptr;
@@ -1604,7 +1604,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
     // file i/o error - report os::lasterror(...) msg
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription("failed to get lib architecture");
+    event.set_errorMessage("failed to get lib architecture");
     event.commit();
 #endif
     return nullptr;
@@ -1653,7 +1653,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (lib_arch == running_arch) {
 #if INCLUDE_JFR
     event.set_success(false);
-    event.set_errorDescription("lib architecture matches, but other error occured");
+    event.set_errorMessage("lib architecture matches, but other error occured");
     event.commit();
 #endif
     return nullptr;
@@ -1671,7 +1671,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 #if INCLUDE_JFR
   event.set_success(false);
-  event.set_errorDescription(ebuf);
+  event.set_errorMessage(ebuf);
   event.commit();
 #endif
 
