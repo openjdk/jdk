@@ -50,7 +50,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * type are provided: {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
  * {@link Style#NARROW NARROW}. The following snippet is an example of formatting
  * the list of Strings {@code ["Foo", "Bar", "Baz"]} in US English with
- * {@code STANDARD}, {@code FULL} (typical case):
+ * {@code STANDARD} type and {@code FULL} style:
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
  *     .format(List.of("Foo", "Bar", "Baz"))
@@ -86,6 +86,12 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * method specifies the delimiting patterns for the start/middle/end portion of
  * the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
+ * <p>
+ * On parsing, if some ambiguity found in the input string, such as delimiting
+ * sequences are used in the input string, may produce the result that is not a
+ * round-trip with the corresponding formatting. For example, a String list
+ * ["a, b,", "c"] will be formatted as "a, b, and c", but may be parsed as
+ * ["a", "b", "c"].
  *
  * @implSpec This class is immutable and thread-safe
  *
@@ -177,8 +183,9 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the default {@code Locale}, {@code STANDARD},
-     * and {@code FULL}}
+     * {@return the list format object for the default
+     * {@link Locale.Category#FORMAT FORMAT Locale}, {@code STANDARD} type,
+     * and {@code FULL} style}
      */
     public static ListFormat getInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), Type.STANDARD, Style.FULL);
@@ -227,8 +234,9 @@ public class ListFormat extends Format {
      * fails on parsing, it falls back to
      * {@code "(start_before){0}end_between{1}(end_after)"},
      * {@code "(start_before){0}start_between{1}end_between{2}(end_after)"} respectively.
-     * Then the input string list with {@code n} elements substitutes these
-     * placeholders:
+     * <p>
+     * On formatting, the input string list with {@code n} elements substitutes above
+     * placeholders based on the number of elements:
      * <blockquote><pre>
      * n = 1: {0}
      * n = 2: parsed pattern for "two"
