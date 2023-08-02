@@ -132,7 +132,7 @@ class BytecodeConstantPool : ResourceObj {
   GrowableArray<BytecodeCPEntry> _entries;
   IndexHash _indices;
 
-  u2 find_or_add(BytecodeCPEntry const& bcpe);
+  u2 find_or_add(BytecodeCPEntry const& bcpe, TRAPS);
 
  public:
 
@@ -144,25 +144,30 @@ class BytecodeConstantPool : ResourceObj {
     return _orig->pool_holder();
   }
 
-  u2 utf8(Symbol* sym) {
-    return find_or_add(BytecodeCPEntry::utf8(sym));
+  u2 utf8(Symbol* sym, TRAPS) {
+    return find_or_add(BytecodeCPEntry::utf8(sym), THREAD);
   }
 
-  u2 klass(Symbol* class_name) {
-    return find_or_add(BytecodeCPEntry::klass(utf8(class_name)));
+  u2 klass(Symbol* class_name, TRAPS) {
+    u2 utf8_entry = utf8(class_name, CHECK_0);
+    return find_or_add(BytecodeCPEntry::klass(utf8_entry), THREAD);
   }
 
-  u2 string(Symbol* str) {
-    return find_or_add(BytecodeCPEntry::string(utf8(str)));
+  u2 string(Symbol* str, TRAPS) {
+    u2 utf8_entry = utf8(str, CHECK_0);
+    return find_or_add(BytecodeCPEntry::string(utf8_entry), THREAD);
   }
 
-  u2 name_and_type(Symbol* name, Symbol* sig) {
-    return find_or_add(BytecodeCPEntry::name_and_type(utf8(name), utf8(sig)));
+  u2 name_and_type(Symbol* name, Symbol* sig, TRAPS) {
+    u2 utf8_name = utf8(name, CHECK_0);
+    u2 utf8_sig  = utf8(sig, CHECK_0);
+    return find_or_add(BytecodeCPEntry::name_and_type(utf8_name, utf8_sig), THREAD);
   }
 
-  u2 methodref(Symbol* class_name, Symbol* name, Symbol* sig) {
-    return find_or_add(BytecodeCPEntry::methodref(
-        klass(class_name), name_and_type(name, sig)));
+  u2 methodref(Symbol* class_name, Symbol* name, Symbol* sig, TRAPS) {
+    u2 klass_entry = klass(class_name, CHECK_0);
+    u2 type_entry = name_and_type(name, sig, CHECK_0);
+    return find_or_add(BytecodeCPEntry::methodref(klass_entry, type_entry), THREAD);
   }
 
   ConstantPool* create_constant_pool(TRAPS) const;
@@ -181,11 +186,11 @@ class BytecodeAssembler : StackObj {
 
   void athrow();
   void dup();
-  void invokespecial(Symbol* cls, Symbol* name, Symbol* sig);
+  void invokespecial(Symbol* cls, Symbol* name, Symbol* sig, TRAPS);
   void ldc(u1 index);
   void ldc_w(u2 index);
-  void _new(Symbol* sym);
-  void load_string(Symbol* sym);
+  void _new(Symbol* sym, TRAPS);
+  void load_string(Symbol* sym, TRAPS);
 
  public:
   BytecodeAssembler(BytecodeBuffer* buffer, BytecodeConstantPool* cp)
@@ -194,7 +199,7 @@ class BytecodeAssembler : StackObj {
   static int assemble_method_error(BytecodeConstantPool* cp,
                                    BytecodeBuffer* buffer,
                                    Symbol* errorName,
-                                   Symbol* message);
+                                   Symbol* message, TRAPS);
 };
 
 #endif // SHARE_CLASSFILE_BYTECODEASSEMBLER_HPP

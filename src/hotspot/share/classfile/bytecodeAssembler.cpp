@@ -32,9 +32,14 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/bytes.hpp"
 
-u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe) {
+u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 
-  // We check for constant pool overflow later.
+  // Check for overflow
+  int new_size = _orig->length() + _entries.length();
+  if (new_size > USHRT_MAX) {
+    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
+  }
+
   u2 index = static_cast<u2>(_entries.length());
   bool created = false;
   u2* probe = _indices.put_if_absent(bcpe, index, &created);
@@ -52,10 +57,6 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   }
 
   int new_size = _orig->length() + _entries.length();
-  if (new_size > USHRT_MAX) {
-    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
-  }
-
   ConstantPool* cp = ConstantPool::allocate(
       _orig->pool_holder()->class_loader_data(),
       new_size, CHECK_NULL);
@@ -125,14 +126,14 @@ void BytecodeAssembler::dup() {
   _code->append(Bytecodes::_dup);
 }
 
-void BytecodeAssembler::_new(Symbol* sym) {
-  u2 cpool_index = _cp->klass(sym);
+void BytecodeAssembler::_new(Symbol* sym, TRAPS) {
+  u2 cpool_index = _cp->klass(sym, CHECK);
   _code->append(Bytecodes::_new);
   append(cpool_index);
 }
 
-void BytecodeAssembler::load_string(Symbol* sym) {
-  u2 cpool_index = _cp->string(sym);
+void BytecodeAssembler::load_string(Symbol* sym, TRAPS) {
+  u2 cpool_index = _cp->string(sym, CHECK);
   if (cpool_index < 0x100) {
     ldc((u1)cpool_index);
   } else {
@@ -154,8 +155,8 @@ void BytecodeAssembler::athrow() {
   _code->append(Bytecodes::_athrow);
 }
 
-void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig) {
-  u2 methodref_index = _cp->methodref(klss, name, sig);
+void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig, TRAPS) {
+  u2 methodref_index = _cp->methodref(klss, name, sig, CHECK);
   _code->append(Bytecodes::_invokespecial);
   append(methodref_index);
 }
@@ -163,17 +164,17 @@ void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig) {
 int BytecodeAssembler::assemble_method_error(BytecodeConstantPool* cp,
                                              BytecodeBuffer* buffer,
                                              Symbol* errorName,
-                                             Symbol* message) {
+                                             Symbol* message, TRAPS) {
 
   Symbol* init = vmSymbols::object_initializer_name();
   Symbol* sig = vmSymbols::string_void_signature();
 
   BytecodeAssembler assem(buffer, cp);
 
-  assem._new(errorName);
+  assem._new(errorName, CHECK_0);
   assem.dup();
-  assem.load_string(message);
-  assem.invokespecial(errorName, init, sig);
+  assem.load_string(message, CHECK_0);
+  assem.invokespecial(errorName, init, sig, CHECK_0);
   assem.athrow();
 
   return 3; // max stack size: [ exception, exception, string ]

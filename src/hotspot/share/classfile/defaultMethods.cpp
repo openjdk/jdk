@@ -884,8 +884,10 @@ static Method* new_method(
                                mt, name, CHECK_NULL);
 
   m->set_constants(nullptr); // This will get filled in later
-  m->set_name_index(cp->utf8(name));
-  m->set_signature_index(cp->utf8(sig));
+  u2 name_index = cp->utf8(name, CHECK_NULL);
+  m->set_name_index(name_index);
+  u2 sig_index = cp->utf8(sig, CHECK_NULL);
+  m->set_signature_index(sig_index);
   m->constMethod()->compute_from_signature(sig, flags.is_static());
   assert(m->size_of_parameters() == params, "should be computed above");
   m->set_max_stack(max_stack);
@@ -973,7 +975,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
           buffer->clear();
         }
         int max_stack = BytecodeAssembler::assemble_method_error(&bpool, buffer,
-           method->get_exception_name(), method->get_exception_message());
+           method->get_exception_name(), method->get_exception_message(), CHECK);
         AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
         Method* m = new_method(&bpool, buffer, slot->name(), slot->signature(),
