@@ -61,6 +61,8 @@ class Shutdown {
     /* Lock object for the native halt method */
     private static Object haltLock = new Lock();
 
+    private static boolean loggedExitOrHalt = false;
+
     /**
      * Add a new system shutdown hook.  Checks the shutdown state and
      * the hook itself, but does not do any security checks.
@@ -145,6 +147,8 @@ class Shutdown {
      * It invokes the true native halt method.
      */
     static void halt(int status) {
+        logRuntimeExitOrHalt(status, false);         // Log without holding the lock;
+
         synchronized (haltLock) {
             halt0(status);
         }
@@ -157,7 +161,7 @@ class Shutdown {
      * which should pass a nonzero status code.
      */
     static void exit(int status) {
-        logRuntimeExit(status);         // Log without holding the lock;
+        logRuntimeExitOrHalt(status, true);         // Log without holding the lock;
 
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
@@ -169,21 +173,24 @@ class Shutdown {
         }
     }
 
-    /* Locate the logger and log the Runtime.exit(status).
+    /* Locate the logger and log the Runtime.exit(status) or Runtime.halt(status).
      * Catch and ignore any and all exceptions.
      */
-    private static void logRuntimeExit(int status) {
+    private static void logRuntimeExitOrHalt(int status, boolean isExit) {
+        if (loggedExitOrHalt) return;
+        String method = isExit ? "exit" : "halt";
         try {
             System.Logger log = System.getLogger("java.lang.Runtime");
             if (log.isLoggable(System.Logger.Level.DEBUG)) {
-                Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
-                log.log(System.Logger.Level.DEBUG, "Runtime.exit() called with status: " + status,
+                Throwable throwable = new Throwable("Runtime." + method + "(" + status + ")");
+                log.log(System.Logger.Level.DEBUG, "Runtime." + method + "() called with status: " + status,
                         throwable);
+                loggedExitOrHalt = true;
             }
         } catch (Throwable throwable) {
             try {
                 // Exceptions from the Logger are printed but do not prevent exit
-                System.err.println("Runtime.exit(" + status + ") logging failed: " +
+                System.err.println("Runtime." + method + "(" + status + ") logging failed: " +
                         throwable.getMessage());
             } catch (Throwable throwable2) {
                 // Ignore
