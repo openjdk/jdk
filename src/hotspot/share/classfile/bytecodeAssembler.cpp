@@ -52,7 +52,7 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   }
 
   int new_size = _orig->length() + _entries.length();
-  if (new_size > std::numeric_limits<u2>::max()) {
+  if (new_size > USHRT_MAX) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
   }
 
