@@ -282,10 +282,7 @@ inline void HeapRegion::reset_parsable_bottom() {
 
 inline void HeapRegion::note_start_of_marking() {
   assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
-  // Collection set candidate regions are never going to be marked through so there
-  // is no need to set their TAMS. For regions in the collection set, assume that
-  // it is likely they are not failing evacuation either.
-  if (is_old_or_humongous() && !is_collection_set_candidate() && !in_collection_set()) {
+  if (is_old_or_humongous() && !is_collection_set_candidate()) {
     set_top_at_mark_start(top());
   }
 }

@@ -37,8 +37,7 @@ bool G1EvacFailureRegions::record(uint region_idx) {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     HeapRegion* hr = g1h->region_at(region_idx);
-    G1CollectorState* state = g1h->collector_state();
-    hr->note_evacuation_failure(state->in_concurrent_start_gc());
+    hr->note_evacuation_failure();
   }
   return success;
 }

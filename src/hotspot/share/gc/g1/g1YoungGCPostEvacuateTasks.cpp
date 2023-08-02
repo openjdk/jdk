@@ -345,24 +345,24 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public 
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
+      uint region = r->hrm_index();
+      assert(r->top_at_mark_start() == r->bottom(), "TAMS must not have been set for region %u", region);
+      assert(cm->live_bytes(region) == 0, "Marking live bytes must not be set for region %u", region);
+
       // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we must clear their mark data (tams, statistics)
-      // previously set eagerly. The marking information on the bitmap is also only
-      // required in a Concurrent Start pause for non-retained regions.
+      // regions wrt to marking), so we must clear their mark data (tams, bitmap)
+      // set eagerly or during evacuation failure.
       bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
-        // Although we only update tams and statistics for evacuation failed regions during
-        // the concurrent start pause, for simplicity always clear.
-        r->reset_top_at_mark_start();
-        cm->clear_statistics(r);
       } else {
+        // Evacuation failed region is going to be marked through. Update mark data.
+        r->set_top_at_mark_start(r->top());
+        cm->set_live_bytes(r->hrm_index(), r->live_bytes());
         assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
                "Marks must be on bitmap for region %u", r->hrm_index());
-        assert(r->live_bytes() != 0, "Live bytes must be set for region %u", r->hrm_index());
-        assert(r->bottom() != r->top_at_mark_start(), "TAMS must be set for region %u", r->hrm_index());
       }
       return false;
     }

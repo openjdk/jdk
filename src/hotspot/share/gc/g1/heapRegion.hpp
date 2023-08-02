@@ -483,7 +483,7 @@ public:
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
-  void note_evacuation_failure(bool during_concurrent_start);
+  void note_evacuation_failure();
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.

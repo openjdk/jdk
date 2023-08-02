@@ -406,14 +406,19 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _cur_pre_evacuate_prepare_time_ms +
+  const double sum_ms = pre_concurrent_start_ms +
+                        _cur_pre_evacuate_prepare_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
                         _cur_region_register_time +
-                        _recorded_prepare_heap_roots_time_ms +
-                        pre_concurrent_start_ms;
+                        _recorded_prepare_heap_roots_time_ms;
 
   info_time("Pre Evacuate Collection Set", sum_ms);
+
+  if (pre_concurrent_start_ms > 0.0) {
+    debug_phase(_gc_par_phases[ResetMarkingState]);
+    debug_phase(_gc_par_phases[NoteStartOfMark]);
+  }
 
   debug_time("Pre Evacuate Prepare", _cur_pre_evacuate_prepare_time_ms);
   debug_phase(_gc_par_phases[RetireTLABsAndFlushLogs], 1);
@@ -422,11 +427,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   debug_time("Region Register", _cur_region_register_time);
 
   debug_time("Prepare Heap Roots", _recorded_prepare_heap_roots_time_ms);
-
-  if (pre_concurrent_start_ms > 0.0) {
-    debug_phase(_gc_par_phases[ResetMarkingState]);
-    debug_phase(_gc_par_phases[NoteStartOfMark]);
-  }
 
   return sum_ms;
 }

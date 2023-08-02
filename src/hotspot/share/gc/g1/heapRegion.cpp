@@ -263,25 +263,12 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
- void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure() {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
-
-  if (during_concurrent_start) {
-    // By default, assume that evacuation failed regions will be part of the
-    // marking, so update the TAMS to prepare for marking through them. We might
-    // undo this decision later if we find that we want to evacuate that region
-    // instead.
-    set_top_at_mark_start(top());
-  } else {
-    // Outside of the concurrent start pause all regions that had an evacuation
-    // failure must be regions that are not (about to be) marked through, their
-    // TAMS must always be bottom.
-    assert(top_at_mark_start() == bottom(), "must be");
-  }
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {

@@ -471,6 +471,8 @@ public:
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
+  // Set live bytes for concurrent marking.
+  void set_live_bytes(uint region, size_t live_words) { _region_mark_stats[region]._live_words = live_words; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
