@@ -1561,7 +1561,7 @@ void ObjectSynchronizer::chk_for_block_req(JavaThread* current, const char* op_n
   if (ls != nullptr) {
     timer_p->stop();
     ls->print_cr("pausing %s: %s=%zu, in_use_list stats: ceiling="
-                 SIZE_FORMAT ", count=%zu, max=%zu",
+                 "%zu, count=%zu, max=%zu",
                  op_name, cnt_name, cnt, in_use_list_ceiling(),
                  _in_use_list.count(), _in_use_list.max());
   }
@@ -1702,7 +1702,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
         timer.stop();
         ls->print_cr("before handshaking: unlinked_count=%zu"
                      ", in_use_list stats: ceiling=%zu, count="
-                     SIZE_FORMAT ", max=%zu",
+                     "%zu, max=%zu",
                      unlinked_count, in_use_list_ceiling(),
                      _in_use_list.count(), _in_use_list.max());
       }
@@ -1719,7 +1719,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
 
       if (ls != nullptr) {
         ls->print_cr("after handshaking: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=%zu, max=%zu",
+                     "%zu, count=%zu, max=%zu",
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
@@ -1736,7 +1736,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
         timer.stop();
         ls->print_cr("before setting blocked: unlinked_count=%zu"
                      ", in_use_list stats: ceiling=%zu, count="
-                     SIZE_FORMAT ", max=%zu",
+                     "%zu, max=%zu",
                      unlinked_count, in_use_list_ceiling(),
                      _in_use_list.count(), _in_use_list.max());
       }
@@ -1745,7 +1745,7 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
       ThreadBlockInVM tbivm(JavaThread::cast(current));
       if (ls != NULL) {
         ls->print_cr("after setting blocked: in_use_list stats: ceiling="
-                     SIZE_FORMAT ", count=%zu, max=%zu",
+                     "%zu, count=%zu, max=%zu",
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }

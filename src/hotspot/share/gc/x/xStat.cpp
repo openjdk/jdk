@@ -43,7 +43,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-#define XSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
+#define XSIZE_FMT                       "%zuM(%.0f%%)"
 #define XSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define XSIZE_ARGS(size)                XSIZE_ARGS_WITH_MAX(size, XStatHeap::max_capacity())
 
@@ -1198,11 +1198,11 @@ void XStatMark::set_at_mark_free(size_t mark_stack_usage) {
 
 void XStatMark::print() {
   log_info(gc, marking)("Mark: "
-                        SIZE_FORMAT " stripe(s), "
-                        SIZE_FORMAT " proactive flush(es), "
-                        SIZE_FORMAT " terminate flush(es), "
-                        SIZE_FORMAT " completion(s), "
-                        SIZE_FORMAT " continuation(s) ",
+                        "%zu stripe(s), "
+                        "%zu proactive flush(es), "
+                        "%zu terminate flush(es), "
+                        "%zu completion(s), "
+                        "%zu continuation(s) ",
                         _nstripes,
                         _nproactiveflush,
                         _nterminateflush,
@@ -1271,8 +1271,8 @@ void XStatNMethods::print() {
 void XStatMetaspace::print() {
   MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
-                          SIZE_FORMAT "M used, "
-                          SIZE_FORMAT "M committed, %zuM reserved",
+                          "%zuM used, "
+                          "%zuM committed, %zuM reserved",
                           stats.used() / M,
                           stats.committed() / M,
                           stats.reserved() / M);
@@ -1310,9 +1310,9 @@ void XStatReferences::set_phantom(size_t encountered, size_t discovered, size_t 
 
 void XStatReferences::print(const char* name, const XStatReferences::XCount& ref) {
   log_info(gc, ref)("%s: "
-                    SIZE_FORMAT " encountered, "
-                    SIZE_FORMAT " discovered, "
-                    SIZE_FORMAT " enqueued",
+                    "%zu encountered, "
+                    "%zu discovered, "
+                    "%zu enqueued",
                     name,
                     ref.encountered,
                     ref.discovered,

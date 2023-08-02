@@ -684,7 +684,7 @@ double ShenandoahFreeSet::external_fragmentation() {
 void ShenandoahFreeSet::assert_bounds() const {
   // Performance invariants. Failing these would not break the free set, but performance
   // would suffer.
-  assert (_mutator_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < %zu", _mutator_leftmost,  _max);
+  assert (_mutator_leftmost <= _max, "leftmost in bounds: "  "%zu < %zu", _mutator_leftmost,  _max);
   assert (_mutator_rightmost < _max, "rightmost in bounds: %zu < %zu", _mutator_rightmost, _max);
 
   assert (_mutator_leftmost == _max || is_mutator_free(_mutator_leftmost),  "leftmost region should be free: %zu",  _mutator_leftmost);
@@ -695,7 +695,7 @@ void ShenandoahFreeSet::assert_bounds() const {
   assert (beg_off >= _mutator_leftmost, "free regions before the leftmost: %zu, bound %zu", beg_off, _mutator_leftmost);
   assert (end_off == _max,      "free regions past the rightmost: %zu, bound %zu",  end_off, _mutator_rightmost);
 
-  assert (_collector_leftmost <= _max, "leftmost in bounds: "  SIZE_FORMAT " < %zu", _collector_leftmost,  _max);
+  assert (_collector_leftmost <= _max, "leftmost in bounds: "  "%zu < %zu", _collector_leftmost,  _max);
   assert (_collector_rightmost < _max, "rightmost in bounds: %zu < %zu", _collector_rightmost, _max);
 
   assert (_collector_leftmost == _max || is_collector_free(_collector_leftmost),  "leftmost region should be free: %zu",  _collector_leftmost);

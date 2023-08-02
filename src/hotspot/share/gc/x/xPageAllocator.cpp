@@ -313,7 +313,7 @@ void XPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   if (set_max_capacity) {
     // Adjust current max capacity to avoid further attempts to increase capacity
     log_error_p(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0f%%) to %zuM(%.0f%%)",
+                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
                     _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
                     _capacity / M, percent_of(_capacity, _max_capacity));
 

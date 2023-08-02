@@ -574,7 +574,7 @@ void ReferenceProcessor::log_reflist_counts(DiscoveredList ref_lists[], uint num
   log_reflist("", ref_lists, num_active_queues);
 #ifdef ASSERT
   for (uint i = num_active_queues; i < _max_num_queues; i++) {
-    assert(ref_lists[i].length() == 0, SIZE_FORMAT " unexpected References in %u",
+    assert(ref_lists[i].length() == 0, "%zu unexpected References in %u",
            ref_lists[i].length(), i);
   }
 #endif

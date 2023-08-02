@@ -1564,9 +1564,9 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
   log_develop_trace(gc, compaction)(
       "Summarizing %d [%s] into %d [%s]:  "
       "src=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-%zu "
+      "%zu-%zu "
       "dst=" PTR_FORMAT "-" PTR_FORMAT " "
-      SIZE_FORMAT "-%zu",
+      "%zu-%zu",
       src_space_id, space_names[src_space_id],
       dst_space_id, space_names[dst_space_id],
       p2i(src_beg), p2i(src_end),
@@ -2150,7 +2150,7 @@ private:
 public:
   FillableRegionLogger() : _next_index(0), _enabled(log_develop_is_enabled(Trace, gc, compaction)), _total_regions(0) { }
   ~FillableRegionLogger() {
-    log.trace(SIZE_FORMAT " initially fillable regions", _total_regions);
+    log.trace("%zu initially fillable regions", _total_regions);
   }
 
   void print_line() {

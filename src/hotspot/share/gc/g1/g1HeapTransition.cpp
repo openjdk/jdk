@@ -109,7 +109,7 @@ static void log_regions(const char* msg, size_t before_length, size_t after_leng
   if (lt.is_enabled()) {
     LogStream ls(lt);
 
-    ls.print("%s regions: %zu->%zu("  SIZE_FORMAT ")",
+    ls.print("%s regions: %zu->%zu("  "%zu)",
              msg, before_length, after_length, capacity);
     // Not null only if gc+heap+numa at Debug level is enabled.
     if (before_per_node_length != nullptr && after_per_node_length != nullptr) {

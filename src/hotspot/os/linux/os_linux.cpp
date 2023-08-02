@@ -1384,7 +1384,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                       uintptr_t(&rlim) < stack_top;
 
     log_info(os, thread)("Capturing initial stack in %s thread: req. size: %zuK, actual size: "
-                         SIZE_FORMAT "K, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
+                         "%zuK, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
                          primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
                          stack_top, intptr_t(_initial_thread_stack_bottom));
   }
@@ -4032,7 +4032,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   }
 
   log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=%zu%s, page size="
-                      SIZE_FORMAT "%s",
+                      "%zu%s",
                       p2i(addr), byte_size_in_exact_unit(bytes),
                       exact_unit_for_byte_size(bytes),
                       byte_size_in_exact_unit(page_size),

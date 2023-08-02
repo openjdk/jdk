@@ -1080,7 +1080,7 @@ void PSAdaptiveSizePolicy::update_averages(bool is_survivor_overflow,
   }
   avg_promoted()->sample(promoted);
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: "  SIZE_FORMAT "  promoted: "  SIZE_FORMAT "  overflow: %s",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::update_averages:  survived: "  "%zu  promoted: "  SIZE_FORMAT "  overflow: %s",
                       survived, promoted, is_survivor_overflow ? "true" : "false");
 }
 

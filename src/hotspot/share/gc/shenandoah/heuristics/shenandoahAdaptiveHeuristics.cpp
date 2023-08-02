@@ -90,7 +90,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
 
   log_info(gc, ergo)("Adaptive CSet Selection. Target Free: %zu%s, Actual Free: "
-                     SIZE_FORMAT "%s, Max CSet: %zu%s, Min Garbage: %zu%s",
+                     "%zu%s, Max CSet: %zu%s, Min Garbage: %zu%s",
                      byte_size_in_proper_unit(free_target), proper_unit_for_byte_size(free_target),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
                      byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset),

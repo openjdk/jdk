@@ -46,7 +46,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-#define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
+#define ZSIZE_FMT                       "%zuM(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
 
@@ -1442,11 +1442,11 @@ void ZStatMark::at_mark_free(size_t mark_stack_usage) {
 
 void ZStatMark::print() {
   log_info(gc, marking)("Mark: "
-                        SIZE_FORMAT " stripe(s), "
-                        SIZE_FORMAT " proactive flush(es), "
-                        SIZE_FORMAT " terminate flush(es), "
-                        SIZE_FORMAT " completion(s), "
-                        SIZE_FORMAT " continuation(s) ",
+                        "%zu stripe(s), "
+                        "%zu proactive flush(es), "
+                        "%zu terminate flush(es), "
+                        "%zu completion(s), "
+                        "%zu continuation(s) ",
                         _nstripes,
                         _nproactiveflush,
                         _nterminateflush,
@@ -1632,8 +1632,8 @@ void ZStatNMethods::print() {
 void ZStatMetaspace::print() {
   const MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
   log_info(gc, metaspace)("Metaspace: "
-                          SIZE_FORMAT "M used, "
-                          SIZE_FORMAT "M committed, %zuM reserved",
+                          "%zuM used, "
+                          "%zuM committed, %zuM reserved",
                           stats.used() / M,
                           stats.committed() / M,
                           stats.reserved() / M);

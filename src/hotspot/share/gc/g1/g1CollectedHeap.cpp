@@ -465,7 +465,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
         // We successfully scheduled a collection which failed to allocate. No
         // point in trying to allocate further. We'll just return null.
         log_trace(gc, alloc)("%s: Successfully scheduled collection failing to allocate "
-                             SIZE_FORMAT " words", Thread::current()->name(), word_size);
+                             "%zu words", Thread::current()->name(), word_size);
         return nullptr;
       }
       log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu words",
@@ -474,7 +474,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       // Failed to schedule a collection.
       if (gclocker_retry_count > GCLockerRetryAllocationCount) {
         log_warning(gc, alloc)("%s: Retried waiting for GCLocker too often allocating "
-                               SIZE_FORMAT " words", Thread::current()->name(), word_size);
+                               "%zu words", Thread::current()->name(), word_size);
         return nullptr;
       }
       log_trace(gc, alloc)("%s: Stall until clear", Thread::current()->name());
@@ -723,7 +723,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         // We successfully scheduled a collection which failed to allocate. No
         // point in trying to allocate further. We'll just return null.
         log_trace(gc, alloc)("%s: Successfully scheduled collection failing to allocate "
-                             SIZE_FORMAT " words", Thread::current()->name(), word_size);
+                             "%zu words", Thread::current()->name(), word_size);
         return nullptr;
       }
       log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu",
@@ -732,7 +732,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       // Failed to schedule a collection.
       if (gclocker_retry_count > GCLockerRetryAllocationCount) {
         log_warning(gc, alloc)("%s: Retried waiting for GCLocker too often allocating "
-                               SIZE_FORMAT " words", Thread::current()->name(), word_size);
+                               "%zu words", Thread::current()->name(), word_size);
         return nullptr;
       }
       log_trace(gc, alloc)("%s: Stall until clear", Thread::current()->name());

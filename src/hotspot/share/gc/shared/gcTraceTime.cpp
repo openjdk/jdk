@@ -63,7 +63,7 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
     size_t used_before_m = _heap_usage_before / M;
     size_t used_m = heap->used() / M;
     size_t capacity_m = heap->capacity() / M;
-    out.print(" %zuM->%zuM("  SIZE_FORMAT "M)", used_before_m, used_m, capacity_m);
+    out.print(" %zuM->%zuM("  "%zuM)", used_before_m, used_m, capacity_m);
   }
 
   out.print_cr(" %.3fms", duration_in_ms);

@@ -215,11 +215,11 @@ HeapWord* EpsilonHeap::allocate_new_tlab(size_t min_size,
   assert(is_object_aligned(size),
          "Size honors object alignment: %zu", size);
   assert(min_size <= size,
-         "Size honors min size: "  SIZE_FORMAT " <= %zu", min_size, size);
+         "Size honors min size: "  "%zu <= %zu", min_size, size);
   assert(size <= _max_tlab_size,
-         "Size honors max size: "  SIZE_FORMAT " <= %zu", size, _max_tlab_size);
+         "Size honors max size: "  "%zu <= %zu", size, _max_tlab_size);
   assert(size <= CollectedHeap::max_tlab_size(),
-         "Size honors global max size: "  SIZE_FORMAT " <= %zu", size, CollectedHeap::max_tlab_size());
+         "Size honors global max size: "  "%zu <= %zu", size, CollectedHeap::max_tlab_size());
 
   if (log_is_enabled(Trace, gc)) {
     ResourceMark rm;
@@ -321,7 +321,7 @@ void EpsilonHeap::print_heap_info(size_t used) const {
 
   if (reserved != 0) {
     log_info(gc)("Heap: %zu%s reserved, %zu%s (%.2f%%) committed, "
-                 SIZE_FORMAT "%s (%.2f%%) used",
+                 "%zu%s (%.2f%%) used",
             byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
             byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
             committed * 100.0 / reserved,
@@ -340,7 +340,7 @@ void EpsilonHeap::print_metaspace_info() const {
 
   if (reserved != 0) {
     log_info(gc, metaspace)("Metaspace: %zu%s reserved, %zu%s (%.2f%%) committed, "
-                            SIZE_FORMAT "%s (%.2f%%) used",
+                            "%zu%s (%.2f%%) used",
             byte_size_in_proper_unit(reserved),  proper_unit_for_byte_size(reserved),
             byte_size_in_proper_unit(committed), proper_unit_for_byte_size(committed),
             committed * 100.0 / reserved,

@@ -643,7 +643,7 @@ void MutableNUMASpace::print_on(outputStream* st) const {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
       st->print("    local/remote/unbiased/uncommitted: %zuK/"
-                SIZE_FORMAT "K/%zuK/%zuK\n",
+                "%zuK/%zuK/%zuK\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,
