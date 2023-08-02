@@ -38,7 +38,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
  * {@code ListFormat} produces or parses a list of concatenated
- * strings in a locale-sensitive way. Use {\@code ListFormat} to construct a list
+ * strings in a locale-sensitive way. Use {@code ListFormat} to construct a list
  * of strings displayed for end users. For example, displaying 3 weekdays
  * as "Monday, Wednesday, and Friday". This class provides the functionality
  * defined in Unicode Consortium's LDML specification for
