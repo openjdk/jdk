@@ -43,8 +43,6 @@ import java.io.IOException;
  * @run main JTableHeaderLabelRightAlignTest
  */
 public class JTableHeaderLabelRightAlignTest {
-    private static final int WIDTH = 300;
-    private static final int HEIGHT = 150;
     private static final double SCALE = 2.25;
 
     public static void main(String[] args) throws Exception {
@@ -56,7 +54,7 @@ public class JTableHeaderLabelRightAlignTest {
         String[] columnNames = {"Size", "Size"};
 
         JTable table = new JTable(data, columnNames);
-        table.setSize(WIDTH, HEIGHT);
+
         ((JLabel)table.getTableHeader().getDefaultRenderer())
                 .setHorizontalAlignment(JLabel.RIGHT);
 
@@ -64,9 +62,10 @@ public class JTableHeaderLabelRightAlignTest {
         Dimension size = header.getPreferredSize();
         header.setSize(size);
 
-        int w = (int)Math.ceil(SCALE * size.width);
-        int h = (int)Math.ceil(SCALE * size.height);
-        BufferedImage imgHeader = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        BufferedImage imgHeader =
+                new BufferedImage((int)Math.ceil(SCALE * size.width),
+                        (int)Math.ceil(SCALE * size.height),
+                        BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
@@ -75,7 +74,9 @@ public class JTableHeaderLabelRightAlignTest {
             g2d.dispose();
         }
 
-        int x = (int) (table.getTableHeader().getColumnModel().getColumn(0)
+        int x = (int) (table.getTableHeader()
+                            .getColumnModel()
+                            .getColumn(0)
                             .getWidth() * SCALE);
         int expectedRGB = imgHeader.getRGB(x, 1);
 
