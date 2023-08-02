@@ -1449,7 +1449,7 @@ JVMCIObject JVMCIEnv::new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject
   }
 }
 
-JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMIntrinsicMethod::klass()->initialize(CHECK_(JVMCIObject()));
@@ -1458,12 +1458,15 @@ JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObj
     HotSpotJVMCI::VMIntrinsicMethod::set_name(this, obj, HotSpotJVMCI::resolve(name));
     HotSpotJVMCI::VMIntrinsicMethod::set_descriptor(this, obj, HotSpotJVMCI::resolve(descriptor));
     HotSpotJVMCI::VMIntrinsicMethod::set_id(this, obj, id);
+    HotSpotJVMCI::VMIntrinsicMethod::set_isAvailable(this, obj, isAvailable);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c1Supported(this, obj, c1Supported);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c2Supported(this, obj, c2Supported);
     return wrap(obj);
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::VMIntrinsicMethod::clazz(),
                                     JNIJVMCI::VMIntrinsicMethod::constructor(),
-                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id);
+                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id, isAvailable, c1Supported, c2Supported);
     return wrap(result);
   }
 }
