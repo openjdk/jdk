@@ -3587,8 +3587,8 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 }
 
 const Type* LibraryCallKit::scopedValueCache_type() {
-  ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
-  const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
   // Because we create the scopedValue cache lazily we have to make the
