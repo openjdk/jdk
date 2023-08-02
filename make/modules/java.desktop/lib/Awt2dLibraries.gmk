@@ -446,6 +446,7 @@ else
     LIBFREETYPE_LIBS := -lfreetype
   endif
 
+  # gcc_ftobjs.c := maybe-uninitialized required for GCC 7 builds.
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
