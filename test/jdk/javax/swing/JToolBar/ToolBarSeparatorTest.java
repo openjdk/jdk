@@ -51,11 +51,13 @@ import javax.imageio.ImageIO;
 public class ToolBarSeparatorTest {
 
     private static JFrame frame;
+    private static JSeparator separator;
     private static JToolBar toolBar;
     private static JButton btn;
     private static volatile Point pt;
     private static volatile Dimension size;
-    private static volatile int btnWidth;
+    private static volatile int sepWidth;
+    private static volatile int sepPrefWidth;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -68,7 +70,8 @@ public class ToolBarSeparatorTest {
                 btn = new JButton("button 1");
                 toolBar.add(btn);
                 toolBar.add(new JButton("button 2"));
-                toolBar.add(new JSeparator(SwingConstants.VERTICAL));
+                separator = new JSeparator(SwingConstants.VERTICAL);
+                toolBar.add(separator);
                 toolBar.add(new JButton("button 3"));
                 toolBar.setBackground(Color.red);
                 frame.getContentPane().setLayout(new BorderLayout());
@@ -83,29 +86,16 @@ public class ToolBarSeparatorTest {
             SwingUtilities.invokeAndWait(() -> {
                 pt = toolBar.getLocationOnScreen();
                 size = toolBar.getSize();
-                btnWidth = btn.getWidth();
+                sepWidth = separator.getSize().width;
+                sepPrefWidth = separator.getPreferredSize().width;
             });
-            boolean passed = true;
-            System.out.println("point " + pt + " size " + size +
-                                " btn width " + btn.getWidth());
-
-            // Capture button width area after 2 buttons which shouldn't be red
-            BufferedImage img = robot.createScreenCapture(
-                new Rectangle(pt.x + btnWidth*2 + 20, pt.y, btnWidth, size.height));
-
-            int y = img.getHeight() / 2;
-            for (int x = 10; x < img.getWidth(); x += 10) {
-                System.out.println("x " + x + " y " + y +
-                                   " color: " + new Color(img.getRGB(x, y)));
-                Color c = new Color(img.getRGB(x, y));
-                if (c.equals(Color.RED)) {
-                    passed = false;
-                    break;
-                }
-            }
-            if (!passed) {
+            if (separator.getSize().width != separator.getPreferredSize().width) {
+                System.out.println("size " + sepWidth);
+                System.out.println("preferredsize " + sepPrefWidth);
+                BufferedImage img = robot.createScreenCapture(
+                    new Rectangle(pt.x, pt.y, size.width, size.height));
                 ImageIO.write(img, "png", new java.io.File("image.png"));
-                throw new RuntimeException("Separator takes more space");
+                throw new RuntimeException("separator size is too wide");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
