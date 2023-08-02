@@ -64,7 +64,7 @@ static int gsEventNumber;
 static int* gsButtonEventNumber;
 static NSTimeInterval gNextKeyEventTime;
 static CGEventFlags initFlags;
-static int allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
+static CGEventFlags allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
                               | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
                               | kCGEventFlagMaskAlphaShift | kCGEventFlagMaskSecondaryFn;
 
