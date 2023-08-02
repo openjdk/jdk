@@ -54,8 +54,6 @@ public class SocketCloseTest {
         props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         props.put(Context.PROVIDER_URL, "ldap://localhost:1389/o=example");
         props.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
-        props.put("com.sun.jndi.ldap.connect.timeout", "1");
-        props.put("com.sun.jndi.ldap.read.timeout", "5000");
 
         try {
             final DirContext ctx = new InitialDirContext(props);
