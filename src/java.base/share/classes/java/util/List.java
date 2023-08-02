@@ -409,8 +409,8 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * Replaces each element of this list with the result of applying the
-     * operator to that element.  Errors or runtime exceptions thrown by
-     * the operator are relayed to the caller.
+     * operator to that element (optional operation).  Errors or runtime
+     * exceptions thrown by the operator are relayed to the caller.
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code list}:
@@ -446,8 +446,8 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * Sorts this list according to the order induced by the specified
-     * {@link Comparator}.  The sort is <i>stable</i>: this method must not
-     * reorder equal elements.
+     * {@link Comparator} (optional operation).  The sort is <i>stable</i>:
+     * this method must not reorder equal elements.
      *
      * <p>All elements in this list must be <i>mutually comparable</i> using the
      * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
@@ -496,7 +496,8 @@ public interface List<E> extends SequencedCollection<E> {
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> using the specified comparator
      * @throws UnsupportedOperationException if the list's list-iterator does
-     *         not support the {@code set} operation
+     *         not support the {@code set} operation or if modification of
+     *         this list is not supported
      * @throws IllegalArgumentException
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      *         if the comparator is found to violate the {@link Comparator}

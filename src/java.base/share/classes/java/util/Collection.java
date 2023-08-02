@@ -555,8 +555,8 @@ public interface Collection<E> extends Iterable<E> {
 
     /**
      * Removes all of the elements of this collection that satisfy the given
-     * predicate.  Errors or runtime exceptions thrown during iteration or by
-     * the predicate are relayed to the caller.
+     * predicate (optional operation).  Errors or runtime exceptions thrown during
+     * iteration or by the predicate are relayed to the caller.
      *
      * @implSpec
      * The default implementation traverses all elements of the collection using
