@@ -43,10 +43,16 @@ import java.io.IOException;
  */
 public class TableHeaderBorderPositionTest {
     private static final double SCALE = 2.25;
+    private static boolean testStatus = true;
+    private static String failureMsg;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(TableHeaderBorderPositionTest::test);
+        if (!testStatus) {
+            throw new RuntimeException(failureMsg);
+        }
+        System.out.println("Test Passed");
     }
 
     private static void test() {
@@ -95,11 +101,12 @@ public class TableHeaderBorderPositionTest {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != bufferedImage.getRGB(x, y)) {
                     saveBufferedImage(bufferedImage, "failureImage.png");
-                    throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
+                    failureMsg = "Test Failed at <" + x + ", " + y + ">";
+                    testStatus = false;
+                    return;
                 }
             }
         }
-        System.out.println("Test Passed");
     }
 
     private static void saveBufferedImage(BufferedImage image, String fileName) {
