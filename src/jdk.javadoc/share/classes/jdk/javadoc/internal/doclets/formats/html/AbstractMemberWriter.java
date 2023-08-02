@@ -49,7 +49,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -67,6 +66,8 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
 
 /**
  * The base class for member writers.
+ *
+ * Two primary methods are defined: {@link #buildSummary(Content)} and {@link #buildDetails(Content)}.
  */
 public abstract class AbstractMemberWriter {
 
@@ -76,7 +77,6 @@ public abstract class AbstractMemberWriter {
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
     protected final Resources resources;
-    protected final Links links;
     protected final HtmlIds htmlIds;
 
     protected final TypeElement typeElement;
@@ -123,14 +123,33 @@ public abstract class AbstractMemberWriter {
             ANNOTATION_TYPE_MEMBER, METHODS
     );
 
+    /**
+     * Creates a member writer for a given enclosing writer and kind of member.
+     *
+     * @param writer the enclosing "page" writer.
+     * @param kind the kind
+     */
     protected AbstractMemberWriter(ClassWriter writer, VisibleMemberTable.Kind kind) {
         this(writer, writer.typeElement, kind);
     }
 
+    /**
+     * Creates a member writer for a given enclosing writer.
+     * No type element or kind is provided, limiting the set of methods that can be used.
+     *
+     * @param writer the writer
+     */
     protected AbstractMemberWriter(SubWriterHolderWriter writer) {
         this(writer, null, null);
     }
 
+    /**
+     * Creates a member writer for a given enclosing writer, and optional type element and member kind.
+     * If no specific type element or kind is provided, methods that require such information
+     * may throw {@link NullPointerException}.
+     *
+     * @param writer the writer
+     */
     protected AbstractMemberWriter(SubWriterHolderWriter writer,
                                  TypeElement typeElement,
                                  VisibleMemberTable.Kind kind) {
@@ -143,7 +162,6 @@ public abstract class AbstractMemberWriter {
         this.utils = configuration.utils;
         this.contents = configuration.getContents();
         this.resources = configuration.docResources;
-        this.links = writer.links;
         this.htmlIds = configuration.htmlIds;
 
         visibleMemberTable = typeElement == null ? null : configuration.getVisibleMemberTable(typeElement);
@@ -158,6 +176,26 @@ public abstract class AbstractMemberWriter {
      */
     public abstract void buildDetails(Content target);
 
+    /**
+     * Builds the signature.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildSignature(Content target);
+
+    /**
+     * Builds the deprecation info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildDeprecationInfo(Content target);
+
+    /**
+     * Builds the preview info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildPreviewInfo(Content target);
 
     /**
      * Builds the "summary" for all members of this kind.
@@ -179,7 +217,7 @@ public abstract class AbstractMemberWriter {
             buildInheritedSummary(summaryTreeList);
 
         if (!summaryTreeList.isEmpty()) {
-            Content member = getMemberSummaryHeader(typeElement, target);
+            Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
         }
@@ -271,12 +309,11 @@ public abstract class AbstractMemberWriter {
     /**
      * Returns the member summary header for the given class.
      *
-     * @param typeElement the class the summary belongs to
      * @param content     the content to which the member summary will be added
      *
      * @return the member summary header
      */
-    public abstract Content getMemberSummaryHeader(TypeElement typeElement, Content content);
+    public abstract Content getMemberSummaryHeader(Content content);
     /**
      * Adds the given summary to the list of summaries.
      *
