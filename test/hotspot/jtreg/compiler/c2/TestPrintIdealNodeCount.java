@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
-#define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+/*
+ * @test
+ * @bug 8312596
+ * @requires vm.debug == true & vm.compiler2.enabled
+ * @summary Run with -Xcomp -XX:-TieredCompilation to force C2 compilations to test -XX:+PrintIdealNodeCount in debug builds.
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
+ */
+package compiler.c2;
 
-#include "runtime/flags/jvmFlag.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-// Parallel Subconstraints
-#define PARALLEL_GC_CONSTRAINTS(f)                          \
-  f(uint, InitialTenuringThresholdConstraintFuncParallel)   \
-  f(uint, MaxTenuringThresholdConstraintFuncParallel)
-
-PARALLEL_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
-
-#endif // SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+public class TestPrintIdealNodeCount {
+    public static void main(String[] args) {
+    }
+}

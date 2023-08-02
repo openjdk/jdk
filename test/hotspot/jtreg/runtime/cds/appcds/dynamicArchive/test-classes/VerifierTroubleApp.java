@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,9 @@
  * questions.
  *
  */
-
-#ifndef SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
-#define SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
-
-#include "runtime/flags/jvmFlag.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-// Parallel Subconstraints
-#define PARALLEL_GC_CONSTRAINTS(f)                          \
-  f(uint, InitialTenuringThresholdConstraintFuncParallel)   \
-  f(uint, MaxTenuringThresholdConstraintFuncParallel)
-
-PARALLEL_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
-
-#endif // SHARE_GC_PARALLEL_JVMFLAGCONSTRAINTSPARALLEL_HPP
+public class VerifierTroubleApp {
+    public static void main(String args[]) throws Throwable {
+        ChildOldSuper c = new ChildOldSuper();
+        System.out.println(c);
+    }
+}
