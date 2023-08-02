@@ -45,7 +45,7 @@ public class VectorizationTestRunner {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    private static final int COMP_LEVEL_INTP = 0;
+    private static final int COMP_LEVEL_C1 = 1;
     private static final int COMP_LEVEL_C2 = 4;
 
     private static final int NMETHOD_COMP_LEVEL_IDX = 1;
@@ -58,15 +58,14 @@ public class VectorizationTestRunner {
 
         // 1) Vectorization correctness test
         // For each method annotated with "@Test" in test classes, this test runner
-        // invokes it twice - first time in the interpreter and second time compiled
-        // by C2. Then this runner compares the two return values. Hence we require
-        // each test method returning a primitive value or an array of primitive type.
-        // Some VM options like "-Xcomp" may mess with the compiler control for the
-        // correctness check. We disable the check in these cases.
-        boolean use_intp = WB.getBooleanVMFlag("UseInterpreter");
+        // invokes it twice - first time compiled by C1 and second time by C2. Then
+        // two return results are compared. We require each test method returning a
+        // primitive value or an array of primitives. Extra VM options like "-Xint"
+        // may mess with the compiler control so we skip the correctness check with
+        // these options.
         boolean use_comp = WB.getBooleanVMFlag("UseCompiler");
-        boolean bg_comp = WB.getBooleanVMFlag("BackgroundCompilation");
-        if (use_intp && use_comp && bg_comp) {
+        boolean is_tiered = WB.getBooleanVMFlag("TieredCompilation");
+        if (use_comp && is_tiered) {
             for (Method method : klass.getDeclaredMethods()) {
                 try {
                     if (method.isAnnotationPresent(Test.class)) {
@@ -117,41 +116,26 @@ public class VectorizationTestRunner {
         }
     }
 
+    private Object invokeMethodAtCompilationLevel(Method method, int level)
+            throws InterruptedException {
+        Object res = null;
+        WB.enqueueMethodForCompilation(method, level);
+        while (WB.getMethodCompilationLevel(method) != level) {
+            Thread.sleep(100 /*ms*/);
+        }
+        try {
+            res = method.invoke(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception is thrown at compilation level " + level);
+        }
+        assert(WB.getMethodCompilationLevel(method) == level);
+        return res;
+    }
+
     private void runTestOnMethod(Method method) throws InterruptedException {
-        Object expected = null;
-        Object actual = null;
-
-        // Lock compilation and inovke the method to get reference result from
-        // the interpreter
-        WB.lockCompilation();
-        try {
-            expected = method.invoke(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Exception is thrown in test method invocation (interpreter).");
-        }
-        assert(WB.getMethodCompilationLevel(method) == COMP_LEVEL_INTP);
-        WB.unlockCompilation();
-
-        // Compile the method and invoke it again
-        long enqueueTime = System.currentTimeMillis();
-        WB.enqueueMethodForCompilation(method, COMP_LEVEL_C2);
-        while (WB.getMethodCompilationLevel(method) != COMP_LEVEL_C2) {
-            if (System.currentTimeMillis() - enqueueTime > COMP_THRES_SECONDS * 1000) {
-                // C2 compilation may timeout with extra compiler control options.
-                // We skip the correctness check in this case.
-                System.out.println("WARNING: Correctness check is skipped because C2 compilation times out");
-                return;
-            }
-            Thread.sleep(50 /*ms*/);
-        }
-        try {
-            actual = method.invoke(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Exception is thrown in test method invocation (C2).");
-        }
-        assert(WB.getMethodCompilationLevel(method) == COMP_LEVEL_C2);
+        Object expected = invokeMethodAtCompilationLevel(method, COMP_LEVEL_C1);
+        Object actual = invokeMethodAtCompilationLevel(method, COMP_LEVEL_C2);
 
         // Check if two invocations return the same
         Class retType = method.getReturnType();

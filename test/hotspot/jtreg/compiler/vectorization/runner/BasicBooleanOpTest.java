@@ -35,7 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicBooleanOpTest
  *
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
