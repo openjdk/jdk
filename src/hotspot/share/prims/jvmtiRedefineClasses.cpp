@@ -1684,13 +1684,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         continue;
       }
 
-      // The find_matching_entry() call above could fail to find a match
-      // due to a resolved versus unresolved class or string entry situation
-      // like we solved above with the is_unresolved_*_mismatch() calls.
-      // However, we would have to call is_unresolved_*_mismatch() over
-      // all of *merge_cp_p (potentially) and that doesn't seem to be
-      // worth the time.
-
       // No match found so we have to append this entry and any unique
       // referenced entries to *merge_cp_p.
       append_entry(scratch_cp, scratch_i, merge_cp_p, merge_cp_length_p);
