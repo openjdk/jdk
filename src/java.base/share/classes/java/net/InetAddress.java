@@ -785,9 +785,12 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Gets the fully qualified domain name for this IP address.
-     * Best effort method, meaning we may not be able to return
-     * the FQDN depending on the underlying system configuration.
+     * Gets the fully qualified domain name for this
+     * {@linkplain InetAddress#getAddress() IP address} using the system-wide
+     * {@linkplain InetAddressResolver resolver}. This is a best effort method,
+     * meaning we may not be able to return the fully qualified domain name; in
+     * which case this method returns the
+     * {@linkplain #getHostAddress() textual representation} of the IP address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
@@ -797,9 +800,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the fully qualified domain name for this IP address,
-     *    or if the operation is not allowed by the security check,
-     *    the textual representation of the IP address.
+     * @return  the fully qualified domain name for this IP address, or the textual representation
+     *          of the IP address if either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the fully qualified domain
+     *          name for the IP address.
      *
      * @see SecurityManager#checkConnect
      *
@@ -814,7 +818,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Returns the hostname for this address.
+     * Returns the fully qualified domain for this address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
@@ -824,11 +828,12 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
-     *
      * @param check make security check if true
+     *
+     * @return  the fully qualified domain name for this IP address, or the textual representation
+     *          of the IP address if either the operation is not allowed by the security check
+     *          or the system-wide resolver wasn't able to determine the fully qualified domain
+     *          name for the IP address.
      *
      * @see SecurityManager#checkConnect
      */
