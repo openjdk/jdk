@@ -65,13 +65,11 @@ public class SocketCloseTest {
 	};
 
 	public static void main(String[] args) throws Exception {
-
 		Hashtable<String, Object> props = new Hashtable<>();
 
 		props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 		props.put(Context.PROVIDER_URL, "ldap://localhost:1389/o=example");
 		props.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
-
 		try {
 			final DirContext ctx = new InitialDirContext(props);
 		} catch (Exception e) {
@@ -104,7 +102,6 @@ public class SocketCloseTest {
 		public Socket createSocket(String s, int timeout) {
 			return customSocket;
 		}
-
 		@Override
 		public Socket createSocket(String host, int port, InetAddress localHost,
 		                           int localPort) {

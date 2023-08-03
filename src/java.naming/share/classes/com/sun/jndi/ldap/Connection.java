@@ -657,8 +657,6 @@ public final class Connection implements Runnable {
                             if (debug) {
                                 if (sock.isClosed()) {
                                     System.err.println("Connection::cleanup - socket closed.");
-                                } else {
-                                    System.err.println("Connection::cleanup - socket not closed.");
                                 }
                             }
                         } catch (IOException ioe) {
