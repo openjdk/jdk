@@ -241,12 +241,12 @@ void StringTable::create_table() {
 #endif
 }
 
-size_t StringTable::item_added() {
-  return Atomic::add(&_items_count, (size_t)1);
+void StringTable::item_added() {
+  Atomic::inc(&_items_count);
 }
 
 void StringTable::item_removed() {
-  Atomic::add(&_items_count, (size_t)-1);
+  Atomic::dec(&_items_count);
 }
 
 double StringTable::get_load_factor() {
