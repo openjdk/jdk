@@ -520,6 +520,9 @@ abstract class UnixFileSystem
         try {
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST)
+                throw new FileSystemException(target.toString(), null,
+                    "Directory exists");
             x.rethrowAsIOException(target);
         }
 
@@ -787,6 +790,9 @@ abstract class UnixFileSystem
                 }
             }
         } catch (UnixException x) {
+            if (x.errno() == EEXIST)
+                throw new FileSystemException(target.toString(), null,
+                    "Link exists");
             x.rethrowAsIOException(target);
         }
     }
@@ -801,6 +807,9 @@ abstract class UnixFileSystem
         try {
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST)
+                throw new FileSystemException(target.toString(), null,
+                    "Special file exists");
             x.rethrowAsIOException(target);
         }
         boolean done = false;
