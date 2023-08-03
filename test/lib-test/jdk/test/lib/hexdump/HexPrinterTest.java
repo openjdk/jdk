@@ -371,8 +371,8 @@ class HexPrinterTest {
     @ParameterizedTest
     @MethodSource("badSources")
     void testBadToStringByteBuffer(byte[] bytes, int offset, int length) {
-        assertThrows(java.lang.IndexOutOfBoundsException.class, () ->
-                testThrowsForBadToStringByteBuffer(bytes, offset, length));
+        assertThrows(java.lang.IndexOutOfBoundsException.class,
+                () -> testThrowsForBadToStringByteBuffer(bytes, offset, length));
     }
 
     void testThrowsForBadToStringByteBuffer(byte[] bytes, int offset, int length) {
@@ -468,26 +468,26 @@ class HexPrinterTest {
 
     @Test
     void testNullByteArray() {
-        assertThrows(NullPointerException.class, () ->
-                HexPrinter.simple().dest(System.out).format((byte[]) null));
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((byte[]) null));
     }
 
     @Test
     void testNullByteArrayOff() {
-        assertThrows(NullPointerException.class, () ->
-                HexPrinter.simple().dest(System.out).format((byte[]) null, 0, 1));
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((byte[]) null, 0, 1));
     }
 
     @Test
     void testNullByteBuffer() {
-        assertThrows(NullPointerException.class, () ->
-                HexPrinter.simple().dest(System.out).format((ByteBuffer) null));
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((ByteBuffer) null));
     }
 
     @Test
     void testNullByteBufferOff() {
-        assertThrows(NullPointerException.class, () ->
-                HexPrinter.simple().dest(System.out).format((ByteBuffer) null, 0, 1));
+        assertThrows(NullPointerException.class,
+                () -> HexPrinter.simple().dest(System.out).format((ByteBuffer) null, 0, 1));
     }
 
     @Test

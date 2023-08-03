@@ -309,14 +309,12 @@ class ArrayDiffTest {
 
     @Test
     void testFirstArrayIsNull() {
-        assertThrows(NullPointerException.class, () ->
-                ArrayDiff.of(null, new String[] {"a", "b"}));
+        assertThrows(NullPointerException.class, () -> ArrayDiff.of(null, new String[] {"a", "b"}));
     }
 
     @Test
     void testSecondArrayIsNull() {
-        assertThrows(NullPointerException.class, () ->
-                ArrayDiff.of(null, new String[] {"a", "b"}));
+        assertThrows(NullPointerException.class, () -> ArrayDiff.of(new String[] {"a", "b"}, null));
     }
 
     class AssertBuilder {
