@@ -72,6 +72,7 @@ class EventLog : public CHeapObj<mtInternal> {
 
 };
 
+typedef decltype(LogEventsBufferEntries) LogEventsBufferEntries_t;
 
 // A templated subclass of EventLog that provides basic ring buffer
 // functionality.  Most event loggers should subclass this, possibly
@@ -93,13 +94,13 @@ template <class T> class EventLogBase : public EventLog {
   // Handle is a short specifier used to select this particular event log
   // for printing (see VM.events command).
   const char*     _handle;
-  uintx           _length;
-  uintx           _index;
-  uintx           _count;
+  LogEventsBufferEntries_t             _length;
+  LogEventsBufferEntries_t             _index;
+  LogEventsBufferEntries_t             _count;
   EventRecord<T>* _records;
 
  public:
-  EventLogBase<T>(const char* name, const char* handle, uintx length = LogEventsBufferEntries):
+  EventLogBase<T>(const char* name, const char* handle, LogEventsBufferEntries_t length = LogEventsBufferEntries):
     _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),
@@ -116,8 +117,8 @@ template <class T> class EventLogBase : public EventLog {
   // move the ring buffer to next open slot and return the index of
   // the slot to use for the current message.  Should only be called
   // while mutex is held.
-  uintx compute_log_index() {
-    uintx index = _index;
+  auto compute_log_index() {
+    auto index = _index;
     if (_count < _length) _count++;
     _index++;
     if (_index >= _length) _index = 0;
@@ -166,7 +167,7 @@ typedef FormatStringLogMessage<512> ExtendedStringLogMessage;
 template <size_t bufsz>
 class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> > {
  public:
-  FormatStringEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
+  FormatStringEventLog(const char* name, const char* short_name, LogEventsBufferEntries_t count = LogEventsBufferEntries)
    : EventLogBase< FormatStringLogMessage<bufsz> >(name, short_name, count) {}
 
   void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
@@ -174,7 +175,7 @@ class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> 
 
     double timestamp = this->fetch_timestamp();
     MutexLocker ml(&this->_mutex, Mutex::_no_safepoint_check_flag);
-    uintx index = this->compute_log_index();
+    int index = this->compute_log_index();
     this->_records[index].thread = thread;
     this->_records[index].timestamp = timestamp;
     this->_records[index].data.printv(format, ap);
@@ -195,7 +196,7 @@ class InstanceKlass;
 // Event log for class unloading events to materialize the class name in place in the log stream.
 class UnloadingEventLog : public EventLogBase<StringLogMessage> {
  public:
-  UnloadingEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
+  UnloadingEventLog(const char* name, const char* short_name, decltype(LogEventsBufferEntries) count = LogEventsBufferEntries)
    : EventLogBase<StringLogMessage>(name, short_name, count) {}
 
   void log(Thread* thread, InstanceKlass* ik);
@@ -204,7 +205,7 @@ class UnloadingEventLog : public EventLogBase<StringLogMessage> {
 // Event log for exceptions
 class ExceptionsEventLog : public ExtendedStringEventLog {
  public:
-  ExceptionsEventLog(const char* name, const char* short_name, uintx count = LogEventsBufferEntries)
+  ExceptionsEventLog(const char* name, const char* short_name, LogEventsBufferEntries_t count = LogEventsBufferEntries)
    : ExtendedStringEventLog(name, short_name, count) {}
 
   void log(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
@@ -425,7 +426,7 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
 
   int printed = 0;
   if (_count < _length) {
-    for (uintx i = 0; i < _count; i++) {
+    for (LogEventsBufferEntries_t i = 0; i < _count; i++) {
       if (max > 0 && printed == max) {
         break;
       }
@@ -433,14 +434,14 @@ inline void EventLogBase<T>::print_log_impl(outputStream* out, int max) {
       printed ++;
     }
   } else {
-    for (uintx i = _index; i < _length; i++) {
+    for (LogEventsBufferEntries_t i = _index; i < _length; i++) {
       if (max > 0 && printed == max) {
         break;
       }
       print(out, _records[i]);
       printed ++;
     }
-    for (uintx i = 0; i < _index; i++) {
+    for (LogEventsBufferEntries_t i = 0; i < _index; i++) {
       if (max > 0 && printed == max) {
         break;
       }
