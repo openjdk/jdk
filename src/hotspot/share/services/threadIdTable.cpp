@@ -187,7 +187,7 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(ThreadIdTableEntry** value, bool* is_dead) {
+  bool equals(ThreadIdTableEntry** value, bool* is_dead, bool is_used_after) {
     bool equals = primitive_equals(_tid, (*value)->tid());
     if (!equals) {
       return false;

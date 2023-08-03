@@ -374,12 +374,14 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(Symbol* value, bool* is_dead) {
+  bool equals(Symbol* value, bool* is_dead, bool is_used_after) {
     assert(value != nullptr, "expected valid value");
     Symbol *sym = value;
     if (sym->equals(_str, _len)) {
-      if (sym->try_increment_refcount()) {
+      if (is_used_after && sym->try_increment_refcount()) {
         // something is referencing this symbol now.
+        return true;
+      } else if (!is_used_after && sym->refcount() > 0) {
         return true;
       } else {
         assert(sym->refcount() == 0, "expected dead symbol");

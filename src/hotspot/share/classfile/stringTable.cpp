@@ -176,7 +176,7 @@ class StringTableLookupJchar : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value, bool* is_dead, bool is_used_after) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       // dead oop, mark this hash dead for cleaning
@@ -208,7 +208,7 @@ class StringTableLookupOop : public StackObj {
     return _hash;
   }
 
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value, bool* is_dead, bool is_used_after) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       // dead oop, mark this hash dead for cleaning
