@@ -787,10 +787,13 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     /**
      * Gets the fully qualified domain name for this
      * {@linkplain InetAddress#getAddress() IP address} using the system-wide
-     * {@linkplain InetAddressResolver resolver}. This is a best effort method,
-     * meaning it may not be able to return the fully qualified domain name; in
-     * which case it returns the
-     * {@linkplain #getHostAddress() textual representation} of the IP address.
+     * {@linkplain InetAddressResolver resolver}.
+     *
+     * <p>The system-wide resolver will be used to do a reverse name lookup of the IP address.
+     * The lookup may fail for reasons such as the host not being registered with the name
+     * service. In such cases, where the resolver isn't able to determine the fully qualified
+     * domain name, this method returns the {@linkplain #getHostAddress() textual representation}
+     * of the IP address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
