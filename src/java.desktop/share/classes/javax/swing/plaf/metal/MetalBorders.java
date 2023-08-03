@@ -1108,11 +1108,11 @@ public class MetalBorders {
             g.translate( x, y );
 
             g.setColor( MetalLookAndFeel.getControlDarkShadow() );
-            g.drawLine( w-1, 0, w-1, h-1 );
-            g.drawLine( 1, h-1, w-1, h-1 );
+            SwingUtilities2.drawVLine(g, w-1, 0, h-1);
+            SwingUtilities2.drawHLine(g, 1, w-1, h-1);
             g.setColor( MetalLookAndFeel.getControlHighlight() );
-            g.drawLine( 0, 0, w-2, 0 );
-            g.drawLine( 0, 0, 0, h-2 );
+            SwingUtilities2.drawHLine(g, 0, w-2, 0);
+            SwingUtilities2.drawVLine(g, 0, 0, h-2);
 
             g.translate( -x, -y );
         }

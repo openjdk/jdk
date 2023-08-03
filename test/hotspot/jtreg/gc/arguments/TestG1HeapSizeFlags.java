@@ -48,4 +48,3 @@ public class TestG1HeapSizeFlags {
     TestMaxHeapSizeTools.checkGenMaxHeapErgo(gcName);
   }
 }
-

@@ -62,6 +62,7 @@ requires.properties= \
     vm.gc.ZGenerational \
     vm.gc.ZSinglegen \
     vm.jvmci \
+    vm.jvmci.enabled \
     vm.emulatedClient \
     vm.cpu.features \
     vm.pageSize \
@@ -77,6 +78,8 @@ requires.properties= \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
+    jdk.hasLibgraal \
+    vm.libgraal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \

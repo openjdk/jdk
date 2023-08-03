@@ -49,4 +49,3 @@ inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter
 #endif  // #if EVAC_FAILURE_INJECTOR
 
 #endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
-
