@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -650,6 +650,21 @@ public final class Connection implements Runnable {
                     } catch (IOException ie) {
                         if (debug)
                             System.err.println("Connection: problem closing socket: " + ie);
+                        //bug 8313657, socket not closed util GC running
+                        try {
+                            sock.close();
+                            unpauseReader();
+                            if (debug) {
+                                if (sock.isClosed()) {
+                                    System.err.println("Connection::cleanup - socket closed.");
+                                } else {
+                                    System.err.println("Connection::cleanup - socket not closed.");
+                                }
+                            }
+                        } catch (IOException ioe) {
+                            if (debug)
+                                System.err.println("Connection::cleanup problem: " + ioe);
+                        }
                     }
                     if (!notifyParent) {
                         LdapRequest ldr = pendingRequests;
