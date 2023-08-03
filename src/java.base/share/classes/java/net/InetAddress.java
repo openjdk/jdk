@@ -800,7 +800,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
-     * @return  the fully qualified domain name for this IP address. 
+     * @return  the fully qualified domain name for this IP address.
      *          If either the operation is not allowed by the security check
      *          or the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
