@@ -51,7 +51,7 @@ public class TestNativeLibraryLoadEvent {
         try (Recording recording = new Recording()) {
             recording.enable(EVENT_NAME);
             recording.start();
-            System.loadLibrary("awt");
+            System.loadLibrary("instrument");
             recording.stop();
 
             List<String> expectedLibs = getExpectedLibs();
@@ -86,7 +86,7 @@ public class TestNativeLibraryLoadEvent {
         }
 
         List<String> libs = new ArrayList<String>();
-        String[] names = { "awt" };
+        String[] names = { "instrument" };
         for (String name : names) {
             libs.add(String.format(libTemplate, name));
         }
