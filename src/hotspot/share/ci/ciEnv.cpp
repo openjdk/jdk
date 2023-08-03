@@ -1708,8 +1708,10 @@ void ciEnv::dump_replay_data(int compile_id) {
         fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
         dump_replay_data(&replay_data_stream);
         tty->print_cr("# Compiler replay data is saved as: %s", buffer);
+        fclose(replay_data_file);
       } else {
         tty->print_cr("# Can't open file to dump replay data.");
+        close(fd);
       }
     }
   }
@@ -1732,8 +1734,10 @@ void ciEnv::dump_inline_data(int compile_id) {
         replay_data_stream.flush();
         tty->print("# Compiler inline data is saved as: ");
         tty->print_cr("%s", buffer);
+        fclose(inline_data_file);
       } else {
         tty->print_cr("# Can't open file to dump inline data.");
+        close(fd);
       }
     }
   }

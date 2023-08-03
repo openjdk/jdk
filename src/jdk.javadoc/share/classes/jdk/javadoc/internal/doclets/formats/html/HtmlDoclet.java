@@ -32,6 +32,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -216,8 +217,8 @@ public class HtmlDoclet extends AbstractDoclet {
             throws DocletException {
         super.generateOtherFiles(classTree);
 
-        writerFactory.newConstantsSummaryWriter().build();
-        writerFactory.newSerializedFormWriter().build();
+        writerFactory.newConstantsSummaryWriter().buildPage();
+        writerFactory.newSerializedFormWriter().buildPage();
 
         var options = configuration.getOptions();
         if (options.linkSource()) {
@@ -245,44 +246,49 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createTree()) {
-            TreeWriter.generate(configuration, classTree);
+            writerFactory.newTreeWriter(classTree).buildPage();
         }
 
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
-            DeprecatedListWriter.generate(configuration);
-        }
-
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
-            PreviewListWriter.generate(configuration);
-        }
-
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
-            NewAPIListWriter.generate(configuration);
+        for (var cp : EnumSet.of(
+                HtmlConfiguration.ConditionalPage.DEPRECATED,
+                HtmlConfiguration.ConditionalPage.PREVIEW,
+                HtmlConfiguration.ConditionalPage.NEW)) {
+            if (configuration.conditionalPages.contains(cp)) {
+                var w = switch (cp) {
+                    case DEPRECATED -> writerFactory.newDeprecatedListWriter();
+                    case NEW -> writerFactory.newNewAPIListWriter();
+                    case PREVIEW -> writerFactory.newPreviewListWriter();
+                    default -> throw new AssertionError();
+                };
+                w.buildPage();
+            }
         }
 
         if (options.createOverview()) {
-            if (configuration.showModules) {
-                ModuleIndexWriter.generate(configuration);
-            } else {
-                PackageIndexWriter.generate(configuration);
-            }
+            var w = configuration.showModules
+                    ? writerFactory.newModuleIndexWriter()
+                    : writerFactory.newPackageIndexWriter();
+            w.buildPage();
         }
 
         if (options.createIndex()) {
             if (!options.noExternalSpecsPage()){
-                ExternalSpecsWriter.generate(configuration);
+                writerFactory.newExternalSpecsWriter().buildPage();
             }
-            SystemPropertiesWriter.generate(configuration);
+            writerFactory.newSystemPropertiesWriter().buildPage();
+
             configuration.mainIndex.addElements();
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
             allClassesIndex.addElements();
-            AllClassesIndexWriter.generate(configuration, allClassesIndex);
+
+            writerFactory.newAllClassesIndexWriter(allClassesIndex).buildPage();
             if (!configuration.packages.isEmpty()) {
-                AllPackagesIndexWriter.generate(configuration);
+                writerFactory.newAllPackagesIndexWriter().buildPage();
             }
+
             configuration.mainIndex.createSearchIndexFiles();
             IndexWriter.generate(configuration);
-            SearchWriter.generate(configuration);
+            writerFactory.newSearchWriter().buildPage();
         }
 
         if (options.createOverview()) {
@@ -292,8 +298,10 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.helpFile().isEmpty() && !options.noHelp()) {
-            HelpWriter.generate(configuration);
+            var w = writerFactory.newHelpWriter();
+            w.buildPage();
         }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         DocFile f;
@@ -399,7 +407,7 @@ public class HtmlDoclet extends AbstractDoclet {
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            writerFactory.newClassWriter(te, classTree).build();
+            writerFactory.newClassWriter(te, classTree).buildPage();
         }
     }
 
@@ -408,7 +416,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (configuration.showModules) {
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             for (ModuleElement mdle : mdles) {
-                writerFactory.newModuleWriter(mdle).build();
+                writerFactory.newModuleWriter(mdle).buildPage();
             }
         }
     }
@@ -423,7 +431,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                writerFactory.newPackageWriter(pkg).build();
+                writerFactory.newPackageWriter(pkg).buildPage();
                 if (options.createTree()) {
                     PackageTreeWriter.generate(configuration, pkg, options.noDeprecated());
                 }
