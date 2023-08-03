@@ -1059,9 +1059,10 @@ static void merge_in_new_methods(InstanceKlass* klass,
   Array<int>* merged_ordering = Universe::the_empty_int_array();
 
   int new_methods_length = klass->methods()->length() + new_methods->length();
-  assert(new_methods_length <= USHRT_MAX,
-         "error methods for default method processing caused too many methods in class %s",
-         klass->external_name());
+  if (new_methods_length > USHRT_MAX) {
+      THROW_MSG(vmSymbols::java_lang_InternalError(),
+                "error methods for default method processing created too many methods");
+  }
   u2 new_size = static_cast<u2>(new_methods_length);
 
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
