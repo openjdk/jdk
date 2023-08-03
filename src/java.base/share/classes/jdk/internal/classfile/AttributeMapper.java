@@ -59,16 +59,10 @@ public interface AttributeMapper<A> {
         LABELS,
 
         /**
-         * The attribute may contain indexes into structured not managed by the library (type variable lists, etc)
+         * The attribute may contain indexes into structured not managed by the library (type variable lists, etc) or unknown
          * and so we consult the {@link Classfile.AttributesProcessingOption} option to determine whether to preserve or drop it.
          */
-        HAZMAT,
-
-        /**
-         * The attribute is completely unknown and so we consult the {@link Classfile.AttributesProcessingOption} option
-         * to determine whether to preserve or drop it.
-         */
-        UNKNOWN
+        HAZMAT
     }
 
     /**

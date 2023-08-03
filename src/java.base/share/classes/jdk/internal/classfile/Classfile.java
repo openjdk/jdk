@@ -251,10 +251,7 @@ public sealed interface Classfile
         /** Process all attributes */
         PASS_ALL_ATTRIBUTES,
 
-        /** Drop unknown attributes */
-        DROP_UNKNOWN_ATTRIBUTES,
-
-        /** Drop unknown and hazmat attributes, @see AttributeMapper.AttributeStability#HAZMAT */
+        /** Drop hazmat attributes, @see AttributeMapper.AttributeStability#HAZMAT */
         DROP_HAZMAT_ATRIBUTES
     }
 

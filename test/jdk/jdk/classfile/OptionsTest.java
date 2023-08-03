@@ -44,8 +44,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.internal.classfile.AttributeMapper;
 import jdk.internal.classfile.AttributedElement;
+import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassfileElement;
+import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.CompoundElement;
 
 /**
@@ -65,8 +67,17 @@ class OptionsTest {
 
     @ParameterizedTest
     @MethodSource("corpus")
-    void testAttributesProcessingOption(Path path) throws Exception {
+    void testAttributesProcessingOptionOnParse(Path path) throws Exception {
         testNoHazmat(path, Classfile.of(Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES).parse(path));
+    }
+
+    @ParameterizedTest
+    @MethodSource("corpus")
+    void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
+        testNoHazmat(path, Classfile.of().parse(
+                Classfile.of(Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES).transform(
+                            Classfile.of().parse(path),
+                            ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
 
     void testNoHazmat(Path path, ClassfileElement e) {

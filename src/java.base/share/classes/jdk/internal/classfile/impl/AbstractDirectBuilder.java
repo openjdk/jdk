@@ -27,6 +27,8 @@ package jdk.internal.classfile.impl;
 import java.util.Optional;
 
 import jdk.internal.classfile.Attribute;
+import jdk.internal.classfile.AttributeMapper;
+import jdk.internal.classfile.Classfile;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
@@ -52,6 +54,9 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        attributes.withAttribute(a);
+        if (context.attributesProcessingOption() == Classfile.AttributesProcessingOption.PASS_ALL_ATTRIBUTES
+                || a.attributeMapper().attributeStability() != AttributeMapper.AttributeStability.HAZMAT) {
+            attributes.withAttribute(a);
+        }
     }
 }

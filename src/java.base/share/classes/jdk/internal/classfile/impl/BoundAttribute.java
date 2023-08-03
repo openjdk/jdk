@@ -172,7 +172,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
                     @Override
                     public AttributeMapper.AttributeStability attributeStability() {
-                        return AttributeStability.UNKNOWN;
+                        return AttributeStability.HAZMAT;
                     }
                 };
                 filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
