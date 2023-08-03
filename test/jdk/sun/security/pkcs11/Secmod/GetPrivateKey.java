@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@
  * @run main/othervm -Djava.security.manager=allow GetPrivateKey sm policy
  */
 
-import jtreg.SkippedException;
-
 import java.io.File;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -54,8 +52,8 @@ public class GetPrivateKey extends SecmodTest {
                     BASE + File.separator + args[1]);
         }
 
-        if (!initSecmod()) {
-            throw new SkippedException("unable to load NSS lib");
+        if (initSecmod() == false) {
+            return;
         }
 
         String configName = BASE + SEP + "nss.cfg";
@@ -92,7 +90,7 @@ public class GetPrivateKey extends SecmodTest {
         signature.update(data);
         boolean ok = signature.verify(sig);
         if (ok == false) {
-            throw new RuntimeException("Signature verification error");
+            throw new Exception("Signature verification error");
         }
 
         System.out.println("OK");

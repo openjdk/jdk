@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@
  * @run main/othervm -Djava.security.manager=allow TrustAnchors sm policy
  */
 
-import jtreg.SkippedException;
-
 import java.io.File;
 import java.security.KeyStore;
 import java.security.Provider;
@@ -46,16 +44,17 @@ import java.util.TreeSet;
 public class TrustAnchors extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
-        if (!initSecmod()) {
-            throw new SkippedException("unable to load NSS lib");
+        if (initSecmod() == false) {
+            return;
         }
 
         // our secmod.db file says nssckbi.*so*, so NSS does not find the
         // *DLL* on Windows nor the *DYLIB* on Mac OSX.
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("win") || osName.startsWith("mac")) {
-            throw new SkippedException("Test currently does not work on " + osName +
+            System.out.println("Test currently does not work on " + osName +
                 ", skipping");
+            return;
         }
 
         String configName = BASE + SEP + "nsstrust.cfg";

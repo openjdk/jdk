@@ -24,6 +24,8 @@
 
 // common infrastructure for Secmod tests
 
+import jtreg.SkippedException;
+
 import java.io.*;
 
 import java.security.Provider;
@@ -43,13 +45,11 @@ public class SecmodTest extends PKCS11Test {
     static boolean initSecmod() throws Exception {
         useNSS();
         LIBPATH = getNSSLibDir();
-        if (LIBPATH == null) {
-            return false;
-        }
         // load all the libraries except libnss3 into memory
-        if (loadNSPR(LIBPATH) == false) {
-            return false;
+        if ((LIBPATH == null) || (!loadNSPR(LIBPATH))) {
+            throw new SkippedException("Failed to load NSS libraries");
         }
+
         safeReload(LIBPATH + System.mapLibraryName("softokn3"));
         safeReload(LIBPATH + System.mapLibraryName("nssckbi"));
 
