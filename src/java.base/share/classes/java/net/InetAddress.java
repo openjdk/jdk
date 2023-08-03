@@ -788,8 +788,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * Gets the fully qualified domain name for this
      * {@linkplain InetAddress#getAddress() IP address} using the system-wide
      * {@linkplain InetAddressResolver resolver}. This is a best effort method,
-     * meaning we may not be able to return the fully qualified domain name; in
-     * which case this method returns the
+     * meaning it may not be able to return the fully qualified domain name; in
+     * which case it returns the
      * {@linkplain #getHostAddress() textual representation} of the IP address.
      *
      * <p>If there is a security manager, this method first
