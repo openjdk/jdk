@@ -115,13 +115,6 @@ class MallocSiteTable : AllStatic {
 
   STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
-  static uint32_t build_marker(unsigned bucket_idx, unsigned pos_idx) {
-    assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && pos_idx < MAX_BUCKET_LENGTH, "overflow");
-    return (uint32_t)bucket_idx << 16 | pos_idx;
-  }
-  static uint16_t bucket_idx_from_marker(uint32_t marker) { return (uint16_t)(marker >> 16); }
-  static uint16_t pos_idx_from_marker(uint32_t marker) { return marker & 0xFFFF; }
-
  public:
 
   static bool initialize();
@@ -131,8 +124,8 @@ class MallocSiteTable : AllStatic {
 
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
-  static inline bool access_stack(NativeCallStack& stack, uint32_t marker) {
-    MallocSite* site = malloc_site(marker);
+  static inline bool access_stack(NativeCallStack& stack, uint16_t bucket_idx, uint16_t bucket_pos) {
+    MallocSite* site = malloc_site(bucket_idx, bucket_pos);
     if (site != nullptr) {
       stack = *site->call_stack();
       return true;
@@ -141,22 +134,22 @@ class MallocSiteTable : AllStatic {
   }
 
   // Record a new allocation from specified call path.
-  // Return true if the allocation is recorded successfully and updates marker
+  // Return true if the allocation is recorded successfully and updates mst index and position
   // to indicate the entry where the allocation information was recorded.
   // Return false only occurs under rare scenarios:
   //  1. out of memory
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-      uint32_t* marker, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, marker, flags);
+      uint16_t* bucket_idx, uint16_t* bucket_pos, MEMFLAGS flags) {
+    MallocSite* site = lookup_or_add(stack, bucket_idx, bucket_pos, flags);
     if (site != nullptr) site->allocate(size);
     return site != nullptr;
   }
 
-  // Record memory deallocation. marker indicates where the allocation
+  // Record memory deallocation. mst index and position indicate where the allocation
   // information was recorded.
-  static inline bool deallocation_at(size_t size, uint32_t marker) {
-    MallocSite* site = malloc_site(marker);
+  static inline bool deallocation_at(size_t size, uint16_t bucket_idx, uint16_t bucket_pos) {
+    MallocSite* site = malloc_site(bucket_idx, bucket_pos);
     if (site != nullptr) {
       site->deallocate(size);
       return true;
@@ -172,8 +165,8 @@ class MallocSiteTable : AllStatic {
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
-  static MallocSite* malloc_site(uint32_t marker);
+  static MallocSite* lookup_or_add(const NativeCallStack& key, uint16_t* bucket_idx, uint16_t* bucket_pos, MEMFLAGS flags);
+  static MallocSite* malloc_site(uint16_t bucket_idx, uint16_t bucket_pos);
   static bool walk(MallocSiteWalker* walker);
 
   static inline unsigned int hash_to_index(unsigned int hash) {

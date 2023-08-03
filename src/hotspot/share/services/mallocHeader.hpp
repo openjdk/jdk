@@ -54,30 +54,53 @@ class outputStream;
  * on both 64-bit/32-bit to be enough for that. So the malloc header is 16 bytes long on both
  * 32-bit and 64-bit.
  *
+ 
  * Layout on 64-bit:
  *
- *     0        1        2        3        4        5        6        7
- * +--------+--------+--------+--------+--------+--------+--------+--------+
- * |                            64-bit size                                |  ...
- * +--------+--------+--------+--------+--------+--------+--------+--------+
+ *           0        1        2        3        4        5        6        7
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
+ *       |                            64-bit size                                |  ...
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
  *
- *           8        9        10       11       12       13       14       15          16 ++
- *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
- *  ...  |   malloc site table marker        | flags  | unused |     canary      |  ... User payload ....
- *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
+ *           8        9        10       11       12       13       14       15
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
+ *  ...  |  bucket index   | bucket position | flags  | unused |     canary      |  ...
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
  *
+ *       16 ++
+ *       ------------------------
+ *  ...  ... User payload ....     ...
+ *       ------------------------
+ *
+ *       footer[0] footer[1]
+ *       +--------+--------+
+ *  ...  |     canary      |
+ *       +--------+--------+
+ *
+ 
  * Layout on 32-bit:
  *
- *     0        1        2        3        4        5        6        7
- * +--------+--------+--------+--------+--------+--------+--------+--------+
- * |            alt. canary            |           32-bit size             |  ...
- * +--------+--------+--------+--------+--------+--------+--------+--------+
+ *           0        1        2        3        4        5        6        7
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
+ *       |            alt. canary            |           32-bit size             |  ...
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
  *
- *           8        9        10       11       12       13       14       15          16 ++
- *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
- *  ...  |   malloc site table marker        | flags  | unused |     canary      |  ... User payload ....
- *       +--------+--------+--------+--------+--------+--------+--------+--------+  ------------------------
+ *           8        9        10       11       12       13       14       15
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
+ *  ...  |  bucket index   | bucket position | flags  | unused |     canary      |  ...
+ *       +--------+--------+--------+--------+--------+--------+--------+--------+
  *
+ *       16 ++
+ *       ------------------------
+ *  ...  ... User payload ....     ...
+ *       ------------------------
+ *
+ *       footer[0] footer[1]
+ *       +--------+--------+
+ *  ...  |     canary      |
+ *       +--------+--------+
+ *
+ 
  * Notes:
  * - We have a canary in the two bytes directly preceding the user payload. That allows us to
  *   catch negative buffer overflows.
@@ -91,7 +114,8 @@ class MallocHeader {
   NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
-  const uint32_t _mst_marker;
+  const uint16_t _bucket_idx;
+  const uint16_t _bucket_pos;
   const MEMFLAGS _flags;
   const uint8_t _unused;
   uint16_t _canary;
@@ -121,24 +145,23 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
+    const uint16_t bucket_idx;
+    const uint16_t bucket_pos;
     const MEMFLAGS flags;
-    const uint32_t mst_marker;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MEMFLAGS flags, uint16_t bucket_idx, uint16_t bucket_pos);
 
   inline size_t   size()  const { return _size; }
   inline MEMFLAGS flags() const { return _flags; }
-  inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
-    return FreeInfo{this->size(), this->flags(), this->mst_marker()};
+    return FreeInfo{this->_size, this->_bucket_idx, this->_bucket_pos, this->_flags};
   }
   inline void mark_block_as_dead();
   inline void revive();
-
 
   bool is_dead() const { return _canary == _header_canary_dead_mark; }
   bool is_live() const { return _canary == _header_canary_live_mark; }

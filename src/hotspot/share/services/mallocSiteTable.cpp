@@ -101,6 +101,8 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
   return true;
 }
 
+#define ASSERT_MST_BOUNDS(bucket_idx, bucket_pos) assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && bucket_pos < MAX_BUCKET_LENGTH, "overflow");
+
 /*
  *  The hashtable does not have deletion policy on individual entry,
  *  and each linked list node is inserted via compare-and-swap,
@@ -112,11 +114,12 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
  */
-MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
+MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint16_t* bucket_idx, uint16_t* bucket_pos, MEMFLAGS flags) {
   assert(flags != mtNone, "Should have a real memory type");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
-  *marker = 0;
+  *bucket_idx = 0;
+  *bucket_pos = 0;
 
   // First entry for this hash bucket
   if (_table[index] == nullptr) {
@@ -126,7 +129,9 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
-      *marker = build_marker(index, 0);
+      *bucket_idx = index;
+      *bucket_pos = 0;
+      ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
       return entry->data();
     }
 
@@ -139,7 +144,9 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
-        *marker = build_marker(index, pos_idx);
+        *bucket_idx = index;
+        *bucket_pos = pos_idx;
+        ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
         return head->data();
       }
     }
@@ -150,7 +157,9 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       if (entry == nullptr) return nullptr;
       if (head->atomic_insert(entry)) {
         pos_idx ++;
-        *marker = build_marker(index, pos_idx);
+        *bucket_idx = index;
+        *bucket_pos = pos_idx;
+        ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
         return entry->data();
       }
       // contended, other thread won
@@ -163,13 +172,11 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 }
 
 // Access malloc site
-MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
-  uint16_t bucket_idx = bucket_idx_from_marker(marker);
+MallocSite* MallocSiteTable::malloc_site(uint16_t bucket_idx, uint16_t bucket_pos) {
   assert(bucket_idx < table_size, "Invalid bucket index");
-  const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
-       index < pos_idx && head != nullptr;
+       index < bucket_pos && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
   assert(head != nullptr, "Invalid position index");
   return head->data();

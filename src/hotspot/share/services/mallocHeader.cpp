@@ -62,5 +62,5 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
 }
 
 bool MallocHeader::get_stack(NativeCallStack& stack) const {
-  return MallocSiteTable::access_stack(stack, _mst_marker);
+  return MallocSiteTable::access_stack(stack, _bucket_idx, _bucket_pos);
 }

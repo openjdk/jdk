@@ -34,8 +34,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
-  : _size(size), _mst_marker(mst_marker), _flags(flags),
+inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint16_t mst_index, uint16_t bucket_pos)
+  : _size(size), _bucket_idx(mst_index), _bucket_pos(bucket_pos), _flags(flags),
     _unused(0), _canary(_header_canary_live_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
