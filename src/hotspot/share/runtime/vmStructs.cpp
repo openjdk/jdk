@@ -3031,7 +3031,7 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
   }
   if (start != nullptr) {
     const char * end = strrchr(typeName, '>');
-    int len = end - start + 1;
+    int len = pointer_delta_as_int(end, start) + 1;
     char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     strncpy(s, start, len - 1);
     s[len-1] = '\0';
