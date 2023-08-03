@@ -180,7 +180,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     INT32 oldCount;
     INT32 cacheIndex;
 
-    if (!DS_lockCache() || FAILED(::CoInitialize(NULL))) {
+    if (!DS_lockCache() || FAILED(::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE))) {
         return 0;
     }
     if (g_lastCacheRefreshTime == 0
@@ -254,7 +254,7 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
 
     /* set the deviceID field to the cache index */
     desc->deviceID = findCacheItemByMixerIndex(mixerIndex);
-    if (desc->deviceID < 0 || FAILED(::CoInitialize(NULL))) {
+    if (desc->deviceID < 0 || FAILED(::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE))) {
         DS_unlockCache();
         return FALSE;
     }
