@@ -521,8 +521,7 @@ abstract class UnixFileSystem
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
             if (x.errno() == EEXIST)
-                throw new FileSystemException(target.toString(), null,
-                    "Directory exists");
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
 
@@ -670,8 +669,7 @@ abstract class UnixFileSystem
                            attrs.mode());
             } catch (UnixException x) {
                 if (x.errno() == EEXIST)
-                    throw new FileSystemException(target.toString(), null,
-                        "File exists");
+                    throw new FileSystemException(toString());
                 x.rethrowAsIOException(target);
             }
 
@@ -791,8 +789,7 @@ abstract class UnixFileSystem
             }
         } catch (UnixException x) {
             if (x.errno() == EEXIST)
-                throw new FileSystemException(target.toString(), null,
-                    "Link exists");
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
     }
@@ -808,8 +805,7 @@ abstract class UnixFileSystem
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
             if (x.errno() == EEXIST)
-                throw new FileSystemException(target.toString(), null,
-                    "Special file exists");
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
         boolean done = false;
