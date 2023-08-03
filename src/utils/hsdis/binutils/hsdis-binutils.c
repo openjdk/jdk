@@ -565,7 +565,7 @@ static void parse_fake_insn(disassembler_ftype dfn,
 static fprintf_ftype target_fprintf_func = NULL;
 
 #if BFD_VERSION >= 239000000
-static int wrapper_fprintf_styled_ftype(void *v, enum disassembler_style, const char* fmt, ...) {
+static int wrapper_fprintf_styled_ftype(void *v, enum disassembler_style style_unused, const char* fmt, ...) {
   char buffer[1024] = {};
   va_list args;
   int r;
