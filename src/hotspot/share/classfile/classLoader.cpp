@@ -521,7 +521,7 @@ void ClassLoader::setup_app_search_path(JavaThread* current, const char *class_p
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    update_class_path_entry_list(current, path, false, false, false);
+    update_class_path_entry_list(current, path, true, false, false);
   }
 }
 
@@ -811,6 +811,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
     while (e != nullptr) {
       if (strcmp(e->name(), entry->name()) == 0) {
         // entry already exists
+        delete entry;
         return;
       }
       e = e->next();
