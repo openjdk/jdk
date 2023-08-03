@@ -70,11 +70,11 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
     if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default AIX or /usr/include location?
       if test "x$OPENJDK_TARGET_OS" = "xaix"; then
-        if test -s "/opt/freeware/include/cups/cups.h"; then
-          CUPS_CFLAGS="-I/opt/freeware/include"
-          CUPS_FOUND=yes
-          AC_MSG_RESULT([$CUPS_FOUND])
-        fi
+        AC_CHECK_HEADERS([/opt/freeware/include/cups/cups.h /opt/freeware/include/cups/ppd.h], [
+            CUPS_FOUND=yes
+            CUPS_CFLAGS="-I/opt/freeware/include"
+            DEFAULT_CUPS=yes
+        ])
       else
         AC_CHECK_HEADERS([cups/cups.h cups/ppd.h], [
             CUPS_FOUND=yes
