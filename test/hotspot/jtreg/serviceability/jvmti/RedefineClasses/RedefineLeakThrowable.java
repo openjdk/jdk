@@ -47,7 +47,7 @@ class Tester {
 
 public class RedefineLeakThrowable {
 
-    static final String NEW_TESTER = 
+    static final String NEW_TESTER =
         "class Tester {" +
         "   void test() {" +
         "        try {" +
