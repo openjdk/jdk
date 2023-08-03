@@ -512,7 +512,21 @@ address StubGenerator::generate_libmFmod() {
     __ pop(rax);
 
   } else {                                       // SSE version
-    assert(false, "SSE not implemented");
+    Label x87_loop;
+    __ movsd(Address(rbp, -8), xmm0);
+    __ movsd(Address(rbp, -16), xmm1);
+    __ fld_d(Address(rbp, -8));
+    __ fld_d(Address(rbp, -16));
+
+    __ bind(x87_loop);
+    __ fprem();
+    __ fnstsw_ax();
+    __ testb(rax, 0x4);
+    __ jcc(Assembler::notZero, x87_loop);
+
+    __ fstp_d(1);
+    __ fstp_d(Address(rbp, -8));
+    __ movsd(xmm0, Address(rbp, -8));
   }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
