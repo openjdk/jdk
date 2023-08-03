@@ -87,7 +87,7 @@ static size_t _symbols_removed = 0;
 static size_t _symbols_counted = 0;
 static size_t _current_size = 0;
 
-static volatile int    _items_count = 0;
+static volatile size_t _items_count = 0;
 static volatile bool   _has_items_to_clean = false;
 
 
@@ -657,11 +657,14 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
 }
 
 size_t SymbolTable::estimate_size_for_archive() {
-  return CompactHashtableWriter::estimate_size(_items_count);
+  if (_items_count > (size_t)max_jint) {
+    fatal("Too many symbols to be archived: " SIZE_FORMAT, _items_count);
+  }
+  return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
-  CompactHashtableWriter writer(_items_count, ArchiveBuilder::symbol_stats());
+  CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
   if (!DynamicDumpSharedSpaces) {
     _shared_table.reset();

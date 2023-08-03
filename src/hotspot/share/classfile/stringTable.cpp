@@ -114,7 +114,7 @@ volatile bool StringTable::_needs_rehashing = false;
 OopStorage*   StringTable::_oop_storage;
 
 static size_t _current_size = 0;
-static volatile int _items_count = 0;
+static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
 
@@ -665,7 +665,7 @@ class VerifyCompStrings : StackObj {
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings() : _table((_items_count / 8) + 1, 0 /* do not resize */), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1, 0 /* do not resize */), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == nullptr) {
@@ -801,11 +801,11 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 // to guarantee because CDS runs with a single Java thread. See JDK-8253495.)
 void StringTable::allocate_shared_strings_array(TRAPS) {
   assert(DumpSharedSpaces, "must be");
-  if (_items_count > max_jint) {
-    fatal("Too many strings to be archived: %d", _items_count);
+  if (_items_count > (size_t)max_jint) {
+    fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
   }
 
-  int total = _items_count;
+  int total = (int)_items_count;
   size_t single_array_size = objArrayOopDesc::object_size(total);
 
   log_info(cds)("allocated string table for %d strings", total);
@@ -825,7 +825,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: %d", _items_count);
+      log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
       MetaspaceShared::unrecoverable_writing_error();
     }
 
@@ -888,7 +888,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
   verify_secondary_array_index_bits();
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
 
   int index = 0;
   auto copy_into_array = [&] (oop string, bool value_ignored) {
