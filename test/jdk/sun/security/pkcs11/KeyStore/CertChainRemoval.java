@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8301154
+ * @bug 8301154 8309214
  * @summary test cert chain deletion logic w/ NSS PKCS11 KeyStore
  * @library /test/lib ..
  * @run testng/othervm CertChainRemoval
