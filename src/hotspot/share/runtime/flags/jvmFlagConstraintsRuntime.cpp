@@ -56,7 +56,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
 JVMFlag::Error ContendedPaddingWidthConstraintFunc(int value, bool verbose) {
   if ((value % BytesPerLong) != 0) {
     JVMFlag::printError(verbose,
-                        "ContendedPaddingWidth (%u) must be "
+                        "ContendedPaddingWidth (%d) must be "
                         "a multiple of %d\n",
                         value, BytesPerLong);
     return JVMFlag::VIOLATES_CONSTRAINT;

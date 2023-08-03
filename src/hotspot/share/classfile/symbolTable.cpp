@@ -87,7 +87,7 @@ static size_t _symbols_removed = 0;
 static size_t _symbols_counted = 0;
 static size_t _current_size = 0;
 
-static volatile size_t _items_count = 0;
+static volatile int    _items_count = 0;
 static volatile bool   _has_items_to_clean = false;
 
 
@@ -657,11 +657,11 @@ void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
 }
 
 size_t SymbolTable::estimate_size_for_archive() {
-  return CompactHashtableWriter::estimate_size(int(_items_count));
+  return CompactHashtableWriter::estimate_size(_items_count);
 }
 
 void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
-  CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
+  CompactHashtableWriter writer(_items_count, ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
   if (!DynamicDumpSharedSpaces) {
     _shared_table.reset();
@@ -923,14 +923,14 @@ void SymbolTable::print_histogram() {
   tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
   if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
-          ((float)_symbols_removed / (float)_symbols_counted) * 100);
+          ((double)_symbols_removed / (double)_symbols_counted) * 100);
   }
   tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
   tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
   tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
   tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
   tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
-  tty->print_cr("  Average symbol length    %7.2f", ((float)hi.total_length / (float)hi.total_count));
+  tty->print_cr("  Average symbol length    %7.2f", ((double)hi.total_length / (double)hi.total_count));
   tty->print_cr("  Symbol length histogram:");
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (size_t i = 0; i < hi.results_length; i++) {
