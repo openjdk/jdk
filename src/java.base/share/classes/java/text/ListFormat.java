@@ -197,7 +197,7 @@ public class ListFormat extends Format {
      * @param locale Locale to be used, not null
      * @param type type of the list format. One of STANDARD/OR/UNIT, not null
      * @param style style of the list format. One of FULL/SHORT/NARROW, not null
-     * @throws NullPointerException if any of the arguments is null
+     * @throws NullPointerException if any of the arguments are null
      */
     public static ListFormat getInstance(Locale locale, Type type, Style style) {
         Objects.requireNonNull(locale);
@@ -322,8 +322,8 @@ public class ListFormat extends Format {
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
      * @throws    NullPointerException if {@code toAppendTo} is null
-     * @throws    IllegalArgumentException if it cannot format the given
-     *            object
+     * @throws    IllegalArgumentException if the given object cannot
+     *               be formatted
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
