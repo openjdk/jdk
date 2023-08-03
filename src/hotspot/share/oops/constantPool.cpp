@@ -1286,11 +1286,14 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   jbyte t1 = tag_at(index1).non_error_value();
   jbyte t2 = cp2->tag_at(index2).non_error_value();
 
+  // Some classes are pre-resolved (like Throwable) which may lead to
+  // consider it as a different entry. We then revert them back temporarily
+  // to ensure proper comparison.
   if (t1 == JVM_CONSTANT_Class) {
-    // Some classes are pre-resolved (like Throwable) which may lead to
-    // consider it as a different entry. we then revert them back temporarily
-    // to ensure proper comparison.
     t1 = JVM_CONSTANT_UnresolvedClass;
+  }
+  if (t2 == JVM_CONSTANT_Class) {
+    t2 = JVM_CONSTANT_UnresolvedClass;
   }
 
   if (t1 != t2) {
@@ -1304,15 +1307,6 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   }
 
   switch (t1) {
-  case JVM_CONSTANT_Class:
-  {
-    Klass* k1 = resolved_klass_at(index1);
-    Klass* k2 = cp2->resolved_klass_at(index2);
-    if (k1 == k2) {
-      return true;
-    }
-  } break;
-
   case JVM_CONSTANT_ClassIndex:
   {
     int recur1 = klass_index_at(index1);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,98 +30,38 @@
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
- * @run driver RedefineLeakThrowable buildagent
- * @run driver/timeout=6000  RedefineLeakThrowable runtest
+ *          java.compiler
+ * @run main RedefineClassHelper
+ * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=12m  -XX:MaxMetaspaceSize=12m RedefineLeakThrowable
  */
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.lang.RuntimeException;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.Instrumentation;
-import java.security.ProtectionDomain;
-import java.lang.instrument.IllegalClassFormatException;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.helpers.ClassFileInstaller;
+class Tester {
+    void test() {
+        try {
+            int i = 42;
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+}
 
 public class RedefineLeakThrowable {
-    static class Tester {
-        void test() {
-            try {
-                int i = 42;
-            } catch (Throwable t) {
-                t.printStackTrace();
-            }
-        }
-    }
 
-    static class LoggingTransformer implements ClassFileTransformer {
-        static int transformCount = 0;
+    static final String NEW_TESTER = 
+        "class Tester {" +
+        "   void test() {" +
+        "        try {" +
+        "            int i = 42;" +
+        "        } catch (Throwable t) {" +
+        "            t.printStackTrace();" +
+        "        }" +
+        "    }" +
+        "}";
 
-        public LoggingTransformer() {}
 
-        public byte[] transform(ClassLoader loader, String className, Class classBeingRedefined,
-            ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-
-            transformCount++;
-            if (transformCount % 1000 == 0) System.out.println("transformCount:" + transformCount);
-            return null;
-        }
-    }
-
-    public static void premain(String agentArgs, Instrumentation inst) throws Exception {
-        System.gc();
-        LoggingTransformer t = new LoggingTransformer();
-        inst.addTransformer(t, true);
-        {
-            Class demoClass = Class.forName("RedefineLeakThrowable$Tester");
-
-            for (int i = 0; i < 10000; i++) {
-               inst.retransformClasses(demoClass);
-            }
-        }
-        System.gc();
-    }
-    private static void buildAgent() {
-        try {
-            ClassFileInstaller.main("RedefineLeakThrowable");
-        } catch (Exception e) {
-            throw new RuntimeException("Could not write agent classfile", e);
-        }
-
-        try {
-            PrintWriter pw = new PrintWriter("MANIFEST.MF");
-            pw.println("Premain-Class: RedefineLeakThrowable");
-            pw.println("Agent-Class: RedefineLeakThrowable");
-            pw.println("Can-Redefine-Classes: true");
-            pw.println("Can-Retransform-Classes: true");
-            pw.close();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Could not write manifest file for the agent", e);
-        }
-
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(new String[] { "-cmf", "MANIFEST.MF", "redefineagent.jar", "RedefineLeakThrowable.class" })) {
-            throw new RuntimeException("Could not write the agent jar file");
-        }
-    }
     public static void main(String argv[]) throws Exception {
-        if (argv.length == 1 && argv[0].equals("buildagent")) {
-            buildAgent();
-            return;
-        }
-        if (argv.length == 1 && argv[0].equals("runtest")) {
-            // run outside of jtreg to not OOM on jtreg classes that are loaded after metaspace is full
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                    "-XX:MetaspaceSize=12m",
-                    "-XX:MaxMetaspaceSize=12m",
-                    "-javaagent:redefineagent.jar",
-                    "RedefineLeakThrowable");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("transformCount:10000");
-            output.shouldHaveExitValue(0);
+        for (int i = 0; i < 500; i++) {
+            RedefineClassHelper.redefineClass(Tester.class, NEW_TESTER);
         }
     }
 }
