@@ -53,9 +53,7 @@ public class ToolBarSeparatorTest {
     private static JFrame frame;
     private static JSeparator separator;
     private static JToolBar toolBar;
-    private static JButton btn;
-    private static volatile Point pt;
-    private static volatile Dimension size;
+    private static volatile Rectangle toolBarBounds;
     private static volatile int sepWidth;
     private static volatile int sepPrefWidth;
 
@@ -64,16 +62,13 @@ public class ToolBarSeparatorTest {
         robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("Troy's ToolBarTest");
+                frame = new JFrame("ToolBar Separator Test");
                 toolBar = new JToolBar();
-                toolBar.setMargin(new Insets(0,0,0,0));
-                btn = new JButton("button 1");
-                toolBar.add(btn);
+                toolBar.add(new JButton("button 1"));
                 toolBar.add(new JButton("button 2"));
                 separator = new JSeparator(SwingConstants.VERTICAL);
                 toolBar.add(separator);
                 toolBar.add(new JButton("button 3"));
-                toolBar.setBackground(Color.red);
                 frame.getContentPane().setLayout(new BorderLayout());
                 frame.getContentPane().add(toolBar, BorderLayout.NORTH);
                 frame.getContentPane().add(new JPanel(), BorderLayout.CENTER);
@@ -84,18 +79,17 @@ public class ToolBarSeparatorTest {
             robot.waitForIdle();
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
-                pt = toolBar.getLocationOnScreen();
-                size = toolBar.getSize();
+                toolBarBounds = new Rectangle(toolBar.getLocationOnScreen(),
+                                              toolBar.getSize());
                 sepWidth = separator.getSize().width;
                 sepPrefWidth = separator.getPreferredSize().width;
             });
-            if (separator.getSize().width != separator.getPreferredSize().width) {
+            if (sepWidth != sepPrefWidth) {
                 System.out.println("size " + sepWidth);
-                System.out.println("preferredsize " + sepPrefWidth);
-                BufferedImage img = robot.createScreenCapture(
-                    new Rectangle(pt.x, pt.y, size.width, size.height));
+                System.out.println("preferredSize " + sepPrefWidth);
+                BufferedImage img = robot.createScreenCapture(toolBarBounds);
                 ImageIO.write(img, "png", new java.io.File("image.png"));
-                throw new RuntimeException("separator size is too wide");
+                throw new RuntimeException("Separator size is too wide");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
