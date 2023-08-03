@@ -27,22 +27,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</delimiters>
 	<dates>
 		<calendars>
-			<calendar type="coptic">
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE፡ dd MMMM መዓልቲ y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-			</calendar>
-			<calendar type="ethiopic">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -55,20 +39,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="unconfirmed">{0} - {1}</intervalFormatFallback>
-						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM-dd – MM-dd</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d" draft="unconfirmed">E፡ MM-dd – E፡ MM-dd</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E፡ MM-dd – E፡ MM-dd</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M" draft="unconfirmed">MMM–MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d–d</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="unconfirmed">E፡ MMM d – E፡ MMM d</greatestDifference>
@@ -123,27 +99,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
-			</calendar>
-			<calendar type="japanese">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="persian">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="roc">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
-					</intervalFormats>
-				</dateTimeFormats>
 			</calendar>
 		</calendars>
 	</dates>

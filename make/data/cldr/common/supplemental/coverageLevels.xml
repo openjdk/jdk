@@ -68,7 +68,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%currency40" value="(BRL|CNY|EUR|GBP|INR|JPY|RUB|USD)"/>
 		<coverageVariable key="%currency60" value="(AUD|CAD|CHF|DKK|HKD|IDR|KRW|MXN|NOK|PLN|SAR|SEK|THB|TRY|TWD|ZAR)"/>
 		<coverageVariable key="%currency60_EU" value="(CZK|HUF)"/>
-		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYN|BZD|CDF|CLP|CNH|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LSL|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRU|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SLL|SOS|SRD|SSP|STN|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VES|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
+		<coverageVariable key="%currency80" value="(AED|AFN|ALL|AMD|ANG|AOA|ARS|AWG|AZN|BAM|BBD|BDT|BGN|BHD|BIF|BMD|BND|BOB|BSD|BTN|BWP|BYN|BZD|CDF|CLP|CNH|COP|CRC|CUC|CUP|CVE|CZK|DJF|DOP|DZD|EGP|ERN|ETB|FJD|FKP|GEL|GHS|GIP|GMD|GNF|GTQ|GYD|HNL|HRK|HTG|HUF|ILS|IQD|IRR|ISK|JMD|JOD|KES|KGS|KHR|KMF|KPW|KWD|KYD|KZT|LAK|LBP|LKR|LRD|LSL|LYD|MAD|MDL|MGA|MKD|MMK|MNT|MOP|MRU|MUR|MVR|MWK|MYR|MZN|NAD|NGN|NIO|NPR|NZD|OMR|PAB|PEN|PGK|PHP|PKR|PYG|QAR|RON|RSD|RWF|SBD|SCR|SDG|SGD|SHP|SL[EL]|SOS|SRD|SSP|STN|SYP|SZL|TJS|TMT|TND|TOP|TTD|TZS|UAH|UGX|UYU|UZS|VES|VND|VUV|WST|XCD|XAF|XOF|XPF|YER|ZMW)"/>
 		<coverageVariable key="%currency100" value="(AFA|ADP|ALK|AO[KNR]|AR[ALMP]|ATS|AZM|BA[DN]|BE[CFL]|BG[LM]|BGO|BO[LPV]|BR[BCENRZ]|BUK|BY[BR]|CH[EW]|CL[EF]|CNX|COU|CS[DK]|CYP|DDM|DEM|EC[SV]|EEK|ES[ABP]|FIM|FRF|GEK|GHC|GNS|GQE|GRD|GW[EP]|HRD|IEP|IL[PR]|ISJ|ITL|KR[HO]|LT[LT]|LU[CFL]|LV[LR]|MAF|MCF|MDC|MGF|MKN|MLF|MRO|MT[LP]|MVP|MX[PV]|MZ[EM]|NIC|NLG|PE[IS]|PLZ|PTE|RHD|ROL|RUR|SD[DP]|SIT|SKK|SRG|STD|SUR|SVC|TJR|TMM|TPE|TRL|UAK|UGS|US[NS]|UY[IPW]|VE[BF]|VNN|XA[GU]|XB[ABCD]|XDR|XEU|XF[OU]|XP[DT]|XRE|XSU|XTS|XUA|YDD|YU[DMNR]|ZAL|ZMK|ZR[NZ]|ZW[DLR])"/>
 		<coverageVariable key="%cyclicNameTypes" value="([1-9]?[0-9])"/>
 		<coverageVariable key="%d0Types80" value="(ascii|fwidth|hwidth|lower|title|upper)"/>
@@ -105,8 +105,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%language60_GA" value="(fan|mye)"/>
 		<coverageVariable key="%language60_NG" value="(ff|ha|ibb|ig|kr|yo)"/>
 		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
-		<!-- All locales present in main/ MUST have their language's name at least at level 80 (modern) -->
-		<coverageVariable key="%language80" value="(a([bfkmvyz]|ce|d[ay]|gq|in|l[et]|n[np]?|r[nps]?|s[at]?|tj|wa)|b([m-os]|a[ns]?|e[mz]?|gc?|ho|in?|la|rx?|ug|yn)|c([ovy]|ay?|cp|eb?|gg|h[kmopry]?|kb|lc|r[gjklmr]|sw?)|d([evz]|a[krv]?|gr|je|oi|sb|ua|yo|zg)|e([elnos-u]|bu|fi|ka|wo)|f([afjy]|il?|on?|r[cr]?|ur)|fa_AF|g([dlnv]|aa?|ez|il|or|sw|uz?|wi)|h([ertyz]|a[iwx]?|il?|mn|sb|u[pr]?)|i([adgiostu]|b[ab]|kt|lo|nh)|j([av]|bo|go|mc)|k([ijnvy]|a[bcjm]?|bd|cg|de|ea|fo|gp|h[aq]|kj?|ln?|mb?|ok?|pe|r[clu]?|s[bfh]?|um?|wk?)|l([bgntv]|a[dg]?|ez|il?|kt|o[uz]?|rc|sm|u[anosy]?)|m([hklr-ty]|a[dgiks]|df|e[nr]|fe|g[ho]?|i[cn]?|ni?|o[ehs]|u[als]|wl|yv|zn)|n([bglrv]|a[pq]?|ds?|ew?|i[au]|mg|nh?|og?|qo|so|us|yn?)|o([cmrs]|j[bcsw]|ka)|p([lst]|a[gmpu]?|cm|is|qm)|qu|r([mn]|a[jpr]|hg|of?|wk?|up?)|s([dgikoqsv]|a[dhqt]?|b[ap]|c[no]?|e[hs]?|h[in]|lh?|m[ns]?|nk?|rn?|tr?|uk?|wb?|yr)|t([akns]|ce|e[mot]?|gx?|ht?|ig?|l[hi]|ok?|pi|rv?|tm?|um|vl|wq|yv?|zm)|u([gkrz]|dm|mb|nd)|v([ei]|ai|un)|w(a[elr]?|o|uu)|x(al|h|og)|y([io]|av|bb|rl|ue)|z(gh|h|un?|xx|za))"/>
+		<!-- See CLDR-16673: All basic+ locales (per coverageLevels.txt) MUST have their language's name at least at level 80 (modern) -->
+		<coverageVariable key="%language80" value="a([bfmvyz]|ce|d[ay]|in|l[et]|np?|r[nps]?|st?|tj|wa)|b([ens]|an?|gc?|ho|in?|l[ao]|rx?|ug|yn)|c([ovy]|ay?|eb|h[kmopry]?|lc|r[gj-mr]|sw?)|d([ev]|a[kr]?|gr|oi|sb|zg)|e([lns-u]|fi|ka)|f([ajy]|il?|on?|rc?)|g([dlnu]|aa?|ez|il|or|wi)|h([ertyz]|a[ix]?|il?|mn|sb|u[pr]?)|i([adgos-u]|b[ab]|kt|lo|nh)|j([av]|bo)|k([jknsvy]|a[cj]?|bd|cg|ea|fo|gp|ha|mb?|ok?|pe|r[clu]?|um?|wk|xv)|l([btv]|ad?|ez|i[jl]?|mo|o[uz]?|sm|u[ans])|m([hklr-t]|a[dgik]|df|en|i[cn]?|ni?|o[ehs]|u[ls]|wl|yv?)|n([glnrvy]|ap?|ew?|i[au]|og?|qo|so)|o([cr]|j[bcsw]|ka)|p([lst]|a[gmpu]?|cm|qm)|qu|r([mo]|a[jpr]|hg|up?)|s([dikmoqsv]|a[dht]?|ba|c[no]?|hn|lh?|nk|rn?|tr?|uk?|wb?|yr|zl)|t([aknos]|ce|e[mt]?|gx?|ht?|ig?|l[hi]|pi|rv?|tm?|um|vl|yv?)|u([gkrz]|dm|mb)|v(ec?|i|mw)|w(a[lr]?|o|uu)|x(al|h|nr)|y(bb|o|rl|ue)|z([ah]|un?|xx|za)"/>
 		<coverageVariable key="%languagecomp" value="(gan|hak|hsn|nan)"/> <!-- not currently used, just for reference: the only valid language codes that are not in modern coverage -->
 		<coverageVariable key="%lbTypes80" value="(strict|normal|loose)"/>
 		<coverageVariable key="%lwTypes" value="(normal|breakall|keepall|phrase)"/>
@@ -444,6 +444,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/symbols[@numberSystem='deva']/minusSign"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/symbols[@numberSystem='deva']/percentSign"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/symbols[@numberSystem='deva']/plusSign"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/symbols[@numberSystem='khmr']/decimal"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/symbols[@numberSystem='khmr']/group"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/symbols[@numberSystem='khmr']/minusSign"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/symbols[@numberSystem='khmr']/percentSign"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/symbols[@numberSystem='khmr']/plusSign"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/symbols[@numberSystem='mymr']/decimal"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/symbols[@numberSystem='mymr']/group"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/symbols[@numberSystem='mymr']/minusSign"/>
@@ -470,6 +475,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inLanguage="%bengDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='beng']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='deva']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='khmr']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='khmr']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength/currencyFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='mymr']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
 		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/currencyFormats[@numberSystem='tibt']/currencyFormatLength/currencyFormat%stdPattern"/>
@@ -482,6 +489,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inLanguage="%bengDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='beng']/decimalFormatLength/decimalFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='deva']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='deva']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='khmr']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='khmr']/decimalFormatLength/decimalFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='mymr']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='mymr']/decimalFormatLength/decimalFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/decimalFormats[@numberSystem='tibt']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
@@ -490,12 +499,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel	value="moderate"	inLanguage="%arabextDefaultLanguages"	match="numbers/percentFormats[@numberSystem='arabext']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%bengDefaultLanguages"	match="numbers/percentFormats[@numberSystem='beng']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/percentFormats[@numberSystem='deva']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/percentFormats[@numberSystem='khmr']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/percentFormats[@numberSystem='mymr']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/percentFormats[@numberSystem='tibt']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%arabDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='arab']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%arabextDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='arabext']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%bengDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='beng']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%devaDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='deva']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel	value="moderate"	inLanguage="%khmrDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='khmr']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%mymrDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='mymr']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel	value="moderate"	inLanguage="%tibtDefaultLanguages"	match="numbers/scientificFormats[@numberSystem='tibt']/scientificFormatLength/scientificFormat%stdPattern"/>
 
@@ -593,6 +604,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="moderate" match="numbers/scientificFormats[@numberSystem='hanidec']/scientificFormatLength/scientificFormat%stdPattern"/>
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="moderate" match="numbers/percentFormats[@numberSystem='hanidec']/percentFormatLength/percentFormat%stdPattern"/>
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="moderate" match="numbers/decimalFormats[@numberSystem='hanidec']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='khmr']/decimal"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='khmr']/group"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='khmr']/plusSign"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='khmr']/minusSign"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='khmr']/percentSign"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/decimalFormats[@numberSystem='khmr']/decimalFormatLength/decimalFormat%stdPattern"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/currencyFormats[@numberSystem='khmr']/currencyFormatLength/currencyFormat%stdPattern"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/currencyFormats[@numberSystem='khmr']/currencyFormatLength/currencyFormat%stdPattern[@alt='%anyAttribute']"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/scientificFormats[@numberSystem='khmr']/scientificFormatLength/scientificFormat%stdPattern"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/percentFormats[@numberSystem='khmr']/percentFormatLength/percentFormat%stdPattern"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="moderate" match="numbers/decimalFormats[@numberSystem='khmr']/decimalFormatLength[@type='%shortLong']/decimalFormat[@type='standard']/pattern[@type='%compactDecimalTypes']"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='knda']/decimal"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='knda']/group"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="moderate" match="numbers/symbols[@numberSystem='knda']/plusSign"/>
@@ -815,6 +837,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel inLanguage="%devaDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/perMille"/>
 		<coverageLevel inLanguage="%devaDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/infinity"/>
 		<coverageLevel inLanguage="%devaDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='deva']/nan"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/approximatelySign"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/exponential"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/superscriptingExponent"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/perMille"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/infinity"/>
+		<coverageLevel inLanguage="%khmrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/nan"/>
 		<coverageLevel inLanguage="%mymrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='mymr']/approximatelySign"/>
 		<coverageLevel inLanguage="%mymrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='mymr']/exponential"/>
 		<coverageLevel inLanguage="%mymrDefaultLanguages" value="modern" match="numbers/symbols[@numberSystem='mymr']/superscriptingExponent"/>
@@ -858,6 +886,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='hanidec']/perMille"/>
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='hanidec']/infinity"/>
 		<coverageLevel inLanguage="%hanidecNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='hanidec']/nan"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/approximatelySign"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/exponential"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/superscriptingExponent"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/perMille"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/infinity"/>
+		<coverageLevel inLanguage="%khmrNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='khmr']/nan"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='knda']/approximatelySign"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='knda']/exponential"/>
 		<coverageLevel inLanguage="%kndaNativeLanguages" value="modern" match="numbers/symbols[@numberSystem='knda']/superscriptingExponent"/>

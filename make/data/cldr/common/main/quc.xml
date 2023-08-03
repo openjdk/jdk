@@ -18,12 +18,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MK">Macedonia del Norte</territory>
 		</territories>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters>[aä {aʼ} {bʼ} {ch} {chʼ} e {eʼ} i {iʼ} j k {kʼ} l m n o p q {qʼ} r s t {tz} {tzʼ} {tʼ} u {uʼ} v w x y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c d f g h ñ z]</exemplarCharacters>

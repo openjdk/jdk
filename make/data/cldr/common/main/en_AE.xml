@@ -349,11 +349,4 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 		</timeZoneNames>
 	</dates>
-	<numbers>
-		<currencies>
-			<currency type="AED">
-				<symbol>AED</symbol>
-			</currency>
-		</currencies>
-	</numbers>
 </ldml>

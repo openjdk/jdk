@@ -12,7 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territory type="DJ"/>
 	</identity>
 	<numbers>
-		<defaultNumberingSystem>arab</defaultNumberingSystem>
 		<currencies>
 			<currency type="DJF">
 				<symbol>Fdj</symbol>

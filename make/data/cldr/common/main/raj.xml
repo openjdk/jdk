@@ -27,9 +27,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="UK">यूके</measurementSystemName>
 			<measurementSystemName type="US">यू एस</measurementSystemName>
 		</measurementSystemNames>
-		<codePatterns>
-			<codePattern type="territory">{0}</codePattern>
-		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters draft="contributed">[ँ ंः अ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी ु ू ृ ॅ े ै ो ौ ्]</exemplarCharacters>
@@ -144,11 +141,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>deva</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="contributed">latn</native>
-		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-		</symbols>
 	</numbers>
 </ldml>

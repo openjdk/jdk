@@ -60,9 +60,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>,</decimal>
 			<group>.</group>
 		</symbols>
-		<symbols numberSystem="olck">
-			<decimal>,</decimal>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

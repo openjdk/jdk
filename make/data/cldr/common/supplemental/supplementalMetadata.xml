@@ -1813,7 +1813,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			ga_IE gaa_GH gd_GB gez_ET gl_ES gn_PY gsw_CH gu_IN guz_KE gv_IM
 			ha_Arab_NG ha_NG haw_US he_IL hi_IN hi_Latn_IN hnj_Hmnp hnj_Hmnp_US hr_HR
 			hsb_DE hu_HU hy_AM
-			ia_001 id_ID ie_001 ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
+			ia_001 id_ID ie_EE ife_TG ig_NG ii_CN io_001 is_IS it_IT iu_CA iu_Latn_CA
 			ja_JP jbo_001 jgo_CM jmc_TZ jv_ID
 			ka_GE kab_DZ kaj_NG kam_KE kcg_NG kde_TZ kea_CV ken_CM kgp_BR khq_ML ki_KE
 			kk_KZ kkj_CM kl_GL kln_KE km_KH kn_IN ko_KR kok_IN kpe_LR ks_Arab ks_Arab_IN
@@ -1827,14 +1827,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			naq_NA nb nb_NO nd_ZW nds_DE ne_NP nl_NL nmg_CM nn_NO nnh_CM nqo_GN nr_ZA
 			nso_ZA nus_SS nv_US ny_MW nyn_UG
 			oc_FR om_ET or_IN os_GE osa_US
-			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL prg_001 ps_AF pt_BR
+			pa_Arab_PK pa_Guru pa_Guru_IN pap_CW pcm_NG pis_SB pl_PL prg_PL ps_AF pt_BR
 			qu_PE quc_GT
 			raj_IN rhg_Rohg rhg_Rohg_MM rif_MA rm_CH rn_BI ro_RO rof_TZ ru_RU rw_RW rwk_TZ
 			sa_IN sah_RU saq_KE sat_Deva_IN sat_Olck sat_Olck_IN sbp_TZ sc_IT scn_IT
 			sd_Arab sd_Arab_PK sd_Deva_IN sdh_IR se_NO seh_MZ ses_ML sg_CF shi_Latn_MA
-			shi_Tfng shi_Tfng_MA shn_MM si_LK sid_ET sk_SK skr_PK sl_SI sma_SE smj_SE smn_FI
-			sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER st_ZA
-			su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
+			shi_Tfng shi_Tfng_MA shn_MM si_LK sid_ET sk_SK skr_PK sl_SI sma_SE smj_SE
+			smn_FI sms_FI sn_ZW so_SO sq_AL sr_Cyrl sr_Cyrl_RS sr_Latn_RS ss_ZA ssy_ER
+			st_ZA su_Latn su_Latn_ID sv_SE sw_TZ syr_IQ szl_PL
 			ta_IN te_IN teo_UG tg_TJ th_TH ti_ET tig_ER tk_TM tn_ZA to_TO tok_001 tpi_PG
 			tr_TR trv_TW trw_PK ts_ZA tt_RU twq_NE tyv_RU tzm_MA
 			ug_CN uk_UA ur_PK uz_Arab_AF uz_Cyrl_UZ uz_Latn uz_Latn_UZ

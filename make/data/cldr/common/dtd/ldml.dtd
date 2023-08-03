@@ -427,7 +427,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT contextTransformUsage ( alias | ( contextTransform*, special* ) ) >
 <!ATTLIST contextTransformUsage type CDATA #REQUIRED >
-    <!--@MATCH:literal/calendar-field, currencyName, day-format-except-narrow, day-standalone-except-narrow, era-abbr, era-name, keyValue, languages, month-format-except-narrow, month-standalone-except-narrow, number-spellout, relative, script, typographicNames-->
+    <!--@MATCH:literal/all, calendar-field, currencyName, currencyName-count, day-format-except-narrow, day-standalone-except-narrow, era-abbr, era-name, key, keyValue, languages, metazone-long, metazone-short, month-format-except-narrow, month-standalone-except-narrow, number-spellout, relative, script, territory, typographicNames, zone-exemplarCity, zone-long, zone-short-->
 <!ATTLIST contextTransformUsage alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST contextTransformUsage draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
@@ -1425,8 +1425,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST pattern type NMTOKEN "standard" >
     <!--@MATCH:literal/1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000, 100000000000, 1000000000000, 10000000000000, 100000000000000, 1000000000000000, 10000000000000000, 100000000000000000, 1000000000000000000, 10000000000000000000, approximately, atLeast, atMost, range, standard-->
 <!ATTLIST pattern numbers CDATA #IMPLIED >
-    <!-- TODO: generalize this to be any (M=|d=)?<numberSystem> -->
-    <!--@MATCH:literal/M=romanlow, d=hanidays, hanidec, hebr, y=jpanyear-->
+    <!-- TODO: generalize this to be any (M=|d=|y=)?<numberSystem> -->
+    <!--@MATCH:literal/M=romanlow, d=hanidays, d=jpan, hanidec, hebr, tibt, y=jpanyear-->
     <!--@VALUE-->
 <!ATTLIST pattern count (0 | 1 | zero | one | two | few | many | other) #IMPLIED >
     <!-- Only used for decimalFormats type="1000..." -->
@@ -1557,8 +1557,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT dateFormatItem ( #PCDATA ) >
 <!ATTLIST dateFormatItem id CDATA #REQUIRED >
-    <!-- TODO rationalize this list -->
-    <!--@MATCH:literal/Bh, Bhm, Bhms, E, EBhm, EBhms, EEEEd, EHm, EHms, Ed, Ehm, Ehms, Gy, GyM, GyMEEEEd, GyMMM, GyMMMEEEEd, GyMMMEd, GyMMMM, GyMMMMEd, GyMMMMd, GyMMMd, GyMd, H, HHmm, HHmmZ, HHmmss, Hm, HmZ, Hmm, Hms, Hmsv, Hmsvvvv, Hmv, Hmvvvv, M, MEEEEd, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEEEEd, MMMMEd, MMMMW, MMMMd, MMMMdd, MMMd, MMMdd, MMd, MMdd, Md, Mdd, UM, UMMM, UMMMd, UMd, d, h, hhmm, hhmmss, hm, hms, hmsv, hmsvvvv, hmv, hmvvvv, mmss, ms, y, yM, yMEEEEd, yMEd, yMM, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMccccd, yMMMMd, yMMMd, yMMdd, yMd, yQ, yQQQ, yQQQQ, yw, yyyy, yyyyM, yyyyMEEEEd, yyyyMEd, yyyyMM, yyyyMMM, yyyyMMMEEEEd, yyyyMMMEd, yyyyMMMM, yyyyMMMMEd, yyyyMMMMccccd, yyyyMMMMd, yyyyMMMd, yyyyMMdd, yyyyMd, yyyyQQQ, yyyyQQQQ-->
+    <!--@MATCH:regex/((E|EEEE)?(H|HH|h|hh|Bh)(m|ms|mm|mmss)?(Z|z|zzzz|v|vvvv)?)|(ms|mmss)|((G|GGGGG)?(y|yy|yyyy)((M{1,4}((E|EEEE|cccc)?(d|dd))?)|(w|Q|QQQ|QQQQ))?)|(U(M|MMM)d?)|(M{1,4}(((E|EEEE|cccc)?(d|dd))|W)?)|((E|EEEE)?d)|(E|EEEE)-->
 <!ATTLIST dateFormatItem count (zero | one | two | few | many | other) #IMPLIED >
 <!ATTLIST dateFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/ascii, variant-->
@@ -1616,8 +1615,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 
 <!ELEMENT intervalFormatItem ( alias | ( greatestDifference*, special* ) ) >
 <!ATTLIST intervalFormatItem id NMTOKEN #REQUIRED >
-    <!-- TODO: check to see if this should be minimized -->
-    <!--@MATCH:literal/Bh, Bhm, Gy, GyM, GyMEd, GyMMM, GyMMMEd, GyMMMd, GyMd, H, Hm, Hmv, Hmvvvv, Hv, Hvvvv, M, MEd, MMM, MMMEEEEd, MMMEd, MMMM, MMMMEd, MMMMd, MMMd, Md, d, h, hm, hmv, hmvvvv, hv, hvvvv, y, yM, yMEd, yMMM, yMMMEEEEd, yMMMEd, yMMMM, yMMMMEEEEd, yMMMMEd, yMMMMd, yMMMd, yMd, GGGGGyM, GGGGGyMEd, GGGGGyMd, GyMMMM, GyMMMMEd, GyMMMMd-->
+    <!--@MATCH:regex/((H|h|Bh)m?(v|vvvv)?)|((G|GGGGG)?(y|yyyy)((M|MMM|MMMM)((E|EEEE)?d)?)?)|((M|MMM|MMMM)((E|EEEE)?d)?)|d-->
 <!ATTLIST intervalFormatItem alt NMTOKENS #IMPLIED >
     <!--@MATCH:literal/variant-->
 <!ATTLIST intervalFormatItem draft (approved | contributed | provisional | unconfirmed) #IMPLIED >

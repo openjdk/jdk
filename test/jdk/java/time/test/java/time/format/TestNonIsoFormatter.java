@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8206120
+ * @bug 8206120 8306116
  * @modules jdk.localedata
  */
 
@@ -132,7 +132,7 @@ public class TestNonIsoFormatter {
             { BUDDHIST, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e1e\u0e38\u0e17\u0e18" },
 
             { HIJRAH,   ARABIC, "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 "
-                                + "\u0627\u0644\u0625\u0633\u0644\u0627\u0645\u064a "
+                                + "\u0627\u0644\u0647\u062c\u0631\u064a "
                                 + "(\u0623\u0645 \u0627\u0644\u0642\u0631\u0649)" },
         };
     }

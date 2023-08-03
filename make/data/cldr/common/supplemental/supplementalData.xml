@@ -1396,7 +1396,7 @@ XXX Code for transations where no currency is involved
 		<language type="bku" scripts="Latn"/>
 		<language type="bku" scripts="Buhd" alt="secondary"/>
 		<language type="bla" scripts="Latn"/>
-		<language type="blo" scripts="Latn" territories="BJ TG"/>
+		<language type="blo" scripts="Latn"/>
 		<language type="blt" scripts="Tavt"/>
 		<language type="bm" scripts="Latn Nkoo"/>
 		<language type="bm" territories="ML" alt="secondary"/>
@@ -1693,6 +1693,7 @@ XXX Code for transations where no currency is involved
 		<language type="ibb" territories="NG" alt="secondary"/>
 		<language type="id" scripts="Latn" territories="ID"/>
 		<language type="id" scripts="Arab" alt="secondary"/>
+		<language type="ie" scripts="Latn" alt="secondary"/>
 		<language type="ife" scripts="Latn"/>
 		<language type="ig" scripts="Latn"/>
 		<language type="ig" territories="NG" alt="secondary"/>
@@ -2567,7 +2568,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="35" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="fon" populationPercent="25"/>	<!--Fon-->
 			<languagePopulation type="yo" populationPercent="6.7"/>	<!--Yoruba-->
-			<languagePopulation type="blo" populationPercent="0.26"/>	<!--Anii-->
+			<languagePopulation type="blo" populationPercent="0.3" references="R1194"/>	<!--Anii-->
 		</territory>
 		<territory type="BL" gdp="255000000" literacyPercent="99" population="7122">	<!--St. Barthélemy-->
 			<languagePopulation type="fr" populationPercent="96" officialStatus="official"/>	<!--French-->
@@ -2919,6 +2920,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="en" populationPercent="50"/>	<!--English-->
 			<languagePopulation type="fi" populationPercent="21"/>	<!--Finnish-->
 			<languagePopulation type="vro" populationPercent="5.7"/>	<!--Võro-->
+			<languagePopulation type="ie" literacyPercent="99" populationPercent="0.0001"/>	<!--Interlingue-->
 		</territory>
 		<territory type="EG" gdp="1204000000000" literacyPercent="73.9" population="104124000">	<!--Egypt-->
 			<languagePopulation type="ar" populationPercent="94" officialStatus="official"/>	<!--Arabic-->
@@ -4146,7 +4148,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="61" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ee" populationPercent="17"/>	<!--Ewe-->
 			<languagePopulation type="ife" literacyPercent="15" populationPercent="1.3" references="R1048"/>	<!--Ifè-->
-			<languagePopulation type="blo" populationPercent="0.14"/>	<!--Anii-->
+			<languagePopulation type="blo" populationPercent="0.15" references="R1194"/>	<!--Anii-->
 		</territory>
 		<territory type="TH" gdp="1236000000000" literacyPercent="93.5" population="68977400">	<!--Thailand-->
 			<languagePopulation type="th" literacyPercent="93" populationPercent="80" officialStatus="official" references="R1090"/>	<!--Thai-->
@@ -5643,6 +5645,7 @@ XXX Code for transations where no currency is involved
 		<reference type="R1191" uri="https://www.cia.gov/library/publications/the-world-factbook/geos/bl.html">http://lanic.utexas.edu/project/tilan/reports/rtf359/bolivia1.html Spanish is the official language, only about 60-70% of the population speaks it at all ;</reference>
 		<reference type="R1192" uri="http://en.wikipedia.org/wiki/Demographics_of_Chile#Languages">Spanish &quot;&quot;universal&quot;&quot;, set to 98%</reference>
 		<reference type="R1193" uri="http://en.wikipedia.org/wiki/Costa_Rica">https://www.cia.gov/library/publications/the-world-factbook/geos/cs.html</reference>
+		<reference type="R1194" uri="https://en.wikipedia.org/wiki/Anii_language/">[missing]</reference>
 		<reference type="R1195" uri="https://www.cia.gov/library/publications/the-world-factbook/geos/in.html">[missing]</reference>
 		<reference type="R1196" uri="http://www.himachalonline.com/temp/languages.htm">Sirmauri (srx) Mahasui = Himachali, Pahari, Sirmouri, Sirmuri</reference>
 		<reference type="R1197" uri="http://en.wikipedia.org/wiki/Sanskrit">- 14k reported as native. Taught as elective subject in grades 5-8; not widely spoken as primary communication.</reference>

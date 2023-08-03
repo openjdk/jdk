@@ -11,12 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="iu"/>
 		<script type="Latn"/>
 	</identity>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters>[a g i j k lł m n {ng} {nng} p q r s t u v]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d e f h o w x y z]</exemplarCharacters>

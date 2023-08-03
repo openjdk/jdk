@@ -22,7 +22,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[aá eé i ɨ j k l m n oó p q s t uú w y ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f g h r v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[AÁ EÉ I Ɨ J K L M N OÓ P Q S T UÚ W Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -32,25 +31,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="provisional">EEEE, MMMM d, y</pattern>
-							<datetimeSkeleton draft="provisional">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="provisional">MMMM d, y</pattern>
-							<datetimeSkeleton draft="provisional">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="provisional">MMM d, y</pattern>
-							<datetimeSkeleton draft="provisional">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="provisional">y-MM-dd</pattern>
-							<datetimeSkeleton draft="provisional">yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>

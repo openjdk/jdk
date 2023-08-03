@@ -11,11 +11,4 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="en"/>
 		<territory type="PH"/>
 	</identity>
-	<numbers>
-		<currencies>
-			<currency type="PHP">
-				<symbol>₱</symbol>
-			</currency>
-		</currencies>
-	</numbers>
 </ldml>

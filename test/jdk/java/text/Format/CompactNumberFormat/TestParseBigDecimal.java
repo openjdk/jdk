@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8306116
  * @summary Checks CNF.parse() when parseBigDecimal is set to true
  * @modules jdk.localedata
  * @run testng/othervm TestParseBigDecimal
@@ -133,9 +133,9 @@ public class TestParseBigDecimal {
             {FORMAT_JA_JP_SHORT, "12345679\u5146", new BigDecimal("12345679000000000000")},
             {FORMAT_JA_JP_SHORT, "-12345679\u5146", new BigDecimal("-12345679000000000000")},
             {FORMAT_IT_SHORT, "-99", new BigDecimal("-99")},
-            {FORMAT_IT_SHORT, "1\u00a0Mln", new BigDecimal("1000000")},
-            {FORMAT_IT_SHORT, "30\u00a0Mln", new BigDecimal("30000000")},
-            {FORMAT_IT_SHORT, "-30\u00a0Mln", new BigDecimal("-30000000")},
+            {FORMAT_IT_SHORT, "1\u00a0Mio", new BigDecimal("1000000")},
+            {FORMAT_IT_SHORT, "30\u00a0Mio", new BigDecimal("30000000")},
+            {FORMAT_IT_SHORT, "-30\u00a0Mio", new BigDecimal("-30000000")},
             {FORMAT_IT_SHORT, "12345679\u00a0Bln", new BigDecimal("12345679000000000000")},
             {FORMAT_IT_SHORT, "-12345679\u00a0Bln", new BigDecimal("-12345679000000000000")},
             {FORMAT_SW_LONG, "-0.0", new BigDecimal("-0.0")},

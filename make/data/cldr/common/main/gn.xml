@@ -49,12 +49,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VE" draft="unconfirmed">Venezuéla</territory>
 		</territories>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
 		<exemplarCharacters>[aã {ch} eẽ g{g̃} h iĩ j k l m {mb} nñ {nd} {ng} {nt} oõ p r {rr} s t uũ v yỹ ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f q w x z]</exemplarCharacters>
@@ -107,11 +101,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ára</displayName>
 			</field>
 			<field type="day-short">
-				<relative type="-1" draft="unconfirmed">kuehe</relative>
-				<relative type="0" draft="unconfirmed">ko ára</relative>
-				<relative type="1" draft="unconfirmed">koʼẽrõ</relative>
-			</field>
-			<field type="day-narrow">
 				<relative type="-1" draft="unconfirmed">kuehe</relative>
 				<relative type="0" draft="unconfirmed">ko ára</relative>
 				<relative type="1" draft="unconfirmed">koʼẽrõ</relative>

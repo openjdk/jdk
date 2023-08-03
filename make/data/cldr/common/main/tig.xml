@@ -478,9 +478,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
-			<native>latn</native>
 			<traditional>ethi</traditional>
 		</otherNumberingSystems>
 		<currencyFormats numberSystem="latn">

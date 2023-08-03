@@ -56,20 +56,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">নভেঃ</month>
 							<month type="12">ডিসেঃ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">জা</month>
-							<month type="2">ফে</month>
-							<month type="3">মা</month>
-							<month type="4">এ</month>
-							<month type="5">মে</month>
-							<month type="6">জুন</month>
-							<month type="7">জুল</month>
-							<month type="8">আ</month>
-							<month type="9">সে</month>
-							<month type="10">অ</month>
-							<month type="11">ন</month>
-							<month type="12">ডি</month>
-						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
@@ -149,7 +135,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencyFormats numberSystem="beng">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤#,##,##0.00</pattern>
 					<pattern alt="alphaNextToNumber">¤ #,##,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -168,46 +153,30 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="ANG">
 				<displayName>নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
-				<displayName count="one">নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
-				<displayName count="other">নেদারল্যান্ডস অ্যান্টিলিয়ান গিল্ডার</displayName>
 			</currency>
 			<currency type="AWG">
 				<displayName>আরুবান গিল্ডার</displayName>
-				<displayName count="one">আরুবান গিল্ডার</displayName>
-				<displayName count="other">আরুবান গিল্ডার</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName>বারমুডান ডলার</displayName>
-				<displayName count="one">বারমুডান ডলার</displayName>
-				<displayName count="other">বারমুডান ডলার</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>গুয়াতেমালান কেৎসাল</displayName>
-				<displayName count="one">গুয়াতেমালান কেৎসাল</displayName>
-				<displayName count="other">গুয়াতেমালান কেৎসাল</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName>হন্ডুরান লেম্পিরা</displayName>
-				<displayName count="one">হন্ডুরান লেম্পিরা</displayName>
-				<displayName count="other">হন্ডুরান লেম্পিরা</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>হাইতিয়ান গুর্দ</displayName>
-				<displayName count="one">হাইতিয়ান গুর্দ</displayName>
-				<displayName count="other">হাইতিয়ান গুর্দ</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName>মেক্সিকান পেসো</displayName>
-				<displayName count="one">মেক্সিকান পেসো</displayName>
-				<displayName count="other">মেক্সিকান পেসো</displayName>
 			</currency>
 			<currency type="USD">
 				<symbol draft="contributed">$</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>পূর্ব ক্যারিবিয়ান ডলার</displayName>
-				<displayName count="one">পূর্ব ক্যারিবিয়ান ডলার</displayName>
-				<displayName count="other">পূর্ব ক্যারিবিয়ান ডলার</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -225,11 +194,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<coordinateUnit>
-				<displayName>দিক</displayName>
-			</coordinateUnit>
-		</unitLength>
-		<unitLength type="narrow">
 			<coordinateUnit>
 				<displayName>দিক</displayName>
 			</coordinateUnit>

@@ -43,7 +43,4 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</calendar>
 		</calendars>
 	</dates>
-	<numbers>
-		<defaultNumberingSystem>arab</defaultNumberingSystem>
-	</numbers>
 </ldml>
