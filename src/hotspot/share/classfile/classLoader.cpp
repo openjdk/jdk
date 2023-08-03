@@ -521,7 +521,8 @@ void ClassLoader::setup_app_search_path(JavaThread* current, const char *class_p
 
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
-    update_class_path_entry_list(current, path, true, false, false);
+    update_class_path_entry_list(current, path, /* check_for_duplicates */ true,
+                                 /* is_boot_append */ false, /* from_class_path_attr */ false);
   }
 }
 
@@ -666,7 +667,8 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
     } else {
       // Every entry on the boot class path after the initial base piece,
       // which is set by os::set_boot_path(), is considered an appended entry.
-      update_class_path_entry_list(current, path, false, true, false);
+      update_class_path_entry_list(current, path, /* check_for_duplicates */ false,
+                                    /* is_boot_append */ true, /* from_class_path_attr */ false);
     }
   }
 }
