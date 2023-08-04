@@ -83,7 +83,7 @@ public final class Arrays {
      * Sorts the specified array into ascending numerical order.
      *
      *
-     * @param elemType the class of the array to be sorted
+     * @param elemType the class of the elements of the array to be sorted
      * @param array the array to be sorted
      * @param offset the relative offset, in bytes, from the base address of
      * the array to sort, otherwise if the array is {@code null},an absolute
@@ -92,7 +92,7 @@ public final class Arrays {
      * @param toIndex the index of the last element, exclusive, to be sorted
      */
     @IntrinsicCandidate
-    public static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
+    private static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
         switch (array) {
             case int[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
             case long[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
