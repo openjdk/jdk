@@ -1022,11 +1022,13 @@ void AwtWindow::_RepositionSecurityWarning(void* param)
         (RepositionSecurityWarningStruct *)param;
     jobject self = rsws->window;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtWindow *window = (AwtWindow *)pData;
+    {
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtWindow *window = (AwtWindow *)pData;
 
-    window->RepositionSecurityWarning(env);
+        window->RepositionSecurityWarning(env);
+    }
 
   ret:
     env->DeleteGlobalRef(self);
@@ -3123,18 +3125,20 @@ void AwtWindow::_ModalDisable(void *param)
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
-    JNI_CHECK_NULL_GOTO(self, "peer", ret);
-    PDATA pData = JNI_GET_PDATA(self);
-    if (pData == NULL) {
-        env->DeleteGlobalRef(self);
-        delete mds;
-        return;
-    }
+    {
+        JNI_CHECK_NULL_GOTO(self, "peer", ret);
+        PDATA pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            env->DeleteGlobalRef(self);
+            delete mds;
+            return;
+        }
 
-    window = (AwtWindow *)pData;
-    windowHWnd = window->GetHWnd();
-    if (::IsWindow(windowHWnd)) {
-        AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
+        window = (AwtWindow *)pData;
+        windowHWnd = window->GetHWnd();
+        if (::IsWindow(windowHWnd)) {
+            AwtWindow::SetAndActivateModalBlocker(windowHWnd, blockerHWnd);
+        }
     }
 
 ret:
@@ -3152,17 +3156,19 @@ void AwtWindow::_ModalEnable(void *param)
     AwtWindow *window = NULL;
     HWND windowHWnd = 0;
 
-    JNI_CHECK_NULL_GOTO(self, "peer", ret);
-    PDATA pData = JNI_GET_PDATA(self);
-    if (pData == NULL) {
-        env->DeleteGlobalRef(self);
-        return;
-    }
+    {
+        JNI_CHECK_NULL_GOTO(self, "peer", ret);
+        PDATA pData = JNI_GET_PDATA(self);
+        if (pData == NULL) {
+            env->DeleteGlobalRef(self);
+            return;
+        }
 
-    window = (AwtWindow *)pData;
-    windowHWnd = window->GetHWnd();
-    if (::IsWindow(windowHWnd)) {
-        AwtWindow::SetModalBlocker(windowHWnd, NULL);
+        window = (AwtWindow *)pData;
+        windowHWnd = window->GetHWnd();
+        if (::IsWindow(windowHWnd)) {
+            AwtWindow::SetModalBlocker(windowHWnd, NULL);
+        }
     }
 
   ret:
@@ -3177,11 +3183,13 @@ void AwtWindow::_SetOpacity(void* param)
     jobject self = os->window;
     BYTE iOpacity = (BYTE)os->iOpacity;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtWindow *window = (AwtWindow *)pData;
+    {
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtWindow *window = (AwtWindow *)pData;
 
-    window->SetTranslucency(iOpacity, window->isOpaque());
+        window->SetTranslucency(iOpacity, window->isOpaque());
+    }
 
   ret:
     env->DeleteGlobalRef(self);
@@ -3196,11 +3204,13 @@ void AwtWindow::_SetOpaque(void* param)
     jobject self = os->window;
     BOOL isOpaque = (BOOL)os->isOpaque;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtWindow *window = (AwtWindow *)pData;
+    {
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtWindow *window = (AwtWindow *)pData;
 
-    window->SetTranslucency(window->getOpacity(), isOpaque);
+        window->SetTranslucency(window->getOpacity(), isOpaque);
+    }
 
   ret:
     env->DeleteGlobalRef(self);
@@ -3215,12 +3225,14 @@ void AwtWindow::_UpdateWindow(void* param)
     jobject self = uws->window;
     jintArray data = uws->data;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtWindow *window = (AwtWindow *)pData;
+    {
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtWindow *window = (AwtWindow *)pData;
 
-    window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
-                         uws->hBitmap);
+        window->UpdateWindow(env, data, (int)uws->width, (int)uws->height,
+                             uws->hBitmap);
+    }
 
   ret:
     env->DeleteGlobalRef(self);
@@ -3239,11 +3251,13 @@ void AwtWindow::_SetFullScreenExclusiveModeState(void *param)
     jobject self = data->window;
     jboolean state = data->isFSEMState;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtWindow *window = (AwtWindow *)pData;
+    {
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtWindow *window = (AwtWindow *)pData;
 
-    window->setFullScreenExclusiveModeState(state != 0);
+        window->setFullScreenExclusiveModeState(state != 0);
+    }
 
   ret:
     env->DeleteGlobalRef(self);
