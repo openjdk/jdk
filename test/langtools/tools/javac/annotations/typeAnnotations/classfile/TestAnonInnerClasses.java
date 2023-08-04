@@ -281,7 +281,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
     }
 
     public <T extends Attribute<T>>void run() {
-        ClassModel cm   = null;
+        ClassModel cm  = null;
         InputStream in = null;
         int testcount  = 1;
         File testFile  = null;
