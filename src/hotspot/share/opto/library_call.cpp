@@ -2811,13 +2811,6 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
-
-#if INCLUDE_JVMTI
-  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-    return false;
-  }
-#endif //INCLUDE_JVMTI
-
   if (callee()->is_static())  return false;  // caller must have the capability!
 
   null_check_receiver();  // null-check, then ignore
@@ -2828,22 +2821,11 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   kls = null_check(kls);
   if (stopped())  return true;  // argument was like int.class
 
-  Node* test = nullptr;
-  if (LibraryCallKit::klass_needs_init_guard(kls)) {
-    // Note:  The argument might still be an illegal value like
-    // Serializable.class or Object[].class.   The runtime will handle it.
-    // But we must make an explicit check for initialization.
-    Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
-    // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
-    // can generate code to load it as unsigned byte.
-    Node* inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
-    Node* bits = intcon(InstanceKlass::fully_initialized);
-    test = _gvn.transform(new SubINode(inst, bits));
-    // The 'test' is non-zero if we need to take a slow path.
-  }
-
 #if INCLUDE_JVMTI
   {
+    if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+      return false;
+    }
     // Don't try to access new allocated obj in the intrinsic.
     // It causes perfomance issues even when jvmti event VmObjectAlloc is disabled.
     // Deoptimize and allocate in interpreter instead.
@@ -2861,6 +2843,20 @@ bool LibraryCallKit::inline_unsafe_allocate() {
 
   }
 #endif //INCLUDE_JVMTI
+
+  Node* test = nullptr;
+  if (LibraryCallKit::klass_needs_init_guard(kls)) {
+    // Note:  The argument might still be an illegal value like
+    // Serializable.class or Object[].class.   The runtime will handle it.
+    // But we must make an explicit check for initialization.
+    Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
+    // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
+    // can generate code to load it as unsigned byte.
+    Node* inst = make_load(nullptr, insp, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
+    Node* bits = intcon(InstanceKlass::fully_initialized);
+    test = _gvn.transform(new SubINode(inst, bits));
+    // The 'test' is non-zero if we need to take a slow path.
+  }
 
   Node* obj = new_instance(kls, test);
   set_result(obj);
