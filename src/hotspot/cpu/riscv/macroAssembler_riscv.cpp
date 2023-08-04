@@ -4299,7 +4299,7 @@ void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enu
   j(done);
   // if got conversion overflow return src
   bind(bad_val);
-  fsgnj_d(dst, src, src);
+  fmv_d(dst, src);
 
   bind(done);
 }
