@@ -102,64 +102,6 @@ struct zmm_vector<int32_t> {
     static ymm_t min(ymm_t x, ymm_t y) { return _mm256_min_epi32(x, y); }
 };
 template <>
-struct zmm_vector<uint32_t> {
-    using type_t = uint32_t;
-    using zmm_t = __m512i;
-    using ymm_t = __m256i;
-    using opmask_t = __mmask16;
-    static const uint8_t numlanes = 16;
-
-    static type_t type_max() { return X86_SIMD_SORT_MAX_UINT32; }
-    static type_t type_min() { return 0; }
-    static zmm_t zmm_max() {
-        return _mm512_set1_epi32(type_max());
-    }  // TODO: this should broadcast bits as is?
-
-    template <int scale>
-    static ymm_t i64gather(__m512i index, void const *base) {
-        return _mm512_i64gather_epi32(index, base, scale);
-    }
-    static zmm_t merge(ymm_t y1, ymm_t y2) {
-        zmm_t z1 = _mm512_castsi256_si512(y1);
-        return _mm512_inserti32x8(z1, y2, 1);
-    }
-    static opmask_t knot_opmask(opmask_t x) { return _mm512_knot(x); }
-    static opmask_t ge(zmm_t x, zmm_t y) {
-        return _mm512_cmp_epu32_mask(x, y, _MM_CMPINT_NLT);
-    }
-    static zmm_t loadu(void const *mem) { return _mm512_loadu_si512(mem); }
-    static zmm_t max(zmm_t x, zmm_t y) { return _mm512_max_epu32(x, y); }
-    static void mask_compressstoreu(void *mem, opmask_t mask, zmm_t x) {
-        return _mm512_mask_compressstoreu_epi32(mem, mask, x);
-    }
-    static zmm_t mask_loadu(zmm_t x, opmask_t mask, void const *mem) {
-        return _mm512_mask_loadu_epi32(x, mask, mem);
-    }
-    static zmm_t mask_mov(zmm_t x, opmask_t mask, zmm_t y) {
-        return _mm512_mask_mov_epi32(x, mask, y);
-    }
-    static void mask_storeu(void *mem, opmask_t mask, zmm_t x) {
-        return _mm512_mask_storeu_epi32(mem, mask, x);
-    }
-    static zmm_t min(zmm_t x, zmm_t y) { return _mm512_min_epu32(x, y); }
-    static zmm_t permutexvar(__m512i idx, zmm_t zmm) {
-        return _mm512_permutexvar_epi32(idx, zmm);
-    }
-    static type_t reducemax(zmm_t v) { return _mm512_reduce_max_epu32(v); }
-    static type_t reducemin(zmm_t v) { return _mm512_reduce_min_epu32(v); }
-    static zmm_t set1(type_t v) { return _mm512_set1_epi32(v); }
-    template <uint8_t mask>
-    static zmm_t shuffle(zmm_t zmm) {
-        return _mm512_shuffle_epi32(zmm, (_MM_PERM_ENUM)mask);
-    }
-    static void storeu(void *mem, zmm_t x) {
-        return _mm512_storeu_si512(mem, x);
-    }
-
-    static ymm_t max(ymm_t x, ymm_t y) { return _mm256_max_epu32(x, y); }
-    static ymm_t min(ymm_t x, ymm_t y) { return _mm256_min_epu32(x, y); }
-};
-template <>
 struct zmm_vector<float> {
     using type_t = float;
     using zmm_t = __m512;
@@ -529,14 +471,6 @@ void avx512_qsort<int32_t>(int32_t *arr, int64_t arrsize) {
     if (arrsize > 1) {
         qsort_32bit_<zmm_vector<int32_t>, int32_t>(arr, 0, arrsize - 1,
                                                    2 * (int64_t)log2(arrsize));
-    }
-}
-
-template <>
-void avx512_qsort<uint32_t>(uint32_t *arr, int64_t arrsize) {
-    if (arrsize > 1) {
-        qsort_32bit_<zmm_vector<uint32_t>, uint32_t>(
-            arr, 0, arrsize - 1, 2 * (int64_t)log2(arrsize));
     }
 }
 
