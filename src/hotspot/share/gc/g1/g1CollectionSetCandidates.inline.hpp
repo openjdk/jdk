@@ -60,7 +60,7 @@ inline G1CollectionSetCandidatesIterator::G1CollectionSetCandidatesIterator(G1Co
 inline void G1CollectionSetCandidatesIterator::select_list() {
   if (_marking_position >= _which->_marking_regions.length()) {
     _is_marking_selected = false;
-  } else if (_retained_position >= _which->_retained_regions.length()) {
+  } else if (_retained_position >= _which->retained_regions_length()) {
     _is_marking_selected = true;
   } else {
     _is_marking_selected = _which->_marking_regions.at(_marking_position)._gc_efficiency >= _which->_retained_regions.at(_retained_position)._gc_efficiency;
@@ -68,7 +68,7 @@ inline void G1CollectionSetCandidatesIterator::select_list() {
 }
 
 inline G1CollectionSetCandidatesIterator& G1CollectionSetCandidatesIterator::operator++() {
-  assert(_marking_position < _which->_marking_regions.length() || _retained_position < _which->_retained_regions.length(),
+  assert(_marking_position < _which->_marking_regions.length() || _retained_position < _which->retained_regions_length(),
          "must not be at end already");
 
   if (_is_marking_selected) {

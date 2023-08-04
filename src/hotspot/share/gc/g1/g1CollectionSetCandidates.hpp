@@ -225,6 +225,7 @@ public:
 
   bool has_more_marking_candidates() const;
   uint marking_regions_length() const;
+  uint retained_regions_length() const;
 
 private:
   void verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
@@ -232,7 +233,7 @@ private:
 public:
   void verify() PRODUCT_RETURN;
 
-  uint length() const { return marking_regions_length() + _retained_regions.length(); }
+  uint length() const { return marking_regions_length() + retained_regions_length(); }
 
   // Iteration
   G1CollectionSetCandidatesIterator begin() {
@@ -240,7 +241,7 @@ public:
   }
 
   G1CollectionSetCandidatesIterator end() {
-    return G1CollectionSetCandidatesIterator(this, marking_regions_length(), _retained_regions.length());
+    return G1CollectionSetCandidatesIterator(this, marking_regions_length(), retained_regions_length());
   }
 };
 

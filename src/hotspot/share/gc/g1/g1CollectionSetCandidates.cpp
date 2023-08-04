@@ -254,6 +254,10 @@ uint G1CollectionSetCandidates::marking_regions_length() const {
   return _marking_regions.length();
 }
 
+uint G1CollectionSetCandidates::retained_regions_length() const {
+  return _retained_regions.length();
+}
+
 #ifndef PRODUCT
 void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) {
   list->verify();
