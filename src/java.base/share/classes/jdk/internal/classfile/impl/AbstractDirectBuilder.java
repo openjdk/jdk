@@ -54,8 +54,7 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        if (context.attributesProcessingOption() == Classfile.AttributesProcessingOption.PASS_ALL_ATTRIBUTES
-                || a.attributeMapper().attributeStability() != AttributeMapper.AttributeStability.HAZMAT) {
+        if (context.attributesProcessingOption().isAllowed(a.attributeMapper().attributeStability())) {
             attributes.withAttribute(a);
         }
     }

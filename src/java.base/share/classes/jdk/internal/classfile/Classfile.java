@@ -251,8 +251,19 @@ public sealed interface Classfile
         /** Process all attributes */
         PASS_ALL_ATTRIBUTES,
 
-        /** Drop hazmat attributes, @see AttributeMapper.AttributeStability#HAZMAT */
-        DROP_HAZMAT_ATRIBUTES
+        /** Drop unknown attributes */
+        DROP_UNKNOWN_ATTRIBUTES,
+
+        /** Drop unknown and hazmat attributes, @see AttributeMapper.AttributeStability#HAZMAT */
+        DROP_HAZMAT_ATRIBUTES;
+
+        /**
+         * {@return true if attributes of given stability are allowed to process}
+         * @param stability stability of the attribute
+         */
+        public boolean isAllowed(AttributeMapper.AttributeStability stability) {
+            return 5 - stability.ordinal() > ordinal();
+        }
     }
 
     /**
