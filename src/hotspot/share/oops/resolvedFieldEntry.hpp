@@ -101,11 +101,11 @@ public:
   // Printing
   void print_on(outputStream* st) const;
 
-  void set_flags(bool is_final, bool is_volatile) {
-    int new_flags = (is_final << is_final_shift) | static_cast<int>(is_volatile);
+  void set_flags(bool is_final_flag, bool is_volatile_flag) {
+    int new_flags = (is_final_flag << is_final_shift) | static_cast<int>(is_volatile_flag);
     _flags = checked_cast<u1>(new_flags);
-    assert(is_final() == is_final, "Must be");
-    assert(is_volatile() == is_volatile, "Must be");
+    assert(is_final() == is_final_flag, "Must be");
+    assert(is_volatile() == is_volatile_flag, "Must be");
   }
 
   inline void set_bytecode(u1* code, u1 new_code) {
