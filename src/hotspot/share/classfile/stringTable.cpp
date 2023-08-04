@@ -802,7 +802,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 void StringTable::allocate_shared_strings_array(TRAPS) {
   assert(DumpSharedSpaces, "must be");
   if (_items_count > (size_t)max_jint) {
-    fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+    fatal("Too many strings to be archived: %zu", _items_count);
   }
 
   int total = (int)_items_count;
@@ -825,7 +825,7 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+      log_error(cds)("Too many strings to be archived: %zu", _items_count);
       MetaspaceShared::unrecoverable_writing_error();
     }
 
