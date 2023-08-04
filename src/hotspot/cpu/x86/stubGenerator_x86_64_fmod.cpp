@@ -513,15 +513,15 @@ address StubGenerator::generate_libmFmod() {
 
   } else {                                       // SSE version
     Label x87_loop;
-    __ movsd(Address(rbp, -8), xmm0);
-    __ movsd(Address(rbp, -16), xmm1);
+    __ movsd(Address(rbp, -8), xmm1);
+    __ movsd(Address(rbp, -16), xmm0);
     __ fld_d(Address(rbp, -8));
     __ fld_d(Address(rbp, -16));
 
     __ bind(x87_loop);
     __ fprem();
     __ fnstsw_ax();
-    __ testb(rax, 0x4);
+    __ testb(rax, 0x4, false);
     __ jcc(Assembler::notZero, x87_loop);
 
     __ fstp_d(1);

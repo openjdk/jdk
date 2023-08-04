@@ -6231,11 +6231,17 @@ void Assembler::subss(XMMRegister dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
-void Assembler::testb(Register dst, int imm8) {
+void Assembler::testb(Register dst, int imm8, bool use_ral) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   if (dst == rax) {
-    emit_int8((unsigned char)0xA8);
-    emit_int8(imm8);
+    if (use_ral) {
+      emit_int8((unsigned char)0xA8);
+      emit_int8(imm8);
+    } else {
+      emit_int8((unsigned char)0xF6);
+      emit_int8((unsigned char)0xC4);
+      emit_int8(imm8);
+    }
   } else {
     (void) prefix_and_encode(dst->encoding(), true);
     emit_arith_b(0xF6, 0xC0, dst, imm8);

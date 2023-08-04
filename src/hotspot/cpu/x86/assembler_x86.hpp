@@ -2182,7 +2182,7 @@ private:
   void subss(XMMRegister dst, XMMRegister src);
 
   void testb(Address dst, int imm8);
-  void testb(Register dst, int imm8);
+  void testb(Register dst, int imm8, bool use_ral = true);
 
   void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);
