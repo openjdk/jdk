@@ -1159,12 +1159,6 @@ bool Arguments::process_argument(const char* arg,
   return arg[0] == '#';
 }
 
-// getc returns an int type for a char value.
-static char get_one_char(FILE* stream) {
-  int c = getc(stream);
-  return checked_cast<char>(c);
-}
-
 bool Arguments::process_settings_file(const char* file_name, bool should_exist, jboolean ignore_unrecognized) {
   FILE* stream = os::fopen(file_name, "rb");
   if (stream == nullptr) {
@@ -1183,10 +1177,10 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  char quote_c        = 0;
+  int  quote_c        = 0;
   bool result         = true;
 
-  char c = get_one_char(stream);
+  int c = getc(stream);
   while(c != EOF && pos < (int)(sizeof(token)-1)) {
     if (in_white_space) {
       if (in_comment) {
@@ -1195,7 +1189,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace(c)) {
           in_white_space = false;
-          token[pos++] = c;
+          token[pos++] = checked_cast<char>(c);
         }
       }
     } else {
@@ -1215,10 +1209,10 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = c;
+        token[pos++] = checked_cast<char>(c);
       }
     }
-    c = get_one_char(stream);
+    c = getc(stream);
   }
   if (pos > 0) {
     token[pos] = '\0';
