@@ -643,27 +643,12 @@ public final class Connection implements Runnable {
                         ldapUnbind(reqCtls);
                     }
                 } finally {
-                    try {
-                        outStream.flush();
-                        sock.close();
-                        unpauseReader();
-                    } catch (IOException ie) {
-                        if (debug)
-                            System.err.println("Connection: problem closing socket: " + ie);
-                        //bug 8313657, socket not closed util GC running
-                        try {
-                            sock.close();
-                            unpauseReader();
-                            if (debug) {
-                                if (sock.isClosed()) {
-                                    System.err.println("Connection::cleanup - socket closed.");
-                                }
-                            }
-                        } catch (IOException ioe) {
-                            if (debug)
-                                System.err.println("Connection::cleanup problem: " + ioe);
-                        }
-                    }
+
+                    flushCloseOutputStream();
+                    // 8313657 socket is not closed until GC is run
+                    closeConnectionSocket();
+                    tryUnpauseReader();
+
                     if (!notifyParent) {
                         LdapRequest ldr = pendingRequests;
                         while (ldr != null) {
@@ -697,6 +682,41 @@ public final class Connection implements Runnable {
         }
     }
 
+    // flush and close output stream
+    private void flushCloseOutputStream() {
+        try {
+            outStream.flush();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
+        }
+        try {
+            outStream.close();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
+        }
+    }
+
+    // close socket
+    private void closeConnectionSocket() {
+        try {
+            sock.close();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.closeConnectionSocket: Socket closing problem " + ioEx);
+        }
+    }
+
+    // unpause reader
+    private void tryUnpauseReader() {
+        try {
+            unpauseReader();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.tryUnpauseReader: unpauseReader problem " + ioEx);
+        }
+    }
 
     // Assume everything is "quiet"
     // "synchronize" might lead to deadlock so don't synchronize method
