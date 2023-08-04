@@ -38,8 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
@@ -53,26 +51,29 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the file to be generated
      */
-    public PreviewListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, configuration.previewAPIListBuilder);
+    public PreviewListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.PREVIEW_LIST, configuration.previewAPIListBuilder);
     }
 
-    /**
-     * Get list of all the preview elements.
-     * Then instantiate PreviewListWriter and generate File.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the preview list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
-            DocPath filename = DocPaths.PREVIEW_LIST;
-            PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generateSummaryListFile(PageMode.PREVIEW, "preview elements",
-                    configuration.contents.previewAPI, "doclet.Window_Preview_List");
-        }
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.PREVIEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "preview elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return configuration.contents.previewAPI;
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_Preview_List";
     }
 
     @Override

@@ -71,7 +71,6 @@ public class Entity extends Content {
         return 1;
     }
 
-
     /**
      * Escapes the special HTML characters in a given string using the appropriate
      * entities.
