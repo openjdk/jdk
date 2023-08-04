@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,6 +112,12 @@ final class SSLConfiguration implements Cloneable {
     static final int maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.maxCertificateChainLength", 10);
 
+    // Limit the maximum certificate chain length accepted from clients
+    static final int maxClientCertificateChainLength;
+
+    // Limit the maximum certificate chain length accepted from servers
+    static final int maxServerCertificateChainLength;
+
     // To switch off the supported_groups extension for DHE cipher suite.
     static final boolean enableFFDHE =
             Utilities.getBooleanProperty("jsse.enableFFDHE", true);
@@ -131,6 +137,25 @@ final class SSLConfiguration implements Cloneable {
             }
         }
         useExtendedMasterSecret = supportExtendedMasterSecret;
+    }
+
+    /*
+     * If the jdk.tls.maxClientCertificateChainLength or jdk.tls.maxServerCertificateChainLength
+     * system property is not set, it will default to the value of the
+     * jdk.tls.maxCertificateChainLength system property. If either of them is
+     * set, it will supersede the value of the jdk.tls.maxCertificateChainLength
+     * system property.
+     */
+    static {
+        Integer clientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxClientCertificateChainLength");
+        maxClientCertificateChainLength = (clientLen != null) ?
+                clientLen : maxCertificateChainLength;
+
+        Integer serverLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxServerCertificateChainLength");
+        maxServerCertificateChainLength = (serverLen != null) ?
+                serverLen : maxCertificateChainLength;
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
