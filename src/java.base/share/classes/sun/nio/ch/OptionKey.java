@@ -28,5 +28,21 @@ package sun.nio.ch;
 /**
  * Represents the level/name of a socket option
  */
-record OptionKey(int level, int name) {
+
+class OptionKey {
+    private final int level;
+    private final int name;
+
+    OptionKey(int level, int name) {
+        this.level = level;
+        this.name = name;
+    }
+
+    int level() {
+        return level;
+    }
+
+    int name() {
+        return name;
+    }
 }
