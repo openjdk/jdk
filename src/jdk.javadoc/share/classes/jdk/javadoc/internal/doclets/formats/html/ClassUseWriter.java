@@ -96,11 +96,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.typeElement = typeElement;
         if (mapper.classToPackageAnnotations.containsKey(typeElement)) {
-            pkgToPackageAnnotations = new TreeSet<>(comparators.makeClassUseComparator());
+            pkgToPackageAnnotations = new TreeSet<>(comparators.classUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
         configuration.currentTypeElement = typeElement;
-        this.pkgSet = new TreeSet<>(comparators.makePackageComparator());
+        this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
@@ -170,7 +170,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<PackageElement, List<Element>> map = new HashMap<>();
         List<? extends Element> elements = classMap.get(typeElement);
         if (elements != null) {
-            elements.sort(comparators.makeClassUseComparator());
+            elements.sort(comparators.classUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);

@@ -79,7 +79,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.generalPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }

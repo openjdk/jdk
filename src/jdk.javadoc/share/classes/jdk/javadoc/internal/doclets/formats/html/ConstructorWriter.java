@@ -40,7 +40,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
@@ -62,7 +61,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
      * @param writer The writer for the class that the constructors belong to.
      */
     public ConstructorWriter(ClassWriter writer) {
-        super(writer, writer.getTypeElement());
+        super(writer, writer.typeElement, VisibleMemberTable.Kind.CONSTRUCTORS);
 
         // the following must be done before the summary table is generated
         var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
@@ -82,7 +81,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
         super(writer);
     }
 
-    public void build(Content target) throws DocletException {
+    @Override
+    public void buildDetails(Content target) {
         buildConstructorDoc(target);
     }
 
@@ -178,7 +178,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.constructorSummary,
                 HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
