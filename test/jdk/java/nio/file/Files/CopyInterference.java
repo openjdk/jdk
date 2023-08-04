@@ -134,13 +134,12 @@ public class CopyInterference {
     void copy(Path source, Path target, CopyOption[] options)
         throws InterruptedException, IOException {
 
-        ExecutorService es = Executors.newFixedThreadPool(N_THREADS);
-        CopyTask copyTask = new CopyTask(source, target, options);
         Future<?>[] results = new Future<?>[N_THREADS];
-        for (int i = 0; i < N_THREADS; i++)
-            results[i] = es.submit(copyTask);
-
-        es.close();
+        try (ExecutorService es = Executors.newFixedThreadPool(N_THREADS)) {
+            CopyTask copyTask = new CopyTask(source, target, options);
+            for (int i = 0; i < N_THREADS; i++)
+                results[i] = es.submit(copyTask);
+        }
 
         for (Future<?> res : results) {
             try {
