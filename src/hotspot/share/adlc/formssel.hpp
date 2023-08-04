@@ -520,7 +520,7 @@ public:
 //---------------------------------Flag----------------------------------------
 class Flag : public Form {
 private:
-    Flag* _next = nullptr;
+    Flag* _next;
 public:
   const char *_name; // Name of the flag (See Node::<flag_name> or Node::Pd::<flag_name>
 

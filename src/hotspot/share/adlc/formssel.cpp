@@ -1896,7 +1896,7 @@ void Effect::output(FILE *fp) {          // Write info to output files
 }
 
 //---------------------------------Flag----------------------------------------
-Flag::Flag(const char *name) : _name(name) {
+Flag::Flag(const char *name) : _name(name), _next(nullptr) {
   _ftype = Form::FLG;
 }
 

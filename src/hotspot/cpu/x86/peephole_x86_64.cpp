@@ -218,6 +218,8 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
         // All flags are covered are clear to remove this test
         MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
         assert(machProjNode != nullptr, "Expected a MachProj node here!");
+        assert(ra_->get_reg_first(machProjNode) == ra_->get_reg_first(test_to_check), "Test must operate on the same register as its replacement");
+
         // Remove the original test node and replace it with the pseudo test node. The AND node already sets ZF
         test_to_check->replace_by(machProjNode);
 
