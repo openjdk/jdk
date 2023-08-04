@@ -380,6 +380,11 @@ public class Utils {
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
 
+    public boolean isFunctionalInterface(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream()
+                .anyMatch(this::isFunctionalInterface);
+    }
+
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
