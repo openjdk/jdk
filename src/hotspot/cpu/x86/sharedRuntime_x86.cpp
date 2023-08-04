@@ -84,7 +84,6 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 }
 #endif //COMPILER1
 
-#if defined(TARGET_COMPILER_gcc) && !defined(_WIN64)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
   assert(StubRoutines::fmod() != nullptr, "");
   jdouble (*addr)(jdouble, jdouble) = (double (*)(double, double))StubRoutines::fmod();
@@ -100,4 +99,3 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 
   return (*addr)(x, y);
 JRT_END
-#endif // TARGET_COMPILER_gcc && !_WIN64
