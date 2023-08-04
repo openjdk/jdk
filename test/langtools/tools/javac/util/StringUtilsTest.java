@@ -59,7 +59,7 @@ public class StringUtilsTest {
         //verify Damerau-Levenshtein
 
         assertEquals(3, DamerauLevenshteinDistance.of("kitten", "sitting"));
-        // note that the unrestricted Damerau-Levenshtein distance would be 3, not 2:
+        // note that the restricted Damerau-Levenshtein distance would be 3, not 2:
         assertEquals(2, DamerauLevenshteinDistance.of("ca", "abc"));
         //verify strings comprising only non-LATIN1 characters
         assertEquals(1, DamerauLevenshteinDistance.of("\u0438\u044e\u043d\u044c",
