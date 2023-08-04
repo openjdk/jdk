@@ -77,15 +77,15 @@ inline size_t BigEndianEncoderImpl::encode(T value, u1* dest) {
        return 0;
      }
      case 2: {
-       Bytes::put_Java_u2(dest, checked_cast<u2>(value));
+       Bytes::put_Java_u2(dest, static_cast<u2>(value));
        return 2;
      }
      case 4: {
-       Bytes::put_Java_u4(dest, checked_cast<u4>(value));
+       Bytes::put_Java_u4(dest, static_cast<u4>(value));
        return 4;
      }
      case 8: {
-       Bytes::put_Java_u8(dest, checked_cast<u8>(value));
+       Bytes::put_Java_u8(dest, static_cast<u8>(value));
        return 8;
      }
   }
@@ -183,13 +183,13 @@ template <typename T>
 inline u8 Varint128EncoderImpl::to_u8(T value) {
   switch(sizeof(T)) {
     case 1:
-     return checked_cast<u8>(checked_cast<u1>(value) & checked_cast<u1>(0xff));
+     return static_cast<u8>(static_cast<u1>(value) & static_cast<u1>(0xff));
     case 2:
-      return checked_cast<u8>(checked_cast<u2>(value) & checked_cast<u2>(0xffff));
+      return static_cast<u8>(static_cast<u2>(value) & static_cast<u2>(0xffff));
     case 4:
-      return checked_cast<u8>(checked_cast<u4>(value) & checked_cast<u4>(0xffffffff));
+      return static_cast<u8>(static_cast<u4>(value) & static_cast<u4>(0xffffffff));
     case 8:
-      return checked_cast<u8>(value);
+      return static_cast<u8>(value);
     default:
       fatal("unsupported type");
   }
@@ -207,47 +207,47 @@ inline size_t Varint128EncoderImpl::encode(T value, u1* dest) {
   const u8 v = to_u8(value);
 
   if (LESS_THAN_128(v)) {
-    *dest = checked_cast<u1>(v); // set bit 0-6, no extension
+    *dest = static_cast<u1>(v); // set bit 0-6, no extension
     return 1;
   }
-  *dest = checked_cast<u1>(v | ext_bit); // set bit 0-6, with extension
+  *dest = static_cast<u1>(v | ext_bit); // set bit 0-6, with extension
   if (LESS_THAN_128(v >> 7)) {
-    *(dest + 1) = checked_cast<u1>(v >> 7); // set bit 7-13, no extension
+    *(dest + 1) = static_cast<u1>(v >> 7); // set bit 7-13, no extension
     return 2;
   }
-  *(dest + 1) = checked_cast<u1>((v >> 7) | ext_bit); // set bit 7-13, with extension
+  *(dest + 1) = static_cast<u1>((v >> 7) | ext_bit); // set bit 7-13, with extension
   if (LESS_THAN_128(v >> 14)) {
-    *(dest + 2) = checked_cast<u1>(v >> 14); // set bit 14-20, no extension
+    *(dest + 2) = static_cast<u1>(v >> 14); // set bit 14-20, no extension
     return 3;
   }
-  *(dest + 2) = checked_cast<u1>((v >> 14) | ext_bit); // set bit 14-20, with extension
+  *(dest + 2) = static_cast<u1>((v >> 14) | ext_bit); // set bit 14-20, with extension
   if (LESS_THAN_128(v >> 21)) {
-    *(dest + 3) = checked_cast<u1>(v >> 21); // set bit 21-27, no extension
+    *(dest + 3) = static_cast<u1>(v >> 21); // set bit 21-27, no extension
     return 4;
   }
-  *(dest + 3) = checked_cast<u1>((v >> 21) | ext_bit); // set bit 21-27, with extension
+  *(dest + 3) = static_cast<u1>((v >> 21) | ext_bit); // set bit 21-27, with extension
   if (LESS_THAN_128(v >> 28)) {
-    *(dest + 4) = checked_cast<u1>(v >> 28); // set bit 28-34, no extension
+    *(dest + 4) = static_cast<u1>(v >> 28); // set bit 28-34, no extension
     return 5;
   }
-  *(dest + 4) = checked_cast<u1>((v >> 28) | ext_bit); // set bit 28-34, with extension
+  *(dest + 4) = static_cast<u1>((v >> 28) | ext_bit); // set bit 28-34, with extension
   if (LESS_THAN_128(v >> 35)) {
-    *(dest + 5) = checked_cast<u1>(v >> 35); // set bit 35-41, no extension
+    *(dest + 5) = static_cast<u1>(v >> 35); // set bit 35-41, no extension
     return 6;
   }
-  *(dest + 5) = checked_cast<u1>((v >> 35) | ext_bit); // set bit 35-41, with extension
+  *(dest + 5) = static_cast<u1>((v >> 35) | ext_bit); // set bit 35-41, with extension
   if (LESS_THAN_128(v >> 42)) {
-    *(dest + 6) = checked_cast<u1>(v >> 42); // set bit 42-48, no extension
+    *(dest + 6) = static_cast<u1>(v >> 42); // set bit 42-48, no extension
     return 7;
   }
-  *(dest + 6) = checked_cast<u1>((v >> 42) | ext_bit); // set bit 42-48, with extension
+  *(dest + 6) = static_cast<u1>((v >> 42) | ext_bit); // set bit 42-48, with extension
   if (LESS_THAN_128(v >> 49)) {
-    *(dest + 7) = checked_cast<u1>(v >> 49); // set bit 49-55, no extension
+    *(dest + 7) = static_cast<u1>(v >> 49); // set bit 49-55, no extension
     return 8;
   }
-  *(dest + 7) = checked_cast<u1>((v >> 49) | ext_bit); // set bit 49-55, with extension
+  *(dest + 7) = static_cast<u1>((v >> 49) | ext_bit); // set bit 49-55, with extension
   // no need to extend since only 64 bits allowed.
-  *(dest + 8) = checked_cast<u1>(v >> 56);  // set bit 56-63
+  *(dest + 8) = static_cast<u1>(v >> 56);  // set bit 56-63
   return 9;
 }
 
@@ -270,27 +270,27 @@ inline size_t Varint128EncoderImpl::encode_padded(T value, u1* dest) {
   const u8 v = to_u8(value);
   switch (sizeof(T)) {
     case 1:
-      dest[0] = checked_cast<u1>(v);
+      dest[0] = static_cast<u1>(v);
       return 1;
     case 2:
-      dest[0] = checked_cast<u1>(v | 0x80);
-      dest[1] = checked_cast<u1>(v >> 7);
+      dest[0] = static_cast<u1>(v | 0x80);
+      dest[1] = static_cast<u1>(v >> 7);
       return 2;
     case 4:
-      dest[0] = checked_cast<u1>(v | 0x80);
-      dest[1] = checked_cast<u1>(v >> 7 | 0x80);
-      dest[2] = checked_cast<u1>(v >> 14 | 0x80);
-      dest[3] = checked_cast<u1>(v >> 21);
+      dest[0] = static_cast<u1>(v | 0x80);
+      dest[1] = static_cast<u1>(v >> 7 | 0x80);
+      dest[2] = static_cast<u1>(v >> 14 | 0x80);
+      dest[3] = static_cast<u1>(v >> 21);
       return 4;
     case 8:
-      dest[0] = checked_cast<u1>(v | 0x80);
-      dest[1] = checked_cast<u1>(v >> 7 | 0x80);
-      dest[2] = checked_cast<u1>(v >> 14 | 0x80);
-      dest[3] = checked_cast<u1>(v >> 21 | 0x80);
-      dest[4] = checked_cast<u1>(v >> 28 | 0x80);
-      dest[5] = checked_cast<u1>(v >> 35 | 0x80);
-      dest[6] = checked_cast<u1>(v >> 42 | 0x80);
-      dest[7] = checked_cast<u1>(v >> 49);
+      dest[0] = static_cast<u1>(v | 0x80);
+      dest[1] = static_cast<u1>(v >> 7 | 0x80);
+      dest[2] = static_cast<u1>(v >> 14 | 0x80);
+      dest[3] = static_cast<u1>(v >> 21 | 0x80);
+      dest[4] = static_cast<u1>(v >> 28 | 0x80);
+      dest[5] = static_cast<u1>(v >> 35 | 0x80);
+      dest[6] = static_cast<u1>(v >> 42 | 0x80);
+      dest[7] = static_cast<u1>(v >> 49);
       return 8;
     default:
       ShouldNotReachHere();
