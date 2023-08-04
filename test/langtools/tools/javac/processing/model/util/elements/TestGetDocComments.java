@@ -77,6 +77,20 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
         if (actual.length() != expected.length()) {
             System.out.println("Strings have different lengths");
         }
+
+        int minLength = Integer.min(actual.length(), expected.length());
+
+        for (int i = 0; i < minLength; i++) {
+            char actualChar = actual.charAt(i);
+            char expectedChar = expected.charAt(i);
+            if (actualChar != expectedChar ) {
+                System.out.println("First difference at index " + i +
+                                   "\t expected char " + expectedChar +
+                                   " got actual char " + actualChar);
+                return;
+            }
+        }
+        System.out.println("One string contains a suffix not found on the other.");
     }
 
     @interface ExpectedComment {
