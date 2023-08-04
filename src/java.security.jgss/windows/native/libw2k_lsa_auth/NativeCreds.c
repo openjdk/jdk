@@ -75,6 +75,7 @@ BOOL native_debug = 0;
 
 BOOL PackageConnectLookup(PHANDLE,PULONG);
 
+static
 NTSTATUS ConstructTicketRequest(JNIEnv *env,
                                 UNICODE_STRING DomainName,
                                 PKERB_RETRIEVE_TKT_REQUEST *outRequest,
