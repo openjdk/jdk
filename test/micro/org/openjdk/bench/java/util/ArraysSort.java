@@ -36,7 +36,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -51,14 +50,8 @@ import java.lang.reflect.Method;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 3, time=60)
-@Measurement(iterations = 3, time=120)
 @Fork(value = 1)
 public class ArraysSort {
-
-
-    @Param({"10","25","50","75","100", "1000", "10000", "100000"})
-    private int size;
 
     private int[] ints_unsorted;
     private long[] longs_unsorted;
@@ -71,8 +64,7 @@ public class ArraysSort {
     private double[] doubles_sorted;
 
 
-    @Setup
-    public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+    public void initialize(int size) {
         Random rnd = new Random(42);
 
         ints_unsorted = new int[size];
@@ -98,7 +90,7 @@ public class ArraysSort {
     }
 
     @Setup(Level.Invocation)
-    public void init() {
+    public void clear() {
         ints_sorted = ints_unsorted.clone();
         longs_sorted = longs_unsorted.clone();
         floats_sorted = floats_unsorted.clone();
@@ -127,6 +119,54 @@ public class ArraysSort {
     public double[] doubleSort() throws Throwable {
         Arrays.sort(doubles_sorted);
         return doubles_sorted;
+    }
+
+    @Warmup(iterations = 3, time=2)
+    @Measurement(iterations = 3, time=5)
+    public static class Small extends ArraysSort {
+        @Param({"10","25","50","75","100"})
+        private int size;
+
+        @Setup
+        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+            initialize(size);
+        }
+    }
+
+    @Warmup(iterations = 3, time=2)
+    @Measurement(iterations = 3, time=5)
+    public static class Medium extends ArraysSort {
+        @Param({"1000", "10000"})
+        private int size;
+
+        @Setup
+        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+            initialize(size);
+        }
+    }
+
+    @Warmup(iterations = 3, time=20)
+    @Measurement(iterations = 3, time=30)
+    public static class Large extends ArraysSort {
+        @Param({"50000", "100000"})
+        private int size;
+
+        @Setup
+        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+            initialize(size);
+        }
+    }
+
+    @Warmup(iterations = 3, time=120)
+    @Measurement(iterations = 3, time=30)
+    public static class VeryLarge extends ArraysSort {
+        @Param({"1000000"})
+        private int size;
+
+        @Setup
+        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+            initialize(size);
+        }
     }
 
 }

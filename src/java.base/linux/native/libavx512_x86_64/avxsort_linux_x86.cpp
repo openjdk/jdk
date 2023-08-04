@@ -24,6 +24,7 @@
  *
  */
 
+#pragma GCC target("avx512dq", "avx512f")
 #include "avx512-32bit-qsort.hpp"
 #include "avx512-64bit-qsort.hpp"
 
