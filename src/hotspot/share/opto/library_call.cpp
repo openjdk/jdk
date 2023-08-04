@@ -2811,6 +2811,13 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
+
+#if INCLUDE_JVMTI
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+#endif //INCLUDE_JVMTI
+
   if (callee()->is_static())  return false;  // caller must have the capability!
 
   null_check_receiver();  // null-check, then ignore
@@ -2822,10 +2829,6 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   if (stopped())  return true;  // argument was like int.class
 
 #if INCLUDE_JVMTI
-  {
-    if (too_many_traps(Deoptimization::Reason_intrinsic)) {
-      return false;
-    }
     // Don't try to access new allocated obj in the intrinsic.
     // It causes perfomance issues even when jvmti event VmObjectAlloc is disabled.
     // Deoptimize and allocate in interpreter instead.
@@ -2840,8 +2843,6 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     }
     if (stopped())
       return true;
-
-  }
 #endif //INCLUDE_JVMTI
 
   Node* test = nullptr;
