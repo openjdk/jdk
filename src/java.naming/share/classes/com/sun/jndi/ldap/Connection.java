@@ -703,8 +703,10 @@ public final class Connection implements Runnable {
         try {
             sock.close();
         } catch (IOException ioEx) {
-            if (debug)
-                System.err.println("Connection.closeConnectionSocket: Socket closing problem " + ioEx);
+            if (debug) {
+                System.err.println("Connection.closeConnectionSocket: Socket close problem: " + ioEx);
+                System.err.println("Socket isClosed: " + sock.isClosed());
+            }
         }
     }
 
