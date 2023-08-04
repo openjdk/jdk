@@ -2210,7 +2210,7 @@ void* os::win32::install_signal_handler(int sig, signal_handler_t handler) {
     sigbreakHandler = handler;
     return oldHandler;
   } else {
-    return ::signal(sig, handler);
+    return CAST_FROM_FN_PTR(void*, ::signal(sig, handler));
   }
 }
 
