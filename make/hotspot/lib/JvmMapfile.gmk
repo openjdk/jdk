@@ -89,7 +89,7 @@ else ifeq ($(call isTargetOs, aix), true)
   # which may be installed under /opt/freeware/bin. So better use an absolute path here!
   # NM=/usr/bin/nm
 
-  DUMP_SYMBOLS_CMD := $(NM) -X64 -B -C *$(OBJ_SUFFIX)
+  DUMP_SYMBOLS_CMD := $(NM) $(NMFLAGS) -B -C *$(OBJ_SUFFIX)
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
         if (($$2="d" || $$2="D") && ($$3 ~ /^__vft/ || $$3 ~ /^gHotSpotVM/)) print $$3; \

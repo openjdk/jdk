@@ -88,6 +88,18 @@ AC_DEFUN([FLAGS_SETUP_RCFLAGS],
   AC_SUBST(RCFLAGS)
 ])
 
+AC_DEFUN([FLAGS_SETUP_NMFLAGS],
+[
+  # On AIX, we need to set NM flags
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
+    NMFLAGS="-X64"
+  else
+    NMFLAGS=""
+  fi
+
+  AC_SUBST(NMFLAGS)
+])
+
 ################################################################################
 # platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],
