@@ -1805,7 +1805,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Allocation prefetch settings
-  intx cache_line_size = prefetch_data_size();
+  int cache_line_size = checked_cast<int>(prefetch_data_size());
   if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
       (cache_line_size > AllocatePrefetchStepSize)) {
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
@@ -3169,7 +3169,7 @@ bool VM_Version::is_intel_tsc_synched_at_init() {
   return false;
 }
 
-intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
+int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // Hardware prefetching (distance/size in bytes):
   // Pentium 3 -  64 /  32
   // Pentium 4 - 256 / 128

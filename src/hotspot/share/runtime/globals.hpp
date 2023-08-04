@@ -1101,7 +1101,7 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, CollectIndexSetStatistics, false,                        \
           "Collect information about IndexSets")                            \
                                                                             \
-  develop(intx, FastAllocateSizeLimit, 128*K,                               \
+  develop(int, FastAllocateSizeLimit, 128*K,                                \
           /* Note:  This value is zero mod 1<<13 for a cheap sparc set. */  \
           "Inline allocations larger than this in doublewords must go slow")\
                                                                             \
@@ -1241,21 +1241,21 @@ const int ObjectAlignmentInBytes = 8;
           "3 = generate one prefetch instruction per cache line")           \
           range(0, 3)                                                       \
                                                                             \
-  product(intx,  AllocatePrefetchDistance, -1,                              \
+  product(int,  AllocatePrefetchDistance, -1,                               \
           "Distance to prefetch ahead of allocation pointer. "              \
           "-1: use system-specific value (automatically determined")        \
           range(-1, 512)                                                    \
                                                                             \
-  product(intx,  AllocatePrefetchLines, 3,                                  \
+  product(int,  AllocatePrefetchLines, 3,                                   \
           "Number of lines to prefetch ahead of array allocation pointer")  \
           range(1, 64)                                                      \
                                                                             \
-  product(intx,  AllocateInstancePrefetchLines, 1,                          \
+  product(int,  AllocateInstancePrefetchLines, 1,                           \
           "Number of lines to prefetch ahead of instance allocation "       \
           "pointer")                                                        \
           range(1, 64)                                                      \
                                                                             \
-  product(intx,  AllocatePrefetchStepSize, 16,                              \
+  product(int,  AllocatePrefetchStepSize, 16,                               \
           "Step size in bytes of sequential prefetch instructions")         \
           range(1, 512)                                                     \
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
@@ -1308,7 +1308,7 @@ const int ObjectAlignmentInBytes = 8;
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
                                                                             \
-  develop(intx, StackPrintLimit, 100,                                       \
+  develop(int, StackPrintLimit, 100,                                        \
           "number of stack frames to print in VM-level stack dump")         \
                                                                             \
   product(int, ErrorLogPrintCodeLimit, 3, DIAGNOSTIC,                       \
@@ -1587,7 +1587,7 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of lookupswitch entries for rewriting to binary " \
           "switch")                                                         \
                                                                             \
-  develop(intx, StopInterpreterAt, 0,                                       \
+  develop(int, StopInterpreterAt, 0,                                        \
           "Stop interpreter execution at specified bytecode number")        \
                                                                             \
   develop(intx, TraceBytecodesAt, 0,                                        \
@@ -1742,7 +1742,7 @@ const int ObjectAlignmentInBytes = 8;
           "The string %p in the file name (if present) "                    \
           "will be replaced by pid")                                        \
                                                                             \
-  product(intx, PerfDataSamplingInterval, 50,                               \
+  product(int, PerfDataSamplingInterval, 50,                                \
           "Data sampling interval (in milliseconds)")                       \
           range(PeriodicTask::min_interval, max_jint)                       \
           constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
