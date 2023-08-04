@@ -104,6 +104,8 @@ public:
   void set_flags(bool is_final, bool is_volatile) {
     int new_flags = (is_final << is_final_shift) | static_cast<int>(is_volatile);
     _flags = checked_cast<u1>(new_flags);
+    assert(is_final() == is_final, "Must be");
+    assert(is_volatile() == is_volatile, "Must be");
   }
 
   inline void set_bytecode(u1* code, u1 new_code) {
