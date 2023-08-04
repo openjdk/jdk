@@ -58,7 +58,7 @@ namespace {
       return c;
     }
     static jlong counter_to_millis(jlong c, bool is_os_time = false) {
-      return c * static_cast<jlong>(NANOS_PER_MILLISEC);
+      return c * (jlong)NANOS_PER_MILLISEC;
     }
     static jlong nanos_to_countertime(jlong c, bool as_os_time = false) {
       return c;

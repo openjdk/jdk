@@ -487,7 +487,7 @@ static u2 utf8_info_index(const InstanceKlass* ik, const Symbol* const target, T
       const Symbol* const utf8_sym = cp->symbol_at(index);
       assert(utf8_sym != nullptr, "invariant");
       if (utf8_sym == target) {
-        return static_cast<u2>(index);
+        return checked_cast<u2>(index);
       }
     }
   }
@@ -685,7 +685,7 @@ static u2 position_stream_after_cp(const ClassFileStream* stream) {
         continue;
       }
       case JVM_CONSTANT_Utf8: {
-        int utf8_length = static_cast<int>(stream->get_u2_fast());
+        int utf8_length = checked_cast<int>(stream->get_u2_fast());
         stream->skip_u1_fast(utf8_length); // skip 2 + len bytes
         continue;
       }
@@ -730,7 +730,7 @@ static u2 position_stream_after_fields(const ClassFileStream* stream) {
     const u2 attrib_info_len = stream->get_u2_fast();
     for (u2 j = 0; j < attrib_info_len; ++j) {
       stream->skip_u2_fast(1);
-      stream->skip_u1_fast(static_cast<int>(stream->get_u4_fast()));
+      stream->skip_u1_fast(checked_cast<int>(stream->get_u4_fast()));
     }
   }
   return orig_fields_len;
@@ -758,7 +758,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
   const u2 orig_methods_len = stream->get_u2_fast();
   // Move copy position past original method_count
   // in order to not copy the original count
-  orig_method_len_offset += static_cast<u4>(2);
+  orig_method_len_offset += 2;
   for (u2 i = 0; i < orig_methods_len; ++i) {
     const u4 method_offset = stream->current_offset();
     stream->skip_u2_fast(1); // Access Flags
@@ -767,7 +767,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
     const u2 attributes_count = stream->get_u2_fast();
     for (u2 j = 0; j < attributes_count; ++j) {
       stream->skip_u2_fast(1);
-      stream->skip_u1_fast(static_cast<int>(stream->get_u4_fast()));
+      stream->skip_u1_fast(checked_cast<int>(stream->get_u4_fast()));
     }
     if (clinit_method != nullptr && name_index == clinit_method->name_index()) {
       // The method just parsed is an existing <clinit> method.
@@ -913,9 +913,9 @@ static void adjust_stack_map(JfrBigEndianWriter& writer,
     writer.write<u1>(stream.get_u1(THREAD));
   }
 
-  u4 stack_map_attrib_len = static_cast<u4>(writer.current_offset() - stack_map_attrib_len_offset);
+  u4 stack_map_attrib_len = checked_cast<u4>(writer.current_offset() - stack_map_attrib_len_offset);
   // the stack_map_table_attributes_length value is exclusive
-  stack_map_attrib_len -= static_cast<u4>(4);
+  stack_map_attrib_len -= 4;
   writer.write_at_offset(stack_map_attrib_len, stack_map_attrib_len_offset);
 }
 
@@ -942,9 +942,9 @@ static void adjust_line_number_table(JfrBigEndianWriter& writer,
     writer.write<u2>((u2)lnt_stream.line());
   }
   writer.write_at_offset(line_number_table_entries, lnt_attributes_entries_offset);
-  u4 lnt_table_attributes_len = static_cast<u4>(writer.current_offset() - lnt_attributes_length_offset);
+  u4 lnt_table_attributes_len = checked_cast<u4>(writer.current_offset() - lnt_attributes_length_offset);
   // the line_number_table_attributes_length value is exclusive
-  lnt_table_attributes_len -= static_cast<u4>(4);
+  lnt_table_attributes_len -= 4;
   writer.write_at_offset(lnt_table_attributes_len, lnt_attributes_length_offset);
 }
 
@@ -975,9 +975,9 @@ static u2 adjust_local_variable_table(JfrBigEndianWriter& writer,
       ++num_lvtt_entries;
     }
   }
-  u4 lvt_table_attributes_len = static_cast<u4>(writer.current_offset() - lvt_attributes_length_offset);
+  u4 lvt_table_attributes_len = checked_cast<u4>(writer.current_offset() - lvt_attributes_length_offset);
   // the lvt_table_attributes_length value is exclusive
-  lvt_table_attributes_len -= static_cast<u4>(4);
+  lvt_table_attributes_len -= 4;
   writer.write_at_offset(lvt_table_attributes_len, lvt_attributes_length_offset);
   return num_lvtt_entries;
 }
@@ -1005,9 +1005,9 @@ static void adjust_local_variable_type_table(JfrBigEndianWriter& writer,
       writer.write<u2>(table[i].slot);
     }
   }
-  u4 lvtt_table_attributes_len = static_cast<u4>(writer.current_offset() - lvtt_attributes_length_offset);
+  u4 lvtt_table_attributes_len = checked_cast<u4>(writer.current_offset() - lvtt_attributes_length_offset);
   // the lvtt_table_attributes_length value is exclusive
-  lvtt_table_attributes_len -= static_cast<u4>(4);
+  lvtt_table_attributes_len -= 4;
   writer.write_at_offset(lvtt_table_attributes_len, lvtt_attributes_length_offset);
 }
 
@@ -1115,9 +1115,9 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   assert(writer.is_valid(), "invariant");
   adjust_code_attributes(writer, utf8_indexes, injected_code_length, clinit_method, THREAD);
   assert(writer.is_valid(), "invariant");
-  u4 code_attribute_len = static_cast<u4>(writer.current_offset() - code_attribute_length_offset);
+  u4 code_attribute_len = checked_cast<u4>(writer.current_offset() - code_attribute_length_offset);
   // the code_attribute_length value is exclusive
-  code_attribute_len -= static_cast<u4>(4);
+  code_attribute_len -= 4;
   writer.write_at_offset(code_attribute_len, code_attribute_length_offset);
   return writer.current_offset();
 }
@@ -1323,7 +1323,7 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, new_buffer_size);
   if (new_buffer == nullptr) {
     log_error(jfr, system) ("Thread local allocation (native) for " SIZE_FORMAT
-      " bytes failed in JfrEventClassTransformer::on_klass_creation", static_cast<size_t>(new_buffer_size));
+      " bytes failed in JfrEventClassTransformer::on_klass_creation", checked_cast<size_t>(new_buffer_size));
     return nullptr;
   }
   assert(new_buffer != nullptr, "invariant");
@@ -1489,7 +1489,7 @@ static ClassFileStream* schema_extend_event_subklass_bytes(const InstanceKlass* 
   if (Jfr::is_recording() || force_instrumentation) {
     jint size_of_instrumented_bytes = 0;
     unsigned char* instrumented_bytes = nullptr;
-    const jclass super = static_cast<jclass>(JfrJavaSupport::local_jni_handle(ik->super()->java_mirror(), THREAD));
+    const jclass super = checked_cast<jclass>(JfrJavaSupport::local_jni_handle(ik->super()->java_mirror(), THREAD));
     const jboolean boot_class_loader = ik->class_loader_data()->is_boot_class_loader_data();
     JfrUpcalls::new_bytes_eager_instrumentation(JfrTraceId::load_raw(ik),
                                                 force_instrumentation,
@@ -1532,7 +1532,7 @@ static ClassFileStream* retransform_bytes(const Klass* existing_klass, const Cla
   unsigned char* new_bytes = nullptr;
   const ClassFileStream* const stream = parser.clone_stream();
   assert(stream != nullptr, "invariant");
-  const jclass clazz = static_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
+  const jclass clazz = checked_cast<jclass>(JfrJavaSupport::local_jni_handle(existing_klass->java_mirror(), THREAD));
   JfrUpcalls::on_retransform(JfrTraceId::load_raw(existing_klass),
                               clazz,
                               stream->length(),
@@ -1564,7 +1564,7 @@ static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* 
     (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
   if (p == nullptr) {
     log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
-      static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
+      checked_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
     return;
   }
   p->length = stream_len;
