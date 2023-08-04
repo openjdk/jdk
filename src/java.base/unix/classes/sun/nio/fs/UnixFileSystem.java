@@ -520,7 +520,7 @@ abstract class UnixFileSystem
         try {
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
-            if (x.errno() == EEXIST)
+            if (x.errno() == EEXIST && flags.replaceExisting)
                 throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
@@ -668,7 +668,7 @@ abstract class UnixFileSystem
                             O_EXCL),
                            attrs.mode());
             } catch (UnixException x) {
-                if (x.errno() == EEXIST)
+                if (x.errno() == EEXIST && flags.replaceExisting)
                     throw new FileSystemException(toString());
                 x.rethrowAsIOException(target);
             }
@@ -788,7 +788,7 @@ abstract class UnixFileSystem
                 }
             }
         } catch (UnixException x) {
-            if (x.errno() == EEXIST)
+            if (x.errno() == EEXIST && flags.replaceExisting)
                 throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
@@ -804,7 +804,7 @@ abstract class UnixFileSystem
         try {
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
-            if (x.errno() == EEXIST)
+            if (x.errno() == EEXIST && flags.replaceExisting)
                 throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
