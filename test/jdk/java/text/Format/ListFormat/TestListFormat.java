@@ -31,6 +31,7 @@
 import java.text.DateFormat;
 import java.text.ListFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.List;
 import java.util.Locale;
 
@@ -41,6 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -160,6 +162,19 @@ public class TestListFormat {
         };
     }
 
+    static Arguments[] parseObject_parsePos() {
+        return new Arguments[] {
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE1),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE2),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE3),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE4),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE1),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE2),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE3),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE4),
+        };
+    }
+
     @ParameterizedTest
     @MethodSource
     void getInstance_1Arg(String[] patterns, List<String> input, String expected) throws ParseException {
@@ -195,6 +210,29 @@ public class TestListFormat {
         var ex = assertThrows(IllegalArgumentException.class,
                 () -> ListFormat.getInstance().format(List.of()));
         assertEquals("There should at least be one input string", ex.getMessage());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void parseObject_parsePos(String[] patterns, List<String> input) {
+        var prefix = "prefix";
+        var f = ListFormat.getInstance(patterns);
+        var testStr = prefix + f.format(input);
+
+        var pp = new ParsePosition(prefix.length());
+        var parsed = f.parseObject(testStr, pp);
+        assertEquals(input, parsed, pp.toString());
+        assertEquals(new ParsePosition(testStr.length()), pp);
+
+        pp.setIndex(0);
+        parsed = f.parseObject(testStr, pp);
+        assertNotEquals(input, parsed);
+        assertEquals(-1, pp.getErrorIndex());
+
+        pp.setIndex(prefix.length() + 1);
+        parsed = f.parseObject(testStr, pp);
+        assertNotEquals(input, parsed);
+        assertEquals(-1, pp.getErrorIndex());
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {

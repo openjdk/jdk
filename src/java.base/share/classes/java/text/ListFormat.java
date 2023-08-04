@@ -415,13 +415,14 @@ public class ListFormat extends Format {
             }
         }
 
-        // return the entire source if still no match
+        // return the entire source from parsePos if still no match
         if (parsed == null) {
+            parsed = new String[]{source.substring(parsePos.index)};
             parsePos.setIndex(source.length());
-            parsed = new String[]{source};
         }
 
         if (parsed instanceof Object[] objs) {
+            parsePos.setErrorIndex(-1);
             return Arrays.asList(objs);
         }
         throw new InternalError("MessageFormat.parseObject() should return Object[]");
