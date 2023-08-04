@@ -269,7 +269,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                 return false;
             }
 
-            if (!(that.getAlgorithm().equalsIgnoreCase(getAlgorithm()))){
+            if (!(that.getAlgorithm().equalsIgnoreCase(getAlgorithm()))) {
                 return false;
             }
             if (!(that.getFormat().equalsIgnoreCase("RAW"))) {
