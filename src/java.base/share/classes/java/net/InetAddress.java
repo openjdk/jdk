@@ -822,7 +822,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Returns the fully qualified domain for this address.
+     * Returns the fully qualified domain name for this address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
