@@ -45,20 +45,7 @@ public class DynLibsTest {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
 
-        String osDependentBaseString = null;
-        if (Platform.isAix()) {
-            osDependentBaseString = "lib%s.so";
-        } else if (Platform.isLinux()) {
-            osDependentBaseString = "lib%s.so";
-        } else if (Platform.isOSX()) {
-            osDependentBaseString = "lib%s.dylib";
-        } else if (Platform.isWindows()) {
-            osDependentBaseString = "%s.dll";
-        }
-
-        if (osDependentBaseString == null) {
-            Assert.fail("Unsupported OS");
-        }
+        String osDependentBaseString = Platform.sharedLibraryPrefix() + "%s." + Platform.sharedLibraryExt();
 
         output.shouldContain(String.format(osDependentBaseString, "jvm"));
         output.shouldContain(String.format(osDependentBaseString, "java"));

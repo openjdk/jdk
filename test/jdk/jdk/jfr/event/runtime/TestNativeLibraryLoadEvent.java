@@ -70,20 +70,7 @@ public class TestNativeLibraryLoadEvent {
     }
 
     private static List<String> getExpectedLibs() throws Throwable {
-        String libTemplate = null;
-        if (Platform.isWindows()) {
-            libTemplate = "%s.dll";
-        } else if (Platform.isOSX()) {
-            libTemplate = "lib%s.dylib";
-        } else if (Platform.isLinux()) {
-            libTemplate = "lib%s.so";
-        } else if (Platform.isAix()) {
-            libTemplate = "lib%s.so";
-        }
-
-        if (libTemplate == null) {
-            throw new Exception("Unsupported OS");
-        }
+        String libTemplate = Platform.sharedLibraryPrefix() + "%s." + Platform.sharedLibraryExt();
 
         List<String> libs = new ArrayList<String>();
         String[] names = { "instrument" };

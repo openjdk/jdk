@@ -362,6 +362,18 @@ public class Platform {
         }
     }
 
+    /**
+     * Returns the usual file prefix of a shared library, e.g. "lib" on linux, empty on windows.
+     * @return file name prefix
+     */
+    public static String sharedLibraryPrefix() {
+        if (isWindows()) {
+            return "";
+        } else {
+            return "lib";
+        }
+    }
+
     /*
      * Returns name of system variable containing paths to shared native libraries.
      */
