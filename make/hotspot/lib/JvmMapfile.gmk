@@ -53,7 +53,7 @@ endif
 # platform dependent.
 
 ifeq ($(call isTargetOs, linux), true)
-  DUMP_SYMBOLS_CMD := $(NM) --defined-only *$(OBJ_SUFFIX)
+  DUMP_SYMBOLS_CMD := $(NM) $(NMFLAGS) --defined-only *$(OBJ_SUFFIX)
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
   endif
@@ -67,7 +67,7 @@ ifeq ($(call isTargetOs, linux), true)
 else ifeq ($(call isTargetOs, macosx), true)
   # nm on macosx prints out "warning: nm: no name list" to stderr for
   # files without symbols. Hide this, even at the expense of hiding real errors.
-  DUMP_SYMBOLS_CMD := $(NM) -Uj *$(OBJ_SUFFIX) 2> /dev/null
+  DUMP_SYMBOLS_CMD := $(NM) $(NMFLAGS) -Uj *$(OBJ_SUFFIX) 2> /dev/null
   ifneq ($(FILTER_SYMBOLS_PATTERN), )
     FILTER_SYMBOLS_PATTERN := $(FILTER_SYMBOLS_PATTERN)|
   endif

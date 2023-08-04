@@ -287,7 +287,7 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
 	      $$(NM) $$(NMFLAGS) $$<  2>&1 | $$(GREP) $$(addprefix -e , $$(MANGLED_SYMS)) | $$(GREP) $$(UNDEF_PATTERN) > $1.op_check || true)
 	  if [ -s $1.op_check ]; then \
 	    $$(ECHO) "$$(notdir $$<): Error: Use of global operators new and delete is not allowed in Hotspot:"; \
-	    $$(NM) $$< | $$(CXXFILT) | $$(EGREP) '$$(DEMANGLED_REGEXP)' | $$(GREP) $$(UNDEF_PATTERN); \
+	    $$(NM) $$(NMFLAGS) $$< | $$(CXXFILT) | $$(EGREP) '$$(DEMANGLED_REGEXP)' | $$(GREP) $$(UNDEF_PATTERN); \
 	    $$(ECHO) "See: $$(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
 	    exit 1; \
 	  fi
