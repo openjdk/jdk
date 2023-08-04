@@ -237,8 +237,8 @@ endif
 ################################################################################
 
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
-  $(eval $(call SetupJdkLibrary, BUILD_LIBAVX512_X86_64, \
-      NAME := avx512_x86_64, \
+  $(eval $(call SetupJdkLibrary, BUILD_LIB_X86_64, \
+      NAME := x86_64, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB), \
       CXXFLAGS := $(CXXFLAGS_JDKLIB), \
@@ -249,7 +249,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       LIBS_linux := -lc -lm -ldl, \
   ))
 
-  TARGETS += $(BUILD_LIBAVX512_X86_64)
+  TARGETS += $(BUILD_LIB_X86_64)
 endif
 
 ################################################################################

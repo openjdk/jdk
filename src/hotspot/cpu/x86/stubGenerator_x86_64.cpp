@@ -4131,28 +4131,28 @@ void StubGenerator::generate_compiler_stubs() {
   }
 
   // Get avx512 sort stub routine addresses
-  void *libavx512_x86_64 = nullptr;
+  void *lib_x86_64 = nullptr;
   char ebuf_avx512[1024];
   char dll_name_avx512[JVM_MAXPATHLEN];
-  if (os::dll_locate_lib(dll_name_avx512, sizeof(dll_name_avx512), Arguments::get_dll_dir(), "avx512_x86_64")) {
-    libavx512_x86_64 = os::dll_load(dll_name_avx512, ebuf_avx512, sizeof ebuf_avx512);
+  if (os::dll_locate_lib(dll_name_avx512, sizeof(dll_name_avx512), Arguments::get_dll_dir(), "x86_64")) {
+    lib_x86_64 = os::dll_load(dll_name_avx512, ebuf_avx512, sizeof ebuf_avx512);
   }
-  if (libavx512_x86_64 != nullptr) {
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "avx512_x86_64" JNI_LIB_SUFFIX, p2i(libavx512_x86_64));
+  if (lib_x86_64 != nullptr) {
+    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "x86_64" JNI_LIB_SUFFIX, p2i(lib_x86_64));
 
     if (UseAVX > 2 && VM_Version::supports_avx512dq()) {
 
       snprintf(ebuf_avx512, sizeof(ebuf_avx512), "avx512_sort_int");
-      StubRoutines::_arraysort_int = (address)os::dll_lookup(libavx512_x86_64, ebuf_avx512);
+      StubRoutines::_arraysort_int = (address)os::dll_lookup(lib_x86_64, ebuf_avx512);
 
       snprintf(ebuf_avx512, sizeof(ebuf_avx512), "avx512_sort_long");
-      StubRoutines::_arraysort_long = (address)os::dll_lookup(libavx512_x86_64, ebuf_avx512);
+      StubRoutines::_arraysort_long = (address)os::dll_lookup(lib_x86_64, ebuf_avx512);
 
       snprintf(ebuf_avx512, sizeof(ebuf_avx512), "avx512_sort_float");
-      StubRoutines::_arraysort_float = (address)os::dll_lookup(libavx512_x86_64, ebuf_avx512);
+      StubRoutines::_arraysort_float = (address)os::dll_lookup(lib_x86_64, ebuf_avx512);
 
       snprintf(ebuf_avx512, sizeof(ebuf_avx512), "avx512_sort_double");
-      StubRoutines::_arraysort_double = (address)os::dll_lookup(libavx512_x86_64, ebuf_avx512);
+      StubRoutines::_arraysort_double = (address)os::dll_lookup(lib_x86_64, ebuf_avx512);
     }
   }
 
