@@ -77,67 +77,66 @@ public class TestTestRemovalPeephole {
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testIntAndEquals0(int x, int y) {
-        int result = x & y;
+    public boolean testIntOrEquals0(int x, int y) {
+        int result = x | y;
         return result == 0;
     }
 
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testIntAndNotEquals0(int x, int y) {
-        int result = x & y;
+    public boolean testIntOrNotEquals0(int x, int y) {
+        int result = x | y;
         return result != 0;
     }
 
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testLongAndEquals0(long x, long y) {
-        long result = x & y;
+    public boolean testLongOrEquals0(long x, long y) {
+        long result = x | y;
         return result == 0;
     }
 
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testLongAndNotEquals0(long x, long y) {
-        long result = x & y;
+    public boolean testLongOrNotEquals0(long x, long y) {
+        long result = x | y;
         return result != 0;
     }
 
     @Test
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42}) // TODO switch to Argument.RANDOM_EACH once conditional moving works with the peephole
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testIntAndGreater0(int x, int y) {
-        int result = x & y;
+    public boolean testIntOrGreater0(int x, int y) {
+        int result = x | y;
         return result > 0;
     }
 
     @Test
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42}) // TODO switch to Argument.RANDOM_EACH once conditional moving works with the peephole
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
-    public boolean testLongAndGreater0(long x, long y) {
-        long result = x & y;
+    public boolean testLongOrGreater0(long x, long y) {
+        long result = x | y;
         return result > 0;
     }
-
 
     @DontCompile
     public void assertResult(int x, int y) {
         Asserts.assertEQ((x + y) == 0, testIntAddtionEquals0(x, y));
         Asserts.assertEQ((x + y) != 0, testIntAddtionNotEquals0(x, y));
-        Asserts.assertEQ((x & y) == 0, testIntAndEquals0(x, y));
-        Asserts.assertEQ((x & y) != 0, testIntAndNotEquals0(x, y));
-        Asserts.assertEQ((x & y) > 0, testIntAndGreater0(x, y));
+        Asserts.assertEQ((x | y) == 0, testIntOrEquals0(x, y));
+        Asserts.assertEQ((x | y) != 0, testIntOrNotEquals0(x, y));
+        Asserts.assertEQ((x | y) > 0, testIntOrGreater0(x, y));
     }
 
     @DontCompile
     public void assertResult(long x, long y) {
         Asserts.assertEQ((x + y) == 0, testLongAddtionEquals0(x, y));
         Asserts.assertEQ((x + y) != 0, testLongAddtionNotEquals0(x, y));
-        Asserts.assertEQ((x & y) == 0, testLongAddtionEquals0(x, y));
-        Asserts.assertEQ((x & y) != 0, testLongAddtionNotEquals0(x, y));
-        Asserts.assertEQ((x & y) > 0, testLongAndGreater0(x, y));
+        Asserts.assertEQ((x | y) == 0, testLongOrEquals0(x, y));
+        Asserts.assertEQ((x | y) != 0, testLongOrNotEquals0(x, y));
+        Asserts.assertEQ((x | y) > 0, testLongOrGreater0(x, y));
     }
 }
