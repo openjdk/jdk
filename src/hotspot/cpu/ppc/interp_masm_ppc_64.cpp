@@ -31,6 +31,7 @@
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -487,8 +488,25 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
 
   // Get address of invokedynamic array
   ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   sldi(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, index);
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  // Take shortcut if the size is a power of 2
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    // Scale index by power of 2
+    sldi(index, index, log2i_exact(sizeof(ResolvedFieldEntry)));
+  } else {
+    // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+    mulli(index, index, sizeof(ResolvedFieldEntry));
+  }
+  // Get address of field entries array
+  ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
+  addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 

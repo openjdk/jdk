@@ -23,25 +23,22 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.util;
 
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.Objects;
 
 /**
- * {@link WeakReference} wrapper key for entries in the backing map.
+ * {@link SoftReference} wrapper key for entries in the backing map.
  *
  * @param <T> key type
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
-final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey<T> {
+final class SoftReferenceKey<T> extends SoftReference<T> implements ReferenceKey<T> {
     /**
-     * Saved hashcode of the key. Used when {@link WeakReference} is
+     * Saved hashcode of the key. Used when {@link SoftReference} is
      * null.
      */
     private final int hashcode;
@@ -52,7 +49,7 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
      * @param key   unwrapped key value
      * @param queue reference queue
      */
-    WeakReferenceKey(T key, ReferenceQueue<T> queue) {
+    SoftReferenceKey(T key, ReferenceQueue<T> queue) {
         super(key, queue);
         this.hashcode = Objects.hashCode(key);
     }
@@ -76,6 +73,8 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
         if (obj instanceof ReferenceKey<?> key) {
             obj = key.get();
         }
+        // Note: refersTo is insufficient since keys require equivalence.
+        // refersTo would also require a cast to type T.
         return Objects.equals(get(), obj);
     }
 

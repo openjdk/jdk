@@ -42,7 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -64,7 +63,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
      * @param writer the writer for the class that the methods belong to.\
      */
     public MethodWriter(ClassWriter writer) {
-        super(writer, writer.typeElement);
+        super(writer, writer.typeElement, VisibleMemberTable.Kind.METHODS);
     }
 
     /**
@@ -74,7 +73,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
      * @param typeElement the class
      */
     public MethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+        super(writer, typeElement, VisibleMemberTable.Kind.METHODS);
     }
 
     /**
@@ -87,7 +86,8 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         super(writer);
     }
 
-    public void build(Content target) throws DocletException {
+    @Override
+    public void buildDetails(Content target) {
         buildMethodDoc(target);
     }
 
@@ -182,7 +182,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.methodSummary,
                 HtmlIds.METHOD_SUMMARY, summariesList, content);
     }
@@ -399,7 +399,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         var enclosing = (TypeElement) method.getEnclosingElement();
         VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
         SortedSet<ExecutableElement> implementedMethods =
-                new TreeSet<>(utils.comparators.makeOverrideUseComparator());
+                new TreeSet<>(utils.comparators.overrideUseComparator());
         implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
