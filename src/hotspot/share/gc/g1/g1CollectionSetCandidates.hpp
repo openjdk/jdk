@@ -134,17 +134,14 @@ public:
   }
 };
 
-// Iterator for G1CollectionSetCandidates. Multiplexes across the marking/retained
-// region lists based on gc efficiency.
+// Iterator for G1CollectionSetCandidates. There are no guarantees on the order
+// of the regions returned.
 class G1CollectionSetCandidatesIterator : public StackObj {
   G1CollectionSetCandidates* _which;
-  bool _is_marking_selected;
-  uint _marking_position;
-  uint _retained_position;
+  uint _position;
 
-  void select_list();
 public:
-  G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint marking_position, uint retained_position);
+  G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint position);
 
   G1CollectionSetCandidatesIterator& operator++();
   HeapRegion* operator*();
@@ -237,11 +234,11 @@ public:
 
   // Iteration
   G1CollectionSetCandidatesIterator begin() {
-    return G1CollectionSetCandidatesIterator(this, 0, 0);
+    return G1CollectionSetCandidatesIterator(this, 0);
   }
 
   G1CollectionSetCandidatesIterator end() {
-    return G1CollectionSetCandidatesIterator(this, marking_regions_length(), retained_regions_length());
+    return G1CollectionSetCandidatesIterator(this, length());
   }
 };
 

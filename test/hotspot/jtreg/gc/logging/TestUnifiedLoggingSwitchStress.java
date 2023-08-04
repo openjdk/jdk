@@ -52,6 +52,1530 @@ import java.util.Random;
  * @run main/othervm -Xmx256M -Xms256M
  *                   gc.logging.TestUnifiedLoggingSwitchStress 60
  */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
+/**
+ * @test TestUnifiedLoggingSwitchStress
+ * @key stress randomness
+ * @summary Switches gc log level on fly while stressing memory/gc
+ * @requires !vm.flightRecorder
+ * @requires vm.gc != "Z"
+ * @library /test/lib /
+ * @modules java.management java.base/jdk.internal.misc
+ *
+ * @run main/othervm -Xmx256M -Xms256M
+ *                   gc.logging.TestUnifiedLoggingSwitchStress 60
+ */
 
 class MemoryStresser implements Runnable {
     public static volatile boolean shouldStop = false;

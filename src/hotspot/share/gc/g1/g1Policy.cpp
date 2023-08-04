@@ -527,21 +527,17 @@ double G1Policy::predict_retained_regions_evac_time() const {
                                list.length());
 
   for (HeapRegion* r : list) {
-    double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
-
-    if (min_regions_left == 0 && (result + predicted_time_ms >= max_time_for_retaining())) {
-      // Over limit, and minimum amount of regions taken. Exit.
+    if (min_regions_left == 0) {
+      // Minimum amount of regions considered. Exit.
       break;
     }
-    if (min_regions_left > 0) {
-      min_regions_left--;
-    }
-    result += predicted_time_ms;
+    min_regions_left--;
+    result += predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
     num_regions++;
   }
 
-  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates taking %1.3fms additional time (max %1.3fms)",
-                            num_regions, list.length(), result, max_time_for_retaining());
+  log_trace(gc, ergo, heap)("Selected %u of %u retained candidates taking %1.3fms additional time",
+                            num_regions, list.length(), result);
   return result;
 }
 
