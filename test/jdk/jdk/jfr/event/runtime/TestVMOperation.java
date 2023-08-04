@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class TestVMOperation {
 
         List<RecordedEvent> events = Events.fromRecording(recording);
         Events.hasEvents(events);
-        for (RecordedEvent event : Events.fromRecording(recording)) {
+        for (RecordedEvent event : events) {
             String operation = Events.assertField(event, "operation").notEmpty().getValue();
             if (operation.equals(VM_OPERATION)) {
                 Events.assertField(event, "safepoint").equal(true);

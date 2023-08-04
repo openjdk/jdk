@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 package jdk.jfr.startupargs;
 
+import java.util.List;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.SimpleEvent;
@@ -58,8 +60,9 @@ public class TestRetransform {
         if (type.isEnabled()) {
             Asserts.fail("Expected event to be disabled after recording stopped");
         }
-        Events.hasEvent(r, SimpleEvent.class.getName());
-        Events.hasEvent(r, TestEvent.class.getName());
+        List<RecordedEvent> events = Events.fromRecording(r);
+        Events.hasEvent(events, SimpleEvent.class.getName());
+        Events.hasEvent(events, TestEvent.class.getName());
     }
 
     // Classes that are loaded during a recording
