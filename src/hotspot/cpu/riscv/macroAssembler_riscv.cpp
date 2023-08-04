@@ -1655,9 +1655,9 @@ void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
 }
 
 // Rd = Rs1 & (~Rd2)
-void MacroAssembler::andnr(Register Rd, Register Rs1, Register Rs2) {
+void MacroAssembler::andn(Register Rd, Register Rs1, Register Rs2) {
   if (UseZbb) {
-    andn(Rd, Rs1, Rs2);
+    Assembler::andn(Rd, Rs1, Rs2);
     return;
   }
 
@@ -1666,9 +1666,9 @@ void MacroAssembler::andnr(Register Rd, Register Rs1, Register Rs2) {
 }
 
 // Rd = Rs1 | (~Rd2)
-void MacroAssembler::ornr(Register Rd, Register Rs1, Register Rs2) {
+void MacroAssembler::orn(Register Rd, Register Rs1, Register Rs2) {
   if (UseZbb) {
-    orn(Rd, Rs1, Rs2);
+    Assembler::orn(Rd, Rs1, Rs2);
     return;
   }
 
