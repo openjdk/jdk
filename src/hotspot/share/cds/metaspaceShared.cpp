@@ -87,7 +87,6 @@
 
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
-bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
 void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
@@ -731,7 +730,6 @@ void MetaspaceShared::preload_classes(TRAPS) {
   }
 
   log_info(cds)("Loading classes to share ...");
-  _has_error_classes = false;
   int class_count = ClassListParser::parse_classlist(classlist_path,
                                                      ClassListParser::_parse_all, CHECK);
   if (ExtraSharedClassListFile) {
@@ -814,7 +812,6 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
-      _has_error_classes = true;
     }
     ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;

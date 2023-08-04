@@ -123,7 +123,7 @@ public class PackageWriter extends HtmlDocletWriter {
         printDocument(content);
         var docFilesHandler = configuration
                 .getWriterFactory()
-                .getDocFilesHandler(packageElement);
+                .newDocFilesHandler(packageElement);
         docFilesHandler.copyDocFiles();
     }
 
