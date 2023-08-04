@@ -30,12 +30,14 @@
  */
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 import java.io.IOException;
+import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
@@ -44,11 +46,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.internal.classfile.AttributeMapper;
 import jdk.internal.classfile.AttributedElement;
+import jdk.internal.classfile.BufWriter;
+import jdk.internal.classfile.ClassReader;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassfileElement;
 import jdk.internal.classfile.CodeTransform;
 import jdk.internal.classfile.CompoundElement;
+import jdk.internal.classfile.CustomAttribute;
 
 /**
  * OptionsTest
@@ -78,6 +83,55 @@ class OptionsTest {
                 Classfile.of(Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES).transform(
                             Classfile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
+    }
+
+    static class StrangeAttribute extends CustomAttribute<StrangeAttribute> {
+        public StrangeAttribute() {
+            super(STRANGE_ATTRIBUTE_MAPPER);
+        }
+    }
+
+    static final AttributeMapper<StrangeAttribute> STRANGE_ATTRIBUTE_MAPPER = new AttributeMapper<>() {
+
+        @Override
+        public String name() {
+            return "StrangeAttribute";
+        }
+
+        @Override
+        public StrangeAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+            return new StrangeAttribute();
+        }
+
+        @Override
+        public void writeAttribute(BufWriter buf, StrangeAttribute attr) {
+            buf.writeIndex(buf.constantPool().utf8Entry(name()));
+            buf.writeInt(0);
+        }
+
+        @Override
+        public AttributeMapper.AttributeStability attributeStability() {
+            return AttributeMapper.AttributeStability.STATELESS;
+        }
+    };
+
+    @Test
+    void testUnknownAttribute() throws Exception {
+        var classBytes = Classfile.of(Classfile.AttributeMapperOption.of(e -> {
+            return e.equalsString(STRANGE_ATTRIBUTE_MAPPER.name()) ? STRANGE_ATTRIBUTE_MAPPER : null;
+        })).build(ClassDesc.of("StrangeClass"), clb -> clb.with(new StrangeAttribute()));
+
+        //test default
+        assertFalse(Classfile.of().parse(classBytes).attributes().isEmpty());
+
+        //test drop unknown at parse
+        assertTrue(Classfile.of(Classfile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).parse(classBytes).attributes().isEmpty());
+
+        //test drop unknown at transform
+        assertTrue(Classfile.of().parse(
+                Classfile.of(Classfile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
+                        Classfile.of().parse(classBytes),
+                        ClassTransform.ACCEPT_ALL)).attributes().isEmpty());
     }
 
     void testNoHazmat(Path path, ClassfileElement e) {
