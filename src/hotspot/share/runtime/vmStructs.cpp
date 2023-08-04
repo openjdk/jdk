@@ -529,10 +529,6 @@
   /***********************************/                                                                                              \
                                                                                                                                      \
      static_field(StubRoutines,                _call_stub_return_address,                     address)                               \
-     static_field(StubRoutines,                _arraysort_int,                                address)                               \
-     static_field(StubRoutines,                _arraysort_long,                               address)                               \
-     static_field(StubRoutines,                _arraysort_float,                              address)                               \
-     static_field(StubRoutines,                _arraysort_double,                             address)                               \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
