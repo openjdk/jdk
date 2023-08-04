@@ -197,11 +197,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, rmethod,
                                   temp_reg, temp_reg2, temp_reg3, itable_index, L_no_such_interface);
 
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
-
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 124;
-  const ptrdiff_t codesize = lookupSize;
+  const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta  = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
