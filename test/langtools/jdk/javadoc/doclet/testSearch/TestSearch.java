@@ -418,7 +418,7 @@ public class TestSearch extends JavadocTester {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
-                    <link rel="stylesheet" type="text/css" href="script-files/jquery-ui.min.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="resource-files/jquery-ui.min.css" title="Style">
                     """,
                 """
                     <script type="text/javascript" src="script-files/jquery-3.6.1.min.js"></script>
@@ -693,7 +693,7 @@ public class TestSearch extends JavadocTester {
                 "script-files/search.js",
                 "script-files/jquery-3.6.1.min.js",
                 "script-files/jquery-ui.min.js",
-                "script-files/jquery-ui.min.css",
+                "resource-files/jquery-ui.min.css",
                 "resource-files/x.png",
                 "resource-files/glass.png");
     }
@@ -712,7 +712,7 @@ public class TestSearch extends JavadocTester {
                 "function renderResults(result) {",
                 "function selectTab(category) {");
 
-        checkCssClasses("script-files/search.js", "stylesheet.css");
+        checkCssClasses("script-files/search.js", "resource-files/stylesheet.css");
     }
 
     void checkCssClasses(String jsFile, String cssFile) {

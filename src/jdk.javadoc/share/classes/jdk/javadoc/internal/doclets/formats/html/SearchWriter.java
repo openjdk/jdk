@@ -134,6 +134,7 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
                         .put(HtmlAttr.STYLE, "display: none;")
-                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
+                                                       .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
     }
 }

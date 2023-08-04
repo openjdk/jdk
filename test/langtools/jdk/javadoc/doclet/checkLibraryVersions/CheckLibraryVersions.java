@@ -73,7 +73,7 @@ public class CheckLibraryVersions {
         var legalDir = rootDir.resolve("src/jdk.javadoc/share/legal");
         var scriptDir = rootDir.resolve("src/jdk.javadoc/share/classes")
                                      .resolve("jdk/javadoc/internal/doclets/formats/html")
-                                     .resolve("resources/script-dir");
+                                     .resolve("resources/jquery");
 
         for (var legalFileName : libraries.keySet()) {
             var legalFile = legalDir.resolve(legalFileName);

@@ -116,9 +116,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style">""");
     }
 
     @Test
@@ -129,9 +129,9 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("custom-stylesheet.css", true, "Custom javadoc style sheet");
+        checkOutput("resource-files/custom-stylesheet.css", true, "Custom javadoc style sheet");
         checkOutput("pkg/Foo.html", true, """
-            <link rel="stylesheet" type="text/css" href="../custom-stylesheet.css" title="Style">""");
+            <link rel="stylesheet" type="text/css" href="../resource-files/custom-stylesheet.css" title="Style">""");
     }
 
     @Test
@@ -144,14 +144,14 @@ public class TestOptions extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
-        checkOutput("additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
-        checkOutput("additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
+        checkOutput("resource-files/additional-stylesheet-1.css", true, "Additional javadoc style sheet 1");
+        checkOutput("resource-files/additional-stylesheet-2.css", true, "Additional javadoc style sheet 2");
+        checkOutput("resource-files/additional-stylesheet-3.css", true, "Additional javadoc style sheet 3");
         checkOutput("pkg/Foo.html", true,
                 """
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-1.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-2.css" title="Style">
-                    <link rel="stylesheet" type="text/css" href="../additional-stylesheet-3.css" title="Style">""");
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-1.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-2.css" title="Style">
+                    <link rel="stylesheet" type="text/css" href="../resource-files/additional-stylesheet-3.css" title="Style">""");
     }
 
     @Test

@@ -211,15 +211,15 @@ class APITest {
             "pkg/package-tree.html",
             "resource-files/copy.svg",
             "resource-files/glass.png",
+            "resource-files/jquery-ui.min.css",
             "resource-files/link.svg",
+            "resource-files/stylesheet.css",
             "resource-files/x.png",
             "script-files/jquery-3.6.1.min.js",
             "script-files/jquery-ui.min.js",
-            "script-files/jquery-ui.min.css",
             "script-files/script.js",
             "script-files/search.js",
             "script-files/search-page.js",
-            "stylesheet.css",
             "tag-search-index.js",
             "type-search-index.js"
     ));
@@ -229,6 +229,7 @@ class APITest {
                             !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
                          && !s.equals("resource-files/glass.png")
+                         && !s.equals("resource-files/jquery-ui.min.css")
                          && !s.equals("resource-files/x.png")
                          && !s.startsWith("script-files/jquery-")
                          && !s.equals("script-files/search.js")
