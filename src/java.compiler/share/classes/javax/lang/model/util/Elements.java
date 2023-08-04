@@ -283,7 +283,9 @@ public interface Elements {
      * <p> A documentation comment of an element is a comment that
      * begins with "{@code /**}", ends with a separate
      * "<code>*&#47;</code>", and immediately precedes the element,
-     * ignoring white space and annotations and end-of-line-comments ({@code "//"} comments).
+     * ignoring white space, annotations, end-of-line-comments ({@code
+     * "//"} comments), and intermediate traditional comments
+     * (<code>"/* ... *&#47;"</code> comments) that are not doc comments.
      * Therefore, a documentation comment
      * contains at least three "{@code *}" characters.  The text
      * returned for the documentation comment is a processed form of
@@ -316,6 +318,7 @@ public interface Elements {
      * @return the documentation comment of the element, or {@code null}
      *          if there is none
      * @jls 3.6 White Space
+     * @jls 3.7 Comments
      */
     String getDocComment(Element e);
 

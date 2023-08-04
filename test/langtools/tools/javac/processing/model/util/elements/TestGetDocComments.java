@@ -106,6 +106,7 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
       """)
     // End-of-line-style comment
     @SuppressWarnings("") // A second preceding annotation
+    /* Traditional comment */
     private void foo() {return ;}
 
 
@@ -133,6 +134,9 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
        """)
     @SuppressWarnings("") // A second preceding annotation
     // End-of-line-style comment
+    /*
+     * Traditional comment over multiple lines.
+     */
     private void bar() {return ;}
 
     // Spaces _after_ the space-asterisk prefix are _not_ deleted.
