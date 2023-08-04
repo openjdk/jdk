@@ -84,11 +84,11 @@ CFLAGS_VM_VERSION := \
 # Disabled warnings
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
-    empty-body ignored-qualifiers implicit-fallthrough int-in-bool-context \
+    empty-body implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
-DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
+DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
 ifneq ($(DEBUG_LEVEL), release)
@@ -139,6 +139,13 @@ JVM_STRIPFLAGS ?= $(STRIPFLAGS)
 # This source set is reused so save in cache.
 $(call FillFindCache, $(JVM_SRC_DIRS))
 
+# The global operator new functions defined in operator_new.cpp are intended
+# to detect and prevent the VM code from calling them. See more details in
+# operator_new.cpp. Exclude operator_new.o when statically linking the VM
+# code with JDK natives, as the JDK natives might need to call the global
+# operator new.
+LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
+
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 
@@ -168,10 +175,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_notificationThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
+    DISABLED_WARNINGS_clang_aix_os_posix.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_clang_serviceThread.cpp := bitwise-instead-of-logical, \
     DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
+    DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
+    DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
+    DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
@@ -186,6 +197,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     RC_FILEDESC := $(HOTSPOT_VM_DISTRO) $(OPENJDK_TARGET_CPU_BITS)-Bit $(JVM_VARIANT) VM, \
     PRECOMPILED_HEADER := $(JVM_PRECOMPILED_HEADER), \
     PRECOMPILED_HEADER_EXCLUDE := $(JVM_PRECOMPILED_HEADER_EXCLUDE), \
+    STATIC_LIB_EXCLUDE_OBJS := $(LIBJVM_STATIC_EXCLUDE_OBJS), \
 ))
 
 # Always recompile abstract_vm_version.cpp if libjvm needs to be relinked. This ensures
@@ -268,6 +280,12 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
         _Znwm \
         #
     UNDEF_PATTERN := ' U '
+
+    # 'nm' on AIX needs -X64 option
+
+    ifeq ($(call isTargetOs, aix), true)
+      NM := $(NM) -X64
+    endif
 
     define SetupOperatorNewDeleteCheck
         $1.op_check: $1

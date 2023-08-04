@@ -533,6 +533,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
+  DEBUG_ONLY( uint outcnt_orig = outcnt(); )
   int del_it = 0;               // The last input path we delete
   bool found_top = false; // irreducible loops need to check reachability if we find TOP
   // For all inputs...
@@ -563,36 +564,32 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         continue;
       }
       cnt++;                    // One more value merging
-
     } else if (can_reshape) {   // Else found dead path with DU info
       PhaseIterGVN *igvn = phase->is_IterGVN();
       del_req(i);               // Yank path from self
       del_it = i;
-      uint max = outcnt();
-      DUIterator j;
-      bool progress = true;
-      while(progress) {         // Need to establish property over all users
-        progress = false;
-        for (j = outs(); has_out(j); j++) {
-          Node *n = out(j);
-          if( n->req() != req() && n->is_Phi() ) {
-            assert( n->in(0) == this, "" );
-            igvn->hash_delete(n); // Yank from hash before hacking edges
-            n->set_req_X(i,nullptr,igvn);// Correct DU info
-            n->del_req(i);        // Yank path from Phis
-            if( max != outcnt() ) {
-              progress = true;
-              j = refresh_out_pos(j);
-              max = outcnt();
-            }
-          }
+
+      for (DUIterator_Fast jmax, j = fast_outs(jmax); j < jmax; j++) {
+        Node* use = fast_out(j);
+
+        if (use->req() != req() && use->is_Phi()) {
+          assert(use->in(0) == this, "unexpected control input");
+          igvn->hash_delete(use);          // Yank from hash before hacking edges
+          use->set_req_X(i, nullptr, igvn);// Correct DU info
+          use->del_req(i);                 // Yank path from Phis
         }
       }
-      add_to_worklist = false;
-      phase->is_IterGVN()->add_users_to_worklist(this);
+
+      if (add_to_worklist) {
+        igvn->add_users_to_worklist(this);
+        add_to_worklist = false;
+      }
+
       i--;
     }
   }
+
+  assert(outcnt() == outcnt_orig, "not expect to remove any use");
 
   if (can_reshape && found_top && loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     // Is it a dead irreducible loop?
@@ -1092,9 +1089,8 @@ PhiNode* PhiNode::split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) cons
     }
   }
   Compile *C = igvn->C;
-  Arena *a = Thread::current()->resource_area();
-  Node_Array node_map = new Node_Array(a);
-  Node_Stack stack(a, C->live_nodes() >> 4);
+  Node_Array node_map;
+  Node_Stack stack(C->live_nodes() >> 4);
   PhiNode *nphi = slice_memory(at);
   igvn->register_new_node_with_optimizer( nphi );
   node_map.map(_idx, nphi);
@@ -1461,7 +1457,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 //-----------------------------unique_input------------------------------------
 // Find the unique value, discounting top, self-loops, and casts.
 // Return top if there are no inputs, and self if there are multiple.
-Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
+Node* PhiNode::unique_input(PhaseValues* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
   //  2) some of the inputs have an intervening ConstraintCast
@@ -1526,6 +1522,12 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
 // Convert Phi to an ConvIB.
 static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   assert(true_path !=0, "only diamond shape graph expected");
+
+  // If we're late in the optimization process, we may have already expanded Conv2B nodes
+  if (phase->C->post_loop_opts_phase() && !Matcher::match_rule_supported(Op_Conv2B)) {
+    return nullptr;
+  }
+
   // Convert the true/false index into an expected 0/1 return.
   // Map 2->0 and 1->1.
   int flipped = 2-true_path;
@@ -1568,9 +1570,10 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   } else return nullptr;
 
   // Build int->bool conversion
-  Node *n = new Conv2BNode(cmp->in(1));
-  if( flipped )
-    n = new XorINode( phase->transform(n), phase->intcon(1) );
+  Node* n = new Conv2BNode(cmp->in(1));
+  if (flipped) {
+    n = new XorINode(phase->transform(n), phase->intcon(1));
+  }
 
   return n;
 }
@@ -1799,8 +1802,8 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
     if( phase->type(n) == Type::TOP ) return nullptr;
     if( phi->in(i) == val ) {
       hit++;
-      if (PhaseIdealLoop::find_predicate(r->in(i)) != nullptr) {
-        return nullptr;            // don't split loop entry path
+      if (Node::may_be_loop_entry(r->in(i))) {
+        return nullptr; // don't split loop entry path
       }
     }
   }
@@ -1937,28 +1940,32 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   for (uint j = 1; j < req(); j++) {
     Node* rc = r->in(j);
     Node* n = in(j);
-    if (rc != nullptr &&
-        rc->is_Proj()) {
-      if (worklist.member(rc)) {
-        delay = true;
-      } else if (rc->in(0) != nullptr &&
-                 rc->in(0)->is_If()) {
-        if (worklist.member(rc->in(0))) {
-          delay = true;
-        } else if (rc->in(0)->in(1) != nullptr &&
-                   rc->in(0)->in(1)->is_Bool()) {
-          if (worklist.member(rc->in(0)->in(1))) {
-            delay = true;
-          } else if (rc->in(0)->in(1)->in(1) != nullptr &&
-                     rc->in(0)->in(1)->in(1)->is_Cmp()) {
-            if (worklist.member(rc->in(0)->in(1)->in(1))) {
-              delay = true;
-            }
-          }
-        }
-      }
+
+    if (rc == nullptr || !rc->is_Proj()) { continue; }
+    if (worklist.member(rc)) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0) == nullptr || !rc->in(0)->is_If()) { continue; }
+    if (worklist.member(rc->in(0))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1) == nullptr || !rc->in(0)->in(1)->is_Bool()) { continue; }
+    if (worklist.member(rc->in(0)->in(1))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1)->in(1) == nullptr || !rc->in(0)->in(1)->in(1)->is_Cmp()) { continue; }
+    if (worklist.member(rc->in(0)->in(1)->in(1))) {
+      delay = true;
+      break;
     }
   }
+
   if (delay) {
     worklist.push(this);
   }

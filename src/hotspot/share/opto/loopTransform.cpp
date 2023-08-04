@@ -489,7 +489,8 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
       assert(test->Opcode() == Op_If ||
              test->Opcode() == Op_CountedLoopEnd ||
              test->Opcode() == Op_LongCountedLoopEnd ||
-             test->Opcode() == Op_RangeCheck,
+             test->Opcode() == Op_RangeCheck ||
+             test->Opcode() == Op_ParsePredicate,
              "Check this code when new subtype is added");
       // Condition is not a member of this loop?
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
@@ -560,7 +561,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //                  stmt1
 //                    |
 //                    v
-//              loop predicate
+//                predicates
 //                    |
 //                    v
 //                   loop<----+
@@ -585,7 +586,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                 /       \
 //        clone   /         \   orig
 //               /           \
@@ -616,7 +617,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //                   stmt1
 //                     |
 //                     v
-//               loop predicate
+//                predicates
 //                    /
 //                   /
 //        clone     /            orig
@@ -653,7 +654,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //                 stmt1
 //                    |
 //                    v
-//              loop predicate
+//                predicates
 //                    |
 //                    v
 //                  stmt2 clone
@@ -666,7 +667,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 //            false  true
 //             |      |
 //             |      v
-//             | initialized skeleton predicates
+//             | Initialized Assertion Predicates
 //             |      |
 //             |      v
 //             |     loop<----+
@@ -771,21 +772,21 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     }
   }
 
-  // Step 5: skeleton_predicates instantiation
+  // Step 5: Assertion Predicates initialization
   if (counted_loop && UseLoopPredicate) {
     CountedLoopNode *cl_head = head->as_CountedLoop();
     Node* init = cl_head->init_trip();
     Node* stride = cl_head->stride();
     IdealLoopTree* outer_loop = get_loop(outer_loop_head);
-    Predicates predicates(new_head->in(LoopNode::EntryControl));
-    initialize_skeleton_predicates_for_peeled_loop(predicates.predicate(),
-                                                   outer_loop_head, dd_outer_loop_head,
-                                                   init, stride, outer_loop,
-                                                   idx_before_clone, old_new);
-    initialize_skeleton_predicates_for_peeled_loop(predicates.profile_predicate(),
-                                                   outer_loop_head, dd_outer_loop_head,
-                                                   init, stride, outer_loop,
-                                                   idx_before_clone, old_new);
+    ParsePredicates parse_predicates(new_head->in(LoopNode::EntryControl));
+    initialize_assertion_predicates_for_peeled_loop(parse_predicates.loop_predicate_proj(),
+                                                    outer_loop_head, dd_outer_loop_head,
+                                                    init, stride, outer_loop,
+                                                    idx_before_clone, old_new);
+    initialize_assertion_predicates_for_peeled_loop(parse_predicates.profiled_loop_predicate_proj(),
+                                                    outer_loop_head, dd_outer_loop_head,
+                                                    init, stride, outer_loop,
+                                                    idx_before_clone, old_new);
  }
 
   // Now force out all loop-invariant dominating tests.  The optimizer
@@ -1037,10 +1038,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   }
 
   if (UseSuperWord) {
-    if (!cl->is_reduction_loop()) {
-      phase->mark_reductions(this);
-    }
-
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
@@ -1306,19 +1303,17 @@ void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) 
 }
 #endif
 
-// Make a copy of the skeleton range check predicates before the main
-// loop and set the initial value of loop as input. After unrolling,
-// the range of values for the induction variable in the main loop can
-// fall outside the allowed range of values by the array access (main
-// loop is never executed). When that happens, range check
-// CastII/ConvI2L nodes cause some data paths to die. For consistency,
-// the control paths must die too but the range checks were removed by
-// predication. The range checks that we add here guarantee that they do.
-void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicate, Node* init, Node* stride,
-                                                 IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                                 uint dd_main_head, const uint idx_before_pre_post,
-                                                 const uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                                 Node* zero_trip_guard_proj_post, const Node_List &old_new) {
+// Make two copies of each Template Assertion Predicate before the pre-loop and add them to the main-loop. One remains
+// a template while the other one is initialized with the initial value of the loop induction variable. The Initialized
+// Assertion Predicates ensures that the main-loop is removed if some type ranges of Cast or Convert nodes become
+// impossible and are replaced by top (i.e. a sign that the main-loop is dead).
+void PhaseIdealLoop::copy_assertion_predicates_to_main_loop_helper(Node* predicate, Node* init, Node* stride,
+                                                                   IdealLoopTree* outer_loop, LoopNode* outer_main_head,
+                                                                   const uint dd_main_head, const uint idx_before_pre_post,
+                                                                   const uint idx_after_post_before_pre,
+                                                                   Node* zero_trip_guard_proj_main,
+                                                                   Node* zero_trip_guard_proj_post,
+                                                                   const Node_List &old_new) {
   if (predicate != nullptr) {
 #ifdef ASSERT
     ensure_zero_trip_guard_proj(zero_trip_guard_proj_main, true);
@@ -1343,20 +1338,20 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicat
       if (uncommon_proj->unique_ctrl_out() != rgn)
         break;
       if (iff->in(1)->Opcode() == Op_Opaque4) {
-        assert(skeleton_predicate_has_opaque(iff), "unexpected");
-        // Clone the skeleton predicate twice and initialize one with the initial
+        assert(assertion_predicate_has_loop_opaque_node(iff), "unexpected");
+        // Clone the Assertion Predicate twice and initialize one with the initial
         // value of the loop induction variable. Leave the other predicate
         // to be initialized when increasing the stride during loop unrolling.
-        prev_proj = clone_skeleton_predicate_and_initialize(iff, opaque_init, nullptr, predicate, uncommon_proj,
-                                                            current_proj, outer_loop, prev_proj);
-        assert(skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "");
+        prev_proj = clone_assertion_predicate_and_initialize(iff, opaque_init, nullptr, predicate, uncommon_proj,
+                                                             current_proj, outer_loop, prev_proj);
+        assert(assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "");
 
-        prev_proj = clone_skeleton_predicate_and_initialize(iff, init, stride, predicate, uncommon_proj,
-                                                            current_proj, outer_loop, prev_proj);
-        assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "");
+        prev_proj = clone_assertion_predicate_and_initialize(iff, init, stride, predicate, uncommon_proj,
+                                                             current_proj, outer_loop, prev_proj);
+        assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "");
 
-        // Rewire any control inputs from the cloned skeleton predicates down to the main and post loop for data nodes that are part of the
-        // main loop (and were cloned to the pre and post loop).
+        // Rewire any control inputs from the cloned Assertion Predicates down to the main and post loop for data nodes
+        // that are part of the main loop (and were cloned to the pre and post loop).
         for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
           Node* loop_node = predicate->out(i);
           Node* pre_loop_node = old_new[loop_node->_idx];
@@ -1377,7 +1372,7 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicat
           }
         }
 
-        // Remove the skeleton predicate from the pre-loop
+        // Remove the Assertion Predicate from the pre-loop
         _igvn.replace_input_of(iff, 1, _igvn.intcon(1));
       }
       predicate = predicate->in(0)->in(0);
@@ -1387,7 +1382,9 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop_helper(Node* predicat
   }
 }
 
-static bool skeleton_follow_inputs(Node* n) {
+// Is 'n' a node that can be found on the input chain of a Template Assertion Predicate bool (i.e. between a Template
+// Assertion Predicate If node and the OpaqueLoop* nodes)?
+static bool is_part_of_template_assertion_predicate_bool(Node* n) {
   int op = n->Opcode();
   return (n->is_Bool() ||
           n->is_Cmp() ||
@@ -1410,7 +1407,7 @@ bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
   if (n->Opcode() == Op_OpaqueLoopInit || n->Opcode() == Op_OpaqueLoopStride) {
     return true;
   }
-  if (!skeleton_follow_inputs(n)) {
+  if (!is_part_of_template_assertion_predicate_bool(n)) {
     return false;
   }
   uint init;
@@ -1419,8 +1416,7 @@ bool PhaseIdealLoop::subgraph_has_opaque(Node* n) {
   return init != 0 || stride != 0;
 }
 
-
-bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
+bool PhaseIdealLoop::assertion_predicate_has_loop_opaque_node(IfNode* iff) {
   uint init;
   uint stride;
   count_opaque_loop_nodes(iff->in(1)->in(1), init, stride);
@@ -1463,7 +1459,7 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   wq.push(n);
   for (uint i = 0; i < wq.size(); i++) {
     Node* n = wq.at(i);
-    if (skeleton_follow_inputs(n)) {
+    if (is_part_of_template_assertion_predicate_bool(n)) {
       for (uint j = 1; j < n->req(); j++) {
         Node* m = n->in(j);
         if (m != nullptr) {
@@ -1480,12 +1476,15 @@ void PhaseIdealLoop::count_opaque_loop_nodes(Node* n, uint& init, uint& stride) 
   }
 }
 
-// Clone the skeleton predicate bool for a main or unswitched loop:
-// Main loop: Set new_init and new_stride nodes as new inputs.
-// Unswitched loop: new_init and new_stride are both null. Clone OpaqueLoopInit and OpaqueLoopStride instead.
-Node* PhaseIdealLoop::clone_skeleton_predicate_bool(Node* iff, Node* new_init, Node* new_stride, Node* control) {
+// Create a new Bool node from the provided Template Assertion Predicate.
+// Unswitched loop: new_init and new_stride are both null. Clone OpaqueLoopInit and OpaqueLoopStride.
+// Otherwise: Replace found OpaqueLoop* nodes with new_init and new_stride, respectively.
+Node* PhaseIdealLoop::create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init,
+                                                                    Node* new_stride, Node* control) {
   Node_Stack to_clone(2);
-  to_clone.push(iff->in(1), 1);
+  Node* opaque4 = template_assertion_predicate->in(1);
+  assert(opaque4->Opcode() == Op_Opaque4, "must be Opaque4");
+  to_clone.push(opaque4, 1);
   uint current = C->unique();
   Node* result = nullptr;
   bool is_unswitched_loop = new_init == nullptr && new_stride == nullptr;
@@ -1499,7 +1498,7 @@ Node* PhaseIdealLoop::clone_skeleton_predicate_bool(Node* iff, Node* new_init, N
     Node* n = to_clone.node();
     uint i = to_clone.index();
     Node* m = n->in(i);
-    if (skeleton_follow_inputs(m)) {
+    if (is_part_of_template_assertion_predicate_bool(m)) {
       to_clone.push(m, 1);
       continue;
     }
@@ -1557,11 +1556,12 @@ Node* PhaseIdealLoop::clone_skeleton_predicate_bool(Node* iff, Node* new_init, N
   return result;
 }
 
-// Clone a skeleton predicate for the main loop. new_init and new_stride are set as new inputs. Since the predicates cannot fail at runtime,
-// Halt nodes are inserted instead of uncommon traps.
-Node* PhaseIdealLoop::clone_skeleton_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate, Node* uncommon_proj,
-                                                              Node* control, IdealLoopTree* outer_loop, Node* input_proj) {
-  Node* result = clone_skeleton_predicate_bool(iff, new_init, new_stride, control);
+// Clone an Assertion Predicate for the main loop. new_init and new_stride are set as new inputs. Since the predicates
+// cannot fail at runtime, Halt nodes are inserted instead of uncommon traps.
+Node* PhaseIdealLoop::clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
+                                                               Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
+                                                               Node* input_proj) {
+  Node* result = create_bool_from_template_assertion_predicate(iff, new_init, new_stride, control);
   Node* proj = predicate->clone();
   Node* other_proj = uncommon_proj->clone();
   Node* new_iff = iff->clone();
@@ -1570,7 +1570,7 @@ Node* PhaseIdealLoop::clone_skeleton_predicate_and_initialize(Node* iff, Node* n
   other_proj->set_req(0, new_iff);
   Node* frame = new ParmNode(C->start(), TypeFunc::FramePtr);
   register_new_node(frame, C->start());
-  // It's impossible for the predicate to fail at runtime. Use an Halt node.
+  // It's impossible for the predicate to fail at runtime. Use a Halt node.
   Node* halt = new HaltNode(other_proj, frame, "duplicated predicate failed which is impossible");
   _igvn.add_input_to(C->root(), halt);
   new_iff->set_req(0, input_proj);
@@ -1582,32 +1582,24 @@ Node* PhaseIdealLoop::clone_skeleton_predicate_and_initialize(Node* iff, Node* n
   return proj;
 }
 
-void PhaseIdealLoop::copy_skeleton_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride,
-                                          IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                          uint dd_main_head, const uint idx_before_pre_post,
-                                          const uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
-                                          Node* zero_trip_guard_proj_post, const Node_List &old_new) {
+void PhaseIdealLoop::copy_assertion_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride,
+                                                            IdealLoopTree* outer_loop, LoopNode* outer_main_head,
+                                                            const uint dd_main_head, const uint idx_before_pre_post,
+                                                            const uint idx_after_post_before_pre,
+                                                            Node* zero_trip_guard_proj_main,
+                                                            Node* zero_trip_guard_proj_post,
+                                                            const Node_List &old_new) {
   if (UseLoopPredicate) {
     Node* entry = pre_head->in(LoopNode::EntryControl);
-    Node* predicate = nullptr;
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-    if (predicate != nullptr) {
-      entry = skip_loop_predicates(entry);
-    }
-    Node* profile_predicate = nullptr;
-    if (UseProfiledLoopPredicate) {
-      profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-      if (profile_predicate != nullptr) {
-        entry = skip_loop_predicates(entry);
-      }
-    }
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    copy_skeleton_predicates_to_main_loop_helper(predicate, init, stride, outer_loop, outer_main_head, dd_main_head,
-                                                 idx_before_pre_post, idx_after_post_before_pre, zero_trip_guard_proj_main,
-                                                 zero_trip_guard_proj_post, old_new);
-    copy_skeleton_predicates_to_main_loop_helper(profile_predicate, init, stride, outer_loop, outer_main_head, dd_main_head,
-                                                 idx_before_pre_post, idx_after_post_before_pre, zero_trip_guard_proj_main,
-                                                 zero_trip_guard_proj_post, old_new);
+    ParsePredicates parse_predicates(entry);
+    copy_assertion_predicates_to_main_loop_helper(parse_predicates.loop_predicate_proj(), init, stride, outer_loop,
+                                                  outer_main_head, dd_main_head, idx_before_pre_post,
+                                                  idx_after_post_before_pre, zero_trip_guard_proj_main,
+                                                  zero_trip_guard_proj_post, old_new);
+    copy_assertion_predicates_to_main_loop_helper(parse_predicates.profiled_loop_predicate_proj(), init, stride,
+                                                  outer_loop, outer_main_head, dd_main_head, idx_before_pre_post,
+                                                  idx_after_post_before_pre, zero_trip_guard_proj_main,
+                                                  zero_trip_guard_proj_post, old_new);
   }
 }
 
@@ -1694,15 +1686,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
 
-  if (peel_only) {
-    // Nodes in the peeled iteration that were marked as reductions within the
-    // original loop might not be reductions within their new outer loop.
-    for (uint i = 0; i < loop->_body.size(); i++) {
-      Node* n = old_new[loop->_body[i]->_idx];
-      n->remove_flag(Node::Flag_is_reduction);
-    }
-  }
-
   // Step B2: Build a zero-trip guard for the main-loop.  After leaving the
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
@@ -1766,9 +1749,10 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   Node* castii = cast_incr_before_loop(pre_incr, min_taken, main_head);
   assert(castii != nullptr, "no castII inserted");
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
-  copy_skeleton_predicates_to_main_loop(pre_head, castii, stride, outer_loop, outer_main_head, dd_main_head,
-                                        idx_before_pre_post, idx_after_post_before_pre, min_taken, post_head->in(1), old_new);
-  copy_skeleton_predicates_to_post_loop(outer_main_head, post_head, post_incr, stride);
+  copy_assertion_predicates_to_main_loop(pre_head, castii, stride, outer_loop, outer_main_head, dd_main_head,
+                                         idx_before_pre_post, idx_after_post_before_pre, min_taken, post_head->in(1),
+                                         old_new);
+  copy_assertion_predicates_to_post_loop(outer_main_head, post_head, post_incr, stride);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1891,7 +1875,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // In this case we throw away the result as we are not using it to connect anything else.
   CountedLoopNode *post_head = nullptr;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
-  copy_skeleton_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
+  copy_assertion_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1903,55 +1887,6 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   peeled_dom_test_elim(loop, old_new);
   loop->record_for_igvn();
 }
-
-
-//-------------------------insert_scalar_rced_post_loop------------------------
-// Insert a copy of the rce'd main loop as a post loop,
-// We have not unrolled the main loop, so this is the right time to inject this.
-// Later we will examine the partner of this post loop pair which still has range checks
-// to see inject code which tests at runtime if the range checks are applicable.
-void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List &old_new) {
-  if (!loop->_head->is_CountedLoop()) return;
-
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-
-  // only process RCE'd main loops
-  if (!cl->is_main_loop() || loop->range_checks_present()) return;
-
-#ifndef PRODUCT
-  if (TraceLoopOpts) {
-    tty->print("PostScalarRce  ");
-    loop->dump_head();
-  }
-#endif
-  C->set_major_progress();
-
-  // Find common pieces of the loop being guarded with pre & post loops
-  CountedLoopNode *main_head = loop->_head->as_CountedLoop();
-  CountedLoopEndNode *main_end = main_head->loopexit();
-  // diagnostic to show loop end is not properly formed
-  assert(main_end->outcnt() == 2, "1 true, 1 false path only");
-
-  Node *incr = main_end->incr();
-  Node *limit = main_end->limit();
-
-  // In this case we throw away the result as we are not using it to connect anything else.
-  CountedLoopNode *post_head = nullptr;
-  insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
-  copy_skeleton_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
-
-  // It's difficult to be precise about the trip-counts
-  // for post loops.  They are usually very short,
-  // so guess that unit vector trips is a reasonable value.
-  post_head->set_profile_trip_cnt(4.0);
-  post_head->set_is_rce_post_loop();
-
-  // Now force out all loop-invariant dominating tests.  The optimizer
-  // finds some, but we _know_ they are all useless.
-  peeled_dom_test_elim(loop, old_new);
-  loop->record_for_igvn();
-}
-
 
 //------------------------------insert_post_loop-------------------------------
 // Insert post loops.  Add a post loop to the given loop passed.
@@ -2055,14 +1990,10 @@ bool IdealLoopTree::is_invariant(Node* n) const {
   return !is_member(_phase->get_loop(n_c));
 }
 
-void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con) {
-  if (init->Opcode() == Op_CastII) {
-    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
-    // it can get in the way of type propagation
-    assert(((CastIINode*)init)->carry_dependency() && loop_head->skip_predicates() == init->in(0), "casted iv phi from pre loop expected");
-    init = init->in(1);
-  }
-  // Search for skeleton predicates and update them according to the new stride
+// Search the Assertion Predicates added by loop predication and/or range check elimination and update them according
+// to the new stride.
+void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init,
+                                                           const int stride_con) {
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
   LoopNode* outer_loop_head = loop_head->skip_strip_mined();
@@ -2081,18 +2012,20 @@ void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoo
       break;
     }
     if (iff->in(1)->Opcode() == Op_Opaque4) {
-      // Look for predicate with an Opaque1 node that can be used as a template
-      if (!skeleton_predicate_has_opaque(iff)) {
-        // No Opaque1 node? It's either the check for the first value
-        // of the first iteration or the check for the last value of
-        // the first iteration of an unrolled loop. We can't
-        // tell. Kill it in any case.
+      if (!assertion_predicate_has_loop_opaque_node(iff)) {
+        // No OpaqueLoop* node? Then it's one of the two Initialized Assertion Predicates:
+        // - For the initial access a[init]
+        // - For the last access a[init+old_stride-orig_stride]
+        // We could keep the one for the initial access but we do not know which one we currently have here. Just kill both.
+        // We will create new Initialized Assertion Predicates from the Template Assertion Predicates below:
+        // - For the initial access a[init] (same as before)
+        // - For the last access a[init+new_stride-orig_stride] (with the new unroll stride)
         _igvn.replace_input_of(iff, 1, iff->in(1)->in(2));
       } else {
-        // Add back predicates updated for the new stride.
-        prev_proj = clone_skeleton_predicate_and_initialize(iff, init, max_value, entry, proj, ctrl, outer_loop,
-                                                            prev_proj);
-        assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "unexpected");
+        // Template Assertion Predicate: Clone it to create initialized version with new stride.
+        prev_proj = clone_assertion_predicate_and_initialize(iff, init, max_value, entry, proj, ctrl, outer_loop,
+                                                             prev_proj);
+        assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "unexpected");
       }
     }
     entry = entry->in(0)->in(0);
@@ -2103,9 +2036,10 @@ void PhaseIdealLoop::update_main_loop_skeleton_predicates(Node* ctrl, CountedLoo
   }
 }
 
-void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init, Node* stride) {
-  // Go over the skeleton predicates of the main loop and make a copy for the post loop with its initial iv value and
-  // stride as inputs.
+// Go over the Assertion Predicates of the main loop and make a copy for the post loop with its initial iv value and
+// stride as inputs.
+void PhaseIdealLoop::copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
+                                                            Node* init, Node* stride) {
   Node* post_loop_entry = post_loop_head->in(LoopNode::EntryControl);
   Node* main_loop_entry = main_loop_head->in(LoopNode::EntryControl);
   IdealLoopTree* post_loop = get_loop(post_loop_head);
@@ -2118,10 +2052,10 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_h
     if (proj->unique_ctrl_out()->Opcode() != Op_Halt) {
       break;
     }
-    if (iff->in(1)->Opcode() == Op_Opaque4 && skeleton_predicate_has_opaque(iff)) {
-      prev_proj = clone_skeleton_predicate_and_initialize(iff, init, stride, ctrl, proj, post_loop_entry,
-                                                          post_loop, prev_proj);
-      assert(!skeleton_predicate_has_opaque(prev_proj->in(0)->as_If()), "unexpected");
+    if (iff->in(1)->Opcode() == Op_Opaque4 && assertion_predicate_has_loop_opaque_node(iff)) {
+      prev_proj = clone_assertion_predicate_and_initialize(iff, init, stride, ctrl, proj, post_loop_entry,
+                                                           post_loop, prev_proj);
+      assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "unexpected");
     }
     ctrl = ctrl->in(0)->in(0);
   }
@@ -2131,32 +2065,30 @@ void PhaseIdealLoop::copy_skeleton_predicates_to_post_loop(LoopNode* main_loop_h
   }
 }
 
-void PhaseIdealLoop::initialize_skeleton_predicates_for_peeled_loop(ProjNode* predicate,
-                                                                    LoopNode* outer_loop_head,
-                                                                    int dd_outer_loop_head,
-                                                                    Node* init,
-                                                                    Node* stride,
-                                                                    IdealLoopTree* outer_loop,
-                                                                    const uint idx_before_clone,
-                                                                    const Node_List &old_new) {
-  if (predicate == nullptr) {
+void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(IfProjNode* predicate_proj, LoopNode* outer_loop_head,
+                                                                     const int dd_outer_loop_head, Node* init,
+                                                                     Node* stride, IdealLoopTree* outer_loop,
+                                                                     const uint idx_before_clone,
+                                                                     const Node_List &old_new) {
+  if (predicate_proj == nullptr) {
     return;
   }
   Node* control = outer_loop_head->in(LoopNode::EntryControl);
   Node* input_proj = control;
 
-  predicate = next_predicate(predicate);
-  while (predicate != nullptr) {
-    IfNode* iff = predicate->in(0)->as_If();
+  predicate_proj = Predicates::next_predicate_proj_in_block(predicate_proj);
+  while (predicate_proj != nullptr) {
+    IfNode* iff = predicate_proj->in(0)->as_If();
     if (iff->in(1)->Opcode() == Op_Opaque4) {
-      assert(skeleton_predicate_has_opaque(iff), "unexpected");
-      ProjNode* uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
-      input_proj = clone_skeleton_predicate_and_initialize(iff, init, stride, predicate, uncommon_proj, control, outer_loop, input_proj);
+      assert(assertion_predicate_has_loop_opaque_node(iff), "unexpected");
+      ProjNode* uncommon_proj = iff->proj_out(1 - predicate_proj->as_Proj()->_con);
+      input_proj = clone_assertion_predicate_and_initialize(iff, init, stride, predicate_proj, uncommon_proj, control,
+                                                            outer_loop, input_proj);
 
-      // Rewire any control inputs from the old skeleton predicates above the peeled iteration down to the initialized
-      // skeleton predicates above the peeled loop.
-      for (DUIterator i = predicate->outs(); predicate->has_out(i); i++) {
-        Node* dependent = predicate->out(i);
+      // Rewire any control inputs from the old Assertion Predicates above the peeled iteration down to the initialized
+      // Assertion Predicates above the peeled loop.
+      for (DUIterator i = predicate_proj->outs(); predicate_proj->has_out(i); i++) {
+        Node* dependent = predicate_proj->out(i);
         Node* new_node = old_new[dependent->_idx];
 
         if (!dependent->is_CFG() &&
@@ -2164,13 +2096,13 @@ void PhaseIdealLoop::initialize_skeleton_predicates_for_peeled_loop(ProjNode* pr
             new_node != nullptr &&                 // cloned
             new_node->_idx >= idx_before_clone) {  // for peeling
           // The old nodes from the peeled loop still point to the predicate above the peeled loop.
-          // We need to rewire the dependencies to the newly initialized skeleton predicates.
+          // We need to rewire the dependencies to the newly Initialized Assertion Predicates.
           _igvn.replace_input_of(dependent, 0, input_proj);
           --i; // correct for just deleted predicate->out(i)
         }
       }
     }
-    predicate = next_predicate(predicate);
+    predicate_proj = Predicates::next_predicate_proj_in_block(predicate_proj);
   }
 
   _igvn.replace_input_of(outer_loop_head, LoopNode::EntryControl, input_proj);
@@ -2240,7 +2172,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   assert(old_trip_count > 1 && (!adjust_min_trip || stride_p <=
     MIN2<int>(max_jint / 2 - 2, MAX2(1<<3, Matcher::max_vector_size(T_BYTE)) * loop_head->unrolled_count())), "sanity");
 
-  update_main_loop_skeleton_predicates(ctrl, loop_head, init, stride_con);
+  update_main_loop_assertion_predicates(ctrl, loop_head, init, stride_con);
 
   // Adjust loop limit to keep valid iterations number after unroll.
   // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
@@ -2288,74 +2220,32 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       new_limit = _igvn.intcon(limit->get_int() - stride_con);
       set_ctrl(new_limit, C->root());
     } else {
-      // Limit is not constant.
-      assert(loop_head->unrolled_count() != 1 || has_ctrl(opaq), "should have opaque for first unroll");
-      if ((stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo)) ||
-          (stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi))) {
-        // No underflow.
-        new_limit = new SubINode(limit, stride);
+      // Limit is not constant. Int subtraction could lead to underflow.
+      // (1) Convert to long.
+      Node* limit_l = new ConvI2LNode(limit);
+      register_new_node(limit_l, get_ctrl(limit));
+      Node* stride_l = _igvn.longcon(stride_con);
+      set_ctrl(stride_l, C->root());
+
+      // (2) Subtract: compute in long, to prevent underflow.
+      Node* new_limit_l = new SubLNode(limit_l, stride_l);
+      register_new_node(new_limit_l, ctrl);
+
+      // (3) Clamp to int range, in case we had subtraction underflow.
+      Node* underflow_clamp_l = _igvn.longcon((stride_con > 0) ? min_jint : max_jint);
+      set_ctrl(underflow_clamp_l, C->root());
+      Node* new_limit_no_underflow_l = nullptr;
+      if (stride_con > 0) {
+        // limit = MaxL(limit - stride, min_jint)
+        new_limit_no_underflow_l = new MaxLNode(C, new_limit_l, underflow_clamp_l);
       } else {
-        // (limit - stride) may underflow.
-        // Clamp the adjustment value with MININT or MAXINT:
-        //
-        //   new_limit = limit-stride
-        //   if (stride > 0)
-        //     new_limit = (limit < new_limit) ? MININT : new_limit;
-        //   else
-        //     new_limit = (limit > new_limit) ? MAXINT : new_limit;
-        //
-        BoolTest::mask bt = loop_end->test_trip();
-        assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-        Node* underflow_clamp = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-        set_ctrl(underflow_clamp, C->root());
-        Node* limit_before_underflow = nullptr;
-        Node* prev_limit = nullptr;
-        Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : nullptr;
-        if (loop_head->unrolled_count() > 1 &&
-            limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-            limit->in(CMoveNode::IfTrue) == underflow_clamp &&
-            bol->as_Bool()->_test._test == bt &&
-            bol->in(1)->Opcode() == Op_CmpI &&
-            bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-          // Loop was unrolled before, and had an unrolling protection CMoveI.
-          // Use inputs to previous CMoveI for the new one:
-          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
-          limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
-        } else {
-          // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
-          prev_limit = limit;
-          limit_before_underflow = limit;
-        }
-        //                           prev_limit   stride
-        //                                |         |
-        // limit_before_underflow  new_limit_with_underflow (SubI)
-        //                   |        |           |
-        //                 underflow_cmp          |
-        //                   |                    |
-        //                 underflow_bool [lt/gt] |
-        //                   |                    |
-        //                   +----+  +------------+
-        //                        |  |
-        //                        |  | underflow_clamp (min_jint/max_jint)
-        //                        |  |  |
-        //                       CMoveINode ([min_jint..hi] / [lo..max_jing])
-        //
-        assert(limit_before_underflow != nullptr && prev_limit != nullptr, "must find them");
-        Node* new_limit_with_underflow = new SubINode(prev_limit, stride);
-        register_new_node(new_limit_with_underflow, ctrl);
-        // We must compare with limit_before_underflow, prev_limit may already have underflowed.
-        Node* underflow_cmp = new CmpINode(limit_before_underflow, new_limit_with_underflow);
-        register_new_node(underflow_cmp, ctrl);
-        Node* underflow_bool = new BoolNode(underflow_cmp, bt);
-        register_new_node(underflow_bool, ctrl);
-        // Prevent type from becoming too pessimistic due to type underflow. The new limit
-        // may be arbitrarily decreased by unrolling, but still in [min_jint..hi] / [lo..max_jint]
-        const TypeInt* limit_before_underflow_t = _igvn.type(limit_before_underflow)->is_int();
-        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : limit_before_underflow_t->_lo,
-                                                      stride_con > 0 ? limit_before_underflow_t->_hi : max_jint,
-                                                      Type::WidenMax);
-        new_limit = new CMoveINode(underflow_bool, new_limit_with_underflow, underflow_clamp, no_underflow_t);
+        // limit = MinL(limit - stride, max_jint)
+        new_limit_no_underflow_l = new MinLNode(C, new_limit_l, underflow_clamp_l);
       }
+      register_new_node(new_limit_no_underflow_l, ctrl);
+
+      // (4) Convert back to int.
+      new_limit = new ConvL2INode(new_limit_no_underflow_l);
       register_new_node(new_limit, ctrl);
     }
 
@@ -2498,72 +2388,12 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
   }
 }
 
-void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
-  if (SuperWordReductions == false) return;
-
-  CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
-  if (loop_head->unrolled_count() > 1) {
-    return;
-  }
-
-  Node* trip_phi = loop_head->phi();
-  for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-    Node* phi = loop_head->fast_out(i);
-    if (phi->is_Phi() && phi->outcnt() > 0 && phi != trip_phi) {
-      // For definitions which are loop inclusive and not tripcounts.
-      Node* def_node = phi->in(LoopNode::LoopBackControl);
-
-      if (def_node != nullptr) {
-        Node* n_ctrl = get_ctrl(def_node);
-        if (n_ctrl != nullptr && loop->is_member(get_loop(n_ctrl))) {
-          // Now test it to see if it fits the standard pattern for a reduction operator.
-          int opc = def_node->Opcode();
-          if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())
-              || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF) {
-            if (!def_node->is_reduction()) { // Not marked yet
-              // To be a reduction, the arithmetic node must have the phi as input and provide a def to it
-              bool ok = false;
-              for (unsigned j = 1; j < def_node->req(); j++) {
-                Node* in = def_node->in(j);
-                if (in == phi) {
-                  ok = true;
-                  break;
-                }
-              }
-
-              // do nothing if we did not match the initial criteria
-              if (ok == false) {
-                continue;
-              }
-
-              // The result of the reduction must not be used in the loop
-              for (DUIterator_Fast imax, i = def_node->fast_outs(imax); i < imax && ok; i++) {
-                Node* u = def_node->fast_out(i);
-                if (!loop->is_member(get_loop(ctrl_or_self(u)))) {
-                  continue;
-                }
-                if (u == phi) {
-                  continue;
-                }
-                ok = false;
-              }
-
-              // iff the uses conform
-              if (ok) {
-                def_node->add_flag(Node::Flag_is_reduction);
-                loop_head->mark_has_reductions();
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 //------------------------------adjust_limit-----------------------------------
 // Helper function that computes new loop limit as (rc_limit-offset)/scale
 Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* offset, Node* rc_limit, Node* old_limit, Node* pre_ctrl, bool round) {
+  Node* old_limit_long = new ConvI2LNode(old_limit);
+  register_new_node(old_limit_long, pre_ctrl);
+
   Node* sub = new SubLNode(rc_limit, offset);
   register_new_node(sub, pre_ctrl);
   Node* limit = new DivLNode(nullptr, sub, scale);
@@ -2589,27 +2419,19 @@ Node* PhaseIdealLoop::adjust_limit(bool is_positive_stride, Node* scale, Node* o
   //   - integer underflow of limit: MAXL chooses old_limit (>= MIN_INT > limit)
   // INT() is finally converting the limit back to an integer value.
 
-  // We use CMove nodes to implement long versions of min/max (MINL/MAXL).
-  // We use helper methods for inner MINL/MAXL which return CMoveL nodes to keep a long value for the outer MINL/MAXL comparison:
-  Node* inner_result_long;
+  Node* inner_result_long = nullptr;
+  Node* outer_result_long = nullptr;
   if (is_positive_stride) {
-    inner_result_long = MaxNode::signed_max(limit, _igvn.longcon(min_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MaxLNode(C, limit, _igvn.longcon(min_jint));
+    outer_result_long = new MinLNode(C, inner_result_long, old_limit_long);
   } else {
-    inner_result_long = MaxNode::signed_min(limit, _igvn.longcon(max_jint), TypeLong::LONG, _igvn);
+    inner_result_long = new MinLNode(C, limit, _igvn.longcon(max_jint));
+    outer_result_long = new MaxLNode(C, inner_result_long, old_limit_long);
   }
-  set_subtree_ctrl(inner_result_long, false);
+  register_new_node(inner_result_long, pre_ctrl);
+  register_new_node(outer_result_long, pre_ctrl);
 
-  // Outer MINL/MAXL:
-  // The comparison is done with long values but the result is the converted back to int by using CmovI.
-  Node* old_limit_long = new ConvI2LNode(old_limit);
-  register_new_node(old_limit_long, pre_ctrl);
-  Node* cmp = new CmpLNode(old_limit_long, limit);
-  register_new_node(cmp, pre_ctrl);
-  Node* bol = new BoolNode(cmp, is_positive_stride ? BoolTest::gt : BoolTest::lt);
-  register_new_node(bol, pre_ctrl);
-  Node* inner_result_int = new ConvL2INode(inner_result_long); // Could under-/overflow but that's fine as comparison was done with CmpL
-  register_new_node(inner_result_int, pre_ctrl);
-  limit = new CMoveINode(bol, old_limit, inner_result_int, TypeInt::INT);
+  limit = new ConvL2INode(outer_result_long);
   register_new_node(limit, pre_ctrl);
   return limit;
 }
@@ -2975,20 +2797,22 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 
 // Same as PhaseIdealLoop::duplicate_predicates() but for range checks
 // eliminated by iteration splitting.
-Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
-                                                Node* predicate_proj, int scale_con, Node* offset,
-                                                Node* limit, jint stride_con, Node* value) {
+Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopTree* loop,
+                                                                      Node* ctrl, const int scale_con,
+                                                                      Node* offset, Node* limit, jint stride_con,
+                                                                      Node* value) {
   bool overflow = false;
-  BoolNode* bol = rc_predicate(loop, predicate_proj, scale_con, offset, value, nullptr, stride_con, limit, (stride_con > 0) != (scale_con > 0), overflow, false);
+  BoolNode* bol = rc_predicate(loop, ctrl, scale_con, offset, value, nullptr, stride_con,
+                               limit, (stride_con > 0) != (scale_con > 0), overflow);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
-  register_new_node(opaque_bol, predicate_proj);
+  register_new_node(opaque_bol, ctrl);
   IfNode* new_iff = nullptr;
   if (overflow) {
-    new_iff = new IfNode(predicate_proj, opaque_bol, PROB_MAX, COUNT_UNKNOWN);
+    new_iff = new IfNode(ctrl, opaque_bol, PROB_MAX, COUNT_UNKNOWN);
   } else {
-    new_iff = new RangeCheckNode(predicate_proj, opaque_bol, PROB_MAX, COUNT_UNKNOWN);
+    new_iff = new RangeCheckNode(ctrl, opaque_bol, PROB_MAX, COUNT_UNKNOWN);
   }
-  register_control(new_iff, loop->_parent, predicate_proj);
+  register_control(new_iff, loop->_parent, ctrl);
   Node* iffalse = new IfFalseNode(new_iff);
   register_control(iffalse, _ltree_root, new_iff);
   ProjNode* iftrue = new IfTrueNode(new_iff);
@@ -3079,8 +2903,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   set_ctrl(one,  C->root());
   set_ctrl(mini, C->root());
 
-  Node* predicate_proj = cl->skip_strip_mined()->in(LoopNode::EntryControl);
-  assert(predicate_proj->is_Proj() && predicate_proj->in(0)->is_If(), "if projection only");
+  Node* loop_entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  assert(loop_entry->is_Proj() && loop_entry->in(0)->is_If(), "if projection only");
 
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
   for (uint i = 0; i < loop->_body.size(); i++) {
@@ -3177,27 +3001,31 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           add_constraint(stride_con, lscale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit);
           Node* init = cl->init_trip();
           Node* opaque_init = new OpaqueLoopInitNode(C, init);
-          register_new_node(opaque_init, predicate_proj);
+          register_new_node(opaque_init, loop_entry);
 
-          // predicate on first value of first iteration
-          predicate_proj = add_range_check_predicate(loop, cl, predicate_proj, scale_con, int_offset, int_limit, stride_con, init);
-          assert(!skeleton_predicate_has_opaque(predicate_proj->in(0)->as_If()), "unexpected");
+          // Initialized Assertion Predicate for the value of the initial main-loop.
+          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
+                                                                       int_limit, stride_con, init);
+          assert(!assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
-          // template predicate so it can be updated on next unrolling
-          predicate_proj = add_range_check_predicate(loop, cl, predicate_proj, scale_con, int_offset, int_limit, stride_con, opaque_init);
-          assert(skeleton_predicate_has_opaque(predicate_proj->in(0)->as_If()), "unexpected");
+          // Add two Template Assertion Predicates to create new Initialized Assertion Predicates from when either
+          // unrolling or splitting this main-loop further.
+          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
+                                                                       int_limit, stride_con, opaque_init);
+          assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
           Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
-          register_new_node(opaque_stride, predicate_proj);
+          register_new_node(opaque_stride, loop_entry);
           Node* max_value = new SubINode(opaque_stride, cl->stride());
-          register_new_node(max_value, predicate_proj);
+          register_new_node(max_value, loop_entry);
           max_value = new AddINode(opaque_init, max_value);
-          register_new_node(max_value, predicate_proj);
+          register_new_node(max_value, loop_entry);
           // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
           max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
-          register_new_node(max_value, predicate_proj);
-          predicate_proj = add_range_check_predicate(loop, cl, predicate_proj, scale_con, int_offset, int_limit, stride_con, max_value);
-          assert(skeleton_predicate_has_opaque(predicate_proj->in(0)->as_If()), "unexpected");
+          register_new_node(max_value, loop_entry);
+          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
+                                                                       int_limit, stride_con, max_value);
+          assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
         } else {
           if (PrintOpto) {
@@ -3259,9 +3087,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       }
     } // End of is IF
   }
-  if (predicate_proj != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
-    _igvn.replace_input_of(cl->skip_strip_mined(), LoopNode::EntryControl, predicate_proj);
-    set_idom(cl->skip_strip_mined(), predicate_proj, dom_depth(cl->skip_strip_mined()));
+  if (loop_entry != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
+    _igvn.replace_input_of(cl->skip_strip_mined(), LoopNode::EntryControl, loop_entry);
+    set_idom(cl->skip_strip_mined(), loop_entry, dom_depth(cl->skip_strip_mined()));
   }
 
   // Update loop limits
@@ -3319,143 +3147,6 @@ bool IdealLoopTree::compute_has_range_checks() const {
     }
   }
   return false;
-}
-
-//-------------------------multi_version_post_loops----------------------------
-// Check the range checks that remain, if simple, use the bounds to guard
-// which version to a post loop we execute, one with range checks or one without
-bool PhaseIdealLoop::multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoopTree *legacy_loop) {
-  bool multi_version_succeeded = false;
-  assert(RangeCheckElimination, "");
-  CountedLoopNode *legacy_cl = legacy_loop->_head->as_CountedLoop();
-  assert(legacy_cl->is_post_loop(), "");
-
-  // Check for existence of range checks using the unique instance to make a guard with
-  Unique_Node_List worklist;
-  for (uint i = 0; i < legacy_loop->_body.size(); i++) {
-    Node *iff = legacy_loop->_body[i];
-    int iff_opc = iff->Opcode();
-    if (iff_opc == Op_If || iff_opc == Op_RangeCheck) {
-      worklist.push(iff);
-    }
-  }
-
-  // Find RCE'd post loop so that we can stage its guard.
-  if (legacy_cl->is_canonical_loop_entry() == nullptr) {
-    return multi_version_succeeded;
-  }
-  Node* ctrl = legacy_cl->in(LoopNode::EntryControl);
-  Node* iffm = ctrl->in(0);
-
-  // Now we test that both the post loops are connected
-  Node* post_loop_region = iffm->in(0);
-  if (post_loop_region == nullptr) return multi_version_succeeded;
-  if (!post_loop_region->is_Region()) return multi_version_succeeded;
-  Node* covering_region = post_loop_region->in(RegionNode::Control+1);
-  if (covering_region == nullptr) return multi_version_succeeded;
-  if (!covering_region->is_Region()) return multi_version_succeeded;
-  Node* p_f = covering_region->in(RegionNode::Control);
-  if (p_f == nullptr) return multi_version_succeeded;
-  if (!p_f->is_IfFalse()) return multi_version_succeeded;
-  if (!p_f->in(0)->is_CountedLoopEnd()) return multi_version_succeeded;
-  CountedLoopEndNode* rce_loop_end = p_f->in(0)->as_CountedLoopEnd();
-  if (rce_loop_end == nullptr) return multi_version_succeeded;
-  CountedLoopNode* rce_cl = rce_loop_end->loopnode();
-  if (rce_cl == nullptr || !rce_cl->is_post_loop()) return multi_version_succeeded;
-  CountedLoopNode *known_rce_cl = rce_loop->_head->as_CountedLoop();
-  if (rce_cl != known_rce_cl) return multi_version_succeeded;
-
-  // Then we fetch the cover entry test
-  ctrl = rce_cl->in(LoopNode::EntryControl);
-  if (!ctrl->is_IfTrue() && !ctrl->is_IfFalse()) return multi_version_succeeded;
-
-#ifndef PRODUCT
-  if (TraceLoopOpts) {
-    tty->print("PostMultiVersion\n");
-    rce_loop->dump_head();
-    legacy_loop->dump_head();
-  }
-#endif
-
-  // Now fetch the limit we want to compare against
-  Node *limit = rce_cl->limit();
-  bool first_time = true;
-
-  // If we got this far, we identified the post loop which has been RCE'd and
-  // we have a work list.  Now we will try to transform the if guard to cause
-  // the loop pair to be multi version executed with the determination left to runtime
-  // or the optimizer if full information is known about the given arrays at compile time.
-  Node *last_min = nullptr;
-  multi_version_succeeded = true;
-  while (worklist.size()) {
-    Node* rc_iffm = worklist.pop();
-    if (rc_iffm->is_If()) {
-      Node *rc_bolzm = rc_iffm->in(1);
-      if (rc_bolzm->is_Bool()) {
-        Node *rc_cmpzm = rc_bolzm->in(1);
-        if (rc_cmpzm->is_Cmp()) {
-          Node *rc_left = rc_cmpzm->in(2);
-          if (rc_left->Opcode() != Op_LoadRange) {
-            multi_version_succeeded = false;
-            break;
-          }
-          if (first_time) {
-            last_min = rc_left;
-            first_time = false;
-          } else {
-            Node *cur_min = new MinINode(last_min, rc_left);
-            last_min = cur_min;
-            _igvn.register_new_node_with_optimizer(last_min);
-          }
-        }
-      }
-    }
-  }
-
-  // All we have to do is update the limit of the rce loop
-  // with the min of our expression and the current limit.
-  // We will use this expression to replace the current limit.
-  if (last_min && multi_version_succeeded) {
-    Node *cur_min = new MinINode(last_min, limit);
-    _igvn.register_new_node_with_optimizer(cur_min);
-    Node *cmp_node = rce_loop_end->cmp_node();
-    _igvn.replace_input_of(cmp_node, 2, cur_min);
-    set_ctrl(cur_min, ctrl);
-    set_loop(cur_min, rce_loop->_parent);
-
-    legacy_cl->mark_is_multiversioned();
-    rce_cl->mark_is_multiversioned();
-    multi_version_succeeded = true;
-
-    C->set_major_progress();
-  }
-
-  return multi_version_succeeded;
-}
-
-//-------------------------poison_rce_post_loop--------------------------------
-// Causes the rce'd post loop to be optimized away if multiversioning fails
-void PhaseIdealLoop::poison_rce_post_loop(IdealLoopTree *rce_loop) {
-  CountedLoopNode *rce_cl = rce_loop->_head->as_CountedLoop();
-  Node* ctrl = rce_cl->in(LoopNode::EntryControl);
-  if (ctrl->is_IfTrue() || ctrl->is_IfFalse()) {
-    Node* iffm = ctrl->in(0);
-    if (iffm->is_If()) {
-      Node* cur_bool = iffm->in(1);
-      if (cur_bool->is_Bool()) {
-        Node* cur_cmp = cur_bool->in(1);
-        if (cur_cmp->is_Cmp()) {
-          BoolTest::mask new_test = BoolTest::gt;
-          BoolNode *new_bool = new BoolNode(cur_cmp, new_test);
-          _igvn.replace_node(cur_bool, new_bool);
-          _igvn._worklist.push(new_bool);
-          Node* left_op = cur_cmp->in(1);
-          _igvn.replace_input_of(cur_cmp, 2, left_op);
-          C->set_major_progress();
-        }
-      }
-    }
-  }
 }
 
 //------------------------------DCE_loop_body----------------------------------
@@ -3642,11 +3333,11 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
   if (needs_guard) {
     // Check for an obvious zero trip guard.
-    Node* inctrl = PhaseIdealLoop::skip_all_loop_predicates(cl->skip_predicates());
-    if (inctrl->Opcode() == Op_IfTrue || inctrl->Opcode() == Op_IfFalse) {
-      bool maybe_swapped = (inctrl->Opcode() == Op_IfFalse);
+    Node* in_ctrl = Predicates::skip_all_predicates(cl->skip_predicates());
+    if (in_ctrl->Opcode() == Op_IfTrue || in_ctrl->Opcode() == Op_IfFalse) {
+      bool maybe_swapped = (in_ctrl->Opcode() == Op_IfFalse);
       // The test should look like just the backedge of a CountedLoop
-      Node* iff = inctrl->in(0);
+      Node* iff = in_ctrl->in(0);
       if (iff->is_If()) {
         Node* bol = iff->in(1);
         if (bol->is_Bool()) {
@@ -3985,14 +3676,6 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     // from the main body.
     if (should_rce) {
       phase->do_range_check(this, old_new);
-    }
-
-    if (should_unroll && !should_peel && PostLoopMultiversioning &&
-        Matcher::has_predicated_vectors()) {
-      // Try to setup multiversioning on main loops before they are unrolled
-      if (cl->is_main_loop() && (cl->unrolled_count() == 1)) {
-        phase->insert_scalar_rced_post_loop(this, old_new);
-      }
     }
 
     // Double loop body for unrolling.  Adjust the minimum-trip test (will do

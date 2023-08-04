@@ -144,8 +144,22 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // its cache line with _header.
   DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(volatile markWord) +
                         sizeof(WeakHandle));
-  // Used by async deflation as a marker in the _owner field:
-  #define DEFLATER_MARKER reinterpret_cast<void*>(-1)
+  // Used by async deflation as a marker in the _owner field.
+  // Note that the choice of the two markers is peculiar:
+  // - They need to represent values that cannot be pointers. In particular,
+  //   we achieve this by using the lowest two bits.
+  // - ANONYMOUS_OWNER should be a small value, it is used in generated code
+  //   and small values encode much better.
+  // - We test for anonymous owner by testing for the lowest bit, therefore
+  //   DEFLATER_MARKER must *not* have that bit set.
+  #define DEFLATER_MARKER reinterpret_cast<void*>(2)
+public:
+  // NOTE: Typed as uintptr_t so that we can pick it up in SA, via vmStructs.
+  static const uintptr_t ANONYMOUS_OWNER = 1;
+
+private:
+  static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
+
   void* volatile _owner;            // pointer to owning thread OR BasicLock
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
@@ -178,6 +192,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
  public:
+
   static void Initialize();
 
   // Only perform a PerfData operation if the PerfData object has been
@@ -202,13 +217,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   static int Knob_SpinLimit;
 
-  // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
-  // ByteSize would also be an appropriate type.
-  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
-  static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
-  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
-  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
-  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
+  static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
+  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
+  static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
+  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -222,7 +235,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // to the ObjectMonitor reference manipulation code:
   //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((ObjectMonitor::f ## _offset_in_bytes()) - markWord::monitor_value)
+    ((in_bytes(ObjectMonitor::f ## _offset())) - markWord::monitor_value)
 
   markWord           header() const;
   volatile markWord* header_addr();
@@ -242,7 +255,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   }
   const char* is_busy_to_string(stringStream* ss);
 
-  intptr_t  is_entered(JavaThread* current) const;
+  bool is_entered(JavaThread* current) const;
 
   // Returns true if this OM has an owner, false otherwise.
   bool      has_owner() const;
@@ -262,6 +275,18 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   void*     try_set_owner_from(void* old_value, void* new_value);
+
+  void set_owner_anonymous() {
+    set_owner_from(nullptr, anon_owner_ptr());
+  }
+
+  bool is_owner_anonymous() const {
+    return owner_raw() == anon_owner_ptr();
+  }
+
+  void set_owner_from_anonymous(Thread* owner) {
+    set_owner_from(anon_owner_ptr(), owner);
+  }
 
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
@@ -338,6 +363,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Deflation support
   bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
+  void      release_object() { _object.release(_oop_storage); _object.set_null(); }
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

@@ -82,11 +82,13 @@ public class PipedOutputStream extends OutputStream {
      * If {@code snk} is an unconnected piped input stream and
      * {@code src} is an unconnected piped output stream, they may
      * be connected by either the call:
-     * <blockquote><pre>
-     * src.connect(snk)</pre></blockquote>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * or the call:
-     * <blockquote><pre>
-     * snk.connect(src)</pre></blockquote>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * The two calls have the same effect.
      *
      * @param      snk   the piped input stream to connect to.
@@ -161,6 +163,7 @@ public class PipedOutputStream extends OutputStream {
      */
     @Override
     public synchronized void flush() throws IOException {
+        var sink = this.sink;
         if (sink != null) {
             synchronized (sink) {
                 sink.notifyAll();

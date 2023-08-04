@@ -243,8 +243,6 @@ const int BitsPerLong        = 1 << LogBitsPerLong;
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
 const int LongAlignmentMask  = (1 << LogBytesPerLong) - 1;
 
-const int WordsPerLong       = 2;       // Number of stack entries for longs
-
 const int oopSize            = sizeof(char*); // Full-width oop
 extern int heapOopSize;                       // Oop within a java object
 const int wordSize           = sizeof(char*);
@@ -411,6 +409,9 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
+#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
+
 // Memory size transition formatting.
 
 #define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
@@ -439,7 +440,6 @@ const uintx max_uintx = (uintx)-1;
 
 typedef unsigned int uint;   NEEDS_CLEANUP
 
-
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
 
@@ -447,23 +447,6 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
-typedef uintptr_t     address_word; // unsigned integer which will hold a pointer
-                                    // except for some implementations of a C++
-                                    // linkage pointer to function. Should never
-                                    // need one of those to be placed in this
-                                    // type anyway.
-
-//  Utility functions to "portably" (?) bit twiddle pointers
-//  Where portable means keep ANSI C++ compilers quiet
-
-inline address       set_address_bits(address x, int m)       { return address(intptr_t(x) | m); }
-inline address       clear_address_bits(address x, int m)     { return address(intptr_t(x) & ~m); }
-
-//  Utility functions to "portably" make cast to/from function pointers.
-
-inline address_word  mask_address_bits(address x, int m)      { return address_word(x) & m; }
-inline address_word  castable_address(address x)              { return address_word(x) ; }
-inline address_word  castable_address(void* x)                { return address_word(x) ; }
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -506,7 +489,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // many C++ compilers.
 //
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
-#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
+#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((uintptr_t)(func_ptr)))
 
 // In many places we've added C-style casts to silence compiler
 // warnings, for example when truncating a size_t to an int when we
@@ -517,10 +500,18 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
 template <typename T2, typename T1>
-T2 checked_cast(T1 thing) {
+constexpr T2 checked_cast(T1 thing) {
   T2 result = static_cast<T2>(thing);
   assert(static_cast<T1>(result) == thing, "must be");
   return result;
+}
+
+// pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
+// returns a non-negative int, usually used as a size of a code buffer range.
+// This scales to sizeof(T).
+template <typename T>
+inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
+  return checked_cast<int>(pointer_delta(left, right, sizeof(T)));
 }
 
 // Need the correct linkage to call qsort without warnings
@@ -596,22 +587,12 @@ extern int MinObjAlignmentInBytesMask;
 extern int LogMinObjAlignment;
 extern int LogMinObjAlignmentInBytes;
 
-const int LogKlassAlignmentInBytes = 3;
-const int LogKlassAlignment        = LogKlassAlignmentInBytes - LogHeapWordSize;
-const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
-const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
-
 // Maximal size of heap where unscaled compression can be used. Also upper bound
 // for heap placement: 4GB.
 const  uint64_t UnscaledOopHeapMax = (uint64_t(max_juint) + 1);
 // Maximal size of heap where compressed oops can be used. Also upper bound for heap
 // placement for zero based compression algorithm: UnscaledOopHeapMax << LogMinObjAlignmentInBytes.
 extern uint64_t OopEncodingHeapMax;
-
-// Maximal size of compressed class space. Above this limit compression is not possible.
-// Also upper bound for placement of zero based class space. (Class space is further limited
-// to be < 3G, see arguments.cpp.)
-const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
 
 // Machine dependent stuff
 
@@ -664,7 +645,7 @@ inline double fabsd(double value) {
 // is zero, return 0.0.
 template<typename T>
 inline double percent_of(T numerator, T denominator) {
-  return denominator != 0 ? (double)numerator / denominator * 100.0 : 0.0;
+  return denominator != 0 ? (double)numerator / (double)denominator * 100.0 : 0.0;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -715,7 +696,7 @@ void basic_types_init(); // cannot define here; uses assert
 
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicType {
+enum BasicType : u1 {
 // The values T_BOOLEAN..T_LONG (4..11) are derived from the JVMS.
   T_BOOLEAN     = JVM_T_BOOLEAN,
   T_CHAR        = JVM_T_CHAR,
@@ -1042,6 +1023,15 @@ enum JavaThreadState {
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
 
+enum LockingMode {
+  // Use only heavy monitors for locking
+  LM_MONITOR     = 0,
+  // Legacy stack-locking, with monitors as 2nd tier
+  LM_LEGACY      = 1,
+  // New lightweight locking, with monitors as 2nd tier
+  LM_LIGHTWEIGHT = 2
+};
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
@@ -1067,7 +1057,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-#define TASKQUEUE_SIZE (NOT_LP64(1<<14) LP64_ONLY(1<<17))
+const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations
@@ -1167,15 +1157,15 @@ inline intx byte_size(void* from, void* to) {
 
 // Pack and extract shorts to/from ints:
 
-inline int extract_low_short_from_int(jint x) {
-  return x & 0xffff;
+inline u2 extract_low_short_from_int(u4 x) {
+  return u2(x & 0xffff);
 }
 
-inline int extract_high_short_from_int(jint x) {
-  return (x >> 16) & 0xffff;
+inline u2 extract_high_short_from_int(u4 x) {
+  return u2((x >> 16) & 0xffff);
 }
 
-inline int build_int_from_shorts( jushort low, jushort high ) {
+inline int build_int_from_shorts( u2 low, u2 high ) {
   return ((int)((unsigned int)high << 16) | (unsigned int)low);
 }
 
@@ -1215,6 +1205,9 @@ JAVA_INTEGER_OP(*, java_multiply, jint, juint)
 JAVA_INTEGER_OP(+, java_add, jlong, julong)
 JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
 JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
+
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
 
 #undef JAVA_INTEGER_OP
 
@@ -1305,7 +1298,7 @@ inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong y1 = java_shift_right((jlong)y, 32);
   const jlong y2 = y & 0xFFFFFFFF;
 
-  const uint64_t z2 = x2 * y2;
+  const uint64_t z2 = (uint64_t)x2 * y2;
   const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
   int64_t z1 = t & 0xFFFFFFFF;
   const int64_t z0 = java_shift_right((jlong)t, 32);

@@ -105,6 +105,10 @@ import sun.util.spi.CalendarProvider;
  * the Epoch) or values of the calendar fields. Calling the
  * {@code get}, {@code getTimeInMillis}, {@code getTime},
  * {@code add} and {@code roll} involves such calculation.
+ * Unless otherwise specified, any {@code Calendar} method containing the
+ * parameter {@code int field} will throw an {@code ArrayIndexOutOfBoundsException}
+ * if the specified field is out of range ({@code field} &lt; 0 ||
+ * {@code field} &gt;= {@link #FIELD_COUNT}).
  *
  * <h3>Leniency</h3>
  *
@@ -459,9 +463,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     /**
      * Field number for {@code get} and {@code set} indicating the day
-     * of the week.  This field takes values {@code SUNDAY},
-     * {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
-     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}.
+     * of the week. If the calendar is non-lenient, this field takes values
+     * {@code SUNDAY}, {@code MONDAY}, {@code TUESDAY}, {@code WEDNESDAY},
+     * {@code THURSDAY}, {@code FRIDAY}, and {@code SATURDAY}. Otherwise, any
+     * int values are accepted and normalized to one of the previously
+     * mentioned values.
      *
      * @see #SUNDAY
      * @see #MONDAY
@@ -1632,6 +1638,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param zone the time zone to use
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone)
     {
@@ -1649,6 +1656,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(Locale aLocale)
     {
@@ -1663,6 +1671,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param zone the time zone to use
      * @param aLocale the locale for the week data
      * @return a Calendar.
+     * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
     public static Calendar getInstance(TimeZone zone,
                                        Locale aLocale)
@@ -1839,8 +1848,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the given calendar field.
      * @return the value for the given calendar field.
-     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
+     * @throws IllegalArgumentException if this {@code Calendar} is non-lenient and any
+     * of the calendar fields have invalid values.
      * @see #set(int,int)
      * @see #complete()
      */
@@ -1868,8 +1877,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * not affect any setting state of the field in this
      * {@code Calendar} instance.
      *
-     * @throws IndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
      * @see #areFieldsSet
      * @see #isTimeSet
      * @see #areAllFieldsSet
@@ -1886,9 +1893,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the given calendar field.
      * @param value the value to be set for the given calendar field.
-     * @throws ArrayIndexOutOfBoundsException if the specified field is out of range
-     *             (<code>field &lt; 0 || field &gt;= FIELD_COUNT</code>).
-     * in non-lenient mode.
      * @see #set(int,int,int)
      * @see #set(int,int,int,int,int)
      * @see #set(int,int,int,int,int,int)
@@ -2626,7 +2630,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         if (stamp_a == UNSET || stamp_b == UNSET) {
             return UNSET;
         }
-        return (stamp_a > stamp_b) ? stamp_a : stamp_b;
+        return Math.max(stamp_a, stamp_b);
     }
 
     /**
@@ -2697,25 +2701,25 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @return {@code true} if this object is equal to {@code obj};
      * {@code false} otherwise.
      */
-    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        try {
-            Calendar that = (Calendar)obj;
-            return compareTo(getMillisOf(that)) == 0 &&
-                lenient == that.lenient &&
-                firstDayOfWeek == that.firstDayOfWeek &&
-                minimalDaysInFirstWeek == that.minimalDaysInFirstWeek &&
-                (zone instanceof ZoneInfo ?
-                    zone.equals(that.zone) :
-                    zone.equals(that.getTimeZone()));
-        } catch (Exception e) {
-            // Note: GregorianCalendar.computeTime throws
-            // IllegalArgumentException if the ERA value is invalid
-            // even it's in lenient mode.
+        if (obj instanceof Calendar that) {
+            try {
+                return compareTo(getMillisOf(that)) == 0 &&
+                    lenient == that.lenient &&
+                    firstDayOfWeek == that.firstDayOfWeek &&
+                    minimalDaysInFirstWeek == that.minimalDaysInFirstWeek &&
+                    (zone instanceof ZoneInfo ?
+                        zone.equals(that.zone) :
+                        zone.equals(that.getTimeZone()));
+            } catch (Exception e) {
+                // Note: GregorianCalendar.computeTime throws
+                // IllegalArgumentException if the ERA value is invalid
+                // even it's in lenient mode.
+            }
         }
         return false;
     }
@@ -2811,6 +2815,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the amount of date or time to be added to the field.
+     * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @see #roll(int,int)
      * @see #set(int,int)
      */
@@ -2833,6 +2840,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field the time field.
      * @param up indicates if the value of the specified time field is to be
      * rolled up or rolled down. Use true if rolling up, false otherwise.
+     * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @see Calendar#add(int,int)
      * @see Calendar#set(int,int)
      */
@@ -2852,6 +2862,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @param field the calendar field.
      * @param amount the signed amount to add to the calendar {@code field}.
+     * @throws IllegalArgumentException if this {@code Calendar} is non-lenient
+     * and any of the calendar fields have invalid values or if {@code field} is
+     * {@code ZONE_OFFSET}, {@code DST_OFFSET}, or unknown.
      * @since 1.2
      * @see #roll(int,boolean)
      * @see #add(int,int)

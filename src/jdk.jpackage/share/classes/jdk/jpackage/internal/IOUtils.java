@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.jpackage.internal;
+
+import jdk.internal.util.OperatingSystem;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -77,7 +79,7 @@ public class IOUtils {
             @Override
             public FileVisitResult visitFile(Path file,
                             BasicFileAttributes attr) throws IOException {
-                if (Platform.getPlatform() == Platform.WINDOWS) {
+                if (OperatingSystem.isWindows()) {
                     Files.setAttribute(file, "dos:readonly", false);
                 }
                 try {
@@ -91,7 +93,7 @@ public class IOUtils {
             @Override
             public FileVisitResult preVisitDirectory(Path dir,
                             BasicFileAttributes attr) throws IOException {
-                if (Platform.getPlatform() == Platform.WINDOWS) {
+                if (OperatingSystem.isWindows()) {
                     Files.setAttribute(dir, "dos:readonly", false);
                 }
                 return FileVisitResult.CONTINUE;

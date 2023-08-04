@@ -221,22 +221,22 @@ public:
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= val;
+    target |= (unsigned)val;
     *(unsigned *)a = target;
   }
 
   static void spatch(address a, int msb, int lsb, int64_t val) {
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
-    guarantee (chk == -1 || chk == 0, "Field too big for insn");
-    unsigned uval = val;
+    guarantee (chk == -1 || chk == 0, "Field too big for insn at " INTPTR_FORMAT, p2i(a));
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
     uval <<= lsb;
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= uval;
+    target |= (unsigned)uval;
     *(unsigned *)a = target;
   }
 
@@ -262,10 +262,10 @@ public:
     int nbits = msb - lsb + 1;
     int64_t chk = val >> (nbits - 1);
     guarantee (chk == -1 || chk == 0, "Field too big for insn");
-    unsigned uval = val;
+    uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
-    f(uval, lsb + nbits - 1, lsb);
+    f((unsigned)uval, lsb + nbits - 1, lsb);
   }
 
   void rf(Register r, int lsb) {
@@ -553,7 +553,7 @@ class Address {
           i->sf(offset(), 20, 12);
         } else {
           i->f(0b01, 25, 24);
-          i->f(offset() >> size, 21, 10);
+          i->f(checked_cast<unsigned>(offset() >> size), 21, 10);
         }
       }
       break;
@@ -653,8 +653,9 @@ class Address {
   static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
-      int sve_offset = offset / vl;
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int64_t sve_offset = offset / vl;
+      int32_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }
@@ -2412,7 +2413,7 @@ public:
       ld_st(Vt, T, a.base(), op1, op2);
       break;
     case Address::post:
-      ld_st(Vt, T, a.base(), a.offset(), op1, op2, regs);
+      ld_st(Vt, T, a.base(), checked_cast<int>(a.offset()), op1, op2, regs);
       break;
     case Address::post_reg:
       ld_st(Vt, T, a.base(), a.index(), op1, op2);
@@ -3522,7 +3523,7 @@ private:
               int op1, int type, int imm_op2, int scalar_op2) {
     switch (a.getMode()) {
     case Address::base_plus_offset:
-      sve_ld_st1(Zt, a.base(), a.offset(), Pg, T, op1, type, imm_op2);
+      sve_ld_st1(Zt, a.base(), checked_cast<int>(a.offset()), Pg, T, op1, type, imm_op2);
       break;
     case Address::base_plus_offset_reg:
       sve_ld_st1(Zt, a.base(), a.index(), Pg, T, op1, type, scalar_op2);
@@ -3786,50 +3787,78 @@ public:
   INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
-// SVE Integer Compare - Signed Immediate
-void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
-             PRegister Pg, FloatRegister Zn, int imm5) {
-  starti;
-  assert(T != Q, "invalid size");
-  guarantee(-16 <= imm5 && imm5 <= 15, "invalid immediate");
-  int cond_op;
-  switch(cond) {
-    case EQ: cond_op = 0b1000; break;
-    case NE: cond_op = 0b1001; break;
-    case GE: cond_op = 0b0000; break;
-    case GT: cond_op = 0b0001; break;
-    case LE: cond_op = 0b0011; break;
-    case LT: cond_op = 0b0010; break;
-    default:
-      ShouldNotReachHere();
-  }
-  f(0b00100101, 31, 24), f(T, 23, 22), f(0b0, 21), sf(imm5, 20, 16),
-  f((cond_op >> 1) & 0x7, 15, 13), pgrf(Pg, 10), rf(Zn, 5);
-  f(cond_op & 0x1, 4), prf(Pd, 0);
-}
+private:
+  // Convert Assembler::Condition to op encoding - used by sve integer compare encoding
+  static int assembler_cond_to_sve_op(Condition cond, bool &is_unsigned) {
+    if (cond == HI || cond == HS || cond == LO || cond == LS) {
+      is_unsigned = true;
+    } else {
+      is_unsigned = false;
+    }
 
-// SVE Floating-point compare vector with zero
-void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
-             PRegister Pg, FloatRegister Zn, double d) {
-  starti;
-  assert(T != Q, "invalid size");
-  guarantee(d == 0.0, "invalid immediate");
-  int cond_op;
-  switch(cond) {
-    case EQ: cond_op = 0b100; break;
-    case GT: cond_op = 0b001; break;
-    case GE: cond_op = 0b000; break;
-    case LT: cond_op = 0b010; break;
-    case LE: cond_op = 0b011; break;
-    case NE: cond_op = 0b110; break;
-    default:
-      ShouldNotReachHere();
+    switch (cond) {
+      case HI:
+      case GT:
+        return 0b0001;
+      case HS:
+      case GE:
+        return 0b0000;
+      case LO:
+      case LT:
+        return 0b0010;
+      case LS:
+      case LE:
+        return 0b0011;
+      case EQ:
+        return 0b1000;
+      case NE:
+        return 0b1001;
+      default:
+        ShouldNotReachHere();
+        return -1;
+    }
   }
-  f(0b01100101, 31, 24), f(T, 23, 22), f(0b0100, 21, 18),
-  f((cond_op >> 1) & 0x3, 17, 16), f(0b001, 15, 13),
-  pgrf(Pg, 10), rf(Zn, 5);
-  f(cond_op & 0x1, 4), prf(Pd, 0);
-}
+
+public:
+  // SVE Integer Compare - 5 bits signed imm and 7 bits unsigned imm
+  void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
+               PRegister Pg, FloatRegister Zn, int imm) {
+    starti;
+    assert(T != Q, "invalid size");
+    bool is_unsigned = false;
+    int cond_op = assembler_cond_to_sve_op(cond, is_unsigned);
+    f(is_unsigned ? 0b00100100 : 0b00100101, 31, 24), f(T, 23, 22);
+    f(is_unsigned ? 0b1 : 0b0, 21);
+    if (is_unsigned) {
+      f(imm, 20, 14), f((cond_op >> 1) & 0x1, 13);
+    } else {
+      sf(imm, 20, 16), f((cond_op >> 1) & 0x7, 15, 13);
+    }
+    pgrf(Pg, 10), rf(Zn, 5), f(cond_op & 0x1, 4), prf(Pd, 0);
+  }
+
+  // SVE Floating-point compare vector with zero
+  void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
+               PRegister Pg, FloatRegister Zn, double d) {
+    starti;
+    assert(T != Q, "invalid size");
+    guarantee(d == 0.0, "invalid immediate");
+    int cond_op;
+    switch(cond) {
+      case EQ: cond_op = 0b100; break;
+      case GT: cond_op = 0b001; break;
+      case GE: cond_op = 0b000; break;
+      case LT: cond_op = 0b010; break;
+      case LE: cond_op = 0b011; break;
+      case NE: cond_op = 0b110; break;
+      default:
+        ShouldNotReachHere();
+    }
+    f(0b01100101, 31, 24), f(T, 23, 22), f(0b0100, 21, 18),
+    f((cond_op >> 1) & 0x3, 17, 16), f(0b001, 15, 13),
+    pgrf(Pg, 10), rf(Zn, 5);
+    f(cond_op & 0x1, 4), prf(Pd, 0);
+  }
 
 // SVE unpack vector elements
 #define INSN(NAME, op) \
@@ -4183,7 +4212,7 @@ Instruction_aarch64::~Instruction_aarch64() {
 #undef starti
 
 // Invert a condition
-inline const Assembler::Condition operator~(const Assembler::Condition cond) {
+inline Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
 

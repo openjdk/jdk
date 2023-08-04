@@ -45,7 +45,7 @@ inline void Method::set_method_data(MethodData* data) {
   Atomic::release_store(&_method_data, data);
 }
 
-inline CompiledMethod* volatile Method::code() const {
+inline CompiledMethod* Method::code() const {
   assert( check_code(), "" );
   return Atomic::load_acquire(&_code);
 }
@@ -69,7 +69,7 @@ inline void CompressedLineNumberWriteStream::write_pair_inline(int bci, int line
   // Check if bci is 5-bit and line number 3-bit unsigned.
   if (((bci_delta & ~0x1F) == 0) && ((line_delta & ~0x7) == 0)) {
     // Compress into single byte.
-    jubyte value = ((jubyte) bci_delta << 3) | (jubyte) line_delta;
+    jubyte value = (jubyte)((bci_delta << 3) | line_delta);
     // Check that value doesn't match escape character.
     if (value != 0xFF) {
       write_byte(value);

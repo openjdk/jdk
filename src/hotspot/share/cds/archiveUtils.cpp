@@ -164,8 +164,8 @@ char* DumpRegion::expand_top_to(char* newtop) {
       // This is just a sanity check and should not appear in any real world usage. This
       // happens only if you allocate more than 2GB of shared objects and would require
       // millions of shared classes.
-      vm_exit_during_initialization("Out of memory in the CDS archive",
-                                    "Please reduce the number of shared classes.");
+      log_error(cds)("Out of memory in the CDS archive: Please reduce the number of shared classes.");
+      MetaspaceShared::unrecoverable_writing_error();
     }
   }
 
@@ -190,8 +190,9 @@ void DumpRegion::commit_to(char* newtop) {
   assert(commit <= uncommitted, "sanity");
 
   if (!_vs->expand_by(commit, false)) {
-    vm_exit_during_initialization(err_msg("Failed to expand shared space to " SIZE_FORMAT " bytes",
-                                          need_committed_size));
+    log_error(cds)("Failed to expand shared space to " SIZE_FORMAT " bytes",
+                    need_committed_size);
+    MetaspaceShared::unrecoverable_writing_error();
   }
 
   const char* which;
@@ -225,7 +226,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%-3s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
                  p2i(ArchiveBuilder::current()->to_requested(_base)));
 }
@@ -261,19 +262,19 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
-void WriteClosure::do_oop(oop* o) {
-  if (*o == nullptr) {
-    _dump_region->append_intptr_t(0);
-  } else {
-    assert(HeapShared::can_write(), "sanity");
-    intptr_t p;
-    if (UseCompressedOops) {
-      p = (intptr_t)CompressedOops::encode_not_null(*o);
-    } else {
-      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
-    }
-    _dump_region->append_intptr_t(p);
+void WriteClosure::do_ptr(void** p) {
+  // Write ptr into the archive; ptr can be:
+  //   (a) null                 -> written as 0
+  //   (b) a "buffered" address -> written as is
+  //   (c) a "source"   address -> convert to "buffered" and write
+  // The common case is (c). E.g., when writing the vmClasses into the archive.
+  // We have (b) only when we don't have a corresponding source object. E.g.,
+  // the archived c++ vtable entries.
+  address ptr = *(address*)p;
+  if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
+    ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
   }
+  _dump_region->append_intptr_t((intptr_t)ptr, true);
 }
 
 void WriteClosure::do_region(u_char* start, size_t size) {
@@ -281,7 +282,7 @@ void WriteClosure::do_region(u_char* start, size_t size) {
   assert(size % sizeof(intptr_t) == 0, "bad size");
   do_tag((int)size);
   while (size > 0) {
-    _dump_region->append_intptr_t(*(intptr_t*)start, true);
+    do_ptr((void**)start);
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
   }
@@ -300,6 +301,11 @@ void ReadClosure::do_u4(u4* p) {
   *p = (u4)(uintx(obj));
 }
 
+void ReadClosure::do_int(int* p) {
+  intptr_t obj = nextPtr();
+  *p = (int)(intx(obj));
+}
+
 void ReadClosure::do_bool(bool* p) {
   intptr_t obj = nextPtr();
   *p = (bool)(uintx(obj));
@@ -311,28 +317,6 @@ void ReadClosure::do_tag(int tag) {
   // do_int(&old_tag);
   assert(tag == old_tag, "old tag doesn't match");
   FileMapInfo::assert_mark(tag == old_tag);
-}
-
-void ReadClosure::do_oop(oop *p) {
-  if (UseCompressedOops) {
-    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(ArchiveHeapLoader::can_use(), "sanity");
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      *p = ArchiveHeapLoader::decode_from_archive(o);
-    }
-  } else {
-    intptr_t dumptime_oop = nextPtr();
-    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(!ArchiveHeapLoader::is_loaded(), "ArchiveHeapLoader::can_load() is not supported for uncompessed oops");
-      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
-      *p = cast_to_oop(runtime_oop);
-    }
-  }
 }
 
 void ReadClosure::do_region(u_char* start, size_t size) {

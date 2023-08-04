@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     int spill_slots = 3;
     if (preserve1 != noreg) { spill_slots++; }
     if (preserve2 != noreg) { spill_slots++; }
-    const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+    const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
     Label filtered;
 
     // Is marking active?
@@ -98,7 +98,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
 void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                              Register addr, Register count, Register preserve) {
   int spill_slots = (preserve != noreg) ? 1 : 0;
-  const int frame_size = align_up(frame::abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
+  const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
   __ save_LR_CR(R0);
   __ push_frame(frame_size, R0);
@@ -246,7 +246,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   __ srdi_(tmp1, tmp1, HeapRegion::LogOfHRGrainBytes);
   __ beq(CCR0, filtered);
 
-  // Crosses regions, storing NULL?
+  // Crosses regions, storing null?
   if (not_null) {
 #ifdef ASSERT
     __ cmpdi(CCR0, new_val, 0);
@@ -257,7 +257,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
     __ beq(CCR0, filtered);
   }
 
-  // Storing region crossing non-NULL, is card already dirty?
+  // Storing region crossing non-null, is card already dirty?
   const Register Rcard_addr = tmp1;
   Register Rbase = tmp2;
   __ load_const_optimized(Rbase, (address)(ct->card_table()->byte_map_base()), /*temp*/ tmp3);
@@ -274,7 +274,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   __ cmpwi(CCR0, tmp3 /* card value */, (int)G1CardTable::dirty_card_val());
   __ beq(CCR0, filtered);
 
-  // Storing a region crossing, non-NULL oop, card is clean.
+  // Storing a region crossing, non-null oop, card is clean.
   // Dirty card and log.
   __ li(tmp3, (int)G1CardTable::dirty_card_val());
   //release(); // G1: oops are allowed to get visible after dirty marking.
@@ -325,7 +325,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
                                 tmp1, tmp2, tmp3,
                                 preservation_level);
 
-  // No need for post barrier if storing NULL
+  // No need for post barrier if storing null
   if (val != noreg) {
     if (precise) {
       if (ind_or_offs.is_constant()) {
@@ -350,7 +350,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
   Label done;
-  if (on_oop && on_reference && L_handle_null == NULL) { L_handle_null = &done; }
+  if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
   // Load the value of the referent field.
   ModRefBarrierSetAssembler::load_at(masm, decorators, type,
                                      base, ind_or_offs, dst,
@@ -375,7 +375,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
                                             MacroAssembler::PreservationLevel preservation_level) {
   Label done, not_weak;
   __ cmpdi(CCR0, value, 0);
-  __ beq(CCR0, done);         // Use NULL as-is.
+  __ beq(CCR0, done);         // Use null as-is.
 
   __ clrrdi(tmp1, value, JNIHandles::tag_size);
   __ andi_(tmp2, value, JNIHandles::TypeTag::weak_global);

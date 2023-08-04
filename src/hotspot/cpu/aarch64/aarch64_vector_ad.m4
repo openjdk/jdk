@@ -115,7 +115,7 @@ source %{
     }
   }
 
-  const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
@@ -138,7 +138,7 @@ source %{
 
   // Identify extra cases that we might want to provide match rules for vector nodes and
   // other intrinsics guarded with vector length (vlen) and element type (bt).
-  const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     if (!match_rule_supported(opcode)) {
       return false;
     }
@@ -206,13 +206,13 @@ source %{
         }
         break;
       case Op_VectorLongToMask:
-        if (UseSVE < 2 || vlen > 64 || !VM_Version::supports_svebitperm()) {
+        if (vlen > 64 || !VM_Version::supports_svebitperm()) {
           return false;
         }
         break;
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
-        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+        if (!VM_Version::supports_svebitperm()) {
           return false;
         }
         break;
@@ -222,7 +222,7 @@ source %{
     return vector_size_supported(bt, vlen);
   }
 
-  const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
     // Only SVE supports masked operations.
     if (UseSVE == 0) {
       return false;
@@ -261,7 +261,7 @@ source %{
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
-  const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
     // Only SVE has partial vector operations
     if (UseSVE == 0) {
       return false;
@@ -3118,6 +3118,34 @@ instruct extract$1_index_ge$2($3 dst, vReg src, immI idx, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
+
+// BOOLEAN
+
+instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_ireg $dst, $src, $idx\t# variable index. KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    __ mov($tmp$$FloatRegister, __ B, 0, $idx$$Register);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ tbl($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src$$FloatRegister, 1, $tmp$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_tbl($tmp$$FloatRegister, __ B, $src$$FloatRegister, $tmp$$FloatRegister);
+    }
+    __ smov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+EXTRACT_INT_SMALL(UB, 16, iRegINoSp, smov, B)
+EXTRACT_INT_LARGE(UB, 16, iRegINoSp, T_BYTE)
+
 // BYTE
 EXTRACT_INT_SMALL(B, 16, iRegINoSp, smov, B)
 EXTRACT_INT_LARGE(B, 16, iRegINoSp, T_BYTE)
@@ -3612,6 +3640,31 @@ instruct vmaskcmp_sve(pReg dst, vReg src1, vReg src2, immI cond, rFlagsReg cr) %
   %}
   ins_pipe(pipe_slow);
 %}
+dnl
+dnl VMASKCMP_SVE_IMM($1          , $2          , $3      , $4            )
+dnl VMASKCMP_SVE_IMM(element_size, element_type, type_imm, type_condition)
+define(`VMASKCMP_SVE_IMM', `
+instruct vmask$4_imm$2_sve(pReg dst, vReg src, $3 imm, immI_$4_cond cond, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set dst (VectorMaskCmp (Binary src (Replicate$2 imm)) cond));
+  effect(KILL cr);
+  format %{ "vmask$4_imm$2_sve $dst, $src, $imm, $cond\t# KILL cr" %}
+  ins_encode %{
+    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+    __ sve_cmp(condition, $dst$$PRegister, __ $1, ptrue, $src$$FloatRegister, (int)$imm$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+VMASKCMP_SVE_IMM(B, B, immI5, cmp)
+VMASKCMP_SVE_IMM(B, B, immIU7, cmpU)
+VMASKCMP_SVE_IMM(H, S, immI5, cmp)
+VMASKCMP_SVE_IMM(H, S, immIU7, cmpU)
+VMASKCMP_SVE_IMM(S, I, immI5, cmp)
+VMASKCMP_SVE_IMM(S, I, immIU7, cmpU)
+VMASKCMP_SVE_IMM(D, L, immL5, cmp)
+VMASKCMP_SVE_IMM(D, L, immLU7, cmpU)
 
 instruct vmaskcmp_masked(pReg dst, vReg src1, vReg src2, immI cond,
                          pRegGov pg, rFlagsReg cr) %{
@@ -3793,41 +3846,36 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// first true
+// Combined rule for VectorMaskTrueCount (VectorStoreMask) when the vector element type is not T_BYTE.
 
-instruct vmask_firsttrue_lt8e(iRegINoSp dst, vReg src, rFlagsReg cr) %{
-  predicate(UseSVE == 0 &&
-            Matcher::vector_length(n->in(1)) < 8);
-  match(Set dst (VectorMaskFirstTrue src));
-  effect(KILL cr);
-  format %{ "vmask_firsttrue_lt8e $dst, $src\t# vector < 8 elements (neon). KILL cr" %}
+instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
+  match(Set dst (VectorMaskTrueCount (VectorStoreMask src size)));
+  effect(TEMP vtmp);
+  format %{ "vstoremask_truecount_neon $dst, $src\t# KILL $vtmp" %}
   ins_encode %{
-    // Returns the index of the first active lane of the
-    // vector mask, or VLENGTH if no lane is active.
-    //
-    // Input "src" is a vector of boolean represented as
-    // bytes with 0x00/0x01 as element values.
-    //
-    // Computed by reversing the bits and counting the leading
-    // zero bytes.
-    BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    assert(bt == T_BOOLEAN, "unsupported type");
-    __ fmovd($dst$$Register, $src$$FloatRegister);
-    __ rbit($dst$$Register, $dst$$Register);
-    __ clz($dst$$Register, $dst$$Register);
-    __ lsrw($dst$$Register, $dst$$Register, 3);
-    __ movw(rscratch1, Matcher::vector_length(this, $src));
-    __ cmpw($dst$$Register, rscratch1);
-    __ cselw($dst$$Register, rscratch1, $dst$$Register, Assembler::GE);
+    // Input "src" is a vector mask represented as lanes with
+    // 0/-1 as element values.
+    uint esize = (uint)$size$$constant;
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    Assembler::SIMD_Arrangement arrangement = Assembler::esize2arrangement(esize,
+                                                                           /* isQ */ length_in_bytes == 16);
+    if (arrangement == __ T2D || arrangement == __ T2S) {
+      __ addpv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister, $src$$FloatRegister);
+    } else {
+      __ addv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister);
+    }
+    __ smov($dst$$Register, $vtmp$$FloatRegister, __ B, 0);
+    __ neg($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_firsttrue_8or16e(iRegINoSp dst, vReg src) %{
-  predicate(UseSVE == 0 &&
-            (Matcher::vector_length(n->in(1)) == 8 || Matcher::vector_length(n->in(1)) == 16));
+// first true
+
+instruct vmask_firsttrue_neon(iRegINoSp dst, vReg src) %{
+  predicate(UseSVE == 0);
   match(Set dst (VectorMaskFirstTrue src));
-  format %{ "vmask_firsttrue_8or16e $dst, $src\t# vector 8B/16B (neon)" %}
+  format %{ "vmask_firsttrue_neon $dst, $src" %}
   ins_encode %{
     // Returns the index of the first active lane of the
     // vector mask, or VLENGTH if no lane is active.
@@ -3840,14 +3888,21 @@ instruct vmask_firsttrue_8or16e(iRegINoSp dst, vReg src) %{
 
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     assert(bt == T_BOOLEAN, "unsupported type");
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
-    if (length_in_bytes == 8) {
+    uint vlength = Matcher::vector_length(this, $src);
+    if (vlength <= 8) {
       __ fmovd($dst$$Register, $src$$FloatRegister);
+      if (vlength == 2 || vlength == 4) {
+        // Special handling for 2B or 4B cases:
+        // Vector mask is moved to a 64-bit general register, but only the low 16/32 bits are
+        // significant for 2B/4B cases. We initialize the 16th/32nd bit as bit 1, so as to generate
+        // the expected result (i.e. VLENGTH) for the case that all lanes are zero.
+        __ orr($dst$$Register, $dst$$Register, vlength == 2 ? 0x10000 : 0x100000000);
+      }
       __ rbit($dst$$Register, $dst$$Register);
       __ clz($dst$$Register, $dst$$Register);
       __ lsrw($dst$$Register, $dst$$Register, 3);
     } else {
-      assert(length_in_bytes == 16, "must be");
+      assert(vlength == 16, "must be");
       Label FIRST_TRUE_INDEX;
 
       // Try to compute the result from lower 64 bits.
@@ -4090,7 +4145,7 @@ instruct vmask_gen_I(pReg pd, iRegIorL2I src, rFlagsReg cr) %{
   format %{ "vmask_gen_I $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelow($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whileltw($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -4102,7 +4157,7 @@ instruct vmask_gen_L(pReg pd, iRegL src, rFlagsReg cr) %{
   format %{ "vmask_gen_L $pd, $src\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), zr, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4126,7 +4181,7 @@ instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
   format %{ "vmask_gen_sub $pd, $src2, $src1\t# KILL cr" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ sve_whilelo($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
+    __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4225,49 +4280,6 @@ instruct vblend_sve(vReg dst, vReg src1, vReg src2, pReg pg) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
                $pg$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// ------------------------- Vector conditional move --------------------------
-
-instruct vcmove_neon(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd) %{
-  predicate(UseSVE == 0 ||
-            (VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
-             n->in(1)->in(2)->get_int() != BoolTest::ne));
-  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
-  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
-  effect(TEMP_DEF dst);
-  format %{ "vcmove_neon.$copnd $dst, $src1, $src2\t# vector conditional move fp" %}
-  ins_encode %{
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    assert(length_in_bytes == 8 || length_in_bytes == 16, "must be");
-    __ neon_compare($dst$$FloatRegister, bt, $src1$$FloatRegister,
-                    $src2$$FloatRegister, condition, /* isQ */ length_in_bytes == 16);
-    __ bsl($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
-           $src2$$FloatRegister, $src1$$FloatRegister);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vcmove_sve(vReg dst, vReg src1, vReg src2, immI cond, cmpOp copnd, pRegGov pgtmp) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) ||
-            (UseSVE > 0 && n->in(1)->in(2)->get_int() == BoolTest::ne));
-  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
-  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
-  effect(TEMP pgtmp);
-  format %{ "vcmove_sve.$copnd $dst, $src1, $src2\t# vector conditional move fp. KILL $pgtmp" %}
-  ins_encode %{
-    assert(UseSVE > 0, "must be sve");
-    Assembler::Condition condition = to_assembler_cond((BoolTest::mask)$cond$$constant);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ sve_compare($pgtmp$$PRegister, bt, ptrue, $src1$$FloatRegister,
-                   $src2$$FloatRegister, condition);
-    __ sve_sel($dst$$FloatRegister, __ elemType_to_regVariant(bt),
-               $pgtmp$$PRegister, $src2$$FloatRegister, $src1$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4852,7 +4864,7 @@ instruct mcompress(pReg dst, pReg pg, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cntp(rscratch1, size, ptrue, $pg$$PRegister);
-    __ sve_whilelo(as_PRegister($dst$$reg), size, zr, rscratch1);
+    __ sve_whilelt(as_PRegister($dst$$reg), size, zr, rscratch1);
   %}
   ins_pipe(pipe_slow);
 %}

@@ -42,6 +42,7 @@
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -85,16 +86,6 @@
 #ifndef MAP_ANONYMOUS
   #define MAP_ANONYMOUS MAP_ANON
 #endif
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 static jlong initial_time_count = 0;
 
@@ -771,9 +762,9 @@ FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
-ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
-  RESTARTABLE(::write(fd, buf, (size_t) nBytes), res);
+  RESTARTABLE(::write(fd, buf, nBytes), res);
   return res;
 }
 
@@ -905,8 +896,8 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   int detachstate = 0;
   pthread_attr_getstacksize(attr, &stack_size);
   pthread_attr_getguardsize(attr, &guard_size);
-  // Work around linux NPTL implementation error, see also os::create_thread() in os_linux.cpp.
-  LINUX_ONLY(stack_size -= guard_size);
+  // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
+  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
   pthread_attr_getdetachstate(attr, &detachstate);
   jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
     stack_size / K, guard_size / K,
@@ -1538,6 +1529,12 @@ void PlatformEvent::park() {       // AKA "down()"
 }
 
 int PlatformEvent::park(jlong millis) {
+  return park_nanos(millis_to_nanos_bounded(millis));
+}
+
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
   // Transitions for _event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -1557,7 +1554,7 @@ int PlatformEvent::park(jlong millis) {
 
   if (v == 0) { // Do this the hard way by blocking ...
     struct timespec abst;
-    to_abstime(&abst, millis_to_nanos_bounded(millis), false, false);
+    to_abstime(&abst, nanos, false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_mutex_lock(_mutex);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.tools.JavaFileObject;
 import static com.sun.tools.classfile.Attribute.Code;
 import static com.sun.tools.classfile.Attribute.LineNumberTable;
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Base class for line number table attribute tests.
@@ -82,22 +82,25 @@ public class LineNumberTestBase extends TestBase {
                         LineNumberTable_attribute tableAttribute =
                                 (LineNumberTable_attribute) code_attribute.attributes.get(LineNumberTable);
                         checkAttribute(testCase, tableAttribute, code_attribute.code_length);
-                        coveredLines.addAll(
+                        Set<Integer> methodCoveredLines =
                                 Stream.of(tableAttribute.line_number_table)
                                         .map(e -> e.line_number)
-                                        .collect(toList()));
+                                        .collect(toSet());
+
+                        TestCase.MethodData expected = testCase.findData(m.getName(classFile.constant_pool));
+
+                        if (expected != null) {
+                            verifyCoveredLines(methodCoveredLines, expected);
+                        }
+
+                        coveredLines.addAll(methodCoveredLines);
                     }
                 }
-                if (testCase.exactLines) {
-                    assertTrue(coveredLines.equals(testCase.expectedLines),
-                            format("Incorrect covered lines.%n" +
-                                    "Covered: %s%n" +
-                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
-                } else {
-                    assertTrue(coveredLines.containsAll(testCase.expectedLines),
-                            format("All significant lines are not covered.%n" +
-                                    "Covered: %s%n" +
-                                    "Expected: %s%n", coveredLines, testCase.expectedLines));
+
+                TestCase.MethodData expected = testCase.findData(null);
+
+                if (expected != null) {
+                    verifyCoveredLines(coveredLines, expected);
                 }
             } catch (AssertionFailedException | CompilationException ex) {
                 System.err.printf("#       %-20s#%n", testCase.getName());
@@ -114,6 +117,20 @@ public class LineNumberTestBase extends TestBase {
         }
         if (failed) {
             throw new RuntimeException("Test failed");
+        }
+    }
+
+    private void verifyCoveredLines(Set<Integer> actualCoveredLines, TestCase.MethodData expected) {
+        if (expected.exactLines()) {
+            assertTrue(actualCoveredLines.equals(expected.expectedLines()),
+                    format("Incorrect covered lines.%n" +
+                            "Covered: %s%n" +
+                            "Expected: %s%n", actualCoveredLines, expected.expectedLines()));
+        } else {
+            assertTrue(actualCoveredLines.containsAll(expected.expectedLines()),
+                    format("All significant lines are not covered.%n" +
+                            "Covered: %s%n" +
+                            "Expected: %s%n", actualCoveredLines, expected.expectedLines()));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,14 @@ class AixSymbols {
   static bool get_module_name (
     address pc,                      // [in] program counter
     char* p_name, size_t namelen     // [out] module name
+  );
+
+  // Given a program counter, returns the name of the module (library and module) the pc points to
+  // and the base address of the module the pc points to
+  static bool get_module_name_and_base (
+    address pc,                      // [in] program counter
+    char* p_name, size_t namelen,    // [out] module name
+    address* p_base                  // [out] base address of library
   );
 
 };

@@ -25,7 +25,6 @@
  * @test
  * @summary Test virtual threads using Object.wait/notifyAll
  * @library /test/lib
- * @enablePreview
  * @run junit WaitNotify
  */
 

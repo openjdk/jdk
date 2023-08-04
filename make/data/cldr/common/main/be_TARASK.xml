@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -30,6 +30,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="awa" draft="provisional">авадгіская</language>
 			<language type="ay" draft="provisional">аймарская</language>
 			<language type="az" draft="provisional">азэрбайджанская</language>
+			<language type="az" alt="short" draft="provisional">азербайджанская</language>
 			<language type="bas" draft="provisional">басайская</language>
 			<language type="be_TARASK" draft="provisional">беларуская (клясычная)</language>
 			<language type="bem" draft="provisional">бембанская</language>
@@ -453,6 +454,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TL" alt="variant" draft="provisional">Тымор-Лешці</territory>
 			<territory type="TM" draft="provisional">Туркмэністан</territory>
 			<territory type="TR" draft="provisional">Турэччына</territory>
+			<territory type="TR" alt="variant">Турэччына</territory>
 			<territory type="UM" draft="provisional">Зьнешнія малыя астравы ЗША</territory>
 			<territory type="UN" draft="provisional">Арганізацыя Аб’яднаных Нацыяў</territory>
 			<territory type="UZ" draft="provisional">Узбэкістан</territory>
@@ -857,6 +859,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0" draft="provisional">сёньня</relative>
 				<relative type="1" draft="provisional">заўтра</relative>
 			</field>
+			<field type="day-short">
+				<relative type="0">сёньня</relative>
+			</field>
+			<field type="day-narrow">
+				<relative type="0">сёньня</relative>
+			</field>
 			<field type="dayOfYear">
 				<displayName draft="provisional">дзень году</displayName>
 			</field>
@@ -1106,6 +1114,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="provisional">{0} гадзіны таму</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<relative type="0">у гэтую гадзіну</relative>
+			</field>
+			<field type="hour-narrow">
+				<relative type="0">у гэтую гадзіну</relative>
+			</field>
 			<field type="minute">
 				<relative type="0" draft="provisional">у гэтую хвіліну</relative>
 				<relativeTime type="future">
@@ -1120,6 +1134,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="many" draft="provisional">{0} хвілінаў таму</relativeTimePattern>
 					<relativeTimePattern count="other" draft="provisional">{0} хвіліны таму</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<relative type="0">у гэтую хвіліну</relative>
+			</field>
+			<field type="minute-narrow">
+				<relative type="0">у гэтую хвіліну</relative>
 			</field>
 			<field type="second">
 				<displayName draft="provisional">сэкунда</displayName>
@@ -3579,12 +3599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} амэр. тэрмаў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} амэр. тэрма</unitPattern>
 			</unit>
-			<unit type="force-pound-force">
-				<unitPattern count="one" draft="provisional">{0} фунт-сіла</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} фунт-сілы</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} lbf</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} lbf</unitPattern>
-			</unit>
 			<unit type="graphics-pixel">
 				<displayName draft="provisional">піксэлі</displayName>
 				<unitPattern count="one" draft="provisional">{0} піксэль</unitPattern>
@@ -3606,36 +3620,87 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} піксэляў/цалю</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} піксэля/цалю</unitPattern>
 			</unit>
-			<unit type="length-solar-radius">
-				<unitPattern count="one" draft="provisional">{0} R☉</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} R☉</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} R☉</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} R☉</unitPattern>
-			</unit>
-			<unit type="light-solar-luminosity">
-				<unitPattern count="one" draft="provisional">{0} L☉</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} L☉</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} L☉</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} L☉</unitPattern>
-			</unit>
-			<unit type="mass-earth-mass">
-				<unitPattern count="one" draft="provisional">{0} M⊕</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} M⊕</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} M⊕</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} M⊕</unitPattern>
-			</unit>
-			<unit type="mass-solar-mass">
-				<unitPattern count="one" draft="provisional">{0} M☉</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} M☉</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} M☉</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} M☉</unitPattern>
-			</unit>
 			<unit type="volume-jigger">
 				<displayName draft="provisional">джыгэр</displayName>
 				<unitPattern count="one" draft="provisional">{0} джыгэр</unitPattern>
 				<unitPattern count="few" draft="provisional">{0} джыгэры</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} джыгэраў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} джыгэра</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="many">{0} міль/імп. галён</unitPattern>
+				<unitPattern count="other">{0} мілі/імп. галён</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>дзесяцігодзьдзе</displayName>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern>{0} сут.</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<perUnitPattern>{0}/гадз.</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<perUnitPattern>{0}/ хв.</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<perUnitPattern>{0}/сэк.</perUnitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>мкс.</displayName>
+				<unitPattern count="one">{0} мкс.</unitPattern>
+				<unitPattern count="few">{0} мкс.</unitPattern>
+				<unitPattern count="many">{0} мкс.</unitPattern>
+				<unitPattern count="other">{0} мкс.</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>нсэк.</displayName>
+				<unitPattern count="one">{0} нсэк.</unitPattern>
+				<unitPattern count="few">{0} нсэк.</unitPattern>
+				<unitPattern count="many">{0} нсэк.</unitPattern>
+				<unitPattern count="other">{0} нсэк.</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<unitPattern count="one">{0} БЦА</unitPattern>
+				<unitPattern count="few">{0} БЦА</unitPattern>
+				<unitPattern count="many">{0} БЦА</unitPattern>
+				<unitPattern count="other">{0} БЦА</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<unitPattern count="one">{0} амэр. тэрм</unitPattern>
+				<unitPattern count="few">{0} амэр. тэрмы</unitPattern>
+				<unitPattern count="many">{0} амэр. тэрмаў</unitPattern>
+				<unitPattern count="other">{0} амэр. тэрма</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>піксэлі</displayName>
+				<unitPattern count="one">{0} піксэль</unitPattern>
+				<unitPattern count="few">{0} піксэлі</unitPattern>
+				<unitPattern count="many">{0} піксэляў</unitPattern>
+				<unitPattern count="other">{0} піксэля</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>піксэль/см</displayName>
+				<unitPattern count="one">{0} піксэль/см</unitPattern>
+				<unitPattern count="few">{0} піксэлі/см</unitPattern>
+				<unitPattern count="many">{0} піксэляў/см</unitPattern>
+				<unitPattern count="other">{0} піксэля/см</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>піксэль/цалю</displayName>
+				<unitPattern count="one">{0} піксэль/цалю</unitPattern>
+				<unitPattern count="few">{0} піксэлі/цалю</unitPattern>
+				<unitPattern count="many">{0} піксэляў/цалю</unitPattern>
+				<unitPattern count="other">{0} піксэля/цалю</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>джыгэр</displayName>
+				<unitPattern count="one">{0} джыгэр</unitPattern>
+				<unitPattern count="few">{0} джыгэры</unitPattern>
+				<unitPattern count="many">{0} джыгэраў</unitPattern>
+				<unitPattern count="other">{0} джыгэра</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

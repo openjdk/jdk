@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ class JfrThreadLocal {
   u8 _data_lost;
   traceid _stack_trace_id;
   traceid _parent_trace_id;
+  int64_t _last_allocated_bytes;
   jlong _user_time;
   jlong _cpu_time;
   jlong _wallclock_time;
@@ -69,6 +70,7 @@ class JfrThreadLocal {
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   bool _vthread;
+  bool _notified;
   bool _dead;
 
   JfrBuffer* install_native_buffer() const;
@@ -92,11 +94,11 @@ class JfrThreadLocal {
   JfrThreadLocal();
 
   JfrBuffer* native_buffer() const {
-    return _native_buffer != NULL ? _native_buffer : install_native_buffer();
+    return _native_buffer != nullptr ? _native_buffer : install_native_buffer();
   }
 
   bool has_native_buffer() const {
-    return _native_buffer != NULL;
+    return _native_buffer != nullptr;
   }
 
   void set_native_buffer(JfrBuffer* buffer) {
@@ -104,11 +106,11 @@ class JfrThreadLocal {
   }
 
   JfrBuffer* java_buffer() const {
-    return _java_buffer != NULL ? _java_buffer : install_java_buffer();
+    return _java_buffer != nullptr ? _java_buffer : install_java_buffer();
   }
 
   bool has_java_buffer() const {
-    return _java_buffer != NULL;
+    return _java_buffer != nullptr;
   }
 
   void set_java_buffer(JfrBuffer* buffer) {
@@ -124,7 +126,7 @@ class JfrThreadLocal {
   }
 
   bool has_java_event_writer() const {
-    return _java_event_writer != NULL;
+    return _java_event_writer != nullptr;
   }
 
   jobject java_event_writer() {
@@ -136,7 +138,7 @@ class JfrThreadLocal {
   }
 
   JfrStackFrame* stackframes() const {
-    return _stackframes != NULL ? _stackframes : install_stackframes();
+    return _stackframes != nullptr ? _stackframes : install_stackframes();
   }
 
   void set_stackframes(JfrStackFrame* frames) {
@@ -147,6 +149,18 @@ class JfrThreadLocal {
 
   void set_stackdepth(u4 depth) {
     _stackdepth = depth;
+  }
+
+  int64_t last_allocated_bytes() const {
+    return _last_allocated_bytes;
+  }
+
+  void set_last_allocated_bytes(int64_t allocated_bytes) {
+    _last_allocated_bytes = allocated_bytes;
+  }
+
+  void clear_last_allocated_bytes() {
+    set_last_allocated_bytes(0);
   }
 
   // Contextually defined thread id that is volatile,
@@ -237,6 +251,18 @@ class JfrThreadLocal {
     _wallclock_time = wallclock_time;
   }
 
+  bool is_notified() {
+    return _notified;
+  }
+
+  void notify() {
+    _notified = true;
+  }
+
+  void clear_notification() {
+    _notified = false;
+  }
+
   bool is_dead() const {
     return _dead;
   }
@@ -260,10 +286,12 @@ class JfrThreadLocal {
 
   // Code generation
   static ByteSize java_event_writer_offset();
+  static ByteSize java_buffer_offset();
   static ByteSize vthread_id_offset();
   static ByteSize vthread_offset();
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
+  static ByteSize notified_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;

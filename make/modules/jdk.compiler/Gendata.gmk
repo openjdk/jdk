@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ CT_DATA_DESCRIPTION += $(MODULE_SRC)/share/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports java.base/jdk.internal.javac=java.compiler.interim,jdk.compiler.interim \
+    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim,jdk.javadoc.interim \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.util=ALL-UNNAMED \

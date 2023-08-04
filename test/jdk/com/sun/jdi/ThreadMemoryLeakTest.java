@@ -58,14 +58,20 @@ class ThreadMemoryLeakTarg {
         while (System.currentTimeMillis() - startTime < 100 * 1000) {
             iterations++;
             semaphore.acquire();
-            Executors.defaultThreadFactory().newThread(() -> {
+            TestScaffold.newThread(() -> {
                     adder.increment();
                     long sum = adder.sum();
                     if ((sum % 1000) == 0) {
                         System.out.println("Progress: " + sum);
                     }
                     try {
-                        Thread.sleep(50);
+                        String mainWrapper = System.getProperty("main.wrapper");
+                        // Virtual thread creation tends to overwhelm the debugger,
+                        // leading to high memory use for all the unprocessed events
+                        // that get queued up, so we need to slow it down a bit more
+                        // than we do for platform threads to avoid getting OOME.
+                        long timeToSleep = "Virtual".equals(mainWrapper) ? 100 : 50;
+                        Thread.sleep(timeToSleep);
                     }
                     catch (InterruptedException e) {
                         throw new RuntimeException(e);

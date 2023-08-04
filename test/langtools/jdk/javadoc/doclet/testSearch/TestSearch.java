@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8141492 8071982 8141636 8147890 8166175 8168965 8176794 8175218 8147881
  *      8181622 8182263 8074407 8187521 8198522 8182765 8199278 8196201 8196202
  *      8184205 8214468 8222548 8223378 8234746 8241219 8254627 8247994 8263528
- *      8266808 8248863
+ *      8266808 8248863 8305710
  * @summary Test the search feature of javadoc.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -56,7 +56,7 @@ public class TestSearch extends JavadocTester {
                 "-use",
                 testSrc("UnnamedPkgClass.java"));
         checkExit(Exit.OK);
-        checkSearchOutput("UnnamedPkgClass.html", true, true);
+        checkSearchOutput("UnnamedPkgClass.html", true);
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -78,8 +78,9 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.OK);
         checkInvalidUsageIndexTag();
         checkSearchOutput(true);
-        checkSingleIndex(true, true);
+        checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
+        checkSearchTagIndex();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkAllPkgsAllClasses();
@@ -102,8 +103,9 @@ public class TestSearch extends JavadocTester {
         checkExit(Exit.ERROR);
         checkDocLintErrors();
         checkSearchOutput(true);
-        checkSingleIndex(true, true);
+        checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
+        checkSearchTagIndex();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
         checkFiles(true,
@@ -147,7 +149,7 @@ public class TestSearch extends JavadocTester {
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
-        checkSingleIndex(true, true);
+        checkSingleIndex();
         checkSingleIndexSearchTagDuplication();
         checkJqueryAndImageFiles(true);
         checkSearchJS();
@@ -279,7 +281,7 @@ public class TestSearch extends JavadocTester {
                 "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchJS();
-        checkSearchIndex(true);
+        checkSearchIndex();
     }
 
     @Test
@@ -299,7 +301,7 @@ public class TestSearch extends JavadocTester {
                     "\u30d1\u30c3\u30b1\u30fc\u30b8pkg1\u306e\u30bd\u30fc\u30b9\u30fb\u30d5\u30a1" +
                             "\u30a4\u30eb\u3092\u8aad\u307f\u8fbc\u3093\u3067\u3044\u307e\u3059...\n");
             checkSearchJS();
-            checkSearchIndex(true);
+            checkSearchIndex();
         } finally {
             Locale.setDefault(prev);
         }
@@ -324,7 +326,7 @@ public class TestSearch extends JavadocTester {
         checkOutput("index.html", true,
                 "<span>\u30d1\u30c3\u30b1\u30fc\u30b8</span>");
         checkSearchJS();
-        checkSearchIndex(true);
+        checkSearchIndex();
     }
 
     @Test
@@ -344,7 +346,7 @@ public class TestSearch extends JavadocTester {
                     "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg2\u7684\u6e90\u6587\u4ef6...\n",
                     "\u6b63\u5728\u52a0\u8f7d\u7a0b\u5e8f\u5305pkg3\u7684\u6e90\u6587\u4ef6...\n");
             checkSearchJS();
-            checkSearchIndex(true);
+            checkSearchIndex();
         } finally {
             Locale.setDefault(prev);
         }
@@ -375,7 +377,7 @@ public class TestSearch extends JavadocTester {
         checkOutput("index.html", true,
                 "<span>\u7a0b\u5e8f\u5305</span>");
         checkSearchJS();
-        checkSearchIndex(true);
+        checkSearchIndex();
     }
 
     void checkDocLintErrors() {
@@ -387,12 +389,8 @@ public class TestSearch extends JavadocTester {
                 "A test field. Testing only white-spaces in index tag text {@index       }.");
     }
 
-    void checkSearchOutput(boolean expectedOutput) {
-        checkSearchOutput("index.html", expectedOutput, true);
-    }
-
-    void checkSearchIndex(boolean expectedOutput) {
-        checkOutput("member-search-index.js", expectedOutput,
+    void checkSearchIndex() {
+        checkOutput("member-search-index.js", true,
                 """
                     {"p":"pkg","c":"AnotherClass","l":"AnotherClass()","u":"%3Cinit%3E()"}""",
                 """
@@ -401,7 +399,7 @@ public class TestSearch extends JavadocTester {
                     {"p":"pkg2","c":"TestError","l":"TestError()","u":"%3Cinit%3E()"}""",
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method(byte[],int,java.lang.String)"}""");
-        checkOutput("member-search-index.js", !expectedOutput,
+        checkOutput("member-search-index.js", false,
                 """
                     {"p":"pkg","c":"AnotherClass","l":"method(RegClass)","u":"method-pkg1.RegClass-"}""",
                 """
@@ -412,11 +410,11 @@ public class TestSearch extends JavadocTester {
                     {"p":"pkg","c":"AnotherClass","l":"method(byte[], int, String)","u":"method-byte:A-int-java.lang.String-"}""");
     }
 
-    void checkSearchOutput(boolean expectedOutput, boolean moduleDirectoriesVar) {
-        checkSearchOutput("index.html", expectedOutput, moduleDirectoriesVar);
+    void checkSearchOutput(boolean expectedOutput) {
+        checkSearchOutput("index.html", expectedOutput);
     }
 
-    void checkSearchOutput(String fileName, boolean expectedOutput, boolean moduleDirectoriesVar) {
+    void checkSearchOutput(String fileName, boolean expectedOutput) {
         // Test for search related markup
         checkOutput(fileName, expectedOutput,
                 """
@@ -440,11 +438,9 @@ public class TestSearch extends JavadocTester {
                 "<div class=\"flex-box\">");
     }
 
-    void checkSingleIndex(boolean expectedOutput, boolean html5) {
-        String html_span_see_span = html5 ? "html%3Cspan%3Esee%3C/span%3E" : "html-span-see-/span-";
-
+    void checkSingleIndex() {
         // Test for search tags markup in index file.
-        checkOutput("index-all.html", expectedOutput,
+        checkOutput("index-all.html", true,
                 """
                     <dt><a href="pkg/package-summary.html#phrasewithspaces" class="search-tag-link">\
                     phrase with spaces</a> - Search tag in package pkg</dt>""",
@@ -491,7 +487,7 @@ public class TestSearch extends JavadocTester {
                     test%7D" class="search-tag-link">nested {@index nested_tag_test}</a> - Search ta\
                     g in pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE</dt>""",
                 """
-                    <dt><a href="pkg/AnotherClass.ModalExclusionType.html#""" + html_span_see_span + """
+                    <dt><a href="pkg/AnotherClass.ModalExclusionType.html#html%3Cspan%3Esee%3C/span%3E\
                     " class="search-tag-link">html &lt;span&gt; see &lt;/span&gt;</a> - Search tag i\
                     n pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE</dt>""",
                 """
@@ -829,5 +825,45 @@ public class TestSearch extends JavadocTester {
                     <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interface\
                     s</a><span class="vertical-separator">|</span><a href="allpackages-index.htm\
                     l">All&nbsp;Packages</a>""");
+    }
+
+    void checkSearchTagIndex() {
+        checkOutput("tag-search-index.js", true,
+                """
+                    {"l":"html <span> see </span>","h":"pkg.AnotherClass.ModalExclusionType.APPLICATION_EXCLUDE","u":"pkg/AnotherClass.ModalExclusionType.html#html<span>see</span>"}""",
+                """
+                    {"l":"nested {@index nested_tag_test}","h":"pkg.AnotherClass.ModalExclusionType.NO_EXCLUDE","u":"pkg/AnotherClass.ModalExclusionType.html#nested{@indexnested_tag_test}"}""",
+                """
+                    {"l":"phrase with spaces","h":"package pkg","u":"pkg/package-summary.html#phrasewithspaces"},{"l":"pkg","h":"package pkg","u":"pkg/package-summary.html#pkg"}""",
+                """
+                    {"l":"quoted","h":"pkg.AnotherClass.CONSTANT1","d":"no-space","u":"pkg/AnotherClass.html#quoted"}""",
+                """
+                    {"l":"r","h":"package pkg","u":"pkg/package-summary.html#r"}""",
+                """
+                    {"l":"search phrase","h":"class pkg1.RegClass","d":"with description","u":"pkg1/RegClass.html#searchphrase"}""",
+                """
+                    {"l":"search phrase deprecated","h":"pkg2.TestEnum.ONE","u":"deprecated-list.html#searchphrasedeprecated"}""",
+                """
+                    {"l":"search phrase deprecated","h":"pkg2.TestEnum.ONE","u":"pkg2/TestEnum.html#searchphrasedeprecated"}""",
+                """
+                    {"l":"search phrase with desc deprecated","h":"annotation interface pkg2.TestAnnotationType","d":"description for phrase deprecated","u":"deprecated-list.html#searchphrasewithdescdeprecated"}""",
+                """
+                    {"l":"search phrase with desc deprecated","h":"annotation interface pkg2.TestAnnotationType","d":"description for phrase deprecated","u":"pkg2/TestAnnotationType.html#searchphrasewithdescdeprecated"}""",
+                """
+                    {"l":"SearchTagDeprecatedClass","h":"class pkg2.TestClass","u":"deprecated-list.html#SearchTagDeprecatedClass"}""",
+                """
+                    {"l":"SearchTagDeprecatedClass","h":"class pkg2.TestClass","u":"pkg2/TestClass.html#SearchTagDeprecatedClass"}""",
+                """
+                    {"l":"SearchTagDeprecatedMethod","h":"pkg2.TestError.TestError()","d":"with description","u":"deprecated-list.html#SearchTagDeprecatedMethod"}""",
+                """
+                    {"l":"SearchTagDeprecatedMethod","h":"pkg2.TestError.TestError()","d":"with description","u":"pkg2/TestError.html#SearchTagDeprecatedMethod"}""",
+                """
+                    {"l":"search term with spaces","h":"interface pkg.TestInterface","d":"description ","u":"pkg/TestInterface.html#searchtermwithspaces"}""",
+                """
+                    {"l":"SearchWordWithDescription","h":"pkg1.RegClass.CONSTANT_FIELD_1","d":"search word with desc","u":"pkg1/RegClass.html#SearchWordWithDescription"}""",
+                """
+                    {"l":"Serialized Form","h":"","u":"serialized-form.html"},{"l":"SingleWord","h":"package pkg","u":"pkg/package-summary.html#SingleWord"}""",
+                """
+                    {"l":"trailing","h":"pkg.AnotherClass.method(byte[], int, String)","d":"backslash\\\\","u":"pkg/AnotherClass.html#trailing"}]""");
     }
 }

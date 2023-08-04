@@ -232,7 +232,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   ThreadSafepointState **p_prev = &tss_head;
   for (; JavaThread *cur = jtiwh.next(); ) {
     ThreadSafepointState *cur_tss = cur->safepoint_state();
-    assert(cur_tss->get_next() == nullptr, "Must be nullptr");
+    assert(cur_tss->get_next() == nullptr, "Must be null");
     if (thread_not_running(cur_tss)) {
       --still_running;
     } else {
@@ -379,7 +379,7 @@ void SafepointSynchronize::begin() {
   if (SafepointTimeout) {
     // Set the limit time, so that it can be compared to see if this has taken
     // too long to complete.
-    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)SafepointTimeoutDelay * (NANOUNITS / MILLIUNITS);
+    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC);
     timeout_error_printed = false;
   }
 
@@ -547,6 +547,28 @@ public:
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
+  uint expected_num_workers() const {
+    uint workers = 0;
+
+    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
+      workers++;
+    }
+
+    if (InlineCacheBuffer::needs_update_inline_caches()) {
+      workers++;
+    }
+
+    if (_do_lazy_roots) {
+      workers++;
+    }
+
+    return MAX2<uint>(1, workers);
+  }
+
   void work(uint worker_id) {
     // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
@@ -601,9 +623,11 @@ void SafepointSynchronize::do_cleanup_tasks() {
   assert(heap != nullptr, "heap not initialized yet?");
   ParallelCleanupTask cleanup;
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
-  if (cleanup_workers != nullptr) {
+  const uint expected_num_workers = cleanup.expected_num_workers();
+  if (cleanup_workers != nullptr && expected_num_workers > 1) {
     // Parallel cleanup using GC provided thread pool.
-    cleanup_workers->run_task(&cleanup);
+    const uint num_workers = MIN2(expected_num_workers, cleanup_workers->active_workers());
+    cleanup_workers->run_task(&cleanup, num_workers);
   } else {
     // Serial cleanup using VMThread.
     cleanup.work(0);
@@ -795,7 +819,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
         os::naked_sleep(3000);
       }
     }
-    fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
+    fatal("Safepoint sync time longer than %.6f ms detected when executing %s.",
           SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }
 }

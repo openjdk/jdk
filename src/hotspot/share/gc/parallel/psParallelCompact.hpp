@@ -1141,7 +1141,7 @@ class PSParallelCompact : AllStatic {
 
   PSParallelCompact();
 
-  static void invoke(bool maximum_heap_compaction);
+  static bool invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 
   static void post_initialize();
@@ -1246,7 +1246,7 @@ class PSParallelCompact : AllStatic {
   static ParallelCompactData& summary_data() { return _summary_data; }
 
   // Reference Processing
-  static ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   static STWGCTimer* gc_timer() { return &_gc_timer; }
 

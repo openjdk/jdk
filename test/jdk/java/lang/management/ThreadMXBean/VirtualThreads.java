@@ -25,7 +25,6 @@
  * @test id=default
  * @bug 8284161 8290562 8303242
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
- * @enablePreview
  * @modules java.base/java.lang:+open java.management
  * @library /test/lib
  * @run junit/othervm VirtualThreads
@@ -34,7 +33,6 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @modules java.base/java.lang:+open java.management
  * @library /test/lib
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
@@ -78,8 +76,9 @@ public class VirtualThreads {
                     .map(ThreadInfo::getThreadId)
                     .collect(Collectors.toSet());
 
-            // current thread should be included
-            assertTrue(tids.contains(Thread.currentThread().threadId()));
+            // if current thread is a platform thread then it should be included
+            boolean expected = !Thread.currentThread().isVirtual();
+            assertEquals(expected, tids.contains(Thread.currentThread().threadId()));
 
             // virtual thread should not be included
             assertFalse(tids.contains(vthread.threadId()));
@@ -97,9 +96,10 @@ public class VirtualThreads {
         try {
             long[] tids = ManagementFactory.getThreadMXBean().getAllThreadIds();
 
-            // current thread should be included
+            // if current thread is a platform thread then it should be included
+            boolean expected = !Thread.currentThread().isVirtual();
             long currentTid = Thread.currentThread().threadId();
-            assertTrue(Arrays.stream(tids).anyMatch(tid -> tid == currentTid));
+            assertEquals(expected, Arrays.stream(tids).anyMatch(tid -> tid == currentTid));
 
             // virtual thread should not be included
             long vtid = vthread.threadId();
@@ -153,7 +153,11 @@ public class VirtualThreads {
             long tid1 = vthread.threadId();
             long[] tids = new long[] { tid0, tid1 };
             ThreadInfo[] infos = ManagementFactory.getThreadMXBean().getThreadInfo(tids, maxDepth);
-            assertEquals(tid0, infos[0].getThreadId());
+            if (Thread.currentThread().isVirtual()) {
+                assertNull(infos[0]);
+            } else {
+                assertEquals(tid0, infos[0].getThreadId());
+            }
             assertNull(infos[1]);
         } finally {
             LockSupport.unpark(vthread);
@@ -174,7 +178,11 @@ public class VirtualThreads {
             long[] tids = new long[] { tid0, tid1 };
             ThreadMXBean bean = ManagementFactory.getThreadMXBean();
             ThreadInfo[] infos = bean.getThreadInfo(tids, false, false, maxDepth);
-            assertEquals(tid0, infos[0].getThreadId());
+            if (Thread.currentThread().isVirtual()) {
+                assertNull(infos[0]);
+            } else {
+                assertEquals(tid0, infos[0].getThreadId());
+            }
             assertNull(infos[1]);
         } finally {
             LockSupport.unpark(vthread);

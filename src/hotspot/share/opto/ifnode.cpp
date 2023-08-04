@@ -42,7 +42,7 @@
 
 
 #ifndef PRODUCT
-extern int explicit_null_checks_elided;
+extern uint explicit_null_checks_elided;
 #endif
 
 //=============================================================================
@@ -91,9 +91,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // See that the merge point contains some constants
   Node *con1=nullptr;
   uint i4;
-  for( i4 = 1; i4 < phi->req(); i4++ ) {
+  RegionNode* phi_region = phi->region();
+  for (i4 = 1; i4 < phi->req(); i4++ ) {
     con1 = phi->in(i4);
-    if( !con1 ) return nullptr;    // Do not optimize partially collapsed merges
+    // Do not optimize partially collapsed merges
+    if (con1 == nullptr || phi_region->in(i4) == nullptr || igvn->type(phi_region->in(i4)) == Type::TOP) {
+      igvn->_worklist.push(iff);
+      return nullptr;
+    }
     if( con1->is_Con() ) break; // Found a constant
     // Also allow null-vs-not-null checks
     const TypePtr *tp = igvn->type(con1)->isa_ptr();
@@ -115,7 +120,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // No intervening control, like a simple Call
   Node* r = iff->in(0);
-  if (!r->is_Region() || r->is_Loop() || phi->region() != r || r->as_Region()->is_copy()) {
+  if (!r->is_Region() || r->is_Loop() || phi_region != r || r->as_Region()->is_copy()) {
     return nullptr;
   }
 
@@ -242,9 +247,8 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     if (phi->in(ii) == con1) {
       req_c++;
     }
-    Node* proj = PhaseIdealLoop::find_predicate(r->in(ii));
-    if (proj != nullptr) {
-      // Bail out if splitting through a region with a predicate input (could
+    if (Node::may_be_loop_entry(r->in(ii))) {
+      // Bail out if splitting through a region with a Parse Predicate input (could
       // also be a loop header before loop opts creates a LoopNode for it).
       return nullptr;
     }
@@ -1969,3 +1973,39 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Replace dominated IfNode
   return dominated_by(prev_dom, igvn);
 }
+
+ParsePredicateNode::ParsePredicateNode(Node* control, Node* bol, Deoptimization::DeoptReason deopt_reason)
+    : IfNode(control, bol, PROB_MAX, COUNT_UNKNOWN),
+      _deopt_reason(deopt_reason) {
+  init_class_id(Class_ParsePredicate);
+  assert(bol->Opcode() == Op_Conv2B && bol->in(1) != nullptr && bol->in(1)->is_Opaque1(), "wrong boolean input");
+#ifdef ASSERT
+  switch (deopt_reason) {
+    case Deoptimization::Reason_predicate:
+    case Deoptimization::Reason_profile_predicate:
+    case Deoptimization::Reason_loop_limit_check:
+      break;
+    default:
+      assert(false, "unsupported deoptimization reason for Parse Predicate");
+  }
+#endif // ASSERT
+}
+
+#ifndef PRODUCT
+void ParsePredicateNode::dump_spec(outputStream* st) const {
+  st->print(" #");
+  switch (_deopt_reason) {
+    case Deoptimization::DeoptReason::Reason_predicate:
+      st->print("Loop ");
+      break;
+    case Deoptimization::DeoptReason::Reason_profile_predicate:
+      st->print("Profiled_Loop ");
+      break;
+    case Deoptimization::DeoptReason::Reason_loop_limit_check:
+      st->print("Loop_Limit_Check ");
+      break;
+    default:
+      fatal("unknown kind");
+  }
+}
+#endif // NOT PRODUCT

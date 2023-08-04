@@ -145,6 +145,8 @@
 
 #define JAVA_21_VERSION                   65
 
+#define JAVA_22_VERSION                   66
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -452,8 +454,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         // fall through
       case JVM_CONSTANT_InterfaceMethodref: {
         if (!_need_verify) break;
-        const int klass_ref_index = cp->klass_ref_index_at(index);
-        const int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
+        const int klass_ref_index = cp->uncached_klass_ref_index_at(index);
+        const int name_and_type_ref_index = cp->uncached_name_and_type_ref_index_at(index);
         check_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index, CHECK);
@@ -655,7 +657,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_Dynamic: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -678,7 +680,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -729,7 +731,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial: {
             const int name_and_type_ref_index =
-              cp->name_and_type_ref_index_at(ref_index);
+              cp->uncached_name_and_type_ref_index_at(ref_index);
             const int name_ref_index =
               cp->name_ref_index_at(name_and_type_ref_index);
             const Symbol* const name = cp->symbol_at(name_ref_index);
@@ -1978,27 +1980,27 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
 
 void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_CallerSensitive))
-    m->set_caller_sensitive(true);
+    m->set_caller_sensitive();
   if (has_annotation(_method_ForceInline))
-    m->set_force_inline(true);
+    m->set_force_inline();
   if (has_annotation(_method_DontInline))
-    m->set_dont_inline(true);
+    m->set_dont_inline();
   if (has_annotation(_method_ChangesCurrentThread))
-    m->set_changes_current_thread(true);
+    m->set_changes_current_thread();
   if (has_annotation(_method_JvmtiMountTransition))
-    m->set_jvmti_mount_transition(true);
+    m->set_jvmti_mount_transition();
   if (has_annotation(_method_InjectedProfile))
-    m->set_has_injected_profile(true);
+    m->set_has_injected_profile();
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
-    m->set_hidden(true);
+    m->set_is_hidden();
   if (has_annotation(_method_Scoped))
-    m->set_scoped(true);
+    m->set_scoped();
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
-    m->set_intrinsic_candidate(true);
+    m->set_intrinsic_candidate();
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
-    m->set_has_reserved_stack_access(true);
+    m->set_has_reserved_stack_access();
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
@@ -2672,7 +2674,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-  m->compute_from_signature(cp->symbol_at(signature_index));
+  m->constMethod()->compute_from_signature(cp->symbol_at(signature_index), access_flags.is_static());
   assert(args_size < 0 || args_size == m->size_of_parameters(), "");
 
   // Fill in code attribute information
@@ -2739,7 +2741,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     parsed_annotations.apply_to(methodHandle(THREAD, m));
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
-    m->set_hidden(true);
+    m->set_is_hidden();
   }
 
   // Copy annotations
@@ -4070,7 +4072,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const Klass* const super = ik->super();
+  const InstanceKlass* const super = ik->java_super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -4349,7 +4351,7 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const Klass* k = this_klass->super();
+      const InstanceKlass* k = this_klass->java_super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
@@ -4381,11 +4383,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->super();
+          k = super_m->method_holder()->java_super();
           continue;
         }
 
-        k = k->super();
+        k = k->java_super();
       }
     }
   }
@@ -4959,7 +4961,7 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  const char* const bytes = (const char* const)signature->bytes();
+  const char* const bytes = (const char*)signature->bytes();
   const unsigned int length = signature->utf8_length();
   const char* const p = skip_over_field_signature(bytes, false, length, CHECK);
 
@@ -5670,7 +5672,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   parse_constant_pool(stream, cp, _orig_cp_size, CHECK);
 
-  assert(cp_size == (const u2)cp->length(), "invariant");
+  assert(cp_size == (u2)cp->length(), "invariant");
 
   // ACCESS FLAGS
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len

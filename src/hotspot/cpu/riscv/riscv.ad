@@ -705,11 +705,6 @@ reg_class method_reg(
     R31, R31_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for java thread register
 reg_class java_thread_reg(
     R23, R23_H
@@ -830,7 +825,8 @@ reg_class double_reg(
     F31, F31_H
 );
 
-// Class for all RVV vector registers
+// Class for RVV vector registers
+// Note: v0, v30 and v31 are used as mask registers.
 reg_class vectora_reg(
     V1, V1_H, V1_J, V1_K,
     V2, V2_H, V2_J, V2_K,
@@ -860,9 +856,7 @@ reg_class vectora_reg(
     V26, V26_H, V26_J, V26_K,
     V27, V27_H, V27_J, V27_K,
     V28, V28_H, V28_J, V28_K,
-    V29, V29_H, V29_J, V29_K,
-    V30, V30_H, V30_J, V30_K,
-    V31, V31_H, V31_J, V31_K
+    V29, V29_H, V29_J, V29_K
 );
 
 // Class for 64 bit register f0
@@ -910,8 +904,55 @@ reg_class v5_reg(
     V5, V5_H, V5_J, V5_K
 );
 
+// class for vector register v6
+reg_class v6_reg(
+    V6, V6_H, V6_J, V6_K
+);
+
+// class for vector register v7
+reg_class v7_reg(
+    V7, V7_H, V7_J, V7_K
+);
+
+// class for vector register v8
+reg_class v8_reg(
+    V8, V8_H, V8_J, V8_K
+);
+
+// class for vector register v9
+reg_class v9_reg(
+    V9, V9_H, V9_J, V9_K
+);
+
+// class for vector register v10
+reg_class v10_reg(
+    V10, V10_H, V10_J, V10_K
+);
+
+// class for vector register v11
+reg_class v11_reg(
+    V11, V11_H, V11_J, V11_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
+
+// Class for RVV v0 mask register
+// https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#53-vector-masking
+// The mask value used to control execution of a masked vector
+// instruction is always supplied by vector register v0.
+reg_class vmask_reg_v0 (
+    V0
+);
+
+// Class for RVV mask registers
+// We need two more vmask registers to do the vector mask logical ops,
+// so define v30, v31 as mask register too.
+reg_class vmask_reg (
+    V0,
+    V30,
+    V31
+);
 %}
 
 //----------DEFINITION BLOCK---------------------------------------------------
@@ -1061,15 +1102,15 @@ void reg_mask_init() {
   // x27 is not allocatable when compressed oops is on
   if (UseCompressedOops) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x27->as_VMReg()));
   }
 
   // x8 is not allocatable when PreserveFramePointer is on
   if (PreserveFramePointer) {
     _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
-    _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-    _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+    _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
+    _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(x8->as_VMReg()));
   }
 }
 
@@ -1522,7 +1563,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   assert(src_lo != OptoReg::Bad && dst_lo != OptoReg::Bad, "must move at least 1 register");
 
-  if (src_hi != OptoReg::Bad) {
+  if (src_hi != OptoReg::Bad && !bottom_type()->isa_vectmask()) {
     assert((src_lo & 1) == 0 && src_lo + 1 == src_hi &&
            (dst_lo & 1) == 0 && dst_lo + 1 == dst_hi,
            "expected aligned-adjacent pairs");
@@ -1554,6 +1595,25 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
+        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+      } else {
+        ShouldNotReachHere();
+      }
+    } else if (bottom_type()->isa_vectmask() && cbuf) {
+      C2_MacroAssembler _masm(cbuf);
+      int vmask_size_in_bytes = Matcher::scalable_predicate_reg_slots() * 32 / 8;
+      if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
+        // stack to stack
+        __ spill_copy_vmask_stack_to_stack(src_offset, dst_offset,
+                                           vmask_size_in_bytes);
+      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
+        // vmask to stack
+        __ spill_vmask(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
+      } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
+        // stack to vmask
+        __ unspill_vmask(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
+      } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
+        // vmask to vmask
         __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
@@ -1642,7 +1702,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     } else {
       st->print("%s", Matcher::regName[dst_lo]);
     }
-    if (bottom_type()->isa_vect() != NULL) {
+    if (bottom_type()->isa_vect() && !bottom_type()->isa_vectmask()) {
       int vsize = 0;
       if (ideal_reg() == Op_VecA) {
         vsize = Matcher::scalable_vector_reg_size(T_BYTE) * 8;
@@ -1650,6 +1710,10 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
       st->print("\t# vector spill size = %d", vsize);
+    } else if (ideal_reg() == Op_RegVectMask) {
+      assert(Matcher::supports_scalable_vector(), "bad register type for spill");
+      int vsize = Matcher::scalable_predicate_reg_slots() * 32;
+      st->print("\t# vmask spill size = %d", vsize);
     } else {
       st->print("\t# spill size = %d", is64 ? 64 : 32);
     }
@@ -1808,7 +1872,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -1848,38 +1912,16 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
-  return match_rule_supported_vector(opcode, vlen, bt);
-}
-
-// Identify extra cases that we might want to provide match rules for vector nodes and
-// other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
-  if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
-    return false;
-  }
-
-  return op_vec_supported(opcode);
-}
-
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return NULL;
+  return &_VMASK_REG_mask;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return NULL;
+  return new TypeVectMask(elemTy, length);
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1912,7 +1954,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
@@ -1927,15 +1969,18 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
-  if (bt == T_BOOLEAN) {
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
     // To support vector api load/store mask.
     size = 2;
   }
@@ -1943,12 +1988,12 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   assert(MaxVectorSize >= len, "");
   if (UseRVV) {
     return Op_VecA;
@@ -1958,7 +2003,7 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -2131,7 +2176,7 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
 encode %{
   // BEGIN Non-volatile memory access
 
-  enc_class riscv_enc_li_imm(iRegIorL dst, immIorL src) %{
+  enc_class riscv_enc_mov_imm(iRegIorL dst, immIorL src) %{
     C2_MacroAssembler _masm(&cbuf);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
@@ -2386,7 +2431,7 @@ encode %{
     }
   %}
 
-  // using the cr register as the bool result: 0 for success; others failed.
+  // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_lock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2396,7 +2441,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, t0);
 
@@ -2406,15 +2451,18 @@ encode %{
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       __ load_klass(flag, oop);
       __ lwu(flag, Address(flag, Klass::access_flags_offset()));
-      __ andi(flag, flag, JVM_ACC_IS_VALUE_BASED_CLASS, tmp /* tmp */);
+      __ test_bit(flag, flag, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS), tmp /* tmp */);
       __ bnez(flag, cont, true /* is_far */);
     }
 
     // Check for existing monitor
-    __ andi(t0, disp_hdr, markWord::monitor_value);
+    __ test_bit(t0, disp_hdr, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
       // Set tmp to be (markWord of object | UNLOCK_VALUE).
       __ ori(tmp, disp_hdr, markWord::unlocked_value);
 
@@ -2445,11 +2493,19 @@ encode %{
       __ andr(tmp/*==0?*/, disp_hdr, tmp);
       __ sd(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
       __ mv(flag, tmp); // we can use the value of tmp as the result here
+      __ j(cont);
     } else {
-      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
-    }
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
 
-    __ j(cont);
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow-path
+      __ j(no_count);
+    }
 
     // Handle existing monitor.
     __ bind(object_has_monitor);
@@ -2457,16 +2513,18 @@ encode %{
     // otherwise m->owner may contain a thread or a stack address.
     //
     // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes() - markWord::monitor_value));
+    __ add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
     __ cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/xthread, Assembler::int64, Assembler::aq,
              Assembler::rl, /*result*/flag); // cas succeeds if flag == zr(expected)
 
-    // Store a non-null value into the box to avoid looking like a re-entrant
-    // lock. The fast-path monitor unlock code checks for
-    // markWord::monitor_value so use markWord::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
-    __ mv(tmp, (address)markWord::unused_mark().value());
-    __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    if (LockingMode != LM_LIGHTWEIGHT) {
+      // Store a non-null value into the box to avoid looking like a re-entrant
+      // lock. The fast-path monitor unlock code checks for
+      // markWord::monitor_value so use markWord::unused_mark which has the
+      // relevant bit set, and also matches ObjectSynchronizer::slow_enter.
+      __ mv(tmp, (address)markWord::unused_mark().value());
+      __ sd(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    }
 
     __ beqz(flag, cont); // CAS success means locking succeeded
 
@@ -2474,18 +2532,20 @@ encode %{
 
     // Recursive lock case
     __ mv(flag, zr);
-    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1, t0, tmp);
+    __ increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, t0, tmp);
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
   %}
 
-  // using cr flag to indicate the fast_unlock result: 0 for success; others failed.
+  // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   enc_class riscv_enc_fast_unlock(iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2) %{
     C2_MacroAssembler _masm(&cbuf);
     Register flag = t1;
@@ -2495,11 +2555,11 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label no_count;
+    Label count, no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr, flag);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_LEGACY) {
       // Find the lock address and load the displaced header from the stack.
       __ ld(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
@@ -2510,10 +2570,13 @@ encode %{
 
     // Handle existing monitor.
     __ ld(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ andi(t0, tmp, markWord::monitor_value);
+    __ test_bit(t0, tmp, exact_log2(markWord::monitor_value));
     __ bnez(t0, object_has_monitor);
 
-    if (!UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
+      __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(cont);
+    } else if (LockingMode == LM_LEGACY) {
       // Check if it is still a light weight lock, this is true if we
       // see the stack address of the basicLock in the markWord of the
       // object.
@@ -2521,10 +2584,19 @@ encode %{
       __ cmpxchg(/*memory address*/oop, /*expected value*/box, /*new value*/disp_hdr, Assembler::int64, Assembler::relaxed,
                  Assembler::rl, /*result*/tmp);
       __ xorr(flag, box, tmp); // box == tmp if cas succeeds
+      __ j(cont);
     } else {
+      assert(LockingMode == LM_LIGHTWEIGHT, "");
+      Label slow;
+      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
+
+      // Indicate success on completion.
+      __ mv(flag, zr);
+      __ j(count);
+      __ bind(slow);
       __ mv(flag, 1); // Set non-zero flag to indicate 'failure' -> take slow path
+      __ j(no_count);
     }
-    __ j(cont);
 
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
@@ -2532,31 +2604,45 @@ encode %{
     __ bind(object_has_monitor);
     STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
     __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // If the owner is anonymous, we need to fix it -- in an outline stub.
+      Register tmp2 = disp_hdr;
+      __ ld(tmp2, Address(tmp, ObjectMonitor::owner_offset()));
+      __ test_bit(t0, tmp2, exact_log2(ObjectMonitor::ANONYMOUS_OWNER));
+      C2HandleAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2HandleAnonOMOwnerStub(tmp, tmp2);
+      Compile::current()->output()->add_stub(stub);
+      __ bnez(t0, stub->entry(), /* is_far */ true);
+      __ bind(stub->continuation());
+    }
+
+    __ ld(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
 
     Label notRecursive;
     __ beqz(disp_hdr, notRecursive); // Will be 0 if not recursive.
 
     // Recursive lock
     __ addi(disp_hdr, disp_hdr, -1);
-    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ sd(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
     __ mv(flag, zr);
     __ j(cont);
 
     __ bind(notRecursive);
-    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
+    __ ld(flag, Address(tmp, ObjectMonitor::EntryList_offset()));
+    __ ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
     __ orr(flag, flag, disp_hdr); // Will be 0 if both are 0.
     __ bnez(flag, cont);
     // need a release store here
-    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+    __ la(tmp, Address(tmp, ObjectMonitor::owner_offset()));
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
     __ sd(zr, Address(tmp)); // set unowned
 
     __ bind(cont);
-
+    // zero flag indicates success
+    // non-zero flag indicates failure
     __ bnez(flag, no_count);
 
+    __ bind(count);
     __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
     __ bind(no_count);
@@ -3446,16 +3532,6 @@ operand iRegNNoSp()
   interface(REG_INTER);
 %}
 
-// heap base register -- used for encoding immN0
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R10 only
 operand iRegL_R10()
 %{
@@ -3547,6 +3623,88 @@ operand vReg_V5()
   constraint(ALLOC_IN_RC(v5_reg));
   match(VecA);
   match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V6()
+%{
+  constraint(ALLOC_IN_RC(v6_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V7()
+%{
+  constraint(ALLOC_IN_RC(v7_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V8()
+%{
+  constraint(ALLOC_IN_RC(v8_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V9()
+%{
+  constraint(ALLOC_IN_RC(v9_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V10()
+%{
+  constraint(ALLOC_IN_RC(v10_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V11()
+%{
+  constraint(ALLOC_IN_RC(v11_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vRegMask()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg));
+  match(RegVectMask);
+  match(vRegMask_V0);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// The mask value used to control execution of a masked
+// vector instruction is always supplied by vector register v0.
+operand vRegMask_V0()
+%{
+  constraint(ALLOC_IN_RC(vmask_reg_v0));
+  match(RegVectMask);
+  match(vRegMask);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -4807,9 +4965,9 @@ instruct loadConI(iRegINoSp dst, immI src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# int, #@loadConI" %}
+  format %{ "mv $dst, $src\t# int, #@loadConI" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -4820,9 +4978,9 @@ instruct loadConL(iRegLNoSp dst, immL src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# long, #@loadConL" %}
+  format %{ "mv $dst, $src\t# long, #@loadConL" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -5176,15 +5334,15 @@ instruct storeN(iRegN src, memory mem)
   ins_pipe(istore_reg_mem);
 %}
 
-instruct storeImmN0(iRegIHeapbase heapbase, immN0 zero, memory mem)
+instruct storeImmN0(immN0 zero, memory mem)
 %{
   match(Set mem (StoreN mem zero));
 
   ins_cost(STORE_COST);
-  format %{ "sw  rheapbase, $mem\t# compressed ptr (rheapbase==0), #@storeImmN0" %}
+  format %{ "sw  zr, $mem\t# compressed ptr, #@storeImmN0" %}
 
   ins_encode %{
-    __ sw(as_Register($heapbase$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    __ sw(zr, Address(as_Register($mem$$base), $mem$$disp));
   %}
 
   ins_pipe(istore_reg_mem);
@@ -7267,7 +7425,7 @@ instruct maxF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "maxF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, false /* is_min */);
   %}
@@ -7283,7 +7441,7 @@ instruct minF_reg_reg(fRegF dst, fRegF src1, fRegF src2, rFlagsReg cr) %{
   format %{ "minF $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  false /* is_double */, true /* is_min */);
   %}
@@ -7299,7 +7457,7 @@ instruct maxD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "maxD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, false /* is_min */);
   %}
@@ -7315,7 +7473,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
   format %{ "minD $dst, $src1, $src2" %}
 
   ins_encode %{
-    __ minmax_FD(as_FloatRegister($dst$$reg),
+    __ minmax_fp(as_FloatRegister($dst$$reg),
                  as_FloatRegister($src1$$reg), as_FloatRegister($src2$$reg),
                  true /* is_double */, true /* is_min */);
   %}
@@ -7506,7 +7664,7 @@ instruct absD_reg(fRegD dst, fRegD src) %{
 %}
 
 instruct sqrtF_reg(fRegF dst, fRegF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
 
   ins_cost(FSQRT_COST);
   format %{ "fsqrt.s  $dst, $src\t#@sqrtF_reg" %}
@@ -8061,7 +8219,7 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_cost(ALU_COST);
   format %{ "addw  $dst, $src, zr\t#@convI2L_reg_reg" %}
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8073,7 +8231,7 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   format %{ "addw  $dst, $src, zr\t#@convL2I_reg" %}
 
   ins_encode %{
-    __ addw(as_Register($dst$$reg), as_Register($src$$reg), zr);
+    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -9842,7 +10000,7 @@ instruct string_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareU" %}
@@ -9860,7 +10018,7 @@ instruct string_compareL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R
                          iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareL" %}
@@ -9877,7 +10035,7 @@ instruct string_compareUL(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           iRegI_R10 result, iRegP_R28 tmp1, iRegL_R29 tmp2, iRegL_R30 tmp3, rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::UL);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{"String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareUL" %}
@@ -9895,7 +10053,7 @@ instruct string_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_
                           rFlagsReg cr)
 %{
   predicate(!UseRVV && ((StrCompNode *)n)->encoding() == StrIntrinsicNode::LU);
-  match(Set result (StrComp(Binary str1 cnt1)(Binary str2 cnt2)));
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL tmp3, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare $str1, $cnt1, $str2, $cnt2 -> $result\t#@string_compareLU" %}
@@ -10044,7 +10202,7 @@ instruct stringU_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringUTF16 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,
@@ -10063,7 +10221,7 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
   effect(USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP_DEF result,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
 
-  format %{ "StringUTF16 IndexOf char[] $str1,$cnt1,$ch -> $result" %}
+  format %{ "StringLatin1 IndexOf char[] $str1, $cnt1, $ch -> $result" %}
   ins_encode %{
     __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register,
                            $result$$Register, $tmp1$$Register, $tmp2$$Register,

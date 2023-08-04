@@ -33,6 +33,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
 import java.util.*;
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 
@@ -48,7 +49,7 @@ class WindowsFileSystemProvider
     private final WindowsFileSystem theFileSystem;
 
     public WindowsFileSystemProvider() {
-        theFileSystem = new WindowsFileSystem(this);
+        theFileSystem = new WindowsFileSystem(this, StaticProperty.userDir());
     }
 
     WindowsFileSystem theFileSystem() {
@@ -593,9 +594,9 @@ class WindowsFileSystemProvider
 
         // create the link
         try {
-            CreateSymbolicLink(link.getPathForWin32Calls(),
-                               WindowsPath.addPrefixIfNeeded(target.toString()),
-                               flags);
+            WindowsLinkSupport.createSymbolicLink(link.getPathForWin32Calls(),
+                                                  WindowsPath.addPrefixIfNeeded(target.toString()),
+                                                  flags);
         } catch (WindowsException x) {
             if (x.lastError() == ERROR_INVALID_REPARSE_DATA) {
                 x.rethrowAsIOException(link, target);

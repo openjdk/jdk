@@ -72,14 +72,12 @@ inline void G1CardTable::mark_range_dirty(size_t start_card_index, size_t num_ca
   }
 }
 
-inline void G1CardTable::change_dirty_cards_to(size_t start_card_index, size_t num_cards, CardValue which) {
-  CardValue* start = &_byte_map[start_card_index];
-  CardValue* const end = start + num_cards;
-  while (start < end) {
-    CardValue value = *start;
+inline void G1CardTable::change_dirty_cards_to(CardValue* start_card, CardValue* end_card, CardValue which) {
+  for (CardValue* i_card = start_card; i_card < end_card; ++i_card) {
+    CardValue value = *i_card;
     assert(value == dirty_card_val(),
-           "Must have been dirty %d start " PTR_FORMAT " " PTR_FORMAT, value, p2i(start), p2i(end));
-    *start++ = which;
+           "Must have been dirty %d start " PTR_FORMAT " " PTR_FORMAT, value, p2i(start_card), p2i(end_card));
+    *i_card = which;
   }
 }
 

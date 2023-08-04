@@ -322,7 +322,7 @@ Metachunk* VirtualSpaceNode::allocate_root_chunk() {
     Metachunk* c = rca->alloc_root_chunk_header(this);
     assert(c->base() == loc && c->vsnode() == this &&
            c->is_free(), "Sanity");
-    DEBUG_ONLY(c->verify();)
+    SOMETIMES(c->verify();)
 
     UL2(debug, "new root chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
     return c;
@@ -338,7 +338,7 @@ void VirtualSpaceNode::split(chunklevel_t target_level, Metachunk* c, FreeChunkL
   assert_lock_strong(Metaspace_lock);
   // Get the area associated with this chunk and let it handle the splitting
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   rca->split(target_level, c, freelists);
 }
 
@@ -358,7 +358,7 @@ Metachunk* VirtualSpaceNode::merge(Metachunk* c, FreeChunkListVector* freelists)
   // Get the rca associated with this chunk and let it handle the merging
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
   Metachunk* c2 = rca->merge(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   return c2;
 }
 
@@ -379,7 +379,7 @@ bool VirtualSpaceNode::attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* 
   RootChunkArea* rca = _root_chunk_area_lut.get_area_by_address(c->base());
 
   bool rc = rca->attempt_enlarge_chunk(c, freelists);
-  DEBUG_ONLY(rca->verify_area_is_ideally_merged();)
+  SOMETIMES(rca->verify_area_is_ideally_merged();)
   if (rc) {
     InternalStats::inc_num_chunks_enlarged();
   }
@@ -415,7 +415,7 @@ void VirtualSpaceNode::verify() const {
   verify_locked();
 }
 
-volatile int test_access = 0;
+volatile uint test_access = 0;
 
 // Verify counters and basic structure. Slow mode: verify all chunks in depth
 void VirtualSpaceNode::verify_locked() const {
@@ -436,7 +436,7 @@ void VirtualSpaceNode::verify_locked() const {
   SOMETIMES(
     for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
       if (_commit_mask.is_committed_address(p)) {
-        test_access += *(int*)p;
+        test_access += *(uint*)p;
       }
     }
   )

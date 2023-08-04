@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,10 @@ public final class JstatdTest {
 
         // Verify output from jstatd
         OutputAnalyzer output = jstatdThread.getOutput();
-        output.shouldBeEmptyIgnoreVMWarnings();
+        List<String> stdout = output.asLinesWithoutVMWarnings();
+        output.reportDiagnosticSummary();
+        assertEquals(stdout.size(), 1, "Output should contain one line");
+        assertTrue(stdout.get(0).startsWith("jstatd started"), "List should start with 'jstatd started'");
         assertNotEquals(output.getExitValue(), 0,
                 "jstatd process exited with unexpected exit code");
     }

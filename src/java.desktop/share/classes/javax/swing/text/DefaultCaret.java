@@ -582,10 +582,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
         if ((component != null) && component.isEnabled() &&
                                    component.isRequestFocusEnabled()) {
             if (inWindow) {
-                component.requestFocusInWindow();
+                component.requestFocusInWindow(FocusEvent.Cause.MOUSE_EVENT);
             }
             else {
-                component.requestFocus();
+                component.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -35,7 +36,8 @@ import java.util.function.Function;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
@@ -52,116 +54,46 @@ public class Util {
     private Util() {
     }
 
-    public static String arrayOf(CharSequence s) {
-        return "[" + s;
-    }
-
-    public static BitSet findParams(String type) {
-        BitSet bs = new BitSet();
-        if (type.charAt(0) != '(')
-            throw new IllegalArgumentException();
-        loop: for (int i = 1; i < type.length(); ++i) {
-            switch (type.charAt(i)) {
-                case '[':
-                    bs.set(i);
-                    while (type.charAt(++i) == '[')
-                        ;
-                    if (type.charAt(i) == 'L') {
-                        while (type.charAt(++i) != ';')
-                            ;
-                    }
-                    break;
-                case ')':
-                    break loop;
-                default:
-                    bs.set(i);
-                    if (type.charAt(i) == 'L') {
-                        while (type.charAt(++i) != ';')
-                            ;
-                    }
-            }
-        }
-        return bs;
-    }
-
-    @SuppressWarnings("fallthrough")
-    public static int parameterSlots(String type) {
-        BitSet bs = findParams(type);
+    public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < mDesc.parameterCount(); i++) {
+            count += slotSize(mDesc.parameterType(i));
         }
         return count;
     }
 
-    public static int[] parseParameterSlots(int flags, String type) {
-        BitSet bs = findParams(type);
-        int[] result = new int[bs.cardinality()];
-        int index = 0;
+    public static int[] parseParameterSlots(int flags, MethodTypeDesc mDesc) {
+        int[] result = new int[mDesc.parameterCount()];
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-            result[index++] = count;
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < result.length; i++) {
+            result[i] = count;
+            count += slotSize(mDesc.parameterType(i));
         }
         return result;
     }
 
-    public static int maxLocals(int flags, String type) {
-        BitSet bs = findParams(type);
+    public static int maxLocals(int flags, MethodTypeDesc mDesc) {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1))
-            count += (type.charAt(i) == 'J' || type.charAt(i) == 'D') ? 2 : 1;
+        for (int i = 0; i < mDesc.parameterCount(); i++) {
+            count += slotSize(mDesc.parameterType(i));
+        }
         return count;
     }
 
-    public static String toClassString(String desc) {
-        //TODO: this doesn't look right L ... ;
-        return desc.replace('/', '.');
-    }
-
-    public static Iterator<String> parameterTypes(String s) {
-        //TODO: gracefully non-method types
-        return new Iterator<>() {
-            int ch = 1;
-
-            @Override
-            public boolean hasNext() {
-                return s.charAt(ch) != ')';
-            }
-
-            @Override
-            public String next() {
-                char curr = s.charAt(ch);
-                switch (curr) {
-                    case 'C', 'B', 'S', 'I', 'J', 'F', 'D', 'Z':
-                        ch++;
-                        return String.valueOf(curr);
-                    case '[':
-                        ch++;
-                        return "[" + next();
-                    case 'L': {
-                        int start = ch;
-                        while (s.charAt(++ch) != ';') { }
-                        ++ch;
-                        return s.substring(start, ch);
-                    }
-                    default:
-                        throw new AssertionError("cannot parse string: " + s);
-                }
-            }
-        };
-    }
-
-    public static String returnDescriptor(String s) {
-        return s.substring(s.indexOf(')') + 1);
+    /**
+     * Converts a descriptor of classes or interfaces into
+     * a binary name. Rejects primitive types or arrays.
+     * This is an inverse of {@link ClassDesc#of(String)}.
+     */
+    public static String toBinaryName(ClassDesc cd) {
+        return toInternalName(cd).replace('/', '.');
     }
 
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
-        return switch (desc.charAt(0)) {
-            case 'L' -> desc.substring(1, desc.length() - 1);
-            default -> throw new IllegalArgumentException(desc);
-        };
+        if (desc.charAt(0) == 'L')
+            return desc.substring(1, desc.length() - 1);
+        throw new IllegalArgumentException(desc);
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
@@ -187,7 +119,7 @@ public class Util {
     public static List<ClassEntry> entryList(List<? extends ClassDesc> list) {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(toInternalName(list.get(i))));
+            result[i] = TemporaryConstantPool.INSTANCE.classEntry(list.get(i));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }
@@ -195,7 +127,7 @@ public class Util {
     public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
-            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).moduleName()));
+            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).name()));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }
@@ -230,5 +162,26 @@ public class Util {
 
     public static boolean has(AccessFlag.Location location, int flagsMask, AccessFlag flag) {
         return (flag.mask() & flagsMask) == flag.mask() && flag.locations().contains(location);
+    }
+
+    public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
+        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).fieldTypeSymbol();
+    }
+
+    public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
+        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
+    }
+
+    public static int slotSize(ClassDesc desc) {
+        return switch (desc.descriptorString().charAt(0)) {
+            case 'V' -> 0;
+            case 'D','J' -> 2;
+            default -> 1;
+        };
+    }
+
+    public static boolean isDoubleSlot(ClassDesc desc) {
+        char ch = desc.descriptorString().charAt(0);
+        return ch == 'D' || ch == 'J';
     }
 }

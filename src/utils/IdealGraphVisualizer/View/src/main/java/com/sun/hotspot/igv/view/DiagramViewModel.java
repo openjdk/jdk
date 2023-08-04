@@ -118,6 +118,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setShowCFG(boolean enable) {
         showCFG = enable;
+        diagram.setCFG(enable);
         if (enable) {
             diagramChangedEvent.fire();
         }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
  * @run testng TestSegmentOffset
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.SegmentScope;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -81,7 +81,7 @@ public class TestSegmentOffset {
     static class SegmentSlice {
 
         enum Kind {
-            NATIVE(i -> MemorySegment.allocateNative(i, SegmentScope.auto())),
+            NATIVE(i -> Arena.ofAuto().allocate(i, 1)),
             ARRAY(i -> MemorySegment.ofArray(new byte[i]));
 
             final IntFunction<MemorySegment> segmentFactory;

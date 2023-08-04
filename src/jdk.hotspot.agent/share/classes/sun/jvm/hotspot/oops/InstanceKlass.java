@@ -66,6 +66,7 @@ public class InstanceKlass extends Klass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
+    annotations          = type.getAddressField("_annotations");
     arrayKlasses         = new MetadataField(type.getAddressField("_array_klasses"), 0);
     methods              = type.getAddressField("_methods");
     defaultMethods       = type.getAddressField("_default_methods");
@@ -80,7 +81,6 @@ public class InstanceKlass extends Klass {
     staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), 0);
     staticOopFieldCount  = new CIntField(type.getCIntegerField("_static_oop_field_count"), 0);
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), 0);
-    isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), 0);
     initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
     if (VM.getVM().isJvmtiSupported()) {
@@ -131,6 +131,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
+  private static AddressField  annotations;
   private static MetadataField arrayKlasses;
   private static AddressField  methods;
   private static AddressField  defaultMethods;
@@ -145,7 +146,6 @@ public class InstanceKlass extends Klass {
   private static CIntField staticFieldSize;
   private static CIntField staticOopFieldCount;
   private static CIntField nonstaticOopMapSize;
-  private static CIntField isMarkedDependent;
   private static CIntField initState;
   private static CIntField itableLen;
   private static AddressField breakpoints;
@@ -300,7 +300,7 @@ public class InstanceKlass extends Klass {
 
   public int getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getField(index).getGenericSignatureIndex();
+    return getField(index).getSignatureIndex();
   }
 
   public Symbol getFieldSignature(int index) {
@@ -373,12 +373,10 @@ public class InstanceKlass extends Klass {
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
-  public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
   public long      getItableLen()           { return                itableLen.getValue(this); }
   public long      majorVersion()           { return                getConstants().majorVersion(); }
   public long      minorVersion()           { return                getConstants().minorVersion(); }
   public Symbol    getGenericSignature()    { return                getConstants().getGenericSignature(); }
-
   // "size helper" == instance size in words
   public long getSizeHelper() {
     int lh = getLayoutHelper();
@@ -386,6 +384,10 @@ public class InstanceKlass extends Klass {
       Assert.that(lh > 0, "layout helper initialized for instance class");
     }
     return lh / VM.getVM().getAddressSize();
+  }
+  public Annotations  getAnnotations() {
+    Address addr = annotations.getValue(getAddress());
+    return VMObjectFactory.newObject(Annotations.class, addr);
   }
 
   // same as enum InnerClassAttributeOffset in VM code.
@@ -571,7 +573,6 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(staticFieldSize, true);
       visitor.doCInt(staticOopFieldCount, true);
       visitor.doCInt(nonstaticOopMapSize, true);
-      visitor.doCInt(isMarkedDependent, true);
       visitor.doCInt(initState, true);
       visitor.doCInt(itableLen, true);
     }
@@ -863,6 +864,41 @@ public class InstanceKlass extends Klass {
     return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
+  public U1Array getClassAnnotations() {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getClassAnnotations();
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getClassTypeAnnotations() {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getClassTypeAnnotations();
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getFieldAnnotations(int fieldIndex) {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getFieldAnnotations(fieldIndex);
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getFieldTypeAnnotations(int fieldIndex) {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getFieldTypeAnnotations(fieldIndex);
+    } else {
+      return null;
+    }
+  }
 
   //----------------------------------------------------------------------
   // Internals only below this point

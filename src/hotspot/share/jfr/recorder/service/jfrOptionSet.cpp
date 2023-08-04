@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ bool JfrOptionSet::allow_event_retransforms() {
 }
 
 // default options for the dcmd parser
-const char* const default_repository = NULL;
-const char* const default_dumppath = NULL;
+const char* const default_repository = nullptr;
+const char* const default_dumppath = nullptr;
 const char* const default_global_buffer_size = "512k";
 const char* const default_num_global_buffers = "20";
 const char* const default_memory_size = "10m";
@@ -281,7 +281,7 @@ static void register_parser_options() {
 }
 
 static bool parse_flight_recorder_options_internal(TRAPS) {
-  if (FlightRecorderOptions == NULL) {
+  if (FlightRecorderOptions == nullptr) {
     return true;
   }
   const size_t length = strlen((const char*)FlightRecorderOptions);
@@ -292,14 +292,14 @@ static bool parse_flight_recorder_options_internal(TRAPS) {
       ObsoleteOption option = OBSOLETE_OPTIONS[index];
       const char* p = strstr((const char*)FlightRecorderOptions, option.name);
       const size_t option_length = strlen(option.name);
-      if (p != NULL && p[option_length] == '=') {
+      if (p != nullptr && p[option_length] == '=') {
         log_error(arguments) ("-XX:FlightRecorderOptions=%s=... has been removed. %s", option.name, option.message);
         return false;
       }
     }
     ResourceMark rm(THREAD);
     oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
-    if (message != NULL) {
+    if (message != nullptr) {
       const char* msg = java_lang_String::as_utf8_string(message);
       log_error(arguments) ("%s", msg);
     }
@@ -336,7 +336,7 @@ bool JfrOptionSet::initialize(JavaThread* thread) {
 }
 
 bool JfrOptionSet::configure(TRAPS) {
-  if (FlightRecorderOptions == NULL) {
+  if (FlightRecorderOptions == nullptr) {
     return true;
   }
   ResourceMark rm(THREAD);
@@ -345,10 +345,10 @@ bool JfrOptionSet::configure(TRAPS) {
   JfrConfigureFlightRecorderDCmd configure(&st, false);
   configure._repository_path.set_is_set(_dcmd_repository.is_set());
   char* repo = _dcmd_repository.value();
-  if (repo != NULL) {
+  if (repo != nullptr) {
     const size_t len = strlen(repo);
     char* repo_copy = JfrCHeapObj::new_array<char>(len + 1);
-    if (NULL == repo_copy) {
+    if (nullptr == repo_copy) {
       return false;
     }
     strncpy(repo_copy, repo, len + 1);
@@ -357,10 +357,10 @@ bool JfrOptionSet::configure(TRAPS) {
 
   configure._dump_path.set_is_set(_dcmd_dumppath.is_set());
   char* dumppath = _dcmd_dumppath.value();
-  if (dumppath != NULL) {
+  if (dumppath != nullptr) {
     const size_t len = strlen(dumppath);
     char* dumppath_copy = JfrCHeapObj::new_array<char>(len + 1);
-    if (NULL == dumppath_copy) {
+    if (nullptr == dumppath_copy) {
       return false;
     }
     strncpy(dumppath_copy, dumppath, len + 1);
@@ -743,9 +743,9 @@ bool JfrOptionSet::adjust_memory_options() {
 }
 
 bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
-  assert(option != NULL, "invariant");
-  assert(delimiter != NULL, "invariant");
-  assert((*option)->optionString != NULL, "invariant");
+  assert(option != nullptr, "invariant");
+  assert(delimiter != nullptr, "invariant");
+  assert((*option)->optionString != nullptr, "invariant");
   assert(strncmp((*option)->optionString, "-XX:FlightRecorderOptions", 25) == 0, "invariant");
   if (*delimiter == '\0') {
     // -XX:FlightRecorderOptions without any delimiter and values
@@ -757,14 +757,14 @@ bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, cha
   return false;
 }
 
-static GrowableArray<const char*>* start_flight_recording_options_array = NULL;
+static GrowableArray<const char*>* start_flight_recording_options_array = nullptr;
 
 bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
-  assert(option != NULL, "invariant");
-  assert(delimiter != NULL, "invariant");
-  assert((*option)->optionString != NULL, "invariant");
+  assert(option != nullptr, "invariant");
+  assert(delimiter != nullptr, "invariant");
+  assert((*option)->optionString != nullptr, "invariant");
   assert(strncmp((*option)->optionString, "-XX:StartFlightRecording", 24) == 0, "invariant");
-  const char* value = NULL;
+  const char* value = nullptr;
   if (*delimiter == '\0') {
     // -XX:StartFlightRecording without any delimiter and values
     // Add dummy value "dumponexit=false" so -XX:StartFlightRecording can be used without explicit values.
@@ -777,13 +777,13 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
     *delimiter = '=';
     value = delimiter + 1;
   }
-  assert(value != NULL, "invariant");
+  assert(value != nullptr, "invariant");
   const size_t value_length = strlen(value);
 
-  if (start_flight_recording_options_array == NULL) {
+  if (start_flight_recording_options_array == nullptr) {
     start_flight_recording_options_array = new (mtTracing) GrowableArray<const char*>(8, mtTracing);
   }
-  assert(start_flight_recording_options_array != NULL, "invariant");
+  assert(start_flight_recording_options_array != nullptr, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);
   strncpy(startup_value, value, value_length + 1);
   assert(strncmp(startup_value, value, value_length) == 0, "invariant");
@@ -796,12 +796,12 @@ const GrowableArray<const char*>* JfrOptionSet::start_flight_recording_options()
 }
 
 void JfrOptionSet::release_start_flight_recording_options() {
-  if (start_flight_recording_options_array != NULL) {
+  if (start_flight_recording_options_array != nullptr) {
     const int length = start_flight_recording_options_array->length();
     for (int i = 0; i < length; ++i) {
       FREE_C_HEAP_ARRAY(char, start_flight_recording_options_array->at(i));
     }
     delete start_flight_recording_options_array;
-    start_flight_recording_options_array = NULL;
+    start_flight_recording_options_array = nullptr;
   }
 }

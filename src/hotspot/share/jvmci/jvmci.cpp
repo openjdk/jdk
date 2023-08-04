@@ -67,6 +67,33 @@ bool JVMCI::can_initialize_JVMCI() {
   return true;
 }
 
+bool JVMCI::get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal) {
+  if (JVMCILibPath != nullptr) {
+    if (!os::dll_locate_lib(pathbuf, pathlen, JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
+    }
+  } else {
+    if (!os::dll_locate_lib(pathbuf, pathlen, Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library");
+    }
+  }
+  return true;
+}
+
+bool JVMCI::shared_library_exists() {
+  if (_shared_library_handle != nullptr) {
+    return true;
+  }
+  char path[JVM_MAXPATHLEN];
+  return get_shared_library_path(path, sizeof(path), false);
+}
+
 void* JVMCI::get_shared_library(char*& path, bool load) {
   void* sl_handle = _shared_library_handle;
   if (sl_handle != nullptr || !load) {
@@ -78,15 +105,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   if (_shared_library_handle == nullptr) {
     char path[JVM_MAXPATHLEN];
     char ebuf[1024];
-    if (JVMCILibPath != nullptr) {
-      if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
-      }
-    } else {
-      if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library");
-      }
-    }
+    get_shared_library_path(path, sizeof(path), true);
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
     if (handle == nullptr) {
@@ -233,12 +252,12 @@ void JVMCI::vtrace(int level, const char* format, va_list ap) {
       ResourceMark rm(thread);
       JavaThreadState state = JavaThread::cast(thread)->thread_state();
       if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
-        tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " \"%s\"]:%*c", level, p2i(thread), thread->name(), level, ' ');
       } else {
         // According to check_access_thread_state, it's unsafe to
         // resolve the j.l.Thread object unless the thread is in
         // one of the states above.
-        tty->print("JVMCITrace-%d[%s@" PTR_FORMAT "]:%*c", level, thread->type_name(), p2i(thread), level, ' ');
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " <%s>]:%*c", level, p2i(thread), thread->type_name(), level, ' ');
       }
     } else {
       tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');

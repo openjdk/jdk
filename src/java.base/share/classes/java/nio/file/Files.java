@@ -179,7 +179,7 @@ public final class Files {
      * regular-file} to a size of {@code 0} if it exists.
      *
      * <p> <b>Usage Examples:</b>
-     * <pre>
+     * {@snippet lang=java :
      *     Path path = ...
      *
      *     // truncate and overwrite an existing file, or create the file if
@@ -194,7 +194,7 @@ public final class Files {
      *
      *     // always create new file, failing if it already exists
      *     out = Files.newOutputStream(path, CREATE_NEW);
-     * </pre>
+     * }
      *
      * @param   path
      *          the path to the file to open or create
@@ -320,7 +320,7 @@ public final class Files {
      * is a {@link java.nio.channels.FileChannel}.
      *
      * <p> <b>Usage Examples:</b>
-     * <pre>{@code
+     * {@snippet lang=java :
      *     Path path = ...
      *
      *     // open file for reading
@@ -334,7 +334,7 @@ public final class Files {
      *     FileAttribute<Set<PosixFilePermission>> perms = ...
      *     SeekableByteChannel sbc =
      *         Files.newByteChannel(path, EnumSet.of(CREATE_NEW,READ,WRITE), perms);
-     * }</pre>
+     * }
      *
      * @param   path
      *          the path to the file to open or create
@@ -493,12 +493,12 @@ public final class Files {
      *
      * <p> For example, suppose we want to iterate over the files ending with
      * ".java" in a directory:
-     * <pre>
+     * {@snippet lang=java :
      *     Path dir = ...
-     *     try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir, "*.java")) {
+     *     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.java")) {
      *         :
      *     }
-     * </pre>
+     * }
      *
      * <p> The globbing pattern is specified by the {@link
      * FileSystem#getPathMatcher getPathMatcher} method.
@@ -577,17 +577,17 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we want to iterate over the files in a directory that are
      * larger than 8K.
-     * <pre>
-     *     DirectoryStream.Filter&lt;Path&gt; filter = new DirectoryStream.Filter&lt;Path&gt;() {
+     * {@snippet lang=java :
+     *     DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
      *         public boolean accept(Path file) throws IOException {
-     *             return (Files.size(file) &gt; 8192L);
+     *             return (Files.size(file) > 8192L);
      *         }
      *     };
      *     Path dir = ...
-     *     try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir, filter)) {
+     *     try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, filter)) {
      *         :
      *     }
-     * </pre>
+     * }
      *
      * @param   dir
      *          the path to the directory
@@ -758,14 +758,15 @@ public final class Files {
             // parent may not exist or other reason
         }
         SecurityException se = null;
+        Path absDir = dir;
         try {
-            dir = dir.toAbsolutePath();
+            absDir = dir.toAbsolutePath();
         } catch (SecurityException x) {
             // don't have permission to get absolute path
             se = x;
         }
         // find a descendant that exists
-        Path parent = dir.getParent();
+        Path parent = absDir.getParent();
         while (parent != null) {
             try {
                 provider(parent).checkAccess(parent);
@@ -778,7 +779,7 @@ public final class Files {
         if (parent == null) {
             // unable to find existing parent
             if (se == null) {
-                throw new FileSystemException(dir.toString(), null,
+                throw new FileSystemException(absDir.toString(), null,
                     "Unable to determine if root directory exists");
             } else {
                 throw se;
@@ -787,7 +788,7 @@ public final class Files {
 
         // create directories
         Path child = parent;
-        for (Path name: parent.relativize(dir)) {
+        for (Path name: parent.relativize(absDir)) {
             child = child.resolve(name);
             createAndCheckIsDirectory(child, attrs);
         }
@@ -1257,11 +1258,11 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we want to copy a file into a directory, giving it the same file
      * name as the source file:
-     * <pre>
+     * {@snippet lang=java :
      *     Path source = ...
      *     Path newdir = ...
      *     Files.copy(source, newdir.resolve(source.getFileName());
-     * </pre>
+     * }
      *
      * @param   source
      *          the path to the file to copy
@@ -1375,18 +1376,18 @@ public final class Files {
      * <p> <b>Usage Examples:</b>
      * Suppose we want to rename a file to "newname", keeping the file in the
      * same directory:
-     * <pre>
+     * {@snippet lang=java :
      *     Path source = ...
      *     Files.move(source, source.resolveSibling("newname"));
-     * </pre>
+     * }
      * Alternatively, suppose we want to move a file to new directory, keeping
      * the same file name, and replacing any existing file of that name in the
      * directory:
-     * <pre>
+     * {@snippet lang=java :
      *     Path source = ...
      *     Path newdir = ...
      *     Files.move(source, newdir.resolve(source.getFileName()), REPLACE_EXISTING);
-     * </pre>
+     * }
      *
      * @param   source
      *          the path to the file to move
@@ -1761,14 +1762,14 @@ public final class Files {
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want read or set a file's ACL, if supported:
-     * <pre>
+     * {@snippet lang=java :
      *     Path path = ...
      *     AclFileAttributeView view = Files.getFileAttributeView(path, AclFileAttributeView.class);
      *     if (view != null) {
-     *         List&lt;AclEntry&gt; acl = view.getAcl();
+     *         List<AclEntry> acl = view.getAcl();
      *         :
      *     }
-     * </pre>
+     * }
      *
      * @param   <V>
      *          The {@code FileAttributeView} type
@@ -1810,16 +1811,16 @@ public final class Files {
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to read a file's attributes in bulk:
-     * <pre>
-     *    Path path = ...
-     *    BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
-     * </pre>
+     * {@snippet lang=java :
+     *     Path path = ...
+     *     BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
+     * }
      * Alternatively, suppose we want to read file's POSIX attributes without
      * following symbolic links:
-     * <pre>
-     *    PosixFileAttributes attrs =
-     *        Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
-     * </pre>
+     * {@snippet lang=java :
+     *     PosixFileAttributes attrs =
+     *         Files.readAttributes(path, PosixFileAttributes.class, NOFOLLOW_LINKS);
+     * }
      *
      * @param   <A>
      *          The {@code BasicFileAttributes} type
@@ -1878,10 +1879,10 @@ public final class Files {
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to set the DOS "hidden" attribute:
-     * <pre>
-     *    Path path = ...
-     *    Files.setAttribute(path, "dos:hidden", true);
-     * </pre>
+     * {@snippet lang=java :
+     *     Path path = ...
+     *     Files.setAttribute(path, "dos:hidden", true);
+     * }
      *
      * @param   path
      *          the path to the file
@@ -1947,10 +1948,10 @@ public final class Files {
      * <p> <b>Usage Example:</b>
      * Suppose we require the user ID of the file owner on a system that
      * supports a "{@code unix}" view:
-     * <pre>
-     *    Path path = ...
-     *    int uid = (Integer)Files.getAttribute(path, "unix:uid");
-     * </pre>
+     * {@snippet lang=java :
+     *     Path path = ...
+     *     int uid = (Integer)Files.getAttribute(path, "unix:uid");
+     * }
      *
      * @param   path
      *          the path to the file
@@ -2212,13 +2213,13 @@ public final class Files {
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to make "joe" the owner of a file:
-     * <pre>
+     * {@snippet lang=java :
      *     Path path = ...
      *     UserPrincipalLookupService lookupService =
      *         provider(path).getUserPrincipalLookupService();
      *     UserPrincipal joe = lookupService.lookupPrincipalByName("joe");
      *     Files.setOwner(path, joe);
-     * </pre>
+     * }
      *
      * @param   path
      *          The path to the file
@@ -2406,11 +2407,11 @@ public final class Files {
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to set the last modified time to the current time:
-     * <pre>
-     *    Path path = ...
-     *    FileTime now = FileTime.fromMillis(System.currentTimeMillis());
-     *    Files.setLastModifiedTime(path, now);
-     * </pre>
+     * {@snippet lang=java :
+     *     Path path = ...
+     *     FileTime now = FileTime.fromMillis(System.currentTimeMillis());
+     *     Files.setLastModifiedTime(path, now);
+     * }
      *
      * @param   path
      *          the path to the file
@@ -3063,13 +3064,13 @@ public final class Files {
      *
      * <p> <b>Usage example</b>: Suppose we want to capture a web page and save
      * it to a file:
-     * <pre>
+     * {@snippet lang=java :
      *     Path path = ...
      *     URI u = URI.create("http://www.example.com/");
      *     try (InputStream in = u.toURL().openStream()) {
      *         Files.copy(in, path);
      *     }
-     * </pre>
+     * }
      *
      * @param   in
      *          the input stream to read from
@@ -3449,11 +3450,11 @@ public final class Files {
      * <p> <b>Usage example</b>: By default the method creates a new file or
      * overwrites an existing file. Suppose you instead want to append bytes
      * to an existing file:
-     * <pre>
+     * {@snippet lang=java :
      *     Path path = ...
      *     byte[] bytes = ...
      *     Files.write(path, bytes, StandardOpenOption.APPEND);
-     * </pre>
+     * }
      *
      * @param   path
      *          the path to the file

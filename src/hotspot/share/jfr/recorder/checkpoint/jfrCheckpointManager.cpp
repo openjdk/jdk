@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
+#include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrBigEndian.hpp"
@@ -59,22 +60,22 @@ typedef JfrCheckpointManager::BufferPtr BufferPtr;
 typedef JfrCheckpointManager::ConstBufferPtr ConstBufferPtr;
 
 static JfrSignal _new_checkpoint;
-static JfrCheckpointManager* _instance = NULL;
+static JfrCheckpointManager* _instance = nullptr;
 
 JfrCheckpointManager& JfrCheckpointManager::instance() {
   return *_instance;
 }
 
 JfrCheckpointManager* JfrCheckpointManager::create(JfrChunkWriter& cw) {
-  assert(_instance == NULL, "invariant");
+  assert(_instance == nullptr, "invariant");
   _instance = new JfrCheckpointManager(cw);
   return _instance;
 }
 
 void JfrCheckpointManager::destroy() {
-  assert(_instance != NULL, "invariant");
+  assert(_instance != nullptr, "invariant");
   delete _instance;
-  _instance = NULL;
+  _instance = nullptr;
 }
 
 JfrCheckpointManager::JfrCheckpointManager(JfrChunkWriter& cw) :
@@ -100,9 +101,9 @@ static const size_t virtual_thread_local_buffer_prealloc_count = 0;
 static const size_t virtual_thread_local_buffer_size = 4 * K;
 
 bool JfrCheckpointManager::initialize() {
-  assert(_global_mspace == NULL, "invariant");
+  assert(_global_mspace == nullptr, "invariant");
   _global_mspace =  create_mspace<JfrCheckpointMspace, JfrCheckpointManager>(global_buffer_size, 0, 0, false, this); // post-pone preallocation
-  if (_global_mspace == NULL) {
+  if (_global_mspace == nullptr) {
     return false;
   }
   // preallocate buffer count to each of the epoch live lists
@@ -112,17 +113,17 @@ bool JfrCheckpointManager::initialize() {
   }
   assert(_global_mspace->free_list_is_empty(), "invariant");
 
-  assert(_thread_local_mspace == NULL, "invariant");
+  assert(_thread_local_mspace == nullptr, "invariant");
   _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
-  if (_thread_local_mspace == NULL || !_thread_local_mspace->initialize(thread_local_buffer_size,
+  if (_thread_local_mspace == nullptr || !_thread_local_mspace->initialize(thread_local_buffer_size,
                                                                         thread_local_buffer_prealloc_count,
                                                                         thread_local_buffer_prealloc_count)) {
     return false;
   }
 
-  assert(_virtual_thread_local_mspace == NULL, "invariant");
+  assert(_virtual_thread_local_mspace == nullptr, "invariant");
   _virtual_thread_local_mspace = new JfrThreadLocalCheckpointMspace();
-  if (_virtual_thread_local_mspace == NULL || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
+  if (_virtual_thread_local_mspace == nullptr || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
                                                                                         JFR_MSPACE_UNLIMITED_CACHE_SIZE,
                                                                                         virtual_thread_local_buffer_prealloc_count)) {
     return false;
@@ -140,13 +141,13 @@ static void assert_lease(ConstBufferPtr buffer) {
 }
 
 static void assert_release(ConstBufferPtr buffer) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer->lease(), "invariant");
   assert(buffer->acquired_by_self(), "invariant");
 }
 
 static void assert_retired(ConstBufferPtr buffer, Thread* thread) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
 }
@@ -158,28 +159,28 @@ void JfrCheckpointManager::register_full(BufferPtr buffer, Thread* thread) {
 }
 
 static inline bool is_global(ConstBufferPtr buffer) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_GLOBAL;
 }
 
 static inline bool is_thread_local(ConstBufferPtr buffer) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_THREADLOCAL;
 }
 
 static inline bool is_virtual_thread_local(ConstBufferPtr buffer) {
-  assert(buffer != NULL, "invariant");
+  assert(buffer != nullptr, "invariant");
   return buffer->context() == JFR_VIRTUAL_THREADLOCAL;
 }
 
 BufferPtr JfrCheckpointManager::lease_global(Thread* thread, bool previous_epoch /* false */, size_t size /* 0 */) {
   JfrCheckpointMspace* const mspace = instance()._global_mspace;
-  assert(mspace != NULL, "invariant");
+  assert(mspace != nullptr, "invariant");
   static const size_t max_elem_size = mspace->min_element_size(); // min is max
   BufferPtr buffer;
   if (size <= max_elem_size) {
     buffer = mspace_acquire_live(size, mspace, thread, previous_epoch);
-    if (buffer != NULL) {
+    if (buffer != nullptr) {
       buffer->set_lease();
       DEBUG_ONLY(assert_lease(buffer);)
       return buffer;
@@ -202,13 +203,13 @@ BufferPtr JfrCheckpointManager::lease_thread_local(Thread* thread, size_t size) 
 }
 
 BufferPtr JfrCheckpointManager::get_virtual_thread_local(Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   return JfrTraceIdEpoch::epoch() ? thread->jfr_thread_local()->_checkpoint_buffer_epoch_1 :
                                     thread->jfr_thread_local()->_checkpoint_buffer_epoch_0;
 }
 
 void JfrCheckpointManager::set_virtual_thread_local(Thread* thread, BufferPtr buffer) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   if (JfrTraceIdEpoch::epoch()) {
     thread->jfr_thread_local()->_checkpoint_buffer_epoch_1 = buffer;
   } else {
@@ -239,7 +240,7 @@ BufferPtr JfrCheckpointManager::acquire_virtual_thread_local(Thread* thread, siz
 }
 
 BufferPtr JfrCheckpointManager::renew(ConstBufferPtr old, Thread* thread, size_t size, JfrCheckpointBufferKind kind /* JFR_THREADLOCAL */) {
-  assert(old != NULL, "invariant");
+  assert(old != nullptr, "invariant");
   assert(old->acquired_by_self(), "invariant");
   if (kind == JFR_GLOBAL) {
     return lease_global(thread, instance()._global_mspace->in_previous_epoch_list(old), size);
@@ -285,14 +286,14 @@ static inline JfrCheckpointBufferKind kind(ConstBufferPtr buffer) {
 }
 
 BufferPtr JfrCheckpointManager::flush(BufferPtr old, size_t used, size_t requested, Thread* thread) {
-  assert(old != NULL, "invariant");
+  assert(old != nullptr, "invariant");
   if (0 == requested) {
     // indicates a lease is being returned
     assert(old->lease(), "invariant");
     release(old);
     // signal completion of a new checkpoint
     _new_checkpoint.signal();
-    return NULL;
+    return nullptr;
   }
   BufferPtr new_buffer = renew(old, thread, used + requested, kind(old));
   if (new_buffer != nullptr) {
@@ -353,7 +354,7 @@ static uint64_t calculate_event_size_bytes(JfrChunkWriter& cw, const u1* data, i
 }
 
 static size_t write_checkpoint_event(JfrChunkWriter& cw, const u1* data) {
-  assert(data != NULL, "invariant");
+  assert(data != nullptr, "invariant");
   const int64_t event_begin = cw.current_offset();
   const int64_t last_checkpoint_event = cw.last_checkpoint_offset();
   cw.set_last_checkpoint_offset(event_begin);
@@ -373,7 +374,7 @@ static size_t write_checkpoint_event(JfrChunkWriter& cw, const u1* data) {
 
 static size_t write_checkpoints(JfrChunkWriter& cw, const u1* data, size_t size) {
   assert(cw.is_valid(), "invariant");
-  assert(data != NULL, "invariant");
+  assert(data != nullptr, "invariant");
   assert(size > 0, "invariant");
   const u1* const limit = data + size;
   const u1* next = data;
@@ -388,7 +389,7 @@ static size_t write_checkpoints(JfrChunkWriter& cw, const u1* data, size_t size)
 }
 
 static size_t write_thread_checkpoint_content(JfrChunkWriter& cw, const u1* data) {
-  assert(data != NULL, "invariant");
+  assert(data != nullptr, "invariant");
   const size_t size = total_size(data);
   assert(size > 0, "invariant");
   assert(checkpoint_type(data) == THREADS, "invariant");
@@ -400,7 +401,7 @@ static size_t write_thread_checkpoint_content(JfrChunkWriter& cw, const u1* data
 
 static size_t write_thread_checkpoint_payloads(JfrChunkWriter& cw, const u1* data, size_t size, u4& elements) {
   assert(cw.is_valid(), "invariant");
-  assert(data != NULL, "invariant");
+  assert(data != nullptr, "invariant");
   assert(size > 0, "invariant");
   const u1* const limit = data + size;
   const u1* next = data;
@@ -493,6 +494,7 @@ void JfrCheckpointManager::end_epoch_shift() {
   debug_only(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::end_epoch_shift();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
+  JfrStringPool::on_epoch_shift();
 }
 
 size_t JfrCheckpointManager::write() {
@@ -528,14 +530,14 @@ size_t JfrCheckpointManager::clear() {
 }
 
 size_t JfrCheckpointManager::write_static_type_set(Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   JfrCheckpointWriter writer(true, thread, STATICS);
   JfrTypeManager::write_static_types(writer);
   return writer.used_size();
 }
 
 size_t JfrCheckpointManager::write_threads(JavaThread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   // can safepoint here
   ThreadInVMfromNative transition(thread);
   ResourceMark rm(thread);
@@ -585,7 +587,7 @@ void JfrCheckpointManager::write_type_set() {
       ObjectSampleCheckpoint::on_type_set(leakp_writer);
     } else {
       JfrCheckpointWriter writer(true, thread);
-      JfrTypeSet::serialize(&writer, NULL, false, false);
+      JfrTypeSet::serialize(&writer, nullptr, false, false);
     }
   }
   write();
@@ -601,11 +603,11 @@ void JfrCheckpointManager::on_unloading_classes() {
 }
 
 static size_t flush_type_set(Thread* thread) {
-  assert(thread != NULL, "invariant");
+  assert(thread != nullptr, "invariant");
   JfrCheckpointWriter writer(thread);
   MutexLocker cld_lock(thread, ClassLoaderDataGraph_lock);
   MutexLocker module_lock(thread, Module_lock);
-  return JfrTypeSet::serialize(&writer, NULL, false, true);
+  return JfrTypeSet::serialize(&writer, nullptr, false, true);
 }
 
 size_t JfrCheckpointManager::flush_type_set() {
@@ -636,7 +638,7 @@ size_t JfrCheckpointManager::flush_type_set() {
 }
 
 JfrBlobHandle JfrCheckpointManager::create_thread_blob(JavaThread* jt, traceid tid /* 0 */, oop vthread /* nullptr */) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   assert(Thread::current() == jt, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   return JfrTypeManager::create_thread_blob(jt, tid, vthread);
@@ -649,7 +651,7 @@ void JfrCheckpointManager::write_checkpoint(Thread* thread, traceid tid /* 0 */,
 class JfrNotifyClosure : public ThreadClosure {
  public:
   void do_thread(Thread* thread) {
-    assert(thread != NULL, "invariant");
+    assert(thread != nullptr, "invariant");
     assert_locked_or_safepoint(Threads_lock);
     JfrJavaEventWriter::notify(JavaThread::cast(thread));
   }

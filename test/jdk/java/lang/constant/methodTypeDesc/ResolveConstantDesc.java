@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,14 @@ public class ResolveConstantDesc {
     // IAE thrown when resolving MethodType using the given Lookup object
     private static void throwIAE(Lookup lookup, MethodTypeDesc mtd) throws Exception {
         try {
-            MethodType mtype = (MethodType)mtd.resolveConstantDesc(lookup);
+            MethodType mtype = mtd.resolveConstantDesc(lookup);
             throw new RuntimeException("unexpected IAE not thrown");
         } catch (IllegalAccessException e) { }
     }
 
     private static void throwACC(Lookup lookup, MethodTypeDesc mtd) throws Exception {
         try {
-            MethodType mtype = (MethodType)mtd.resolveConstantDesc(lookup);
+            MethodType mtype = mtd.resolveConstantDesc(lookup);
             throw new RuntimeException("unexpected IAE not thrown");
         } catch (AccessControlException e) {
             Permission perm = e.getPermission();
