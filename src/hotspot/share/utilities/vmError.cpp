@@ -1833,7 +1833,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       if (fd != -1) {
         FILE* replay_data_file = os::fdopen(fd, "w");
         if (replay_data_file != nullptr) {
-          fileStream replay_data_stream(replay_data_file, /*fclose replay_data_file in destructor:*/ true);
+          fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
           env->dump_replay_data_unsafe(&replay_data_stream);
           out.print_raw("#\n# Compiler replay data is saved as:\n# ");
           out.print_raw_cr(buffer);
