@@ -37,7 +37,7 @@ import jdk.test.lib.hprof.HprofParser;
 /**
  * @test
  * @bug 8306441
- * @summary Verify the generated heap dump is valid and complete after parallel heap dump
+ * @summary Verify the integrity of generated heap dump and capability of parallel dump
  * @library /test/lib
  * @run driver HeapDumpParallelTest
  */
@@ -54,7 +54,7 @@ public class HeapDumpParallelTest {
 
     private static void checkAndVerify(OutputAnalyzer out, LingeredApp app, File heapDumpFile, boolean expectSerial) {
         out.shouldHaveExitValue(0);
-        Asserts.assertTrue(out.getStdout().contains("Heap dump file created"));
+        out.shouldContain("Heap dump file created");
         if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
             Asserts.assertTrue(app.getProcessStdout().contains("Dump heap objects in parallel"));
             Asserts.assertTrue(app.getProcessStdout().contains("Merge heap files complete"));
@@ -83,7 +83,7 @@ public class HeapDumpParallelTest {
                                 "-XX:ParallelGCThreads=2");
             // Expect error message
             OutputAnalyzer out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + -1);
-            Asserts.assertTrue(out.getStdout().contains("Invalid number of parallel dump threads."));
+            out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect serial dump because 0 implies to disable parallel dump
             out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + 0);

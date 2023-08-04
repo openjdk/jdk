@@ -1724,15 +1724,8 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   }
   int dump_seq()           { return _dump_seq; }
   bool is_parallel_dump()  { return _num_dumper_threads > 1; }
-  bool can_parallel_dump() {
-    const char* base_path = writer()->get_file_path();
-    assert(base_path != nullptr, "sanity check");
-    if ((strlen(base_path) + 7/*.p\d\d\d\d\0*/) >= JVM_MAXPATHLEN) {
-      // no extra path room for separate heap dump files
-      return false;
-    }
-    return true;
-  }
+  bool can_parallel_dump(WorkerThreads* workers);
+
   VMOp_Type type() const { return VMOp_HeapDumper; }
   virtual bool doit_prologue();
   void doit();
@@ -1923,6 +1916,32 @@ bool VM_HeapDumper::doit_prologue() {
   return VM_GC_Operation::doit_prologue();
 }
 
+bool VM_HeapDumper::can_parallel_dump(WorkerThreads* workers) {
+  bool can_parallel = true;
+  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
+  uint num_requested_dump_threads = _num_dumper_threads;
+  // check if we can dump in parallel based on requested and active threads
+  if (num_active_workers <= 1 || num_requested_dump_threads <= 1) {
+    _num_dumper_threads = 1;
+    can_parallel = false;
+  } else {
+    // check if we have extra path room to accommodate segmented heap files
+    const char* base_path = writer()->get_file_path();
+    assert(base_path != nullptr, "sanity check");
+    if ((strlen(base_path) + 7/*.p\d\d\d\d\0*/) >= JVM_MAXPATHLEN) {
+      _num_dumper_threads = 1;
+      can_parallel = false;
+    } else {
+      _num_dumper_threads = clamp(num_requested_dump_threads, 2U, num_active_workers);
+    }
+  }
+
+  log_info(heapdump)("Requested dump threads %u, active dump threads %u, "
+                     "actual dump threads %u, parallelism %s",
+                     num_requested_dump_threads, num_active_workers,
+                     _num_dumper_threads, can_parallel ? "true" : "false");
+  return can_parallel;
+}
 
 // The VM operation that dumps the heap. The dump consists of the following
 // records:
@@ -1969,21 +1988,9 @@ void VM_HeapDumper::doit() {
   set_global_writer();
 
   WorkerThreads* workers = ch->safepoint_workers();
-  uint num_active_workers = workers != nullptr ? workers->active_workers() : 0;
-  uint num_requested_dump_thread = _num_dumper_threads;
-  bool can_parallel = can_parallel_dump();
-  log_info(heapdump)("Requested dump threads %u, active dump threads %u, " "parallelism %s",
-                      num_requested_dump_thread, num_active_workers, can_parallel ? "true" : "false");
-
-  if (num_active_workers <= 1 ||         // serial gc?
-      num_requested_dump_thread <= 1 ||  // request serial dump?
-     !can_parallel) {                    // can not dump in parallel?
-    // Use serial dump, set dumper threads and writer threads number to 1.
-    _num_dumper_threads = 1;
+  if (!can_parallel_dump(workers)) {
     work(VMDumperWorkerId);
   } else {
-    // Use parallel dump otherwise
-    _num_dumper_threads = clamp(num_requested_dump_thread, 2U, num_active_workers);
     uint heap_only_dumper_threads = _num_dumper_threads - 1 /* VMDumper thread */;
     _dumper_controller = new (std::nothrow) DumperController(heap_only_dumper_threads);
     ParallelObjectIterator poi(_num_dumper_threads);
