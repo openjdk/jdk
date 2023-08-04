@@ -36,6 +36,12 @@ AC_DEFUN([FLAGS_SETUP_ABI_PROFILE],
   AC_ARG_WITH(abi-profile, [AS_HELP_STRING([--with-abi-profile],
       [specify ABI profile for ARM builds (arm-vfp-sflt,arm-vfp-hflt,arm-sflt, armv5-vfp-sflt,armv6-vfp-hflt,aarch64) @<:@toolchain dependent@:>@ ])])
 
+  # On Arm, set -marm as default to avoid relying on the default setting gcc imposes.
+  # This is to prevent arm/thumb mismatches like JDK-8288719. Note that if an ABI profile
+  # had been specified, the default flags will be overwritten below.
+  ARM_ARCH_TYPE_FLAGS='-marm'
+  ARM_ARCH_TYPE_ASFLAGS='-marm'
+
   if test "x$with_abi_profile" != x; then
     if test "x$OPENJDK_TARGET_CPU" != xarm && \
         test "x$OPENJDK_TARGET_CPU" != xaarch64; then
