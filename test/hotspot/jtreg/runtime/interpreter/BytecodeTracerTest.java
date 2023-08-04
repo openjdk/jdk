@@ -172,7 +172,8 @@ public class BytecodeTracerTest {
             .printClasses("BytecodeTracerTest$Linked", 0xff)
             .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>")
             .mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]")
-            .mustMatch("\"num args = [\\\\]u0001\""); // static param for string concat
+            .mustMatch("\"num args = [\\\\]u0001\"") // static param for string concat
+            .mustMatch(".*getstatic [0-9]+ <java/lang/System.out:Ljava/io/PrintStream;>");
 
         test("invokedynamic in unlinked class")
             .printUnlinkedMethods("toString")
