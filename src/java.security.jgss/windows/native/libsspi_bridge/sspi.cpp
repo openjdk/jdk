@@ -368,54 +368,58 @@ gss_import_name(OM_uint32 *minor_status,
     }
 
     SEC_WCHAR* value = new SEC_WCHAR[len + 1];
-    if (value == NULL) {
-        goto err;
-    }
 
-    len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
-    if (len == 0) {
-        goto err;
-    }
-    value[len] = 0;
-
-    PP("import_name from %ls", value);
-
-    if (len > 33 && !wcscmp(value+len-33, L"@WELLKNOWN:ORG.H5L.REFERALS-REALM")) {
-        // Remove the wellknown referrals realms
-        value[len-33] = 0;
-        len -= 33;
-    } else if (value[len-1] == L'@') {
-        // Remove the empty realm. It might come from an NT_EXPORT_NAME.
-        value[len-1] = 0;
-        len--;
-    }
-    if (len == 0) {
-        goto err;
-    }
-
-    if (input_name_type != NULL
-            && is_same_oid(input_name_type, &HOST_SERVICE_NAME_OID)) {
-        // HOST_SERVICE_NAME_OID takes the form of service@host.
-        for (int i = 0; i < len; i++) {
-            if (value[i] == L'\\') {
-                i++;
-                continue;
-            }
-            if (value[i] == L'@') {
-                value[i] = L'/';
-                break;
-            }
+    {
+        if (value == NULL) {
+            goto err;
         }
-        PP("Host-based service now %ls", value);
+
+        len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
+        if (len == 0) {
+            goto err;
+        }
+        value[len] = 0;
+
+        PP("import_name from %ls", value);
+
+        if (len > 33 && !wcscmp(value+len-33, L"@WELLKNOWN:ORG.H5L.REFERALS-REALM")) {
+            // Remove the wellknown referrals realms
+            value[len-33] = 0;
+            len -= 33;
+        } else if (value[len-1] == L'@') {
+            // Remove the empty realm. It might come from an NT_EXPORT_NAME.
+            value[len-1] = 0;
+            len--;
+        }
+        if (len == 0) {
+            goto err;
+        }
+
+        if (input_name_type != NULL
+                && is_same_oid(input_name_type, &HOST_SERVICE_NAME_OID)) {
+            // HOST_SERVICE_NAME_OID takes the form of service@host.
+            for (int i = 0; i < len; i++) {
+                if (value[i] == L'\\') {
+                    i++;
+                    continue;
+                }
+                if (value[i] == L'@') {
+                    value[i] = L'/';
+                    break;
+                }
+            }
+            PP("Host-based service now %ls", value);
+        }
+        PP("import_name to %ls", value);
+        gss_name_struct* name = new gss_name_struct;
+        if (name == NULL) {
+            goto err;
+        }
+        name->name = value;
+        *output_name = (gss_name_t) name;
+        return GSS_S_COMPLETE;
     }
-    PP("import_name to %ls", value);
-    gss_name_struct* name = new gss_name_struct;
-    if (name == NULL) {
-        goto err;
-    }
-    name->name = value;
-    *output_name = (gss_name_t) name;
-    return GSS_S_COMPLETE;
+
 err:
     delete[] value;
     return GSS_S_FAILURE;
@@ -528,41 +532,45 @@ gss_export_name(OM_uint32 *minor_status,
     OM_uint32 result = GSS_S_FAILURE;
     SEC_WCHAR* name = input_name->name;
     SEC_WCHAR* fullname = get_full_name(name);
-    if (!fullname) {
-        goto err;
+
+    {
+        if (!fullname) {
+            goto err;
+        }
+        PP("Make fullname: %ls -> %ls", name, fullname);
+        int len;
+        size_t namelen = wcslen(fullname);
+        if (namelen > 255) {
+            goto err;
+        }
+        len = (int)namelen;
+        // We only deal with not-so-long names.
+        // 04 01 00 ** 06 ** OID len:int32 name
+        int mechLen = KRB5_OID.length;
+        char* buffer = (char*) malloc(10 + mechLen + len);
+        if (buffer == NULL) {
+            goto err;
+        }
+        buffer[0] = 4;
+        buffer[1] = 1;
+        buffer[2] = 0;
+        buffer[3] = 2 + mechLen;
+        buffer[4] = 6;
+        buffer[5] = mechLen;
+        memcpy_s(buffer + 6, mechLen, KRB5_OID.elements, mechLen);
+        buffer[6 + mechLen] = buffer[7 + mechLen] = buffer[8 + mechLen] = 0;
+        buffer[9 + mechLen] = (char)len;
+        len = WideCharToMultiByte(CP_UTF8, 0, fullname, len,
+                    buffer+10+mechLen, len, NULL, NULL);
+        if (len == 0) {
+            free(buffer);
+            goto err;
+        }
+        exported_name->length = 10 + mechLen + len;
+        exported_name->value = buffer;
+        result = GSS_S_COMPLETE;
     }
-    PP("Make fullname: %ls -> %ls", name, fullname);
-    int len;
-    size_t namelen = wcslen(fullname);
-    if (namelen > 255) {
-        goto err;
-    }
-    len = (int)namelen;
-    // We only deal with not-so-long names.
-    // 04 01 00 ** 06 ** OID len:int32 name
-    int mechLen = KRB5_OID.length;
-    char* buffer = (char*) malloc(10 + mechLen + len);
-    if (buffer == NULL) {
-        goto err;
-    }
-    buffer[0] = 4;
-    buffer[1] = 1;
-    buffer[2] = 0;
-    buffer[3] = 2 + mechLen;
-    buffer[4] = 6;
-    buffer[5] = mechLen;
-    memcpy_s(buffer + 6, mechLen, KRB5_OID.elements, mechLen);
-    buffer[6 + mechLen] = buffer[7 + mechLen] = buffer[8 + mechLen] = 0;
-    buffer[9 + mechLen] = (char)len;
-    len = WideCharToMultiByte(CP_UTF8, 0, fullname, len,
-                buffer+10+mechLen, len, NULL, NULL);
-    if (len == 0) {
-        free(buffer);
-        goto err;
-    }
-    exported_name->length = 10 + mechLen + len;
-    exported_name->value = buffer;
-    result = GSS_S_COMPLETE;
+
 err:
     if (fullname != name) {
         delete[] fullname;
@@ -904,80 +912,82 @@ gss_init_sec_context(OM_uint32 *minor_status,
     }
     outName[len] = 0;
 
-    int flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
+    {
+        int flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
 
-    outBuffDesc.ulVersion = SECBUFFER_VERSION;
-    outBuffDesc.cBuffers = 1;
-    outBuffDesc.pBuffers = &outSecBuff;
+        outBuffDesc.ulVersion = SECBUFFER_VERSION;
+        outBuffDesc.cBuffers = 1;
+        outBuffDesc.pBuffers = &outSecBuff;
 
-    outSecBuff.BufferType = SECBUFFER_TOKEN;
+        outSecBuff.BufferType = SECBUFFER_TOKEN;
 
-    if (!firstTime) {
-        inBuffDesc.ulVersion = SECBUFFER_VERSION;
-        inBuffDesc.cBuffers = 1;
-        inBuffDesc.pBuffers = &inSecBuff;
+        if (!firstTime) {
+            inBuffDesc.ulVersion = SECBUFFER_VERSION;
+            inBuffDesc.cBuffers = 1;
+            inBuffDesc.pBuffers = &inSecBuff;
 
-        inSecBuff.BufferType = SECBUFFER_TOKEN;
-        inSecBuff.cbBuffer = (ULONG)input_token->length;
-        inSecBuff.pvBuffer = input_token->value;
-    } else if (!pc->phCred) {
-        if (isSPNEGO && initiator_cred_handle
-                && initiator_cred_handle->phCredS) {
-            PP("Find SPNEGO credentials");
-            pc->phCred = initiator_cred_handle->phCredS;
-            pc->isLocalCred = FALSE;
-        } else if (!isSPNEGO && initiator_cred_handle
-                && initiator_cred_handle->phCredK) {
-            PP("Find Kerberos credentials");
-            pc->phCred = initiator_cred_handle->phCredK;
-            pc->isLocalCred = FALSE;
-        } else {
-            PP("No credentials provided, acquire myself");
-            newCred = new CredHandle;
-            if (!newCred) {
-                goto err;
+            inSecBuff.BufferType = SECBUFFER_TOKEN;
+            inSecBuff.cbBuffer = (ULONG)input_token->length;
+            inSecBuff.pvBuffer = input_token->value;
+        } else if (!pc->phCred) {
+            if (isSPNEGO && initiator_cred_handle
+                    && initiator_cred_handle->phCredS) {
+                PP("Find SPNEGO credentials");
+                pc->phCred = initiator_cred_handle->phCredS;
+                pc->isLocalCred = FALSE;
+            } else if (!isSPNEGO && initiator_cred_handle
+                    && initiator_cred_handle->phCredK) {
+                PP("Find Kerberos credentials");
+                pc->phCred = initiator_cred_handle->phCredK;
+                pc->isLocalCred = FALSE;
+            } else {
+                PP("No credentials provided, acquire myself");
+                newCred = new CredHandle;
+                if (!newCred) {
+                    goto err;
+                }
+                SEC_WINNT_AUTH_IDENTITY_EX auth;
+                ZeroMemory(&auth, sizeof(auth));
+                auth.Version = SEC_WINNT_AUTH_IDENTITY_VERSION;
+                auth.Length = sizeof(auth);
+                auth.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
+                auth.PackageList = (unsigned short*)L"Kerberos";
+                auth.PackageListLength = 8;
+                ss = AcquireCredentialsHandle(
+                        NULL,
+                        (LPWSTR)(isSPNEGO ? L"Negotiate" : L"Kerberos"),
+                        SECPKG_CRED_OUTBOUND,
+                        NULL,
+                        isSPNEGO ? &auth : NULL,
+                        NULL,
+                        NULL,
+                        newCred,
+                        &lifeTime);
+                if (!(SEC_SUCCESS(ss))) {
+                    goto err;
+                }
+                pc->phCred = newCred;
+                pc->isLocalCred = TRUE;
             }
-            SEC_WINNT_AUTH_IDENTITY_EX auth;
-            ZeroMemory(&auth, sizeof(auth));
-            auth.Version = SEC_WINNT_AUTH_IDENTITY_VERSION;
-            auth.Length = sizeof(auth);
-            auth.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-            auth.PackageList = (unsigned short*)L"Kerberos";
-            auth.PackageListLength = 8;
-            ss = AcquireCredentialsHandle(
-                    NULL,
-                    (LPWSTR)(isSPNEGO ? L"Negotiate" : L"Kerberos"),
-                    SECPKG_CRED_OUTBOUND,
-                    NULL,
-                    isSPNEGO ? &auth : NULL,
-                    NULL,
-                    NULL,
-                    newCred,
-                    &lifeTime);
-            if (!(SEC_SUCCESS(ss))) {
-                goto err;
-            }
-            pc->phCred = newCred;
-            pc->isLocalCred = TRUE;
         }
-    }
-    ss = InitializeSecurityContext(
-            pc->phCred,
-            firstTime ? NULL : &pc->hCtxt,
-            outName,
-            flag,
-            0,
-            SECURITY_NATIVE_DREP,
-            firstTime ? NULL : &inBuffDesc,
-            0,
-            &pc->hCtxt,
-            &outBuffDesc,
-            &outFlag,
-            &lifeTime);
+        ss = InitializeSecurityContext(
+                pc->phCred,
+                firstTime ? NULL : &pc->hCtxt,
+                outName,
+                flag,
+                0,
+                SECURITY_NATIVE_DREP,
+                firstTime ? NULL : &inBuffDesc,
+                0,
+                &pc->hCtxt,
+                &outBuffDesc,
+                &outFlag,
+                &lifeTime);
 
-    if (!SEC_SUCCESS(ss)) {
-        PP("InitializeSecurityContext failed");
-        goto err;
+        if (!SEC_SUCCESS(ss)) {
+            PP("InitializeSecurityContext failed");
+            goto err;
+        }
     }
 
     pc->flags = *ret_flags = flag_sspi_to_gss(outFlag);
