@@ -57,6 +57,8 @@
  */
 #define ROUND_TO_INT(num)     ((int) floor((num) + 0.5))
 
+jfieldID AwtPrintDialog::pageID;
+
 /************************************************************************
  * WPrintJob native methods
  */
@@ -209,7 +211,6 @@ static const double POINTS_TO_HIMETRIC = (2540.0 / 72.0);
  */
 static const double POINTS_TO_LOMETRIC = (254.0 / 72.0);
 
-jfieldID AwtPrintDialog::pageID;
 
 
 /*** Private Macros ***/
@@ -528,184 +529,186 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
 
     setup.lStructSize = sizeof(setup);
 
-    HWND parentID = AwtPrintControl::getParentID(env, self);
-    if (parentID != NULL && ::IsWindow(parentID)) {
-        // windows native modality is requested (used by JavaFX).
-        setup.hwndOwner = parentID;
-    }
-    /*
-      Fix for 6488834.
-      To disable Win32 native parent modality we have to set
-      hwndOwner field to either NULL or some hidden window. For
-      parentless dialogs we use NULL to show them in the taskbar,
-      and for all other dialogs AwtToolkit's HWND is used.
-    */
-    else if (awtParent != NULL)
     {
-        setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
-    }
-    else
-    {
-        setup.hwndOwner = NULL;
-    }
-
-    setup.hDevMode = NULL;
-    setup.hDevNames = NULL;
-    setup.Flags = PSD_RETURNDEFAULT | PSD_DEFAULTMINMARGINS;
-    // setup.ptPaperSize =
-    // setup.rtMinMargin =
-    // setup.rtMargin =
-    setup.hInstance = NULL;
-    setup.lCustData = (LPARAM)peerGlobalRef;
-    setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
-    setup.lpfnPagePaintHook = NULL;
-    setup.lpPageSetupTemplateName = NULL;
-    setup.hPageSetupTemplate = NULL;
-
-
-    /* Because the return default flag is set, this first call
-     * will not display the dialog but will return default values, inc
-     * including hDevMode, hDevName, ptPaperSize, and rtMargin values.
-     * We can use the devmode to set the orientation of the page
-     * and the size of the page.
-     * The units used by the user is also needed.
-     */
-    if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
-        AwtPrintControl::getPrintHDName(env,self) == NULL) {
-        (void)::PageSetupDlg(&setup);
-        /* check if hDevMode and hDevNames are set.
-         * If both are null, then there is no default printer.
-         */
-        if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-            doIt = JNI_FALSE;
-            goto done;
+        HWND parentID = AwtPrintControl::getParentID(env, self);
+        if (parentID != NULL && ::IsWindow(parentID)) {
+            // windows native modality is requested (used by JavaFX).
+            setup.hwndOwner = parentID;
         }
-    } else {
-        int measure = PSD_INTHOUSANDTHSOFINCHES;
-        int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
-        if (sz > 0) {
-          LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
-          if (str != NULL) {
-            sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
+        /*
+          Fix for 6488834.
+          To disable Win32 native parent modality we have to set
+          hwndOwner field to either NULL or some hidden window. For
+          parentless dialogs we use NULL to show them in the taskbar,
+          and for all other dialogs AwtToolkit's HWND is used.
+        */
+        else if (awtParent != NULL)
+        {
+            setup.hwndOwner = AwtToolkit::GetInstance().GetHWnd();
+        }
+        else
+        {
+            setup.hwndOwner = NULL;
+        }
+
+        setup.hDevMode = NULL;
+        setup.hDevNames = NULL;
+        setup.Flags = PSD_RETURNDEFAULT | PSD_DEFAULTMINMARGINS;
+        // setup.ptPaperSize =
+        // setup.rtMinMargin =
+        // setup.rtMargin =
+        setup.hInstance = NULL;
+        setup.lCustData = (LPARAM)peerGlobalRef;
+        setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
+        setup.lpfnPagePaintHook = NULL;
+        setup.lpPageSetupTemplateName = NULL;
+        setup.hPageSetupTemplate = NULL;
+
+
+        /* Because the return default flag is set, this first call
+         * will not display the dialog but will return default values, inc
+         * including hDevMode, hDevName, ptPaperSize, and rtMargin values.
+         * We can use the devmode to set the orientation of the page
+         * and the size of the page.
+         * The units used by the user is also needed.
+         */
+        if (AwtPrintControl::getPrintHDMode(env, self) == NULL ||
+            AwtPrintControl::getPrintHDName(env,self) == NULL) {
+            (void)::PageSetupDlg(&setup);
+            /* check if hDevMode and hDevNames are set.
+             * If both are null, then there is no default printer.
+             */
+            if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
+                doIt = JNI_FALSE;
+                goto done;
+            }
+        } else {
+            int measure = PSD_INTHOUSANDTHSOFINCHES;
+            int sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, NULL, 0);
             if (sz > 0) {
-              if (_tcscmp(TEXT("0"), str) == 0) {
-                measure = PSD_INHUNDREDTHSOFMILLIMETERS;
+              LPTSTR str = (LPTSTR)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(TCHAR), sz);
+              if (str != NULL) {
+                sz = GetLocaleInfo(LOCALE_USER_DEFAULT, LOCALE_IMEASURE, str, sz);
+                if (sz > 0) {
+                  if (_tcscmp(TEXT("0"), str) == 0) {
+                    measure = PSD_INHUNDREDTHSOFMILLIMETERS;
+                  }
+                }
+                free((LPTSTR)str);
               }
             }
-            free((LPTSTR)str);
-          }
+            setup.Flags |= measure;
+            setup.hDevMode = AwtPrintControl::getPrintHDMode(env, self);
+            setup.hDevNames = AwtPrintControl::getPrintHDName(env, self);
         }
-        setup.Flags |= measure;
-        setup.hDevMode = AwtPrintControl::getPrintHDMode(env, self);
-        setup.hDevNames = AwtPrintControl::getPrintHDName(env, self);
-    }
-    /* Move page size and orientation from the PageFormat object
-     * into the Windows setup structure so that the format can
-     * be displayed in the dialog.
-     */
-    pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
-    if (env->ExceptionCheck()) {
-        doIt = JNI_FALSE;
-        goto done;
-    }
-
-    setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
-    setup.Flags = PSD_ENABLEPAGESETUPHOOK | PSD_MARGINS;
-
-    AwtDialog::CheckInstallModalHook();
-
-    BOOL ret = ::PageSetupDlg(&setup);
-    if (ret) {
-
-        jobject paper = getPaper(env, page);
-        if (paper == NULL) {
+        /* Move page size and orientation from the PageFormat object
+         * into the Windows setup structure so that the format can
+         * be displayed in the dialog.
+         */
+        pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
+        if (env->ExceptionCheck()) {
             doIt = JNI_FALSE;
             goto done;
         }
-        int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
-                                                MM_HIENGLISH :
-                                                MM_HIMETRIC;
-        POINT paperSize;
-        RECT margins;
-        jint orientation;
 
-        /* The printer may have been changed, and we track that change,
-         * but then need to get a new DC for the current printer so that
-         * we validate the paper size correctly
-         */
-        if (setup.hDevNames != NULL) {
-            DEVNAMES* names = (DEVNAMES*)::GlobalLock(setup.hDevNames);
-            if (names != NULL) {
-                LPTSTR printer = (LPTSTR)names+names->wDeviceOffset;
-                SAVE_CONTROLWORD
-                HDC newDC = ::CreateDC(TEXT("WINSPOOL"), printer, NULL, NULL);
-                RESTORE_CONTROLWORD
-                if (newDC != NULL) {
-                    HDC oldDC = AwtPrintControl::getPrintDC(env, self);
-                    if (oldDC != NULL) {
-                         ::DeleteDC(oldDC);
+        setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
+        setup.Flags = PSD_ENABLEPAGESETUPHOOK | PSD_MARGINS;
+
+        AwtDialog::CheckInstallModalHook();
+
+        BOOL ret = ::PageSetupDlg(&setup);
+        if (ret) {
+
+            jobject paper = getPaper(env, page);
+            if (paper == NULL) {
+                doIt = JNI_FALSE;
+                goto done;
+            }
+            int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
+                                                    MM_HIENGLISH :
+                                                    MM_HIMETRIC;
+            POINT paperSize;
+            RECT margins;
+            jint orientation;
+
+            /* The printer may have been changed, and we track that change,
+             * but then need to get a new DC for the current printer so that
+             * we validate the paper size correctly
+             */
+            if (setup.hDevNames != NULL) {
+                DEVNAMES* names = (DEVNAMES*)::GlobalLock(setup.hDevNames);
+                if (names != NULL) {
+                    LPTSTR printer = (LPTSTR)names+names->wDeviceOffset;
+                    SAVE_CONTROLWORD
+                    HDC newDC = ::CreateDC(TEXT("WINSPOOL"), printer, NULL, NULL);
+                    RESTORE_CONTROLWORD
+                    if (newDC != NULL) {
+                        HDC oldDC = AwtPrintControl::getPrintDC(env, self);
+                        if (oldDC != NULL) {
+                             ::DeleteDC(oldDC);
+                        }
+                    }
+                    AwtPrintControl::setPrintDC(env, self, newDC);
+                }
+                ::GlobalUnlock(setup.hDevNames);
+            }
+
+            /* Get the Windows paper and margins description.
+            */
+            retrievePaperInfo(&setup, &paperSize, &margins, &orientation,
+                              AwtPrintControl::getPrintDC(env, self));
+
+            /* Convert the Windows' paper and margins description
+             * and place them into a Paper instance.
+             */
+            setPaperValues(env, paper, &paperSize, &margins, units);
+             if (env->ExceptionCheck()) {
+                 doIt = JNI_FALSE;
+                 goto done;
+             }
+            /*
+             * Put the updated Paper instance and the orientation into
+             * the PageFormat.
+             */
+            setPaper(env, page, paper);
+            if (env->ExceptionCheck()) {
+                 doIt = JNI_FALSE;
+                 goto done;
+            }
+            setPageFormatOrientation(env, page, orientation);
+            if (env->ExceptionCheck()) {
+                 doIt = JNI_FALSE;
+                 goto done;
+            }
+            if (setup.hDevMode != NULL) {
+                DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
+                if (devmode != NULL) {
+                    if (devmode->dmFields & DM_PAPERSIZE) {
+                        jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
+                        if (err) {
+                            doIt = JNI_FALSE;
+                            goto done;
+                        }
                     }
                 }
-                AwtPrintControl::setPrintDC(env, self, newDC);
+                ::GlobalUnlock(setup.hDevMode);
             }
-            ::GlobalUnlock(setup.hDevNames);
+            doIt = JNI_TRUE;
         }
 
-        /* Get the Windows paper and margins description.
-        */
-        retrievePaperInfo(&setup, &paperSize, &margins, &orientation,
-                          AwtPrintControl::getPrintDC(env, self));
+        AwtDialog::CheckUninstallModalHook();
 
-        /* Convert the Windows' paper and margins description
-         * and place them into a Paper instance.
-         */
-        setPaperValues(env, paper, &paperSize, &margins, units);
-         if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
-         }
-        /*
-         * Put the updated Paper instance and the orientation into
-         * the PageFormat.
-         */
-        setPaper(env, page, paper);
-        if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+        AwtDialog::ModalActivateNextWindow(NULL, target, peer);
+
+        HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
+        if (setup.hDevMode != oldG) {
+            AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
         }
-        setPageFormatOrientation(env, page, orientation);
-        if (env->ExceptionCheck()) {
-             doIt = JNI_FALSE;
-             goto done;
+
+        oldG = AwtPrintControl::getPrintHDName(env, self);
+        if (setup.hDevNames != oldG) {
+            AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
         }
-        if (setup.hDevMode != NULL) {
-            DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
-            if (devmode != NULL) {
-                if (devmode->dmFields & DM_PAPERSIZE) {
-                    jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
-                    if (err) {
-                        doIt = JNI_FALSE;
-                        goto done;
-                    }
-                }
-            }
-            ::GlobalUnlock(setup.hDevMode);
-        }
-        doIt = JNI_TRUE;
-    }
-
-    AwtDialog::CheckUninstallModalHook();
-
-    AwtDialog::ModalActivateNextWindow(NULL, target, peer);
-
-    HGLOBAL oldG = AwtPrintControl::getPrintHDMode(env, self);
-    if (setup.hDevMode != oldG) {
-        AwtPrintControl::setPrintHDMode(env, self, setup.hDevMode);
-    }
-
-    oldG = AwtPrintControl::getPrintHDName(env, self);
-    if (setup.hDevNames != oldG) {
-        AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
     }
 
 done:
@@ -919,145 +922,147 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         }
     }
 
-    JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
+    {
+        JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
 
-    /* We try to mitigate the effects of floating point rounding errors
-     * by only setting a value if it would differ from the value in the
-     * target by at least 0.10 points = 1/720 inches.
-     * eg if the values present in the target are close to the calculated
-     * values then we accept the target.
-     */
-    const double epsilon = 0.10;
+        /* We try to mitigate the effects of floating point rounding errors
+         * by only setting a value if it would differ from the value in the
+         * target by at least 0.10 points = 1/720 inches.
+         * eg if the values present in the target are close to the calculated
+         * values then we accept the target.
+         */
+        const double epsilon = 0.10;
 
-    jdouble paperWidth, paperHeight;
-    jboolean err;
-    WORD dmPaperSize = getPrintPaperSize(env, &err, self);
-    if (err) goto done;
+        jdouble paperWidth, paperHeight;
+        jboolean err;
+        WORD dmPaperSize = getPrintPaperSize(env, &err, self);
+        if (err) goto done;
 
-    double ix, iy, iw, ih, pw, ph;
+        double ix, iy, iw, ih, pw, ph;
 
-    DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
-    jmethodID getID;
+        DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
+        jmethodID getID;
 
-    jclass paperClass = env->GetObjectClass(origPaper);
-    JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
-    getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
-    pw = env->CallDoubleMethod(origPaper, getID);
-    getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
-    ph = env->CallDoubleMethod(origPaper, getID);
-    getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
-    ix = env->CallDoubleMethod(origPaper, getID);
-    getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
-    iy = env->CallDoubleMethod(origPaper, getID);
-    getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
-    iw = env->CallDoubleMethod(origPaper, getID);
-    getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
-    JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
-    ih = env->CallDoubleMethod(origPaper, getID);
+        jclass paperClass = env->GetObjectClass(origPaper);
+        JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
+        getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
+        pw = env->CallDoubleMethod(origPaper, getID);
+        getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
+        ph = env->CallDoubleMethod(origPaper, getID);
+        getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
+        ix = env->CallDoubleMethod(origPaper, getID);
+        getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
+        iy = env->CallDoubleMethod(origPaper, getID);
+        getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
+        iw = env->CallDoubleMethod(origPaper, getID);
+        getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
+        JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
+        ih = env->CallDoubleMethod(origPaper, getID);
 
-    matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
-                   &paperWidth, &paperHeight, &dmPaperSize);
+        matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
+                       &paperWidth, &paperHeight, &dmPaperSize);
 
-    /* Validate margins and imageable area */
+        /* Validate margins and imageable area */
 
-    // pixels per inch in x and y direction
-    jint xPixelRes = GetDeviceCaps(printDC, LOGPIXELSX);
-    jint yPixelRes = GetDeviceCaps(printDC, LOGPIXELSY);
+        // pixels per inch in x and y direction
+        jint xPixelRes = GetDeviceCaps(printDC, LOGPIXELSX);
+        jint yPixelRes = GetDeviceCaps(printDC, LOGPIXELSY);
 
-    // x & y coord of printable area in pixels
-    jint xPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);
-    jint yPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETY);
+        // x & y coord of printable area in pixels
+        jint xPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);
+        jint yPixelOrg = GetDeviceCaps(printDC, PHYSICALOFFSETY);
 
-    // width & height of printable area in pixels
-    jint imgPixelWid = GetDeviceCaps(printDC, HORZRES);
-    jint imgPixelHgt = GetDeviceCaps(printDC, VERTRES);
+        // width & height of printable area in pixels
+        jint imgPixelWid = GetDeviceCaps(printDC, HORZRES);
+        jint imgPixelHgt = GetDeviceCaps(printDC, VERTRES);
 
-    // The DC may be obtained when we first selected the printer as a
-    // result of a call to setNativePrintService.
-    // If the Devmode was obtained later on from the DocumentProperties dialog
-    // the DC won't have been updated and its settings may be for PORTRAIT.
-    // This may happen in other cases too, but was observed for the above.
-    // To get a DC compatible with this devmode we should really call
-    // CreateDC() again to get a DC for the devmode we are using.
-    // The changes for that are a lot more risk, so to minimize that
-    // risk, assume its not LANDSCAPE unless width > height, even if the
-    // devmode says its LANDSCAPE.
-    // if the values were obtained from a rotated device, swap.
-    if ((getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) &&
-        (imgPixelWid > imgPixelHgt)) {
-      jint tmp;
-      tmp = xPixelRes;
-      xPixelRes = yPixelRes;
-      yPixelRes = tmp;
+        // The DC may be obtained when we first selected the printer as a
+        // result of a call to setNativePrintService.
+        // If the Devmode was obtained later on from the DocumentProperties dialog
+        // the DC won't have been updated and its settings may be for PORTRAIT.
+        // This may happen in other cases too, but was observed for the above.
+        // To get a DC compatible with this devmode we should really call
+        // CreateDC() again to get a DC for the devmode we are using.
+        // The changes for that are a lot more risk, so to minimize that
+        // risk, assume its not LANDSCAPE unless width > height, even if the
+        // devmode says its LANDSCAPE.
+        // if the values were obtained from a rotated device, swap.
+        if ((getOrientationFromDevMode2(hDevMode) == DMORIENT_LANDSCAPE) &&
+            (imgPixelWid > imgPixelHgt)) {
+          jint tmp;
+          tmp = xPixelRes;
+          xPixelRes = yPixelRes;
+          yPixelRes = tmp;
 
-      tmp = xPixelOrg;
-      xPixelOrg = yPixelOrg;
-      yPixelOrg = tmp;
+          tmp = xPixelOrg;
+          xPixelOrg = yPixelOrg;
+          yPixelOrg = tmp;
 
-      tmp = imgPixelWid;
-      imgPixelWid = imgPixelHgt;
-      imgPixelHgt = tmp;
-    }
+          tmp = imgPixelWid;
+          imgPixelWid = imgPixelHgt;
+          imgPixelHgt = tmp;
+        }
 
-    // page imageable area in 1/72"
-    jdouble imgX = (jdouble)((xPixelOrg * 72)/(jdouble)xPixelRes);
-    jdouble imgY = (jdouble)((yPixelOrg * 72)/(jdouble)yPixelRes);
-    jdouble imgWid = (jdouble)((imgPixelWid * 72)/(jdouble)xPixelRes);
-    jdouble imgHgt = (jdouble)((imgPixelHgt * 72)/(jdouble)yPixelRes);
+        // page imageable area in 1/72"
+        jdouble imgX = (jdouble)((xPixelOrg * 72)/(jdouble)xPixelRes);
+        jdouble imgY = (jdouble)((yPixelOrg * 72)/(jdouble)yPixelRes);
+        jdouble imgWid = (jdouble)((imgPixelWid * 72)/(jdouble)xPixelRes);
+        jdouble imgHgt = (jdouble)((imgPixelHgt * 72)/(jdouble)yPixelRes);
 
-    /* Check each of the individual values is within range.
-     * Then make sure imageable area is placed within imageable area.
-     * Allow for a small floating point error in the comparisons
-     */
+        /* Check each of the individual values is within range.
+         * Then make sure imageable area is placed within imageable area.
+         * Allow for a small floating point error in the comparisons
+         */
 
-    if (ix < 0.0 ) {
-        ix = 0.0;
-    }
-    if (iy < 0.0 ) {
-        iy = 0.0;
-    }
-    if (iw < 0.0) {
-        iw = 0.0;
-    }
-    if (ih < 0.0) {
-        ih = 0.0;
-    }
-    if ((ix + epsilon) < imgX) {
-         ix = imgX;
-    }
-    if ((iy + epsilon) < imgY) {
-         iy = imgY;
-    }
-    if (iw + epsilon > imgWid) {
-        iw = imgWid;
-    }
-    if (ih + epsilon > imgHgt) {
-        ih = imgHgt;
-    }
-    if ((ix + iw + epsilon) > (imgX+imgWid)) {
-        ix = (imgX+imgWid) - iw;
-    }
-    if ((iy + ih + epsilon) > (imgY+imgHgt)) {
-        iy = (imgY+imgHgt) - ih;
-    }
+        if (ix < 0.0 ) {
+            ix = 0.0;
+        }
+        if (iy < 0.0 ) {
+            iy = 0.0;
+        }
+        if (iw < 0.0) {
+            iw = 0.0;
+        }
+        if (ih < 0.0) {
+            ih = 0.0;
+        }
+        if ((ix + epsilon) < imgX) {
+             ix = imgX;
+        }
+        if ((iy + epsilon) < imgY) {
+             iy = imgY;
+        }
+        if (iw + epsilon > imgWid) {
+            iw = imgWid;
+        }
+        if (ih + epsilon > imgHgt) {
+            ih = imgHgt;
+        }
+        if ((ix + iw + epsilon) > (imgX+imgWid)) {
+            ix = (imgX+imgWid) - iw;
+        }
+        if ((iy + ih + epsilon) > (imgY+imgHgt)) {
+            iy = (imgY+imgHgt) - ih;
+        }
 
-    DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
+        DASSERT(AwtToolkit::MainThread() != ::GetCurrentThreadId());
 
-    jmethodID setSizeID = env->GetMethodID(paperClass,
+        jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
-    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
+        JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
 
-    jmethodID setImageableID = env->GetMethodID(paperClass,
-                                        SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
-    JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
+        jmethodID setImageableID = env->GetMethodID(paperClass,
+                                            SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
+        JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
 
-    env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
-    env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
+        env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
+        env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
+    }
 
 done:
     /* Free any resources allocated */
