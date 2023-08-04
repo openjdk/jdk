@@ -6368,19 +6368,22 @@ void AwtComponent::_SetParent(void * param)
         AwtComponent *awtComponent = NULL;
         AwtComponent *awtParent = NULL;
 
-        PDATA pData;
-        JNI_CHECK_PEER_GOTO(self, ret);
-        awtComponent = (AwtComponent *)pData;
-        JNI_CHECK_PEER_GOTO(parent, ret);
-        awtParent = (AwtComponent *)pData;
+        {
+            PDATA pData;
+            JNI_CHECK_PEER_GOTO(self, ret);
+            awtComponent = (AwtComponent *)pData;
+            JNI_CHECK_PEER_GOTO(parent, ret);
+            awtParent = (AwtComponent *)pData;
 
-        HWND selfWnd = awtComponent->GetHWnd();
-        HWND parentWnd = awtParent->GetHWnd();
-        if (::IsWindow(selfWnd) && ::IsWindow(parentWnd)) {
-            // Shouldn't trigger native focus change
-            // (only the proxy may be the native focus owner).
-            ::SetParent(selfWnd, parentWnd);
+            HWND selfWnd = awtComponent->GetHWnd();
+            HWND parentWnd = awtParent->GetHWnd();
+            if (::IsWindow(selfWnd) && ::IsWindow(parentWnd)) {
+                // Shouldn't trigger native focus change
+                // (only the proxy may be the native focus owner).
+                ::SetParent(selfWnd, parentWnd);
+            }
         }
+
 ret:
         env->DeleteGlobalRef(self);
         env->DeleteGlobalRef(parent);
@@ -6543,14 +6546,16 @@ static void _GetInsets(void* param)
     GetInsetsStruct *gis = (GetInsetsStruct *)param;
     jobject self = gis->window;
 
-    gis->insets->left = gis->insets->top =
-        gis->insets->right = gis->insets->bottom = 0;
+    {
+        gis->insets->left = gis->insets->top =
+            gis->insets->right = gis->insets->bottom = 0;
 
-    PDATA pData;
-    JNI_CHECK_PEER_GOTO(self, ret);
-    AwtComponent *component = (AwtComponent *)pData;
+        PDATA pData;
+        JNI_CHECK_PEER_GOTO(self, ret);
+        AwtComponent *component = (AwtComponent *)pData;
 
-    component->GetInsets(gis->insets);
+        component->GetInsets(gis->insets);
+    }
 
   ret:
     env->DeleteGlobalRef(self);
