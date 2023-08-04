@@ -66,7 +66,7 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class UpdateDerivedPointersTask;
 #endif
 
-  class ClearRetainedRegionData;
+  class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
   class RestorePreservedMarksTask;
   class FreeCollectionSetTask;

@@ -142,9 +142,7 @@ private:
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
   // Basically everything but copying eden regions.
-  // The include_retained parameter determines whether the time retained regions
-  // will take is included or not in this base time.
-  double predict_base_time_ms(size_t pending_cards, size_t rs_length, bool include_retained) const;
+  double predict_base_time_ms(size_t pending_cards, size_t rs_length) const;
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(HeapRegion* hr, bool for_young_only_phase) const;
@@ -262,6 +260,8 @@ private:
 public:
   size_t pending_cards_at_gc_start() const { return _pending_cards_at_gc_start; }
 
+  // The minimum number of retained regions we will add to the CSet during a young GC.
+  uint min_retained_old_cset_length() const;
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a single mixed GC given the initial number of regions selected during
   // marking.

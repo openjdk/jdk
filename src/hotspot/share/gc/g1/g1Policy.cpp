@@ -267,10 +267,15 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   if (use_adaptive_young_list_length()) {
     desired_eden_length_by_mmu = calculate_desired_eden_length_by_mmu();
 
-    double base_time_ms = predict_base_time_ms(pending_cards, rs_length, true /* include_retained */);
+    double base_time_ms = predict_base_time_ms(pending_cards, rs_length);
+    double retained_time_ms = predict_retained_regions_evac_time();
+    double total_time_ms = base_time_ms + retained_time_ms;
+
+    log_trace(gc, ergo, heap)("Predicted total base time: total %f base_time %f retained_time %f",
+                              total_time_ms, base_time_ms, retained_time_ms);
 
     desired_eden_length_by_pause =
-      calculate_desired_eden_length_by_pause(base_time_ms,
+      calculate_desired_eden_length_by_pause(total_time_ms,
                                              absolute_min_young_length - survivor_length,
                                              absolute_max_young_length - survivor_length);
 
@@ -518,17 +523,23 @@ double G1Policy::predict_retained_regions_evac_time() const {
   double result = 0.0;
 
   G1CollectionCandidateList& list = candidates()->retained_regions();
+  uint min_regions_left = MIN2(min_retained_old_cset_length(),
+                               list.length());
 
   for (HeapRegion* r : list) {
     double predicted_time_ms = predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
 
-    if (result + predicted_time_ms >= max_time_for_retaining()) {
-      // Over limit. Exit.
+    if (min_regions_left == 0 && (result + predicted_time_ms >= max_time_for_retaining())) {
+      // Over limit, and minimum amount of regions taken. Exit.
       break;
+    }
+    if (min_regions_left > 0) {
+      min_regions_left--;
     }
     result += predicted_time_ms;
     num_regions++;
   }
+
   log_trace(gc, ergo, heap)("Selected %u of %u retained candidates taking %1.3fms additional time (max %1.3fms)",
                             num_regions, list.length(), result, max_time_for_retaining());
   return result;
@@ -1026,8 +1037,7 @@ void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards,
-                                      size_t rs_length,
-                                      bool include_retained) const {
+                                      size_t rs_length) const {
   bool in_young_only_phase = collector_state()->in_young_only_phase();
 
   size_t unique_cards_from_rs = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
@@ -1039,24 +1049,20 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
   double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
   double constant_other_time = _analytics->predict_constant_other_time_ms();
   double survivor_evac_time = predict_survivor_regions_evac_time();
-  double retained_evac_time = include_retained ? predict_retained_regions_evac_time() : -1.0;
 
-  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time +
-                      (include_retained ? retained_evac_time : 0.0);
+  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time;
 
   log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
-                            "card_merge_time %f card_scan_time %f constant_other_time %f "
-                            "survivor_evac_time %f retained_evac_time %f",
+                            "card_merge_time %f card_scan_time %f constant_other_time %f survivor_evac_time %f",
                             total_time, pending_cards, rs_length, effective_scanned_cards,
-                            card_merge_time, card_scan_time, constant_other_time,
-                            survivor_evac_time, retained_evac_time);
+                            card_merge_time, card_scan_time, constant_other_time, survivor_evac_time);
   return total_time;
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   size_t rs_length = _analytics->predict_rs_length(for_young_only_phase);
-  return predict_base_time_ms(pending_cards, rs_length, false /* include_retained */);
+  return predict_base_time_ms(pending_cards, rs_length);
 }
 
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
@@ -1408,6 +1414,12 @@ size_t G1Policy::allowed_waste_in_collection_set() const {
   return G1HeapWastePercent * _g1h->capacity() / 100;
 }
 
+uint G1Policy::min_retained_old_cset_length() const {
+  // Guarantee some progress with retained regions regardless of available time by
+  // taking at least one region.
+  return 1;
+}
+
 uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
@@ -1530,9 +1542,7 @@ void G1Policy::select_candidates_from_retained(G1CollectionCandidateList* retain
                                                G1CollectionCandidateRegionList* initial_old_regions,
                                                G1CollectionCandidateRegionList* optional_old_regions) {
 
-  // Guarantee some progress with retained regions regardless of available time by
-  // taking at least one region.
-  uint const min_regions = 1;
+  uint const min_regions = min_retained_old_cset_length();
 
   uint num_initial_regions_selected = 0;
   uint num_optional_regions_selected = 0;

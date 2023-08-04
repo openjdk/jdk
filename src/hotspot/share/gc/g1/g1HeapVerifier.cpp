@@ -461,7 +461,7 @@ public:
 
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
 
-    bool part_of_marking = !(r->is_collection_set_candidate() || !r->is_old_or_humongous());
+    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
 
     if (part_of_marking) {
       guarantee(r->bottom() != r->top_at_mark_start(), "region %u (%s) does not have TAMS set",

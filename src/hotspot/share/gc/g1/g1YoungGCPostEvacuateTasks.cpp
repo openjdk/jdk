@@ -334,11 +334,11 @@ public:
   size_t num_dirtied()   const { return _num_dirtied; }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
   HeapRegionClaimer _claimer;
 
-  class ClearRetainedRegionDataClosure : public HeapRegionClosure {
+  class ProcessEvacuationFailedRegionsClosure : public HeapRegionClosure {
   public:
 
     bool do_heap_region(HeapRegion* r) override {
@@ -358,7 +358,7 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
       } else {
-        // Evacuation failed region is going to be marked through. Update mark data.
+        // This evacuation failed region is going to be marked through. Update mark data.
         r->set_top_at_mark_start(r->top());
         cm->set_live_bytes(r->hrm_index(), r->live_bytes());
         assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
@@ -369,8 +369,8 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public 
   };
 
 public:
-  ClearRetainedRegionData(G1EvacFailureRegions* evac_failure_regions) :
-    G1AbstractSubTask(G1GCPhaseTimes::ClearRetainedRegionData),
+  ProcessEvacuationFailedRegionsTask(G1EvacFailureRegions* evac_failure_regions) :
+    G1AbstractSubTask(G1GCPhaseTimes::ProcessEvacuationFailedRegions),
     _evac_failure_regions(evac_failure_regions),
     _claimer(0) {
   }
@@ -384,7 +384,7 @@ public:
   }
 
   void do_work(uint worker_id) override {
-    ClearRetainedRegionDataClosure cl;
+    ProcessEvacuationFailedRegionsClosure cl;
     _evac_failure_regions->par_iterate(&cl, &_claimer, worker_id);
   }
 };
@@ -769,7 +769,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
-    add_parallel_task(new ClearRetainedRegionData(evac_failure_regions));
+    add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   if (UseTLAB && ResizeTLAB) {
