@@ -40,7 +40,7 @@ u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
   }
 
-  u2 index = static_cast<u2>(_entries.length());
+  u2 index = checked_cast<u2>(_entries.length());
   bool created = false;
   u2* probe = _indices.put_if_absent(bcpe, index, &created);
   if (created) {
@@ -48,7 +48,7 @@ u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
   } else {
     index = *probe;
   }
-  return static_cast<u2>(index + _orig->length());
+  return checked_cast<u2>(index + _orig->length());
 }
 
 ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
