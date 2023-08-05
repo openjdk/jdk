@@ -297,9 +297,9 @@ public interface Elements {
      * the returned comment.
      * <li>For subsequent lines
      * of the doc comment starting after the initial "{@code /**}",
-     * if the lines start with <em>zero</em> or more white space characters followed by
+     * if the lines start with <em>zero</em> or more whitespace characters followed by
      * <em>one</em> or more "{@code *}" characters,
-     * those leading white space characters are discarded as are any
+     * those leading whitespace characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
      * space or starting the line.
      * Otherwise, if a line does not have a prefix of the described
