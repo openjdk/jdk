@@ -108,7 +108,7 @@ bool JfrSamplerWindow::sample(int64_t timestamp, bool* expired_window) const {
 }
 
 inline bool JfrSamplerWindow::sample() const {
-  const size_t ordinal = Atomic::add(&_measured_population_size, checked_cast<size_t>(1));
+  const size_t ordinal = Atomic::add(&_measured_population_size, static_cast<size_t>(1));
   return ordinal <= _projected_population_size && ordinal % _sampling_interval == 0;
 }
 
@@ -171,7 +171,7 @@ inline double exponentially_weighted_moving_average(double Y, double alpha, doub
 }
 
 inline double compute_ewma_alpha_coefficient(size_t lookback_count) {
-  return lookback_count <= 1 ? 1 : checked_cast<double>(1) / checked_cast<double>(lookback_count);
+  return lookback_count <= 1 ? 1 : static_cast<double>(1) / static_cast<double>(lookback_count);
 }
 
 inline size_t compute_accumulated_debt_carry_limit(const JfrSamplerParams& params) {
@@ -197,10 +197,10 @@ inline int64_t millis_to_countertime(int64_t millis) {
 void JfrSamplerWindow::initialize(const JfrSamplerParams& params) {
   assert(_sampling_interval >= 1, "invariant");
   if (params.window_duration_ms == 0) {
-    Atomic::store(&_end_ticks, checked_cast<int64_t>(0));
+    Atomic::store(&_end_ticks, static_cast<int64_t>(0));
     return;
   }
-  Atomic::store(&_measured_population_size, checked_cast<size_t>(0));
+  Atomic::store(&_measured_population_size, static_cast<size_t>(0));
   const int64_t end_ticks = now() + millis_to_countertime(params.window_duration_ms);
   Atomic::store(&_end_ticks, end_ticks);
 }
@@ -222,7 +222,7 @@ JfrSamplerWindow* JfrAdaptiveSampler::set_rate(const JfrSamplerParams& params, c
     next->_projected_population_size = 0;
     return next;
   }
-  next->_sampling_interval = derive_sampling_interval(checked_cast<double>(sample_size), expired);
+  next->_sampling_interval = derive_sampling_interval(static_cast<double>(sample_size), expired);
   assert(next->_sampling_interval >= 1, "invariant");
   next->_projected_population_size = sample_size * next->_sampling_interval;
   return next;
@@ -283,11 +283,11 @@ size_t JfrSamplerWindow::population_size() const {
 }
 
 intptr_t JfrSamplerWindow::accumulated_debt() const {
-  return _projected_population_size == 0 ? 0 : checked_cast<intptr_t>(_params.sample_points_per_window - max_sample_size()) + debt();
+  return _projected_population_size == 0 ? 0 : static_cast<intptr_t>(_params.sample_points_per_window - max_sample_size()) + debt();
 }
 
 intptr_t JfrSamplerWindow::debt() const {
-  return _projected_population_size == 0 ? 0 : checked_cast<intptr_t>(sample_size() - _params.sample_points_per_window);
+  return _projected_population_size == 0 ? 0 : static_cast<intptr_t>(sample_size() - _params.sample_points_per_window);
 }
 
 /*
@@ -310,7 +310,7 @@ inline size_t next_geometric(double p, double u) {
     u = 0.99;
   }
   // Inverse CDF for the geometric distribution.
-  return checked_cast<size_t>(ceil(log(1.0 - u) / log(1.0 - p)));
+  return static_cast<size_t>(ceil(log(1.0 - u) / log(1.0 - p)));
 }
 
 size_t JfrAdaptiveSampler::derive_sampling_interval(double sample_size, const JfrSamplerWindow* expired) {
@@ -327,7 +327,7 @@ size_t JfrAdaptiveSampler::derive_sampling_interval(double sample_size, const Jf
 // The projected population size is an exponentially weighted moving average, a function of the window_lookback_count.
 inline double JfrAdaptiveSampler::project_population_size(const JfrSamplerWindow* expired) {
   assert(expired != nullptr, "invariant");
-  _avg_population_size = exponentially_weighted_moving_average(checked_cast<double>(expired->population_size()), _ewma_population_size_alpha, _avg_population_size);
+  _avg_population_size = exponentially_weighted_moving_average(static_cast<double>(expired->population_size()), _ewma_population_size_alpha, _avg_population_size);
   return _avg_population_size;
 }
 
@@ -362,7 +362,7 @@ bool JfrGTestFixedRateSampler::initialize() {
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
   assert(sample_size_ewma != nullptr, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
-    *sample_size_ewma = exponentially_weighted_moving_average(checked_cast<double>(expired->sample_size()), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
+    *sample_size_ewma = exponentially_weighted_moving_average(static_cast<double>(expired->sample_size()), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
     log_debug(jfr, system, throttle)("JfrGTestFixedRateSampler: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
       *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
       expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),

@@ -87,13 +87,13 @@ inline R JfrBigEndian::read_unaligned(const address location) {
   assert(location != nullptr, "just checking");
   switch (sizeof(T)) {
     case sizeof(u1) :
-      return checked_cast<R>(read_bytes<u1>(location));
+      return static_cast<R>(read_bytes<u1>(location));
     case sizeof(u2):
-      return checked_cast<R>(read_bytes<u2>(location));
+      return static_cast<R>(read_bytes<u2>(location));
     case sizeof(u4):
-      return checked_cast<R>(read_bytes<u4>(location));
+      return static_cast<R>(read_bytes<u4>(location));
     case sizeof(u8):
-      return checked_cast<R>(read_bytes<u8>(location));
+      return static_cast<R>(read_bytes<u8>(location));
     default:
       assert(false, "not reach");
   }
@@ -116,19 +116,19 @@ inline R JfrBigEndian::read(const void* location) {
   assert(location != nullptr, "just checking");
   assert(sizeof(T) <= sizeof(u8), "no support for arbitrary sizes");
   if (sizeof(T) == sizeof(u1)) {
-    return checked_cast<R>(*(u1*)location);
+    return static_cast<R>(*(u1*)location);
   }
   if (is_aligned(location, sizeof(T)) || platform_supports_unaligned_reads()) {
     // fastest case
     switch (sizeof(T)) {
       case sizeof(u1) :
-        return checked_cast<R>(*(u1*)location);
+        return static_cast<R>(*(u1*)location);
       case sizeof(u2):
-        return checked_cast<R>(bigendian_16(*(u2*)location));
+        return static_cast<R>(bigendian_16(*(u2*)location));
       case sizeof(u4):
-        return checked_cast<R>(bigendian_32(*(u4*)location));
+        return static_cast<R>(bigendian_32(*(u4*)location));
       case sizeof(u8):
-        return checked_cast<R>(bigendian_64(*(u8*)location));
+        return static_cast<R>(bigendian_64(*(u8*)location));
     }
   }
   return read_unaligned<R, T>((const address)location);
