@@ -51,13 +51,14 @@ import java.io.PrintStream;
  * <p> The BoxLayout manager is constructed with an axis parameter that
  * specifies the type of layout that will be done. There are four choices:
  *
- * <blockquote><b>{@code X_AXIS}</b> - Components are laid out horizontally
- * from left to right.</blockquote>
+ * <ul>
+ * <li><b>{@code X_AXIS}</b> - Components are laid out horizontally
+ * from left to right.</li>
  *
- * <blockquote><b>{@code Y_AXIS}</b> - Components are laid out vertically
- * from top to bottom.</blockquote>
+ * <li><b>{@code Y_AXIS}</b> - Components are laid out vertically
+ * from top to bottom.</li>
  *
- * <blockquote><b>{@code LINE_AXIS}</b> - Components are laid out the way
+ * <li><b>{@code LINE_AXIS}</b> - Components are laid out the way
  * words are laid out in a line, based on the container's
  * {@code ComponentOrientation} property. If the container's
  * {@code ComponentOrientation} is horizontal then components are laid out
@@ -65,9 +66,9 @@ import java.io.PrintStream;
  * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left. For vertical orientations components are always laid out
- * from top to bottom.</blockquote>
+ * from top to bottom.</li>
  *
- * <blockquote><b>{@code PAGE_AXIS}</b> - Components are laid out the way
+ * <li><b>{@code PAGE_AXIS}</b> - Components are laid out the way
  * text lines are laid out on a page, based on the container's
  * {@code ComponentOrientation} property. If the container's
  * {@code ComponentOrientation} is horizontal then components are laid out
@@ -75,7 +76,9 @@ import java.io.PrintStream;
  * orientations, if the container's {@code ComponentOrientation} is left to
  * right then components are laid out left to right, otherwise they are laid
  * out right to left.&nbsp; For vertical orientations components are always
- * laid out from top to bottom.</blockquote>
+ * laid out from top to bottom.</li>
+ * </ul>
+ *
  * <p>
  * For all directions, components are arranged in the same order as they were
  * added to the container.
