@@ -93,7 +93,7 @@ class jfieldIDWorkaround: AllStatic {
     // the jfieldID is created with.
     return checked_cast<int>(result);
   }
-  static intptr_t encode_klass_hash(Klass* k, intptr_t offset);
+  static intptr_t encode_klass_hash(Klass* k, int offset);
   static bool             klass_hash_ok(Klass* k, jfieldID id);
   static void  verify_instance_jfieldID(Klass* k, jfieldID id);
 

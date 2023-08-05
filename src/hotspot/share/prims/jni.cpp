@@ -206,15 +206,14 @@ bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
 }
 
 
-intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
+intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, int offset) {
   if (offset <= small_offset_mask) {
-    int small_offset = checked_cast<int>(offset);
     Klass* field_klass = k;
     Klass* super_klass = field_klass->super();
     // With compressed oops the most super class with nonstatic fields would
     // be the owner of fields embedded in the header.
     while (InstanceKlass::cast(super_klass)->has_nonstatic_fields() &&
-           InstanceKlass::cast(super_klass)->contains_field_offset(small_offset)) {
+           InstanceKlass::cast(super_klass)->contains_field_offset(offset)) {
       field_klass = super_klass;   // super contains the field also
       super_klass = field_klass->super();
     }
@@ -1903,7 +1902,6 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
     field_value.unionType = value; \
     o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = (Argument)(((jboolean)value) & 1); } \
   o->Fieldname##_field_put(offset, value); \
   ReturnProbe; \
 JNI_END
@@ -2096,7 +2094,6 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, nullptr, nullptr, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = (Argument)(((jboolean)value) & 1); } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   ReturnProbe;\
 JNI_END
