@@ -46,7 +46,6 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     // Just make sure it's there for now
     Type type = db.lookupType("InstanceStackChunkKlass");
-    System.out.println("InstanceStackChunkKlass: " + type);
   }
 
   public InstanceStackChunkKlass(Address addr) {

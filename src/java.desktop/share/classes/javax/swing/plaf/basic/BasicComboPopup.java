@@ -71,7 +71,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         public Object getElementAt(int index) { return null; }
         public void addListDataListener(ListDataListener l) {}
         public void removeListDataListener(ListDataListener l) {}
-    };
+    }
 
     static final ListModel<Object> EmptyListModel = new EmptyListModelClass();
 
@@ -377,7 +377,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         installKeyboardActions();
     }
 
-    // Overriden PopupMenuListener notification methods to inform combo box
+    // Overridden PopupMenuListener notification methods to inform combo box
     // PopupMenuListeners.
 
     protected void firePopupMenuWillBecomeVisible() {
@@ -708,7 +708,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
 
     //===================================================================
-    // begin Event Listenters
+    // begin Event Listeners
     //
 
     /**
@@ -927,11 +927,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
             if ( comboBox.isEditable() ) {
                 Component comp = comboBox.getEditor().getEditorComponent();
                 if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
-                    comp.requestFocus();
+                    comp.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
                 }
             }
             else if (comboBox.isRequestFocusEnabled()) {
-                comboBox.requestFocus();
+                comboBox.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
             togglePopup();
         }
@@ -1237,11 +1237,19 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         if ( comboBox.isEditable() ) {
             Component comp = comboBox.getEditor().getEditorComponent();
             if ((!(comp instanceof JComponent)) || ((JComponent)comp).isRequestFocusEnabled()) {
-                comp.requestFocus();
+                if (e != null) {
+                    comp.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+                } else {
+                    comp.requestFocus();
+                }
             }
         }
         else if (comboBox.isRequestFocusEnabled()) {
-            comboBox.requestFocus();
+            if (e != null) {
+                comboBox.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
+            } else {
+                comboBox.requestFocus();
+            }
         }
     }
 

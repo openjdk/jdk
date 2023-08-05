@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ class stack_map_frame {
 #define FRAME_TYPE_DECL(stackmap_frame_type, arg1, arg2) \
   inline stackmap_frame_type* as_##stackmap_frame_type() const; \
   bool is_##stackmap_frame_type() { \
-    return as_##stackmap_frame_type() != NULL; \
+    return as_##stackmap_frame_type() != nullptr; \
   }
 
   FOR_EACH_STACKMAP_FRAME_TYPE(FRAME_TYPE_DECL, x, x)
@@ -252,7 +252,7 @@ class same_frame : public stack_map_frame {
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
 
   bool is_valid_offset(int offset_delta) const {
     return is_frame_type(offset_delta_to_frame_type(offset_delta));
@@ -305,7 +305,7 @@ class same_frame_extended : public stack_map_frame {
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
   bool is_valid_offset(int offset) const { return true; }
 
   bool verify_subtype(address start, address end) const {
@@ -344,7 +344,7 @@ class same_locals_1_stack_item_frame : public stack_map_frame {
       address addr, int offset_delta, verification_type_info* vti) {
     same_locals_1_stack_item_frame* sm = (same_locals_1_stack_item_frame*)addr;
     sm->set_offset_delta(offset_delta);
-    if (vti != NULL) {
+    if (vti != nullptr) {
       sm->set_type(vti);
     }
     return sm;
@@ -421,7 +421,7 @@ class same_locals_1_stack_item_extended : public stack_map_frame {
        (same_locals_1_stack_item_extended*)addr;
     sm->set_frame_type(_frame_id);
     sm->set_offset_delta(offset_delta);
-    if (vti != NULL) {
+    if (vti != nullptr) {
       sm->set_type(vti);
     }
     return sm;
@@ -521,7 +521,7 @@ class chop_frame : public stack_map_frame {
   }
 
   int number_of_types() const { return 0; }
-  verification_type_info* types() const { return NULL; }
+  verification_type_info* types() const { return nullptr; }
   bool is_valid_offset(int offset) { return true; }
 
   bool verify_subtype(address start, address end) const {
@@ -568,7 +568,7 @@ class append_frame : public stack_map_frame {
     append_frame* sm = (append_frame*)addr;
     sm->set_appends(appends);
     sm->set_offset_delta(offset_delta);
-    if (types != NULL) {
+    if (types != nullptr) {
       verification_type_info* cur = sm->types();
       for (int i = 0; i < appends; ++i) {
         cur->copy_from(types);
@@ -680,7 +680,7 @@ class full_frame : public stack_map_frame {
     sm->set_frame_type(_frame_id);
     sm->set_offset_delta(offset_delta);
     sm->set_num_locals(num_locals);
-    if (locals != NULL) {
+    if (locals != nullptr) {
       verification_type_info* cur = sm->locals();
       for (int i = 0; i < num_locals; ++i) {
         cur->copy_from(locals);
@@ -822,13 +822,13 @@ class full_frame : public stack_map_frame {
 
 #define VIRTUAL_DISPATCH(stack_frame_type, func_name, args) \
   stack_frame_type* item_##stack_frame_type = as_##stack_frame_type(); \
-  if (item_##stack_frame_type != NULL) { \
+  if (item_##stack_frame_type != nullptr) { \
     return item_##stack_frame_type->func_name args;  \
   }
 
 #define VOID_VIRTUAL_DISPATCH(stack_frame_type, func_name, args) \
   stack_frame_type* item_##stack_frame_type = as_##stack_frame_type(); \
-  if (item_##stack_frame_type != NULL) { \
+  if (item_##stack_frame_type != nullptr) { \
     item_##stack_frame_type->func_name args;  \
     return; \
   }
@@ -855,7 +855,7 @@ int stack_map_frame::number_of_types() const {
 
 verification_type_info* stack_map_frame::types() const {
   FOR_EACH_STACKMAP_FRAME_TYPE(VIRTUAL_DISPATCH, types, ());
-  return NULL;
+  return nullptr;
 }
 
 bool stack_map_frame::is_valid_offset(int offset) const {
@@ -887,7 +887,7 @@ stack_frame_type* stack_map_frame::as_##stack_frame_type() const { \
   if (stack_frame_type::is_frame_type(frame_type())) { \
     return (stack_frame_type*)this; \
   } else { \
-    return NULL; \
+    return nullptr; \
   } \
 }
 

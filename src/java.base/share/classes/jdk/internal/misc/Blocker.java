@@ -63,7 +63,7 @@ public class Blocker {
 
     /**
      * Marks the beginning of a possibly blocking operation.
-     * @return the return value from the attempt to compensate
+     * @return the return value from the attempt to compensate or -1 if not attempted
      */
     public static long begin() {
         if (VM.isBooted()
@@ -81,17 +81,17 @@ public class Blocker {
                 }
             }
         }
-        return 0;
+        return -1;
     }
 
     /**
      * Marks the beginning of a possibly blocking operation.
      * @param blocking true if the operation may block, otherwise false
-     * @return the return value from the attempt to compensate when blocking is true,
-     * another value when blocking is false
+     * @return the return value from the attempt to compensate, -1 if not attempted
+     * or blocking is false
      */
     public static long begin(boolean blocking) {
-        return (blocking) ? begin() : 0;
+        return (blocking) ? begin() : -1;
     }
 
     /**
@@ -99,7 +99,7 @@ public class Blocker {
      * @param compensateReturn the value returned by the begin method
      */
     public static void end(long compensateReturn) {
-        if (compensateReturn > 0) {
+        if (compensateReturn >= 0) {
             assert currentCarrierThread() instanceof CarrierThread ct && ct.inBlocking();
             CarrierThread ct = (CarrierThread) currentCarrierThread();
             ForkJoinPools.endCompensatedBlock(ct.getPool(), compensateReturn);

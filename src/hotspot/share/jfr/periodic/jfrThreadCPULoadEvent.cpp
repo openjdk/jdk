@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,11 +115,12 @@ void JfrThreadCPULoadEvent::send_events() {
   int number_of_threads = 0;
   while (iter.has_next()) {
     JavaThread* const jt = iter.next();
-    assert(jt != NULL, "invariant");
+    assert(jt != nullptr, "invariant");
     ++number_of_threads;
     EventThreadCPULoad event(UNTIMED);
     if (JfrThreadCPULoadEvent::update_event(event, jt, cur_wallclock_time, processor_count)) {
       event.set_starttime(event_time);
+      event.set_endtime(event_time);
       if (jt != periodic_thread) {
         // Commit reads the thread id from this thread's trace data, so put it there temporarily
         JfrThreadLocal::impersonate(periodic_thread, JFR_JVM_THREAD_ID(jt));

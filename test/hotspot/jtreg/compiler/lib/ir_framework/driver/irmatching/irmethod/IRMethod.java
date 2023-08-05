@@ -23,94 +23,65 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
+import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.driver.irmatching.Compilation;
+import compiler.lib.ir_framework.driver.irmatching.MatchResult;
+import compiler.lib.ir_framework.driver.irmatching.Matchable;
+import compiler.lib.ir_framework.driver.irmatching.MatchableMatcher;
 import compiler.lib.ir_framework.driver.irmatching.irrule.IRRule;
-import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
+import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFormatException;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Helper class to store information about a method that needs to be IR matched.
+ * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable
+ * {@link IR @IR} rules.
+ *
+ * @see IR
+ * @see IRRule
+ * @see IRMethodMatchResult
  */
-public class IRMethod {
+public class IRMethod implements IRMethodMatchable {
     private final Method method;
-    private final List<IRRule> irRules;
-    private final StringBuilder outputBuilder;
-    private String output;
-    private String idealOutput;
-    private String optoAssemblyOutput;
+    private final MatchableMatcher matcher;
 
-    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos) {
+    public IRMethod(Method method, int[] ruleIds, IR[] irAnnos, Compilation compilation) {
         this.method = method;
-        this.irRules = new ArrayList<>();
-        for (int i : ruleIds) {
-            irRules.add(new IRRule(this, i, irAnnos[i - 1]));
-        }
-        this.outputBuilder = new StringBuilder();
-        this.output = "";
-        this.idealOutput = "";
-        this.optoAssemblyOutput = "";
+        this.matcher = new MatchableMatcher(createIRRules(method, ruleIds, irAnnos, compilation));
     }
 
-    public Method getMethod() {
-        return method;
-    }
-
-
-    /**
-     * The Ideal output comes always before the Opto Assembly output. We might parse multiple C2 compilations of this method.
-     * Only keep the very last one by overriding 'output'.
-     */
-    public void setIdealOutput(String idealOutput) {
-        outputBuilder.setLength(0);
-        this.idealOutput = "PrintIdeal:" + System.lineSeparator() + idealOutput;
-        outputBuilder.append(this.idealOutput);
-    }
-
-    /**
-     * The Opto Assembly output comes after the Ideal output. Simply append to 'output'.
-     */
-    public void setOptoAssemblyOutput(String optoAssemblyOutput) {
-        this.optoAssemblyOutput = "PrintOptoAssembly:" + System.lineSeparator() + optoAssemblyOutput;
-        outputBuilder.append(System.lineSeparator()).append(System.lineSeparator()).append(this.optoAssemblyOutput);
-        output = outputBuilder.toString();
-    }
-
-    public String getOutput() {
-        return output;
-    }
-
-    public String getIdealOutput() {
-        return idealOutput;
-    }
-
-    public String getOptoAssemblyOutput() {
-        return optoAssemblyOutput;
-    }
-
-    /**
-     * Apply all IR rules of this IR method.
-     */
-    public IRMethodMatchResult applyIRRules() {
-        TestFramework.check(!irRules.isEmpty(), "IRMethod cannot be created if there are no IR rules to apply");
-        List<IRRuleMatchResult> results = new ArrayList<>();
-        if (!output.isEmpty()) {
-            return getNormalMatchResult(results);
-        } else {
-            return new MissingCompilationResult(this, irRules.size());
-        }
-    }
-
-    private NormalMatchResult getNormalMatchResult(List<IRRuleMatchResult> results) {
-        for (IRRule irRule : irRules) {
-            IRRuleMatchResult result = irRule.applyCheckAttribute();
-            if (result.fail()) {
-                results.add(result);
+    private List<Matchable> createIRRules(Method method, int[] ruleIds, IR[] irAnnos, Compilation compilation) {
+        List<Matchable> irRules = new ArrayList<>();
+        for (int ruleId : ruleIds) {
+            try {
+                irRules.add(new IRRule(ruleId, irAnnos[ruleId - 1], compilation));
+            } catch (TestFormatException e) {
+                String postfixErrorMsg = " for IR rule " + ruleId + " at " + method + ".";
+                TestFormat.failNoThrow(e.getMessage() + postfixErrorMsg);
             }
         }
-        return new NormalMatchResult(this, results);
+        return irRules;
+    }
+
+    /**
+     * Used only for sorting.
+     */
+    @Override
+    public String name() {
+        return method.getName();
+    }
+
+    /**
+     * Apply all IR rules of this method for each of the specified (or implied in case of
+     * {@link CompilePhase#DEFAULT}) compile phases.
+     */
+    @Override
+    public MatchResult match() {
+        return new IRMethodMatchResult(method, matcher.match());
     }
 }

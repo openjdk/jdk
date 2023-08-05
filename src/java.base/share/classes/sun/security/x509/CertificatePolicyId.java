@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 
@@ -35,8 +37,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicyId {
-    private ObjectIdentifier id;
+public class CertificatePolicyId implements DerEncoder {
+    private final ObjectIdentifier id;
 
     /**
      * Create a CertificatePolicyId with the ObjectIdentifier.
@@ -44,7 +46,7 @@ public class CertificatePolicyId {
      * @param id the ObjectIdentifier for the policy id.
      */
     public CertificatePolicyId(ObjectIdentifier id) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     /**
@@ -67,20 +69,19 @@ public class CertificatePolicyId {
      * Returns a printable representation of the CertificatePolicyId.
      */
     public String toString() {
-        String s = "CertificatePolicyId: ["
-                 + id.toString()
-                 + "]\n";
 
-        return (s);
+        return ("CertificatePolicyId: ["
+                 + id.toString()
+                 + "]\n");
     }
 
     /**
      * Write the CertificatePolicyId to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the object to.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putOID(id);
     }
 

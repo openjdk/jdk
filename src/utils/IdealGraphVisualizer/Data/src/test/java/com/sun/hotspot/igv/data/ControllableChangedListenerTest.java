@@ -24,8 +24,8 @@
 
 package com.sun.hotspot.igv.data;
 
-import static org.junit.Assert.*;
 import org.junit.*;
+import static org.junit.Assert.*;
 
 /**
  *

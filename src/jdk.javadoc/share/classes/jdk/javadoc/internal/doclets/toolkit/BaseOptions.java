@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,28 +30,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -83,11 +77,6 @@ public abstract class BaseOptions {
      * True if we should recursively copy the doc-file subdirectories
      */
     private boolean copyDocfileSubdirs = false;
-
-    /**
-     * Arguments for command-line option {@code -tag} and {@code -taglet}.
-     */
-    private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
 
     /**
      * Argument for command-line option {@code --date}.
@@ -263,12 +252,6 @@ public abstract class BaseOptions {
     private boolean showAuthor = false;
 
     /**
-     * Argument for command-line option {@code --show-taglets}.
-     * Show taglets (internal debug switch)
-     */
-    private boolean showTaglets = false;
-
-    /**
      * Argument for command-line option {@code -version}.
      * Generate version specific information for the all the classes
      * if @version tag is used in the doc comment and if -version option is
@@ -296,6 +279,12 @@ public abstract class BaseOptions {
     private int sourceTabSize;
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    private URI specBaseURI;
+
+    /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
      * Specifies whether those methods that override a supertype's method
@@ -304,28 +293,21 @@ public abstract class BaseOptions {
      */
     private boolean summarizeOverriddenMethods = false;
 
-    /**
-     * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
-     */
-    private String tagletPath = null;
-
-    /**
-     * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
-     */
-    private String snippetPath = null;
-
     //</editor-fold>
 
     private final BaseConfiguration config;
+
+    /**
+     * The default amount of space between tab stops.
+     */
+    public static final int DEFAULT_TAB_STOP_LENGTH = 8;
 
     protected BaseOptions(BaseConfiguration config) {
         this.config = config;
 
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
-        sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+        sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
         groupPairs = new ArrayList<>(0);
     }
 
@@ -405,7 +387,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-excludedocfilessubdir", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedDocFileDirs, args.get(0));
+                        excludedDocFileDirs.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -522,7 +504,7 @@ public abstract class BaseOptions {
                 new Option(resources, "-noqualifier", 1) {
                     @Override
                     public boolean process(String opt, List<String> args) {
-                        addToSet(excludedQualifiers, args.get(0));
+                        excludedQualifiers.addAll(List.of(args.get(0).split("[,:]")));
                         return true;
                     }
                 },
@@ -597,46 +579,8 @@ public abstract class BaseOptions {
                         }
                         if (sourceTabSize <= 0) {
                             messages.warning("doclet.sourcetab_warning");
-                            sourceTabSize = DocletConstants.DEFAULT_TAB_STOP_LENGTH;
+                            sourceTabSize = DEFAULT_TAB_STOP_LENGTH;
                         }
-                        return true;
-                    }
-                },
-
-                new Option(resources, "-tag", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add(opt);
-                        list.add(args.get(0));
-                        customTagStrs.add(list);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "-taglet", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        ArrayList<String> list = new ArrayList<>();
-                        list.add(opt);
-                        list.add(args.get(0));
-                        customTagStrs.add(list);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "-tagletpath", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        tagletPath = args.get(0);
-                        return true;
-                    }
-                },
-
-                new Option(resources, "--snippet-path", 1) {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        snippetPath = args.get(0);
                         return true;
                     }
                 },
@@ -665,18 +609,30 @@ public abstract class BaseOptions {
                     }
                 },
 
+                new Option(resources, "--spec-base-url", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        String arg = args.get(0);
+                        try {
+                            if (!arg.endsWith("/")) {
+                                // to ensure that URI.resolve works as expected
+                                arg += "/";
+                            }
+                            specBaseURI = new URI(arg);
+                            return true;
+                        } catch (URISyntaxException e) {
+                            config.reporter.print(ERROR,
+                                    config.getDocResources().getText("doclet.Invalid_URL",
+                                            e.getMessage()));
+                            return false;
+                        }
+                    }
+                },
+
                 new Hidden(resources, "--disable-javafx-strict-checks") {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         disableJavaFxStrictChecks = true;
-                        return true;
-                    }
-                },
-
-                new Hidden(resources, "--show-taglets") {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        showTaglets = true;
                         return true;
                     }
                 }
@@ -730,15 +686,6 @@ public abstract class BaseOptions {
         return true;
     }
 
-    private void addToSet(Set<String> s, String str) {
-        StringTokenizer st = new StringTokenizer(str, ":");
-        String current;
-        while (st.hasMoreTokens()) {
-            current = st.nextToken();
-            s.add(current);
-        }
-    }
-
     /**
      * Add a trailing file separator, if not found. Remove superfluous
      * file separators if any. Preserve the front double file separator for
@@ -774,13 +721,6 @@ public abstract class BaseOptions {
      */
     public boolean copyDocfileSubdirs() {
         return copyDocfileSubdirs;
-    }
-
-    /**
-     * Arguments for command-line option {@code -tag} and {@code -taglet}.
-     */
-    LinkedHashSet<List<String>> customTagStrs() {
-        return customTagStrs;
     }
 
     /**
@@ -998,18 +938,10 @@ public abstract class BaseOptions {
      * Generate author specific information for all the classes if @author
      * tag is used in the doc comment and if -author option is used.
      * <code>showauthor</code> is set to true if -author option is used.
-     * Default is don't show author information.
+     * Default is to not show author information.
      */
     public boolean showAuthor() {
         return showAuthor;
-    }
-
-    /**
-     * Argument for command-line option {@code --show-taglets}.
-     * Show taglets (internal debug switch)
-     */
-    public boolean showTaglets() {
-        return showTaglets;
     }
 
     /**
@@ -1046,6 +978,14 @@ public abstract class BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --spec-base-url}.
+     * The base URL for relative URLs in {@code @spec} tags.
+     */
+    public URI specBaseURI() {
+        return specBaseURI;
+    }
+
+    /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
      * Specifies whether those methods that override a supertype's method
@@ -1054,22 +994,6 @@ public abstract class BaseOptions {
      */
     public boolean summarizeOverriddenMethods() {
         return summarizeOverriddenMethods;
-    }
-
-    /**
-     * Argument for command-line option {@code -tagletpath}.
-     * The path to Taglets
-     */
-    public String tagletPath() {
-        return tagletPath;
-    }
-
-    /**
-     * Argument for command-line option {@code --snippet-path}.
-     * The path for external snippets.
-     */
-    public String snippetPath() {
-        return snippetPath;
     }
 
     protected abstract static class Option implements Doclet.Option, Comparable<Option> {

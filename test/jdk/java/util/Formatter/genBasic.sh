@@ -32,7 +32,7 @@ gen() {
 #  fi
     out=Basic$2.java
     rm -f $out
-    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -iBasic-X.java.template -o$out
+    java build.tools.spp.Spp -K$1 -Dtype=$1 -DType=$2 -K$3 -K$4 -K$5 -K$6 -iBasic-X.java.template -nel -o$out
 }
 
 gen boolean Boolean       prim  ""  ""   ""

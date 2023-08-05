@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ class JVMCI : public AllStatic {
   // Special libjvmci based JVMCIRuntime reserved for
   // threads trying to attach when in JVMCI shutdown.
   // This preserves the invariant that JVMCIRuntime::for_thread()
-  // never returns nullptr.
+  // never returns null.
   static JVMCIRuntime* _shutdown_compiler_runtime;
 
   // True when at least one JVMCIRuntime::initialize_HotSpotJVMCIRuntime()
@@ -98,8 +98,14 @@ class JVMCI : public AllStatic {
     max_EventLog_level = 4
   };
 
-  // Gets the Thread* value for the current thread or NULL if it's not available.
+  // Gets the Thread* value for the current thread or null if it's not available.
   static Thread* current_thread_or_null();
+
+  // Writes into `pathbuf` the path to the existing JVMCI shared library file.
+  // If the file cannot be found and `fail_is_fatal` is true, then
+  // a fatal error occurs.
+  // Returns whether the path to an existing file was written into `pathbuf`.
+  static bool get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal);
 
  public:
 
@@ -107,7 +113,7 @@ class JVMCI : public AllStatic {
      ok,
      dependencies_failed,
      cache_full,
-     nmethod_reclaimed, // code cache sweeper reclaimed nmethod in between its creation and being marked "in_use"
+     nmethod_reclaimed,
      code_too_large,
      first_permanent_bailout = code_too_large
   };
@@ -122,6 +128,11 @@ class JVMCI : public AllStatic {
     return JVMCIThreadsPerNativeLibraryRuntime == 1 && JVMCICompilerIdleDelay == 0;
   }
 
+  // Determines if the JVMCI shared library exists. This does not
+  // take into account whether loading the library would succeed
+  // if it's not already loaded.
+  static bool shared_library_exists();
+
   // Gets the handle to the loaded JVMCI shared library, loading it
   // first if not yet loaded and `load` is true. The path from
   // which the library is loaded is returned in `path`.
@@ -130,7 +141,7 @@ class JVMCI : public AllStatic {
   // Logs the fatal crash data in `buf` to the appropriate stream.
   static void fatal_log(const char* buf, size_t count);
 
-  // Gets the name of the opened JVMCI shared library crash data file or NULL
+  // Gets the name of the opened JVMCI shared library crash data file or null
   // if this file has not been created.
   static const char* fatal_log_filename() { return _fatal_log_filename; }
 
@@ -152,6 +163,8 @@ class JVMCI : public AllStatic {
 
   static void initialize_globals();
 
+  // Called to force initialization of the JVMCI compiler
+  // early in VM startup.
   static void initialize_compiler(TRAPS);
 
   // Ensures the boxing cache classes (e.g., java.lang.Integer.IntegerCache) are initialized.

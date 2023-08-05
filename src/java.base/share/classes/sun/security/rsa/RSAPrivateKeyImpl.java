@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.rsa;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -89,31 +88,26 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            // generate the key encoding
-            byte[] nbytes = n.toByteArray();
-            byte[] dbytes = d.toByteArray();
-            DerOutputStream out = new DerOutputStream(
-                    nbytes.length + dbytes.length + 50);
-                    // Enough for 7 zeroes (21) and 2 tag+length(4)
-            out.putInteger(0); // version must be 0
-            out.putInteger(nbytes);
-            Arrays.fill(nbytes, (byte)0);
-            out.putInteger(0);
-            out.putInteger(dbytes);
-            Arrays.fill(dbytes, (byte)0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+        // generate the key encoding
+        byte[] nbytes = n.toByteArray();
+        byte[] dbytes = d.toByteArray();
+        DerOutputStream out = new DerOutputStream(
+                nbytes.length + dbytes.length + 50);
+        // Enough for 7 zeroes (21) and 2 tag+length(4)
+        out.putInteger(0); // version must be 0
+        out.putInteger(nbytes);
+        Arrays.fill(nbytes, (byte) 0);
+        out.putInteger(0);
+        out.putInteger(dbytes);
+        Arrays.fill(dbytes, (byte) 0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        key = val.toByteArray();
+        val.clear();
     }
 
     // see JCA doc

@@ -277,11 +277,13 @@ JNIEXPORT void JNICALL Java_apple_laf_JRSUIControl_getNativePartBounds
     CGRect partBounds = JRSUIControlGetScrollBarPartBounds(control, frame, part);
 
     jdouble *rect = (*env)->GetPrimitiveArrayCritical(env, rectArray, NULL);
-    rect[0] = partBounds.origin.x;
-    rect[1] = partBounds.origin.y;
-    rect[2] = partBounds.size.width;
-    rect[3] = partBounds.size.height;
-    (*env)->ReleasePrimitiveArrayCritical(env, rectArray, rect, 0);
+    if (rect != NULL) {
+        rect[0] = partBounds.origin.x;
+        rect[1] = partBounds.origin.y;
+        rect[2] = partBounds.size.width;
+        rect[3] = partBounds.size.height;
+        (*env)->ReleasePrimitiveArrayCritical(env, rectArray, rect, 0);
+    }
 }
 
 /*

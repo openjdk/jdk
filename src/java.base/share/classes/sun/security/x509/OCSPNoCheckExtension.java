@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
-
-import sun.security.util.*;
 
 /**
  * Represent the OCSP NoCheck Extension from RFC2560.
@@ -49,20 +45,9 @@ import sun.security.util.*;
  *
  * @author Xuelei Fan
  * @see Extension
- * @see CertAttrSet
  */
-public class OCSPNoCheckExtension extends Extension
-    implements CertAttrSet<String> {
+public class OCSPNoCheckExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                         "x509.info.extensions.OCSPNoCheck";
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "OCSPNoCheck";
 
     /**
@@ -92,40 +77,9 @@ public class OCSPNoCheckExtension extends Extension
     }
 
     /**
-     * Set the attribute value.
+     * Return the name of this extension.
      */
-    public void set(String name, Object obj) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Object get(String name) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
-
-    /**
-     * Delete the attribute value.
-     */
-    public void delete(String name) throws IOException {
-        throw new IOException("No attribute is allowed by " +
-                        "CertAttrSet:OCSPNoCheckExtension.");
-    }
-
-    /**
-     * Return an enumeration of names of attributes existing within this
-     * attribute.
-     */
-    public Enumeration<String> getElements() {
-        return (new AttributeNameEnumeration()).elements();
-    }
-
-    /**
-     * Return the name of this attribute.
-     */
+    @Override
     public String getName() {
         return NAME;
     }

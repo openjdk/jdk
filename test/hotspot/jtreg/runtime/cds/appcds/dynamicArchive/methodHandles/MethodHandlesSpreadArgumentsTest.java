@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ public class MethodHandlesSpreadArgumentsTest extends DynamicArchiveTestBase {
     private static final String ps = System.getProperty("path.separator");
     private static final String testPackageName = "test.java.lang.invoke";
     private static final String testClassName = "MethodHandlesSpreadArgumentsTest";
+    private static final String loggingOpts = "-Xlog:cds,cds+dynamic=debug,class+load=trace";
+    private static final String lambdaLoadedFromArchive =
+        ".class.load. test.java.lang.invoke.MethodHandlesSpreadArgumentsTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)";
 
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
@@ -72,9 +75,19 @@ public class MethodHandlesSpreadArgumentsTest extends DynamicArchiveTestBase {
             Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
         String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+        String jars = appJar + ps + junitJar;
+        String className = testPackageName + "." + testClassName;
 
-        dumpAndRun(topArchiveName, "-Xlog:cds,cds+dynamic=debug,class+load=trace",
-            "-cp", appJar + ps + junitJar, verifyOpt,
-            mainClass, testPackageName + "." + testClassName);
+        dump(topArchiveName, loggingOpts, "-cp", jars, verifyOpt, mainClass, className)
+            .assertNormalExit(output -> {
+                    output.shouldContain("Written dynamic archive 0x");
+                });
+
+        run(topArchiveName, loggingOpts, "-cp", jars, verifyOpt, mainClass, className)
+            .assertNormalExit(output -> {
+                    output.shouldMatch(lambdaLoadedFromArchive)
+                          .shouldHaveExitValue(0);
+                });
+
     }
 }

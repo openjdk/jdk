@@ -99,6 +99,10 @@ public:
     }
   }
 
+  ~SparseArray() {
+    FREE_C_HEAP_ARRAY(T, _slots);
+  }
+
   T at(int i)              { return _slots[i]; }
   const T at(int i) const  { return _slots[i]; }
   void set_at(int i, T e)  { _slots[i] = e; }

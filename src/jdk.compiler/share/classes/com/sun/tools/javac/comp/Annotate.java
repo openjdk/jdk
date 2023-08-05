@@ -32,7 +32,7 @@ import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
+import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
@@ -101,9 +101,9 @@ public class Annotate {
     private final Types types;
 
     private final Attribute theUnfinishedDefaultValue;
-    private final boolean allowRepeatedAnnos;
     private final String sourceName;
 
+    @SuppressWarnings("this-escape")
     protected Annotate(Context context) {
         context.put(annotateKey, this);
 
@@ -124,7 +124,6 @@ public class Annotate {
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 
         Source source = Source.instance(context);
-        allowRepeatedAnnos = Feature.REPEATED_ANNOTATIONS.allowedInSource(source);
         sourceName = source.name;
 
         blockCount = 1;
@@ -347,9 +346,6 @@ public class Annotate {
 
             if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
-                    if (!allowRepeatedAnnos) {
-                        log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
-                    }
                     ListBuffer<T> l = annotated.get(a.type.tsym);
                     l = l.append(c);
                     annotated.put(a.type.tsym, l);
@@ -526,6 +522,7 @@ public class Annotate {
                 left.name, List.nil(), null);
         left.sym = method;
         left.type = method.type;
+        chk.checkDeprecated(left, env.info.scope.owner, method);
         if (method.owner != thisAnnotationType.tsym && !badAnnotation)
             log.error(left.pos(), Errors.NoAnnotationMember(left.name, thisAnnotationType));
         Type resultType = method.type.getReturnType();
@@ -1053,7 +1050,11 @@ public class Annotate {
         typeAnnotation(() -> {
             List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
             Assert.check(annotations.size() == compounds.size());
-            storeAt.getMetadataOfKind(Kind.ANNOTATIONS).combine(new TypeMetadata.Annotations(compounds));
+            // the type already has annotation metadata, but it's empty
+            Annotations metadata = storeAt.getMetadata(Annotations.class);
+            Assert.checkNonNull(metadata);
+            Assert.check(metadata.annotationBuffer().isEmpty());
+            metadata.annotationBuffer().appendList(compounds);
         });
     }
 

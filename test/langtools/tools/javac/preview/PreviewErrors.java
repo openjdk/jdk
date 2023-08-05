@@ -39,6 +39,7 @@
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -404,7 +405,9 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                         if (testClass == null) {
                             throw new IllegalStateException("Cannot find Test.class");
                         }
-                        cf = ClassFile.read(testClass.openInputStream());
+                        try (InputStream input = testClass.openInputStream()) {
+                            cf = ClassFile.read(input);
+                        }
                     } catch (IOException | ConstantPoolException ex) {
                         throw new IllegalStateException(ex);
                     }

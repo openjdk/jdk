@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
 class MLetParser {
 
 /*
@@ -114,7 +115,7 @@ class MLetParser {
      * Scan tag
      */
     public Map<String,String> scanTag(Reader in) throws IOException {
-        Map<String,String> atts = new HashMap<String,String>();
+        Map<String,String> atts = new HashMap<>();
         skipSpace(in);
         while (c >= 0 && c != '>') {
             if (c == '<')
@@ -153,6 +154,7 @@ class MLetParser {
     /**
      * Scan an html file for {@literal <mlet>} tags.
      */
+    @SuppressWarnings("removal")
     public List<MLetContent> parse(URL url) throws IOException {
         // Warning Messages
         String requiresTypeWarning = "<arg type=... value=...> tag requires type parameter.";
@@ -172,11 +174,11 @@ class MLetParser {
         //
         url = conn.getURL();
 
-        List<MLetContent> mlets = new ArrayList<MLetContent>();
+        List<MLetContent> mlets = new ArrayList<>();
         Map<String,String> atts = null;
 
-        List<String> types = new ArrayList<String>();
-        List<String> values = new ArrayList<String>();
+        List<String> types = new ArrayList<>();
+        List<String> values = new ArrayList<>();
 
         // debug("parse","*** Parsing " + url );
         while(true) {
@@ -195,8 +197,8 @@ class MLetParser {
                             mlets.add(new MLetContent(url, atts, types, values));
                         }
                         atts = null;
-                        types = new ArrayList<String>();
-                        values = new ArrayList<String>();
+                        types = new ArrayList<>();
+                        values = new ArrayList<>();
                     }
                 } else {
                     String nm = scanIdentifier(in);
@@ -249,6 +251,7 @@ class MLetParser {
     /**
      * Parse the document pointed by the URL urlname
      */
+    @SuppressWarnings("removal")
     public List<MLetContent> parseURL(String urlname) throws IOException {
         // Parse the document
         //

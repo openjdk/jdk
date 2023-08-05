@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +39,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -387,6 +385,15 @@ public class HtmlTree extends Content {
     public static HtmlTree DD(Content body) {
         return new HtmlTree(TagName.DD)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DETAILS() {
+        return new HtmlTree(TagName.DETAILS);
     }
 
     /**
@@ -1051,38 +1058,37 @@ public class HtmlTree extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
         boolean isInline = isInline();
-        if (!isInline && !atNewline)
-            out.write(DocletConstants.NL);
+        if (!isInline && !atNewline) {
+            out.write(newline);
+        }
         String tagString = tagName.toString();
         out.write("<");
         out.write(tagString);
-        Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
-        HtmlAttr key;
-        String value;
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            value = attrs.get(key);
+        for (var attr : attrs.entrySet()) {
+            var key = attr.getKey();
+            var value = attr.getValue();
             out.write(" ");
             out.write(key.toString());
             if (!value.isEmpty()) {
                 out.write("=\"");
-                out.write(value);
+                out.write(value.replace("\"", "&quot;"));
                 out.write("\"");
             }
         }
         out.write(">");
         boolean nl = false;
-        for (Content c : content)
-            nl = c.write(out, nl);
+        for (Content c : content) {
+            nl = c.write(out, newline, nl);
+        }
         if (!isVoid()) {
             out.write("</");
             out.write(tagString);
             out.write(">");
         }
         if (!isInline) {
-            out.write(DocletConstants.NL);
+            out.write(newline);
             return true;
         } else {
             return false;

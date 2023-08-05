@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,23 +44,18 @@ class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
         return new NativeAccessor(ctor);
     }
 
-    private static final int PARAM_COUNT_MASK = 0x00FF;
-    private static final int NONZERO_BIT = 0x8000_0000;
-
-    private final int paramFlags;
+    private final int paramCount;
     private final MethodHandle target;
 
     DirectConstructorHandleAccessor(Constructor<?> ctor, MethodHandle target) {
-        this.paramFlags = (ctor.getParameterCount() & PARAM_COUNT_MASK) | NONZERO_BIT;
+        this.paramCount = ctor.getParameterCount();
         this.target = target;
     }
 
     @Override
     public Object newInstance(Object[] args) throws InstantiationException, InvocationTargetException {
         int argc = args != null ? args.length : 0;
-        // only check argument count for specialized forms
-        int paramCount = paramFlags & PARAM_COUNT_MASK;
-        if (paramCount <= SPECIALIZED_PARAM_COUNT && argc != paramCount) {
+        if (argc != paramCount) {
             throw new IllegalArgumentException("wrong number of arguments: " + argc + " expected: " + paramCount);
         }
         try {
@@ -87,7 +82,7 @@ class DirectConstructorHandleAccessor extends ConstructorAccessorImpl {
     @Hidden
     @ForceInline
     Object invokeImpl(Object[] args) throws Throwable {
-        return switch (paramFlags & PARAM_COUNT_MASK) {
+        return switch (paramCount) {
             case 0 -> target.invokeExact();
             case 1 -> target.invokeExact(args[0]);
             case 2 -> target.invokeExact(args[0], args[1]);

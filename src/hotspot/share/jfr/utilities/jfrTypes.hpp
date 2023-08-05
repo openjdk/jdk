@@ -57,4 +57,10 @@ enum JfrCheckpointType {
   THREADS = 8
 };
 
+enum JfrCheckpointBufferKind {
+  JFR_GLOBAL,
+  JFR_THREADLOCAL,
+  JFR_VIRTUAL_THREADLOCAL
+};
+
 #endif // SHARE_JFR_UTILITIES_JFRTYPES_HPP

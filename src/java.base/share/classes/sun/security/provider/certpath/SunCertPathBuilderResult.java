@@ -51,7 +51,7 @@ public final class SunCertPathBuilderResult extends PKIXCertPathBuilderResult {
 
     private static final Debug debug = Debug.getInstance("certpath");
 
-    private AdjacencyList adjList;
+    private final AdjacencyList adjList;
 
     /**
      * Creates a SunCertPathBuilderResult instance.

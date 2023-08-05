@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
@@ -235,18 +236,49 @@ public final class Executor extends CommandArguments<Executor> {
         return saveOutput().execute().getOutput();
     }
 
+    private static class BadResultException extends RuntimeException {
+        BadResultException(Result v) {
+            value = v;
+        }
+
+        Result getValue() {
+            return value;
+        }
+
+        private final Result value;
+    }
+
     /*
      * Repeates command "max" times and waits for "wait" seconds between each
      * execution until command returns expected error code.
      */
     public Result executeAndRepeatUntilExitCode(int expectedCode, int max, int wait) {
-        Result result;
+        try {
+            return tryRunMultipleTimes(() -> {
+                Result result = executeWithoutExitCodeCheck();
+                if (result.getExitCode() != expectedCode) {
+                    throw new BadResultException(result);
+                }
+                return result;
+            }, max, wait).assertExitCodeIs(expectedCode);
+        } catch (BadResultException ex) {
+            return ex.getValue().assertExitCodeIs(expectedCode);
+        }
+    }
+
+    /*
+     * Repeates a "task" "max" times and waits for "wait" seconds between each
+     * execution until the "task" returns without throwing an exception.
+     */
+    public static <T> T tryRunMultipleTimes(Supplier<T> task, int max, int wait) {
+        RuntimeException lastException = null;
         int count = 0;
 
         do {
-            result = executeWithoutExitCodeCheck();
-            if (result.getExitCode() == expectedCode) {
-                return result;
+            try {
+                return task.get();
+            } catch (RuntimeException ex) {
+                lastException = ex;
             }
 
             try {
@@ -258,7 +290,14 @@ public final class Executor extends CommandArguments<Executor> {
             count++;
         } while (count < max);
 
-        return result.assertExitCodeIs(expectedCode);
+        throw lastException;
+    }
+
+    public static void tryRunMultipleTimes(Runnable task, int max, int wait) {
+        tryRunMultipleTimes(() -> {
+            task.run();
+            return null;
+        }, max, wait);
     }
 
     public List<String> executeWithoutExitCodeCheckAndGetOutput() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,14 +69,14 @@ public class Type implements Comparable<Type> {
     static final Type CLASS = createKnownType(Class.class);
     static final Type STRING = createKnownType(String.class);
     static final Type THREAD = createKnownType(Thread.class);
-    static final Type STACK_TRACE = createKnownType(TYPES_PREFIX + "StackTrace", null);
+    public static final Type STACK_TRACE = createKnownType(TYPES_PREFIX + "StackTrace", null);
 
     private static Type createKnownType(Class<?> clazz) {
         return createKnownType(clazz.getName(), clazz);
     }
 
     private static Type createKnownType(String name, Class<?> clazz) {
-        long id = JVM.getJVM().getTypeId(name);
+        long id = JVM.getTypeId(name);
         Type t =  new Type(name, null, id, null);
         knownTypes.put(t, clazz);
         return t;
@@ -122,7 +122,7 @@ public class Type implements Comparable<Type> {
 
     public static long getTypeId(Class<?> clazz) {
         Type type = Type.getKnownType(clazz);
-        return type == null ? JVM.getJVM().getTypeId(clazz) : type.getId();
+        return type == null ? JVM.getTypeId(clazz) : type.getId();
     }
 
     static Collection<Type> getKnownTypes() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.security;
+
+import jdk.internal.event.SecurityProviderServiceEvent;
 
 import java.io.*;
 import java.util.*;
@@ -1281,18 +1283,22 @@ public abstract class Provider extends Properties {
         }
 
         Service s = serviceMap.get(key);
-        if (s != null) {
-            return s;
+        if (s == null) {
+            s = legacyMap.get(key);
+            if (s != null && !s.isValid()) {
+                legacyMap.remove(key, s);
+            }
         }
 
-        s = legacyMap.get(key);
-        if (s != null && !s.isValid()) {
-            legacyMap.remove(key, s);
-        } else {
-            return s;
+        if (s != null && SecurityProviderServiceEvent.isTurnedOn()) {
+            var e  = new SecurityProviderServiceEvent();
+            e.provider = getName();
+            e.type = type;
+            e.algorithm = algorithm;
+            e.commit();
         }
 
-        return null;
+        return s;
     }
 
     // ServiceKey from previous getService() call
@@ -1321,7 +1327,13 @@ public abstract class Provider extends Properties {
                 set.addAll(serviceMap.values());
             }
             if (!legacyMap.isEmpty()) {
-                set.addAll(legacyMap.values());
+                legacyMap.entrySet().forEach(entry -> {
+                    if (!entry.getValue().isValid()) {
+                        legacyMap.remove(entry.getKey(), entry.getValue());
+                    } else {
+                        set.add(entry.getValue());
+                    }
+                });
             }
             serviceSet = Collections.unmodifiableSet(set);
             servicesChanged = false;
@@ -1587,6 +1599,7 @@ public abstract class Provider extends Properties {
         addEngine("KeyAgreement",                       true,  null);
         addEngine("KeyGenerator",                       false, null);
         addEngine("SecretKeyFactory",                   false, null);
+        addEngine("KEM",                                true,  null);
         // JSSE
         addEngine("KeyManagerFactory",                  false, null);
         addEngine("SSLContext",                         false, null);

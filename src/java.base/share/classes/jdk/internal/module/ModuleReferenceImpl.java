@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,11 @@ public class ModuleReferenceImpl extends ModuleReference {
     // ModuleResolution flags
     private final ModuleResolution moduleResolution;
 
-    // cached hash of this module to avoid needing to compute it many times
-    private byte[] cachedHash;
+    // Single-slot cache of this module's hash to avoid needing to compute
+    // it many times. For correctness under concurrent updates, we need to
+    // wrap the fields updated at the same time with a record.
+    private record CachedHash(byte[] hash, String algorithm) {}
+    private CachedHash cachedHash;
 
     /**
      * Constructs a new instance of this class.
@@ -139,13 +142,17 @@ public class ModuleReferenceImpl extends ModuleReference {
      * @throws java.io.UncheckedIOException if an I/O error occurs
      */
     public byte[] computeHash(String algorithm) {
-        byte[] result = cachedHash;
-        if (result != null)
-            return result;
-        if (hasher == null)
+        CachedHash ch = cachedHash;
+        if (ch != null && ch.algorithm().equals(algorithm)) {
+            return ch.hash();
+        }
+
+        if (hasher == null) {
             return null;
-        cachedHash = result = hasher.generate(algorithm);
-        return result;
+        }
+        byte[] hash = hasher.generate(algorithm);
+        cachedHash = new CachedHash(hash, algorithm);
+        return hash;
     }
 
     @Override

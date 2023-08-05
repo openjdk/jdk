@@ -603,7 +603,7 @@ public class AquaSpinnerUI extends SpinnerUI {
             final Component child = ftp.getComponentAfter(root, spinner);
 
             if (child != null && SwingUtilities.isDescendingFrom(child, spinner)) {
-                child.requestFocus();
+                child.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
         }
 
@@ -866,7 +866,7 @@ public class AquaSpinnerUI extends SpinnerUI {
         }
     }
 
-    // Syncronizes the ToolTip text for the components within the spinner
+    // Synchronizes the ToolTip text for the components within the spinner
     // to be the same value as the spinner ToolTip text.
     void updateToolTipTextForChildren(final JComponent spinnerComponent) {
         final String toolTipText = spinnerComponent.getToolTipText();

@@ -88,7 +88,7 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
       jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
       jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
-      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp
+      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp
 endif
 
 ifneq ($(call check-jvm-feature, jvmci), true)
@@ -120,12 +120,8 @@ endif
 ifneq ($(call check-jvm-feature, cds), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_CDS=0
   JVM_EXCLUDE_FILES += \
-      cdsProtectionDomain.cpp \
       classLoaderDataShared.cpp \
       classLoaderExt.cpp \
-      dumpTimeSharedClassInfo.cpp \
-      lambdaProxyClassDictionary.cpp \
-      runTimeSharedClassInfo.cpp \
       systemDictionaryShared.cpp
   JVM_EXCLUDE_PATTERNS += cds/
 endif
@@ -153,6 +149,7 @@ endif
 ifneq ($(call check-jvm-feature, zgc), true)
   JVM_CFLAGS_FEATURES += -DINCLUDE_ZGC=0
   JVM_EXCLUDE_PATTERNS += gc/z
+  JVM_EXCLUDE_PATTERNS += gc/x
 endif
 
 ifneq ($(call check-jvm-feature, shenandoahgc), true)
@@ -169,12 +166,20 @@ endif
 ################################################################################
 
 ifeq ($(call check-jvm-feature, link-time-opt), true)
-  # NOTE: Disable automatic opimization level and let the explicit cflag control
-  # optimization level instead. This activates O3 on slowdebug builds, just
-  # like the old build, but it's probably not right.
-  JVM_OPTIMIZATION :=
-  JVM_CFLAGS_FEATURES += -O3 -flto
-  JVM_LDFLAGS_FEATURES += -O3 -flto -fuse-linker-plugin -fno-strict-aliasing
+  # Set JVM_OPTIMIZATION directly so other jvm-feature flags can override it
+  # later on if desired
+  JVM_OPTIMIZATION := HIGHEST_JVM
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_CFLAGS_FEATURES += -flto=auto -fuse-linker-plugin -fno-strict-aliasing -fno-fat-lto-objects
+    JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=auto -fuse-linker-plugin -fno-strict-aliasing
+  else ifeq ($(call isCompiler, microsoft), true)
+    JVM_CFLAGS_FEATURES += -GL
+    JVM_LDFLAGS_FEATURES += -LTCG:INCREMENTAL
+  endif
+else
+  ifeq ($(call isCompiler, gcc), true)
+    JVM_LDFLAGS_FEATURES += -O1
+  endif
 endif
 
 ifeq ($(call check-jvm-feature, opt-size), true)

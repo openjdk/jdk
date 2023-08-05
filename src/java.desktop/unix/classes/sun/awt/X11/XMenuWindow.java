@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,20 @@
  */
 package sun.awt.X11;
 
-import java.awt.*;
-import java.awt.peer.*;
-import java.awt.event.*;
-
-import java.awt.image.BufferedImage;
-import java.awt.geom.Point2D;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.MenuItem;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.Window;
 
 import java.util.Vector;
+
+import sun.awt.SunToolkit;
 import sun.util.logging.PlatformLogger;
+
+import javax.swing.SwingUtilities;
 
 public class XMenuWindow extends XBaseMenuWindow {
 
@@ -176,7 +181,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      *
      ************************************************/
     /*
-     * Overriden initialization
+     * Overridden initialization
      */
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
@@ -325,7 +330,7 @@ public class XMenuWindow extends XBaseMenuWindow {
     /**
      * Returns size of menu window's caption or null
      * if window has no caption.
-     * Can be overriden for popup menus and tear-off menus
+     * Can be overridden for popup menus and tear-off menus
      */
     protected Dimension getCaptionSize() {
         return null;
@@ -333,7 +338,7 @@ public class XMenuWindow extends XBaseMenuWindow {
 
     /**
      * Paints menu window's caption.
-     * Can be overriden for popup menus and tear-off menus.
+     * Can be overridden for popup menus and tear-off menus.
      * Default implementation does nothing
      */
     protected void paintCaption(Graphics g, Rectangle rect) {
@@ -354,7 +359,7 @@ public class XMenuWindow extends XBaseMenuWindow {
 
     /**
      * Reads vector of items from target
-     * This function is overriden in XPopupMenuPeer
+     * This function is overridden in XPopupMenuPeer
      */
     Vector<MenuItem> getMenuTargetItems() {
         return menuPeer.getTargetItems();
@@ -389,6 +394,16 @@ public class XMenuWindow extends XBaseMenuWindow {
         return true;
     }
 
+    protected Window getMenuTarget() {
+        if (target instanceof Window targetWindow) {
+            return targetWindow;
+        } else {
+            return target == null
+                    ? null
+                    : SwingUtilities.getWindowAncestor(target);
+        }
+    }
+
     /**
      * Init window if it's not inited yet
      * and show it at specified coordinates
@@ -405,6 +420,9 @@ public class XMenuWindow extends XBaseMenuWindow {
         XToolkit.awtLock();
         try {
             reshape(bounds.x, bounds.y, bounds.width, bounds.height);
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+                sunToolkit.dismissPopupOnFocusLostIfNeeded(getMenuTarget());
+            }
             xSetVisible(true);
             //Fixed 6267182: PIT: Menu is not visible after
             //showing and disposing a file dialog, XToolkit
@@ -421,6 +439,9 @@ public class XMenuWindow extends XBaseMenuWindow {
     void hide() {
         selectItem(null, false);
         xSetVisible(false);
+        if (Toolkit.getDefaultToolkit() instanceof SunToolkit sunToolkit) {
+            sunToolkit.dismissPopupOnFocusLostIfNeededCleanUp(getMenuTarget());
+        }
     }
 
     /************************************************

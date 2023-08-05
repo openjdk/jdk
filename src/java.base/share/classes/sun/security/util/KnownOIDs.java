@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.util;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -240,6 +239,7 @@ public enum KnownOIDs {
     TimeStampTokenInfo("1.2.840.113549.1.9.16.1.4"),
     SigningCertificate("1.2.840.113549.1.9.16.2.12"),
     SignatureTimestampToken("1.2.840.113549.1.9.16.2.14"),
+    HSSLMS("1.2.840.113549.1.9.16.3.17", "HSS/LMS"),
     CHACHA20_POLY1305("1.2.840.113549.1.9.16.3.18", "CHACHA20-POLY1305"),
     FriendlyName("1.2.840.113549.1.9.20"),
     LocalKeyID("1.2.840.113549.1.9.21"),
@@ -431,9 +431,9 @@ public enum KnownOIDs {
 
     Blowfish("1.3.6.1.4.1.3029.1.1.2");
 
-    private String stdName;
-    private String oid;
-    private String[] aliases;
+    private final String stdName;
+    private final String oid;
+    private final String[] aliases;
 
     // find the matching enum using either name or oid string
     // return null if no match found
@@ -457,7 +457,7 @@ public enum KnownOIDs {
         }
         for (KnownOIDs o : KnownOIDs.values()) {
             register(o);
-        };
+        }
     }
 
     private static void register(KnownOIDs o) {
@@ -493,13 +493,13 @@ public enum KnownOIDs {
         }
     }
 
-    private KnownOIDs(String oid) {
+    KnownOIDs(String oid) {
         this.oid = oid;
         this.stdName = name(); // defaults to enum name
         this.aliases = new String[0];
     }
 
-    private KnownOIDs(String oid, String stdName, String ... aliases) {
+    KnownOIDs(String oid, String stdName, String... aliases) {
         this.oid = oid;
         this.stdName = stdName;
         this.aliases = aliases;

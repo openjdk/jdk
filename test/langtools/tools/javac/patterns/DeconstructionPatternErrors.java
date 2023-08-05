@@ -1,7 +1,7 @@
 /**
  * @test /nodynamiccopyright/
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
- * @compile/fail/ref=DeconstructionPatternErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
+ * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
 
 import java.util.ArrayList;
@@ -9,10 +9,9 @@ import java.util.List;
 
 public class DeconstructionPatternErrors {
 
-    public static void main(String... args) throws Throwable {
+    public static void meth() throws Throwable {
         Object p;
         p = new P(42);
-        if (p instanceof P(_));
         if (p instanceof P3(ArrayList<Integer> l));
         if (p instanceof P4(ArrayList<Integer> l));
         if (p instanceof P5(int i));
@@ -26,8 +25,8 @@ public class DeconstructionPatternErrors {
         if (p instanceof GenRecord<String>(var v)); //incorrect generic type
         if (p instanceof P4(GenRecord<String>(var v))); //incorrect generic type
         if (p instanceof GenRecord<String>(Integer v)); //inconsistency in types
-        if (p instanceof P2(var v, var v) v); //duplicated variables
-        if (p instanceof P6(P2(var v1, var v2) v1, P2(var v1, var v2) v2) v1); //duplicated variables
+        if (p instanceof P2(var v, var v)); //duplicated variables
+        if (p instanceof P6(P2(var v1, var v2), P2(var v1, var v2))); //duplicated variables
         if (p instanceof P7(byte b)); //incorrect pattern type
         if (p instanceof P7(long l)); //incorrect pattern type
         switch (p) {
@@ -44,6 +43,7 @@ public class DeconstructionPatternErrors {
         switch (r1) {
             case GenRecord<>(String s) -> {}
         }
+        boolean b = p instanceof P(int i) p; //introducing a variable for the record pattern
     }
 
     public record P(int i) {

@@ -847,7 +847,7 @@ public abstract class Toolkit {
      * the security manager's {@code checkPrintJobAccess} method to
      * ensure initiation of a print operation is allowed. If the default
      * implementation of {@code checkPrintJobAccess} is used (that is,
-     * that method is not overriden), then this results in a call to the
+     * that method is not overridden), then this results in a call to the
      * security manager's {@code checkPermission} method with a
      * {@code RuntimePermission("queuePrintJob")} permission.
      *
@@ -883,7 +883,7 @@ public abstract class Toolkit {
      * the security manager's {@code checkPrintJobAccess} method to
      * ensure initiation of a print operation is allowed. If the default
      * implementation of {@code checkPrintJobAccess} is used (that is,
-     * that method is not overriden), then this results in a call to the
+     * that method is not overridden), then this results in a call to the
      * security manager's {@code checkPermission} method with a
      * {@code RuntimePermission("queuePrintJob")} permission.
      *

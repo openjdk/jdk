@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class SourceTargetTest extends OptionModesTester {
         String v = System.getProperty("java.specification.version");
         String[] va = v.split("\\.");
         int major = Integer.parseInt(va[0]);
-        boolean newVersion = major > 8;
+        boolean newVersion = major > 9;
         String latest = (newVersion) ? va[0] : va[1];
         String prev = String.valueOf(Integer.valueOf(latest) - 1);
 
@@ -71,7 +71,7 @@ public class SourceTargetTest extends OptionModesTester {
 
         writeFile("C.java", "class C { }");
 
-        String[] opts = { "-source", "1.7", "-target", "1.7" };
+        String[] opts = { "-source", "8", "-target", "8" };
         String[] files = { "C.java" };
 
         runMain(opts, files)

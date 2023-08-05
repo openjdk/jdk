@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "runtime/globals.hpp"
 
 // For UseCompressedOops.
-NarrowPtrStruct CompressedOops::_narrow_oop = { NULL, 0, true };
+NarrowPtrStruct CompressedOops::_narrow_oop = { nullptr, 0, true };
 MemRegion       CompressedOops::_heap_address_range;
 
 // Choose the heap base address and oop encoding mode
@@ -79,8 +79,8 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
                                                  false));
 
   // base() is one page below the heap.
-  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - os::vm_page_size()) ||
-         base() == NULL, "invalid value");
+  assert((intptr_t)base() <= ((intptr_t)_heap_address_range.start() - (intptr_t)os::vm_page_size()) ||
+         base() == nullptr, "invalid value");
   assert(shift() == LogMinObjAlignmentInBytes ||
          shift() == 0, "invalid value");
 #endif
@@ -148,14 +148,14 @@ bool CompressedOops::is_disjoint_heap_base_address(address addr) {
 
 // Check for disjoint base compressed oops.
 bool CompressedOops::base_disjoint() {
-  return _narrow_oop._base != NULL && is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 // Check for real heapbased compressed oops.
 // We must subtract the base as the bits overlap.
 // If we negate above function, we also get unscaled and zerobased.
 bool CompressedOops::base_overlaps() {
-  return _narrow_oop._base != NULL && !is_disjoint_heap_base_address(_narrow_oop._base);
+  return _narrow_oop._base != nullptr && !is_disjoint_heap_base_address(_narrow_oop._base);
 }
 
 void CompressedOops::print_mode(outputStream* st) {
@@ -176,127 +176,4 @@ void CompressedOops::print_mode(outputStream* st) {
     st->print(", no protected page in front of the heap");
   }
   st->cr();
-}
-
-// For UseCompressedClassPointers.
-NarrowPtrStruct CompressedKlassPointers::_narrow_klass = { NULL, 0, true };
-
-// CompressedClassSpaceSize set to 1GB, but appear 3GB away from _narrow_ptrs_base during CDS dump.
-// (Todo: we should #ifdef out CompressedKlassPointers for 32bit completely and fix all call sites which
-//  are compiled for 32bit to LP64_ONLY).
-size_t CompressedKlassPointers::_range = 0;
-
-
-// Given an address range [addr, addr+len) which the encoding is supposed to
-//  cover, choose base, shift and range.
-//  The address range is the expected range of uncompressed Klass pointers we
-//  will encounter (and the implicit promise that there will be no Klass
-//  structures outside this range).
-void CompressedKlassPointers::initialize(address addr, size_t len) {
-#ifdef _LP64
-  assert(is_valid_base(addr), "Address must be a valid encoding base");
-  address const end = addr + len;
-
-  address base;
-  int shift;
-  size_t range;
-
-  if (UseSharedSpaces || DumpSharedSpaces) {
-
-    // Special requirements if CDS is active:
-    // Encoding base and shift must be the same between dump and run time.
-    //   CDS takes care that the SharedBaseAddress and CompressedClassSpaceSize
-    //   are the same. Archive size will be probably different at runtime, but
-    //   it can only be smaller than at, never larger, since archives get
-    //   shrunk at the end of the dump process.
-    //   From that it follows that the range [addr, len) we are handed in at
-    //   runtime will start at the same address then at dumptime, and its len
-    //   may be smaller at runtime then it was at dump time.
-    //
-    // To be very careful here, we avoid any optimizations and just keep using
-    //  the same address and shift value. Specifically we avoid using zero-based
-    //  encoding. We also set the expected value range to 4G (encoding range
-    //  cannot be larger than that).
-
-    base = addr;
-
-    // JDK-8265705
-    // This is a temporary fix for aarch64: there, if the range-to-be-encoded is located
-    //  below 32g, either encoding base should be zero or base should be aligned to 4G
-    //  and shift should be zero. The simplest way to fix this for now is to force
-    //  shift to zero for both runtime and dumptime.
-    // Note however that this is not a perfect solution. Ideally this whole function
-    //  should be CDS agnostic, that would simplify it - and testing - a lot. See JDK-8267141
-    //  for details.
-    shift = 0;
-
-    // This must be true since at dumptime cds+ccs is 4G, at runtime it can
-    //  only be smaller, see comment above.
-    assert(len <= 4 * G, "Encoding range cannot be larger than 4G");
-    range = 4 * G;
-
-  } else {
-
-    // Otherwise we attempt to use a zero base if the range fits in lower 32G.
-    if (end <= (address)KlassEncodingMetaspaceMax) {
-      base = 0;
-    } else {
-      base = addr;
-    }
-
-    // Highest offset a Klass* can ever have in relation to base.
-    range = end - base;
-
-    // We may not even need a shift if the range fits into 32bit:
-    const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
-    if (range < UnscaledClassSpaceMax) {
-      shift = 0;
-    } else {
-      shift = LogKlassAlignmentInBytes;
-    }
-
-  }
-
-  set_base(base);
-  set_shift(shift);
-  set_range(range);
-#else
-  fatal("64bit only.");
-#endif
-}
-
-// Given an address p, return true if p can be used as an encoding base.
-//  (Some platforms have restrictions of what constitutes a valid base address).
-bool CompressedKlassPointers::is_valid_base(address p) {
-#ifdef AARCH64
-  // Below 32G, base must be aligned to 4G.
-  // Above that point, base must be aligned to 32G
-  if (p < (address)(32 * G)) {
-    return is_aligned(p, 4 * G);
-  }
-  return is_aligned(p, (4 << LogKlassAlignmentInBytes) * G);
-#else
-  return true;
-#endif
-}
-
-void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
-               "Narrow klass range: " SIZE_FORMAT_HEX, p2i(base()), shift(),
-               range());
-}
-
-void CompressedKlassPointers::set_base(address base) {
-  assert(UseCompressedClassPointers, "no compressed klass ptrs?");
-  _narrow_klass._base   = base;
-}
-
-void CompressedKlassPointers::set_shift(int shift)       {
-  assert(shift == 0 || shift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
-  _narrow_klass._shift   = shift;
-}
-
-void CompressedKlassPointers::set_range(size_t range) {
-  assert(UseCompressedClassPointers, "no compressed klass ptrs?");
-  _range = range;
 }

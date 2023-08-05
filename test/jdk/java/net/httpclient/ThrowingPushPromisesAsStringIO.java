@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,10 @@
  * @bug 8229822
  * @summary Tests what happens when push promise handlers and their
  *          response body handlers and subscribers throw unexpected exceptions.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
-  *       ReferenceTracker AbstractThrowingPushPromises ThrowingPushPromisesAsStringIO
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        ReferenceTracker AbstractThrowingPushPromises ThrowingPushPromisesAsStringIO
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm -Djdk.internal.httpclient.debug=true ThrowingPushPromisesAsStringIO
  */
 

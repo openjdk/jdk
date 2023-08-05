@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ public class X509CertificatePair {
      * Return the DER encoded form of the certificate pair.
      *
      * @return The encoded form of the certificate pair.
-     * @throws CerticateEncodingException If an encoding exception occurs.
+     * @throws CertificateEncodingException If an encoding exception occurs.
      */
     public byte[] getEncoded() throws CertificateEncodingException {
         try {
@@ -240,7 +240,7 @@ public class X509CertificatePair {
                         }
                         opt = opt.data.getDerValue();
                         forward = X509Factory.intern
-                                        (new X509CertImpl(opt.toByteArray()));
+                                        (X509CertImpl.newX509CertImpl(opt.toByteArray()));
                     }
                     break;
                 case TAG_REVERSE:
@@ -251,7 +251,7 @@ public class X509CertificatePair {
                         }
                         opt = opt.data.getDerValue();
                         reverse = X509Factory.intern
-                                        (new X509CertImpl(opt.toByteArray()));
+                                        (X509CertImpl.newX509CertImpl(opt.toByteArray()));
                     }
                     break;
                 default:

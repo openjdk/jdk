@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,7 @@
 #include "runtime/vmOperations.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memReporter.hpp"
+#include "services/mallocLimit.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
@@ -46,8 +48,7 @@
 #include <windows.h>
 #endif
 
-volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
-NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
+NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
@@ -73,11 +74,15 @@ void MemTracker::initialize() {
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
       return;
     }
+  } else {
+    if (MallocLimit != nullptr) {
+      warning("MallocLimit will be ignored since NMT is disabled.");
+    }
   }
 
-  NMTPreInit::pre_to_post();
+  NMTPreInit::pre_to_post(level == NMT_off);
 
-  _tracking_level = _cmdline_tracking_level = level;
+  _tracking_level = level;
 
   // Log state right after NMT initialization
   if (log_is_enabled(Info, nmt)) {
@@ -86,7 +91,7 @@ void MemTracker::initialize() {
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
     NMTPreInit::print_state(&ls);
-    ls.cr();
+    MallocLimitHandler::print_on(&ls);
   }
 }
 
@@ -110,6 +115,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
+    MallocLimitHandler::print_on(output);
   }
 }
 
@@ -126,8 +132,16 @@ void MemTracker::final_report(outputStream* output) {
   }
 }
 
+// Given an unknown pointer, check if it points into a known region; print region if found
+// and return true; false if not found.
+bool MemTracker::print_containing_region(const void* p, outputStream* out) {
+  return enabled() &&
+      (MallocTracker::print_pointer_information(p, out) ||
+       VirtualMemoryTracker::print_containing_region(p, out));
+}
+
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
- assert(output != NULL, "No output stream");
+ assert(output != nullptr, "No output stream");
   MemBaseline baseline;
   baseline.baseline(summary_only);
   if (summary_only) {
@@ -154,5 +168,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
+  MallocLimitHandler::print_on(out);
   out->cr();
 }

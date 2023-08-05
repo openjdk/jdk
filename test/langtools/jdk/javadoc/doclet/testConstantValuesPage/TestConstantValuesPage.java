@@ -39,7 +39,7 @@ import toolbox.ToolBox;
 public class TestConstantValuesPage extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestConstantValuesPage tester = new TestConstantValuesPage();
+        var tester = new TestConstantValuesPage();
         tester.runTests();
     }
 
@@ -109,7 +109,7 @@ public class TestConstantValuesPage extends JavadocTester {
                 """
                     <section class="packages">
                     <h2 title="Contents">Contents</h2>
-                    <ul>
+                    <ul class="contents-list">
                     <li><a href="#p1.p2a">p1.p2a.*</a></li>
                     <li><a href="#p1.p2b">p1.p2b.*</a></li>
                     </ul>
@@ -142,7 +142,7 @@ public class TestConstantValuesPage extends JavadocTester {
                 """
                     <section class="packages">
                     <h2 title="Contents">Contents</h2>
-                    <ul>
+                    <ul class="contents-list">
                     <li><a href="#unnamed-package">Unnamed Package</a></li>
                     </ul>
                     </section>""");
@@ -181,7 +181,7 @@ public class TestConstantValuesPage extends JavadocTester {
                 """
                     <section class="packages">
                     <h2 title="Contents">Contents</h2>
-                    <ul>
+                    <ul class="contents-list">
                     <li><a href="#unnamed-package">Unnamed Package</a></li>
                     <li><a href="#p1.p2a">p1.p2a.*</a></li>
                     </ul>
@@ -247,7 +247,7 @@ public class TestConstantValuesPage extends JavadocTester {
                 """
                     <section class="packages">
                     <h2 title="Contents">Contents</h2>
-                    <ul>
+                    <ul class="contents-list">
                     <li><a href="#p.a">p.a.*</a></li>
                     <li><a href="#p.b">p.b.*</a></li>
                     <li><a href="#p.q">p.q.*</a></li>

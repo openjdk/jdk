@@ -30,6 +30,7 @@ import sun.security.util.Debug;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * This class extends {@code ClassLoader} with additional support for defining
@@ -218,16 +219,20 @@ public class SecureClassLoader extends ClassLoader {
         // that no nameservice lookup is done on the hostname (String comparison
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
-        return pdcache.computeIfAbsent(key, unused -> {
-            PermissionCollection perms
-                    = SecureClassLoader.this.getPermissions(cs);
-            ProtectionDomain pd = new ProtectionDomain(
-                    cs, perms, SecureClassLoader.this, null);
-            if (DebugHolder.debug != null) {
-                DebugHolder.debug.println(" getPermissions " + pd);
-                DebugHolder.debug.println("");
+        return pdcache.computeIfAbsent(key, new Function<>() {
+            // Do not turn this into a lambda since it is executed during bootstrap
+            @Override
+            public ProtectionDomain apply(CodeSourceKey key) {
+                PermissionCollection perms
+                        = SecureClassLoader.this.getPermissions(key.cs);
+                ProtectionDomain pd = new ProtectionDomain(
+                        key.cs, perms, SecureClassLoader.this, null);
+                if (DebugHolder.debug != null) {
+                    DebugHolder.debug.println(" getPermissions " + pd);
+                    DebugHolder.debug.println("");
+                }
+                return pd;
             }
-            return pd;
         });
     }
 

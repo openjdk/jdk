@@ -41,7 +41,7 @@ public class TestTagMisuse extends JavadocTester {
      * @throws Exception if the test fails
      */
     public static void main(String... args) throws Exception {
-        TestTagMisuse tester = new TestTagMisuse();
+        var tester = new TestTagMisuse();
         tester.runTests();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_32BE;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -120,7 +121,7 @@ public class DerValue {
     /** Tag value indicating an ASN.1 "GeneralizedTime" value. */
     public static final byte    tag_GeneralizedTime = 0x18;
 
-    /** Tag value indicating an ASN.1 "GenerallString" value. */
+    /** Tag value indicating an ASN.1 "GeneralString" value. */
     public static final byte    tag_GeneralString = 0x1B;
 
     /** Tag value indicating an ASN.1 "UniversalString" value. */
@@ -493,7 +494,7 @@ public class DerValue {
     /**
      * Encode an ASN1/DER encoded datum onto a DER output stream.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         out.write(tag);
         out.putLength(end - start);
         out.write(buffer, start, end - start);
@@ -774,7 +775,7 @@ public class DerValue {
      * Helper routine to return all the bytes contained in the
      * DerInputStream associated with this object.
      */
-    public byte[] getDataBytes() throws IOException {
+    public byte[] getDataBytes() {
         data.pos = data.end; // Compatibility. Reach end.
         return Arrays.copyOfRange(buffer, start, end);
     }
@@ -1016,7 +1017,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, +hhmm");
                 }
 
-                time -= ((hr * 60) + min) * 60 * 1000;
+                time -= ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case '-':
@@ -1032,7 +1033,7 @@ public class DerValue {
                     throw new IOException("Parse " + type + " time, -hhmm");
                 }
 
-                time += ((hr * 60) + min) * 60 * 1000;
+                time += ((hr * 60L) + min) * 60 * 1000;
                 break;
 
             case 'Z':
@@ -1057,6 +1058,14 @@ public class DerValue {
             throw new IOException("Parse " + type + " time, invalid format");
         }
         return b - '0';
+    }
+
+    /**
+     * Determines whether Date was encoded as UTC or Generalized time and
+     * calls getUTCTime or getGeneralizedTime accordingly
+     */
+    public Date getTime() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
     }
 
     /**
@@ -1104,10 +1113,9 @@ public class DerValue {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof DerValue)) {
+        if (!(o instanceof DerValue other)) {
             return false;
         }
-        DerValue other = (DerValue) o;
         if (tag != other.tag) {
             return false;
         }
@@ -1125,7 +1133,8 @@ public class DerValue {
     @Override
     public String toString() {
         return String.format("DerValue(%02x, %s, %d, %d)",
-                0xff & tag, buffer, start, end);
+                0xff & tag, HexFormat.of().withUpperCase().formatHex(buffer),
+                start, end);
     }
 
     /**
@@ -1134,7 +1143,7 @@ public class DerValue {
      *
      * @return DER-encoded value, including tag and length.
      */
-    public byte[] toByteArray() throws IOException {
+    public byte[] toByteArray() {
         data.pos = data.start; // Compatibility. At head.
         // Minimize content duplication by writing out tag and length only
         DerOutputStream out = new DerOutputStream();
@@ -1258,11 +1267,7 @@ public class DerValue {
      */
     @Override
     public int hashCode() {
-        int result = tag;
-        for (int i = start; i < end; i++) {
-            result = 31 * result + buffer[i];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(buffer, start, end - start, tag, ArraysSupport.T_BYTE);
     }
 
     /**

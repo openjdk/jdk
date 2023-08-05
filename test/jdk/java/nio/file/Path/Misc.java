@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,21 @@
  */
 
 /* @test
- * @bug 4313887 6838333 7029979
+ * @bug 4313887 6838333 7029979 8295753
  * @summary Unit test for miscellenous java.nio.file.Path methods
- * @library ..
+ * @library .. /test/lib
+ * @build jdk.test.lib.Platform
+ * @run main Misc
  */
 
-import java.nio.file.*;
-import static java.nio.file.LinkOption.*;
 import java.io.*;
+import java.nio.file.*;
+
+import static java.nio.file.LinkOption.*;
+
+import jdk.test.lib.Platform;
 
 public class Misc {
-    static final boolean isWindows =
-        System.getProperty("os.name").startsWith("Windows");
     static boolean supportsLinks;
 
     public static void main(String[] args) throws IOException {
@@ -70,7 +73,7 @@ public class Misc {
         assertTrue(!thisFile.equals(new Object()));
 
         Path likeThis = Paths.get("This");
-        if (isWindows) {
+        if (Platform.isWindows()) {
             // case insensitive
             assertTrue(thisFile.equals(likeThis));
             assertTrue(thisFile.hashCode() == likeThis.hashCode());
@@ -97,7 +100,7 @@ public class Misc {
         final Path link = dir.resolve("link");
 
         /**
-         * Test: totRealPath() will access same file as toRealPath(NOFOLLOW_LINKS)
+         * Test: toRealPath() will access same file as toRealPath(NOFOLLOW_LINKS)
          */
         assertTrue(Files.isSameFile(file.toRealPath(), file.toRealPath(NOFOLLOW_LINKS)));
 
@@ -121,7 +124,7 @@ public class Misc {
          */
         if (supportsLinks) {
             Path resolvedFile = file;
-            if (isWindows) {
+            if (Platform.isWindows()) {
                 // Path::toRealPath does not work with environments using the
                 // legacy subst mechanism. This is a workaround to keep the
                 // test working if 'dir' points to a location on a subst drive.
@@ -170,9 +173,52 @@ public class Misc {
         Path subdir = Files.createDirectory(dir.resolve("subdir"));
         assertTrue(subdir.resolve("..").toRealPath().equals(dir.toRealPath()));
         assertTrue(subdir.resolve("..").toRealPath(NOFOLLOW_LINKS).equals(dir.toRealPath(NOFOLLOW_LINKS)));
-        Files.delete(subdir);
+
+        /**
+         * Test: toRealPath yields accurate case of path elements when
+         *       not following links
+         */
+        if (Platform.isOSX()) {
+            // theTarget = dir/subdir/theTarget
+            Path theTarget = Path.of(subdir.toString(), "theTarget");
+            Files.createFile(theTarget);
+
+            // dir/theLink -> dir/subdir
+            Path theLink = Path.of(dir.toString(), "theLink");
+            Files.createSymbolicLink(theLink, subdir);
+
+            // thePath = dir/thelink/thetarget (all lower case)
+            Path thePath = Path.of(dir.toString(), "thelink", "thetarget");
+            Path noFollow = thePath.toRealPath(NOFOLLOW_LINKS);
+            int nc = noFollow.getNameCount();
+
+            // Real path should retain case as dir/theLink/theTarget
+            assertTrue(noFollow.getName(nc - 2).equals(Path.of("theLink")));
+            assertTrue(noFollow.getName(nc - 1).equals(Path.of("theTarget")));
+            assertTrue(noFollow.toString().equals(
+                Path.of(dir.toString(), "theLink", "theTarget").toString()));
+
+            // Test where a link is preceded by ".." in the path
+            Path superBeforeLink =
+                Path.of(subdir.toString(), "..", "thelink", "thetarget");
+            noFollow = superBeforeLink.toRealPath(NOFOLLOW_LINKS);
+            nc = noFollow.getNameCount();
+            assertTrue(noFollow.getName(nc - 2).equals(Path.of("theLink")));
+            assertTrue(noFollow.getName(nc - 1).equals(Path.of("theTarget")));
+
+            // Test where a link is followed by ".." in the path
+            Path linkBeforeSuper =
+                Path.of(dir.toString(), "thelink", "..", "subdir", "thetarget");
+            noFollow = linkBeforeSuper.toRealPath(NOFOLLOW_LINKS);
+            nc = noFollow.getNameCount();
+            assertTrue(noFollow.getName(nc - 4).equals(Path.of("theLink")));
+            assertTrue(noFollow.getName(nc - 1).equals(Path.of("theTarget")));
+
+            Files.delete(theTarget);
+        }
 
         // clean-up
+        Files.delete(subdir);
         Files.delete(file);
     }
 

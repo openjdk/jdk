@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.security.NoSuchProviderException;
 import java.security.Policy;
 import java.security.Provider;
 import java.security.ProviderException;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -54,6 +55,9 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
@@ -700,10 +704,12 @@ public abstract class PKCS11Test {
         osMap.put("Linux-arm-32", new String[] {
                 "/usr/lib/arm-linux-gnueabi/nss/",
                 "/usr/lib/arm-linux-gnueabihf/nss/" });
-        osMap.put("Linux-aarch64-64", new String[] {
-                "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/",
-                "/usr/lib64/" });
+        // Exclude linux-aarch64 at the moment until the following bug is fixed:
+        // 8296631: NSS tests failing on OL9 linux-aarch64 hosts
+//        osMap.put("Linux-aarch64-64", new String[] {
+//                "/usr/lib/aarch64-linux-gnu/",
+//                "/usr/lib/aarch64-linux-gnu/nss/",
+//                "/usr/lib64/" });
         return osMap;
     }
 
@@ -824,6 +830,58 @@ public abstract class PKCS11Test {
             }
         }
         return algorithms;
+    }
+
+    private static final SecureRandom srdm = new SecureRandom();
+
+    static SecretKey generateKey(String alg, int keySize) {
+        if (alg.contains("PBE")) {
+            return generateKeyPBE(alg, keySize);
+        } else {
+            return generateKeyNonPBE(alg, keySize);
+        }
+    }
+
+    private static SecretKey generateKeyNonPBE(String alg, int keySize) {
+        byte[] keyVal = new byte[keySize];
+        srdm.nextBytes(keyVal);
+        return new SecretKeySpec(keyVal, alg);
+    }
+
+    private static SecretKey generateKeyPBE(String alg, int keySize) {
+        char[] pass = new char[keySize];
+        for (int i = 0; i < pass.length; i++) {
+            pass[i] = (char) ('0' + srdm.nextInt(74));
+        }
+        byte[] salt = new byte[srdm.nextInt(8, 16)];
+        srdm.nextBytes(salt);
+        int iterations = srdm.nextInt(1, 1000);
+        return new javax.crypto.interfaces.PBEKey() {
+            @Override
+            public String getAlgorithm() {
+                return "PBE";
+            }
+            @Override
+            public String getFormat() {
+                return null;
+            }
+            @Override
+            public byte[] getEncoded() {
+                throw new RuntimeException("Should not be called");
+            }
+            @Override
+            public char[] getPassword() {
+                return pass;
+            }
+            @Override
+            public byte[] getSalt() {
+                return salt;
+            }
+            @Override
+            public int getIterationCount() {
+                return iterations;
+            }
+        };
     }
 
     static byte[] generateData(int length) {

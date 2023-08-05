@@ -180,6 +180,7 @@ public class ClassFinder {
     }
 
     /** Construct a new class finder. */
+    @SuppressWarnings("this-escape")
     protected ClassFinder(Context context) {
         context.put(classFinderKey, this);
         reader = ClassReader.instance(context);
@@ -214,8 +215,6 @@ public class ClassFinder {
         }
         if (fm instanceof JavacFileManager javacFileManager) {
             useCtProps = javacFileManager.isDefaultBootClassPath() && javacFileManager.isSymbolFileEnabled();
-        } else if (fm.getClass().getName().equals("com.sun.tools.sjavac.comp.SmartFileManager")) {
-            useCtProps = !options.isSet("ignore.symbol.file");
         } else {
             useCtProps = false;
         }
@@ -445,6 +444,9 @@ public class ClassFinder {
         if (c.members_field == null) {
             try {
                 c.complete();
+                if ((c.flags_field & UNNAMED_CLASS) != 0) {
+                    syms.removeClass(ps.modle, flatname);
+                }
             } catch (CompletionFailure ex) {
                 if (absent) {
                     syms.removeClass(ps.modle, flatname);

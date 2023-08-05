@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,19 @@
 
 package sun.security.pkcs;
 
-import java.io.OutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertPath;
-import java.security.cert.X509Certificate;
 import java.security.*;
+import java.security.cert.*;
 import java.security.spec.PSSParameterSpec;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import sun.security.provider.SHAKE256;
 import sun.security.timestamp.TimestampToken;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
-import sun.security.x509.X500Name;
 import sun.security.x509.KeyUsageExtension;
+import sun.security.x509.X500Name;
 
 /**
  * A SignerInfo, as defined in PKCS#7's signedData type.
@@ -81,7 +70,7 @@ public class SignerInfo implements DerEncoder {
      * should also be checked (ex: if it is a signature algorithm).
      */
     private record AlgorithmInfo(String field, boolean checkKey) {}
-    private Map<AlgorithmId, AlgorithmInfo> algorithms = new HashMap<>();
+    private final Map<AlgorithmId, AlgorithmInfo> algorithms = new HashMap<>();
 
     public SignerInfo(X500Name  issuerName,
                       BigInteger serial,
@@ -112,9 +101,7 @@ public class SignerInfo implements DerEncoder {
     /**
      * Parses a PKCS#7 signer info.
      */
-    public SignerInfo(DerInputStream derin)
-        throws IOException, ParsingException
-    {
+    public SignerInfo(DerInputStream derin) throws IOException {
         this(derin, false);
     }
 
@@ -125,12 +112,11 @@ public class SignerInfo implements DerEncoder {
      * PKCS#7 blocks that were generated using JDK1.1.x.
      *
      * @param derin the ASN.1 encoding of the signer info.
-     * @param oldStyle flag indicating whether or not the given signer info
+     * @param oldStyle flag indicating whether the given signer info
      * is encoded according to JDK1.1.x.
      */
     public SignerInfo(DerInputStream derin, boolean oldStyle)
-        throws IOException, ParsingException
-    {
+            throws IOException {
         // version
         version = derin.getBigInteger();
 
@@ -222,21 +208,14 @@ public class SignerInfo implements DerEncoder {
         }
     }
 
-    public void encode(DerOutputStream out) throws IOException {
-
-        derEncode(out);
-    }
-
     /**
      * DER encode this object onto an output stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
-    public void derEncode(OutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
         seq.putInteger(version);
         DerOutputStream issuerAndSerialNumber = new DerOutputStream();
@@ -258,10 +237,7 @@ public class SignerInfo implements DerEncoder {
         if (unauthenticatedAttributes != null)
             unauthenticatedAttributes.encode((byte)0xA1, seq);
 
-        DerOutputStream tmp = new DerOutputStream();
-        tmp.write(DerValue.tag_Sequence, seq);
-
-        out.write(tmp.toByteArray());
+        out.write(DerValue.tag_Sequence, seq);
     }
 
     /*
@@ -357,7 +333,7 @@ public class SignerInfo implements DerEncoder {
 
             byte[] dataSigned;
 
-            // if there are authenticate attributes, get the message
+            // if there are authenticated attributes, get the message
             // digest and compare it with the digest of data
             if (authenticatedAttributes == null) {
                 dataSigned = data;
@@ -453,16 +429,11 @@ public class SignerInfo implements DerEncoder {
             boolean[] keyUsageBits = cert.getKeyUsage();
             if (keyUsageBits != null) {
                 KeyUsageExtension keyUsage;
-                try {
-                    // We don't care whether or not this extension was marked
-                    // critical in the certificate.
-                    // We're interested only in its value (i.e., the bits set)
-                    // and treat the extension as critical.
-                    keyUsage = new KeyUsageExtension(keyUsageBits);
-                } catch (IOException ioe) {
-                    throw new SignatureException("Failed to parse keyUsage "
-                                                 + "extension");
-                }
+                // We don't care whether this extension was marked
+                // critical in the certificate.
+                // We're interested only in its value (i.e., the bits set)
+                // and treat the extension as critical.
+                keyUsage = new KeyUsageExtension(keyUsageBits);
 
                 boolean digSigAllowed
                         = keyUsage.get(KeyUsageExtension.DIGITAL_SIGNATURE);
@@ -566,7 +537,16 @@ public class SignerInfo implements DerEncoder {
                     digAlg = "SHA" + digAlg.substring(4);
                 }
                 if (keyAlg.equals("EC")) keyAlg = "ECDSA";
-                return digAlg + "with" + keyAlg;
+                String sigAlg = digAlg + "with" + keyAlg;
+                try {
+                    Signature.getInstance(sigAlg);
+                    return sigAlg;
+                } catch (NoSuchAlgorithmException e) {
+                    // Possibly an unknown modern signature algorithm,
+                    // in this case, encAlg should already be a signature
+                    // algorithm.
+                    return encAlg;
+                }
         }
     }
 
@@ -737,7 +717,7 @@ public class SignerInfo implements DerEncoder {
     }
 
     /**
-     * Verify all of the algorithms in the array of SignerInfos against the
+     * Verify all the algorithms in the array of SignerInfos against the
      * constraints in the jdk.jar.disabledAlgorithms security property.
      *
      * @param infos array of SignerInfos

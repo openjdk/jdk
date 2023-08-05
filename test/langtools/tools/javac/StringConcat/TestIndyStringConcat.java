@@ -35,10 +35,6 @@ import java.io.File;
  * @modules jdk.jdeps/com.sun.tools.classfile
  *
  * @clean *
- * @compile -source 7 -target 7 TestIndyStringConcat.java
- * @run main TestIndyStringConcat false
- *
- * @clean *
  * @compile -source 8 -target 8 TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *

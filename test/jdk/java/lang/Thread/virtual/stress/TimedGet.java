@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress parking with CompletableFuture timed get
  * @requires vm.debug != true & vm.continuations
- * @compile --enable-preview -source ${jdk.version} TimedGet.java
- * @run main/othervm -Xmx1g --enable-preview TimedGet
+ * @run main/othervm -Xmx1g TimedGet 100000
  */
 
 import java.time.Duration;

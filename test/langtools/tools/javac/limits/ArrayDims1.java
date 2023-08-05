@@ -58,6 +58,4 @@ class ArrayDims1 {
         [][][][][][][][][][]
         [][][][][][][][][][]
         [][][][][] o; // 255 = limit (OK)
-    public static void main(String[] args) {
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
 
 #include "gc/g1/g1OopClosures.hpp"
 
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -64,7 +66,7 @@ inline void G1ScanClosureBase::prefetch_and_push(T* p, const oop obj) {
 
 template <class T>
 inline void G1ScanClosureBase::handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj) {
-  if (region_attr.is_humongous()) {
+  if (region_attr.is_humongous_candidate()) {
     _g1h->set_humongous_is_live(obj);
   } else if (region_attr.is_optional()) {
     _par_scan_state->remember_reference_into_optional_region(p);
@@ -117,17 +119,9 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   // can't do because of races
   // assert(oopDesc::is_oop_or_null(obj), "expected an oop");
-  assert(is_object_aligned(obj), "oop must be aligned");
-  assert(g1h->is_in_reserved(obj), "oop must be in reserved");
-
-  HeapRegion* from = g1h->heap_region_containing(p);
-
-  assert(from->is_in_reserved(p) ||
-         (from->is_humongous() &&
-          g1h->heap_region_containing(p)->is_humongous() &&
-          from->humongous_start_region() == g1h->heap_region_containing(p)->humongous_start_region()),
-         "p " PTR_FORMAT " is not in the same region %u or part of the correct humongous object starting at region %u.",
-         p2i(p), from->hrm_index(), from->humongous_start_region()->hrm_index());
+  assert(is_object_aligned(obj), "obj must be aligned");
+  assert(g1h->is_in(obj), "invariant");
+  assert(g1h->is_in(p), "invariant");
 #endif // ASSERT
 }
 
@@ -154,7 +148,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
   HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
 
-  assert(to_rem_set != NULL, "Need per-region 'into' remsets.");
+  assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
     to_rem_set->add_reference(p, _worker_id);
   }
@@ -238,14 +232,14 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
-    assert(forwardee != NULL, "forwardee should not be NULL");
+    assert(forwardee != nullptr, "forwardee should not be null");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 
     if (barrier == G1BarrierCLD) {
       do_cld_barrier(forwardee);
     }
   } else {
-    if (state.is_humongous()) {
+    if (state.is_humongous_candidate()) {
       _g1h->set_humongous_is_live(obj);
     } else if ((barrier != G1BarrierNoOptRoots) && state.is_optional()) {
       _par_scan_state->remember_root_into_optional_region(p);
@@ -263,7 +257,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
 
 template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return;
   }
 

@@ -117,7 +117,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_CreateRawMonitor(
     jvmtiError ret;
     char sz[128];
 
-    sprintf(sz, "Raw-monitor");
+    snprintf(sz, sizeof(sz), "Raw-monitor");
     ret = jvmti->CreateRawMonitor(sz, &jraw_monitor);
 
     if (ret != JVMTI_ERROR_NONE) {

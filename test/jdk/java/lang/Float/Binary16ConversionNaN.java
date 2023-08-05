@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,10 @@
 /*
  * @test
  * @bug 8289551
+ * @requires (os.arch != "x86" & os.arch != "i386") | vm.opt.UseSSE == "null" | vm.opt.UseSSE > 0
  * @summary Verify NaN sign and significand bits are preserved across conversions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ * -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 Binary16ConversionNaN
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,7 +526,6 @@ public final class Duration
      * @param nanos  the nanoseconds within the second, from 0 to 999,999,999
      */
     private Duration(long seconds, int nanos) {
-        super();
         this.seconds = seconds;
         this.nanos = nanos;
     }
@@ -1420,7 +1419,8 @@ public final class Duration
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherDuration the other duration to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this duration is less than {@code otherDuration},
+     *          zero if they are equal, greater than zero if this duration is greater than {@code otherDuration}
      */
     @Override
     public int compareTo(Duration otherDuration) {

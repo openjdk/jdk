@@ -42,6 +42,7 @@ import combo.ComboInstance;
 import combo.ComboParameter;
 import combo.ComboTask;
 import combo.ComboTestHelper;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -98,10 +99,7 @@ public class ConditionalExpressionResolvePending extends ComboInstance<Condition
                         case "FALSE" -> False;
                         case "SNIPPET" -> snippet;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             try {
@@ -110,7 +108,10 @@ public class ConditionalExpressionResolvePending extends ComboInstance<Condition
                 if (filesIt.hasNext()) {
                     throw new IllegalStateException("More than one classfile returned!");
                 }
-                byte[] data = file.openInputStream().readAllBytes();
+                byte[] data;
+                try (InputStream input = file.openInputStream()) {
+                    data = input.readAllBytes();
+                }
                 ClassLoader inMemoryLoader = new ClassLoader() {
                     protected Class<?> findClass(String name) throws ClassNotFoundException {
                         if ("Test".equals(name)) {

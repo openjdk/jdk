@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,11 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _constantValueIndex;
     protected short  _codeIndex;
     protected short  _exceptionsIndex;
+    protected short  _stackMapTableIndex;
     protected short  _lineNumberTableIndex;
     protected short  _localVariableTableIndex;
     protected short  _signatureIndex;
+    protected short  _bootstrapMethodsIndex;
 
     protected static int extractHighShortFromInt(int val) {
         // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
@@ -133,34 +135,36 @@ public class ClassWriter implements /* imports */ ClassConstants
         // remember index of attribute name modified UTF-8 strings
 
         // class attributes
-        Short sourceFileIndex = (Short) utf8ToIndex.get("SourceFile");
+        Short sourceFileIndex = utf8ToIndex.get("SourceFile");
         _sourceFileIndex = (sourceFileIndex != null)? sourceFileIndex.shortValue() : 0;
         if (DEBUG) debugMessage("SourceFile index = " + _sourceFileIndex);
 
-        Short innerClassesIndex = (Short) utf8ToIndex.get("InnerClasses");
+        Short innerClassesIndex = utf8ToIndex.get("InnerClasses");
         _innerClassesIndex = (innerClassesIndex != null)? innerClassesIndex.shortValue() : 0;
         if (DEBUG) debugMessage("InnerClasses index = " + _innerClassesIndex);
 
+        Short bootstrapMethodsIndex = utf8ToIndex.get("BootstrapMethods");
+        _bootstrapMethodsIndex = (bootstrapMethodsIndex != null) ? bootstrapMethodsIndex.shortValue() : 0;
         // field attributes
-        Short constantValueIndex = (Short) utf8ToIndex.get("ConstantValue");
+        Short constantValueIndex = utf8ToIndex.get("ConstantValue");
         _constantValueIndex = (constantValueIndex != null)?
                                           constantValueIndex.shortValue() : 0;
         if (DEBUG) debugMessage("ConstantValue index = " + _constantValueIndex);
 
-        Short syntheticIndex = (Short) utf8ToIndex.get("Synthetic");
+        Short syntheticIndex = utf8ToIndex.get("Synthetic");
         _syntheticIndex = (syntheticIndex != null)? syntheticIndex.shortValue() : 0;
         if (DEBUG) debugMessage("Synthetic index = " + _syntheticIndex);
 
-        Short deprecatedIndex = (Short) utf8ToIndex.get("Deprecated");
+        Short deprecatedIndex = utf8ToIndex.get("Deprecated");
         _deprecatedIndex = (deprecatedIndex != null)? deprecatedIndex.shortValue() : 0;
         if (DEBUG) debugMessage("Deprecated index = " + _deprecatedIndex);
 
         // method attributes
-        Short codeIndex = (Short) utf8ToIndex.get("Code");
+        Short codeIndex = utf8ToIndex.get("Code");
         _codeIndex = (codeIndex != null)? codeIndex.shortValue() : 0;
         if (DEBUG) debugMessage("Code index = " + _codeIndex);
 
-        Short exceptionsIndex = (Short) utf8ToIndex.get("Exceptions");
+        Short exceptionsIndex = utf8ToIndex.get("Exceptions");
         _exceptionsIndex = (exceptionsIndex != null)? exceptionsIndex.shortValue() : 0;
         if (DEBUG) debugMessage("Exceptions index = " + _exceptionsIndex);
 
@@ -168,17 +172,22 @@ public class ClassWriter implements /* imports */ ClassConstants
         // Short deprecatedIndex = (Short) utf8ToIndex.get("Deprecated");
 
         // Code attributes
-        Short lineNumberTableIndex = (Short) utf8ToIndex.get("LineNumberTable");
+        Short stackMapTableIndex = utf8ToIndex.get("StackMapTable");
+        _stackMapTableIndex = (stackMapTableIndex != null) ?
+                              stackMapTableIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("StackMapTable index = " + _stackMapTableIndex);
+
+        Short lineNumberTableIndex = utf8ToIndex.get("LineNumberTable");
         _lineNumberTableIndex = (lineNumberTableIndex != null)?
                                        lineNumberTableIndex.shortValue() : 0;
         if (DEBUG) debugMessage("LineNumberTable index = " + _lineNumberTableIndex);
 
-        Short localVariableTableIndex = (Short) utf8ToIndex.get("LocalVariableTable");
+        Short localVariableTableIndex = utf8ToIndex.get("LocalVariableTable");
         _localVariableTableIndex = (localVariableTableIndex != null)?
                                        localVariableTableIndex.shortValue() : 0;
         if (DEBUG) debugMessage("LocalVariableTable index = " + _localVariableTableIndex);
 
-        Short signatureIdx = (Short) utf8ToIndex.get("Signature");
+        Short signatureIdx = utf8ToIndex.get("Signature");
         _signatureIndex = (signatureIdx != null)? signatureIdx.shortValue() : 0;
         if (DEBUG) debugMessage("Signature index = " + _signatureIndex);
 
@@ -232,7 +241,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_UnresolvedClassInError: {
                      dos.writeByte(JVM_CONSTANT_Class);
                      String klassName = cpool.getKlassNameAt(ci).asString();
-                     Short s = (Short) utf8ToIndex.get(klassName);
+                     Short s = utf8ToIndex.get(klassName);
                      classToIndex.put(klassName, (short) ci);
                      dos.writeShort(s.shortValue());
                      if (DEBUG) debugMessage("CP[" + ci  + "] = class " + s);
@@ -242,7 +251,7 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_String: {
                      dos.writeByte(cpConstType);
                      String str = cpool.getUnresolvedStringAt(ci).asString();
-                     Short s = (Short) utf8ToIndex.get(str);
+                     Short s = utf8ToIndex.get(str);
                      dos.writeShort(s.shortValue());
                      if (DEBUG) debugMessage("CP[" + ci + "] = string " + s);
                      break;
@@ -333,7 +342,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected void writeThisClass() throws IOException {
         String klassName = klass.getName().asString();
-        Short index = (Short) classToIndex.get(klassName);
+        Short index = classToIndex.get(klassName);
         dos.writeShort(index.shortValue());
         if (DEBUG) debugMessage("this class = " + index);
     }
@@ -342,7 +351,7 @@ public class ClassWriter implements /* imports */ ClassConstants
         Klass superKlass = klass.getSuper();
         if (superKlass != null) { // is not java.lang.Object
             String superName = superKlass.getName().asString();
-            Short index = (Short) classToIndex.get(superName);
+            Short index = classToIndex.get(superName);
             if (DEBUG) debugMessage("super class = " + index);
             dos.writeShort(index.shortValue());
         } else {
@@ -359,7 +368,7 @@ public class ClassWriter implements /* imports */ ClassConstants
         dos.writeShort((short) len);
         for (int i = 0; i < len; i++) {
            Klass k = interfaces.getAt(i);
-           Short index = (Short) classToIndex.get(k.getName().asString());
+           Short index = classToIndex.get(k.getName().asString());
            dos.writeShort(index.shortValue());
            if (DEBUG) debugMessage("\t" + index);
         }
@@ -377,10 +386,10 @@ public class ClassWriter implements /* imports */ ClassConstants
             short accessFlags    = klass.getFieldAccessFlags(index);
             dos.writeShort(accessFlags & (short) JVM_RECOGNIZED_FIELD_MODIFIERS);
 
-            short nameIndex    = klass.getFieldNameIndex(index);
+            int nameIndex = klass.getFieldNameIndex(index);
             dos.writeShort(nameIndex);
 
-            short signatureIndex = klass.getFieldSignatureIndex(index);
+            int signatureIndex = klass.getFieldSignatureIndex(index);
             dos.writeShort(signatureIndex);
             if (DEBUG) debugMessage("\tfield name = " + nameIndex + ", signature = " + signatureIndex);
 
@@ -389,13 +398,23 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (hasSyn)
                 fieldAttributeCount++;
 
-            short initvalIndex = klass.getFieldInitialValueIndex(index);
+            int initvalIndex = klass.getFieldInitialValueIndex(index);
             if (initvalIndex != 0)
                 fieldAttributeCount++;
 
-            short genSigIndex = klass.getFieldGenericSignatureIndex(index);
+            int genSigIndex = klass.getFieldGenericSignatureIndex(index);
             if (genSigIndex != 0)
                 fieldAttributeCount++;
+
+            U1Array fieldAnnotations = klass.getFieldAnnotations(index);
+            if (fieldAnnotations != null) {
+                fieldAttributeCount++;
+            }
+
+            U1Array fieldTypeAnnotations = klass.getFieldTypeAnnotations(index);
+            if (fieldTypeAnnotations != null) {
+                fieldAttributeCount++;
+            }
 
             dos.writeShort(fieldAttributeCount);
 
@@ -415,6 +434,14 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeInt(2);
                 dos.writeShort(genSigIndex);
                 if (DEBUG) debugMessage("\tfield generic signature index " + genSigIndex);
+            }
+
+            if (fieldAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleAnnotations", fieldAnnotations);
+            }
+
+            if (fieldTypeAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", fieldTypeAnnotations);
             }
         }
     }
@@ -438,8 +465,8 @@ public class ClassWriter implements /* imports */ ClassConstants
         ArrayList<Method> valid_methods = new ArrayList<Method>();
         for (int i = 0; i < methods.length(); i++) {
             Method m = methods.at(i);
-            long accessFlags = m.getAccessFlags();
-            // overpass method
+            long accessFlags = m.getAccessFlags() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+            // skip overpass methods
             if (accessFlags == (JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE)) {
                 continue;
             }
@@ -483,6 +510,26 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (isGeneric)
             methodAttributeCount++;
 
+        final U1Array annotations = m.getAnnotations();
+        if (annotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array parameterAnnotations = m.getParameterAnnotations();
+        if (parameterAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array typeAnnotations = m.getTypeAnnotations();
+        if (typeAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array annotationDefault = m.getAnnotationDefault();
+        if (annotationDefault != null) {
+            methodAttributeCount++;
+        }
+
         dos.writeShort(methodAttributeCount);
         if (DEBUG) debugMessage("\tmethod attribute count = " + methodAttributeCount);
 
@@ -513,6 +560,27 @@ public class ClassWriter implements /* imports */ ClassConstants
                                             2 /* end_pc       */ +
                                             2 /* handler_pc   */ +
                                             2 /* catch_type   */);
+            }
+
+            boolean hasStackMapTable = m.hasStackMapTable();
+            U1Array stackMapData = null;
+            int stackMapAttrLen = 0;
+
+            if (hasStackMapTable) {
+                if (DEBUG) debugMessage("\tmethod has stack map table");
+                stackMapData = m.getStackMapData();
+                if (DEBUG) debugMessage("\t\tstack map table length = " + stackMapData.length());
+
+                stackMapAttrLen = stackMapData.length();
+
+                codeSize += 2 /* stack map table attr index */ +
+                            4 /* stack map table attr length */ +
+                            stackMapAttrLen;
+
+                if (DEBUG) debugMessage("\t\tstack map table attr size = " +
+                                        stackMapAttrLen);
+
+                codeAttrCount++;
             }
 
             boolean hasLineNumberTable = m.hasLineNumberTable();
@@ -598,8 +666,19 @@ public class ClassWriter implements /* imports */ ClassConstants
                 }
             }
 
-            dos.writeShort((short)codeAttrCount);
+            dos.writeShort(codeAttrCount);
             if (DEBUG) debugMessage("\tcode attribute count = " + codeAttrCount);
+
+            // write StackMapTable, if available
+            if (hasStackMapTable) {
+                writeIndex(_stackMapTableIndex);
+                dos.writeInt(stackMapAttrLen);
+                // We write bytes directly as stackMapData is
+                // raw data (#entries + entries)
+                for (int i = 0; i < stackMapData.length(); i++) {
+                    dos.writeByte(stackMapData.at(i));
+                }
+            }
 
             // write LineNumberTable, if available.
             if (hasLineNumberTable) {
@@ -614,7 +693,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             // write LocalVariableTable, if available.
             if (hasLocalVariableTable) {
-                writeIndex((short) _localVariableTableIndex);
+                writeIndex(_localVariableTableIndex);
                 dos.writeInt(localVarAttrLen);
                 dos.writeShort((short) localVariableTable.length);
                 for (int l = 0; l < localVariableTable.length; l++) {
@@ -646,6 +725,22 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (isGeneric) {
            writeGenericSignature(m.getGenericSignature().asString());
         }
+
+        if (annotationDefault != null) {
+           writeAnnotationAttribute("AnnotationDefault", annotationDefault);
+        }
+
+        if (annotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", annotations);
+        }
+
+        if (parameterAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleParameterAnnotations", parameterAnnotations);
+        }
+
+        if (typeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", typeAnnotations);
+        }
     }
 
     protected void rewriteByteCode(Method m, byte[] code) {
@@ -657,7 +752,7 @@ public class ClassWriter implements /* imports */ ClassConstants
         writeIndex(_signatureIndex);
         if (DEBUG) debugMessage("signature attribute = " + _signatureIndex);
         dos.writeInt(2);
-        Short index = (Short) utf8ToIndex.get(signature);
+        Short index = utf8ToIndex.get(signature);
         dos.writeShort(index.shortValue());
         if (DEBUG) debugMessage("generic signature = " + index);
     }
@@ -681,9 +776,24 @@ public class ClassWriter implements /* imports */ ClassConstants
             classAttributeCount++;
 
         U2Array innerClasses = klass.getInnerClasses();
-        final int numInnerClasses = (int) (innerClasses.length() / 4);
+        final int numInnerClasses = innerClasses.length() / 4;
         if (numInnerClasses != 0)
             classAttributeCount++;
+
+        int bsmCount = klass.getConstants().getBootstrapMethodsCount();
+        if (bsmCount != 0) {
+            classAttributeCount++;
+        }
+
+        U1Array classAnnotations = klass.getClassAnnotations();
+        if (classAnnotations != null) {
+            classAttributeCount++;
+        }
+
+        U1Array classTypeAnnotations = klass.getClassTypeAnnotations();
+        if (classTypeAnnotations != null) {
+            classAttributeCount++;
+        }
 
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);
@@ -696,7 +806,7 @@ public class ClassWriter implements /* imports */ ClassConstants
             writeIndex(_sourceFileIndex);
             if (DEBUG) debugMessage("source file attribute = " + _sourceFileIndex);
             dos.writeInt(2);
-            Short index = (Short) utf8ToIndex.get(sourceFileName.asString());
+            Short index = utf8ToIndex.get(sourceFileName.asString());
             dos.writeShort(index.shortValue());
             if (DEBUG) debugMessage("source file name = " + index);
         }
@@ -724,5 +834,48 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeShort(innerClasses.at(index));
             }
         }
+
+        // write bootstrap method attribute, if any
+        if (bsmCount != 0) {
+            ConstantPool cpool = klass.getConstants();
+            writeIndex(_bootstrapMethodsIndex);
+            if (DEBUG) debugMessage("bootstrap methods attribute = " + _bootstrapMethodsIndex);
+            int attrLen = 2; // num_bootstrap_methods
+            for (int index = 0; index < bsmCount; index++) {
+                int bsmArgsCount = cpool.getBootstrapMethodArgsCount(index);
+                attrLen += 2 // bootstrap_method_ref
+                           + 2 // num_bootstrap_arguments
+                           + bsmArgsCount * 2;
+            }
+            dos.writeInt(attrLen);
+            dos.writeShort(bsmCount);
+            for (int index = 0; index < bsmCount; index++) {
+                short value[] = cpool.getBootstrapMethodAt(index);
+                for (int i = 0; i < value.length; i++) {
+                    dos.writeShort(value[i]);
+                }
+            }
+        }
+
+        if (classAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", classAnnotations);
+        }
+
+        if (classTypeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", classTypeAnnotations);
+        }
+    }
+
+    protected void writeAnnotationAttribute(String annotationName, U1Array annotation) throws IOException {
+      int length = annotation.length();
+      Short annotationNameIndex = utf8ToIndex.get(annotationName);
+      if (Assert.ASSERTS_ENABLED) {
+        Assert.that(annotationNameIndex != null, "should not be null");
+      }
+      writeIndex(annotationNameIndex.shortValue());
+      dos.writeInt(length);
+      for (int index = 0; index < length; index++) {
+        dos.writeByte(annotation.at(index));
+      }
     }
 }

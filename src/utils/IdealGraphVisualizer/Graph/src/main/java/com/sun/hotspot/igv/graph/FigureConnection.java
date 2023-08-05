@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -106,7 +106,7 @@ public class FigureConnection implements Connection {
         builder.append(" → ");
         builder.append(getInputSlot().getFigure().getProperties().resolveString(shortNodeText));
         builder.append(" [")
-               .append(getInputSlot().getPosition())
+               .append(getInputSlot().getOriginalIndex())
                .append("]");
         return builder.toString();
     }

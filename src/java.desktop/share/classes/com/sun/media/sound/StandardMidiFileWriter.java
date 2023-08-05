@@ -188,7 +188,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
             //bytesBuilt += trackStreams[i].getLength();
         }
 
-        // Now seqence the track streams
+        // Now sequence the track streams
         if( trackCount == 1 ) {
             trackStream = trackStreams[0];
         } else if( trackCount > 1 ){

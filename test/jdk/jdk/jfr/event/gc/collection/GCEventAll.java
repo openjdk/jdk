@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,13 +267,17 @@ public class GCEventAll {
                 Instant batchStartTime = endEvent.getStartTime();
                 Instant batchEndTime = endEvent.getEndTime();
                 for (RecordedEvent event : batch.getEvents()) {
-                    if (event.getEventType().getName().contains("AllocationRequiringGC")) {
+                    String name = event.getEventType().getName();
+                    if (name.contains("AllocationRequiringGC")) {
                         // Unlike other events, these are sent *before* a GC.
                         Asserts.assertLessThanOrEqual(event.getStartTime(), batchStartTime, "Timestamp in event after start event, should be sent before GC start");
                     } else {
                         Asserts.assertGreaterThanOrEqual(event.getStartTime(), batchStartTime, "startTime in event before batch start event, should be sent after GC start");
                     }
-                    Asserts.assertLessThanOrEqual(event.getEndTime(), batchEndTime, "endTime in event after batch end event, should be sent before GC end");
+                    // GCCPUTime is generated after GC is completed.
+                    if (!EventNames.GCCPUTime.equals(name)) {
+                        Asserts.assertLessThanOrEqual(event.getEndTime(), batchEndTime, "endTime in event after batch end event, should be sent before GC end");
+                    }
                 }
 
                 // Verify that all required events has been received.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,14 @@ public class TestStackGuardPages {
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("invoke",
                                                                         "test_java_overflow");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
-        new OutputAnalyzer(pb.start())
-            .shouldHaveExitValue(0);
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createNativeTestProcessBuilder("invoke", "test_native_overflow");
+        pb = ProcessTools.createNativeTestProcessBuilder("invoke",
+                                                         "test_java_overflow_initial");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
-        new OutputAnalyzer(pb.start())
-            .shouldHaveExitValue(0);
+        output = ProcessTools.executeProcess(pb);
+        output.shouldHaveExitValue(0);
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,7 +332,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // after the last flight.  If the last flight get lost, the
             // application data may be discarded accordingly.  As could
             // be an issue for some applications.  This impact can be
-            // mitigated by sending the last fligth twice.
+            // mitigated by sending the last flight twice.
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
                 SSLLogger.finest("retransmit the last flight messages");
             }
@@ -394,11 +394,11 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
      */
     private HandshakeStatus tryKeyUpdate(
             HandshakeStatus currentHandshakeStatus) throws IOException {
-        // Don't bother to kickstart if handshaking is in progress, or if the
-        // connection is not duplex-open.
+        // Don't bother to kickstart if handshaking is in progress, or if
+        // the write side of the connection is not open.  We allow a half-
+        // duplex write-only connection for key updates.
         if ((conContext.handshakeContext == null) &&
                 !conContext.isOutboundClosed() &&
-                !conContext.isInboundClosed() &&
                 !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger key update");
@@ -1130,7 +1130,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     if (conContext.delegatedThrown == exc) {
                         // clear if/only if both are the same
                         conContext.delegatedThrown = null;
-                    } // otherwise report the hc delegatedThrown
+                    } // otherwise, report the hc delegatedThrown
                 } else {
                     // Nothing waiting in HandshakeContext, but one is in the
                     // TransportContext.

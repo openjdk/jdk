@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  *     its usages, please look through the README.
  *
  * @library /test/lib ../warnings
- * @compile -source 1.7 -target 1.7 JdkUtils.java
+ * @compile -source 1.8 -target 1.8 JdkUtils.java
  * @run main/manual/othervm Compatibility
  */
 
@@ -459,7 +459,7 @@ public class Compatibility {
         if (RSA.equals(keyAlgorithm) || DSA.equals(keyAlgorithm)) {
             return new int[] { 1024, 2048, 0 }; // 0 is no keysize specified
         } else if (EC.equals(keyAlgorithm)) {
-            return new int[] { 384, 571, 0 }; // 0 is no keysize specified
+            return new int[] { 384, 521, 0 }; // 0 is no keysize specified
         } else {
             throw new RuntimeException("problem determining key sizes");
         }
@@ -716,7 +716,7 @@ public class Compatibility {
         try {
             String match = "^  ("
                     + "  Signature algorithm: " + signItem.certInfo.
-                            expectedSigalg() + ", " + signItem.certInfo.
+                            expectedSigalg(signItem) + ", " + signItem.certInfo.
                             expectedKeySize() + "-bit key"
                     + ")|("
                     + "  Digest algorithm: " + signItem.expectedDigestAlg()
@@ -844,6 +844,7 @@ public class Compatibility {
 
             if (isWeakAlg(signItem.expectedDigestAlg())
                     && line.contains(Test.WEAK_ALGORITHM_WARNING)) continue;
+            if (line.contains(Test.WEAK_KEY_WARNING)) continue;
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
                     && signItem.certInfo.expired) continue;
@@ -1034,13 +1035,13 @@ public class Compatibility {
             throws Throwable {
         long start = System.currentTimeMillis();
         try {
+            String[] cmd;
 
-            String[] cmd = new String[args.length + 4];
+            cmd = new String[args.length + 3];
+            System.arraycopy(args, 0, cmd, 3, args.length);
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";
-            cmd[3] = "-J-Djava.security.egd=file:/dev/./urandom";
-            System.arraycopy(args, 0, cmd, 4, args.length);
             return ProcessTools.executeCommand(cmd);
 
         } finally {
@@ -1182,19 +1183,56 @@ public class Compatibility {
         }
 
         private String expectedSigalg() {
-            return (DEFAULT.equals(this.digestAlgorithm) ? this.digestAlgorithm
-                    : "SHA-256").replace("-", "") + "with" +
-                    keyAlgorithm + (EC.equals(keyAlgorithm) ? "DSA" : "");
+            return "SHA256with" + keyAlgorithm + (EC.equals(keyAlgorithm) ? "DSA" : "");
+        }
+
+        private String expectedSigalg(SignItem signer) {
+            if (!DEFAULT.equals(digestAlgorithm)) {
+                return "SHA256with" + keyAlgorithm + (EC.equals(keyAlgorithm) ? "DSA" : "");
+
+            } else {
+                // default algorithms documented for jarsigner here:
+                // https://docs.oracle.com/en/java/javase/17/docs/specs/man/jarsigner.html#supported-algorithms
+                // https://docs.oracle.com/en/java/javase/20/docs/specs/man/jarsigner.html#supported-algorithms
+                int expectedKeySize = expectedKeySize();
+                switch (keyAlgorithm) {
+                    case DSA:
+                        return "SHA256withDSA";
+                    case RSA: {
+                        if ((signer.jdkInfo.majorVersion >= 20 && expectedKeySize < 624)
+                                || (signer.jdkInfo.majorVersion < 20 && expectedKeySize <= 3072)) {
+                            return "SHA256withRSA";
+                        } else if (expectedKeySize <= 7680) {
+                            return "SHA384withRSA";
+                        } else {
+                            return "SHA512withRSA";
+                        }
+                    }
+                    case EC: {
+                        if (signer.jdkInfo.majorVersion < 20 && expectedKeySize < 384) {
+                            return "SHA256withECDSA";
+                        } else if (expectedKeySize < 512) {
+                            return "SHA384withECDSA";
+                        } else {
+                            return "SHA512withECDSA";
+                        }
+                    }
+                    default:
+                        throw new RuntimeException("Unsupported/expected key algorithm: " + keyAlgorithm);
+                }
+            }
         }
 
         private int expectedKeySize() {
             if (keySize != 0) return keySize;
 
             // defaults
-            if (RSA.equals(keyAlgorithm) || DSA.equals(keyAlgorithm)) {
-                return 3072;
+            if (RSA.equals(keyAlgorithm)) {
+                return jdkInfo.majorVersion >= 20 ? 3072 : 2048;
+            } else if (DSA.equals(keyAlgorithm)) {
+                return 2048;
             } else if (EC.equals(keyAlgorithm)) {
-                return 384;
+                return jdkInfo.majorVersion >= 20 ? 384 : 256;
             } else {
                 throw new RuntimeException("problem determining key size");
             }
@@ -1390,7 +1428,9 @@ public class Compatibility {
         }
 
         String expectedDigestAlg() {
-            return digestAlgorithm != null ? digestAlgorithm : "SHA-256";
+            return digestAlgorithm != null
+                    ? digestAlgorithm
+                    : jdkInfo.majorVersion >= 20 ? "SHA-384" : "SHA-256";
         }
 
         private SignItem tsaDigestAlgorithm(String tsaDigestAlgorithm) {
@@ -1539,7 +1579,7 @@ public class Compatibility {
         s_values_add.accept(i -> i.unsignedJar + " -> " + i.signedJar);
         s_values_add.accept(i -> i.certInfo.toString());
         s_values_add.accept(i -> i.jdkInfo.version);
-        s_values_add.accept(i -> i.certInfo.expectedSigalg());
+        s_values_add.accept(i -> i.certInfo.expectedSigalg(i));
         s_values_add.accept(i ->
                 null2Default(i.digestAlgorithm, i.expectedDigestAlg()));
         s_values_add.accept(i -> i.tsaIndex == -1 ? "" :

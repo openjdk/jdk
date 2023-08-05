@@ -57,7 +57,7 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withBitAlignment(8);
+    static final ValueLayout.OfLong ELEMENT_LAYOUT = ValueLayout.JAVA_LONG.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -717,11 +717,9 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Long> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (long) 0);
-                that = that.blend((long) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Long> mask
+                    = this.compare(EQ, (long) 0);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -767,11 +765,9 @@ public abstract class LongVector extends AbstractVector<Long> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Long> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (long) 0);
-                that = that.blend((long) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Long> mask
+                    = this.compare(EQ, (long) 0, m);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -3042,7 +3038,7 @@ public abstract class LongVector extends AbstractVector<Long> {
      * long[] ar = new long[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_LONG.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_LONG.withByteAlignment(1), n);
      *     }
      * }
      * LongVector r = LongVector.fromArray(species, ar, 0);

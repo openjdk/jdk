@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.net.www;
 
 import java.util.Iterator;
+import java.util.Locale;
+import java.util.OptionalInt;
 
 /* This is useful for the nightmare of parsing multi-part HTTP/RFC822 headers
  * sensibly:
@@ -93,7 +95,7 @@ public class HeaderParser {
             while (end < len) {
                 char c = ca[end];
                 if ((c == '=') && !inQuote) { // end of a key
-                    tab[i][0] = new String(ca, beg, end-beg).toLowerCase();
+                    tab[i][0] = new String(ca, beg, end-beg).toLowerCase(Locale.ROOT);
                     inKey = false;
                     end++;
                     beg = end;
@@ -116,7 +118,7 @@ public class HeaderParser {
                         end++;
                         continue;
                     } else if (inKey) {
-                        tab[i++][0] = (new String(ca, beg, end-beg)).toLowerCase();
+                        tab[i++][0] = (new String(ca, beg, end-beg)).toLowerCase(Locale.ROOT);
                     } else {
                         tab[i++][1] = (new String(ca, beg, end-beg));
                     }
@@ -144,7 +146,7 @@ public class HeaderParser {
                         tab[i++][1] = (new String(ca, beg, end-beg+1));
                     }
                 } else {
-                    tab[i++][0] = (new String(ca, beg, end-beg+1)).toLowerCase();
+                    tab[i++][0] = (new String(ca, beg, end-beg+1)).toLowerCase(Locale.ROOT);
                 }
             } else if (end == beg) {
                 if (!inKey) {
@@ -154,7 +156,7 @@ public class HeaderParser {
                         tab[i++][1] = String.valueOf(ca[end]);
                     }
                 } else {
-                    tab[i++][0] = String.valueOf(ca[end]).toLowerCase();
+                    tab[i++][0] = String.valueOf(ca[end]).toLowerCase(Locale.ROOT);
                 }
             }
             nkeys=i;
@@ -181,7 +183,7 @@ public class HeaderParser {
     public String findValue(String k, String Default) {
         if (k == null)
             return Default;
-        k = k.toLowerCase();
+        k = k.toLowerCase(Locale.ROOT);
         for (int i = 0; i < asize; ++i) {
             if (tab[i][0] == null) {
                 return Default;
@@ -246,6 +248,19 @@ public class HeaderParser {
             return Default;
         }
     }
+
+    public OptionalInt findInt(String k) {
+        try {
+            String s = findValue(k);
+            if (s == null) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(Integer.parseInt(s));
+        } catch (Throwable t) {
+            return OptionalInt.empty();
+        }
+    }
+
     /*
     public static void main(String[] a) throws Exception {
         System.out.print("enter line to parse> ");

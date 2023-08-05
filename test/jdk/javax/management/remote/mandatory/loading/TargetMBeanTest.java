@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public class TargetMBeanTest {
 
         URLClassLoader jrcl = (URLClassLoader) jmxRemoteClassLoader;
         URL[] urls = jrcl.getURLs();
+        @SuppressWarnings("removal")
         PrivateMLet mlet = new PrivateMLet(urls, null, false);
         Class shadowClass = mlet.loadClass(JMXServiceURL.class.getName());
         if (shadowClass == JMXServiceURL.class) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,15 +61,15 @@ public class PSYoungGen extends VMObject {
 
    // Accessors
    public MutableSpace edenSpace() {
-      return (MutableSpace) VMObjectFactory.newObject(MutableSpace.class, edenSpaceField.getValue(addr));
+      return VMObjectFactory.newObject(MutableSpace.class, edenSpaceField.getValue(addr));
    }
 
    public MutableSpace fromSpace() {
-      return (MutableSpace) VMObjectFactory.newObject(MutableSpace.class, fromSpaceField.getValue(addr));
+      return VMObjectFactory.newObject(MutableSpace.class, fromSpaceField.getValue(addr));
    }
 
    public MutableSpace toSpace() {
-      return (MutableSpace) VMObjectFactory.newObject(MutableSpace.class, toSpaceField.getValue(addr));
+      return VMObjectFactory.newObject(MutableSpace.class, toSpaceField.getValue(addr));
    }
 
    public long capacity() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class JfrMspaceRetrieval {
  private:
   template <typename Iterator>
   static Node* acquire(Mspace* mspace, Iterator& iterator, Thread* thread, size_t size) {
-    assert(mspace != NULL, "invariant");
+    assert(mspace != nullptr, "invariant");
     while (iterator.has_next()) {
       Node* const node = iterator.next();
       if (node->retired()) continue;
@@ -57,7 +57,7 @@ class JfrMspaceRetrieval {
         mspace->register_full(node, thread);
       }
     }
-    return NULL;
+    return nullptr;
   }
 };
 
@@ -70,7 +70,7 @@ class JfrMspaceRemoveRetrieval : AllStatic {
     if (free_list) {
       StopOnNullConditionRemoval<typename Mspace::FreeList> iterator(mspace->free_list());
       Node* const node = acquire(iterator, thread, size);
-      if (node != NULL) {
+      if (node != nullptr) {
         mspace->decrement_free_list_count();
       }
       return node;
@@ -83,14 +83,14 @@ class JfrMspaceRemoveRetrieval : AllStatic {
   static Node* acquire(Iterator& iterator, Thread* thread, size_t size) {
     while (iterator.has_next()) {
       Node* const node = iterator.next();
-      if (node == NULL) return NULL;
+      if (node == nullptr) return nullptr;
       assert(node->free_size() >= size, "invariant");
       assert(!node->retired(), "invariant");
-      assert(node->identity() == NULL, "invariant");
+      assert(node->identity() == nullptr, "invariant");
       node->set_identity(thread);
       return node;
     }
-    return NULL;
+    return nullptr;
   }
 };
 

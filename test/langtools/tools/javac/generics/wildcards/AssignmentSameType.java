@@ -7,7 +7,7 @@
 
 public class AssignmentSameType {
 
-    public static void main(String[] args) {
+    public static void meth() {
         Ref<B> exact = null;
         Ref<? extends B> ebound = null;
         Ref<? super B> sbound = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm_md.h"
-#include "metaprogramming/integralConstant.hpp"
+#include "runtime/osInfo.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
@@ -34,8 +34,8 @@
 # include <mach/mach_time.h>
 #endif
 
-class AgentLibrary;
 class frame;
+class JvmtiAgent;
 
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
@@ -188,7 +188,6 @@ class os: AllStatic {
 
  private:
   static OSThread*          _starting_thread;
-  static address            _polling_page;
   static PageSizes          _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
@@ -230,6 +229,8 @@ class os: AllStatic {
   // Get summary strings for system information in buffer provided
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
+  // Returns number of bytes written on success, OS_ERR on failure.
+  static ssize_t pd_write(int fd, const void *buf, size_t nBytes);
 
   static void initialize_initial_active_processor_count();
 
@@ -256,7 +257,7 @@ class os: AllStatic {
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);
   static void   javaTimeSystemUTC(jlong &seconds, jlong &nanos);
-  static void   run_periodic_checks();
+  static void   run_periodic_checks(outputStream* st);
 
   // Returns the elapsed time in seconds since the vm started.
   static double elapsedTime();
@@ -290,13 +291,13 @@ class os: AllStatic {
 
   // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
                             size_t buffer_length, bool utc = false);
 
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(char* buffer, size_t buffer_length, bool utc = false);
 
   // Interface for detecting multiprocessor system
@@ -311,7 +312,13 @@ class os: AllStatic {
     return (_processor_count != 1);
   }
 
+  // On some platforms there is a distinction between "available" memory and "free" memory.
+  // For example, on Linux, "available" memory (`MemAvailable` in `/proc/meminfo`) is greater
+  // than "free" memory (`MemFree` in `/proc/meminfo`) because Linux can free memory
+  // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
+  static julong free_memory();
+
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
   static bool is_server_class_machine();
@@ -371,7 +378,7 @@ class os: AllStatic {
   // OS interface to Virtual Memory
 
   // Return the default page size.
-  static int    vm_page_size();
+  static size_t vm_page_size() { return OSInfo::vm_page_size(); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
@@ -398,21 +405,21 @@ class os: AllStatic {
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
-  static void trace_page_sizes(const char* str, const size_t* page_sizes, int count);
   static void trace_page_sizes(const char* str,
                                const size_t region_min_size,
                                const size_t region_max_size,
-                               const size_t page_size,
                                const char* base,
-                               const size_t size);
+                               const size_t size,
+                               const size_t page_size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
-  static int    vm_allocation_granularity();
+  static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -437,6 +444,15 @@ class os: AllStatic {
                                       bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
+
+  // Does the platform support trimming the native heap?
+  static bool can_trim_native_heap();
+
+  // Trim the C-heap. Optionally returns working set size change (RSS+Swap) in *rss_change.
+  // Note: If trimming succeeded but no size change information could be obtained,
+  // rss_change.after will contain SIZE_MAX upon return.
+  struct size_change_t { size_t before; size_t after; };
+  static bool trim_native_heap(size_change_t* rss_change = nullptr);
 
   // A diagnostic function to print memory mappings in the given range.
   static void print_memory_mappings(char* addr, size_t bytes, outputStream* st);
@@ -480,7 +496,6 @@ class os: AllStatic {
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
-  static bool   numa_has_static_binding();
   static bool   numa_has_group_homing();
   static void   numa_make_local(char *addr, size_t bytes, int lgrp_hint);
   static void   numa_make_global(char *addr, size_t bytes);
@@ -489,13 +504,13 @@ class os: AllStatic {
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
+  static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
 
   // Page manipulation
   struct page_info {
     size_t size;
     int lgrp_id;
   };
-  static bool   get_page_info(char *start, page_info* info);
   static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
 
   static char*  non_memory_address_word();
@@ -517,7 +532,7 @@ class os: AllStatic {
   enum ThreadType {
     vm_thread,
     gc_thread,         // GC thread
-    java_thread,       // Java, CodeCacheSweeper, JVMTIAgent and Service threads.
+    java_thread,       // Java, JVMTIAgent and Service threads.
     compiler_thread,
     watcher_thread,
     asynclog_thread,   // dedicated to flushing logs
@@ -568,12 +583,10 @@ class os: AllStatic {
   // multiple calls to naked_short_sleep. Only for use by non-JavaThreads.
   static void naked_sleep(jlong millis);
   // Never returns, use with CAUTION
-  static void infinite_sleep();
+  ATTRIBUTE_NORETURN static void infinite_sleep();
   static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
-
-  static int pd_self_suspend_thread(Thread* thread);
 
   static address    fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(const void* ucVoid);
@@ -595,26 +608,26 @@ class os: AllStatic {
   static int fork_and_exec(const char *cmd);
 
   // Call ::exit() on all platforms
-  static void exit(int num);
+  ATTRIBUTE_NORETURN static void exit(int num);
 
   // Call ::_exit() on all platforms. Similar semantics to die() except we never
   // want a core dump.
-  static void _exit(int num);
+  ATTRIBUTE_NORETURN static void _exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
-  static void abort(bool dump_core, void *siginfo, const void *context);
-  static void abort(bool dump_core = true);
+  ATTRIBUTE_NORETURN static void abort(bool dump_core, void *siginfo, const void *context);
+  ATTRIBUTE_NORETURN static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
   // Dump a core file, if possible, for debugging. os::abort() is the
   // preferred means to abort the VM on error. os::die() should only
   // be called if something has gone badly wrong. CreateCoredumpOnCrash
   // is intentionally not honored by this function.
-  static void die();
+  ATTRIBUTE_NORETURN static void die();
 
   // File i/o operations
   static int open(const char *path, int oflag, int mode);
@@ -638,15 +651,13 @@ class os: AllStatic {
   //File i/o operations
 
   static ssize_t read_at(int fd, void *buf, unsigned int nBytes, jlong offset);
-  static ssize_t write(int fd, const void *buf, unsigned int nBytes);
+  // Writes the bytes completely. Returns true on success, false otherwise.
+  static bool write(int fd, const void *buf, size_t nBytes);
 
   // Reading directories.
   static DIR*           opendir(const char* dirname);
   static struct dirent* readdir(DIR* dirp);
   static int            closedir(DIR* dirp);
-
-  // Dynamic library extension
-  static const char*    dll_file_extension();
 
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
@@ -667,7 +678,7 @@ class os: AllStatic {
   // dladdr() for all platforms. Name of the nearest function is copied
   // to buf. Distance from its base address is optionally returned as offset.
   // If function name is not found, buf[0] is set to '\0' and offset is
-  // set to -1 (if offset is non-NULL).
+  // set to -1 (if offset is non-null).
   static bool dll_address_to_function_name(address addr, char* buf,
                                            int buflen, int* offset,
                                            bool demangle = true);
@@ -675,7 +686,7 @@ class os: AllStatic {
   // Locate DLL/DSO. On success, full path of the library is copied to
   // buf, and offset is optionally set to be the distance between addr
   // and the library's base address. On failure, buf[0] is set to '\0'
-  // and offset is set to -1 (if offset is non-NULL).
+  // and offset is set to -1 (if offset is non-null).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 
@@ -692,7 +703,7 @@ class os: AllStatic {
   // "<address> in <library>+<offset>"
   static bool print_function_and_library_name(outputStream* st,
                                               address addr,
-                                              char* buf = NULL, int buflen = 0,
+                                              char* buf = nullptr, int buflen = 0,
                                               bool shorten_paths = true,
                                               bool demangle = true,
                                               bool strip_arguments = false);
@@ -706,7 +717,7 @@ class os: AllStatic {
   // Loads .dll/.so and
   // in case of error it checks if .dll/.so was built for the
   // same architecture as HotSpot is running on
-  // in case of an error NULL is returned and an error message is stored in ebuf
+  // in case of an error null is returned and an error message is stored in ebuf
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
 
   // lookup symbol in a shared library
@@ -729,17 +740,21 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
                                  size_t syms_len);
 
   // Find agent entry point
-  static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
   // Provide C99 compliant versions of these functions, since some versions
   // of some platforms don't.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+
+  // Performs snprintf and asserts the result is non-negative (so there was not
+  // an encoding error) and that the output was not truncated.
+  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);
@@ -756,12 +771,14 @@ class os: AllStatic {
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
+  static void print_tos(outputStream* st, address sp);
+  static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -772,6 +789,9 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as
@@ -806,7 +826,7 @@ class os: AllStatic {
   static bool is_first_C_frame(frame *fr);
   static frame get_sender_for_C_frame(frame *fr);
 
-  // return current frame. pc() and sp() are set to NULL on failure.
+  // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
   static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
@@ -816,7 +836,7 @@ class os: AllStatic {
   }
 
   // returns a string to describe the exception/signal;
-  // returns NULL if exception_code is not an OS exception/signal.
+  // returns null if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
 
   // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
@@ -858,10 +878,10 @@ class os: AllStatic {
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
 
-  // handles NULL pointers
+  // handles null pointers
   static void  free    (void *memblock);
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
-  // Like strdup, but exit VM when strdup() returns NULL
+  // Like strdup, but exit VM when strdup() returns null
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
@@ -870,15 +890,11 @@ class os: AllStatic {
   static int send(int fd, char* buf, size_t nBytes, uint flags);
   static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static int connect(int fd, struct sockaddr* him, socklen_t len);
-  static struct hostent* get_host_by_name(char* name);
 
-  // Support for signals (see JVM_RaiseSignal, JVM_RegisterSignal)
+  // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
   static void  signal_notify(int signal_number);
-  static void* signal(int signal_number, void* handler);
-  static void  signal_raise(int signal_number);
   static int   signal_wait();
-  static void* user_handler();
   static void  terminate_signal_thread();
   static int   sigexitnum_pd();
 
@@ -950,7 +966,6 @@ class os: AllStatic {
   inline static bool zero_page_read_protected();
 
   static void setup_fpu();
-  static bool supports_sse();
   static juint cpu_microcode_revision();
 
   static inline jlong rdtsc();
@@ -992,13 +1007,12 @@ class os: AllStatic {
 
  public:
   inline static bool platform_print_native_stack(outputStream* st, const void* context,
-                                                 char *buf, int buf_size);
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address
 
   static bool dont_yield();                     // when true, JVM_Yield() is nop
-  static void print_statistics();
 
   // Thread priority helpers (implemented in OS-specific part)
   static OSReturn set_native_priority(Thread* thread, int native_prio);

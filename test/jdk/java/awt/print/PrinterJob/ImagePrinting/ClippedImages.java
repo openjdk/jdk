@@ -59,6 +59,7 @@ import static java.awt.EventQueue.invokeAndWait;
 public class ClippedImages {
 
     private static ClippedImageCanvas c;
+    private static Frame frame;
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
@@ -100,7 +101,7 @@ public class ClippedImages {
     }
 
     public static void createTestUI() {
-        Frame frame = new Frame("Clipped Src Area Image Printing Test");
+        frame = new Frame("Clipped Src Area Image Printing Test");
         c = new ClippedImageCanvas();
         frame.add(c, BorderLayout.CENTER);
 
@@ -123,10 +124,10 @@ public class ClippedImages {
         frame.add(p, BorderLayout.SOUTH);
         frame.setLocationRelativeTo(null);
         frame.pack();
-        frame.setVisible(true);
 
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+        frame.setVisible(true);
     }
 
     private static void printOne() {

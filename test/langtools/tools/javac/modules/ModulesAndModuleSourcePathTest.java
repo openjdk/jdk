@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8165102 8175560
+ * @bug 8165102 8175560 8296390
  * @summary incorrect message from javac
  * @library /tools/lib
  * @modules
@@ -85,5 +85,40 @@ public class ModulesAndModuleSourcePathTest extends ModuleTestBase {
                 .getOutput(Task.OutputKind.DIRECT);
         if (!log.contains("module-info.java:1:1: compiler.err.module.not.found.on.module.source.path"))
             throw new Exception("expected output not found");
+    }
+
+    @Test
+    public void testImplicitModuleInfosModuleSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path ma = src.resolve("java.base");
+        Path mb = src.resolve("mb");
+        tb.writeJavaFiles(ma,
+                          "module java.base { exports java.lang;}",
+                          """
+                          package java.lang;
+                          public class Object {}
+                          """);
+        tb.writeJavaFiles(mb,
+                          """
+                          //note the following import must be present to verify the behavior:
+                          import java.lang.Object;
+                          module mb {
+                          }
+                          """,
+                          """
+                          package impl;
+                          public class Impl {}
+                          """);
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "--system", "none")
+                .outdir(classes)
+                .files(mb.resolve("impl").resolve("Impl.java"))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
     }
 }

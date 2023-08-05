@@ -16,7 +16,7 @@ DocComment[DOC_COMMENT, pos:0
       attributes: empty
     ]
   firstSentence: 1
-    Text[TEXT, pos:60, A_simple_well_fo...rmed_html_document]
+    Text[TEXT, pos:60, A_simple_well_formed_html_document]
   body: 4
     StartElement[START_ELEMENT, pos:95
       name:pre

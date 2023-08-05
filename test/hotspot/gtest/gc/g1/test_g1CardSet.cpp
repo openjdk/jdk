@@ -25,7 +25,7 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/workerThread.hpp"

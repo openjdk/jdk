@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,16 @@
 
 package jdk.test.lib.thread;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Helper class for running tasks in a virtual thread.
+ * Helper class to support tests running tasks a in virtual thread.
  */
 public class VThreadRunner {
     private VThreadRunner() { }
-
-    /**
-     * Characteristic value signifying that the thread cannot set values for its
-     * copy of thread-locals.
-     */
-    public static final int NO_THREAD_LOCALS = 1 << 1;
 
     /**
      * Characteristic value signifying that initial values for inheritable
@@ -83,8 +79,6 @@ public class VThreadRunner {
         Thread.Builder builder = Thread.ofVirtual();
         if (name != null)
             builder.name(name);
-        if ((characteristics & NO_THREAD_LOCALS) != 0)
-            builder.allowSetThreadLocals(false);
         if ((characteristics & NO_INHERIT_THREAD_LOCALS) != 0)
             builder.inheritInheritableThreadLocals(false);
         Thread thread = builder.start(target);
@@ -139,5 +133,42 @@ public class VThreadRunner {
      */
     public static void run(ThrowingRunnable task) throws Exception {
         run(null, 0, task);
+    }
+
+    /**
+     * Returns the virtual thread scheduler.
+     */
+    private static ForkJoinPool defaultScheduler() {
+        try {
+            var clazz = Class.forName("java.lang.VirtualThread");
+            var field = clazz.getDeclaredField("DEFAULT_SCHEDULER");
+            field.setAccessible(true);
+            return (ForkJoinPool) field.get(null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Sets the virtual thread scheduler's target parallelism.
+     * @return the previous parallelism level
+     */
+    public static int setParallelism(int size) {
+        return defaultScheduler().setParallelism(size);
+    }
+
+    /**
+     * Ensures that the virtual thread scheduler's target parallelism is at least
+     * the given size. If the target parallelism is less than the given size then
+     * it is changed to the given size.
+     * @return the previous parallelism level
+     */
+    public static int ensureParallelism(int size) {
+        ForkJoinPool pool = defaultScheduler();
+        int parallelism = pool.getParallelism();
+        if (size > parallelism) {
+            pool.setParallelism(size);
+        }
+        return parallelism;
     }
 }

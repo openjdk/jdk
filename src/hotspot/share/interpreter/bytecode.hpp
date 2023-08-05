@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;
+class ResolvedIndyEntry;
 
 // The base class for different kinds of bytecode abstractions.
 // Provides the primitive operations to manipulate code relative
@@ -56,10 +57,10 @@ class Bytecode: public StackObj {
 
  public:
   Bytecode(Method* method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {
-    assert(method != NULL, "this form requires a valid Method*");
+    assert(method != nullptr, "this form requires a valid Method*");
   }
   // Defined in ciStreams.hpp
-  inline Bytecode(const ciBytecodeStream* stream, address bcp = NULL);
+  inline Bytecode(const ciBytecodeStream* stream, address bcp = nullptr);
 
   // Attributes
   address bcp() const                            { return _bcp; }
@@ -77,9 +78,11 @@ class Bytecode: public StackObj {
   int get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
-    if (can_use_native_byte_order(bc, is_wide))
+    if (can_use_native_byte_order(bc, is_wide)) {
       return Bytes::get_native_u2(p);
-    else  return Bytes::get_Java_u2(p);
+    } else {
+      return Bytes::get_Java_u2(p);
+    }
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
@@ -186,6 +189,7 @@ class Bytecode_member_ref: public Bytecode {
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
   ConstantPoolCacheEntry* cpcache_entry() const;
+  ResolvedIndyEntry* resolved_indy_entry() const;
 
  public:
   int          index() const;                    // cache index (loaded from instruction)
@@ -321,7 +325,7 @@ class Bytecode_loadconstant: public Bytecode {
   Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method()) { verify(); }
 
   void verify() const {
-    assert(_method != NULL, "must supply method");
+    assert(_method != nullptr, "must supply method");
     Bytecodes::Code stdc = Bytecodes::java_code(code());
     assert(stdc == Bytecodes::_ldc ||
            stdc == Bytecodes::_ldc_w ||

@@ -24,9 +24,16 @@
  */
 package jdk.jshell.execution;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.instruction.BranchInstruction;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
@@ -40,6 +47,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private final Object STOP_LOCK = new Object();
     private boolean userCodeRunning = false;
     private ThreadGroup execThreadGroup;
+    private Field allStop = null;
 
     /**
      * Creates an instance, delegating loader operations to the specified
@@ -58,7 +66,49 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
+    public void load(ClassBytecodes[] cbcs)
+            throws ClassInstallException, NotImplementedException, EngineTerminationException {
+        super.load(Stream.of(cbcs)
+                .map(cbc -> new ClassBytecodes(cbc.name(), instrument(cbc.bytecodes())))
+                .toArray(ClassBytecodes[]::new));
+    }
+
+    private static final String CANCEL_CLASS = "REPL.$Cancel$";
+    private static final ClassDesc CD_Cancel = ClassDesc.of(CANCEL_CLASS);
+    private static final ClassDesc CD_ThreadDeath = ClassDesc.of("java.lang.ThreadDeath");
+
+    private static byte[] instrument(byte[] classFile) {
+        var cc = Classfile.of();
+        return cc.transform(cc.parse(classFile),
+                        ClassTransform.transformingMethodBodies((cob, coe) -> {
+                            if (coe instanceof BranchInstruction)
+                                cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);
+                            cob.with(coe);
+                        }));
+    }
+
+    private static ClassBytecodes genCancelClass() {
+        return new ClassBytecodes(CANCEL_CLASS, Classfile.of().build(CD_Cancel, clb ->
+             clb.withFlags(Classfile.ACC_PUBLIC)
+                .withField("allStop", ConstantDescs.CD_boolean, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC | Classfile.ACC_VOLATILE)
+                .withMethodBody("stopCheck", ConstantDescs.MTD_void, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, cob ->
+                        cob.getstatic(CD_Cancel, "allStop", ConstantDescs.CD_boolean)
+                           .ifThenElse(tb -> tb.new_(CD_ThreadDeath)
+                                               .dup()
+                                               .invokespecial(CD_ThreadDeath, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                               .athrow(),
+                                       eb -> eb.return_()))));
+    }
+
+    @Override
+    @SuppressWarnings("removal")
     protected String invoke(Method doitMethod) throws Exception {
+        if (allStop == null) {
+            super.load(new ClassBytecodes[]{ genCancelClass() });
+            allStop = findClass(CANCEL_CLASS).getDeclaredField("allStop");
+        }
+        allStop.set(null, false);
+
         execThreadGroup = new ThreadGroup("JShell process local execution");
 
         AtomicReference<InvocationTargetException> iteEx = new AtomicReference<>();
@@ -124,7 +174,6 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
-    @SuppressWarnings({"deprecation", "removal"})
     public void stop() throws EngineTerminationException, InternalException {
         synchronized (STOP_LOCK) {
             if (!userCodeRunning) {
@@ -133,7 +182,11 @@ public class LocalExecutionControl extends DirectExecutionControl {
             if (execThreadGroup == null) {
                 throw new InternalException("Process-local code snippets thread group is null. Aborting stop.");
             }
-
+            try {
+                allStop.set(null, true);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new InternalException("Exception on local stop: " + ex);
+            }
             Thread[] threads;
             int len, threadCount;
             do {
@@ -142,7 +195,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
                 threadCount = execThreadGroup.enumerate(threads);
             } while (threadCount == len);
             for (int i = 0; i < threadCount; i++) {
-                threads[i].stop();
+                threads[i].interrupt();
             }
         }
     }

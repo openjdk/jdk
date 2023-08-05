@@ -115,6 +115,12 @@ public class TestPauseNotifications {
 
     static volatile Object sink;
 
+    private static boolean isExpectedPauseAction(String action) {
+        return "Init Mark".equals(action) || "Final Mark".equals(action) || "Full GC".equals(action)
+            || "Degenerated GC".equals(action) || "Init Update Refs".equals(action)
+            || "Final Update Refs".equals(action) || "Final Roots".equals(action);
+    }
+
     public static void main(String[] args) throws Exception {
         final long startTime = System.currentTimeMillis();
 
@@ -129,7 +135,8 @@ public class TestPauseNotifications {
                 if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                     GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
 
-                    System.out.println("Received: " + info.getGcName());
+                    System.out.println("Received: " + info.getGcName() + "/" + info.getGcAction());
+
 
                     long d = info.getGcInfo().getDuration();
 
@@ -138,6 +145,9 @@ public class TestPauseNotifications {
                         if (name.equals("Shenandoah Pauses")) {
                             pausesCount.incrementAndGet();
                             pausesDuration.addAndGet(d);
+                            if (!isExpectedPauseAction(info.getGcAction())) {
+                                throw new IllegalStateException("Unknown action: " + info.getGcAction());
+                            }
                         } else if (name.equals("Shenandoah Cycles")) {
                             cyclesCount.incrementAndGet();
                             cyclesDuration.addAndGet(d);

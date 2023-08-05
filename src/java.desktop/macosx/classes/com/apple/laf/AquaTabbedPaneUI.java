@@ -810,6 +810,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     protected ChangeListener createChangeListener() {
         return new ChangeListener() {
             public void stateChanged(final ChangeEvent e) {
+                JTabbedPane tabPane = (JTabbedPane)e.getSource();
                 if (!isTabVisible(tabPane.getSelectedIndex())) popupSelectionChanged = true;
                 tabPane.revalidate();
                 tabPane.repaint();

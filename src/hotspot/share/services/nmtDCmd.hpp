@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<char*> _scale;
 
  public:
+  static int num_arguments() { return 7; }
   NMTDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.native_memory"; }
   static const char* description() {
@@ -54,7 +55,7 @@ class NMTDCmd: public DCmdWithParser {
   }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
   virtual void execute(DCmdSource source, TRAPS);

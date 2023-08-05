@@ -102,7 +102,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
     public void paint(Graphics g) {}
     public void print(Graphics g) {}
     public void setBounds(int x, int y, int width, int height, int op) {
-        // Unimplemeneted: Check for min/max hints for non-resizable
+        // Unimplemented: Check for min/max hints for non-resizable
         XToolkit.awtLock();
         try {
             XlibWrapper.XMoveResizeWindow(XToolkit.getDisplay(), handle, x, y, width, height);
@@ -258,7 +258,7 @@ public class XEmbedChildProxyPeer implements ComponentPeer, XEventDispatcher{
               return simulateMotifRequestFocus(lightweightChild, temporary, focusedWindowChangeAllowed, time);
               // Motif compatibility code
           case XKeyboardFocusManagerPeer.SNFH_SUCCESS_HANDLED:
-              // Either lightweight or excessive requiest - all events are generated.
+              // Either lightweight or excessive request - all events are generated.
               return true;
         }
         return false;

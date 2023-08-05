@@ -97,7 +97,7 @@ import javax.tools.StandardJavaFileManager;
  * <pre><code>
  *  public class MyTester extends JavadocTester {
  *      public static void main(String... args) throws Exception {
- *          MyTester tester = new MyTester();
+ *          var tester = new MyTester();
  *          tester.runTests();
  *      }
  *
@@ -214,7 +214,7 @@ public abstract class JavadocTester {
         NONE(null) { @Override void check(Path dir) { } };
 
         /** The filter used to detect that files should <i>not</i> be present. */
-        DirectoryStream.Filter<Path> filter;
+        private final DirectoryStream.Filter<Path> filter;
 
         DirectoryCheck(DirectoryStream.Filter<Path> f) {
             filter = f;
@@ -246,6 +246,7 @@ public abstract class JavadocTester {
     private boolean automaticCheckAccessibility = true;
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
+    private boolean automaticCheckNoStacktrace = true;
     private boolean useStandardStreams = false;
     private StandardJavaFileManager fileManager = null;
 
@@ -488,6 +489,11 @@ public abstract class JavadocTester {
             }
         });
 
+        if (automaticCheckNoStacktrace) {
+            // Any stacktrace will have javadoc near the bottom of the stack
+            checkOutput(Output.STDERR, false, "at jdk.javadoc/jdk.javadoc.internal.");
+        }
+
         if (exitCode == Exit.OK.code && Files.exists(outputDir)) {
             if (automaticCheckLinks) {
                 checkLinks();
@@ -531,6 +537,13 @@ public abstract class JavadocTester {
      */
     public void setAutomaticCheckUniqueOUT(boolean b) {
         automaticCheckUniqueOUT = b;
+    }
+
+    /**
+     * Sets whether or not to check for stacktraces.
+     */
+    public void setAutomaticCheckNoStacktrace(boolean b) {
+        automaticCheckNoStacktrace = b;
     }
 
     /**
@@ -736,7 +749,7 @@ public abstract class JavadocTester {
 
     /**
      * Shows the heading structure for each of the specified files.
-     * The structure is is printed in plain text to the main output stream.
+     * The structure is printed in plain text to the main output stream.
      * No errors are reported (unless there is a problem reading a file)
      * but missing headings are noted within the output.
      *
@@ -1147,7 +1160,7 @@ public abstract class JavadocTester {
         public OutputChecker check(String... strings) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(strings).stream()
+                        + Stream.of(strings)
                         .map(s -> "    " + toShortString(s))
                         .collect(Collectors.joining(NL)));
                 return this;
@@ -1169,7 +1182,7 @@ public abstract class JavadocTester {
         public OutputChecker check(Pattern... patterns) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(patterns).stream()
+                        + Stream.of(patterns)
                         .map(p -> "    " + toShortString(p.pattern()))
                         .collect(Collectors.joining(NL)));
                 return this;

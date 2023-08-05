@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
+#include "vmreg_riscv.inline.hpp"
 
 void VMRegImpl::set_regName() {
   int i = 0;
   Register reg = ::as_Register(0);
   for ( ; i < ConcreteRegisterImpl::max_gpr ; ) {
-    for (int j = 0 ; j < RegisterImpl::max_slots_per_register ; j++) {
+    for (int j = 0 ; j < Register::max_slots_per_register ; j++) {
       regName[i++] = reg->name();
     }
     reg = reg->successor();
@@ -39,16 +40,16 @@ void VMRegImpl::set_regName() {
 
   FloatRegister freg = ::as_FloatRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_fpr ; ) {
-    for (int j = 0 ; j < FloatRegisterImpl::max_slots_per_register ; j++) {
-      regName[i++] = reg->name();
+    for (int j = 0 ; j < FloatRegister::max_slots_per_register ; j++) {
+      regName[i++] = freg->name();
     }
     freg = freg->successor();
   }
 
   VectorRegister vreg = ::as_VectorRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_vpr ; ) {
-    for (int j = 0 ; j < VectorRegisterImpl::max_slots_per_register ; j++) {
-      regName[i++] = reg->name();
+    for (int j = 0 ; j < VectorRegister::max_slots_per_register ; j++) {
+      regName[i++] = vreg->name();
     }
     vreg = vreg->successor();
   }

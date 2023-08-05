@@ -2,8 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8269146 8269113
  * @summary Verify errors related to pattern switches.
- * @compile/fail/ref=SwitchErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
+ * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
+
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
         switch (o) {
@@ -154,12 +155,6 @@ public class SwitchErrors {
             case String s: break;
         }
     }
-    void nullAfterTotal(Object o) {
-        switch (o) {
-            case Object obj: break;
-            case null: break;
-        }
-    }
     void sealedNonAbstract(SealedNonAbstract obj) {
         switch (obj) {//does not cover SealedNonAbstract
             case A a -> {}
@@ -194,10 +189,10 @@ public class SwitchErrors {
                 break;
         }
     }
-    void test8269146a2(Integer i) {
+    void test8269146a2a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern and constant:
-            case Integer o when o != null, 1:
+            case Integer o, 1:
                 break;
             default:
                 break;
@@ -222,14 +217,14 @@ public class SwitchErrors {
     void test8269301a(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case 1, Integer o when o != null, default:
+            case 1, Integer o, default:
                 break;
         }
     }
-    void test8269301b(Integer i) {
+    void test8269301ba(Integer i) {
         switch (i) {
             //error - illegal combination of pattern, constant and default
-            case Integer o when o != null, 1, default:
+            case Integer o, 1, default:
                 break;
         }
     }
@@ -257,29 +252,75 @@ public class SwitchErrors {
     void nullAndParenthesized1(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R r)): break;
+            case null, R r: break;
             default: break;
         }
     }
     void nullAndParenthesized2(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R(var v))): break;
+            case null, R(var v): break;
             default: break;
         }
     }
     void nullAndParenthesized3(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R r)): case null: break;
+            case R r: case null: break;
             default: break;
         }
     }
     void nullAndParenthesized4(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R(var v))): case null: break;
+            case R(var v): case null: break;
             default: break;
+        }
+    }
+    void noDiamond(Object o) {
+        record R<T>(T t) {}
+        switch (o) {
+            case R<> r -> {}
+            default -> {}
+        }
+        if (o instanceof R<> r) {}
+    }
+    void noRawInferenceNonDeconstruction() {
+        record R<T>(T t) {}
+        R<String> o = null;
+        switch (o) {
+            case R r -> System.out.println(r.t().length());
+        }
+        if (o instanceof R r) System.out.println(r.t().length());
+    }
+    void cannotInfer() {
+        interface A<T> {}
+        record R<T extends Number>() implements A<T> {}
+        A<String> i = null;
+        if (i instanceof R()) {
+        }
+    }
+    void test8269146a2b(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern and constant:
+            case Integer o when o != null, 1:
+                break;
+            default:
+                break;
+        }
+    }
+    void test8269301ab(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case 1, Integer o when o != null, default:
+                break;
+        }
+    }
+    void test8269301bb(Integer i) {
+        switch (i) {
+            //error - illegal combination of pattern, constant and default
+            case Integer o when o != null, 1, default:
+                break;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ class JVMCIObject {
   bool _is_hotspot;
 
  public:
-  JVMCIObject(): _object(NULL), _is_hotspot(false) {}
+  JVMCIObject(): _object(nullptr), _is_hotspot(false) {}
   JVMCIObject(jobject o, bool is_hotspot): _object(o), _is_hotspot(is_hotspot) { }
 
   static JVMCIObject create(jobject o, bool is_hotspot) { JVMCIObject r(o, is_hotspot); return r; }
@@ -47,8 +47,8 @@ class JVMCIObject {
   jstring as_jstring() { return (jstring) _object; }
   bool is_hotspot() { return _is_hotspot; }
 
-  bool is_null() const { return _object == NULL; }
-  bool is_non_null() const { return _object != NULL; }
+  bool is_null() const { return _object == nullptr; }
+  bool is_non_null() const { return _object != nullptr; }
 
   operator JVMCIArray();
   operator JVMCIPrimitiveArray();
@@ -65,7 +65,7 @@ class JVMCIArray : public JVMCIObject {
 class JVMCIObjectArray : public JVMCIArray {
  public:
   JVMCIObjectArray() {}
-  JVMCIObjectArray(void* v): JVMCIArray() { assert(v == NULL, "must be NULL"); }
+  JVMCIObjectArray(void* v): JVMCIArray() { assert(v == nullptr, "must be null"); }
   JVMCIObjectArray(jobject o, bool is_hotspot): JVMCIArray(o, is_hotspot) {}
 
   jobjectArray as_jobject() { return (jobjectArray) JVMCIArray::as_jobject(); }
@@ -74,7 +74,7 @@ class JVMCIObjectArray : public JVMCIArray {
 class JVMCIPrimitiveArray : public JVMCIArray {
  public:
   JVMCIPrimitiveArray() {}
-  JVMCIPrimitiveArray(void* v): JVMCIArray() { assert(v == NULL, "must be NULL"); }
+  JVMCIPrimitiveArray(void* v): JVMCIArray() { assert(v == nullptr, "must be null"); }
   JVMCIPrimitiveArray(jobject o, bool is_hotspot): JVMCIArray(o, is_hotspot) {}
 
   jbooleanArray as_jbooleanArray() { return (jbooleanArray) as_jobject(); }

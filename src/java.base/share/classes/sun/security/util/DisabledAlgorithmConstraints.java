@@ -323,7 +323,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * disallowed.
      */
     private static class Constraints {
-        private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
+        private final Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
         private static class Holder {
             private static final Pattern DENY_AFTER_PATTERN = Pattern.compile(
@@ -358,7 +358,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                             alias.toUpperCase(Locale.ENGLISH), constraintList);
                 }
 
-                // If there is no whitespace, it is a algorithm name; however,
+                // If there is no whitespace, it is an algorithm name; however,
                 // if there is a whitespace, could be a multi-word EC curve too.
                 if (space <= 0 || CurveDB.lookup(constraintEntry) != null) {
                     constraintList.add(new DisabledConstraint(algorithm));
@@ -423,7 +423,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                                 day);
                         denyAfterLimit = true;
                     } else if (entry.startsWith("usage")) {
-                        String s[] = (entry.substring(5)).trim().split(" ");
+                        String[] s = (entry.substring(5)).trim().split(" ");
                         c = new UsageConstraint(algorithm, s);
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
@@ -589,7 +589,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *
          * @param parameters the cryptographic parameters
          * @return 'true' if the cryptographic parameters is allowed,
-         *         'false' ortherwise.
+         *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
             return true;
@@ -694,8 +694,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * timezone.
      */
     private static class DenyAfterConstraint extends Constraint {
-        private ZonedDateTime zdt;
-        private Instant denyAfterDate;
+        private final ZonedDateTime zdt;
+        private final Instant denyAfterDate;
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
 
@@ -831,8 +831,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class KeySizeConstraint extends Constraint {
 
-        private int minSize;            // the minimal available key size
-        private int maxSize;            // the maximal available key size
+        private final int minSize;          // the minimal available key size
+        private final int maxSize;          // the maximal available key size
         private int prohibitedSize = -1;    // unavailable key sizes
 
         public KeySizeConstraint(String algo, Operator operator, int length) {

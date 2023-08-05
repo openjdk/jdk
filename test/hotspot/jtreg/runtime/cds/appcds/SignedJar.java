@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ public class SignedJar {
         String mainClass = "Hello";
 
         String skipMsg = "Skipping Hello: Signed JAR";
-        String lambdaInArchive = "klasses.*=.*app.*Hello[$][$]Lambda[$].*hidden";
+        String lambdaInArchive = "klasses.*=.*app.*Hello[$][$]Lambda.*hidden";
         String loadFromJar = ".class,load. Hello source: file:.*signed_hello.jar";
-        String lambdaLoadFromHello = ".class.load. Hello[$][$]Lambda[$].*/0x.*source.*Hello";
+        String lambdaLoadFromHello = ".class.load. Hello[$][$]Lambda.*/0x.*source.*Hello";
 
         for (String mainArg : mainArgs) {
             output = TestCommon.dump(signedJar, TestCommon.list(mainClass),

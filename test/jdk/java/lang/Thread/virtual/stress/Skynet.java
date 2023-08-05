@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,30 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} Skynet.java
- * @run main/othervm/timeout=300 --enable-preview Skynet
+ * @requires !vm.debug | vm.gc != "Z"
+ * @run main/othervm/timeout=300 -Xmx1g Skynet
  */
 
-/**
- * @test
+/*
+ * @test id=ZSinglegen
  * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.Z
- * @compile --enable-preview -source ${jdk.version} Skynet.java
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions
- *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 Skynet
+ * @requires vm.gc.ZSinglegen
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+UseZGC -XX:-ZGenerational
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ */
+
+/*
+ * @test id=ZGenerational
+ * @requires vm.debug == true & vm.continuations
+ * @requires vm.gc.ZGenerational
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+UseZGC -XX:+ZGenerational
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */
 
 import java.util.concurrent.BlockingQueue;
@@ -43,10 +52,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 
 public class Skynet {
-    public static final int ITERATIONS = 10;
-
     public static void main(String[] args) {
-        for (int i = 0; i < ITERATIONS; i++) {
+        int iterations = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
+        for (int i = 0; i < iterations; i++) {
             skynet(1_000_000, 499999500000L);
         }
     }

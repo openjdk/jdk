@@ -41,7 +41,6 @@ import javax.swing.WindowConstants;
 public class PrintAllPagesTest {
     static JFrame f;
     static JTable table;
-    static volatile boolean ret = false;
 
     static final String INSTRUCTIONS = """
          Note: You must have a printer installed for this test.
@@ -65,25 +64,23 @@ public class PrintAllPagesTest {
 
         SwingUtilities.invokeAndWait(() -> {
             printAllPagesTest();
-        });
+            // add the test frame to dispose
+            PassFailJFrame.addTestWindow(f);
 
-        // add the test frame to dispose
-        PassFailJFrame.addTestWindow(f);
+            // Arrange the test instruction frame and test frame side by side
+            PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
+            f.setVisible(true);
 
-        // Arrange the test instruction frame and test frame side by side
-        PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
-
-        SwingUtilities.invokeAndWait(() -> {
+            boolean ret;
             try {
                 ret = table.print();
             } catch (PrinterException ex) {
                 ret = false;
             }
+            if (!ret) {
+                PassFailJFrame.forceFail("Printing cancelled/failed");
+            }
         });
-
-        if (!ret) {
-            throw new RuntimeException("Printing cancelled/failed");
-        }
         passFailJFrame.awaitAndCheck();
     }
 
@@ -107,11 +104,11 @@ public class PrintAllPagesTest {
         };
         table = new JTable(dataModel);
         JScrollPane scrollpane = new JScrollPane(table);
-        table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1, 0, false));
+        table.scrollRectToVisible(table.getCellRect(table.getRowCount() - 1,
+                0, false));
 
         f = new JFrame("Table test");
         f.add(scrollpane);
-        f.setSize(1000, 800);
-        f.setVisible(true);
+        f.setSize(500, 400);
     }
 }

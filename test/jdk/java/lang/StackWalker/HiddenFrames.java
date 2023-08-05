@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class HiddenFrames {
         if (cn.startsWith("java.lang.reflect.") || cn.startsWith("jdk.internal.reflect.")) {
             reflects.add(frame);
         }
-        if (cn.contains("$$Lambda$")) {
+        if (cn.contains("$$Lambda")) {
             lambdas.add(frame);
         }
     }

@@ -32,6 +32,11 @@ class outputStream;
 class Thread;
 class OSThread;
 
+extern "C" {
+  typedef void (*sa_handler_t)(int);
+  typedef void (*sa_sigaction_t)(int, siginfo_t*, void*);
+}
+
 class PosixSignals : public AllStatic {
 
 public:
@@ -61,6 +66,14 @@ public:
   // Unblock all signals whose delivery cannot be deferred and which, if they happen
   //  while delivery is blocked, would cause crashes or hangs (see JDK-8252533).
   static void unblock_error_signals();
+
+  // Signal handler installation
+  static int install_sigaction_signal_handler(struct sigaction* sigAct, // Main VM handler routine
+                                              struct sigaction* oldAct,
+                                              int sig,
+                                              sa_sigaction_t handler);
+  static void* install_generic_signal_handler(int sig, void* handler); // Used by JVM_RegisterSignal
+  static void* user_handler(); // Needed for signal handler comparisons
 };
 
 #endif // OS_POSIX_SIGNALS_POSIX_HPP

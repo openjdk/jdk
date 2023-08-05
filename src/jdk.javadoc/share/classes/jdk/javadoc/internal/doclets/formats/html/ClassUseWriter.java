@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -81,10 +80,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final Map<PackageElement, List<Element>> pkgToConstructorArgTypeParameter;
     final Map<PackageElement, List<Element>> pkgToConstructorThrows;
     final SortedSet<PackageElement> pkgSet;
-    final MethodWriterImpl methodSubWriter;
-    final ConstructorWriterImpl constrSubWriter;
-    final FieldWriterImpl fieldSubWriter;
-    final NestedClassWriterImpl classSubWriter;
+    final MethodWriter methodSubWriter;
+    final ConstructorWriter constrSubWriter;
+    final FieldWriter fieldSubWriter;
+    final NestedClassWriter classSubWriter;
 
     /**
      * Constructor.
@@ -97,11 +96,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         super(configuration, filename);
         this.typeElement = typeElement;
         if (mapper.classToPackageAnnotations.containsKey(typeElement)) {
-            pkgToPackageAnnotations = new TreeSet<>(comparators.makeClassUseComparator());
+            pkgToPackageAnnotations = new TreeSet<>(comparators.classUseComparator());
             pkgToPackageAnnotations.addAll(mapper.classToPackageAnnotations.get(typeElement));
         }
         configuration.currentTypeElement = typeElement;
-        this.pkgSet = new TreeSet<>(comparators.makePackageComparator());
+        this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
@@ -132,11 +131,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     + pkgSet + " with: " + mapper.classToPackage.get(this.typeElement));
         }
 
-        methodSubWriter = new MethodWriterImpl(this);
-        constrSubWriter = new ConstructorWriterImpl(this);
+        methodSubWriter = new MethodWriter(this);
+        constrSubWriter = new ConstructorWriter(this);
         constrSubWriter.setFoundNonPubConstructor(true);
-        fieldSubWriter = new FieldWriterImpl(this);
-        classSubWriter = new NestedClassWriterImpl(this);
+        fieldSubWriter = new FieldWriter(this);
+        classSubWriter = new NestedClassWriter(this);
     }
 
     /**
@@ -171,7 +170,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<PackageElement, List<Element>> map = new HashMap<>();
         List<? extends Element> elements = classMap.get(typeElement);
         if (elements != null) {
-            elements.sort(comparators.makeClassUseComparator());
+            elements.sort(comparators.classUseComparator());
             for (Element e : elements) {
                 PackageElement pkg = utils.containingPackage(e);
                 pkgSet.add(pkg);
@@ -241,8 +240,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+                        HtmlLinkInfo.Kind.PLAIN, typeElement)));
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -266,9 +265,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_PackageAnnotation",
                 getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
+                        HtmlLinkInfo.Kind.PLAIN, typeElement)));
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -291,7 +290,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             var section = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(htmlIds.forPackage(pkg));
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
-                    getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER,
+                    getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                             typeElement)),
                     getPackageLink(pkg, getLocalizedPackageName(pkg)));
             var heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
@@ -309,7 +308,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param pkg the package that uses the given class
      * @param table the table to which the package use information will be added
      */
-    protected void addPackageUse(PackageElement pkg, Table table) {
+    protected void addPackageUse(PackageElement pkg, Table<?> table) {
         Content pkgLink =
                 links.createLink(htmlIds.forPackage(pkg), getLocalizedPackageName(pkg));
         Content summary = new ContentBuilder();
@@ -325,7 +324,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassUse(PackageElement pkg, Content content) {
         Content classLink = getLink(new HtmlLinkInfo(configuration,
-            HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement));
+            HtmlLinkInfo.Kind.PLAIN, typeElement));
         Content pkgLink = getPackageLink(pkg, getLocalizedPackageName(pkg));
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_Annotation", classLink,
@@ -425,7 +424,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
                 contents.moduleLabel);
         Content classLinkContent = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)
+                configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
                 .label(resources.getText("doclet.Class"))
                 .skipPreview(true));
         return super.getNavBar(pageMode, element)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ import jdk.jfr.internal.jfc.JFC;
 
 /**
  * A collection of settings and metadata describing the configuration.
+ * <p>
+ * The following example shows how the {@code Configuration} class can be used
+ * to list available configurations and how to pass a configuration object to a
+ * {@code Recording}.
+ * {@snippet class = "Snippets" region = "ConfigurationxsOverview"}
  *
  * @since 9
  */

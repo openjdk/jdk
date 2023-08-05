@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public:
                        const TypeFunc* call_type, address call_addr,
                        const char* call_name,
                        const TypePtr* adr_type,
-                       Node* parm0 = NULL, Node* parm1 = NULL,
-                       Node* parm2 = NULL, Node* parm3 = NULL,
-                       Node* parm4 = NULL, Node* parm5 = NULL,
-                       Node* parm6 = NULL, Node* parm7 = NULL);
+                       Node* parm0 = nullptr, Node* parm1 = nullptr,
+                       Node* parm2 = nullptr, Node* parm3 = nullptr,
+                       Node* parm4 = nullptr, Node* parm5 = nullptr,
+                       Node* parm6 = nullptr, Node* parm7 = nullptr);
 
   address basictype2arraycopy(BasicType t,
                               Node* src_offset,
@@ -99,8 +99,8 @@ private:
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done);
+  void undo_previous_scalarizations(GrowableArray <SafePointNode *> safepoints_done, AllocateNode* alloc);
+  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints);
   void process_users_of_allocation(CallNode *alloc);
 
   void eliminate_gc_barrier(Node *p2x);
@@ -111,7 +111,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = NULL);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = nullptr);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
@@ -139,7 +139,7 @@ private:
                            Node* copy_length,
                            bool disjoint_bases = false,
                            bool length_never_negative = false,
-                           RegionNode* slow_region = NULL);
+                           RegionNode* slow_region = nullptr);
   void generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
                             const TypePtr* adr_type,
                             Node* dest,
@@ -205,6 +205,10 @@ public:
   void eliminate_macro_nodes();
   bool expand_macro_nodes();
 
+  SafePointScalarObjectNode* create_scalarized_object_description(AllocateNode *alloc, SafePointNode* sfpt);
+  static bool can_eliminate_allocation(PhaseIterGVN *igvn, AllocateNode *alloc, GrowableArray <SafePointNode *> *safepoints);
+
+
   PhaseIterGVN &igvn() const { return _igvn; }
 
 #ifndef PRODUCT
@@ -221,6 +225,7 @@ public:
   Node* intcon(jint con)        const { return _igvn.intcon(con); }
   Node* longcon(jlong con)      const { return _igvn.longcon(con); }
   Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
+  Node* zerocon(BasicType bt)   const { return _igvn.zerocon(bt); }
   Node* top()                   const { return C->top(); }
 
   Node* prefetch_allocation(Node* i_o,

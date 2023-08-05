@@ -76,12 +76,7 @@ public class TransTypes extends TreeTranslator {
     private final Resolve resolve;
     private final CompileStates compileStates;
 
-    /** Switch: is complex graph inference supported? */
-    private final boolean allowGraphInference;
-
-    /** Switch: are default methods supported? */
-    private final boolean allowInterfaceBridges;
-
+    @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
         compileStates = CompileStates.instance(context);
@@ -92,9 +87,6 @@ public class TransTypes extends TreeTranslator {
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
-        Source source = Source.instance(context);
-        allowInterfaceBridges = Feature.DEFAULT_METHODS.allowedInSource(source);
-        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
     }
@@ -559,7 +551,13 @@ public class TransTypes extends TreeTranslator {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels, null);
+        tree.guard = translate(tree.guard, syms.booleanType);
         tree.stats = translate(tree.stats);
+        result = tree;
+    }
+
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
         result = tree;
     }
 
@@ -577,7 +575,6 @@ public class TransTypes extends TreeTranslator {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         tree.pat = translate(tree.pat, null);
-        tree.guard = translate(tree.guard, syms.booleanType);
         result = tree;
     }
 
@@ -587,15 +584,9 @@ public class TransTypes extends TreeTranslator {
             selsuper.tsym == syms.enumSym;
         Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
         tree.selector = translate(tree.selector, target);
-        tree.cases = translate(tree.cases);
+        tree.cases = translate(tree.cases, tree.type);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
-    }
-
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        tree.pattern = translate(tree.pattern, null);
-        result = tree;
     }
 
     public void visitRecordPattern(JCRecordPattern tree) {
@@ -675,8 +666,7 @@ public class TransTypes extends TreeTranslator {
         tree.meth = translate(tree.meth, null);
         Symbol meth = TreeInfo.symbol(tree.meth);
         Type mt = meth.erasure(types);
-        boolean useInstantiatedPtArgs =
-                allowGraphInference && !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
+        boolean useInstantiatedPtArgs = !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
         List<Type> argtypes = useInstantiatedPtArgs ?
                 tree.meth.type.getParameterTypes() :
                 mt.getParameterTypes();
@@ -710,7 +700,7 @@ public class TransTypes extends TreeTranslator {
                 erasure(tree.constructorType) :
                 null;
 
-        List<Type> argtypes = erasedConstructorType != null && allowGraphInference ?
+        List<Type> argtypes = erasedConstructorType != null ?
                 erasedConstructorType.getParameterTypes() :
                 tree.constructor.erasure(types).getParameterTypes();
 
@@ -847,6 +837,13 @@ public class TransTypes extends TreeTranslator {
         }
     }
 
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.expressions = tree.expressions.stream()
+                .map(e -> translate(e, erasure(e.type))).collect(List.collector());
+        tree.type = erasure(tree.type);
+        result = tree;
+    }
+
     public void visitSelect(JCFieldAccess tree) {
         Type t = types.skipTypeVars(tree.selected.type, false);
         if (t.isCompound()) {
@@ -971,9 +968,7 @@ public class TransTypes extends TreeTranslator {
                 super.visitClassDef(tree);
                 make.at(tree.pos);
                 ListBuffer<JCTree> bridges = new ListBuffer<>();
-                if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
-                    addBridges(tree.pos(), c, bridges);
-                }
+                addBridges(tree.pos(), c, bridges);
                 tree.defs = bridges.toList().prependList(tree.defs);
                 tree.type = erasure(tree.type);
             } finally {

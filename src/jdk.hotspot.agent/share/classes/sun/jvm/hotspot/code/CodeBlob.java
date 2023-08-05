@@ -183,12 +183,6 @@ public class CodeBlob extends VMObject {
 
   public boolean isFrameCompleteAt(Address a)  { return codeContains(a) && a.minus(codeBegin()) >= getFrameCompleteOffset(); }
 
-  // Reclamation support (really only used by the nmethods, but in order to get asserts to work
-  // in the CodeCache they are defined virtual here)
-  public boolean isZombie()             { return false; }
-
-  public boolean isLockedByVM()         { return false; }
-
   public ImmutableOopMap getOopMapForReturnAddress(Address returnAddress, boolean debugging) {
     Address pc = returnAddress;
     if (Assert.ASSERTS_ENABLED) {

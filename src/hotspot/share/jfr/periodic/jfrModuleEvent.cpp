@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,16 @@ class ModuleExportClosure : public ModuleEventCallbackClosure {
 
 static void write_module_dependency_event(const void* from_module, const ModuleEntry* to_module) {
   EventModuleRequire event(UNTIMED);
+  event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
-  event.set_source((const ModuleEntry* const)from_module);
+  event.set_source((const ModuleEntry*)from_module);
   event.set_requiredModule(to_module);
   event.commit();
 }
 
 static void write_module_export_event(const void* package, const ModuleEntry* qualified_export) {
   EventModuleExport event(UNTIMED);
+  event.set_starttime(invocation_time);
   event.set_endtime(invocation_time);
   event.set_exportedPackage((const PackageEntry*)package);
   event.set_targetModule(qualified_export);
@@ -76,23 +78,23 @@ static void write_module_export_event(const void* package, const ModuleEntry* qu
 
 void ModuleDependencyClosure::do_module(ModuleEntry* to_module) {
   assert_locked_or_safepoint(Module_lock);
-  assert(to_module != NULL, "invariant");
-  assert(_module != NULL, "invariant");
-  assert(_event_func != NULL, "invariant");
+  assert(to_module != nullptr, "invariant");
+  assert(_module != nullptr, "invariant");
+  assert(_event_func != nullptr, "invariant");
   _event_func(_module, to_module);
 }
 
 void ModuleExportClosure::do_module(ModuleEntry* qualified_export) {
   assert_locked_or_safepoint(Module_lock);
-  assert(qualified_export != NULL, "invariant");
-  assert(_package != NULL, "invariant");
-  assert(_event_func != NULL, "invariant");
+  assert(qualified_export != nullptr, "invariant");
+  assert(_package != nullptr, "invariant");
+  assert(_event_func != nullptr, "invariant");
   _event_func(_package, qualified_export);
 }
 
 static void module_dependency_event_callback(ModuleEntry* module) {
   assert_locked_or_safepoint(Module_lock);
-  assert(module != NULL, "invariant");
+  assert(module != nullptr, "invariant");
   if (module->has_reads_list()) {
     // create an individual event for each directed edge
     ModuleDependencyClosure directed_edges(module, &write_module_dependency_event);
@@ -102,7 +104,7 @@ static void module_dependency_event_callback(ModuleEntry* module) {
 
 static void module_export_event_callback(PackageEntry* package) {
   assert_locked_or_safepoint(Module_lock);
-  assert(package != NULL, "invariant");
+  assert(package != nullptr, "invariant");
   if (package->is_exported()) {
     if (package->has_qual_exports_list()) {
       // package is qualifiedly exported to a set of modules,
@@ -114,9 +116,9 @@ static void module_export_event_callback(PackageEntry* package) {
 
     assert(!package->is_qual_exported() || package->is_exported_allUnnamed(), "invariant");
     // no qualified exports
-    // only create a single event with NULL
+    // only create a single event with nullptr
     // for the qualified_exports module
-    write_module_export_event(package, NULL);
+    write_module_export_event(package, nullptr);
   }
 }
 

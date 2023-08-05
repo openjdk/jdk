@@ -33,7 +33,6 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "runtime/continuation.hpp"
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
@@ -47,17 +46,15 @@ ShenandoahMark::ShenandoahMark() :
 }
 
 void ShenandoahMark::start_mark() {
-  // Tell the sweeper that we start a marking cycle.
-  if (!Continuations::is_gc_marking_cycle_active()) {
-    Continuations::on_gc_marking_cycle_start();
+  if (!CodeCache::is_gc_marking_cycle_active()) {
+    CodeCache::on_gc_marking_cycle_start();
   }
 }
 
 void ShenandoahMark::end_mark() {
-  // Tell the sweeper that we finished a marking cycle.
   // Unlike other GCs, we do not arm the nmethods
   // when marking terminates.
-  Continuations::on_gc_marking_cycle_finish();
+  CodeCache::on_gc_marking_cycle_finish();
 }
 
 void ShenandoahMark::clear() {
@@ -142,7 +139,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
          "Need to reserve proper number of queues: reserved: %u, active: %u", queues->get_reserved(), heap->workers()->active_workers());
 
   q = queues->claim_next();
-  while (q != NULL) {
+  while (q != nullptr) {
     if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
       return;
     }

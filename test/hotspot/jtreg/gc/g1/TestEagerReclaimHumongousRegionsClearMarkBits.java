@@ -136,4 +136,3 @@ public class TestEagerReclaimHumongousRegionsClearMarkBits {
         output.shouldHaveExitValue(0);
     }
 }
-

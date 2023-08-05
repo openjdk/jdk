@@ -29,6 +29,7 @@
 #import "LWCToolkit.h"
 #import "MTLSurfaceData.h"
 #import "JNIUtilities.h"
+#define KEEP_ALIVE_INC 4
 
 @implementation MTLLayer
 
@@ -42,6 +43,13 @@
 @synthesize leftInset;
 @synthesize nextDrawableCount;
 @synthesize displayLink;
+@synthesize displayLinkCount;
+
+- (void) createDisplayLink {
+    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+    self.displayLinkCount = 0;
+}
 
 - (id) initWithJavaLayer:(jobject)layer
 {
@@ -72,14 +80,43 @@
     self.framebufferOnly = NO;
     self.nextDrawableCount = 0;
     self.opaque = YES;
-    CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-    CVDisplayLinkSetOutputCallback(displayLink, &displayLinkCallback, (__bridge void*)self);
+    [self createDisplayLink];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter]
+        addObserver : self
+           selector : @selector(onScreenSleep)
+               name : NSWorkspaceScreensDidSleepNotification object: NULL];
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter]
+        addObserver : self
+           selector : @selector(onScreenWakeup)
+               name : NSWorkspaceScreensDidWakeNotification object: NULL];
+
     return self;
+}
+
+- (void) onScreenSleep {
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.onScreenSleep ---  received screen sleep notification.");
+
+    [self stopDisplayLink];
+}
+
+- (void) onScreenWakeup {
+    J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.onScreenWakeup ---  received screen wakeup notification.");
+    [self stopDisplayLink];
+    CVDisplayLinkRelease(self.displayLink);
+    self.displayLink = nil;
+
+    [self createDisplayLink];
+
+    [self startDisplayLink];
 }
 
 - (void) blitTexture {
     if (self.ctx == NULL || self.javaLayer == NULL || self.buffer == nil || self.ctx.device == nil) {
-        J2dTraceLn4(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, devide=%p)", self.ctx, self.javaLayer, self.buffer, ctx.device);
+        J2dTraceLn4(J2D_TRACE_VERBOSE,
+                    "MTLLayer.blitTexture: uninitialized (mtlc=%p, javaLayer=%p, buffer=%p, device=%p)", self.ctx,
+                    self.javaLayer, self.buffer, ctx.device);
         [self stopDisplayLink];
         return;
     }
@@ -100,9 +137,9 @@
         NSUInteger src_h = self.buffer.height - src_y;
 
         if (src_h <= 0 || src_w <= 0) {
-           J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: Invalid src width or height.");
-           [self stopDisplayLink];
-           return;
+            J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer.blitTexture: Invalid src width or height.");
+            [self stopDisplayLink];
+            return;
         }
 
         id<MTLCommandBuffer> commandBuf = [self.ctx createBlitCommandBuffer];
@@ -134,11 +171,18 @@
         }];
 
         [commandBuf commit];
-        [self stopDisplayLink];
+
+        if (--self.displayLinkCount <= 0) {
+            self.displayLinkCount = 0;
+            [self stopDisplayLink];
+        }
     }
 }
 
 - (void) dealloc {
+
+    [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
+
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
     (*env)->DeleteWeakGlobalRef(env, self.javaLayer);
     self.javaLayer = nil;
@@ -177,13 +221,18 @@
 }
 
 - (void) startDisplayLink {
-    if (!CVDisplayLinkIsRunning(self.displayLink))
+    if (!CVDisplayLinkIsRunning(self.displayLink)) {
         CVDisplayLinkStart(self.displayLink);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_startDisplayLink");
+    }
+    displayLinkCount += KEEP_ALIVE_INC; // Keep alive displaylink counter
 }
 
 - (void) stopDisplayLink {
-    if (CVDisplayLinkIsRunning(self.displayLink))
+    if (CVDisplayLinkIsRunning(self.displayLink)) {
         CVDisplayLinkStop(self.displayLink);
+        J2dTraceLn(J2D_TRACE_VERBOSE, "MTLLayer_stopDisplayLink");
+    }
 }
 
 CVReturn displayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* now, const CVTimeStamp* outputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* displayLinkContext)

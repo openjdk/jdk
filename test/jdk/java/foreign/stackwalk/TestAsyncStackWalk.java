@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test id=default_gc
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -40,10 +41,10 @@
  */
 
 /*
- * @test id=zgc
+ * @test id=ZSinglegen
  * @enablePreview
- * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
- * @requires vm.gc.Z
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.gc.ZSinglegen
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -55,13 +56,34 @@
  *   -XX:+WhiteBoxAPI
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
- *   -XX:+UseZGC
+ *   -XX:+UseZGC -XX:-ZGenerational
  *   TestAsyncStackWalk
  */
+
+/*
+ * @test id=ZGenerational
+ * @enablePreview
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.gc.ZGenerational
+ * @library /test/lib
+ * @library ../
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseZGC -XX:+ZGenerational
+ *   TestAsyncStackWalk
+ */
+
 /*
  * @test id=shenandoah
  * @enablePreview
- * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64")
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library ../
@@ -78,15 +100,14 @@
  *   TestAsyncStackWalk
  */
 
-import java.lang.foreign.Addressable;
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemorySegment;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
-import java.lang.foreign.MemorySession;
 import jdk.test.whitebox.WhiteBox;
 
 import static java.lang.invoke.MethodHandles.lookup;
@@ -116,17 +137,16 @@ public class TestAsyncStackWalk extends NativeTestHelper {
     static boolean didStackWalk;
 
     public static void main(String[] args) throws Throwable {
-        try (MemorySession session = MemorySession.openConfined()) {
-            Addressable stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), session);
-            MemoryAddress stubAddress = stub.address();
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment stub = linker.upcallStub(MH_m, FunctionDescriptor.ofVoid(), arena);
             invocations = 0;
             didStackWalk = false;
-            payload(stubAddress);
+            payload(stub);
             assertTrue(didStackWalk);
         }
     }
 
-    static void payload(MemoryAddress cb) throws Throwable {
+    static void payload(MemorySegment cb) throws Throwable {
         MH_asyncStackWalk.invoke(cb);
     }
 

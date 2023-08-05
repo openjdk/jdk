@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ public class X509CRLSelector implements CRLSelector {
             else
                 namesCopy.add(nameObject);
         }
-        return(namesCopy);
+        return namesCopy;
     }
 
     /**
@@ -623,6 +623,7 @@ public class X509CRLSelector implements CRLSelector {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: no CRLNumber");
                 }
+                return false;
             }
             BigInteger crlNum;
             try {
@@ -630,7 +631,7 @@ public class X509CRLSelector implements CRLSelector {
                 byte[] encoded = in.getOctetString();
                 CRLNumberExtension crlNumExt =
                     new CRLNumberExtension(Boolean.FALSE, encoded);
-                crlNum = crlNumExt.get(CRLNumberExtension.NUMBER);
+                crlNum = crlNumExt.getCrlNumber();
             } catch (IOException ex) {
                 if (debug != null) {
                     debug.println("X509CRLSelector.match: exception in "

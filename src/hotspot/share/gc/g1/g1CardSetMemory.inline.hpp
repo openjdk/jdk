@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/ostream.hpp"
 

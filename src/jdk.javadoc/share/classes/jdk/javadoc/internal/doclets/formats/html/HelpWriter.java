@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -387,6 +386,15 @@ public class HelpWriter extends HtmlDocletWriter {
             Content sysPropsBody = getContent("doclet.help.systemProperties.body",
                     links.createLink(DocPaths.SYSTEM_PROPERTIES, resources.getText("doclet.systemProperties")));
             section.add(HtmlTree.P(sysPropsBody));
+            pageKindsSection.add(section);
+        }
+
+        // External Specification
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.EXTERNAL_SPECS)) {
+            section = newHelpSection(contents.externalSpecifications, PageMode.EXTERNAL_SPECS, subTOC);
+            Content extSpecsBody = getContent("doclet.help.externalSpecifications.body",
+                    links.createLink(DocPaths.EXTERNAL_SPECS, resources.getText("doclet.External_Specifications")));
+            section.add(HtmlTree.P(extSpecsBody));
             pageKindsSection.add(section);
         }
 

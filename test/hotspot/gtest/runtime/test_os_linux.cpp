@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,18 @@
 
 #ifdef LINUX
 
-#include <sys/mman.h>
-
+#include "os_linux.hpp"
+#include "prims/jniCheck.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/decoder.hpp"
 #include "concurrentTestRunner.inline.hpp"
-#include "os_linux.hpp"
+#include "testutils.hpp"
 #include "unittest.hpp"
+
+#include <sys/mman.h>
+
 
 namespace {
   static void small_page_write(void* addr, size_t size) {
@@ -423,4 +427,87 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
   }
 }
 
-#endif
+// Check that method JNI_CreateJavaVM is found.
+TEST(os_linux, addr_to_function_valid) {
+  char buf[128] = "";
+  int offset = -1;
+  address valid_function_pointer = (address)JNI_CreateJavaVM;
+  ASSERT_TRUE(os::dll_address_to_function_name(valid_function_pointer, buf, sizeof(buf), &offset, true));
+  ASSERT_TRUE(strstr(buf, "JNI_CreateJavaVM") != nullptr);
+  ASSERT_TRUE(offset >= 0);
+}
+
+#if !defined(__clang_major__) || (__clang_major__ >= 5) // DWARF does not support Clang versions older than 5.0.
+// Test valid address of method ReportJNIFatalError in jniCheck.hpp. We should get "jniCheck.hpp" in the buffer and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid) {
+  char buf[128] = "";
+  int line = -1;
+  address valid_function_pointer = (address)ReportJNIFatalError;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, sizeof(buf), &line));
+  ASSERT_TRUE(strcmp(buf, "jniCheck.hpp") == 0);
+  ASSERT_TRUE(line > 0);
+}
+
+// Test invalid addresses. Should not cause harm and output buffer and line must contain "" and -1, respectively.
+TEST_VM(os_linux, decoder_get_source_info_invalid) {
+  char buf[128] = "";
+  int line = -1;
+  address invalid_function_pointers[] = { nullptr, (address)1, (address)&line };
+
+  for (address addr : invalid_function_pointers) {
+    strcpy(buf, "somestring");
+    line = 12;
+    // We should return false but do not crash or fail in any way.
+    ASSERT_FALSE(Decoder::get_source_info(addr, buf, sizeof(buf), &line));
+    ASSERT_TRUE(buf[0] == '\0'); // Should contain "" on error
+    ASSERT_TRUE(line == -1); // Should contain -1 on error
+  }
+}
+
+// Test with valid address but a too small buffer to store the entire filename. Should find generic <OVERFLOW> message
+// and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid_overflow) {
+  char buf[11] = "";
+  int line = -1;
+  address valid_function_pointer = (address)ReportJNIFatalError;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 11, &line));
+  ASSERT_TRUE(strcmp(buf, "<OVERFLOW>") == 0);
+  ASSERT_TRUE(line > 0);
+}
+
+// Test with valid address but a too small buffer that can neither store the entire filename nor the generic <OVERFLOW>
+// message. We should find "L" as filename and a valid line number.
+TEST_VM(os_linux, decoder_get_source_info_valid_overflow_minimal) {
+  char buf[2] = "";
+  int line = -1;
+  address valid_function_pointer = (address)ReportJNIFatalError;
+  ASSERT_TRUE(Decoder::get_source_info(valid_function_pointer, buf, 2, &line));
+  ASSERT_TRUE(strcmp(buf, "L") == 0); // Overflow message does not fit, so we fall back to "L:line_number"
+  ASSERT_TRUE(line > 0); // Line should correctly be found and returned
+}
+#endif // clang
+
+#ifdef __GLIBC__
+TEST_VM(os_linux, glibc_mallinfo_wrapper) {
+  // Very basic test. Call it. That proves that resolution and invocation works.
+  os::Linux::glibc_mallinfo mi;
+  bool did_wrap = false;
+
+  os::Linux::get_mallinfo(&mi, &did_wrap);
+
+  void* p = os::malloc(2 * K, mtTest);
+  ASSERT_NOT_NULL(p);
+
+  // We should see total allocation values > 0
+  ASSERT_GE((mi.uordblks + mi.hblkhd), 2 * K);
+
+  // These values also should exceed some reasonable size.
+  ASSERT_LT(mi.fordblks, 2 * G);
+  ASSERT_LT(mi.uordblks, 2 * G);
+  ASSERT_LT(mi.hblkhd, 2 * G);
+
+  os::free(p);
+}
+#endif // __GLIBC__
+
+#endif // LINUX

@@ -54,7 +54,12 @@ public class ClassUnloadEventTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            runDebuggee();
+            try {
+                runDebuggee();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
         } else {
             runDebugger();
         }
@@ -96,19 +101,25 @@ public class ClassUnloadEventTest {
                     Class.forName(CLASS_NAME_PREFIX + index, true, loader);
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Failed to create Sample class");
+                throw new RuntimeException("Failed to create Sample class", e);
             }
         }
         loader = null;
-        // Trigger class unloading
-        ClassUnloadCommon.triggerUnloading();
 
-        // Short delay to make sure all ClassUnloadEvents have been sent
-        // before VMDeathEvent is genareated.
+        // Do a short delay to make sure that the debug agent is done processing all
+        // ClassPrepare events. Otherwise the debug agent might still be holding on to
+        // a reference to a class, which will prevent it from unloading during the GC.
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
         }
+
+        // Trigger class unloading
+        ClassUnloadCommon.triggerUnloading();
+
+        // We rely on JVMTI to post all pending ObjectFree events at VM shutdown.
+        // It will trigger the JDWP agent to synthesize expected ClassUnloadEvents events.
+        System.out.println("Exiting debuggee");
     }
 
     private static void runDebugger() throws Exception {
@@ -169,6 +180,21 @@ public class ClassUnloadEventTest {
             eventSet.resume();
         }
 
+        /* Dump debuggee output. */
+        Process p = vm.process();
+        BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        String line = in.readLine();
+        while (line != null) {
+            System.out.println("stdout: " + line);
+            line = in.readLine();
+        }
+        line = err.readLine();
+        while (line != null) {
+            System.out.println("stderr: " + line);
+            line = err.readLine();
+        }
+
         if (unloadedSampleClasses.size() != NUM_CLASSES) {
             throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
         }
@@ -183,7 +209,7 @@ public class ClassUnloadEventTest {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(ClassUnloadEventTest.class.getName());
-        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI");
+        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:class+unload=info -Xlog:gc");
         return launchingConnector.launch(arguments);
     }
 }

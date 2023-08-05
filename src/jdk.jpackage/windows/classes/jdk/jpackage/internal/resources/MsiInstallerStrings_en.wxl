@@ -12,4 +12,5 @@
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">Create desktop shortcut(s)</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">Create start menu shortcut(s)</String>
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName] Setup</String>
+  <String Id="ContextMenuCommandLabel">Open with [ProductName]</String>
 </WixLocalization>

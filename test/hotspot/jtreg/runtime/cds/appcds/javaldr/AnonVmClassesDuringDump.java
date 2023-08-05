@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,9 +68,9 @@ public class AnonVmClassesDuringDump {
 
         String prefix = ".class.load. ";
         // class name pattern like the following:
-        // jdk.internal.loader.BuiltinClassLoader$$Lambda$1/1816757085
+        // jdk.internal.loader.BuiltinClassLoader$$Lambda/1816757085
         // java.lang.invoke.LambdaForm$MH/1585787493
-        String class_pattern = ".*Lambda([a-z0-9$]+)/([0-9]+).*";
+        String class_pattern = ".*Lambda/([0-9]+).*";
         String suffix = ".*source: shared objects file.*";
         String pattern = prefix + class_pattern + suffix;
         // during run time, anonymous classes shouldn't be loaded from the archive
@@ -83,7 +83,7 @@ public class AnonVmClassesDuringDump {
         // inspect the archive and make sure no anonymous class is in there
         TestCommon.run("-cp", appJar,
             "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
-            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", Hello.class.getName())
+            "-XX:+PrintSharedArchiveAndExit", Hello.class.getName())
             .assertNormalExit(dynamicMode ?
                 output -> output.shouldMatch(pattern) :
                 output -> output.shouldNotMatch(pattern));

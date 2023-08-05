@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -192,7 +193,7 @@ public sealed class RecordedObject
      * @see #getFields()
      */
     public boolean hasField(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         for (ValueDescriptor v : objectContext.fields) {
             if (v.getName().equals(name)) {
                 return true;
@@ -463,7 +464,6 @@ public sealed class RecordedObject
         if (o instanceof Character c) {
             return c;
         }
-
         throw newIllegalArgumentException(name, "char");
     }
 
@@ -494,23 +494,13 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final short getShort(String name) {
-        Object o = getValue(name, true);
-        if (o instanceof Short s) {
-            return s;
-        }
-        if (o instanceof Byte b) {
-            return b;
-        }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Short s) {
-                return s;
-            }
-            if (u instanceof Byte b) {
-                return (short) Byte.toUnsignedInt(b);
-            }
-        }
-        throw newIllegalArgumentException(name, "short");
+        return switch (getValue(name, true)) {
+            case Short s -> s;
+            case Byte b -> b;
+            case UnsignedValue(Short s) -> s;
+            case UnsignedValue(Byte b) -> (short) Byte.toUnsignedInt(b);
+            case null, default -> throw newIllegalArgumentException(name, "short");
+        };
     }
 
     /**
@@ -541,32 +531,16 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final int getInt(String name) {
-        Object o = getValue(name, true);
-        if (o instanceof Integer i) {
-            return i;
-        }
-        if (o instanceof Short s) {
-            return s;
-        }
-        if (o instanceof Character c) {
-            return c;
-        }
-        if (o instanceof Byte b) {
-            return b;
-        }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
-                return i;
-            }
-            if (u instanceof Short s) {
-                return Short.toUnsignedInt(s);
-            }
-            if (u instanceof Byte b) {
-                return Byte.toUnsignedInt(b);
-            }
-        }
-        throw newIllegalArgumentException(name, "int");
+        return switch(getValue(name, true)) {
+            case Integer i -> i;
+            case Short s -> s;
+            case Character c -> c;
+            case Byte b -> b;
+            case UnsignedValue(Integer i) -> i;
+            case UnsignedValue(Short s) -> Short.toUnsignedInt(s);
+            case UnsignedValue(Byte b) -> Byte.toUnsignedInt(b);
+            case null, default -> throw newIllegalArgumentException(name, "short");
+        };
     }
 
     /**
@@ -594,26 +568,15 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final float getFloat(String name) {
-        Object o = getValue(name);
-        if (o instanceof Float f) {
-            return f;
-        }
-        if (o instanceof Long l) {
-            return l;
-        }
-        if (o instanceof Integer i) {
-            return i;
-        }
-        if (o instanceof Short s) {
-            return s;
-        }
-        if (o instanceof Byte b) {
-            return b;
-        }
-        if (o instanceof Character c) {
-            return c;
-        }
-        throw newIllegalArgumentException(name, "float");
+        return switch(getValue(name)) {
+            case Float f -> f;
+            case Long l -> l;
+            case Integer i -> i;
+            case Short s -> s;
+            case Character c -> c;
+            case Byte b -> b;
+            case null, default -> throw newIllegalArgumentException(name, "float");
+        };
     }
 
     /**
@@ -644,35 +607,17 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final long getLong(String name) {
-        Object o = getValue(name, true);
-        if (o instanceof Long l) {
-            return l;
-        }
-        if (o instanceof Integer i) {
-            return i;
-        }
-        if (o instanceof Short s) {
-            return s;
-        }
-        if (o instanceof Character c) {
-            return c;
-        }
-        if (o instanceof Byte b) {
-            return b.longValue();
-        }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
-                return Integer.toUnsignedLong(i);
-            }
-            if (u instanceof Short s) {
-                return Short.toUnsignedLong(s);
-            }
-            if (u instanceof Byte b) {
-                return Byte.toUnsignedLong(b);
-            }
-        }
-        throw newIllegalArgumentException(name, "long");
+        return switch(getValue(name, true)) {
+            case Long l -> l;
+            case Integer i -> i;
+            case Short s -> s;
+            case Character c -> c;
+            case Byte b -> b;
+            case UnsignedValue(Integer i) -> Integer.toUnsignedLong(i);
+            case UnsignedValue(Short s) -> Short.toUnsignedLong(s);
+            case UnsignedValue(Byte b) -> Byte.toUnsignedLong(b);
+            case null, default -> throw newIllegalArgumentException(name, "long");
+        };
     }
 
     /**
@@ -700,29 +645,16 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final double getDouble(String name) {
-        Object o = getValue(name);
-        if (o instanceof Double d) {
-            return d.doubleValue();
-        }
-        if (o instanceof Float f) {
-            return f.doubleValue();
-        }
-        if (o instanceof Long l) {
-            return l.doubleValue();
-        }
-        if (o instanceof Integer i) {
-            return i.doubleValue();
-        }
-        if (o instanceof Short s) {
-            return s.doubleValue();
-        }
-        if (o instanceof Byte b) {
-            return b.doubleValue();
-        }
-        if (o instanceof Character c) {
-            return c;
-        }
-        throw newIllegalArgumentException(name, "double");
+        return switch(getValue(name)) {
+            case Double d -> d;
+            case Float f -> f;
+            case Long l -> l.doubleValue();
+            case Integer i -> i.doubleValue();
+            case Short s -> s.doubleValue();
+            case Character c -> c;
+            case Byte b -> b.doubleValue();
+            case null, default -> throw newIllegalArgumentException(name, "double");
+        };
     }
 
     /**
@@ -755,6 +687,10 @@ public sealed class RecordedObject
      * the following types: {@code long}, {@code int}, {@code short}, {@code char},
      * and {@code byte}.
      * <p>
+     * If the committed event value was {@code Long.MAX_VALUE},
+     * regardless of the unit set by {@code @Timespan}, this method returns
+     * {@link ChronoUnit#FOREVER}.
+     * <p>
      * It's possible to index into a nested object using {@code "."} (for example,
      * {@code "aaa.bbb"}).
      * <p>
@@ -772,35 +708,17 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final Duration getDuration(String name) {
-        Object o = getValue(name);
-        if (o instanceof Long l) {
-            return getDuration(l, name);
-        }
-        if (o instanceof Integer i) {
-            return getDuration(i, name);
-        }
-        if (o instanceof Short s) {
-            return getDuration(s, name);
-        }
-        if (o instanceof Character c) {
-            return getDuration(c, name);
-        }
-        if (o instanceof Byte b) {
-            return getDuration(b, name);
-        }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
-                return getDuration(Integer.toUnsignedLong(i), name);
-            }
-            if (u instanceof Short s) {
-                return getDuration(Short.toUnsignedLong(s), name);
-            }
-            if (u instanceof Byte b) {
-                return getDuration(Short.toUnsignedLong(b), name);
-            }
-        }
-        throw newIllegalArgumentException(name, "java.time.Duration");
+        return switch (getValue(name, true)) {
+            case Long l -> getDuration(l, name);
+            case Integer i -> getDuration(i,name);
+            case Short s -> getDuration(s, name);
+            case Character c -> getDuration(c, name);
+            case Byte b -> getDuration(b, name);
+            case UnsignedValue(Integer i) -> getDuration(Integer.toUnsignedLong(i), name);
+            case UnsignedValue(Short s) -> getDuration(Short.toUnsignedLong(s), name);
+            case UnsignedValue(Byte b) -> getDuration(Short.toUnsignedLong(b), name);
+            case null, default ->  throw newIllegalArgumentException(name, "java.time.Duration");
+        };
     }
 
     private Duration getDuration(long timespan, String name) {
@@ -811,21 +729,19 @@ public sealed class RecordedObject
         if (timespan == Long.MIN_VALUE) {
             return Duration.ofSeconds(Long.MIN_VALUE, 0);
         }
+        if (timespan == Long.MAX_VALUE) {
+            return ChronoUnit.FOREVER.getDuration();
+        }
         Timespan ts = v.getAnnotation(Timespan.class);
         if (ts != null) {
-            switch (ts.value()) {
-            case Timespan.MICROSECONDS:
-                return Duration.ofNanos(1000 * timespan);
-            case Timespan.SECONDS:
-                return Duration.ofSeconds(timespan);
-            case Timespan.MILLISECONDS:
-                return Duration.ofMillis(timespan);
-            case Timespan.NANOSECONDS:
-                return Duration.ofNanos(timespan);
-            case Timespan.TICKS:
-                return Duration.ofNanos(objectContext.convertTimespan(timespan));
-            }
-            throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timespan unit " + ts.value());
+            return switch (ts.value()) {
+                case Timespan.MICROSECONDS -> Duration.ofNanos(1000 * timespan);
+                case Timespan.SECONDS -> Duration.ofSeconds(timespan);
+                case Timespan.MILLISECONDS -> Duration.ofMillis(timespan);
+                case Timespan.NANOSECONDS -> Duration.ofNanos(timespan);
+                case Timespan.TICKS -> Duration.ofNanos(objectContext.convertTimespan(timespan));
+                default ->  throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timespan unit " + ts.value());
+            };
         }
         throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with missing @Timespan");
     }
@@ -854,35 +770,17 @@ public sealed class RecordedObject
      * @see #getValue(String)
      */
     public final Instant getInstant(String name) {
-        Object o = getValue(name, true);
-        if (o instanceof Long l) {
-            return getInstant(l, name);
-        }
-        if (o instanceof Integer i) {
-            return getInstant(i, name);
-        }
-        if (o instanceof Short s) {
-            return getInstant(s, name);
-        }
-        if (o instanceof Character c) {
-            return getInstant(c, name);
-        }
-        if (o instanceof Byte b) {
-            return getInstant(b, name);
-        }
-        if (o instanceof UnsignedValue unsigned) {
-            Object u = unsigned.value();
-            if (u instanceof Integer i) {
-                return getInstant(Integer.toUnsignedLong(i), name);
-            }
-            if (u instanceof Short s) {
-                return getInstant(Short.toUnsignedLong(s), name);
-            }
-            if (u instanceof Byte b) {
-                return getInstant(Short.toUnsignedLong(b), name);
-            }
-        }
-        throw newIllegalArgumentException(name, "java.time.Instant");
+        return switch (getValue(name, true)) {
+            case Long l -> getInstant(l, name);
+            case Integer i -> getInstant(i, name);
+            case Short s -> getInstant(s, name);
+            case Character c -> getInstant(c, name);
+            case Byte b -> getInstant(b, name);
+            case UnsignedValue(Integer i) -> getInstant(Integer.toUnsignedLong(i), name);
+            case UnsignedValue(Short s) -> getInstant(Short.toUnsignedLong(s), name);
+            case UnsignedValue(Byte b) -> getInstant(Short.toUnsignedLong(b), name);
+            case null, default -> throw newIllegalArgumentException(name, "java.time.Instant");
+        };
     }
 
     private Instant getInstant(long timestamp, String name) {
@@ -892,13 +790,11 @@ public sealed class RecordedObject
             if (timestamp == Long.MIN_VALUE) {
                 return Instant.MIN;
             }
-            switch (ts.value()) {
-            case Timestamp.MILLISECONDS_SINCE_EPOCH:
-                return Instant.ofEpochMilli(timestamp);
-            case Timestamp.TICKS:
-                return Instant.ofEpochSecond(0, objectContext.convertTimestamp(timestamp));
-            }
-            throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timestamp unit " + ts.value());
+            return switch (ts.value()) {
+                case Timestamp.MILLISECONDS_SINCE_EPOCH -> Instant.ofEpochMilli(timestamp);
+                case Timestamp.TICKS -> Instant.ofEpochSecond(0, objectContext.convertTimestamp(timestamp));
+                default -> throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with illegal timestamp unit " + ts.value());
+            };
         }
         throw new IllegalArgumentException("Attempt to get " + v.getTypeName() + " field \"" + name + "\" with missing @Timestamp");
     }

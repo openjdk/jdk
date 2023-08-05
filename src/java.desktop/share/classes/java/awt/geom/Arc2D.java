@@ -1303,7 +1303,7 @@ public abstract class Arc2D extends RectangularShape {
          * outside of rectagle with left top corner coordinates
          * (min(center x, start point x, end point x),
          *  min(center y, start point y, end point y))
-         * and rigth bottom corner coordinates
+         * and right bottom corner coordinates
          * (max(center x, start point x, end point x),
          *  max(center y, start point y, end point y)).
          * So we'll check axis segments outside of rectangle above.

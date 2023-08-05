@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
 import java.util.concurrent.ForkJoinPool;
@@ -83,10 +84,12 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
     private static JavaxCryptoSealedObjectAccess javaxCryptoSealedObjectAccess;
     private static JavaxCryptoSpecAccess javaxCryptoSpecAccess;
+    private static JavaTemplateAccess javaTemplateAccess;
 
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
@@ -108,12 +111,14 @@ public class SharedSecrets {
     }
 
     public static JavaUtilConcurrentTLRAccess getJavaUtilConcurrentTLRAccess() {
-        if (javaUtilConcurrentTLRAccess == null) {
+        var access = javaUtilConcurrentTLRAccess;
+        if (access == null) {
             try {
                 Class.forName("java.util.concurrent.ThreadLocalRandom$Access", true, null);
+                access = javaUtilConcurrentTLRAccess;
             } catch (ClassNotFoundException e) {}
         }
-        return javaUtilConcurrentTLRAccess;
+        return access;
     }
 
     public static void setJavaUtilConcurrentFJPAccess(JavaUtilConcurrentFJPAccess access) {
@@ -121,10 +126,12 @@ public class SharedSecrets {
     }
 
     public static JavaUtilConcurrentFJPAccess getJavaUtilConcurrentFJPAccess() {
-        if (javaUtilConcurrentFJPAccess == null) {
+        var access = javaUtilConcurrentFJPAccess;
+        if (access == null) {
             ensureClassInitialized(ForkJoinPool.class);
+            access = javaUtilConcurrentFJPAccess;
         }
-        return javaUtilConcurrentFJPAccess;
+        return access;
     }
 
     public static JavaUtilJarAccess javaUtilJarAccess() {
@@ -339,6 +346,19 @@ public class SharedSecrets {
         return access;
     }
 
+    public static void setJavaSecurityPropertiesAccess(JavaSecurityPropertiesAccess jspa) {
+        javaSecurityPropertiesAccess = jspa;
+    }
+
+    public static JavaSecurityPropertiesAccess getJavaSecurityPropertiesAccess() {
+        var access = javaSecurityPropertiesAccess;
+        if (access == null) {
+            ensureClassInitialized(Security.class);
+            access = javaSecurityPropertiesAccess;
+        }
+        return access;
+    }
+
     public static JavaUtilZipFileAccess getJavaUtilZipFileAccess() {
         var access = javaUtilZipFileAccess;
         if (access == null) {
@@ -463,10 +483,12 @@ public class SharedSecrets {
     }
 
     public static JavaSecuritySpecAccess getJavaSecuritySpecAccess() {
-        if (javaSecuritySpecAccess == null) {
+        var access = javaSecuritySpecAccess;
+        if (access == null) {
             ensureClassInitialized(EncodedKeySpec.class);
+            access = javaSecuritySpecAccess;
         }
-        return javaSecuritySpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSpecAccess(JavaxCryptoSpecAccess jcsa) {
@@ -474,10 +496,12 @@ public class SharedSecrets {
     }
 
     public static JavaxCryptoSpecAccess getJavaxCryptoSpecAccess() {
-        if (javaxCryptoSpecAccess == null) {
+        var access = javaxCryptoSpecAccess;
+        if (access == null) {
             ensureClassInitialized(SecretKeySpec.class);
+            access = javaxCryptoSpecAccess;
         }
-        return javaxCryptoSpecAccess;
+        return access;
     }
 
     public static void setJavaxCryptoSealedObjectAccess(JavaxCryptoSealedObjectAccess jcsoa) {
@@ -489,6 +513,21 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(SealedObject.class);
             access = javaxCryptoSealedObjectAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaTemplateAccess(JavaTemplateAccess jta) {
+        javaTemplateAccess = jta;
+    }
+
+    public static JavaTemplateAccess getJavaTemplateAccess() {
+        var access = javaTemplateAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.lang.runtime.TemplateSupport", true, null);
+                access = javaTemplateAccess;
+            } catch (ClassNotFoundException e) {}
         }
         return access;
     }

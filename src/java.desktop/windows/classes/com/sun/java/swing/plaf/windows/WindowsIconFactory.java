@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.java.swing.plaf.windows;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -175,7 +174,7 @@ public class WindowsIconFactory implements Serializable
 
     @SuppressWarnings("serial") // Same-version serialization only
     private static class FrameButtonIcon implements Icon, Serializable {
-        private Part part;
+        private final Part part;
 
         private FrameButtonIcon(Part part) {
             this.part = part;
@@ -286,18 +285,10 @@ public class WindowsIconFactory implements Serializable
             int width;
             if (XPStyle.getXP() != null) {
                 // Fix for XP bug where sometimes these sizes aren't updated properly
-                // Assume for now that height is correct and derive width using the
-                // ratio from the uxtheme part
-                width = UIManager.getInt("InternalFrame.titleButtonHeight") -2;
-                Dimension d = XPStyle.getPartSize(Part.WP_CLOSEBUTTON, State.NORMAL);
-                if (d != null && d.width != 0 && d.height != 0) {
-                    width = (int) ((float) width * d.width / d.height);
-                }
+                // Assume for now that height is correct and derive width from height
+                width = UIManager.getInt("InternalFrame.titleButtonHeight") + 10;
             } else {
-                width = UIManager.getInt("InternalFrame.titleButtonWidth") -2;
-            }
-            if (XPStyle.getXP() != null) {
-                width -= 2;
+                width = UIManager.getInt("InternalFrame.titleButtonHeight") - 2;
             }
             return width;
         }
@@ -328,7 +319,7 @@ public class WindowsIconFactory implements Serializable
             }
             public int getIconWidth() { return 13; }
             public int getIconHeight() { return 13; }
-        };
+        }
 
     @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, Serializable
@@ -508,10 +499,10 @@ public class WindowsIconFactory implements Serializable
                     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                                          RenderingHints.VALUE_ANTIALIAS_ON);
 
-                    // outter left arc
+                    // outer left arc
                     g.setColor(UIManager.getColor("RadioButton.shadow"));
                     g.drawArc(x, y, 11, 11, 45, 180);
-                    // outter right arc
+                    // outer right arc
                     g.setColor(UIManager.getColor("RadioButton.highlight"));
                     g.drawArc(x, y, 11, 11, 45, -180);
                     // inner left arc
@@ -535,7 +526,7 @@ public class WindowsIconFactory implements Serializable
 
                 } else {
 
-                    // outter left arc
+                    // outer left arc
                     g.setColor(UIManager.getColor("RadioButton.shadow"));
                     g.drawLine(x+4, y+0, x+7, y+0);
                     g.drawLine(x+2, y+1, x+3, y+1);
@@ -544,7 +535,7 @@ public class WindowsIconFactory implements Serializable
                     g.drawLine(x+0, y+4, x+0, y+7);
                     g.drawLine(x+1, y+8, x+1, y+9);
 
-                    // outter right arc
+                    // outer right arc
                     g.setColor(UIManager.getColor("RadioButton.highlight"));
                     g.drawLine(x+2, y+10, x+3, y+10);
                     g.drawLine(x+4, y+11, x+7, y+11);

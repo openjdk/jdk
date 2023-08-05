@@ -61,7 +61,7 @@ import sun.awt.SunToolkit;
  * {@code InputMethodManager} class. It is runnable as a separate
  * thread in the AWT environment.&nbsp;
  * {@code InputMethodManager.getInstance()} creates an instance of
- * {@code ExecutableInputMethodManager} and executes it as a deamon
+ * {@code ExecutableInputMethodManager} and executes it as a daemon
  * thread.
  *
  * @see InputMethodManager

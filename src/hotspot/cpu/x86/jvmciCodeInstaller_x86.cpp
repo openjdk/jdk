@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/disassembler.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -146,7 +147,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
       return;
@@ -185,6 +186,15 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, j
   if (!call->is_displacement_aligned()) {
     JVMCI_ERROR("unaligned displacement for call at offset %d", pc_offset);
   }
+  if (Continuations::enabled()) {
+    // Check for proper post_call_nop
+    NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
+    if (nop == nullptr) {
+      JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
+    } else {
+      _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);
+    }
+  }
 }
 
 void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
@@ -210,11 +220,11 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS) {
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
 VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
-  if (jvmci_reg < RegisterImpl::number_of_registers) {
+  if (jvmci_reg < Register::number_of_registers) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {
-    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers;
-    if (floatRegisterNumber < XMMRegisterImpl::number_of_registers) {
+    jint floatRegisterNumber = jvmci_reg - Register::number_of_registers;
+    if (floatRegisterNumber < XMMRegister::number_of_registers) {
       return as_XMMRegister(floatRegisterNumber)->as_VMReg();
     }
     JVMCI_ERROR_NULL("invalid register number: %d", jvmci_reg);

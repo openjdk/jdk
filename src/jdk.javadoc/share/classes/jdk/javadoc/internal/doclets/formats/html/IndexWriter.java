@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.Element;
@@ -47,7 +46,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -210,7 +208,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case ANNOTATION_TYPE:
             case INTERFACE:
                 dt = HtmlTree.DT(getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.INDEX, (TypeElement) element).style(HtmlStyle.typeNameLink)));
+                        HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL, (TypeElement) element).style(HtmlStyle.typeNameLink)));
                 dt.add(" - ");
                 addClassInfo((TypeElement) element, dt);
                 break;
@@ -220,7 +218,7 @@ public class IndexWriter extends HtmlDocletWriter {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.INDEX, containingType, element,
+                dt = HtmlTree.DT(getDocLink(HtmlLinkInfo.Kind.PLAIN, containingType, element,
                                 label, HtmlStyle.memberNameLink));
                 dt.add(" - ");
                 addMemberDesc(element, containingType, dt);
@@ -332,7 +330,7 @@ public class IndexWriter extends HtmlDocletWriter {
             default -> throw new IllegalArgumentException(member.getKind().toString());
         };
         content.add(contents.getContent(resource, kindName)).add(" ");
-        addPreQualifiedClassLink(HtmlLinkInfo.Kind.INDEX, enclosing,
+        addPreQualifiedClassLink(HtmlLinkInfo.Kind.PLAIN, enclosing,
                 null, content);
     }
 

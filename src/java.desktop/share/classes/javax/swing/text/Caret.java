@@ -201,4 +201,4 @@ public interface Caret {
      */
     public void moveDot(int dot);
 
-};
+}

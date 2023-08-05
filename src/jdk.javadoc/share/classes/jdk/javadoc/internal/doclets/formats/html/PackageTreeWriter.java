@@ -33,7 +33,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -98,10 +97,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, headContent);
         var div = HtmlTree.DIV(HtmlStyle.header, heading);
-        if (configuration.packages.size() > 1) {
-            addLinkToAllPackages(div);
-        }
         mainContent.add(div);
+        if (configuration.packages.size() > 1) {
+            addLinkToAllPackages(mainContent);
+        }
         addTree(classTree.classes(), "doclet.Class_Hierarchy", mainContent);
         addTree(classTree.interfaces(), "doclet.Interface_Hierarchy", mainContent);
         addTree(classTree.annotationInterfaces(), "doclet.Annotation_Type_Hierarchy", mainContent);
@@ -143,7 +142,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
         var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
                 contents.packageHierarchies);
         target.add(span);
-        var ul = HtmlTree.UL(HtmlStyle.horizontal);
+        var ul = HtmlTree.UL(HtmlStyle.horizontal).addStyle(HtmlStyle.contentsList);
         // TODO the link should be more specific:
         //  it should point to the "all packages" section of the overview tree
         ul.add(getNavLinkToOverviewTree(resources.getText("doclet.All_Packages")));

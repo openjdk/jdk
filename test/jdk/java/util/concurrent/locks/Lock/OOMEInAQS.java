@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  * @test
  * @bug 8066859
  * @summary Check that AQS-based locks, conditions, and CountDownLatches do not fail when encountering OOME
- * @run main/othervm -XX:-UseGCOverheadLimit -Xmx24M -XX:-UseTLAB OOMEInAQS
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xmx48M -XX:-UseTLAB OOMEInAQS
  */
 
 public class OOMEInAQS extends Thread {

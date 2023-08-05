@@ -81,13 +81,13 @@ class PSCardTable: public CardTable {
   static bool card_is_verify(int value)     { return value == verify_card; }
 
   // Card marking
-  void inline_write_ref_field_gc(void* field, oop new_val) {
+  void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = youngergen_card;
   }
 
   // ReduceInitialCardMarks support
-  bool is_in_young(oop obj) const;
+  bool is_in_young(const void* p) const override;
 
 #ifdef ASSERT
   bool is_valid_card_address(CardValue* addr) {

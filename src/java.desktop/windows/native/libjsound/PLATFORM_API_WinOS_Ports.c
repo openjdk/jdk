@@ -113,8 +113,9 @@ char* getLineFlags(DWORD flags) {
     }
     if (flags!=0) {
         UINT_PTR r = (UINT_PTR) ret;
-        r += strlen(ret);
-        sprintf((char*) r, "%d", flags);
+        size_t usedLen = strlen(ret);
+        r += usedLen;
+        snprintf((char*) r, sizeof(ret) - usedLen, "%d", flags);
     }
     return ret;
 }
@@ -219,8 +220,9 @@ char* getControlState(DWORD controlState) {
     }
     if (controlState!=0) {
         UINT_PTR r = (UINT_PTR) ret;
-        r += strlen(ret);
-        sprintf((char*) r, "%d", controlState);
+        size_t usedLen = strlen(ret);
+        r += usedLen;
+        snprintf((char*) r, sizeof(ret) - usedLen, "%d", controlState);
     }
     return ret;
 }
@@ -359,7 +361,7 @@ INT32 PORT_GetPortMixerDescription(INT32 mixerIndex, PortMixerDescription* descr
     MIXERCAPSW mixerCaps;
     if (mixerGetDevCapsW(mixerIndex, &mixerCaps, sizeof(MIXERCAPSW)) == MMSYSERR_NOERROR) {
         UnicodeToUTF8AndCopy(description->name, mixerCaps.szPname, PORT_STRING_LENGTH);
-        sprintf(description->version, "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
+        snprintf(description->version, sizeof(description->version), "%d.%d", (mixerCaps.vDriverVersion & 0xFF00) >> 8, mixerCaps.vDriverVersion & 0xFF);
         strncpy(description->description, "Port Mixer", PORT_STRING_LENGTH-1);
         return TRUE;
     }

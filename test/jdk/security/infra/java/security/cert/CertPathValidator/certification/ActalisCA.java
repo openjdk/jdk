@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,27 +144,26 @@ public class ActalisCA {
             "rjhpn3C/NptVyZgT8bL4XT5ITrAjwPciBj0yxYzUkrLZO1wKQSQ=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=ssltest-revoked.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro,
-    //        ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p .A.,
-    //         L=Ponte San Pietro, ST=Bergamo, C=IT
-    // Serial number: 3dbdba0fefe7c6bd978220de52ffe3b2
-    // Valid from: Fri Oct 08 02:23:49 PDT 2021 until: Sat Oct 08 02:23:49 PDT 2022
+    // Owner: CN=ssltest-revoked.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p.A.,
+    // L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Serial number: 320955171b78d49507508910da2c5bc4
+    // Valid from: Tue Sep 27 03:40:43 PDT 2022 until: Wed Sep 27 03:40:43 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIH1zCCBb+gAwIBAgIQPb26D+/nxr2XgiDeUv/jsjANBgkqhkiG9w0BAQsFADCB\n" +
+            "MIIH1TCCBb2gAwIBAgIQMglVFxt41JUHUIkQ2ixbxDANBgkqhkiG9w0BAQsFADCB\n" +
             "iTELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRl\n" +
             "IFNhbiBQaWV0cm8xFzAVBgNVBAoMDkFjdGFsaXMgUy5wLkEuMTQwMgYDVQQDDCtB\n" +
-            "Y3RhbGlzIE9yZ2FuaXphdGlvbiBWYWxpZGF0ZWQgU2VydmVyIENBIEczMB4XDTIx\n" +
-            "MTAwODA5MjM0OVoXDTIyMTAwODA5MjM0OVoweDELMAkGA1UEBhMCSVQxEDAOBgNV\n" +
+            "Y3RhbGlzIE9yZ2FuaXphdGlvbiBWYWxpZGF0ZWQgU2VydmVyIENBIEczMB4XDTIy\n" +
+            "MDkyNzEwNDA0M1oXDTIzMDkyNzEwNDA0M1oweDELMAkGA1UEBhMCSVQxEDAOBgNV\n" +
             "BAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRlIFNhbiBQaWV0cm8xFzAVBgNVBAoM\n" +
             "DkFjdGFsaXMgUy5wLkEuMSMwIQYDVQQDDBpzc2x0ZXN0LXJldm9rZWQuYWN0YWxp\n" +
-            "cy5pdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPPgHusiIPuBvyPF\n" +
-            "5lvUnfRraGomDTTJ4FBHomWJgbyTcfjJ6WqP5p6dwcRTyXT1U/odp5bxSYGBpj31\n" +
-            "1zi1tqtJGxuXauTytKUPL1pOXOD4V9JpOL9VetDZS5Lvo3bnAjGLJA/Bqr7VRmMY\n" +
-            "l9LiGjIlJcSCQWCDxcHDkJA/4Vrmek6z1Pwzz/OjkBYRJ3T75qlWtTh/8ZhvnKxs\n" +
-            "WAeHD/n0hLshMbqke2CuGHGC1+tAUlb8ZzIZjdVKoWL4VrQPN0NzgQF2jX6AS/ru\n" +
-            "NNO3UrvwjD2Us9YUrDxxQLCw0LT/TkchhYWp675mY/e1EjoX+vnXpO3J3CMEfCv5\n" +
-            "aVtXzusCAwEAAaOCA0kwggNFMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUn4qx\n" +
+            "cy5pdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKdBnbeFtw/Ejp1U\n" +
+            "gr86BQ5rqgGXWWXb7fsOhPb5On9RXTojg6oaeIV4GxHsMZhEDKQdcZ6JWAo2dbtp\n" +
+            "/7ereFEDWG/YJahLHFZ/ihXG4AmfObYEhoGbKitW75fOs/aWC7Veck/sXsw7cjLW\n" +
+            "GY623ybcF9DBExg3S4uLRaSkv5hXUDu/CzphUgwiEd5YNBZjcryOiS8+Y5EQ+2q+\n" +
+            "g+tdRG9m5G5YxeHWgQz2HDDwLDsJhWkb8/RsUurU/I+avHPhYk13K5Ysf311gww8\n" +
+            "bAsplfdJ2gdn8Is+EAEH4GJHqMybC95YDh1w5dY7dk/lIoNX4hYUIQimirIr3OW8\n" +
+            "Svkj1G8CAwEAAaOCA0cwggNDMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUn4qx\n" +
             "tfGx3oL0J3y+iM3eqUOBo0swfgYIKwYBBQUHAQEEcjBwMDsGCCsGAQUFBzAChi9o\n" +
             "dHRwOi8vY2FjZXJ0LmFjdGFsaXMuaXQvY2VydHMvYWN0YWxpcy1hdXRob3ZnMzAx\n" +
             "BggrBgEFBQcwAYYlaHR0cDovL29jc3AwOS5hY3RhbGlzLml0L1ZBL0FVVEhPVi1H\n" +
@@ -172,54 +171,47 @@ public class ActalisCA {
             "SjBIMDwGBiuBHwEUATAyMDAGCCsGAQUFBwIBFiRodHRwczovL3d3dy5hY3RhbGlz\n" +
             "Lml0L2FyZWEtZG93bmxvYWQwCAYGZ4EMAQICMB0GA1UdJQQWMBQGCCsGAQUFBwMC\n" +
             "BggrBgEFBQcDATBIBgNVHR8EQTA/MD2gO6A5hjdodHRwOi8vY3JsMDkuYWN0YWxp\n" +
-            "cy5pdC9SZXBvc2l0b3J5L0FVVEhPVi1HMy9nZXRMYXN0Q1JMMB0GA1UdDgQWBBTe\n" +
-            "jnmMDJmWf46bs3abftL18WTLPzAOBgNVHQ8BAf8EBAMCBaAwggGABgorBgEEAdZ5\n" +
-            "AgQCBIIBcASCAWwBagB2AFWB1MIWkDYBSuoLm1c8U/DA5Dh4cCUIFy+jqh0HE9MM\n" +
-            "AAABfF9AbyoAAAQDAEcwRQIgb4G8Pbdfmo9KKxA1AXSB6MGNWb5SzDbKK12xR6/d\n" +
-            "gvQCIQDlIsOyHxCDIPGFIRgKrsKH1nHj2DQ++7J1V5g9r/JNwwB3AFGjsPX9AXmc\n" +
-            "Vm24N3iPDKR6zBsny/eeiEKaDf7UiwXlAAABfF9Aby0AAAQDAEgwRgIhAO7xBWad\n" +
-            "yewERj1dP5Uebb4K4AFI/1CDhVljDDJ/hejTAiEAzQH3I6FyCBfT92HeMB3AonNC\n" +
-            "HaNEXSzmwksP6umHAzYAdwBGpVXrdfqRIDC1oolp9PN9ESxBdL79SbiFq/L8cP5t\n" +
-            "RwAAAXxfQG70AAAEAwBIMEYCIQCCkh1gHDflb+PNRy3T7AEBvHf/ZlFKpZcMMz2N\n" +
-            "4RV04QIhAJHrg7WiSAOW0qN3Xx5FCqm+GBomtByHlY8qg9F4VTEmMA0GCSqGSIb3\n" +
-            "DQEBCwUAA4ICAQBfsH+q/ZIUIrIz4JsN8Ac8Rfbr0p1jqWc7WNyPKgDzxiI92T5O\n" +
-            "IjJty1sshsoWct4hLmCk0nqTt2/Pvk76RUSvpneVh9lrmmnxOUeu/PxykYzOQoYq\n" +
-            "gGvXQrDPc0R1Q/gt2Q8Orcow/TTNpbWjZYhlOmT8JHUCpUgfKm00xCWayWRVMyZH\n" +
-            "lFFOHcM7+1cngXC7rkGESB0pmdkJ3Zh0fhYYdhjltZJOScO3wGCH5UtlvgbcZkYh\n" +
-            "h1NMdp/yveucVwNajHGIzJ56KyFcxHrXlqIhV8HslyrSvFHQklETLyAJBt8uLoVi\n" +
-            "W4ytCS11qHFcSv9D5btlGqqpub6XicRwM1jGRvD/odrTuRetT8Wi4qB0XeDGmaG8\n" +
-            "al9Z6HEZoxTQ5+Pb0xIu5FOF7rC5p/BjqDxGlKBCFWyhEwR7T17javCLMNQGCQMc\n" +
-            "LsLG8iUjPSQB/wiJ8RtruU7kEQrEoxRJjJLIfkLt9ti8C3yK7T7SCPBdoeM6CyI/\n" +
-            "V5p7FDcvBXtDPukWTnPQ2DtUUGw8244QLWavFoHbvFekzlm2GWZYTPEwlaNAcwmg\n" +
-            "0ZpxphiuMoouwud1Oaa1xzToPn+iyIjun8+wkB+rbaenIMSpqwWk8s3jtmconGKP\n" +
-            "JCJvmsfAxAXrAy4Iizums4Z1kPN1ApfNIoPprTfu5cSza3xeOMq0txkERQ==\n" +
+            "cy5pdC9SZXBvc2l0b3J5L0FVVEhPVi1HMy9nZXRMYXN0Q1JMMB0GA1UdDgQWBBS6\n" +
+            "o8qJpg3ixoyA2QBayptaTfc+5DAOBgNVHQ8BAf8EBAMCBaAwggF+BgorBgEEAdZ5\n" +
+            "AgQCBIIBbgSCAWoBaAB2AK33vvp8/xDIi509nB4+GGq0Zyldz7EMJMqFhjTr3IKK\n" +
+            "AAABg36SGRYAAAQDAEcwRQIgDXxSCQGfcIYroxNiDJg08IX38Y9+r5CC6T4NeW14\n" +
+            "FzgCIQDdEhEYsGIWpwyrnTLr4RFB5CMEq+84dByNT07UYkiVwwB2AHoyjFTYty22\n" +
+            "IOo44FIe6YQWcDIThU070ivBOlejUutSAAABg36SGTUAAAQDAEcwRQIgL2ig9RrM\n" +
+            "FPWESGRYGJJJYRHdcayHev66jawrf98saN8CIQD/CInlI3Vo7SBzzN/4uykjYsFZ\n" +
+            "u9RypT6AYv6AHPlNdQB2AG9Tdqwx8DEZ2JkApFEV/3cVHBHZAsEAKQaNsgiaN9kT\n" +
+            "AAABg36SGU0AAAQDAEcwRQIhAOCD/dOs4HjyC+GQaQRh4U+/mUwWyu+CnlHdebmD\n" +
+            "hAvFAiAvBE0rbxgm8TpZLG2TaMk3dqZj7Q6FFdLlqTsvwhKa3jANBgkqhkiG9w0B\n" +
+            "AQsFAAOCAgEAEnPALMVp1pySJgHhugLWAUgiD6stpDWCKfaBxPr+jf34A5wS+m5r\n" +
+            "2VhYyNQpOwIQB76K2RSJQrdpg7Dg2L6EiUnbbClSTrOkZ4XX5ggBIjldDEx4ZxhI\n" +
+            "zwSw4KB6+DDAVMwsCL0q0E7AAPOMaZ0RDLteusqQYIYm08TXfJPWD8LjQPt/8Uie\n" +
+            "LOqm1eLUuwJc+eHFWV+Xr8Uea6SFwqNEj7qPHb2MElctET/MhSIIUKI1ObmrFwyB\n" +
+            "ElKEPaUh9L0HXpnuD8IWc7tw2mdvnWJhuGG8G6JkasTGvtZ4gKIDBdTrJcuj7MCS\n" +
+            "amz3ZBCY47tP1ohgImjqwg4ITYjX6UQXgj/nBVDdu+nXkEhx16uPJkTYWaun9Nio\n" +
+            "8RjYIOxXmDD39QbGUElP0Epsr2wcVT9tIFYMGzUpIO51mCk3Aq1AmiQZwZZhqOIN\n" +
+            "RDx7lGESPj3IgdVfJi9Ing/OUNtS46Ug9DSuDcGqdY7KnTYEUdWGsUJNtnpjd4lS\n" +
+            "U6oIAeW1aKuOve6iNg1vsFAN57aJNh1ih3BOup58J9ve42bNlAYWN8wiNxM+Aeba\n" +
+            "ArUSTnH/QEYCyMRD0XqIREVR9VhNODgSZbL3XedYBAW9wImi1whp+u+8aReXd7lC\n" +
+            "Q3kD9KRyfZ9Kk05Glf3DsZMWvp1N2ZZWaU2Ms5U3ijUheCiBrqrs8a8=\n" +
             "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
 
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
-        boolean ocspEnabled = false;
 
         if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
             pathValidator.enableCRLCheck();
         } else {
             // OCSP check by default
             pathValidator.enableOCSPCheck();
-            ocspEnabled = true;
         }
 
         // Validate valid
         pathValidator.validate(new String[]{VALID, INT},
                 ValidatePathWithParams.Status.GOOD, null, System.out);
 
-        if (ocspEnabled) {
-            // Revoked test certificate will expire in Oct 2022
-            pathValidator.setValidationDate("June 01, 2022");
-        }
-
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Mon Mar 07 06:11:11 PST 2022", System.out);
+                "Tue Sep 27 03:52:40 PDT 2022", System.out);
     }
 }

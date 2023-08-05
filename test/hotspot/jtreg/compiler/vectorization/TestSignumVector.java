@@ -23,11 +23,10 @@
 
 /**
  * @test
- * @bug 8282711
- * @summary Accelerate Math.signum function for AVX and AVX512.
+ * @bug 8282711 8290249
+ * @summary Accelerate Math.signum function for AVX, AVX512 and aarch64 (Neon and SVE)
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*avx.*"
- * @requires os.simpleArch == "x64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSignumVector
  */
@@ -46,13 +45,13 @@ public class TestSignumVector {
   private static float  [] fout;
 
   public static void main(String args[]) {
-      TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                  "-XX:CompileThresholdScaling=0.3");
+      TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:+UnlockDiagnosticVMOptions",
+                                 "-XX:+UseSignumIntrinsic", "-XX:CompileThresholdScaling=0.3");
       System.out.println("PASSED");
   }
 
   @Test
-  @IR(counts = {"SignumVD" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VD, "> 0"})
   public void test_signum_double(double[] dout, double[] dinp) {
       for (int i = 0; i < dout.length; i+=1) {
           dout[i] = Math.signum(dinp[i]);
@@ -72,7 +71,7 @@ public class TestSignumVector {
   }
 
   @Test
-  @IR(counts = {"SignumVF" , " > 0 "})
+  @IR(counts = {IRNode.SIGNUM_VF, "> 0"})
   public void test_signum_float(float[] fout, float[] finp) {
       for (int i = 0; i < finp.length; i+=1) {
           fout[i] = Math.signum(finp[i]);

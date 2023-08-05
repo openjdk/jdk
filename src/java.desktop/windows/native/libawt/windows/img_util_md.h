@@ -111,5 +111,5 @@ extern void initDitherTables(ColorData* cData);
 
 
 #ifdef __cplusplus
-}; /* end of extern "C" */
+} /* end of extern "C" */
 #endif

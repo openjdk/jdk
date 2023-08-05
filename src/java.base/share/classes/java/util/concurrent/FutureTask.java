@@ -583,7 +583,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
 
         // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         Class<?> ensureLoaded = LockSupport.class;
     }
 

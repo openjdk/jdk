@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -80,7 +79,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.generalPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -149,7 +148,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getPackageLink(packageElement, getLocalizedPackageName(packageElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -185,7 +184,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     "doclet.ClassUse_Classes.in.0.used.by.1",
                     getPackageLink(packageElement, getLocalizedPackageName(packageElement)),
                     getPackageLink(usingPackage, getLocalizedPackageName(usingPackage)));
-            Table table = new Table(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setCaption(caption)
                     .setHeader(classTableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

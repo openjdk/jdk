@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,9 +75,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
             if (t instanceof ExceptionInInitializerError) {
                 t = t.getCause();
             }
-            if (t instanceof ThreadDeath) {
-                throw (ThreadDeath)t;
-            }
             if (t instanceof SecurityException) {
                 return result;
             }
@@ -101,9 +98,7 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                     result.add(new HotSpotVirtualMachineDescriptor(this, pid, name));
                 }
             } catch (Throwable t) {
-                if (t instanceof ThreadDeath) {
-                    throw (ThreadDeath)t;
-                }
+                // ignore
             } finally {
                 if (mvm != null) {
                     mvm.detach();
@@ -138,10 +133,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
                 return;
             }
         } catch (Throwable t) {
-            if (t instanceof ThreadDeath) {
-                ThreadDeath td = (ThreadDeath)t;
-                throw td;
-            }
             // we do not know what this id is
             return;
         } finally {

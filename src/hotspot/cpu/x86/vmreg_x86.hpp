@@ -37,7 +37,7 @@ inline bool is_FloatRegister() {
 
 inline bool is_XMMRegister() {
   int uarch_max_xmm = ConcreteRegisterImpl::max_fpr +
-    (XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::available_xmm_registers());
+    (XMMRegister::max_slots_per_register * XMMRegister::available_xmm_registers());
 
   return (value() >= ConcreteRegisterImpl::max_fpr && value() < uarch_max_xmm);
 }
@@ -87,7 +87,7 @@ inline   bool is_concrete() {
   // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
   if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
     int base = value() - ConcreteRegisterImpl::max_fpr;
-    return base % XMMRegisterImpl::max_slots_per_register == 0;
+    return (base % XMMRegister::max_slots_per_register) == 0;
   } else {
     return is_even(value());   // General, float, and K registers are all two slots wide
   }

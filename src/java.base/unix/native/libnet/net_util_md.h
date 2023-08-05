@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,26 +74,10 @@ typedef union {
 /************************************************************************
  * Functions
  */
-
-int NET_Timeout(JNIEnv *env, int s, long timeout, jlong  nanoTimeStamp);
-int NET_Read(int s, void* buf, size_t len);
-int NET_NonBlockingRead(int s, void* buf, size_t len);
-int NET_RecvFrom(int s, void *buf, int len, unsigned int flags,
-                 struct sockaddr *from, socklen_t *fromlen);
-int NET_Send(int s, void *msg, int len, unsigned int flags);
-int NET_SendTo(int s, const void *msg, int len,  unsigned  int
-               flags, const struct sockaddr *to, int tolen);
-int NET_Connect(int s, struct sockaddr *addr, int addrlen);
-int NET_Accept(int s, struct sockaddr *addr, socklen_t *addrlen);
-int NET_SocketClose(int s);
-int NET_Dup2(int oldfd, int newfd);
-int NET_Poll(struct pollfd *ufds, unsigned int nfds, int timeout);
-
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
                                                int gai_error);
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
                                   const char *defaultDetail);
-void NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass);
 
 #endif /* NET_UTILS_MD_H */

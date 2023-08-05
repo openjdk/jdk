@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,17 @@
  * questions.
  */
 
-import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
-
 /*
  * @test
- * @bug 8042451
+ * @bug 8042451 8208470
  * @summary Test population of reference info for field
  * @modules jdk.jdeps/com.sun.tools.classfile
  * @compile -g Driver.java ReferenceInfoUtil.java Fields.java
  * @run main Driver Fields
  */
+
+import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
+
 public class Fields {
     // field types
     @TADescription(annotation = "TA", type = FIELD)
@@ -61,6 +62,26 @@ public class Fields {
             genericLocation = { 0, 0, 0, 0 })
     public String fieldAsArray() {
         return "@TC String @TA [] @TB [] test;";
+    }
+
+    @TADescription(annotation = "TA", type = FIELD)
+    @TADescription(annotation = "TB", type = FIELD,
+            genericLocation = { 0, 0 })
+    @TADescription(annotation = "TC", type = FIELD,
+            genericLocation = { 0, 0, 0, 0, 1, 0})
+    public String fieldAsNestedArray1() {
+        return "@TC Nested @TA [] @TB [] test;";
+    }
+
+    @TADescription(annotation = "TA", type = FIELD)
+    @TADescription(annotation = "TB", type = FIELD,
+            genericLocation = { 0, 0 })
+    @TADescription(annotation = "TC", type = FIELD,
+            genericLocation = { 0, 0, 0, 0, 1, 0})
+    @TADescription(annotation = "TD", type = FIELD,
+            genericLocation = { 0, 0, 0, 0 })
+    public String fieldAsNestedArray2() {
+        return "@TD %TEST_CLASS_NAME%. @TC Nested @TA [] @TB [] test;";
     }
 
     @TADescription(annotation = "TA", type = FIELD)

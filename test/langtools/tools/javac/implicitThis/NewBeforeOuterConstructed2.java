@@ -24,9 +24,4 @@ public class NewBeforeOuterConstructed2 {
             System.out.println("ok");
         }
     }
-    public static void main(String[] args) {
-        NewBeforeOuterConstructed2 c = new NewBeforeOuterConstructed2(new Object());
-        Middle m = c.new Middle();
-        m.f();
-    }
 }

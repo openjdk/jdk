@@ -26,23 +26,11 @@
 #include "precompiled.hpp"
 #include "register_riscv.hpp"
 
-REGISTER_IMPL_DEFINITION(Register, RegisterImpl, RegisterImpl::number_of_registers);
-REGISTER_IMPL_DEFINITION(FloatRegister, FloatRegisterImpl, FloatRegisterImpl::number_of_registers);
-REGISTER_IMPL_DEFINITION(VectorRegister, VectorRegisterImpl, VectorRegisterImpl::number_of_registers);
+Register::RegisterImpl             all_RegisterImpls      [Register::number_of_registers       + 1];
+FloatRegister::FloatRegisterImpl   all_FloatRegisterImpls [FloatRegister::number_of_registers  + 1];
+VectorRegister::VectorRegisterImpl all_VectorRegisterImpls[VectorRegister::number_of_registers + 1];
 
-const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers *
-                                          RegisterImpl::max_slots_per_register;
-
-const int ConcreteRegisterImpl::max_fpr =
-    ConcreteRegisterImpl::max_gpr +
-    FloatRegisterImpl::number_of_registers * FloatRegisterImpl::max_slots_per_register;
-
-const int ConcreteRegisterImpl::max_vpr =
-    ConcreteRegisterImpl::max_fpr +
-    VectorRegisterImpl::number_of_registers * VectorRegisterImpl::max_slots_per_register;
-
-
-const char* RegisterImpl::name() const {
+const char* Register::RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
     "zr", "ra", "sp", "gp", "tp", "t0", "t1", "t2", "fp", "x9",
     "c_rarg0", "c_rarg1", "c_rarg2", "c_rarg3", "c_rarg4", "c_rarg5", "c_rarg6", "c_rarg7",
@@ -52,7 +40,7 @@ const char* RegisterImpl::name() const {
   return is_valid() ? names[encoding()] : "noreg";
 }
 
-const char* FloatRegisterImpl::name() const {
+const char* FloatRegister::FloatRegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
     "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
     "f8", "f9", "f10", "f11", "f12", "f13", "f14", "f15",
@@ -62,7 +50,7 @@ const char* FloatRegisterImpl::name() const {
   return is_valid() ? names[encoding()] : "noreg";
 }
 
-const char* VectorRegisterImpl::name() const {
+const char* VectorRegister::VectorRegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
     "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
     "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",

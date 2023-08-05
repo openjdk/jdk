@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
   MacroAssembler _masm(&cb);
   for (int i = 0; i < _constants.length(); i++) {
     Constant con = _constants.at(i);
-    address constant_addr = NULL;
+    address constant_addr = nullptr;
     if (con.is_array()) {
       constant_addr = _masm.array_constant(con.type(), con.get_array(), con.alignment());
     } else {
@@ -176,17 +176,17 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
         // filled in later in fill_jump_table.
         address dummy = (address) n;
         constant_addr = _masm.address_constant(dummy);
-        if (constant_addr == NULL) {
+        if (constant_addr == nullptr) {
           return false;
         }
         assert((constant_addr - _masm.code()->consts()->start()) == con.offset(),
               "must be: %d == %d", (int)(constant_addr - _masm.code()->consts()->start()), (int)(con.offset()));
 
         // Expand jump-table
-        address last_addr = NULL;
+        address last_addr = nullptr;
         for (uint j = 1; j < n->outcnt(); j++) {
           last_addr = _masm.address_constant(dummy + j);
-          if (last_addr == NULL) {
+          if (last_addr == nullptr) {
             return false;
           }
         }
@@ -211,7 +211,7 @@ bool ConstantTable::emit(CodeBuffer& cb) const {
       }
     }
 
-    if (constant_addr == NULL) {
+    if (constant_addr == nullptr) {
       return false;
     }
     assert((constant_addr - _masm.code()->consts()->start()) == con.offset(),
@@ -269,6 +269,7 @@ ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) 
   BasicType type = oper->type()->basic_type();
   switch (type) {
   case T_LONG:    value.j = oper->constantL(); break;
+  case T_INT:     value.i = oper->constant();  break;
   case T_FLOAT:   value.f = oper->constantF(); break;
   case T_DOUBLE:  value.d = oper->constantD(); break;
   case T_OBJECT:

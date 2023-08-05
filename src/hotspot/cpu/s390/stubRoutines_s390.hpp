@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,9 +32,11 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum { // Platform dependent constants.
-  // TODO: May be able to shrink this a lot
-  code_size1 = 20000,      // Simply increase if too small (assembler will crash if too small).
-  code_size2 = 20000       // Simply increase if too small (assembler will crash if too small).
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      = 20000,
+  _continuation_stubs_code_size =  2000,
+  _compiler_stubs_code_size     = 20000,
+  _final_stubs_code_size        = 20000
 };
 
 // MethodHandles adapters
@@ -78,6 +80,8 @@ class zarch {
   static address _trot_table_addr;
   static jlong   _trot_table[TROT_COLUMN_SIZE];
 
+  static address _nmethod_entry_barrier;
+
  public:
   // Global lock for everyone who needs to use atomic_compare_and_exchange
   // or atomic_increment -- should probably use more locks for more
@@ -98,6 +102,8 @@ class zarch {
 
   // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
   static void generate_load_trot_table_addr(MacroAssembler* masm, Register table);
+
+  static address nmethod_entry_barrier() { return _nmethod_entry_barrier; }
 };
 
 #endif // CPU_S390_STUBROUTINES_S390_HPP

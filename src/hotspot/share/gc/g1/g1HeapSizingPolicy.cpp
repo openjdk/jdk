@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
-#include "gc/g1/g1Analytics.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
@@ -265,4 +266,3 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
   expand = true; // Does not matter.
   return 0;
 }
-

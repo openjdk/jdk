@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class Method extends Executable {
     // Generics and annotations support
     private final transient String    signature;
     // generic info repository; lazily initialized
-    private transient MethodRepository genericInfo;
+    private transient volatile MethodRepository genericInfo;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
     private final byte[]              annotationDefault;
@@ -108,11 +108,13 @@ public final class Method extends Executable {
     // Accessor for generic info repository
     @Override
     MethodRepository getGenericInfo() {
+        var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
             genericInfo = MethodRepository.make(getGenericSignature(),
                                                 getFactory());
+            this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
     }
@@ -605,13 +607,17 @@ public final class Method extends Executable {
         return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
     }
 
-    @Stable private Boolean callerSensitive;       // lazily initialize
+    //  0 = not initialized (@Stable contract)
+    //  1 = initialized, CS
+    // -1 = initialized, not CS
+    @Stable private byte callerSensitive;
+
     private boolean isCallerSensitive() {
-        Boolean cs = callerSensitive;
-        if (cs == null) {
-            callerSensitive = cs = Reflection.isCallerSensitive(this);
+        byte cs = callerSensitive;
+        if (cs == 0) {
+            callerSensitive = cs = (byte)(Reflection.isCallerSensitive(this) ? 1 : -1);
         }
-        return cs;
+        return (cs > 0);
     }
 
     /**

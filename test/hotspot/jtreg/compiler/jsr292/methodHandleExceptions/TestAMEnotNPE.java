@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,12 @@
  *
  * @build p.*
  * @run main/othervm compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
- * @run main/othervm -Xint compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
- * @run main/othervm -Xcomp compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xint
+ *                   compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xcomp
+ *                   -XX:CompileCommand=compileonly,p.*::*
+ *                   -XX:CompileCommand=compileonly,q.*::*
+ *                   compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
  */
 
 // Since this test was written the specification for interface method selection has been

@@ -34,7 +34,6 @@ import javax.lang.model.element.ModuleElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -84,7 +83,7 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            Table table =  new Table(HtmlStyle.summaryTable)
+            var table = new Table<ModuleElement>(HtmlStyle.summaryTable)
                     .setHeader(tableHeader)
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_MODULES_TABLE)

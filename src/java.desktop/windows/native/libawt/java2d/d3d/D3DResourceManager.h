@@ -71,7 +71,7 @@ class IManagedResource {
 friend class D3DResourceManager;
 public:
     // determines whether the resource should be released by the manager
-    // when defaul pool resources are to be released
+    // when default pool resources are to be released
     virtual BOOL IsDefaultPool() = 0;
 protected:
                  IManagedResource() { pPrev = pNext = NULL; };
@@ -211,4 +211,4 @@ private:
 
     IManagedResource* pHead;
 };
-#endif _D3DRESOURCEMANAGER_H_
+#endif // _D3DRESOURCEMANAGER_H_

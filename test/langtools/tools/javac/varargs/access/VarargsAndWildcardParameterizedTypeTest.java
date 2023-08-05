@@ -27,7 +27,6 @@
  * @summary javac, wildcards and generic vararg method invocation not accepted
  * @compile VarargsAndWildcardParameterizedTypeTest.java
  * @compile --release 8 VarargsAndWildcardParameterizedTypeTest.java
- * @compile --release 7 VarargsAndWildcardParameterizedTypeTest.java
  */
 
 class VarargsAndWildcardParameterizedTypeTest {

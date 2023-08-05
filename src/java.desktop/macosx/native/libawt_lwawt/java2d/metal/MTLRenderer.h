@@ -72,9 +72,5 @@ void MTLRenderer_FillAAParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
                                    jfloat fx11, jfloat fy11,
                                    jfloat dx21, jfloat dy21,
                                    jfloat dx12, jfloat dy12);
-void MTLRenderer_AddVertexToBatch(float x, float y);
-void MTLRenderer_SubmitVertexBatch(MTLContext* mtlc, BMTLSDOps* dstOps);
-void MTLRenderer_SetPrimitiveType(MTLPrimitiveType type);
-
 
 #endif /* MTLRenderer_h_Included */

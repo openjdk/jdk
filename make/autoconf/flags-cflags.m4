@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,14 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,[$]1'
+
+    elif test "x$OPENJDK_TARGET_OS" = xaix; then
+      # Linking is different on aix
+      SHARED_LIBRARY_FLAGS="-shared -Wl,-bM:SRE -Wl,-bnoentry"
+      SET_EXECUTABLE_ORIGIN=""
+      SET_SHARED_LIBRARY_ORIGIN=''
+      SET_SHARED_LIBRARY_NAME=''
+      SET_SHARED_LIBRARY_MAPFILE=''
 
     else
       # Default works for linux, might work on other platforms as well.
@@ -113,7 +121,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
@@ -128,7 +136,12 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    # -gdwarf-4 and -gdwarf-aranges were introduced in clang 5.0
+    GDWARF_FLAGS="-gdwarf-4 -gdwarf-aranges"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
+        IF_FALSE: [GDWARF_FLAGS=""])
+
+    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g1"
@@ -167,11 +180,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
 
       WARNINGS_ENABLE_ALL="-W3"
-      DISABLED_WARNINGS="4800"
-      if test "x$TOOLCHAIN_VERSION" = x2017; then
-        # VS2017 incorrectly triggers this warning for constexpr
-        DISABLED_WARNINGS="$DISABLED_WARNINGS 4307"
-      fi
+      DISABLED_WARNINGS="4800 5105"
       ;;
 
     gcc)
@@ -188,6 +197,10 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
+      # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
+      if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
+        DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
+      fi
       ;;
 
     clang)
@@ -201,7 +214,6 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
-
       ;;
 
     xlc)
@@ -279,9 +291,15 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
       C_O_FLAG_NONE="${C_O_FLAG_NONE} ${DISABLE_FORTIFY_CFLAGS}"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_O_FLAG_HIGHEST_JVM="-O3"
-    C_O_FLAG_HIGHEST="-O3"
-    C_O_FLAG_HI="-O3"
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      C_O_FLAG_HIGHEST_JVM="-O3 -finline-functions"
+      C_O_FLAG_HIGHEST="-O3 -finline-functions"
+      C_O_FLAG_HI="-O3 -finline-functions"
+    else
+      C_O_FLAG_HIGHEST_JVM="-O3"
+      C_O_FLAG_HIGHEST="-O3"
+      C_O_FLAG_HI="-O3"
+    fi
     C_O_FLAG_NORM="-O2"
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_SIZE="-Os"
@@ -453,6 +471,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       # so for debug we build with '-qpic=large -bbigtoc'.
       DEBUG_CFLAGS_JVM="-qpic=large"
     fi
+    if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+      DEBUG_CFLAGS_JVM="-fpic -mcmodel=large"
+    fi
   fi
 
   if test "x$DEBUG_LEVEL" != xrelease; then
@@ -475,8 +496,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
         -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
     ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE \
-        -D_WINSOCK_DEPRECATED_NO_WARNINGS"
+        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
   fi
 
   ###############################################################################
@@ -489,8 +509,14 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
         -fvisibility=hidden -fno-strict-aliasing -fno-omit-frame-pointer"
   fi
 
+  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    # clang compiler on aix needs -ffunction-sections
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
+    TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
+  fi
+
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
     # reduce lib size on linux in link step, this needs also special compile flags
     # do this on s390x also for libjvm (where serviceability agent is not supported)
@@ -531,28 +557,18 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Suggested additions: -qsrcmsg to get improved error reporting
     # set -qtbtable=full for a better traceback table/better stacks in hs_err when xlc16 is used
     TOOLCHAIN_CFLAGS_JDK="-qtbtable=full -qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
-    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
+    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:strictStrings -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:strictStrings -Zc:wchar_t-"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)
-  # Ideally we would have a common level across all toolchains so that all sources
-  # are sure to conform to the same standard. Unfortunately neither our sources nor
-  # our toolchains are in a condition to support that. But what we loosely aim for is
-  # C99 level.
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang || test "x$TOOLCHAIN_TYPE" = xxlc; then
-    # Explicitly set C99. clang and xlclang support the same flag.
-    LANGSTD_CFLAGS="-std=c99"
+    LANGSTD_CFLAGS="-std=c11"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # MSVC doesn't support C99/C11 explicitly, unless you compile as C++:
-    # LANGSTD_CFLAGS="-TP"
-    # but that requires numerous changes to the sources files. So we are limited
-    # to C89/C90 plus whatever extensions Visual Studio has decided to implement.
-    # This is the lowest bar for shared code.
-    LANGSTD_CFLAGS=""
+    LANGSTD_CFLAGS="-std:c11"
   fi
   TOOLCHAIN_CFLAGS_JDK_CONLY="$LANGSTD_CFLAGS $TOOLCHAIN_CFLAGS_JDK_CONLY"
 
@@ -607,6 +623,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     PICFLAG="-fPIC"
     PIEFLAG="-fPIE"
+  elif test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    JVM_PICFLAG="-fpic -mcmodel=large -Wl,-bbigtoc
+    JDK_PICFLAG="-fpic
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # '-qpic' defaults to 'qpic=small'. This means that the compiler generates only
     # one instruction for accessing the TOC. If the TOC grows larger than 64K, the linker
@@ -643,7 +662,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   STATIC_LIBS_CFLAGS="-DSTATIC_BUILD=1"
   if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -ffunction-sections -fdata-sections \
-      -DJNIEXPORT='__attribute__((visibility(\"hidden\")))'"
+      -DJNIEXPORT='__attribute__((visibility(\"default\")))'"
   else
     STATIC_LIBS_CFLAGS="$STATIC_LIBS_CFLAGS -DJNIEXPORT="
   fi
@@ -751,6 +770,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         # for all archs except arm and ppc, prevent gcc to omit frame pointer
         $1_CFLAGS_CPU_JDK="${$1_CFLAGS_CPU_JDK} -fno-omit-frame-pointer"
       fi
+    fi
+    if test "x$OPENJDK_TARGET_OS" = xaix; then
+      $1_CFLAGS_CPU="-mcpu=pwr8"
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ include JavaCompilation.gmk
 include Modules.gmk
 
 SRC_ZIP_WORK_DIR := $(SUPPORT_OUTPUTDIR)/src
+$(if $(filter $(TOPDIR)/%, $(SUPPORT_OUTPUTDIR)), $(eval SRC_ZIP_BASE := $(TOPDIR)), $(eval SRC_ZIP_BASE := $(SUPPORT_OUTPUTDIR)))
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, ZipSource.gmk))
@@ -45,10 +46,10 @@ ALL_MODULES := $(FindAllModules)
 # again to create src.zip.
 $(foreach m, $(ALL_MODULES), \
   $(foreach d, $(call FindModuleSrcDirs, $m), \
-    $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(TOPDIR)/%,%,$d)/$m) \
+    $(eval $d_TARGET := $(SRC_ZIP_WORK_DIR)/$(patsubst $(TOPDIR)/%,%,$(patsubst $(SUPPORT_OUTPUTDIR)/%,%,$d))/$m) \
     $(if $(SRC_GENERATED), , \
       $(eval $$($d_TARGET): $d ; \
-          $$(if $(filter $(TOPDIR)/%, $d), $$(link-file-relative), $$(link-file-absolute)) \
+          $$(if $(filter $(SRC_ZIP_BASE)/%, $d), $$(link-file-relative), $$(link-file-absolute)) \
       ) \
     ) \
     $(eval SRC_ZIP_SRCS += $$($d_TARGET)) \

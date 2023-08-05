@@ -57,7 +57,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     static final int FORBID_OPCODE_KIND = VO_NOFP;
 
-    static final ValueLayout.OfDouble ELEMENT_LAYOUT = ValueLayout.JAVA_DOUBLE.withBitAlignment(8);
+    static final ValueLayout.OfDouble ELEMENT_LAYOUT = ValueLayout.JAVA_DOUBLE.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -764,15 +764,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
         if (opKind(op, VO_SPECIAL )) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Long> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (long) 0);
-                that = that.blend((double) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
-                // FIXME: Support OR_UNCHECKED on float/double also!
-                return this.viewAsIntegralLanes()
-                    .lanewise(op, that.viewAsIntegralLanes())
-                    .viewAsFloatingLanes();
+                VectorMask<Long> mask
+                    = this.viewAsIntegralLanes().compare(EQ, (long) 0);
+                return this.blend(that, mask.cast(vspecies()));
             }
         }
 
@@ -803,7 +797,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
         if (opKind(op, VO_SPECIAL )) {
             if (op == FIRST_NONZERO) {
-                return blend(lanewise(op, v), m);
+                LongVector bits = this.viewAsIntegralLanes();
+                VectorMask<Long> mask
+                    = bits.compare(EQ, (long) 0, m.cast(bits.vspecies()));
+                return this.blend(that, mask.cast(vspecies()));
             }
         }
 
@@ -3000,7 +2997,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      * double[] ar = new double[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_DOUBLE.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_DOUBLE.withByteAlignment(1), n);
      *     }
      * }
      * DoubleVector r = DoubleVector.fromArray(species, ar, 0);

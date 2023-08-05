@@ -60,6 +60,10 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                  "-cp", appJar, mainClass)
             .assertNormalExit();
 
+        String topArchiveMsg = "The top archive failed to load";
+        String mismatchMsg = "shared class paths mismatch";
+        String hintMsg = "(hint: enable -Xlog:class+path=info to diagnose the failure)";
+
         // ... but try to load the top archive using "-cp WrongJar.jar".
         // Use -Xshare:auto so top archive can fail after base archive has succeeded,
         // but the app will continue to run.
@@ -71,6 +75,43 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "-cp", wrongJar, mainClass,
                 "assertShared:java.lang.Object",  // base archive still useable
                 "assertNotShared:GenericTestApp") // but top archive is not useable
-          .assertNormalExit("The top archive failed to load");
+          .assertNormalExit(topArchiveMsg);
+
+        // Turn off all CDS logging, the "shared class paths mismatch" warning
+        // message should still be there.
+        run2_WB(baseArchiveName, topArchiveName,
+                "-Xshare:auto",
+                "-cp", wrongJar, mainClass,
+                "assertShared:java.lang.Object",  // base archive still useable
+                "assertNotShared:GenericTestApp") // but top archive is not useable
+          .assertNormalExit(topArchiveMsg, mismatchMsg, hintMsg);
+
+        // Enable class+path logging and run with -Xshare:on, the mismatchMsg
+        // should be there, the hintMsg should NOT be there.
+        run2_WB(baseArchiveName, topArchiveName,
+                "-Xlog:class+path=info",
+                "-Xshare:on",
+                "-cp", wrongJar, mainClass,
+                "assertShared:java.lang.Object",  // base archive still useable
+                "assertNotShared:GenericTestApp") // but top archive is not useable
+          .assertAbnormalExit( output -> {
+            output.shouldContain(mismatchMsg)
+                  .shouldNotContain(hintMsg);
+          });
+
+        // modify the timestamp of appJar
+        (new File(appJar.toString())).setLastModified(System.currentTimeMillis() + 2000);
+
+        // Without CDS logging enabled, the "timestamp has changed" message should
+        // be there.
+        run2_WB(baseArchiveName, topArchiveName,
+                "-Xshare:auto",
+                "-cp", appJar, mainClass,
+                "assertShared:java.lang.Object",  // base archive still useable
+                "assertNotShared:GenericTestApp") // but top archive is not useable
+          .assertNormalExit(output -> {
+              output.shouldContain(topArchiveMsg);
+              output.shouldMatch("A jar file is not the one used while building the shared archive file:.*GenericTestApp.jar");
+              output.shouldMatch(".warning..cds.*GenericTestApp.jar timestamp has changed.");});
     }
 }

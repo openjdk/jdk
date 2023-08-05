@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,12 @@
 class outputStream;
 class Thread;
 
+typedef void (*signal_handler_t)(int);
+
 class os::win32 {
   friend class os;
-  friend unsigned __stdcall thread_native_entry(Thread*);
 
  protected:
-  static int    _vm_page_size;
-  static int    _vm_allocation_granularity;
   static int    _processor_type;
   static int    _processor_level;
   static julong _physical_memory;
@@ -49,7 +48,7 @@ class os::win32 {
   static void print_uptime_info(outputStream* st);
 
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size);
+                                          char *buf, int buf_size, address& lastpc);
 
   static bool register_code_area(char *low, char *high);
 
@@ -64,12 +63,17 @@ class os::win32 {
     return _processor_level;
   }
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
  private:
+  // The handler passed to _beginthreadex().
+  // Called with the associated Thread* as the argument.
+  static unsigned __stdcall thread_native_entry(void*);
+
   enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
   // Wrapper around _endthreadex(), exit() and _exit()
   static int exit_process_or_thread(Ept what, int exit_code);
@@ -84,12 +88,6 @@ class os::win32 {
 
   // Tells whether there can be the race bug during process exit on this platform
   static bool has_exit_bug() { return _has_exit_bug; }
-
-  // Returns the byte size of a virtual memory page
-  static int vm_page_size() { return _vm_page_size; }
-
-  // Returns the size in bytes of memory blocks which can be allocated.
-  static int vm_allocation_granularity() { return _vm_allocation_granularity; }
 
   // Read the headers for the executable that started the current process into
   // the structure passed in (see winnt.h).
@@ -128,6 +126,10 @@ public:
     _thread_ptr_offset = offset;
   }
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
+
+  // signal support
+  static void* install_signal_handler(int sig, signal_handler_t handler);
+  static void* user_handler();
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 #include "oops/symbol.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
+
+class SerializeClosure;
 
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
@@ -67,10 +69,10 @@
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_BaseVirtualThread,               "java/lang/BaseVirtualThread")              \
   template(java_lang_VirtualThread,                   "java/lang/VirtualThread")                  \
+  template(java_lang_BoundVirtualThread,              "java/lang/ThreadBuilders$BoundVirtualThread") \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
   template(java_lang_Throwable,                       "java/lang/Throwable")                      \
   template(java_lang_ClassLoader,                     "java/lang/ClassLoader")                    \
-  template(java_lang_ThreadDeath,                     "java/lang/ThreadDeath")                    \
   template(java_lang_Runnable,                        "java/lang/Runnable")                       \
   template(jdk_internal_vm_ContinuationScope,         "jdk/internal/vm/ContinuationScope")        \
   template(jdk_internal_vm_StackChunk,                "jdk/internal/vm/StackChunk")               \
@@ -118,6 +120,8 @@
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
   template(java_lang_CharSequence,                    "java/lang/CharSequence")                   \
   template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
+  template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
+  template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
   template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
   template(java_security_AccessController,            "java/security/AccessController")           \
   template(executePrivileged_name,                    "executePrivileged")                        \
@@ -269,14 +273,13 @@
   /* Support for reflection based on dynamic bytecode generation (JDK 1.4 and above) */           \
                                                                                                   \
   template(jdk_internal_reflect,                      "jdk/internal/reflect")                     \
-  template(reflect_MagicAccessorImpl,                 "jdk/internal/reflect/MagicAccessorImpl")       \
   template(reflect_MethodAccessorImpl,                "jdk/internal/reflect/MethodAccessorImpl")      \
-  template(reflect_ConstructorAccessorImpl,           "jdk/internal/reflect/ConstructorAccessorImpl") \
   template(reflect_DelegatingClassLoader,             "jdk/internal/reflect/DelegatingClassLoader")   \
   template(reflect_Reflection,                        "jdk/internal/reflect/Reflection")              \
   template(reflect_CallerSensitive,                   "jdk/internal/reflect/CallerSensitive")         \
   template(reflect_CallerSensitive_signature,         "Ljdk/internal/reflect/CallerSensitive;")       \
-  template(reflect_NativeConstructorAccessorImpl,     "jdk/internal/reflect/NativeConstructorAccessorImpl")\
+  template(reflect_DirectConstructorHandleAccessor_NativeAccessor,   "jdk/internal/reflect/DirectConstructorHandleAccessor$NativeAccessor") \
+  template(reflect_SerializationConstructorAccessorImpl,             "jdk/internal/reflect/SerializationConstructorAccessorImpl") \
   template(checkedExceptions_name,                    "checkedExceptions")                        \
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
@@ -305,7 +308,6 @@
   template(parameter_annotations_name,                "parameterAnnotations")                     \
   template(annotation_default_name,                   "annotationDefault")                        \
   template(reflect_ConstantPool,                      "jdk/internal/reflect/ConstantPool")        \
-  template(reflect_UnsafeStaticFieldAccessorImpl,     "jdk/internal/reflect/UnsafeStaticFieldAccessorImpl")\
   template(base_name,                                 "base")                                     \
   /* Type Annotations (JDK 8 and above) */                                                        \
   template(type_annotations_name,                     "typeAnnotations")                          \
@@ -394,18 +396,14 @@
   template(main_name,                                 "main")                                     \
   template(name_name,                                 "name")                                     \
   template(priority_name,                             "priority")                                 \
-  template(stillborn_name,                            "stillborn")                                \
   template(group_name,                                "group")                                    \
   template(daemon_name,                               "daemon")                                   \
   template(run_method_name,                           "run")                                      \
+  template(runWith_method_name,                       "runWith")                                  \
   template(interrupt_method_name,                     "interrupt")                                \
   template(exit_method_name,                          "exit")                                     \
   template(remove_method_name,                        "remove")                                   \
   template(parent_name,                               "parent")                                   \
-  template(ngroups_name,                              "ngroups")                                  \
-  template(groups_name,                               "groups")                                   \
-  template(nweaks_name,                               "nweaks")                                   \
-  template(weaks_name,                                "weaks")                                    \
   template(maxPriority_name,                          "maxPriority")                              \
   template(shutdown_name,                             "shutdown")                                 \
   template(finalize_method_name,                      "finalize")                                 \
@@ -414,6 +412,11 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
   template(loadClass_name,                            "loadClass")                                \
+  template(notifyJvmtiStart_name,                     "notifyJvmtiStart")                         \
+  template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
+  template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
+  template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
+  template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
   template(enterSpecial_name,                         "enterSpecial")                             \
@@ -523,6 +526,8 @@
   template(java_lang_Boolean_signature,               "Ljava/lang/Boolean;")                      \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(jvmti_thread_state_name,                   "jvmti_thread_state")                       \
+  template(jvmti_VTMS_transition_disable_count_name,  "jvmti_VTMS_transition_disable_count")      \
+  template(jvmti_is_in_VTMS_transition_name,          "jvmti_is_in_VTMS_transition")              \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
   template(init_lock_name,                            "<init_lock>")                              \
@@ -550,6 +555,7 @@
   template(void_float_signature,                      "()F")                                      \
   template(void_double_signature,                     "()D")                                      \
   template(bool_void_signature,                       "(Z)V")                                     \
+  template(bool_bool_void_signature,                  "(ZZ)V")                                    \
   template(int_void_signature,                        "(I)V")                                     \
   template(int_int_signature,                         "(I)I")                                     \
   template(char_char_signature,                       "(C)C")                                     \
@@ -607,8 +613,10 @@
   template(string_array_string_array_void_signature,  "([Ljava/lang/String;[Ljava/lang/String;)V")                \
   template(thread_throwable_void_signature,           "(Ljava/lang/Thread;Ljava/lang/Throwable;)V")               \
   template(thread_void_signature,                     "(Ljava/lang/Thread;)V")                                    \
+  template(runnable_void_signature,                   "(Ljava/lang/Runnable;)V")                                   \
   template(threadgroup_runnable_void_signature,       "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;)V")           \
   template(threadgroup_string_void_signature,         "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V")             \
+  template(void_threadgroup_array_signature,          "()[Ljava/lang/ThreadGroup;")                               \
   template(string_class_signature,                    "(Ljava/lang/String;)Ljava/lang/Class;")                    \
   template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
@@ -746,6 +754,12 @@
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
+  template(encodeThrowable_name,                       "encodeThrowable")                                         \
+  template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
+  template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
+  template(encodeAnnotations_name,                     "encodeAnnotations")                                       \
+  template(encodeAnnotations_signature,                "([BLjava/lang/Class;Ljdk/internal/reflect/ConstantPool;Z[Ljava/lang/Class;)[B")\
+  template(decodeAndThrowThrowable_signature,          "(IJZ)V")                                                  \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \
@@ -866,7 +880,7 @@ class vmSymbols: AllStatic {
 
   static Symbol* type_signature(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
-    assert(_type_signatures[t] != NULL, "domain check");
+    assert(_type_signatures[t] != nullptr, "domain check");
     return _type_signatures[t];
   }
 

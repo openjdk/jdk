@@ -226,15 +226,13 @@ class LinuxWatchService
             }
 
             // no modifiers supported at this time
-            if (modifiers.length > 0) {
-                for (WatchEvent.Modifier modifier: modifiers) {
-                    if (modifier == null)
-                        return new NullPointerException();
-                    if (!ExtendedOptions.SENSITIVITY_HIGH.matches(modifier) &&
-                            !ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier) &&
-                            !ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
-                        return new UnsupportedOperationException("Modifier not supported");
-                    }
+            for (WatchEvent.Modifier modifier : modifiers) {
+                if (modifier == null)
+                    return new NullPointerException();
+                if (!ExtendedOptions.SENSITIVITY_HIGH.matches(modifier) &&
+                        !ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier) &&
+                        !ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
+                    return new UnsupportedOperationException("Modifier not supported");
                 }
             }
 
@@ -250,15 +248,10 @@ class LinuxWatchService
             }
 
             // register with inotify (replaces existing mask if already registered)
-            int wd = -1;
-            try {
-                NativeBuffer buffer =
-                    NativeBuffers.asNativeBuffer(dir.getByteArrayForSysCalls());
-                try {
-                    wd = inotifyAddWatch(ifd, buffer.address(), mask);
-                } finally {
-                    buffer.release();
-                }
+            int wd;
+            try (NativeBuffer buffer =
+                 NativeBuffers.asNativeBuffer(dir.getByteArrayForSysCalls())) {
+                wd = inotifyAddWatch(ifd, buffer.address(), mask);
             } catch (UnixException x) {
                 if (x.errno() == ENOSPC) {
                     return new IOException("User limit of inotify watches reached");

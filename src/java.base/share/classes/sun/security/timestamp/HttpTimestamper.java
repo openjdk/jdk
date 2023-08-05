@@ -63,7 +63,7 @@ public class HttpTimestamper implements Timestamper {
     /*
      * HTTP URI identifying the location of the TSA
      */
-    private URI tsaURI = null;
+    private final URI tsaURI;
 
     /**
      * Creates a timestamper that connects to the specified TSA.
@@ -123,7 +123,7 @@ public class HttpTimestamper implements Timestamper {
         }
 
         // Receive the reply
-        byte[] replyBuffer = null;
+        byte[] replyBuffer;
         try (var input = connection.getInputStream()) {
             if (debug != null) {
                 String header = connection.getHeaderField(0);

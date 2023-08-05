@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -60,8 +61,9 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.math.FormattedFloatingDecimal;
+import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -1260,6 +1262,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     id="scientific">computerized scientific notation</a>.  The <a
  *     href="#L10nAlgorithm">localization algorithm</a> is applied.
  *
+ *     <p> A {@code float} or {@link Float} argument is first converted to
+ *     {@code double} or {@link Double}, without loss of precision.
+ *
  *     <p> The formatting of the magnitude <i>m</i> depends upon its value.
  *
  *     <p> If <i>m</i> is NaN or infinite, the literal strings "NaN" or
@@ -1291,8 +1296,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
- *     the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     the string returned by {@link
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
@@ -1342,6 +1347,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     format</a>.  The <a href="#L10nAlgorithm">localization algorithm</a> is
  *     applied.
  *
+ *     <p> A {@code float} or {@link Float} argument is first converted to
+ *     {@code double} or {@link Double}, without loss of precision.
+ *
  *     <p> The result is a string that represents the sign and magnitude
  *     (absolute value) of the argument.  The formatting of the sign is
  *     described in the <a href="#L10nAlgorithm">localization
@@ -1360,8 +1368,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <i>m</i> or <i>a</i> is equal to the precision.  If the precision is not
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
- *     the string returned by {@link Float#toString(float)} or {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     the string returned by {@link
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
@@ -2004,6 +2012,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * method or constructor in this class will cause a {@link
  * NullPointerException} to be thrown.
  *
+ * @spec https://www.w3.org/TR/NOTE-datetime Date and Time Formats
+ * @spec https://www.rfc-editor.org/info/rfc822
+ *      RFC 822: STANDARD FOR THE FORMAT OF ARPA INTERNET TEXT MESSAGES
  * @author  Iris Clark
  * @since 1.5
  */
@@ -2761,8 +2772,7 @@ public final class Formatter implements Closeable, Flushable {
         int lasto = -1;
 
         List<FormatString> fsa = parse(format);
-        for (int i = 0; i < fsa.size(); i++) {
-            var fs = fsa.get(i);
+        for (FormatString fs : fsa) {
             int index = fs.index();
             try {
                 switch (index) {
@@ -2780,7 +2790,7 @@ public final class Formatter implements Closeable, Flushable {
                             throw new MissingFormatArgumentException(fs.toString());
                         fs.print(this, (args == null ? null : args[lasto]), l);
                     }
-                    default -> {  // explicit index
+                    default -> { // explicit index
                         last = index - 1;
                         if (args != null && last > args.length - 1)
                             throw new MissingFormatArgumentException(fs.toString());
@@ -2795,15 +2805,15 @@ public final class Formatter implements Closeable, Flushable {
     }
 
     // %[argument_index$][flags][width][.precision][t]conversion
-    private static final String formatSpecifier
+    static final String FORMAT_SPECIFIER
         = "%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])";
 
-    private static final Pattern fsPattern = Pattern.compile(formatSpecifier);
+    static final Pattern FORMAT_SPECIFIER_PATTERN = Pattern.compile(FORMAT_SPECIFIER);
 
     /**
      * Finds format specifiers in the format string.
      */
-    private List<FormatString> parse(String s) {
+    static List<FormatString> parse(String s) {
         ArrayList<FormatString> al = new ArrayList<>();
         int i = 0;
         int max = s.length();
@@ -2831,7 +2841,7 @@ public final class Formatter implements Closeable, Flushable {
                 i++;
             } else {
                 if (m == null) {
-                    m = fsPattern.matcher(s);
+                    m = FORMAT_SPECIFIER_PATTERN.matcher(s);
                 }
                 // We have already parsed a '%' at n, so we either have a
                 // match or the specifier at n is invalid
@@ -2846,7 +2856,7 @@ public final class Formatter implements Closeable, Flushable {
         return al;
     }
 
-    private interface FormatString {
+    interface FormatString {
         int index();
         void print(Formatter fmt, Object arg, Locale l) throws IOException;
         String toString();
@@ -2882,14 +2892,15 @@ public final class Formatter implements Closeable, Flushable {
         DECIMAL_FLOAT
     };
 
-    private static class FormatSpecifier implements FormatString {
+    static class FormatSpecifier implements FormatString {
+        private static final double SCALEUP = Math.scalb(1.0, 54);
 
-        private int index = 0;
-        private int flags = Flags.NONE;
-        private int width = -1;
-        private int precision = -1;
-        private boolean dt = false;
-        private char c;
+        int index = 0;
+        int flags = Flags.NONE;
+        int width = -1;
+        int precision = -1;
+        boolean dt = false;
+        char c;
 
         private void index(String s, int start, int end) {
             if (start >= 0) {
@@ -3512,19 +3523,16 @@ public final class Formatter implements Closeable, Flushable {
             appendJustified(fmt.a, sb);
         }
 
-        // !Double.isInfinite(value) && !Double.isNaN(value)
+        // !Double.isInfinite(value) && !Double.isNaN(value) && value sign bit is 0
         private void print(Formatter fmt, StringBuilder sb, double value, Locale l,
-                           int flags, char c, int precision, boolean neg)
-            throws IOException
-        {
+                           int flags, char c, int precision, boolean neg) {
             if (c == Conversion.SCIENTIFIC) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.SCIENTIFIC);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.SCIENTIFIC);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3542,8 +3550,8 @@ public final class Formatter implements Closeable, Flushable {
                 if (width != -1) {
                     newW = adjustWidth(width - exp.length - 1, flags, neg);
                 }
-                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
 
+                localizedMagnitude(fmt, sb, mant, 0, flags, newW, l);
                 sb.append(Flags.contains(flags, Flags.UPPERCASE) ? 'E' : 'e');
 
                 char sign = exp[0];
@@ -3552,13 +3560,12 @@ public final class Formatter implements Closeable, Flushable {
 
                 localizedMagnitudeExp(fmt, sb, exp, 1, l);
             } else if (c == Conversion.DECIMAL_FLOAT) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.PLAIN);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3587,9 +3594,8 @@ public final class Formatter implements Closeable, Flushable {
                     mant.append('0');
                     expRounded = 0;
                 } else {
-                    FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.GENERAL);
+                    FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                            value, prec, FormattedFPDecimal.GENERAL);
                     exp = fd.getExponent();
                     mant.append(fd.getMantissa());
                     expRounded = fd.getExponentRounded();
@@ -3715,8 +3721,7 @@ public final class Formatter implements Closeable, Flushable {
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    double scaleUp = Math.scalb(1.0, 54);
-                    d *= scaleUp;
+                    d *= SCALEUP;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
                     exponent = Math.getExponent(d);
@@ -4596,10 +4601,9 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             // apply zero padding
-            if (width != -1 && Flags.contains(f, Flags.ZERO_PAD)) {
-                for (int k = sb.length(); k < width; k++) {
-                    sb.insert(begin, zero);
-                }
+            if (width > sb.length() && Flags.contains(f, Flags.ZERO_PAD)) {
+                String zeros = String.valueOf(zero).repeat(width - sb.length());
+                sb.insert(begin, zeros);
             }
 
             return sb;
@@ -4620,7 +4624,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Flags {
+    static class Flags {
 
         static final int NONE          = 0;      // ''
 
@@ -4698,7 +4702,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class Conversion {
+    static class Conversion {
         // Byte, Short, Integer, Long, BigInteger
         // (and associated primitives due to autoboxing)
         static final char DECIMAL_INTEGER     = 'd';
@@ -4823,7 +4827,7 @@ public final class Formatter implements Closeable, Flushable {
         }
     }
 
-    private static class DateTime {
+    static class DateTime {
         static final char HOUR_OF_DAY_0 = 'H'; // (00 - 23)
         static final char HOUR_0        = 'I'; // (01 - 12)
         static final char HOUR_OF_DAY   = 'k'; // (0 - 23) -- like H
@@ -4874,4 +4878,5 @@ public final class Formatter implements Closeable, Flushable {
             };
         }
     }
+
 }

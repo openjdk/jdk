@@ -120,22 +120,6 @@ Zone	Africa/Algiers	0:12:12 -	LMT	1891 Mar 16
 			0:00	Algeria	WE%sT	1981 May
 			1:00	-	CET
 
-# Angola
-# Benin
-# See Africa/Lagos.
-
-# Botswana
-# See Africa/Maputo.
-
-# Burkina Faso
-# See Africa/Abidjan.
-
-# Burundi
-# See Africa/Maputo.
-
-# Cameroon
-# See Africa/Lagos.
-
 # Cape Verde / Cabo Verde
 #
 # From Paul Eggert (2018-02-16):
@@ -150,9 +134,6 @@ Zone Atlantic/Cape_Verde -1:34:04 -	LMT	1912 Jan 01  2:00u # Praia
 			-2:00	-	-02	1975 Nov 25  2:00
 			-1:00	-	-01
 
-# Central African Republic
-# See Africa/Lagos.
-
 # Chad
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
@@ -160,39 +141,36 @@ Zone	Africa/Ndjamena	1:00:12 -	LMT	1912        # N'Djamena
 			1:00	1:00	WAST	1980 Mar  8
 			1:00	-	WAT
 
-# Comoros
-# See Africa/Nairobi.
+# Burkina Faso
+# Côte d'Ivoire (Ivory Coast)
+# The Gambia
+# Ghana
+# Guinea
+# Iceland
+# Mali
+# Mauritania
+# St Helena
+# Senegal
+# Sierra Leone
+# Togo
 
-# Democratic Republic of the Congo
-# See Africa/Lagos for the western part and Africa/Maputo for the eastern.
+# The other parts of the St Helena territory are similar:
+#	Tristan da Cunha: on GMT, say Whitman and the CIA
+#	Ascension: on GMT, say the USNO (1995-12-21) and the CIA
+#	Gough (scientific station since 1955; sealers wintered previously):
+#		on GMT, says the CIA
+#	Inaccessible, Nightingale: uninhabited
 
-# Republic of the Congo
-# See Africa/Lagos.
-
-# Côte d'Ivoire / Ivory Coast
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Abidjan	-0:16:08 -	LMT	1912
 			 0:00	-	GMT
-Link Africa/Abidjan Africa/Accra	# Ghana
-Link Africa/Abidjan Africa/Bamako	# Mali
-Link Africa/Abidjan Africa/Banjul	# The Gambia
-Link Africa/Abidjan Africa/Conakry	# Guinea
-Link Africa/Abidjan Africa/Dakar	# Senegal
-Link Africa/Abidjan Africa/Freetown	# Sierra Leone
-Link Africa/Abidjan Africa/Lome		# Togo
-Link Africa/Abidjan Africa/Nouakchott	# Mauritania
-Link Africa/Abidjan Africa/Ouagadougou	# Burkina Faso
-Link Africa/Abidjan Atlantic/St_Helena	# St Helena
-
-# Djibouti
-# See Africa/Nairobi.
 
 ###############################################################################
 
 # Egypt
 
 # Milne says Cairo used 2:05:08.9, the local mean time of the Abbasizeh
-# observatory; round to nearest.  Milne also says that the official time for
+# observatory.  Milne also says that the official time for
 # Egypt was mean noon at the Great Pyramid, 2:04:30.5, but apparently this
 # did not apply to Cairo, Alexandria, or Port Said.
 
@@ -366,6 +344,14 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # From Mina Samuel (2016-07-04):
 # Egyptian government took the decision to cancel the DST,
 
+# From Ahmad ElDardiry (2023-03-01):
+# Egypt officially announced today that daylight savings will be
+# applied from last Friday of April to last Thursday of October.
+# From Paul Eggert (2023-03-01):
+# Assume transitions are at 00:00 and 24:00 respectively.
+# From Amir Adib (2023-03-07):
+# https://www.facebook.com/EgyptianCabinet/posts/638829614954129/
+
 Rule	Egypt	2008	only	-	Aug	lastThu	24:00	0	-
 Rule	Egypt	2009	only	-	Aug	20	24:00	0	-
 Rule	Egypt	2010	only	-	Aug	10	24:00	0	-
@@ -375,37 +361,13 @@ Rule	Egypt	2014	only	-	May	15	24:00	1:00	S
 Rule	Egypt	2014	only	-	Jun	26	24:00	0	-
 Rule	Egypt	2014	only	-	Jul	31	24:00	1:00	S
 Rule	Egypt	2014	only	-	Sep	lastThu	24:00	0	-
+Rule	Egypt	2023	max	-	Apr	lastFri	 0:00	1:00	S
+Rule	Egypt	2023	max	-	Oct	lastThu	24:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	2:05:08.9
 Zone	Africa/Cairo	2:05:09 -	LMT	1900 Oct
 			2:00	Egypt	EE%sT
-
-# Equatorial Guinea
-# See Africa/Lagos.
-
-# Eritrea
-# See Africa/Nairobi.
-
-# Eswatini (formerly Swaziland)
-# See Africa/Johannesburg.
-
-# Ethiopia
-# See Africa/Nairobi.
-#
-# Unfortunately tzdb records only Western clock time in use in Ethiopia,
-# as the tzdb format is not up to properly recording a common Ethiopian
-# timekeeping practice that is based on solar time.  See:
-# Mortada D. If you have a meeting in Ethiopia, you'd better double
-# check the time. PRI's The World. 2015-01-30 15:15 -05.
-# https://www.pri.org/stories/2015-01-30/if-you-have-meeting-ethiopia-you-better-double-check-time
-
-# Gabon
-# See Africa/Lagos.
-
-# The Gambia
-# Ghana
-# Guinea
-# See Africa/Abidjan.
 
 # Guinea-Bissau
 #
@@ -419,7 +381,16 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 			-1:00	-	-01	1975
 			 0:00	-	GMT
 
+# Comoros
+# Djibouti
+# Eritrea
+# Ethiopia
 # Kenya
+# Madagascar
+# Mayotte
+# Somalia
+# Tanzania
+# Uganda
 
 # From P Chan (2020-10-24):
 #
@@ -430,7 +401,7 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 # At midnight on 30 June 1928 the clocks throughout Kenya was put forward
 # half an hour by the Alteration of Time Ordinance, 1928.
 # https://gazettes.africa/archive/ke/1928/ke-government-gazette-dated-1928-05-11-no-28.pdf
-# [Ordinance No. 11 of 1928, The Offical Gazette, 1928-06-26, p 813]
+# [Ordinance No. 11 of 1928, The Official Gazette, 1928-06-26, p 813]
 # https://books.google.com/books?id=2S0S6os32ZUC&pg=PA813
 #
 # The 1928 ordinance was repealed by the Alteration of Time (repeal) Ordinance,
@@ -462,6 +433,14 @@ Zone	Africa/Bissau	-1:02:20 -	LMT	1912 Jan  1  1:00u
 # The 1908-05-01 announcement does not give an effective date,
 # so just say "1908 May".
 
+# From Paul Eggert (2018-09-11):
+# Unfortunately tzdb records only Western clock time in use in Ethiopia,
+# as the tzdb format is not up to properly recording a common Ethiopian
+# timekeeping practice that is based on solar time.  See:
+# Mortada D. If you have a meeting in Ethiopia, you'd better double
+# check the time. PRI's The World. 2015-01-30 15:15 -05.
+# https://www.pri.org/stories/2015-01-30/if-you-have-meeting-ethiopia-you-better-double-check-time
+
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 			2:30	-	+0230	1928 Jun 30 24:00
@@ -469,18 +448,6 @@ Zone	Africa/Nairobi	2:27:16	-	LMT	1908 May
 			2:30	-	+0230	1936 Dec 31 24:00
 			2:45	-	+0245	1942 Jul 31 24:00
 			3:00	-	EAT
-Link Africa/Nairobi Africa/Addis_Ababa	 # Ethiopia
-Link Africa/Nairobi Africa/Asmara	 # Eritrea
-Link Africa/Nairobi Africa/Dar_es_Salaam # Tanzania
-Link Africa/Nairobi Africa/Djibouti
-Link Africa/Nairobi Africa/Kampala	 # Uganda
-Link Africa/Nairobi Africa/Mogadishu	 # Somalia
-Link Africa/Nairobi Indian/Antananarivo	 # Madagascar
-Link Africa/Nairobi Indian/Comoro
-Link Africa/Nairobi Indian/Mayotte
-
-# Lesotho
-# See Africa/Johannesburg.
 
 # Liberia
 #
@@ -495,7 +462,7 @@ Link Africa/Nairobi Indian/Mayotte
 # President William R. Tolbert, Jr., July 23, 1971-July 31, 1972.
 # Monrovia: Executive Mansion.
 #
-# Use the abbreviation "MMT" before 1972, as the more-accurate numeric
+# Use the abbreviation "MMT" before 1972, as the more accurate numeric
 # abbreviation "-004430" would be one byte over the POSIX limit.
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
@@ -560,16 +527,6 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 			2:00	-	EET	2012 Nov 10  2:00
 			1:00	Libya	CE%sT	2013 Oct 25  2:00
 			2:00	-	EET
-
-# Madagascar
-# See Africa/Nairobi.
-
-# Malawi
-# See Africa/Maputo.
-
-# Mali
-# Mauritania
-# See Africa/Abidjan.
 
 # Mauritius
 
@@ -642,8 +599,8 @@ Zone	Africa/Tripoli	0:52:44 -	LMT	1920
 # DST the coming summer...
 #
 # Some sources, in French:
-# http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-%C2%AB-L%E2%80%99heure-d%E2%80%99%C3%A9t%C3%A9-ne-sera-pas-appliqu%C3%A9e-cette-ann%C3%A9e-%C2%BB
-# http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-%C3%A9conomie-d-%C3%A9nergie-de-l-heure-d-%C3%A9t%C3%A9-ont-%C3%A9t%C3%A9-atteints-
+# http://www.defimedia.info/news/946/Rashid-Beebeejaun-:-«-L%E2%80%99heure-d%E2%80%99été-ne-sera-pas-appliquée-cette-année-»
+# http://lexpress.mu/Story/3398~Beebeejaun---Les-objectifs-d-économie-d-énergie-de-l-heure-d-été-ont-été-atteints-
 #
 # Our wrap-up:
 # https://www.timeanddate.com/news/time/mauritius-dst-will-not-repeat.html
@@ -664,8 +621,6 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # Agalega Is, Rodriguez
 # no information; probably like Indian/Mauritius
 
-# Mayotte
-# See Africa/Nairobi.
 
 # Morocco
 # See Africa/Ceuta for Spanish Morocco.
@@ -776,7 +731,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # More articles in the press
 # https://www.yabiladi.com/articles/details/5058/secret-l-heure-d-ete-maroc-leve.html
 # http://www.lematin.ma/Actualite/Express/Article.asp?id=148923
-# http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT%2B1-a-partir-de-dim
+# http://www.lavieeco.com/actualite/Le-Maroc-passe-sur-GMT+1-a-partir-de-dim
 
 # From Petr Machata (2011-03-30):
 # They have it written in English here:
@@ -791,7 +746,7 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # According to Infomédiaire web site from Morocco (infomediaire.ma),
 # on March 9, 2012, (in French) Heure légale:
 # Le Maroc adopte officiellement l'heure d'été
-# http://www.infomediaire.ma/news/maroc/heure-l%C3%A9gale-le-maroc-adopte-officiellement-lheure-d%C3%A9t%C3%A9
+# http://www.infomediaire.ma/news/maroc/heure-légale-le-maroc-adopte-officiellement-lheure-dété
 # Governing Council adopted draft decree, that Morocco DST starts on
 # the last Sunday of March (March 25, 2012) and ends on
 # last Sunday of September (September 30, 2012)
@@ -915,19 +870,28 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 # Friday or Saturday (and so the 2 days off are on a weekend), the next time
 # shift will be the next weekend.
 #
-# From Paul Eggert (2020-05-31):
+# From Milamber (2021-03-31, 2022-03-10):
+# https://www.mmsp.gov.ma/fr/actualites.aspx?id=2076
+# https://www.ecoactu.ma/horaires-administration-ramadan-gmtheure-gmt-a-partir-de-dimanche-27-mars/
+#
+# From Milamber (2023-03-14, 2023-03-15):
+# The return to legal GMT time will take place this Sunday, March 19 at 3 a.m.
+# ... the return to GMT+1 will be made on Sunday April 23, 2023 at 2 a.m.
+# https://www.mmsp.gov.ma/fr/actualites/passage-à-l%E2%80%99heure-gmt-à-partir-du-dimanche-19-mars-2023
+#
+# From Paul Eggert (2023-03-14):
 # For now, guess that in the future Morocco will fall back at 03:00
 # the last Sunday before Ramadan, and spring forward at 02:00 the
-# first Sunday after two days after Ramadan.  To implement this,
+# first Sunday after one day after Ramadan.  To implement this,
 # transition dates and times for 2019 through 2087 were determined by
-# running the following program under GNU Emacs 26.3.  (This algorithm
+# running the following program under GNU Emacs 28.2.  (This algorithm
 # also produces the correct transition dates for 2016 through 2018,
 # though the times differ due to Morocco's time zone change in 2018.)
 # (let ((islamic-year 1440))
 #   (require 'cal-islam)
 #   (while (< islamic-year 1511)
 #     (let ((a (calendar-islamic-to-absolute (list 9 1 islamic-year)))
-#           (b (+ 2 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
+#           (b (+ 1 (calendar-islamic-to-absolute (list 10 1 islamic-year))))
 #           (sunday 0))
 #       (while (/= sunday (mod (setq a (1- a)) 7)))
 #       (while (/= sunday (mod b 7))
@@ -941,10 +905,6 @@ Zone Indian/Mauritius	3:50:00 -	LMT	1907 # Port Louis
 #         (car (cdr (cdr a))) (calendar-month-name (car a) t) (car (cdr a))
 #         (car (cdr (cdr b))) (calendar-month-name (car b) t) (car (cdr b)))))
 #     (setq islamic-year (+ 1 islamic-year))))
-#
-# From Milamber (2021-03-31, 2022-03-10), confirming these predictions:
-# https://www.mmsp.gov.ma/fr/actualites.aspx?id=2076
-# https://www.ecoactu.ma/horaires-administration-ramadan-gmtheure-gmt-a-partir-de-dimanche-27-mars/
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Morocco	1939	only	-	Sep	12	 0:00	1:00	-
@@ -997,7 +957,7 @@ Rule	Morocco	2021	only	-	May	16	 2:00	0	-
 Rule	Morocco	2022	only	-	Mar	27	 3:00	-1:00	-
 Rule	Morocco	2022	only	-	May	 8	 2:00	0	-
 Rule	Morocco	2023	only	-	Mar	19	 3:00	-1:00	-
-Rule	Morocco	2023	only	-	Apr	30	 2:00	0	-
+Rule	Morocco	2023	only	-	Apr	23	 2:00	0	-
 Rule	Morocco	2024	only	-	Mar	10	 3:00	-1:00	-
 Rule	Morocco	2024	only	-	Apr	14	 2:00	0	-
 Rule	Morocco	2025	only	-	Feb	23	 3:00	-1:00	-
@@ -1013,7 +973,7 @@ Rule	Morocco	2029	only	-	Feb	18	 2:00	0	-
 Rule	Morocco	2029	only	-	Dec	30	 3:00	-1:00	-
 Rule	Morocco	2030	only	-	Feb	10	 2:00	0	-
 Rule	Morocco	2030	only	-	Dec	22	 3:00	-1:00	-
-Rule	Morocco	2031	only	-	Feb	 2	 2:00	0	-
+Rule	Morocco	2031	only	-	Jan	26	 2:00	0	-
 Rule	Morocco	2031	only	-	Dec	14	 3:00	-1:00	-
 Rule	Morocco	2032	only	-	Jan	18	 2:00	0	-
 Rule	Morocco	2032	only	-	Nov	28	 3:00	-1:00	-
@@ -1029,7 +989,7 @@ Rule	Morocco	2036	only	-	Nov	23	 2:00	0	-
 Rule	Morocco	2037	only	-	Oct	 4	 3:00	-1:00	-
 Rule	Morocco	2037	only	-	Nov	15	 2:00	0	-
 Rule	Morocco	2038	only	-	Sep	26	 3:00	-1:00	-
-Rule	Morocco	2038	only	-	Nov	 7	 2:00	0	-
+Rule	Morocco	2038	only	-	Oct	31	 2:00	0	-
 Rule	Morocco	2039	only	-	Sep	18	 3:00	-1:00	-
 Rule	Morocco	2039	only	-	Oct	23	 2:00	0	-
 Rule	Morocco	2040	only	-	Sep	 2	 3:00	-1:00	-
@@ -1045,7 +1005,7 @@ Rule	Morocco	2044	only	-	Aug	28	 2:00	0	-
 Rule	Morocco	2045	only	-	Jul	 9	 3:00	-1:00	-
 Rule	Morocco	2045	only	-	Aug	20	 2:00	0	-
 Rule	Morocco	2046	only	-	Jul	 1	 3:00	-1:00	-
-Rule	Morocco	2046	only	-	Aug	12	 2:00	0	-
+Rule	Morocco	2046	only	-	Aug	 5	 2:00	0	-
 Rule	Morocco	2047	only	-	Jun	23	 3:00	-1:00	-
 Rule	Morocco	2047	only	-	Jul	28	 2:00	0	-
 Rule	Morocco	2048	only	-	Jun	 7	 3:00	-1:00	-
@@ -1061,7 +1021,7 @@ Rule	Morocco	2052	only	-	Jun	 2	 2:00	0	-
 Rule	Morocco	2053	only	-	Apr	13	 3:00	-1:00	-
 Rule	Morocco	2053	only	-	May	25	 2:00	0	-
 Rule	Morocco	2054	only	-	Apr	 5	 3:00	-1:00	-
-Rule	Morocco	2054	only	-	May	17	 2:00	0	-
+Rule	Morocco	2054	only	-	May	10	 2:00	0	-
 Rule	Morocco	2055	only	-	Mar	28	 3:00	-1:00	-
 Rule	Morocco	2055	only	-	May	 2	 2:00	0	-
 Rule	Morocco	2056	only	-	Mar	12	 3:00	-1:00	-
@@ -1077,7 +1037,7 @@ Rule	Morocco	2060	only	-	Mar	 7	 2:00	0	-
 Rule	Morocco	2061	only	-	Jan	16	 3:00	-1:00	-
 Rule	Morocco	2061	only	-	Feb	27	 2:00	0	-
 Rule	Morocco	2062	only	-	Jan	 8	 3:00	-1:00	-
-Rule	Morocco	2062	only	-	Feb	19	 2:00	0	-
+Rule	Morocco	2062	only	-	Feb	12	 2:00	0	-
 Rule	Morocco	2062	only	-	Dec	31	 3:00	-1:00	-
 Rule	Morocco	2063	only	-	Feb	 4	 2:00	0	-
 Rule	Morocco	2063	only	-	Dec	16	 3:00	-1:00	-
@@ -1093,7 +1053,7 @@ Rule	Morocco	2067	only	-	Dec	11	 2:00	0	-
 Rule	Morocco	2068	only	-	Oct	21	 3:00	-1:00	-
 Rule	Morocco	2068	only	-	Dec	 2	 2:00	0	-
 Rule	Morocco	2069	only	-	Oct	13	 3:00	-1:00	-
-Rule	Morocco	2069	only	-	Nov	24	 2:00	0	-
+Rule	Morocco	2069	only	-	Nov	17	 2:00	0	-
 Rule	Morocco	2070	only	-	Oct	 5	 3:00	-1:00	-
 Rule	Morocco	2070	only	-	Nov	 9	 2:00	0	-
 Rule	Morocco	2071	only	-	Sep	20	 3:00	-1:00	-
@@ -1109,7 +1069,7 @@ Rule	Morocco	2075	only	-	Sep	15	 2:00	0	-
 Rule	Morocco	2076	only	-	Jul	26	 3:00	-1:00	-
 Rule	Morocco	2076	only	-	Sep	 6	 2:00	0	-
 Rule	Morocco	2077	only	-	Jul	18	 3:00	-1:00	-
-Rule	Morocco	2077	only	-	Aug	29	 2:00	0	-
+Rule	Morocco	2077	only	-	Aug	22	 2:00	0	-
 Rule	Morocco	2078	only	-	Jul	10	 3:00	-1:00	-
 Rule	Morocco	2078	only	-	Aug	14	 2:00	0	-
 Rule	Morocco	2079	only	-	Jun	25	 3:00	-1:00	-
@@ -1119,13 +1079,13 @@ Rule	Morocco	2080	only	-	Jul	21	 2:00	0	-
 Rule	Morocco	2081	only	-	Jun	 1	 3:00	-1:00	-
 Rule	Morocco	2081	only	-	Jul	13	 2:00	0	-
 Rule	Morocco	2082	only	-	May	24	 3:00	-1:00	-
-Rule	Morocco	2082	only	-	Jul	 5	 2:00	0	-
+Rule	Morocco	2082	only	-	Jun	28	 2:00	0	-
 Rule	Morocco	2083	only	-	May	16	 3:00	-1:00	-
 Rule	Morocco	2083	only	-	Jun	20	 2:00	0	-
 Rule	Morocco	2084	only	-	Apr	30	 3:00	-1:00	-
 Rule	Morocco	2084	only	-	Jun	11	 2:00	0	-
 Rule	Morocco	2085	only	-	Apr	22	 3:00	-1:00	-
-Rule	Morocco	2085	only	-	Jun	 3	 2:00	0	-
+Rule	Morocco	2085	only	-	May	27	 2:00	0	-
 Rule	Morocco	2086	only	-	Apr	14	 3:00	-1:00	-
 Rule	Morocco	2086	only	-	May	19	 2:00	0	-
 Rule	Morocco	2087	only	-	Mar	30	 3:00	-1:00	-
@@ -1158,7 +1118,14 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 			 0:00	Morocco	+00/+01	2018 Oct 28  3:00
 			 1:00	Morocco	+01/+00
 
+# Botswana
+# Burundi
+# Democratic Republic of the Congo (eastern)
+# Malawi
 # Mozambique
+# Rwanda
+# Zambia
+# Zimbabwe
 #
 # Shanks gives 1903-03-01 for the transition to CAT.
 # Perhaps the 1911-05-26 Portuguese decree
@@ -1168,14 +1135,6 @@ Zone Africa/El_Aaiun	-0:52:48 -	LMT	1934 Jan # El Aaiún
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Maputo	2:10:20 -	LMT	1903 Mar
 			2:00	-	CAT
-Link Africa/Maputo Africa/Blantyre	# Malawi
-Link Africa/Maputo Africa/Bujumbura	# Burundi
-Link Africa/Maputo Africa/Gaborone	# Botswana
-Link Africa/Maputo Africa/Harare	# Zimbabwe
-Link Africa/Maputo Africa/Kigali	# Rwanda
-Link Africa/Maputo Africa/Lubumbashi	# E Dem. Rep. of Congo
-Link Africa/Maputo Africa/Lusaka	# Zambia
-
 
 # Namibia
 
@@ -1254,23 +1213,30 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 #			2:00	-	CAT
 # End of rearguard section.
 
-# Niger
-# See Africa/Lagos.
 
+# Angola
+# Benin
+# Cameroon
+# Central African Republic
+# Democratic Republic of the Congo (western)
+# Republic of the Congo
+# Equatorial Guinea
+# Gabon
+# Niger
 # Nigeria
 
 # From P Chan (2020-12-03):
 # GMT was adopted as the standard time of Lagos on 1905-07-01.
 # Lagos Weekly Record, 1905-06-24, p 3
-# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446%2C5221%2C1931%2C1235
+# http://ddsnext.crl.edu/titles/31558#?c=0&m=668&s=0&cv=2&r=0&xywh=1446,5221,1931,1235
 # says "It is officially notified that on and after the 1st of July 1905
-# Greenwich Mean Solar Time will be adopted thought the Colony and
+# Greenwich Mean Solar Time will be adopted throughout the Colony and
 # Protectorate, and that it will be necessary to put all clocks 13 minutes and
 # 35 seconds back, recording local mean time."
 #
 # It seemed that Lagos returned to LMT on 1908-07-01.
 # [The Lagos Standard], 1908-07-01, p 5
-# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92%2C3590%2C3944%2C2523
+# http://ddsnext.crl.edu/titles/31556#?c=0&m=78&s=0&cv=4&r=0&xywh=-92,3590,3944,2523
 # says "Scarcely have the people become accustomed to this new time, when
 # another official notice has now appeared announcing that from and after the
 # 1st July next, return will be made to local mean time."
@@ -1282,7 +1248,7 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # https://libsysdigi.library.illinois.edu/ilharvest/Africana/Books2011-05/3064634/3064634_1914/3064634_1914_opt.pdf#page=27
 # "On January 1st [1914], a universal standard time for Nigeria was adopted,
 # viz., half an hour fast on Greenwich mean time, corresponding to the meridian
-# 7 [degrees] 30' E. long."
+# 7° 30' E. long."
 # Lloyd's Register of Shipping (1915) says "Hitherto the time observed in Lagos
 # was the local mean time. On 1st January, 1914, standard time for the whole of
 # Nigeria was introduced ... Lagos time has been advanced about 16 minutes
@@ -1300,7 +1266,7 @@ Zone	Africa/Windhoek	1:08:24 -	LMT	1892 Feb 8
 # The Lagos Weekly Record, 1919-09-20, p 3 details discussion on the first
 # reading of this Bill by the Legislative Council of the Colony of Nigeria on
 # Thursday 1919-08-28:
-# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261%2C3408%2C2994%2C1915
+# http://ddsnext.crl.edu/titles/31558?terms&item_id=303484#?m=1118&c=1&s=0&cv=2&r=0&xywh=1261,3408,2994,1915
 # "The proposal is that the Globe should be divided into twelve zones East and
 # West of Greenwich, of one hour each, Nigeria falling into the zone with a
 # standard of one hour fast on Greenwich Mean Time.  Nigeria standard time is
@@ -1322,44 +1288,6 @@ Zone	Africa/Lagos	0:13:35 -	LMT	1905 Jul  1
 			0:13:35	-	LMT	1914 Jan  1
 			0:30	-	+0030	1919 Sep  1
 			1:00	-	WAT
-Link Africa/Lagos Africa/Bangui		# Central African Republic
-Link Africa/Lagos Africa/Brazzaville	# Rep. of the Congo
-Link Africa/Lagos Africa/Douala		# Cameroon
-Link Africa/Lagos Africa/Kinshasa	# Dem. Rep. of the Congo (west)
-Link Africa/Lagos Africa/Libreville	# Gabon
-Link Africa/Lagos Africa/Luanda		# Angola
-Link Africa/Lagos Africa/Malabo		# Equatorial Guinea
-Link Africa/Lagos Africa/Niamey		# Niger
-Link Africa/Lagos Africa/Porto-Novo	# Benin
-
-# Réunion
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
-			4:00	-	+04
-#
-# Scattered Islands (Îles Éparses) administered from Réunion are as follows.
-# The following information about them is taken from
-# Îles Éparses (<http://www.outre-mer.gouv.fr/domtom/ile.htm>, 1997-07-22,
-# in French; no longer available as of 1999-08-17).
-# We have no info about their time zone histories.
-#
-# Bassas da India - uninhabited
-# Europa Island - inhabited from 1905 to 1910 by two families
-# Glorioso Is - inhabited until at least 1958
-# Juan de Nova - uninhabited
-# Tromelin - inhabited until at least 1958
-
-# Rwanda
-# See Africa/Maputo.
-
-# St Helena
-# See Africa/Abidjan.
-# The other parts of the St Helena territory are similar:
-#	Tristan da Cunha: on GMT, say Whitman and the CIA
-#	Ascension: on GMT, say the USNO (1995-12-21) and the CIA
-#	Gough (scientific station since 1955; sealers wintered previously):
-#		on GMT, says the CIA
-#	Inaccessible, Nightingale: uninhabited
 
 # São Tomé and Príncipe
 
@@ -1379,48 +1307,19 @@ Zone	Indian/Reunion	3:41:52 -	LMT	1911 Jun # Saint-Denis
 # From Michael Deckers (2018-12-30):
 # https://www.legis-palop.org/download.jsp?idFile=102818
 # ... [The legal time of the country, which coincides with universal
-# coordinated time, will be restituted at 2 o'clock on day 1 of January, 2019.]
+# coordinated time, will be reinstituted at 2 o'clock on day 1 of January, 2019.]
 
 Zone	Africa/Sao_Tome	 0:26:56 -	LMT	1884
+		#STDOFF	-0:36:44.68
 			-0:36:45 -	LMT	1912 Jan  1 00:00u # Lisbon MT
 			 0:00	-	GMT	2018 Jan  1 01:00
 			 1:00	-	WAT	2019 Jan  1 02:00
 			 0:00	-	GMT
 
-# Senegal
-# See Africa/Abidjan.
-
-# Seychelles
-
-# From P Chan (2020-11-27):
-# Standard Time was adopted on 1907-01-01.
-#
-# Standard Time Ordinance (Chapter 237)
-# The Laws of Seychelles in Force on the 31st December, 1971, Vol. 6, p 571
-# https://books.google.com/books?id=efE-AQAAIAAJ&pg=PA571
-#
-# From Tim Parenti (2020-12-05):
-# A footnote on https://books.google.com/books?id=DYdDAQAAMAAJ&pg=PA1689
-# confirms that Ordinance No. 9 of 1906 "was brought into force on the 1st
-# January, 1907."
-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Indian/Mahe	3:41:48 -	LMT	1907 Jan  1 # Victoria
-			4:00	-	+04
-# From Paul Eggert (2001-05-30):
-# Aldabra, Farquhar, and Desroches, originally dependencies of the
-# Seychelles, were transferred to the British Indian Ocean Territory
-# in 1965 and returned to Seychelles control in 1976.  We don't know
-# whether this affected their time zone, so omit this for now.
-# Possibly the islands were uninhabited.
-
-# Sierra Leone
-# See Africa/Abidjan.
-
-# Somalia
-# See Africa/Nairobi.
-
+# Eswatini (Swaziland)
+# Lesotho
 # South Africa
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	SA	1942	1943	-	Sep	Sun>=15	2:00	1:00	-
 Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
@@ -1428,8 +1327,6 @@ Rule	SA	1943	1944	-	Mar	Sun>=15	2:00	0	-
 Zone Africa/Johannesburg 1:52:00 -	LMT	1892 Feb 8
 			1:30	-	SAST	1903 Mar
 			2:00	SA	SAST
-Link Africa/Johannesburg Africa/Maseru	# Lesotho
-Link Africa/Johannesburg Africa/Mbabane	# Eswatini
 #
 # Marion and Prince Edward Is
 # scientific station since 1947
@@ -1477,12 +1374,6 @@ Zone	Africa/Juba	2:06:28 -	LMT	1931
 			2:00	Sudan	CA%sT	2000 Jan 15 12:00
 			3:00	-	EAT	2021 Feb  1 00:00
 			2:00	-	CAT
-
-# Tanzania
-# See Africa/Nairobi.
-
-# Togo
-# See Africa/Abidjan.
 
 # Tunisia
 
@@ -1581,10 +1472,3 @@ Rule	Tunisia	2006	2008	-	Oct	lastSun	 2:00s	0	-
 Zone	Africa/Tunis	0:40:44 -	LMT	1881 May 12
 			0:09:21	-	PMT	1911 Mar 11 # Paris Mean Time
 			1:00	Tunisia	CE%sT
-
-# Uganda
-# See Africa/Nairobi.
-
-# Zambia
-# Zimbabwe
-# See Africa/Maputo.

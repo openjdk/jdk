@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,22 +45,8 @@
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
-  blr(rscratch1);
-  b(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  emit_int32(0);   // nmethod guard value
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 4 * 6;
-}
-
 // Search for str1 in str2 and return index or -1
+// Clobbers: rscratch1, rscratch2, rflags. May also clobber v0-v1, when icnt1==-1.
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
                                        Register cnt2, Register cnt1,
                                        Register tmp1, Register tmp2,
@@ -302,18 +288,23 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
     cmp(cnt1, (u1)16); // small patterns still should be handled by simple algorithm
     br(LT, LINEAR_MEDIUM);
     mov(result, zr);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     if (isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ll());
-      assert(stub.target() != NULL, "string_indexof_linear_ll stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_ll stub has not been generated");
     } else if (str1_isL) {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_ul());
-       assert(stub.target() != NULL, "string_indexof_linear_ul stub has not been generated");
+       assert(stub.target() != nullptr, "string_indexof_linear_ul stub has not been generated");
     } else {
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
-      assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
+      assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
     }
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(LINEARSEARCH, LINEAR_MEDIUM, DONE, NOMATCH, MATCH));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
   }
 
@@ -854,7 +845,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   }
 
   bind(STUB);
-    RuntimeAddress stub = NULL;
+    RuntimeAddress stub = nullptr;
     switch(ae) {
       case StrIntrinsicNode::LL:
         stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LL());
@@ -871,8 +862,13 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       default:
         ShouldNotReachHere();
      }
-    assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-    trampoline_call(stub);
+    assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
 
   bind(SHORT_STRING);
@@ -923,43 +919,47 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 }
 
 void C2_MacroAssembler::neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
-                                     FloatRegister src2, int cond, bool isQ) {
+                                     FloatRegister src2, Condition cond, bool isQ) {
+  SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+  FloatRegister zn = src1, zm = src2;
+  bool needs_negation = false;
+  switch (cond) {
+    case LT: cond = GT; zn = src2; zm = src1; break;
+    case LE: cond = GE; zn = src2; zm = src1; break;
+    case LO: cond = HI; zn = src2; zm = src1; break;
+    case LS: cond = HS; zn = src2; zm = src1; break;
+    case NE: cond = EQ; needs_negation = true; break;
+    default:
+      break;
+  }
+
+  if (is_floating_point_type(bt)) {
+    fcm(cond, dst, size, zn, zm);
+  } else {
+    cm(cond, dst, size, zn, zm);
+  }
+
+  if (needs_negation) {
+    notr(dst, isQ ? T16B : T8B, dst);
+  }
+}
+
+void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, FloatRegister src,
+                                          Condition cond, bool isQ) {
   SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
-    switch (cond) {
-      case BoolTest::eq: fcmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        fcmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
-        break;
-      }
-      case BoolTest::ge: fcmge(dst, size, src1, src2); break;
-      case BoolTest::gt: fcmgt(dst, size, src1, src2); break;
-      case BoolTest::le: fcmge(dst, size, src2, src1); break;
-      case BoolTest::lt: fcmgt(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      fcm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      fcm(cond, dst, size, src);
     }
   } else {
-    switch (cond) {
-      case BoolTest::eq: cmeq(dst, size, src1, src2); break;
-      case BoolTest::ne: {
-        cmeq(dst, size, src1, src2);
-        notr(dst, T16B, dst);
-        break;
-      }
-      case BoolTest::ge: cmge(dst, size, src1, src2); break;
-      case BoolTest::gt: cmgt(dst, size, src1, src2); break;
-      case BoolTest::le: cmge(dst, size, src2, src1); break;
-      case BoolTest::lt: cmgt(dst, size, src2, src1); break;
-      case BoolTest::uge: cmhs(dst, size, src1, src2); break;
-      case BoolTest::ugt: cmhi(dst, size, src1, src2); break;
-      case BoolTest::ult: cmhi(dst, size, src2, src1); break;
-      case BoolTest::ule: cmhs(dst, size, src2, src1); break;
-      default:
-        assert(false, "unsupported");
-        ShouldNotReachHere();
+    if (cond == Assembler::NE) {
+      cm(Assembler::EQ, dst, size, src);
+      notr(dst, isQ ? T16B : T8B, dst);
+    } else {
+      cm(cond, dst, size, src);
     }
   }
 }
@@ -977,7 +977,7 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 
 // Pack the lowest-numbered bit of each mask element in src into a long value
 // in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1 if hardware doesn't support FEAT_BITPERM.
+// Clobbers: rscratch1, if UseSVE=1 or the hardware doesn't support FEAT_BITPERM.
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
                                          FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
@@ -995,25 +995,12 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
     sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
   }
 
-  if (UseSVE > 0 && !VM_Version::supports_svebitperm()) {
-    // Compress the lowest 8 bytes.
-    fmovd(dst, vtmp1);
-    bytemask_compress(dst);
-    if (lane_cnt <= 8) return;
-
-    // Repeat on higher bytes and join the results.
-    // Compress 8 bytes in each iteration.
-    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-      sve_extract_integral(rscratch1, D, vtmp1, idx, /* is_signed */ false, vtmp2);
-      bytemask_compress(rscratch1);
-      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
-    }
-  } else if (UseSVE == 2 && VM_Version::supports_svebitperm()) {
-    // Given by the vector with value 0x00 or 0x01 in each byte, the basic idea
+  if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
+    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
     // is to compress each significant bit of the byte in a cross-lane way. Due
-    // to the lack of cross-lane bit-compress instruction, here we use BEXT
-    // (bit-compress in each lane) with the biggest lane size (T = D) and
-    // concatenates the results then.
+    // to the lack of a cross-lane bit-compress instruction, we use BEXT
+    // (bit-compress in each lane) with the biggest lane size (T = D) then
+    // concatenate the results.
 
     // The second source input of BEXT, initialized with 0x01 in each byte.
     // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
@@ -1041,6 +1028,19 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
       // the lowest 64 bits after narrowing vtmp1 from D to B.
       sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
       umov(dst, vtmp1, D, 0);
+    }
+  } else if (UseSVE > 0) {
+    // Compress the lowest 8 bytes.
+    fmovd(dst, vtmp1);
+    bytemask_compress(dst);
+    if (lane_cnt <= 8) return;
+
+    // Repeat on higher bytes and join the results.
+    // Compress 8 bytes in each iteration.
+    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
+      bytemask_compress(rscratch1);
+      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
     }
   } else {
     assert(false, "unsupported");
@@ -1108,30 +1108,26 @@ void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicTyp
   sve_cmp(Assembler::NE, dst, size, ptrue, vtmp1, 0);
 }
 
+// Clobbers: rflags
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
-                                    FloatRegister zn, FloatRegister zm, int cond) {
+                                    FloatRegister zn, FloatRegister zm, Condition cond) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
   FloatRegister z1 = zn, z2 = zm;
-  // Convert the original BoolTest condition to Assembler::condition.
-  Condition condition;
   switch (cond) {
-    case BoolTest::eq: condition = Assembler::EQ; break;
-    case BoolTest::ne: condition = Assembler::NE; break;
-    case BoolTest::le: z1 = zm; z2 = zn; condition = Assembler::GE; break;
-    case BoolTest::ge: condition = Assembler::GE; break;
-    case BoolTest::lt: z1 = zm; z2 = zn; condition = Assembler::GT; break;
-    case BoolTest::gt: condition = Assembler::GT; break;
+    case LE: z1 = zm; z2 = zn; cond = GE; break;
+    case LT: z1 = zm; z2 = zn; cond = GT; break;
+    case LO: z1 = zm; z2 = zn; cond = HI; break;
+    case LS: z1 = zm; z2 = zn; cond = HS; break;
     default:
-      assert(false, "unsupported compare condition");
-      ShouldNotReachHere();
+      break;
   }
 
   SIMD_RegVariant size = elemType_to_regVariant(bt);
-  if (bt == T_FLOAT || bt == T_DOUBLE) {
-    sve_fcm(condition, pd, size, pg, z1, z2);
+  if (is_floating_point_type(bt)) {
+    sve_fcm(cond, pd, size, pg, z1, z2);
   } else {
     assert(is_integral_type(bt), "unsupported element type");
-    sve_cmp(condition, pd, size, pg, z1, z2);
+    sve_cmp(cond, pd, size, pg, z1, z2);
   }
 }
 
@@ -1143,6 +1139,61 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
   sve_cntp(dst, size, ptrue, ptmp);
   movw(rscratch1, MaxVectorSize / type2aelembytes(bt) - 1);
   subw(dst, rscratch1, dst);
+}
+
+// Extend integer vector src to dst with the same lane count
+// but larger element size, e.g. 4B -> 4I
+void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
+                                           FloatRegister src, BasicType src_bt) {
+  if (src_bt == T_BYTE) {
+    if (dst_bt == T_SHORT) {
+      // 4B/8B to 4S/8S
+      assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+      sxtl(dst, T8H, src, T8B);
+    } else {
+      // 4B to 4I
+      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+      sxtl(dst, T8H, src, T8B);
+      sxtl(dst, T4S, dst, T4H);
+    }
+  } else if (src_bt == T_SHORT) {
+    // 4S to 4I
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    sxtl(dst, T4S, src, T4H);
+  } else if (src_bt == T_INT) {
+    // 2I to 2L
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
+    sxtl(dst, T2D, src, T2S);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+// Narrow integer vector src down to dst with the same lane count
+// but smaller element size, e.g. 4I -> 4B
+void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
+                                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes) {
+  if (src_bt == T_SHORT) {
+    // 4S/8S to 4B/8B
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE, "unsupported");
+    xtn(dst, T8B, src, T8H);
+  } else if (src_bt == T_INT) {
+    // 4I to 4B/4S
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
+    xtn(dst, T4H, src, T4S);
+    if (dst_bt == T_BYTE) {
+      xtn(dst, T8B, dst, T8H);
+    }
+  } else if (src_bt == T_LONG) {
+    // 2L to 2I
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT, "unsupported");
+    xtn(dst, T2S, src, T2D);
+  } else {
+    ShouldNotReachHere();
+  }
 }
 
 void C2_MacroAssembler::sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
@@ -1239,24 +1290,303 @@ void C2_MacroAssembler::sve_vmaskcast_extend(PRegister dst, PRegister src,
 
 // Narrow src predicate to dst predicate with the same lane count but
 // smaller element size, e.g. 512Long -> 64Byte
-void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src,
+void C2_MacroAssembler::sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                                              uint dst_element_length_in_bytes, uint src_element_length_in_bytes) {
   // The insignificant bits in src predicate are expected to be zero.
+  // To ensure the higher order bits of the resultant narrowed vector are 0, an all-zero predicate is
+  // passed as the second argument. An example narrowing operation with a given mask would be -
+  // 128Long -> 64Int on a 128-bit machine i.e 2L -> 2I
+  // Mask (for 2 Longs) : TF
+  // Predicate register for the above mask (16 bits) : 00000001 00000000
+  // After narrowing (uzp1 dst.b, src.b, ptmp.b) : 0000 0000 0001 0000
+  // Which translates to mask for 2 integers as : TF (lower half is considered while upper half is 0)
+  assert_different_registers(src, ptmp);
+  assert_different_registers(dst, ptmp);
+  sve_pfalse(ptmp);
   if (dst_element_length_in_bytes * 2 == src_element_length_in_bytes) {
-    sve_uzp1(dst, B, src, src);
+    sve_uzp1(dst, B, src, ptmp);
   } else if (dst_element_length_in_bytes * 4 == src_element_length_in_bytes) {
-    sve_uzp1(dst, H, src, src);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, H, src, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else if (dst_element_length_in_bytes * 8 == src_element_length_in_bytes) {
-    sve_uzp1(dst, S, src, src);
-    sve_uzp1(dst, H, dst, dst);
-    sve_uzp1(dst, B, dst, dst);
+    sve_uzp1(dst, S, src, ptmp);
+    sve_uzp1(dst, H, dst, ptmp);
+    sve_uzp1(dst, B, dst, ptmp);
   } else {
     assert(false, "unsupported");
     ShouldNotReachHere();
   }
 }
 
+// Vector reduction add for integral type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_add_integral(Register dst, BasicType bt,
+                                                 Register isrc, FloatRegister vsrc,
+                                                 unsigned vector_length_in_bytes,
+                                                 FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_add_integral {");
+    switch(bt) {
+      case T_BYTE:
+        addv(vtmp, isQ ? T16B : T8B, vsrc);
+        smov(dst, vtmp, B, 0);
+        addw(dst, dst, isrc, ext::sxtb);
+        break;
+      case T_SHORT:
+        addv(vtmp, isQ ? T8H : T4H, vsrc);
+        smov(dst, vtmp, H, 0);
+        addw(dst, dst, isrc, ext::sxth);
+        break;
+      case T_INT:
+        isQ ? addv(vtmp, T4S, vsrc) : addpv(vtmp, T2S, vsrc, vsrc);
+        umov(dst, vtmp, S, 0);
+        addw(dst, dst, isrc);
+        break;
+      case T_LONG:
+        assert(isQ, "unsupported");
+        addpd(vtmp, vsrc);
+        umov(dst, vtmp, D, 0);
+        add(dst, dst, isrc);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_add_integral");
+}
+
+// Vector reduction multiply for integral type with ASIMD instructions.
+// Note: temporary registers vtmp1 and vtmp2 are not used in some cases.
+// Clobbers: rscratch1
+void C2_MacroAssembler::neon_reduce_mul_integral(Register dst, BasicType bt,
+                                                 Register isrc, FloatRegister vsrc,
+                                                 unsigned vector_length_in_bytes,
+                                                 FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_mul_integral {");
+    switch(bt) {
+      case T_BYTE:
+        if (isQ) {
+          // Multiply the lower half and higher half of vector iteratively.
+          // vtmp1 = vsrc[8:15]
+          ins(vtmp1, D, vsrc, 0, 1);
+          // vtmp1[n] = vsrc[n] * vsrc[n + 8], where n=[0, 7]
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+          // vtmp2 = vtmp1[4:7]
+          ins(vtmp2, S, vtmp1, 0, 1);
+          // vtmp1[n] = vtmp1[n] * vtmp1[n + 4], where n=[0, 3]
+          mulv(vtmp1, T8B, vtmp2, vtmp1);
+        } else {
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T8B, vtmp1, vsrc);
+        }
+        // vtmp2 = vtmp1[2:3]
+        ins(vtmp2, H, vtmp1, 0, 1);
+        // vtmp2[n] = vtmp1[n] * vtmp1[n + 2], where n=[0, 1]
+        mulv(vtmp2, T8B, vtmp2, vtmp1);
+        // dst = vtmp2[0] * isrc * vtmp2[1]
+        umov(rscratch1, vtmp2, B, 0);
+        mulw(dst, rscratch1, isrc);
+        sxtb(dst, dst);
+        umov(rscratch1, vtmp2, B, 1);
+        mulw(dst, rscratch1, dst);
+        sxtb(dst, dst);
+        break;
+      case T_SHORT:
+        if (isQ) {
+          ins(vtmp2, D, vsrc, 0, 1);
+          mulv(vtmp2, T4H, vtmp2, vsrc);
+          ins(vtmp1, S, vtmp2, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vtmp2);
+        } else {
+          ins(vtmp1, S, vsrc, 0, 1);
+          mulv(vtmp1, T4H, vtmp1, vsrc);
+        }
+        umov(rscratch1, vtmp1, H, 0);
+        mulw(dst, rscratch1, isrc);
+        sxth(dst, dst);
+        umov(rscratch1, vtmp1, H, 1);
+        mulw(dst, rscratch1, dst);
+        sxth(dst, dst);
+        break;
+      case T_INT:
+        if (isQ) {
+          ins(vtmp1, D, vsrc, 0, 1);
+          mulv(vtmp1, T2S, vtmp1, vsrc);
+        } else {
+          vtmp1 = vsrc;
+        }
+        umov(rscratch1, vtmp1, S, 0);
+        mul(dst, rscratch1, isrc);
+        umov(rscratch1, vtmp1, S, 1);
+        mul(dst, rscratch1, dst);
+        break;
+      case T_LONG:
+        umov(rscratch1, vsrc, D, 0);
+        mul(dst, isrc, rscratch1);
+        umov(rscratch1, vsrc, D, 1);
+        mul(dst, dst, rscratch1);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_mul_integral");
+}
+
+// Vector reduction multiply for floating-point type with ASIMD instructions.
+void C2_MacroAssembler::neon_reduce_mul_fp(FloatRegister dst, BasicType bt,
+                                           FloatRegister fsrc, FloatRegister vsrc,
+                                           unsigned vector_length_in_bytes,
+                                           FloatRegister vtmp) {
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_mul_fp {");
+    switch(bt) {
+      case T_FLOAT:
+        fmuls(dst, fsrc, vsrc);
+        ins(vtmp, S, vsrc, 0, 1);
+        fmuls(dst, dst, vtmp);
+        if (isQ) {
+          ins(vtmp, S, vsrc, 0, 2);
+          fmuls(dst, dst, vtmp);
+          ins(vtmp, S, vsrc, 0, 3);
+          fmuls(dst, dst, vtmp);
+         }
+        break;
+      case T_DOUBLE:
+        assert(isQ, "unsupported");
+        fmuld(dst, fsrc, vsrc);
+        ins(vtmp, D, vsrc, 0, 1);
+        fmuld(dst, dst, vtmp);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_mul_fp");
+}
+
+// Helper to select logical instruction
+void C2_MacroAssembler::neon_reduce_logical_helper(int opc, bool is64, Register Rd,
+                                                   Register Rn, Register Rm,
+                                                   enum shift_kind kind, unsigned shift) {
+  switch(opc) {
+    case Op_AndReductionV:
+      is64 ? andr(Rd, Rn, Rm, kind, shift) : andw(Rd, Rn, Rm, kind, shift);
+      break;
+    case Op_OrReductionV:
+      is64 ? orr(Rd, Rn, Rm, kind, shift) : orrw(Rd, Rn, Rm, kind, shift);
+      break;
+    case Op_XorReductionV:
+      is64 ? eor(Rd, Rn, Rm, kind, shift) : eorw(Rd, Rn, Rm, kind, shift);
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+  }
+}
+
+// Vector reduction logical operations And, Or, Xor
+// Clobbers: rscratch1
+void C2_MacroAssembler::neon_reduce_logical(int opc, Register dst, BasicType bt,
+                                            Register isrc, FloatRegister vsrc,
+                                            unsigned vector_length_in_bytes) {
+  assert(opc == Op_AndReductionV || opc == Op_OrReductionV || opc == Op_XorReductionV,
+         "unsupported");
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+
+  BLOCK_COMMENT("neon_reduce_logical {");
+    umov(rscratch1, vsrc, isQ ? D : S, 0);
+    umov(dst, vsrc, isQ ? D : S, 1);
+    neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, rscratch1);
+    switch(bt) {
+      case T_BYTE:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 16);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 8);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        sxtb(dst, dst);
+        break;
+      case T_SHORT:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, dst, dst, Assembler::LSR, 16);
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        sxth(dst, dst);
+        break;
+      case T_INT:
+        if (isQ) {
+          neon_reduce_logical_helper(opc, /* is64 */ true, dst, dst, dst, Assembler::LSR, 32);
+        }
+        neon_reduce_logical_helper(opc, /* is64 */ false, dst, isrc, dst);
+        break;
+      case T_LONG:
+        assert(isQ, "unsupported");
+        neon_reduce_logical_helper(opc, /* is64 */ true, dst, isrc, dst);
+        break;
+      default:
+        assert(false, "unsupported");
+        ShouldNotReachHere();
+    }
+  BLOCK_COMMENT("} neon_reduce_logical");
+}
+
+// Vector reduction min/max for integral type with ASIMD instructions.
+// Note: vtmp is not used and expected to be fnoreg for T_LONG case.
+// Clobbers: rscratch1, rflags
+void C2_MacroAssembler::neon_reduce_minmax_integral(int opc, Register dst, BasicType bt,
+                                                    Register isrc, FloatRegister vsrc,
+                                                    unsigned vector_length_in_bytes,
+                                                    FloatRegister vtmp) {
+  assert(opc == Op_MinReductionV || opc == Op_MaxReductionV, "unsupported");
+  assert(vector_length_in_bytes == 8 || vector_length_in_bytes == 16, "unsupported");
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported");
+  assert_different_registers(dst, isrc);
+  bool isQ = vector_length_in_bytes == 16;
+  bool is_min = opc == Op_MinReductionV;
+
+  BLOCK_COMMENT("neon_reduce_minmax_integral {");
+    if (bt == T_LONG) {
+      assert(vtmp == fnoreg, "should be");
+      assert(isQ, "should be");
+      umov(rscratch1, vsrc, D, 0);
+      cmp(isrc, rscratch1);
+      csel(dst, isrc, rscratch1, is_min ? LT : GT);
+      umov(rscratch1, vsrc, D, 1);
+      cmp(dst, rscratch1);
+      csel(dst, dst, rscratch1, is_min ? LT : GT);
+    } else {
+      SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
+      if (size == T2S) {
+        is_min ? sminp(vtmp, size, vsrc, vsrc) : smaxp(vtmp, size, vsrc, vsrc);
+      } else {
+        is_min ? sminv(vtmp, size, vsrc) : smaxv(vtmp, size, vsrc);
+      }
+      if (bt == T_INT) {
+        umov(dst, vtmp, S, 0);
+      } else {
+        smov(dst, vtmp, elemType_to_regVariant(bt), 0);
+      }
+      cmpw(dst, isrc);
+      cselw(dst, dst, isrc, is_min ? LT : GT);
+    }
+  BLOCK_COMMENT("} neon_reduce_minmax_integral");
+}
+
+// Vector reduction for integral type with SVE instruction.
+// Supported operations are Add, And, Or, Xor, Max, Min.
+// rflags would be clobbered if opc is Op_MaxReductionV or Op_MinReductionV.
 void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                                             FloatRegister src2, PRegister pg, FloatRegister tmp) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
@@ -1267,12 +1597,14 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
   switch (opc) {
     case Op_AddReductionVI: {
       sve_uaddv(tmp, size, pg, src2);
-      smov(dst, tmp, size, 0);
       if (bt == T_BYTE) {
+        smov(dst, tmp, size, 0);
         addw(dst, src1, dst, ext::sxtb);
       } else if (bt == T_SHORT) {
+        smov(dst, tmp, size, 0);
         addw(dst, src1, dst, ext::sxth);
       } else {
+        umov(dst, tmp, size, 0);
         addw(dst, dst, src1);
       }
       break;
@@ -1285,45 +1617,57 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     }
     case Op_AndReductionV: {
       sve_andv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        andr(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        andr(dst, dst, src1);
+      } else {
         andw(dst, dst, src1);
       }
       break;
     }
     case Op_OrReductionV: {
       sve_orv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        orr(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        orr(dst, dst, src1);
+      } else {
         orrw(dst, dst, src1);
       }
       break;
     }
     case Op_XorReductionV: {
       sve_eorv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
-        eor(dst, dst, src1);
       } else {
         smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
+        eor(dst, dst, src1);
+      } else {
         eorw(dst, dst, src1);
       }
       break;
     }
     case Op_MaxReductionV: {
       sve_smaxv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
+      } else {
+        smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
         cmp(dst, src1);
         csel(dst, dst, src1, Assembler::GT);
       } else {
-        smov(dst, tmp, size, 0);
         cmpw(dst, src1);
         cselw(dst, dst, src1, Assembler::GT);
       }
@@ -1331,12 +1675,15 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
     }
     case Op_MinReductionV: {
       sve_sminv(tmp, size, pg, src2);
-      if (bt == T_LONG) {
+      if (bt == T_INT || bt == T_LONG) {
         umov(dst, tmp, size, 0);
+      } else {
+        smov(dst, tmp, size, 0);
+      }
+      if (bt == T_LONG) {
         cmp(dst, src1);
         csel(dst, dst, src1, Assembler::LT);
       } else {
-        smov(dst, tmp, size, 0);
         cmpw(dst, src1);
         cselw(dst, dst, src1, Assembler::LT);
       }
@@ -1417,9 +1764,9 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
   } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
     sve_ptrue(dst, size, /* MUL3 */ 0b11110);
   } else {
-    // Encode to "whilelow" for the remaining cases.
+    // Encode to "whileltw" for the remaining cases.
     mov(rscratch1, lane_cnt);
-    sve_whilelow(dst, size, zr, rscratch1);
+    sve_whileltw(dst, size, zr, rscratch1);
   }
 }
 
@@ -1573,23 +1920,32 @@ void C2_MacroAssembler::neon_reverse_bytes(FloatRegister dst, FloatRegister src,
 
 // Extract a scalar element from an sve vector at position 'idx'.
 // The input elements in src are expected to be of integral type.
-void C2_MacroAssembler::sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
-                                             bool is_signed, FloatRegister vtmp) {
-  assert(UseSVE > 0 && size != Q, "unsupported");
-  assert(!(is_signed && size == D), "signed extract (D) not supported.");
+void C2_MacroAssembler::sve_extract_integral(Register dst, BasicType bt, FloatRegister src,
+                                             int idx, FloatRegister vtmp) {
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
   if (regVariant_to_elemBits(size) * idx < 128) { // generate lower cost NEON instruction
-    is_signed ? smov(dst, src, size, idx) : umov(dst, src, size, idx);
+    if (bt == T_INT || bt == T_LONG) {
+      umov(dst, src, size, idx);
+    } else {
+      smov(dst, src, size, idx);
+    }
   } else {
     sve_orr(vtmp, src, src);
     sve_ext(vtmp, vtmp, idx << size);
-    is_signed ? smov(dst, vtmp, size, 0) : umov(dst, vtmp, size, 0);
+    if (bt == T_INT || bt == T_LONG) {
+      umov(dst, vtmp, size, 0);
+    } else {
+      smov(dst, vtmp, size, 0);
+    }
   }
 }
 
 // java.lang.Math::round intrinsics
 
+// Clobbers: rscratch1, rflags
 void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
-                                       FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
+                                          FloatRegister tmp2, FloatRegister tmp3, SIMD_Arrangement T) {
   assert_different_registers(tmp1, tmp2, tmp3, src, dst);
   switch (T) {
     case T2S:
@@ -1613,15 +1969,17 @@ void C2_MacroAssembler::vector_round_neon(FloatRegister dst, FloatRegister src, 
 
   fneg(tmp3, T, src);
   dup(tmp2, T, rscratch1);
-  cmhs(tmp3, T, tmp3, tmp2);
+  cm(HS, tmp3, T, tmp3, tmp2);
   // tmp3 is now a set of flags
 
   bif(dst, T16B, tmp1, tmp3);
   // result in dst
 }
 
+// Clobbers: rscratch1, rflags
 void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
-                                      FloatRegister tmp2, PRegister ptmp, SIMD_RegVariant T) {
+                                         FloatRegister tmp2, PRegister pgtmp, SIMD_RegVariant T) {
+  assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
   assert_different_registers(tmp1, tmp2, src, dst);
 
   switch (T) {
@@ -1632,7 +1990,7 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
       mov(rscratch1, julong_cast(0x1.0p52));
       break;
     default:
-      assert(T == S || T == D, "invalid arrangement");
+      assert(T == S || T == D, "invalid register variant");
   }
 
   sve_frinta(dst, T, ptrue, src);
@@ -1642,12 +2000,12 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
 
   sve_fneg(tmp1, T, ptrue, src);
   sve_dup(tmp2, T, rscratch1);
-  sve_cmp(HS, ptmp, T, ptrue, tmp2, tmp1);
+  sve_cmp(HS, pgtmp, T, ptrue, tmp2, tmp1);
   br(EQ, none);
   {
-    sve_cpy(tmp1, T, ptmp, 0.5);
-    sve_fadd(tmp1, T, ptmp, src);
-    sve_frintm(dst, T, ptmp, tmp1);
+    sve_cpy(tmp1, T, pgtmp, 0.5);
+    sve_fadd(tmp1, T, pgtmp, src);
+    sve_frintm(dst, T, pgtmp, tmp1);
     // dst = floor(src + 0.5, ties to even)
   }
   bind(none);
@@ -1656,13 +2014,47 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   // result in dst
 }
 
+void C2_MacroAssembler::vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                           FloatRegister one, SIMD_Arrangement T) {
+  assert_different_registers(dst, src, zero, one);
+  assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+
+  facgt(dst, T, src, zero);
+  ushr(dst, T, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+  bsl(dst, T == T2S ? T8B : T16B, one, src); // Result in dst
+}
+
+void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T) {
+    assert_different_registers(dst, src, zero, one, vtmp);
+    assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+
+    sve_orr(vtmp, src, src);
+    sve_fac(Assembler::GT, pgtmp, T, ptrue, src, zero); // pmtp=0 for +-0.0 and NaN. 0x1 otherwise
+    switch (T) {
+    case S:
+      sve_and(vtmp, T, min_jint); // Extract the sign bit of float value in every lane of src
+      sve_orr(vtmp, T, jint_cast(1.0)); // OR it with +1 to make the final result +1 or -1 depending
+                                        // on the sign of the float value
+      break;
+    case D:
+      sve_and(vtmp, T, min_jlong);
+      sve_orr(vtmp, T, jlong_cast(1.0));
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+    }
+    sve_sel(dst, T, pgtmp, vtmp, src); // Select either from src or vtmp based on the predicate register pgtmp
+                                       // Result in dst
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
-  if (ciEnv::current()->task() != NULL) {
+  if (ciEnv::current()->task() != nullptr) {
     PhaseOutput* phase_output = Compile::current()->output();
-    if (phase_output != NULL && phase_output->in_scratch_emit_size()) {
+    if (phase_output != nullptr && phase_output->in_scratch_emit_size()) {
       return true;
     }
   }
   return MacroAssembler::in_scratch_emit_size();
 }
-

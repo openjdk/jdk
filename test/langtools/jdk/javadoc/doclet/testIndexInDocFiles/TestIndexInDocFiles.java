@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ public class TestIndexInDocFiles extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestIndexInDocFiles tester = new TestIndexInDocFiles();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestIndexInDocFiles();
+        tester.runTests();
     }
 
     TestIndexInDocFiles() {
@@ -100,13 +100,13 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("doc-files/top-level-file.html", true,
                 """
-                    <h1>Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="top-level-index" class="search-tag-result">top-level-index</span>
                     <code><span id="top.level.property" class="search-tag-result">top.level.property</span></code>
                     """);
         checkOutput("p/q/doc-files/package-file.html", true,
                 """
-                    <h1>Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="package-index" class="search-tag-result">package-index</span>
                     <code><span id="package.property" class="search-tag-result">package.property</span></code>
                     """);
@@ -170,13 +170,13 @@ public class TestIndexInDocFiles extends JavadocTester {
 
         checkOutput("m.n/doc-files/module-file.html", true,
                 """
-                    <h1>Module HTML file</h1>
+                    <h1 id="module-html-file-heading">Module HTML file</h1>
                     <span id="module-index" class="search-tag-result">module-index</span>
                     <code><span id="module.property" class="search-tag-result">module.property</span></code>
                     """);
         checkOutput("m.n/p/q/doc-files/package-file.html", true,
                 """
-                    <h1>Package HTML file</h1>
+                    <h1 id="package-html-file-heading">Package HTML file</h1>
                     <span id="package-index" class="search-tag-result">package-index</span>
                     <code><span id="package.property" class="search-tag-result">package.property</span></code>
                     """);

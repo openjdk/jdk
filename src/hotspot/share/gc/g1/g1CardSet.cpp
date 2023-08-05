@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,23 @@
 #include "runtime/java.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 G1CardSet::ContainerPtr G1CardSet::FullCardSet = (G1CardSet::ContainerPtr)-1;
 uint G1CardSet::_split_card_shift = 0;
 size_t G1CardSet::_split_card_mask = 0;
+
+class G1CardSetHashTableConfig : public StackObj {
+public:
+  using Value = G1CardSetHashTableValue;
+
+  static uintx get_hash(Value const& value, bool* is_dead);
+  static void* allocate_node(void* context, size_t size, Value const& value);
+  static void free_node(void* context, void* memory, Value const& value);
+};
+
+using CardSetHash = ConcurrentHashTable<G1CardSetHashTableConfig, mtGCCardSet>;
 
 static uint default_log2_card_regions_per_region() {
   uint log2_card_regions_per_heap_region = 0;
@@ -229,19 +241,22 @@ void G1CardSetCoarsenStats::print_on(outputStream* out) {
 
 class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using ContainerPtr = G1CardSet::ContainerPtr;
+  using CHTScanTask = CardSetHash::ScanTask;
 
+  const static uint BucketClaimSize = 16;
   // Did we insert at least one card in the table?
   bool volatile _inserted_card;
 
   G1CardSetMemoryManager* _mm;
   CardSetHash _table;
+  CHTScanTask _table_scanner;
 
   class G1CardSetHashTableLookUp : public StackObj {
     uint _region_idx;
   public:
     explicit G1CardSetHashTableLookUp(uint region_idx) : _region_idx(region_idx) { }
 
-    uintx get_hash() const { return _region_idx; }
+    uintx get_hash() const { return G1CardSetHashTable::get_hash(_region_idx); }
 
     bool equals(G1CardSetHashTableValue* value, bool* is_dead) {
       *is_dead = false;
@@ -261,18 +276,6 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
     G1CardSetHashTableValue* value() const { return _value; }
   };
 
-  class G1CardSetHashTableScan : public StackObj {
-    G1CardSet::ContainerPtrClosure* _scan_f;
-  public:
-    explicit G1CardSetHashTableScan(G1CardSet::ContainerPtrClosure* f) : _scan_f(f) { }
-
-    bool operator()(G1CardSetHashTableValue* value) {
-      _scan_f->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
-      return true;
-    }
-  };
-
-
 public:
   static const size_t InitialLogTableSize = 2;
 
@@ -280,7 +283,8 @@ public:
                      size_t initial_log_table_size = InitialLogTableSize) :
     _inserted_card(false),
     _mm(mm),
-    _table(mm, initial_log_table_size) {
+    _table(mm, initial_log_table_size, false),
+    _table_scanner(&_table, BucketClaimSize) {
   }
 
   ~G1CardSetHashTable() {
@@ -307,6 +311,10 @@ public:
     return found.value();
   }
 
+  static uint get_hash(uint region_idx) {
+    return region_idx;
+  }
+
   G1CardSetHashTableValue* get(uint region_idx) {
     G1CardSetHashTableLookUp lookup(region_idx);
     G1CardSetHashTableFound found;
@@ -315,14 +323,14 @@ public:
     return found.value();
   }
 
-  void iterate_safepoint(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table.do_safepoint_scan(cl);
+  template <typename SCAN_FUNC>
+  void iterate_safepoint(SCAN_FUNC& scan_f) {
+    _table_scanner.do_safepoint_scan(scan_f);
   }
 
-  void iterate(G1CardSet::ContainerPtrClosure* cl2) {
-    G1CardSetHashTableScan cl(cl2);
-    _table.do_scan(Thread::current(), cl);
+  template <typename SCAN_FUNC>
+  void iterate(SCAN_FUNC& scan_f) {
+    _table.do_scan(Thread::current(), scan_f);
   }
 
   void reset() {
@@ -330,6 +338,10 @@ public:
       _table.unsafe_reset(InitialLogTableSize);
       Atomic::store(&_inserted_card, false);
     }
+  }
+
+  void reset_table_scanner() {
+    _table_scanner.set(&_table, BucketClaimSize);
   }
 
   void grow() {
@@ -344,6 +356,11 @@ public:
 
   size_t log_table_size() { return _table.get_size_log2(Thread::current()); }
 };
+
+uintx G1CardSetHashTableConfig::get_hash(Value const& value, bool* is_dead) {
+  *is_dead = false;
+  return G1CardSetHashTable::get_hash(value._region_idx);
+}
 
 void* G1CardSetHashTableConfig::allocate_node(void* context, size_t size, Value const& value) {
   G1CardSetMemoryManager* mm = (G1CardSetMemoryManager*)context;
@@ -842,7 +859,7 @@ void G1CardSet::print_info(outputStream* st, uintptr_t card) {
 
   G1CardSetHashTableValue* table_entry = get_container(card_region);
   if (table_entry == nullptr) {
-    st->print("NULL card set");
+    st->print("null card set");
     return;
   }
 
@@ -895,10 +912,16 @@ void G1CardSet::iterate_cards_during_transfer(ContainerPtr const container, Card
 }
 
 void G1CardSet::iterate_containers(ContainerPtrClosure* cl, bool at_safepoint) {
+  auto do_value =
+    [&] (G1CardSetHashTableValue* value) {
+      cl->do_containerptr(value->_region_idx, value->_num_occupied, value->_container);
+      return true;
+    };
+
   if (at_safepoint) {
-    _table->iterate_safepoint(cl);
+    _table->iterate_safepoint(do_value);
   } else {
-    _table->iterate(cl);
+    _table->iterate(do_value);
   }
 }
 
@@ -1008,4 +1031,8 @@ void G1CardSet::clear() {
   _table->reset();
   _num_occupied = 0;
   _mm->flush();
+}
+
+void G1CardSet::reset_table_scanner() {
+  _table->reset_table_scanner();
 }

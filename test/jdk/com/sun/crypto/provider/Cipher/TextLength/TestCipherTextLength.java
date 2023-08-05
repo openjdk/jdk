@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.crypto.NoSuchPaddingException;
 
 /*
  * @test
- * @bug 8048601
+ * @bug 8048601 8288050
  * @summary Performs multiple-part encryption/decryption depending on the
  *  specified encryption mode and check if the results obtained by
  *  different ways are the same.
@@ -55,11 +55,15 @@ public class TestCipherTextLength {
         "PBEWithSHA1AndRC4_128/ECB/NoPadding", "PBEWithHmacSHA1AndAES_128",
         "PBEWithHmacSHA224AndAES_128", "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128", "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128", "PBEWithHmacSHA512/256AndAES_128",
         "PBEWithHmacSHA1AndAES_256", "PBEWithHmacSHA224AndAES_256",
         "PBEWithHmacSHA256AndAES_256", "PBEWithHmacSHA384AndAES_256",
-        "PBEWithHmacSHA512AndAES_256", "PBKDF2WithHmacSHA1",
+        "PBEWithHmacSHA512AndAES_256", "PBEWithHmacSHA512/224AndAES_256",
+        "PBEWithHmacSHA512/256AndAES_256", "PBKDF2WithHmacSHA1",
         "PBKDF2WithHmacSHA224", "PBKDF2WithHmacSHA256",
-        "PBKDF2WithHmacSHA384", "PBKDF2WithHmacSHA512"};
+        "PBKDF2WithHmacSHA384", "PBKDF2WithHmacSHA512",
+        "PBKDF2WithHmacSHA512/224", "PBKDF2WithHmacSHA512/256",
+    };
     private static final String PBE_PASSWORD = "Hush, it's a secret!!";
 
     // Algorithm tested by PBKDF2Wrappter

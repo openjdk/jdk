@@ -225,7 +225,7 @@ public interface LoginModule {
      * @return {@code true} if this method succeeded, or {@code false}
      *                  if this {@code LoginModule} should be ignored.
      *
-     * @implSpec Implementations should check if a variable is {@code null}
+     * @implNote Implementations should check if a variable is {@code null}
      *      before removing it from the Principals or Credentials set
      *      of a {@code Subject}, otherwise a {@code NullPointerException}
      *      will be thrown as these sets {@linkplain Subject#Subject()

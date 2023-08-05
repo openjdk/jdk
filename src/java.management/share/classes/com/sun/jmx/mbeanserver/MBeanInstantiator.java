@@ -761,7 +761,7 @@ public class MBeanInstantiator {
         @SuppressWarnings("removal")
         AccessControlContext ctx = new AccessControlContext(domains);
         @SuppressWarnings("removal")
-        ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<>() {
             public ClassLoader run() {
                 return clr.getClassLoader(name);
             }

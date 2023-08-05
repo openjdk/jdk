@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ public class Handler extends java.net.URLStreamHandler {
 
         URL enclosedURL1 = null, enclosedURL2 = null;
         try {
-            enclosedURL1 = new URL(file1.substring(0, sep1));
-            enclosedURL2 = new URL(file2.substring(0, sep2));
+            enclosedURL1 = newURL(file1.substring(0, sep1));
+            enclosedURL2 = newURL(file2.substring(0, sep2));
         } catch (MalformedURLException unused) {
             return super.sameFile(u1, u2);
         }
@@ -108,7 +108,7 @@ public class Handler extends java.net.URLStreamHandler {
         URL enclosedURL = null;
         String fileWithoutEntry = file.substring(0, sep);
         try {
-            enclosedURL = new URL(fileWithoutEntry);
+            enclosedURL = newURL(fileWithoutEntry);
             h += enclosedURL.hashCode();
         } catch (MalformedURLException unused) {
             h += fileWithoutEntry.hashCode();
@@ -179,7 +179,7 @@ public class Handler extends java.net.URLStreamHandler {
         // test the inner URL
         try {
             String innerSpec = spec.substring(0, index - 1);
-            new URL(innerSpec);
+            newURL(innerSpec);
         } catch (MalformedURLException e) {
             throw new NullPointerException("invalid url: " +
                                            spec + " (" + e + ")");
@@ -258,5 +258,10 @@ public class Handler extends java.net.URLStreamHandler {
             file = file.substring(0, file.length() -1);
 
         return file;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

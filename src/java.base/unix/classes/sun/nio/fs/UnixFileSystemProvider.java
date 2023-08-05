@@ -25,15 +25,38 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.nio.file.spi.FileTypeDetector;
-import java.nio.channels.*;
-import java.net.URI;
-import java.util.concurrent.ExecutorService;
 import java.io.IOException;
 import java.io.FilePermission;
-import java.util.*;
+import java.net.URI;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.AccessMode;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.LinkOption;
+import java.nio.file.LinkPermission;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.NotLinkException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.spi.FileTypeDetector;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
@@ -274,18 +297,18 @@ public abstract class UnixFileSystemProvider
     public void copy(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        UnixCopyFile.copy(UnixPath.toUnixPath(source),
-                          UnixPath.toUnixPath(target),
-                          options);
+        theFileSystem.copy(UnixPath.toUnixPath(source),
+                           UnixPath.toUnixPath(target),
+                           options);
     }
 
     @Override
     public void move(Path source, Path target, CopyOption... options)
         throws IOException
     {
-        UnixCopyFile.move(UnixPath.toUnixPath(source),
-                          UnixPath.toUnixPath(target),
-                          options);
+        theFileSystem.move(UnixPath.toUnixPath(source),
+                           UnixPath.toUnixPath(target),
+                           options);
     }
 
     @Override

@@ -26,6 +26,7 @@
 #define CPU_X86_GLOBALDEFINITIONS_X86_HPP
 
 const int StackAlignmentInBytes  = 16;
+const size_t pd_segfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
@@ -69,12 +70,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #if defined(LINUX) || defined(__APPLE__)
 #define SUPPORT_RESERVED_STACK_AREA
-#endif
-
-#if INCLUDE_JVMCI
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS EnableJVMCI
-#else
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 #endif
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY

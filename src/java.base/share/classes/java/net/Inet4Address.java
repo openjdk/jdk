@@ -79,6 +79,13 @@ import java.io.ObjectStreamException;
  * 255 are global. However, the administrative scoping is preferred.
  * Please refer to <a href="http://www.ietf.org/rfc/rfc2365.txt">
  * <i>RFC&nbsp;2365: Administratively Scoped IP Multicast</i></a>
+ *
+ * @spec https://www.rfc-editor.org/info/rfc1918
+ *      RFC 1918: Address Allocation for Private Internets
+ * @spec https://www.rfc-editor.org/info/rfc2365
+ *      RFC 2365: Administratively Scoped IP Multicast
+ * @spec https://www.rfc-editor.org/info/rfc790
+ *      RFC 790: Assigned numbers
  * @since 1.4
  */
 

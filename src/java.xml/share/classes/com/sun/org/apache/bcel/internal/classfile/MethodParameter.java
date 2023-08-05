@@ -30,11 +30,11 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * Entry of the parameters table.
  *
- * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.24">
- * The class File Format : The MethodParameters Attribute</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.24"> The class File Format :
+ *      The MethodParameters Attribute</a>
  * @since 6.0
  */
-public class MethodParameter implements Cloneable {
+public class MethodParameter implements Cloneable, Node {
 
     /** Index of the CONSTANT_Utf8_info structure in the constant_pool table representing the name of the parameter */
     private int nameIndex;
@@ -49,65 +49,17 @@ public class MethodParameter implements Cloneable {
      * Construct object from input stream.
      *
      * @param input Input stream
-     * @throws java.io.IOException
-     * @throws ClassFormatException
+     * @throws IOException if an I/O error occurs.
+     * @throws ClassFormatException if a class is malformed or cannot be interpreted as a class file
      */
     MethodParameter(final DataInput input) throws IOException {
         nameIndex = input.readUnsignedShort();
         accessFlags = input.readUnsignedShort();
     }
 
-    public int getNameIndex() {
-        return nameIndex;
-    }
-
-    public void setNameIndex(final int name_index) {
-        this.nameIndex = name_index;
-    }
-
-    /**
-     * Returns the name of the parameter.
-     */
-    public String getParameterName(final ConstantPool constant_pool) {
-        if (nameIndex == 0) {
-            return null;
-        }
-        return ((ConstantUtf8) constant_pool.getConstant(nameIndex, Const.CONSTANT_Utf8)).getBytes();
-       }
-
-    public int getAccessFlags() {
-        return accessFlags;
-    }
-
-    public void setAccessFlags(final int access_flags) {
-        this.accessFlags = access_flags;
-    }
-
-    public boolean isFinal() {
-        return (accessFlags & Const.ACC_FINAL) != 0;
-    }
-
-    public boolean isSynthetic() {
-        return (accessFlags & Const.ACC_SYNTHETIC) != 0;
-    }
-
-    public boolean isMandated() {
-        return (accessFlags & Const.ACC_MANDATED) != 0;
-    }
-
+    @Override
     public void accept(final Visitor v) {
         v.visitMethodParameter(this);
-    }
-
-    /**
-     * Dump object to file stream on binary format.
-     *
-     * @param file Output file stream
-     * @throws IOException
-     */
-    public final void dump(final DataOutputStream file) throws IOException {
-        file.writeShort(nameIndex);
-        file.writeShort(accessFlags);
     }
 
     /**
@@ -120,5 +72,54 @@ public class MethodParameter implements Cloneable {
             // TODO should this throw?
         }
         return null;
+    }
+
+    /**
+     * Dump object to file stream on binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
+     */
+    public final void dump(final DataOutputStream file) throws IOException {
+        file.writeShort(nameIndex);
+        file.writeShort(accessFlags);
+    }
+
+    public int getAccessFlags() {
+        return accessFlags;
+    }
+
+    public int getNameIndex() {
+        return nameIndex;
+    }
+
+    /**
+     * Returns the name of the parameter.
+     */
+    public String getParameterName(final ConstantPool constantPool) {
+        if (nameIndex == 0) {
+            return null;
+        }
+        return constantPool.getConstantUtf8(nameIndex).getBytes();
+    }
+
+    public boolean isFinal() {
+        return (accessFlags & Const.ACC_FINAL) != 0;
+    }
+
+    public boolean isMandated() {
+        return (accessFlags & Const.ACC_MANDATED) != 0;
+    }
+
+    public boolean isSynthetic() {
+        return (accessFlags & Const.ACC_SYNTHETIC) != 0;
+    }
+
+    public void setAccessFlags(final int accessFlags) {
+        this.accessFlags = accessFlags;
+    }
+
+    public void setNameIndex(final int nameIndex) {
+        this.nameIndex = nameIndex;
     }
 }

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 Google Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,5 +195,30 @@ public class DelegatingIteratorForEachRemaining {
         Set<Map.Entry<String, Object>> entrySet = map().entrySet();
         Class clazz = entrySet.iterator().next().getClass();
         assertThrowingIterator(Collections.checkedSet(entrySet, clazz).iterator());
+    }
+
+    /**
+     * Calls Collections.unmodifiableMap().entrySet().iterator().forEachRemaining() by passing
+     * that method a {@code null} action and expects that call to fail with a
+     * {@code NullPointerException}.
+     */
+    @Test
+    public void testUnmodifiableForEachRemainingNPE() {
+        final Iterator<?> it = Collections.unmodifiableMap(Map.of()).entrySet().iterator();
+        // pass null action and expect a NPE
+        Assert.assertThrows(NullPointerException.class, () -> it.forEachRemaining(null));
+    }
+
+    /**
+     * Calls Collections.checkedMap().entrySet().iterator().forEachRemaining() by passing
+     * that method a {@code null} action and expects that call to fail with a
+     * {@code NullPointerException}.
+     */
+    @Test
+    public void testCheckedMapForEachRemainingNPE() {
+        final Iterator<?> it = Collections.checkedMap(Map.of(), String.class,
+                String.class).entrySet().iterator();
+        // pass null "action" and expect it to fail with NPE
+        Assert.assertThrows(NullPointerException.class, () -> it.forEachRemaining(null));
     }
 }

@@ -78,8 +78,8 @@ class JfrTraceIdLoadBarrier : AllStatic {
   static void destroy();
   static void enqueue(const Klass* klass);
   static void load_barrier(const Klass* klass);
-  static JfrBuffer* get_enqueue_buffer(Thread* thread);
-  static JfrBuffer* renew_enqueue_buffer(size_t size, Thread* thread);
+  static JfrBuffer* get_sampler_enqueue_buffer(Thread* thread);
+  static JfrBuffer* renew_sampler_enqueue_buffer(Thread* thread);
  public:
   static traceid load(const ClassLoaderData* cld);
   static traceid load(const Klass* klass);

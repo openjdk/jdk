@@ -126,9 +126,7 @@ public class TestHumongousClassLoader {
                 WHITE_BOX.youngGC();
                 Helpers.waitTillCMCFinished(WHITE_BOX, 0);
                 WHITE_BOX.youngGC();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
-                WHITE_BOX.g1StartConcMarkCycle();
-                Helpers.waitTillCMCFinished(WHITE_BOX, 0);
+                WHITE_BOX.g1RunConcurrentGC();
             }
         },
         FULL_GC_MEMORY_PRESSURE {

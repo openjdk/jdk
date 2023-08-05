@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import static sun.security.x509.PKIXExtensions.*;
+import sun.security.x509.X509CertImpl;
 import sun.security.util.Debug;
 
 /**
@@ -72,7 +73,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
      * private objects shared by methods
      */
     private BuilderParams buildParams;
-    private CertificateFactory cf;
+    private final CertificateFactory cf;
     private boolean pathCompleted = false;
     private PolicyNode policyTreeResult;
     private TrustAnchor trustAnchor;
@@ -130,18 +131,21 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         List<List<Vertex>> adjList = new ArrayList<>();
         PKIXCertPathBuilderResult result = buildCertPath(false, adjList);
         if (result == null) {
-            if (debug != null) {
-                debug.println("SunCertPathBuilder.engineBuild: 2nd pass; " +
+            if (buildParams.certStores().size() > 1 || Builder.USE_AIA) {
+                if (debug != null) {
+                    debug.println("SunCertPathBuilder.engineBuild: 2nd pass; " +
                               "try building again searching all certstores");
+                }
+                // try again
+                adjList.clear();
+                result = buildCertPath(true, adjList);
+                if (result != null) {
+                    return result;
+                }
             }
-            // try again
-            adjList.clear();
-            result = buildCertPath(true, adjList);
-            if (result == null) {
-                throw new SunCertPathBuilderException("unable to find valid "
-                    + "certification path to requested target",
-                    new AdjacencyList(adjList));
-            }
+            throw new SunCertPathBuilderException("unable to find valid "
+                + "certification path to requested target",
+                new AdjacencyList(adjList));
         }
         return result;
     }
@@ -218,7 +222,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
         /* Initialize adjacency list */
         adjacencyList.clear();
-        adjacencyList.add(new LinkedList<Vertex>());
+        adjacencyList.add(new LinkedList<>());
 
         currentState.untrustedChecker = new UntrustedChecker();
 
@@ -269,16 +273,16 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
 
         /*
          * For each cert in the collection, verify anything
-         * that hasn't been checked yet (signature, revocation, etc)
-         * and check for loops. Call depthFirstSearchForward()
-         * recursively for each good cert.
+         * that hasn't been checked yet (signature, revocation, etc.)
+         * and check for certs with repeated public key and subject.
+         * Call depthFirstSearchForward() recursively for each good cert.
          */
 
                vertices:
         for (Vertex vertex : vertices) {
-            /**
+            /*
              * Restore state to currentState each time through the loop.
-             * This is important because some of the user-defined
+             * This is important because some user-defined
              * checkers modify the state, which MUST be restored if
              * the cert eventually fails to lead to the target and
              * the next matching cert is tried.
@@ -346,26 +350,24 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 checkers.add(new AlgorithmChecker(builder.trustAnchor,
                         buildParams.timestamp(), buildParams.variant()));
 
-                BasicChecker basicChecker = null;
-                if (nextState.keyParamsNeeded()) {
-                    PublicKey rootKey = cert.getPublicKey();
-                    if (builder.trustAnchor.getTrustedCert() == null) {
-                        rootKey = builder.trustAnchor.getCAPublicKey();
-                        if (debug != null)
-                            debug.println(
-                                "SunCertPathBuilder.depthFirstSearchForward " +
-                                "using buildParams public key: " +
-                                rootKey.toString());
-                    }
-                    TrustAnchor anchor = new TrustAnchor
-                        (cert.getSubjectX500Principal(), rootKey, null);
+                PublicKey rootKey = cert.getPublicKey();
+                if (builder.trustAnchor.getTrustedCert() == null) {
+                    rootKey = builder.trustAnchor.getCAPublicKey();
+                    if (debug != null)
+                        debug.println(
+                            "SunCertPathBuilder.depthFirstSearchForward " +
+                            "using buildParams public key: " +
+                            rootKey.toString());
+                }
+                TrustAnchor anchor = new TrustAnchor
+                    (cert.getSubjectX500Principal(), rootKey, null);
 
-                    // add the basic checker
-                    basicChecker = new BasicChecker(anchor, buildParams.date(),
+                // add the basic checker
+                BasicChecker basicChecker = new BasicChecker(anchor,
+                                                    buildParams.date(),
                                                     buildParams.sigProvider(),
                                                     true);
-                    checkers.add(basicChecker);
-                }
+                checkers.add(basicChecker);
 
                 buildParams.setCertPath(cf.generateCertPath(appendedCerts));
 
@@ -405,7 +407,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     Set<String> unresCritExts =
                         currCert.getCriticalExtensionOIDs();
                     if (unresCritExts == null) {
-                        unresCritExts = Collections.<String>emptySet();
+                        unresCritExts = Collections.emptySet();
                     }
 
                     for (PKIXCertPathChecker currChecker : checkers) {
@@ -511,6 +513,14 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 policyTreeResult = policyChecker.getPolicyTree();
                 return;
             } else {
+                // If successive certs are self-issued, don't continue search
+                // on this branch.
+                if (currentState.selfIssued && X509CertImpl.isSelfIssued(cert)) {
+                    if (debug != null) {
+                        debug.println("Successive certs are self-issued");
+                    }
+                    return;
+                }
                 builder.addCertToPath(cert, cpList);
             }
 
@@ -521,7 +531,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
              * Append an entry for cert in adjacency list and
              * set index for current vertex.
              */
-            adjList.add(new LinkedList<Vertex>());
+            adjList.add(new LinkedList<>());
             vertex.setIndex(adjList.size() - 1);
 
             /* recursively search for matching certs at next dN */

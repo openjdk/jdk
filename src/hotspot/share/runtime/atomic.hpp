@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,13 @@
 #define SHARE_RUNTIME_ATOMIC_HPP
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isPointer.hpp"
-#include "metaprogramming/isSame.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
-#include "metaprogramming/removeCV.hpp"
-#include "metaprogramming/removePointer.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/macros.hpp"
+
 #include <type_traits>
 
 enum atomic_memory_order {
@@ -110,8 +105,8 @@ public:
 
   // Returns previous value.
   template<typename D, typename I>
-  inline static D fetch_and_add(D volatile* dest, I add_value,
-                                atomic_memory_order order = memory_order_conservative);
+  inline static D fetch_then_add(D volatile* dest, I add_value,
+                                 atomic_memory_order order = memory_order_conservative);
 
   template<typename D, typename I>
   inline static D sub(D volatile* dest, I sub_value,
@@ -156,7 +151,7 @@ public:
                           T exchange_value,
                           atomic_memory_order order = memory_order_conservative);
 
-  // Performs atomic compare of *dest and NULL, and replaces *dest
+  // Performs atomic compare of *dest and nullptr, and replaces *dest
   // with exchange_value if the comparison succeeded.  Returns true if
   // the comparison succeeded and the exchange occurred.  This is
   // often used as part of lazy initialization, as a lock-free
@@ -165,8 +160,83 @@ public:
   inline static bool replace_if_null(D* volatile* dest, T* value,
                                      atomic_memory_order order = memory_order_conservative);
 
+  // Bitwise logical operations (and, or, xor)
+  //
+  // All operations apply the corresponding operation to the value in dest and
+  // bits, storing the result in dest. They return either the old value
+  // (fetch_then_BITOP) or the newly updated value (BITOP_then_fetch).
+  //
+  // Requirements:
+  // - T is an integral type
+  // - sizeof(T) == 1 || sizeof(T) == sizeof(int) || sizeof(T) == sizeof(void*)
+
+  // Performs atomic bitwise-and of *dest and bits, storing the result in
+  // *dest.  Returns the prior value of *dest.  That is, atomically performs
+  // this sequence of operations:
+  // { tmp = *dest; *dest &= bits; return tmp; }
+  template<typename T>
+  static T fetch_then_and(volatile T* dest, T bits,
+                          atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().fetch_then_and(dest, bits, order);
+  }
+
+  // Performs atomic bitwise-or of *dest and bits, storing the result in
+  // *dest.  Returns the prior value of *dest.  That is, atomically performs
+  // this sequence of operations:
+  // { tmp = *dest; *dest |= bits; return tmp; }
+  template<typename T>
+  static T fetch_then_or(volatile T* dest, T bits,
+                         atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().fetch_then_or(dest, bits, order);
+  }
+
+  // Performs atomic bitwise-xor of *dest and bits, storing the result in
+  // *dest.  Returns the prior value of *dest.  That is, atomically performs
+  // this sequence of operations:
+  // { tmp = *dest; *dest ^= bits; return tmp; }
+  template<typename T>
+  static T fetch_then_xor(volatile T* dest, T bits,
+                          atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().fetch_then_xor(dest, bits, order);
+  }
+
+  // Performs atomic bitwise-and of *dest and bits, storing the result in
+  // *dest.  Returns the new value of *dest.  That is, atomically performs
+  // this operation:
+  // { return *dest &= bits; }
+  template<typename T>
+  static T and_then_fetch(volatile T* dest, T bits,
+                          atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().and_then_fetch(dest, bits, order);
+  }
+
+  // Performs atomic bitwise-or of *dest and bits, storing the result in
+  // *dest.  Returns the new value of *dest.  That is, atomically performs
+  // this operation:
+  // { return *dest |= bits; }
+  template<typename T>
+  static T or_then_fetch(volatile T* dest, T bits,
+                         atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().or_then_fetch(dest, bits, order);
+  }
+
+  // Performs atomic bitwise-xor of *dest and bits, storing the result in
+  // *dest.  Returns the new value of *dest.  That is, atomically performs
+  // this operation:
+  // { return *dest ^= bits; }
+  template<typename T>
+  static T xor_then_fetch(volatile T* dest, T bits,
+                          atomic_memory_order order = memory_order_conservative) {
+    static_assert(std::is_integral<T>::value, "bitop with non-integral type");
+    return PlatformBitops<sizeof(T)>().xor_then_fetch(dest, bits, order);
+  }
+
 private:
-WINDOWS_ONLY(public:) // VS2017 warns (C2027) use of undefined type if IsPointerConvertible is declared private
   // Test whether From is implicitly convertible to To.
   // From and To must be pointer types.
   // Note: Provides the limited subset of C++11 std::is_convertible
@@ -240,27 +310,36 @@ private:
   // bytes and (if different) pointer size bytes are required.  The
   // class must be default constructable, with these requirements:
   //
-  // - dest is of type D*, an integral or pointer type.
+  // - dest is of type D*, where D is an integral or pointer type.
   // - add_value is of type I, an integral type.
   // - sizeof(I) == sizeof(D).
   // - if D is an integral type, I == D.
+  // - if D is a pointer type P*, sizeof(P) == 1.
   // - order is of type atomic_memory_order.
   // - platform_add is an object of type PlatformAdd<sizeof(D)>.
   //
   // Then both
-  //   platform_add.add_and_fetch(dest, add_value, order)
-  //   platform_add.fetch_and_add(dest, add_value, order)
+  //   platform_add.add_then_fetch(dest, add_value, order)
+  //   platform_add.fetch_then_add(dest, add_value, order)
   // must be valid expressions returning a result convertible to D.
   //
-  // add_and_fetch atomically adds add_value to the value of dest,
+  // add_then_fetch atomically adds add_value to the value of dest,
   // returning the new value.
   //
-  // fetch_and_add atomically adds add_value to the value of dest,
+  // fetch_then_add atomically adds add_value to the value of dest,
   // returning the old value.
   //
-  // When D is a pointer type P*, both add_and_fetch and fetch_and_add
-  // treat it as if it were an uintptr_t; they do not perform any
-  // scaling of add_value, as that has already been done by the caller.
+  // When the destination type D of the Atomic operation is a pointer type P*,
+  // the addition must scale the add_value by sizeof(P) to add that many bytes
+  // to the destination value.  Rather than requiring each platform deal with
+  // this, the shared part of the implementation performs some adjustments
+  // before and after calling the platform operation.  It ensures the pointee
+  // type of the destination value passed to the platform operation has size
+  // 1, casting if needed.  It also scales add_value by sizeof(P).  The result
+  // of the platform operation is cast back to P*.  This means the platform
+  // operation does not need to account for the scaling.  It also makes it
+  // easy for the platform to implement one of add_then_fetch or fetch_then_add
+  // in terms of the other (which is a common approach).
   //
   // No definition is provided; all platforms must explicitly define
   // this class and any needed specializations.
@@ -364,6 +443,44 @@ private:
   static T xchg_using_helper(Fn fn,
                              T volatile* dest,
                              T exchange_value);
+
+  // Platform-specific implementation of the bitops (and, or, xor).  Support
+  // for sizes of 4 bytes and (if different) pointer size bytes are required.
+  // The class is a function object that must be default constructable, with
+  // these requirements:
+  //
+  // - T is an integral type.
+  // - dest is of type T*.
+  // - bits is of type T.
+  // - order is of type atomic_memory_order.
+  // - platform_bitops is an object of type PlatformBitops<sizeof(T)>.
+  //
+  // Then
+  //  platform_bitops.fetch_then_and(dest, bits, order)
+  //  platform_bitops.fetch_then_or(dest, bits, order)
+  //  platform_bitops.fetch_then_xor(dest, bits, order)
+  //  platform_bitops.and_then_fetch(dest, bits, order)
+  //  platform_bitops.or_then_fetch(dest, bits, order)
+  //  platform_bitops.xor_then_fetch(dest, bits, order)
+  // must all be valid expressions, returning a result convertible to T.
+  //
+  // A default definition is provided, which implements all of the operations
+  // using cmpxchg.
+  //
+  // For each required size, a platform must either use the default or
+  // entirely specialize the class for that size by providing all of the
+  // required operations.
+  //
+  // The second (bool) template parameter allows platforms to provide a
+  // partial specialization with a parameterized size, and is otherwise
+  // unused.  The default value for that bool parameter means specializations
+  // don't need to mention it.
+  template<size_t size, bool = true> class PlatformBitops;
+
+  // Helper base classes that may be used to implement PlatformBitops.
+  class PrefetchBitopsUsingCmpxchg;
+  class PostfetchBitopsUsingCmpxchg;
+  class PostfetchBitopsUsingPrefetch;
 };
 
 template<typename From, typename To>
@@ -380,12 +497,12 @@ struct Atomic::IsPointerConvertible<From*, To*> : AllStatic {
   static const bool value = (sizeof(yes) == sizeof(test(test_value)));
 };
 
-// Handle load for pointer, integral and enum types.
+// Handle load for pointer and integral types.
 template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value || IsPointer<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value || std::is_pointer<T>::value>::type>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -430,14 +547,14 @@ struct Atomic::PlatformLoad {
   }
 };
 
-// Handle store for integral and enum types.
+// Handle store for integral types.
 //
 // All the involved types must be identical.
 template<typename T, typename PlatformOp>
 struct Atomic::StoreImpl<
   T, T,
   PlatformOp,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   void operator()(T volatile* dest, T new_value) const {
     // Forward to the platform handler for the size of T.
@@ -502,15 +619,15 @@ struct Atomic::PlatformStore {
 
 template<typename D>
 inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
-  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   Atomic::add(dest, I(1), order);
 }
 
 template<typename D>
 inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
-  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
   Atomic::add(dest, I(-1), order);
@@ -518,14 +635,14 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
 
 template<typename D, typename I>
 inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || IsIntegral<D>::value);
-  STATIC_ASSERT(IsIntegral<I>::value);
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
-  typedef typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type PI;
-  typedef typename Conditional<IsPointer<D>::value, PI, D>::type AddendType;
+  using PI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
+  using AddendType = std::conditional_t<std::is_pointer<D>::value, PI, D>;
   // Only allow conversions that can't change the value.
-  STATIC_ASSERT(IsSigned<I>::value == IsSigned<AddendType>::value);
+  STATIC_ASSERT(std::is_signed<I>::value == std::is_signed<AddendType>::value);
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
@@ -572,6 +689,99 @@ struct Atomic::PlatformXchg {
                T exchange_value,
                atomic_memory_order order) const;
 };
+
+// Implement fetch_then_bitop operations using a CAS loop.
+class Atomic::PrefetchBitopsUsingCmpxchg {
+  template<typename T, typename Op>
+  T bitop(T volatile* dest, atomic_memory_order order, Op operation) const {
+    T old_value;
+    T new_value;
+    T fetched_value = Atomic::load(dest);
+    do {
+      old_value = fetched_value;
+      new_value = operation(old_value);
+      fetched_value = Atomic::cmpxchg(dest, old_value, new_value, order);
+    } while (old_value != fetched_value);
+    return fetched_value;
+  }
+
+public:
+  template<typename T>
+  T fetch_then_and(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value & bits; });
+  }
+
+  template<typename T>
+  T fetch_then_or(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value | bits; });
+  }
+
+  template<typename T>
+  T fetch_then_xor(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value ^ bits; });
+  }
+};
+
+// Implement bitop_then_fetch operations using a CAS loop.
+class Atomic::PostfetchBitopsUsingCmpxchg {
+  template<typename T, typename Op>
+  T bitop(T volatile* dest, atomic_memory_order order, Op operation) const {
+    T old_value;
+    T new_value;
+    T fetched_value = Atomic::load(dest);
+    do {
+      old_value = fetched_value;
+      new_value = operation(old_value);
+      fetched_value = Atomic::cmpxchg(dest, old_value, new_value, order);
+    } while (old_value != fetched_value);
+    return new_value;
+  }
+
+public:
+  template<typename T>
+  T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value & bits; });
+  }
+
+  template<typename T>
+  T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value | bits; });
+  }
+
+  template<typename T>
+  T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bitop(dest, order, [&](T value) -> T { return value ^ bits; });
+  }
+};
+
+// Implement bitop_then_fetch operations by calling fetch_then_bitop and
+// applying the operation to the result and the bits argument.
+class Atomic::PostfetchBitopsUsingPrefetch {
+public:
+  template<typename T>
+  T and_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bits & Atomic::fetch_then_and(dest, bits, order);
+  }
+
+  template<typename T>
+  T or_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bits | Atomic::fetch_then_or(dest, bits, order);
+  }
+
+  template<typename T>
+  T xor_then_fetch(T volatile* dest, T bits, atomic_memory_order order) const {
+    return bits ^ Atomic::fetch_then_xor(dest, bits, order);
+  }
+};
+
+// The default definition uses cmpxchg.  Platforms can override by defining a
+// partial specialization providing size, either as a template parameter or as
+// a specific value.
+template<size_t size, bool>
+class Atomic::PlatformBitops
+  : public PrefetchBitopsUsingCmpxchg,
+    public PostfetchBitopsUsingCmpxchg
+{};
 
 template <ScopedFenceType T>
 class ScopedFenceGeneral: public StackObj {
@@ -656,55 +866,77 @@ inline void Atomic::release_store_fence(volatile D* p, T v) {
 template<typename D, typename I>
 inline D Atomic::add(D volatile* dest, I add_value,
                      atomic_memory_order order) {
-  return AddImpl<D, I>::add_and_fetch(dest, add_value, order);
+  return AddImpl<D, I>::add_then_fetch(dest, add_value, order);
 }
 
 template<typename D, typename I>
-inline D Atomic::fetch_and_add(D volatile* dest, I add_value,
-                               atomic_memory_order order) {
-  return AddImpl<D, I>::fetch_and_add(dest, add_value, order);
+inline D Atomic::fetch_then_add(D volatile* dest, I add_value,
+                                atomic_memory_order order) {
+  return AddImpl<D, I>::fetch_then_add(dest, add_value, order);
 }
 
 template<typename D, typename I>
 struct Atomic::AddImpl<
   D, I,
-  typename EnableIf<IsIntegral<I>::value &&
-                    IsIntegral<D>::value &&
+  typename EnableIf<std::is_integral<I>::value &&
+                    std::is_integral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
-                    (IsSigned<I>::value == IsSigned<D>::value)>::type>
+                    (std::is_signed<I>::value == std::is_signed<D>::value)>::type>
 {
-  static D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
+  static D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>().add_and_fetch(dest, addend, order);
+    return PlatformAdd<sizeof(D)>().add_then_fetch(dest, addend, order);
   }
-  static D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) {
+  static D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
-    return PlatformAdd<sizeof(D)>().fetch_and_add(dest, addend, order);
+    return PlatformAdd<sizeof(D)>().fetch_then_add(dest, addend, order);
   }
 };
 
 template<typename P, typename I>
 struct Atomic::AddImpl<
   P*, I,
-  typename EnableIf<IsIntegral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
+  typename EnableIf<std::is_integral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
   STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
-  typedef typename Conditional<IsSigned<I>::value,
-                               intptr_t,
-                               uintptr_t>::type CI;
 
-  static CI scale_addend(CI add_value) {
-    return add_value * sizeof(P);
+  // Type of the scaled addend.  An integral type of the same size as a
+  // pointer, and the same signedness as I.
+  using SI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
+
+  // Type of the unscaled destination.  A pointer type with pointee size == 1.
+  using UP = const char*;
+
+  // Scale add_value by the size of the pointee.
+  static SI scale_addend(SI add_value) {
+    return add_value * SI(sizeof(P));
   }
 
-  static P* add_and_fetch(P* volatile* dest, I add_value, atomic_memory_order order) {
-    CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>().add_and_fetch(dest, scale_addend(addend), order);
+  // Casting between P* and UP* here intentionally uses C-style casts,
+  // because reinterpret_cast can't cast away cv qualifiers.  Using copy_cv
+  // would be an alternative if it existed.
+
+  // Unscale dest to a char* pointee for consistency with scaled addend.
+  static UP volatile* unscale_dest(P* volatile* dest) {
+    return (UP volatile*) dest;
   }
-  static P* fetch_and_add(P* volatile* dest, I add_value, atomic_memory_order order) {
-    CI addend = add_value;
-    return PlatformAdd<sizeof(P*)>().fetch_and_add(dest, scale_addend(addend), order);
+
+  // Convert the unscaled char* result to a P*.
+  static P* scale_result(UP result) {
+    return (P*) result;
+  }
+
+  static P* add_then_fetch(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().add_then_fetch(unscale_dest(dest),
+                                                                scale_addend(addend),
+                                                                order));
+  }
+
+  static P* fetch_then_add(P* volatile* dest, I addend, atomic_memory_order order) {
+    return scale_result(PlatformAdd<sizeof(P*)>().fetch_then_add(unscale_dest(dest),
+                                                                scale_addend(addend),
+                                                                order));
   }
 };
 
@@ -729,17 +961,17 @@ inline bool Atomic::replace_if_null(D* volatile* dest, T* value,
   // Presently using a trivial implementation in terms of cmpxchg.
   // Consider adding platform support, to permit the use of compiler
   // intrinsics like gcc's __sync_bool_compare_and_swap.
-  D* expected_null = NULL;
+  D* expected_null = nullptr;
   return expected_null == cmpxchg(dest, expected_null, value, order);
 }
 
-// Handle cmpxchg for integral and enum types.
+// Handle cmpxchg for integral types.
 //
 // All the involved types must be identical.
 template<typename T>
 struct Atomic::CmpxchgImpl<
   T, T, T,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   T operator()(T volatile* dest, T compare_value, T exchange_value,
                atomic_memory_order order) const {
@@ -764,8 +996,8 @@ template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
-                    IsSame<typename RemoveCV<D>::type,
-                           typename RemoveCV<U>::type>::value>::type>
+                    std::is_same<std::remove_cv_t<D>,
+                                 std::remove_cv_t<U>>::value>::type>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {
@@ -868,13 +1100,13 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   return PrimitiveConversions::cast<T>(get_byte_in_int(cur, idx));
 }
 
-// Handle xchg for integral and enum types.
+// Handle xchg for integral types.
 //
 // All the involved types must be identical.
 template<typename T>
 struct Atomic::XchgImpl<
   T, T,
-  typename EnableIf<IsIntegral<T>::value || std::is_enum<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value>::type>
 {
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     // Forward to the platform handler for the size of T.

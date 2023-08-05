@@ -32,7 +32,6 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -85,7 +84,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            Table table =  new Table(HtmlStyle.summaryTable)
+            var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)

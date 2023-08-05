@@ -97,14 +97,14 @@ public class DefaultHistory implements History {
     }
 
     @Override
-    public void read(Path file, boolean incremental) throws IOException {
+    public void read(Path file, boolean checkDuplicates) throws IOException {
         Path path = file != null ? file : getPath();
         if (path != null) {
             try {
                 if (Files.exists(path)) {
                     Log.trace("Reading history from: ", path);
                     try (BufferedReader reader = Files.newBufferedReader(path)) {
-                        reader.lines().forEach(line -> addHistoryLine(path, line, incremental));
+                        reader.lines().forEach(line -> addHistoryLine(path, line, checkDuplicates));
                         setHistoryFileData(path, new HistoryFileData(items.size(), offset + items.size()));
                         maybeResize();
                     }

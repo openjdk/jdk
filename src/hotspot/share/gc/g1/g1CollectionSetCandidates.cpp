@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,79 +26,245 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/growableArray.hpp"
 
-void G1CollectionSetCandidates::remove(uint num_regions) {
-  assert(num_regions <= num_remaining(), "Trying to remove more regions (%u) than available (%u)", num_regions, num_remaining());
-  for (uint i = 0; i < num_regions; i++) {
-    _remaining_reclaimable_bytes -= at(_front_idx)->reclaimable_bytes();
-    _front_idx++;
-  }
+G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
+
+void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
+  assert(_candidates.is_empty(), "must be");
+
+  GrowableArrayFromArray<G1CollectionCandidateList::CandidateInfo> a(candidate_infos, (int)num_infos);
+  _candidates.appendAll(&a);
 }
 
-void G1CollectionSetCandidates::remove_from_end(uint num_remove, size_t wasted) {
-  assert(num_remove <= num_remaining(), "trying to remove more regions than remaining");
+void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
+  guarantee((uint)_candidates.length() >= other->length(), "must be");
 
-#ifdef ASSERT
-  size_t reclaimable = 0;
-
-  for (uint i = 0; i < num_remove; i++) {
-    uint cur_idx = _num_regions - i - 1;
-    reclaimable += at(cur_idx)->reclaimable_bytes();
-    // Make sure we crash if we access it.
-    _regions[cur_idx] = NULL;
+  if (other->length() == 0) {
+    // Nothing to remove or nothing in the original set.
+    return;
   }
 
-  assert(reclaimable == wasted, "Recalculated reclaimable inconsistent");
-#endif
-  _num_regions -= num_remove;
-  _remaining_reclaimable_bytes -= wasted;
-}
+  // Create a list from scratch, copying over the elements from the candidate
+  // list not in the other list. Finally deallocate and overwrite the old list.
+  int new_length = _candidates.length() - other->length();
+  GrowableArray<CandidateInfo> new_list(new_length, mtGC);
 
-void G1CollectionSetCandidates::iterate(HeapRegionClosure* cl) {
-  for (uint i = _front_idx; i < _num_regions; i++) {
-    HeapRegion* r = _regions[i];
-    if (cl->do_heap_region(r)) {
-      cl->set_incomplete();
-      break;
+  uint other_idx = 0;
+
+  for (uint candidate_idx = 0; candidate_idx < (uint)_candidates.length(); candidate_idx++) {
+    if ((other_idx == other->length()) || _candidates.at(candidate_idx)._r != other->at(other_idx)) {
+      new_list.append(_candidates.at(candidate_idx));
+    } else {
+      other_idx++;
     }
   }
+  _candidates.swap(&new_list);
+
+  verify();
+  assert(_candidates.length() == new_length, "must be %u %u", _candidates.length(), new_length);
 }
 
-void G1CollectionSetCandidates::iterate_backwards(HeapRegionClosure* cl) {
-  for (uint i = _num_regions; i > _front_idx; i--) {
-    HeapRegion* r = _regions[i - 1];
-    if (cl->do_heap_region(r)) {
-      cl->set_incomplete();
-      break;
-    }
-  }
+void G1CollectionCandidateList::clear() {
+  _candidates.clear();
 }
 
 #ifndef PRODUCT
-void G1CollectionSetCandidates::verify() const {
-  guarantee(_front_idx <= _num_regions, "Index: %u Num_regions: %u", _front_idx, _num_regions);
-  uint idx = _front_idx;
-  size_t sum_of_reclaimable_bytes = 0;
-  HeapRegion *prev = NULL;
-  for (; idx < _num_regions; idx++) {
-    HeapRegion *cur = _regions[idx];
-    guarantee(cur != NULL, "Regions after _front_idx %u cannot be NULL but %u is", _front_idx, idx);
-    // The first disjunction filters out regions with objects that were explicitly
-    // pinned after being added to the collection set candidates. Archive regions
-    // should never have been added to the collection set though.
-    guarantee((cur->is_pinned() && !cur->is_archive()) ||
-              G1CollectionSetChooser::should_add(cur),
-              "Region %u should be eligible for addition.", cur->hrm_index());
-    if (prev != NULL) {
-      guarantee(prev->gc_efficiency() >= cur->gc_efficiency(),
-                "GC efficiency for region %u: %1.4f smaller than for region %u: %1.4f",
-                prev->hrm_index(), prev->gc_efficiency(), cur->hrm_index(), cur->gc_efficiency());
-    }
-    sum_of_reclaimable_bytes += cur->reclaimable_bytes();
-    prev = cur;
+void G1CollectionCandidateList::verify() {
+  CandidateInfo* prev = nullptr;
+
+  for (uint i = 0; i < (uint)_candidates.length(); i++) {
+    CandidateInfo& ci = _candidates.at(i);
+    assert(prev == nullptr || prev->_gc_efficiency >= ci._gc_efficiency,
+           "Stored gc efficiency must be descending from region %u to %u",
+           prev->_r->hrm_index(), ci._r->hrm_index());
+    prev = &ci;
+    assert(ci._r->rem_set()->is_tracked(), "remset for region %u must be tracked", ci._r->hrm_index());
   }
-  guarantee(sum_of_reclaimable_bytes == _remaining_reclaimable_bytes,
-            "Inconsistent remaining_reclaimable bytes, remaining " SIZE_FORMAT " calculated " SIZE_FORMAT,
-            _remaining_reclaimable_bytes, sum_of_reclaimable_bytes);
 }
-#endif // !PRODUCT
+#endif
+
+int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
+  // Make sure that null entries are moved to the end.
+  if (ci1->_r == nullptr) {
+    if (ci2->_r == nullptr) {
+      return 0;
+    } else {
+      return 1;
+    }
+  } else if (ci2->_r == nullptr) {
+    return -1;
+  }
+
+  double gc_eff1 = ci1->_gc_efficiency;
+  double gc_eff2 = ci2->_gc_efficiency;
+
+  if (gc_eff1 > gc_eff2) {
+    return -1;
+  } if (gc_eff1 < gc_eff2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
+
+void G1CollectionCandidateRegionList::append(HeapRegion* r) {
+  assert(!_regions.contains(r), "must be");
+  _regions.append(r);
+}
+
+void G1CollectionCandidateRegionList::remove_prefix(G1CollectionCandidateRegionList* other) {
+#ifdef ASSERT
+  // Check that the given list is a prefix of this list.
+  int i = 0;
+  for (HeapRegion* r : *other) {
+    assert(_regions.at(i) == r, "must be in order, but element %d is not", i);
+    i++;
+  }
+#endif
+
+  if (other->length() == 0) {
+    return;
+  }
+  _regions.remove_till(other->length());
+}
+
+HeapRegion* G1CollectionCandidateRegionList::at(uint index) {
+  return _regions.at(index);
+}
+
+void G1CollectionCandidateRegionList::clear() {
+  _regions.clear();
+}
+
+G1CollectionSetCandidates::G1CollectionSetCandidates() :
+  _marking_regions(),
+  _contains_map(nullptr),
+  _max_regions(0),
+  _last_marking_candidates_length(0)
+{ }
+
+G1CollectionSetCandidates::~G1CollectionSetCandidates() {
+  FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
+}
+
+bool G1CollectionSetCandidates::is_from_marking(HeapRegion* r) const {
+  assert(contains(r), "must be");
+  return _contains_map[r->hrm_index()] == CandidateOrigin::Marking;
+}
+
+void G1CollectionSetCandidates::initialize(uint max_regions) {
+  assert(_contains_map == nullptr, "already initialized");
+  _max_regions = max_regions;
+  _contains_map = NEW_C_HEAP_ARRAY(CandidateOrigin, max_regions, mtGC);
+  clear();
+}
+
+void G1CollectionSetCandidates::clear() {
+  _marking_regions.clear();
+  for (uint i = 0; i < _max_regions; i++) {
+    _contains_map[i] = CandidateOrigin::Invalid;
+  }
+  _last_marking_candidates_length = 0;
+}
+
+void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+                                                            uint num_infos) {
+  assert(_marking_regions.length() == 0, "must be empty before adding new ones");
+
+  verify();
+
+  _marking_regions.set(candidate_infos, num_infos);
+  for (uint i = 0; i < num_infos; i++) {
+    HeapRegion* r = candidate_infos[i]._r;
+    assert(!contains(r), "must not contain region %u", r->hrm_index());
+    _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
+  }
+  _last_marking_candidates_length = num_infos;
+
+  verify();
+}
+
+void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
+  _marking_regions.remove(other);
+
+  for (HeapRegion* r : *other) {
+    assert(contains(r), "must contain region %u", r->hrm_index());
+    _contains_map[r->hrm_index()] = CandidateOrigin::Invalid;
+  }
+
+  verify();
+}
+
+bool G1CollectionSetCandidates::is_empty() const {
+  return length() == 0;
+}
+
+bool G1CollectionSetCandidates::has_more_marking_candidates() const {
+  return _marking_regions.length() != 0;
+}
+
+#ifndef PRODUCT
+void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, uint& from_marking, CandidateOrigin* verify_map) {
+  list->verify();
+
+  for (uint i = 0; i < (uint)list->length(); i++) {
+    HeapRegion* r = list->at(i)._r;
+
+    if (is_from_marking(r)) {
+      from_marking++;
+    }
+    const uint hrm_index = r->hrm_index();
+    assert(_contains_map[hrm_index] == CandidateOrigin::Marking,
+           "must be %u is %u", hrm_index, (uint)_contains_map[hrm_index]);
+    assert(verify_map[hrm_index] == CandidateOrigin::Invalid, "already added");
+
+    verify_map[hrm_index] = CandidateOrigin::Verify;
+  }
+}
+
+void G1CollectionSetCandidates::verify() {
+  uint from_marking = 0;
+
+  CandidateOrigin* verify_map = NEW_C_HEAP_ARRAY(CandidateOrigin, _max_regions, mtGC);
+  for (uint i = 0; i < _max_regions; i++) {
+    verify_map[i] = CandidateOrigin::Invalid;
+  }
+
+  verify_helper(&_marking_regions, from_marking, verify_map);
+
+  assert(from_marking == marking_regions_length(), "must be");
+
+  // Check whether the _contains_map is consistent with the list.
+  for (uint i = 0; i < _max_regions; i++) {
+    assert(_contains_map[i] == verify_map[i] ||
+           (_contains_map[i] != CandidateOrigin::Invalid && verify_map[i] == CandidateOrigin::Verify),
+           "Candidate origin does not match for region %u, is %u but should be %u",
+           i,
+           static_cast<std::underlying_type<CandidateOrigin>::type>(_contains_map[i]),
+           static_cast<std::underlying_type<CandidateOrigin>::type>(verify_map[i]));
+  }
+
+  FREE_C_HEAP_ARRAY(CandidateOrigin, verify_map);
+}
+#endif
+
+bool G1CollectionSetCandidates::contains(const HeapRegion* r) const {
+  const uint index = r->hrm_index();
+  assert(index < _max_regions, "must be");
+  return _contains_map[index] != CandidateOrigin::Invalid;
+}
+
+const char* G1CollectionSetCandidates::get_short_type_str(const HeapRegion* r) const {
+  static const char* type_strings[] = {
+    "Ci",  // Invalid
+    "Cm",  // Marking
+    "Cv"   // Verification
+  };
+
+  uint8_t kind = static_cast<std::underlying_type<CandidateOrigin>::type>(_contains_map[r->hrm_index()]);
+  return type_strings[kind];
+}

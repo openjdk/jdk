@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,17 @@
 
 /* @test
    @bug 4071322
-   @summary Basic test for listRoots method
+   @summary Basic test for File.listRoots method
  */
 
-import java.io.*;
-
+import java.io.File;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class ListRoots {
 
@@ -37,15 +43,25 @@ public class ListRoots {
             System.out.println(i + ": " + rs[i]);
         }
 
-        File f = new File(System.getProperty("test.src", "."),
-                          "ListRoots.java");
+        File f = new File(System.getProperty("test.src", "."), "ListRoots.java");
         String cp = f.getCanonicalPath();
-        for (int i = 0; i < rs.length; i++) {
-            if (cp.startsWith(rs[i].getPath())) break;
-            if (i == rs.length - 1)
-                throw new Exception(cp + " does not have a recognized root");
+        boolean found = Stream.of(rs)
+                .map(File::getPath)
+                .anyMatch(p -> cp.startsWith(p));
+        if (!found) {
+            throw new RuntimeException(cp + " does not have a recognized root");
         }
 
+        // the list of roots should match FileSystem::getRootDirectories
+        Set<File> roots1 = Stream.of(rs).collect(Collectors.toSet());
+        FileSystem fs = FileSystems.getDefault();
+        Set<File> roots2 = StreamSupport.stream(fs.getRootDirectories().spliterator(), false)
+                .map(Path::toFile)
+                .collect(Collectors.toSet());
+        if (!roots1.equals(roots2)) {
+            System.out.println(roots2);
+            throw new RuntimeException("Does not match FileSystem::getRootDirectories");
+        }
     }
 
 }

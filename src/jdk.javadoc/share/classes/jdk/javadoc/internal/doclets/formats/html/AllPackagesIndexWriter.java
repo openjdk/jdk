@@ -33,7 +33,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -94,7 +93,7 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addPackages(Content target) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                 .setCaption(Text.of(contents.packageSummaryLabel.toString()))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);

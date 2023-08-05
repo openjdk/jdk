@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ public final class TemporalQueries {
      * The query implementation examines the {@link ChronoField#EPOCH_DAY EPOCH_DAY}
      * field and uses it to create a {@code LocalDate}.
      * <p>
-     * The method {@link ZoneOffset#from(TemporalAccessor)} can be used as a
+     * The method {@link LocalDate#from(TemporalAccessor)} can be used as a
      * {@code TemporalQuery} via a method reference, {@code LocalDate::from}.
      * This query and {@code LocalDate::from} will return the same result if the
      * temporal object contains a date. If the temporal object does not contain
@@ -324,7 +324,7 @@ public final class TemporalQueries {
      * The query implementation examines the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY}
      * field and uses it to create a {@code LocalTime}.
      * <p>
-     * The method {@link ZoneOffset#from(TemporalAccessor)} can be used as a
+     * The method {@link LocalTime#from(TemporalAccessor)} can be used as a
      * {@code TemporalQuery} via a method reference, {@code LocalTime::from}.
      * This query and {@code LocalTime::from} will return the same result if the
      * temporal object contains a time. If the temporal object does not contain

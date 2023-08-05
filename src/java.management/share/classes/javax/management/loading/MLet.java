@@ -162,8 +162,14 @@ import javax.management.ServiceNotFoundException;
  * <p><STRONG>Note - </STRONG> The <CODE>MLet</CODE> class loader uses the {@link javax.management.MBeanServerFactory#getClassLoaderRepository(javax.management.MBeanServer)}
  * to load classes that could not be found in the loaded jar files.
  *
+ * @deprecated This API is part of Management Applets (m-lets), which is a legacy feature that allows loading
+ * of remote MBeans. This feature is not usable without a Security Manager, which is deprecated and subject to
+ * removal in a future release. Consequently, this API is also deprecated and subject to removal. There is no replacement.
+ *
  * @since 1.5
  */
+@Deprecated(since="20", forRemoval=true)
+@SuppressWarnings("removal")
 public class MLet extends java.net.URLClassLoader
      implements MLetMBean, MBeanRegistration, Externalizable {
 
@@ -189,7 +195,7 @@ public class MLet extends java.net.URLClassLoader
       * @serial
       */
      @SuppressWarnings("serial") // Type of field is not Serializable
-     private List<MLetContent> mletList = new ArrayList<MLetContent>();
+     private List<MLetContent> mletList = new ArrayList<>();
 
 
      /**
@@ -226,8 +232,7 @@ public class MLet extends java.net.URLClassLoader
       * objects maps from primitive classes to primitive object classes.
       */
      @SuppressWarnings("serial") // Type of field is not Serializable
-     private Map<String,Class<?>> primitiveClasses =
-         new HashMap<String,Class<?>>(8) ;
+     private Map<String,Class<?>> primitiveClasses = new HashMap<>(8) ;
      {
          primitiveClasses.put(Boolean.TYPE.toString(), Boolean.class);
          primitiveClasses.put(Character.TYPE.toString(), Character.class);
@@ -407,6 +412,7 @@ public class MLet extends java.net.URLClassLoader
       */
      public void addURL(String url) throws ServiceNotFoundException {
          try {
+             @SuppressWarnings("deprecation")
              URL ur = new URL(url);
              if (!Arrays.asList(getURLs()).contains(ur))
                  super.addURL(ur);
@@ -515,7 +521,7 @@ public class MLet extends java.net.URLClassLoader
          }
 
          // Walk through the list of MLets
-         Set<Object> mbeans = new HashSet<Object>();
+         Set<Object> mbeans = new HashSet<>();
          for (MLetContent elmt : mletList) {
              // Initialize local variables
              String code = elmt.getCode();
@@ -572,8 +578,10 @@ public class MLet extends java.net.URLClassLoader
                  // Appends the specified JAR file URL to the list of
                  // URLs to search for classes and resources.
                  try {
+                     @SuppressWarnings("deprecation")
+                     var u = new URL(codebase.toString() + tok);
                      if (!Arrays.asList(getURLs())
-                         .contains(new URL(codebase.toString() + tok))) {
+                         .contains(u)) {
                          addURL(codebase + tok);
                      }
                  } catch (MalformedURLException me) {
@@ -609,7 +617,7 @@ public class MLet extends java.net.URLClassLoader
 
                      List<String> signat = elmt.getParameterTypes();
                      List<String> stringPars = elmt.getParameterValues();
-                     List<Object> objectPars = new ArrayList<Object>();
+                     List<Object> objectPars = new ArrayList<>();
 
                      for (int i = 0; i < signat.size(); i++) {
                          objectPars.add(constructParameter(stringPars.get(i),
@@ -1275,7 +1283,7 @@ public class MLet extends java.net.URLClassLoader
     private synchronized void setMBeanServer(final MBeanServer server) {
         this.server = server;
         PrivilegedAction<ClassLoaderRepository> act =
-            new PrivilegedAction<ClassLoaderRepository>() {
+            new PrivilegedAction<>() {
                 public ClassLoaderRepository run() {
                     return server.getClassLoaderRepository();
                 }

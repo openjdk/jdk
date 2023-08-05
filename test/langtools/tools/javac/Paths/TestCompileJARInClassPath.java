@@ -63,9 +63,9 @@ public class TestCompileJARInClassPath {
     }
 
     void writeFile(String f, String contents) throws IOException {
-        PrintStream s = new PrintStream(new FileOutputStream(f));
-        s.println(contents);
-        s.close();
+        try (PrintStream s = new PrintStream(new FileOutputStream(f))) {
+            s.println(contents);
+        }
     }
 
     void rm(String filename) throws Exception {

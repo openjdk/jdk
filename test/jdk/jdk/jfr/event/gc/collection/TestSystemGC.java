@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class TestSystemGC {
 
             Asserts.assertEquals(3, events.size(), "Expected 3 SystemGC events");
 
-            RecordedEvent event1 = events.get(0);
+            RecordedEvent event1 = events.getFirst();
             Events.assertFrame(event1, System.class, "gc");
             Events.assertEventThread(event1, Thread.currentThread());
             Events.assertField(event1, "invokedConcurrent").isEqual(concurrent);

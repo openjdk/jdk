@@ -38,7 +38,7 @@ import javadoc.tester.JavadocTester;
 public class TestThrowsTagInheritance extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestThrowsTagInheritance tester = new TestThrowsTagInheritance();
+        var tester = new TestThrowsTagInheritance();
         tester.runTests();
     }
 

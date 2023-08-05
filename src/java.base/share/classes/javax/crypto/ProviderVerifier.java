@@ -91,6 +91,7 @@ final class ProviderVerifier {
         // If the protocol of jarURL isn't "jar", we should
         // construct a JAR URL so we can open a JarURLConnection
         // for verifying this provider.
+        @SuppressWarnings("deprecation")
         final URL url = jarURL.getProtocol().equalsIgnoreCase("jar")?
                         jarURL : new URL("jar:" + jarURL + "!/");
 

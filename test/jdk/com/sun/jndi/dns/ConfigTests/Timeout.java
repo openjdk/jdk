@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,26 @@
 import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.directory.InitialDirContext;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
+
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
  * @bug 8200151 8265309
  * @summary Tests that we can set the initial UDP timeout interval and the
  *          number of retries.
- * @library ../lib/
+ * @library ../lib/ /test/lib
  * @modules java.base/sun.security.util
  * @run main Timeout
  */
 
 public class Timeout extends DNSTestBase {
-    // Host 10.0.0.0 is a bit bucket, used here to simulate a DNS server that
-    // doesn't respond. 10.0.0.0 server shouldn't be reachable.
-    // Ping to this address should not give any reply
-    private static final String HOST = "10.0.0.0";
-    // Port 9 is a bit bucket, used here to simulate a DNS server that
-    // doesn't respond.
-    private static final int PORT = 9;
     // initial timeout = 1/4 sec
     private static final int TIMEOUT = 250;
     // try 5 times per server
@@ -67,18 +65,28 @@ public class Timeout extends DNSTestBase {
      */
     @Override
     public void runTest() throws Exception {
-        String allQuietUrl = "dns://" + HOST + ":" + PORT;
-        env().put(Context.PROVIDER_URL, allQuietUrl);
-        env().put("com.sun.jndi.dns.timeout.initial", String.valueOf(TIMEOUT));
-        env().put("com.sun.jndi.dns.timeout.retries", String.valueOf(RETRIES));
-        setContext(new InitialDirContext(env()));
+        // Create a DatagramSocket and bind it to the loopback address to simulate
+        // UDP DNS server that doesn't respond
+        try (DatagramSocket ds = new DatagramSocket(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))) {
+            String allQuietUrl = URIBuilder.newBuilder()
+                    .scheme("dns")
+                    .loopback()
+                    .port(ds.getLocalPort())
+                    .build()
+                    .toString();
+            env().put(Context.PROVIDER_URL, allQuietUrl);
+            env().put("com.sun.jndi.dns.timeout.initial", String.valueOf(TIMEOUT));
+            env().put("com.sun.jndi.dns.timeout.retries", String.valueOf(RETRIES));
+            setContext(new InitialDirContext(env()));
 
-        // Any request should fail after timeouts have expired.
-        startTime = Instant.now();
-        context().getAttributes("");
+            // Any request should fail after timeouts have expired.
+            startTime = Instant.now();
+            context().getAttributes("");
 
-        throw new RuntimeException(
-                "Failed: getAttributes succeeded unexpectedly");
+            throw new RuntimeException(
+                    "Failed: getAttributes succeeded unexpectedly");
+        }
     }
 
     @Override

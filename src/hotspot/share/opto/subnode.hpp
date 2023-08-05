@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public:
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type* Value_common( PhaseTransform *phase ) const;
+  const Type* Value_common(PhaseValues* phase) const;
 
   // Supplied function returns the subtractend of the inputs.
   // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -143,13 +143,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegFlags; }
 
   static CmpNode *make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp = false);
-
-#ifndef PRODUCT
-  // CmpNode and subclasses include all data inputs (until hitting a control
-  // boundary) in their related node set, as well as all outputs until and
-  // including eventual control nodes and their projections.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 //------------------------------CmpINode---------------------------------------
@@ -160,6 +153,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------CmpUNode---------------------------------------
@@ -256,7 +250,7 @@ class CmpFNode : public CmpNode {
 public:
   CmpFNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return NULL; }
+  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
 };
 
@@ -284,7 +278,7 @@ class CmpDNode : public CmpNode {
 public:
   CmpDNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return NULL; }
+  virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return nullptr; }
   const Type* Value(PhaseGVN* phase) const;
   virtual Node  *Ideal(PhaseGVN *phase, bool can_reshape);
 };
@@ -342,7 +336,7 @@ class BoolNode : public Node {
                   int cmp1_op, const TypeInt* cmp2_type);
 public:
   const BoolTest _test;
-  BoolNode(Node *cc, BoolTest::mask t): Node(NULL,cc), _test(t) {
+  BoolNode(Node *cc, BoolTest::mask t): Node(nullptr,cc), _test(t) {
     init_class_id(Class_Bool);
   }
   // Convert an arbitrary int value to a Bool or other suitable predicate.
@@ -361,7 +355,6 @@ public:
   bool is_counted_loop_exit_test();
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -519,7 +512,7 @@ class SqrtFNode : public Node {
 public:
   SqrtFNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    if (c != NULL) {
+    if (c != nullptr) {
       // Treat node only as expensive if a control input is set because it might
       // be created from a SqrtDNode in ConvD2FNode::Ideal() that was found to
       // be unique and therefore has no control input.

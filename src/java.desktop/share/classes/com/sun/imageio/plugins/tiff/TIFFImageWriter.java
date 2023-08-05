@@ -181,7 +181,7 @@ public class TIFFImageWriter extends ImageWriter {
     private boolean isImageSimple; // Whether image can be copied into directly
     private boolean isInverted; // Whether photometric inversion is required
 
-    private boolean isTiled; // Whether the image is tiled (true) or stipped (false).
+    private boolean isTiled; // Whether the image is tiled (true) or stripped (false).
 
     private int nativePhotometricInterpretation;
     private int photometricInterpretation;

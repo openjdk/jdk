@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ GCAdaptivePolicyCounters::GCAdaptivePolicyCounters(const char* name,
 }
 
 void GCAdaptivePolicyCounters::update_counters_from_policy() {
-  if (UsePerfData && (size_policy() != NULL)) {
+  if (UsePerfData && (size_policy() != nullptr)) {
     update_avg_minor_pause_counter();
     update_avg_minor_interval_counter();
 #ifdef NOT_PRODUCT

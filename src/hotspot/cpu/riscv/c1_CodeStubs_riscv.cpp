@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -42,11 +42,14 @@
 void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   InternalAddress safepoint_pc(__ pc() - __ offset() + safepoint_offset());
-  __ code_section()->relocate(__ pc(), safepoint_pc.rspec());
-  __ la(t0, safepoint_pc.target());
+  __ relocate(safepoint_pc.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ addi(t0, t0, offset);
+  });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -63,18 +66,6 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ j(_continuation);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
-  : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
-}
-
-RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
-  : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
-  _info = new CodeEmitInfo(info);
 }
 
 void RangeCheckStub::emit_code(LIR_Assembler* ce) {
@@ -101,9 +92,12 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
     __ mv(t1, _array->as_pointer_register());
     stub_id = Runtime1::throw_range_check_failed_id;
   }
-  int32_t off = 0;
-  __ la_patchable(ra, RuntimeAddress(Runtime1::entry_for(stub_id)), off);
-  __ jalr(ra, ra, off);
+  RuntimeAddress target(Runtime1::entry_for(stub_id));
+  __ relocate(target.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(ra, target, offset);
+    __ jalr(ra, ra, offset);
+  });
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());
@@ -127,7 +121,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  __ far_call(Address(Runtime1::entry_for(Runtime1::throw_div0_exception_id), relocInfo::runtime_call_type));
+  __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::throw_div0_exception_id)));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 #ifdef ASSERT
@@ -199,12 +193,6 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ j(_continuation);
 }
 
-// Implementation of MonitorAccessStubs
-MonitorEnterStub::MonitorEnterStub(LIR_Opr obj_reg, LIR_Opr lock_reg, CodeEmitInfo* info)
-: MonitorAccessStub(obj_reg, lock_reg) {
-  _info = new CodeEmitInfo(info);
-}
-
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   assert(__ rsp_offset() == 0, "frame size should be fixed");
   __ bind(_entry);
@@ -265,7 +253,7 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
 }
 
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
-  address a = NULL;
+  address a = nullptr;
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
     a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
@@ -290,7 +278,7 @@ void SimpleExceptionStub::emit_code(LIR_Assembler* ce) {
   if (_obj->is_cpu_register()) {
     __ mv(t0, _obj->as_register());
   }
-  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), NULL, t1);
+  __ far_call(RuntimeAddress(Runtime1::entry_for(_stub)), t1);
   ce->add_call_info_here(_info);
   debug_only(__ should_not_reach_here());
 }
@@ -334,7 +322,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   Address resolve(SharedRuntime::get_resolve_static_call_stub(),
                   relocInfo::static_call_type);
   address call = __ trampoline_call(resolve);
-  if (call == NULL) {
+  if (call == nullptr) {
     ce->bailout("trampoline stub overflow");
     return;
   }

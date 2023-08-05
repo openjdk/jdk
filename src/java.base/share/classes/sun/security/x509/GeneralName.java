@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class GeneralName {
+public class GeneralName implements DerEncoder {
 
     // Private data members
-    private GeneralNameInterface name = null;
+    private final GeneralNameInterface name;
 
     /**
      * Default constructor for the class.
@@ -231,9 +231,9 @@ public class GeneralName {
      * Encode the name to the specified DerOutputStream.
      *
      * @param out the DerOutputStream to encode the GeneralName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         name.encode(tmp);
         int nameType = name.getType();

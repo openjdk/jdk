@@ -57,7 +57,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withBitAlignment(8);
+    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -759,11 +759,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Integer> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (int) 0);
-                that = that.blend((int) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Integer> mask
+                    = this.compare(EQ, (int) 0);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -809,11 +807,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Integer> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (int) 0);
-                that = that.blend((int) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Integer> mask
+                    = this.compare(EQ, (int) 0, m);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -3163,7 +3159,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * int[] ar = new int[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_INT.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_INT.withByteAlignment(1), n);
      *     }
      * }
      * IntVector r = IntVector.fromArray(species, ar, 0);
