@@ -26,23 +26,9 @@
 #ifndef AWT_OLE_H
 #define AWT_OLE_H
 
-#pragma push_macro("malloc")
-#pragma push_macro("calloc")
-#pragma push_macro("realloc")
-
-// Don't want to pull in the redefined allocation functions
-#undef malloc
-#undef calloc
-#undef realloc
-
 #include <ole2.h>
 #include <comdef.h>
 #include <comutil.h>
-
-#pragma pop_macro("realloc")
-#pragma pop_macro("calloc")
-#pragma pop_macro("malloc")
-
 #include "awt.h"
 
 #ifdef _DEBUG
