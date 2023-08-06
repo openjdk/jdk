@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.util;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -37,8 +37,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * This class provides management of {@link Map maps} where it is desirable to
@@ -78,11 +81,8 @@ import java.util.stream.Stream;
  * @param <V> the type of mapped values
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
-final class ReferencedKeyMap<K, V> implements Map<K, V> {
+public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     /**
      * true if {@link SoftReference} keys are to be used,
      * {@link WeakReference} otherwise.
@@ -95,54 +95,61 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final Map<ReferenceKey<K>, V> map;
 
     /**
-     * {@link ReferenceQueue} for cleaning up {@link WeakReferenceKey EntryKeys}.
+     * {@link ReferenceQueue} for cleaning up entries.
      */
     private final ReferenceQueue<K> stale;
 
     /**
      * Private constructor.
      *
-     * @param isSoft  true if {@link SoftReference} keys are to
-     *                be used, {@link WeakReference} otherwise.
-     * @param map     backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param map             backing map
+     * @param stale           {@link ReferenceQueue} for cleaning up entries
      */
-    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map) {
+    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map, ReferenceQueue<K> stale) {
         this.isSoft = isSoft;
         this.map = map;
-        this.stale = new ReferenceQueue<>();
+        this.stale = stale;
     }
 
     /**
      * Create a new {@link ReferencedKeyMap} map.
      *
-     * @param isSoft    true if {@link SoftReference} keys are to
-     *                  be used, {@link WeakReference} otherwise.
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new map with {@link Reference} keys
      *
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    static <K, V> ReferencedKeyMap<K, V>
+    public static <K, V> ReferencedKeyMap<K, V>
     create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft, supplier.get());
+        return create(isSoft, false, supplier);
     }
 
     /**
-     * Create a new {@link ReferencedKeyMap} map using
-     * {@link WeakReference} keys.
+     * Create a new {@link ReferencedKeyMap} map.
      *
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param useNativeQueue  true if uses NativeReferenceQueue
+     *                        otherwise use {@link ReferenceQueue}.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new map with {@link Reference} keys
      *
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    static <K, V> ReferencedKeyMap<K, V>
-    create(Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(false, supplier.get());
+    public static <K, V> ReferencedKeyMap<K, V>
+    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(),
+                useNativeQueue ? SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue()
+                               : new ReferenceQueue<>()
+                );
     }
 
     /**
@@ -320,15 +327,116 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
     /**
      * Removes enqueued weak references from map.
      */
-    @SuppressWarnings("unchecked")
     public void removeStaleReferences() {
         while (true) {
-            WeakReferenceKey<K> key = (WeakReferenceKey<K>)stale.poll();
+            Object key = stale.poll();
             if (key == null) {
                 break;
             }
             map.remove(key);
         }
+    }
+
+    /**
+     * Puts an entry where the key and the value are the same. Used for
+     * interning values in a set.
+     *
+     * @implNote Requires a {@link ReferencedKeyMap} whose {@code V} type
+     * is a {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
+     * be thrown.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     *
+     * @param <T> type of key
+     *
+     * @return the old key instance if found otherwise the new key instance
+     *
+     * @throws ClassCastException if {@code V} is not {@code EntryKey<T>}
+     */
+    static <T> T intern(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        T value = existingKey(setMap, key);
+        if (value != null) {
+            return value;
+        }
+        return internKey(setMap, key);
+    }
+
+    /**
+     * Puts an entry where the key and the value are the same. Used for
+     * interning values in a set.
+     *
+     * @implNote Requires a {@link ReferencedKeyMap} whose {@code V} type
+     * is a {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
+     * be thrown.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     * @param interner  operation to apply to key before adding to map
+     *
+     * @param <T> type of key
+     *
+     * @return the old key instance if found otherwise the new key instance
+     *
+     * @throws ClassCastException if {@code V} is not {@code EntryKey<T>}
+     *
+     * @implNote This version of intern should not be called during phase1
+     * using a lambda. Use an UnaryOperator instance instead.
+     */
+    static <T> T intern(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key, UnaryOperator<T> interner) {
+        T value = existingKey(setMap, key);
+        if (value != null) {
+            return value;
+        }
+        key = interner.apply(key);
+        return internKey(setMap, key);
+    }
+
+    /**
+     * Check if the key already exists in the map.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to test
+     *
+     * @param <T> type of key
+     *
+     * @return key if found otherwise null
+     */
+    private static <T> T existingKey(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        setMap.removeStaleReferences();
+        ReferenceKey<T> entryKey = setMap.get(setMap.lookupKey(key));
+        return entryKey != null ? entryKey.get() : null;
+    }
+
+    /**
+     * Attempt to add key to map.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     *
+     * @param <T> type of key
+     *
+     * @return the old key instance if found otherwise the new key instance
+     */
+    private static <T> T internKey(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        ReferenceKey<T> entryKey = setMap.entryKey(key);
+        T interned;
+        do {
+            setMap.removeStaleReferences();
+            ReferenceKey<T> existing = setMap.map.putIfAbsent(entryKey, entryKey);
+            if (existing == null) {
+                return key;
+            } else {
+                // If {@code putIfAbsent} returns non-null then was actually a
+                // {@code replace} and older key was used. In that case the new
+                // key was not used and the reference marked stale.
+                interned = existing.get();
+                if (interned != null) {
+                    entryKey.unused();
+                }
+            }
+        } while (interned == null);
+        return interned;
     }
 
 }

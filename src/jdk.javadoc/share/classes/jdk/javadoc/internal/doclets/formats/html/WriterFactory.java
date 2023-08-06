@@ -26,16 +26,22 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 
+import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
- * The factory that returns HTML writers.
+ * The factory that returns HTML writers, to be used to generate pages in the overall API documentation.
  */
 public class WriterFactory {
 
@@ -46,37 +52,150 @@ public class WriterFactory {
     }
 
     /**
-     * {@return a new {@link ConstantsSummaryWriter}}
+     * {@return a new writer for the page for a module}
      */
-    public ConstantsSummaryWriter newConstantsSummaryWriter() {
-        return new ConstantsSummaryWriter(configuration);
-    }
-
-    /**
-     * {@return a new {@link PackageWriter}}
-     */
-    public PackageWriter newPackageWriter(PackageElement packageElement) {
-        return new PackageWriter(configuration, packageElement);
-    }
-
-    /**
-     * {@return a new {@link ModuleWriter}}
-     */
-    public ModuleWriter newModuleWriter(ModuleElement mdle) {
+    public HtmlDocletWriter newModuleWriter(ModuleElement mdle) {
         return new ModuleWriter(configuration, mdle);
     }
 
     /**
-     * {@return a new {@link ClassWriter}}
+     * {@return a new writer for the "module index" page}
      */
-    public ClassWriter newClassWriter(TypeElement typeElement, ClassTree classTree) {
+    public HtmlDocletWriter newModuleIndexWriter() {
+        return new ModuleIndexWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page for a package}
+     */
+    public HtmlDocletWriter newPackageWriter(PackageElement packageElement) {
+        return new PackageWriter(configuration, packageElement);
+    }
+
+    /**
+     * {@return a new writer for the "package index" page}
+     */
+    public HtmlDocletWriter newPackageIndexWriter() {
+        return new PackageIndexWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "package use" page for a package}
+     */
+    public HtmlDocletWriter newPackageUseWriter(PackageElement packageElement, ClassUseMapper mapper) {
+        return new PackageUseWriter(configuration, mapper, packageElement);
+    }
+
+    /**
+     * {@return a new writer for the page for a class or other type element}
+     */
+    public HtmlDocletWriter newClassWriter(TypeElement typeElement, ClassTree classTree) {
         return new ClassWriter(configuration, typeElement, classTree);
     }
+
     /**
-     * {@return a new {@link SerializedFormWriter}}
+     * {@return a new writer for the "class use" page for a class or other type element}
      */
-    public SerializedFormWriter newSerializedFormWriter() {
+    public HtmlDocletWriter newClassUseWriter(TypeElement typeElement, ClassUseMapper mapper) {
+        return new ClassUseWriter(configuration, mapper, typeElement);
+    }
+
+    /**
+     * {@return a new writer for the list of "all classes"}
+     */
+    public HtmlDocletWriter newAllClassesIndexWriter(IndexBuilder indexBuilder) {
+        return new AllClassesIndexWriter(configuration, indexBuilder);
+    }
+
+    /**
+     * {@return a new writer for the list of "all packages"}
+     */
+    public HtmlDocletWriter newAllPackagesIndexWriter() {
+        return new AllPackagesIndexWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "constants summary" page}
+     */
+    public HtmlDocletWriter newConstantsSummaryWriter() {
+        return new ConstantsSummaryWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page giving the API that has been deprecated in recent releases}
+     */
+    public HtmlDocletWriter newDeprecatedListWriter() {
+        return new DeprecatedListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for a "doc-file" page}
+     */
+    public HtmlDocletWriter newDocFileWriter(DocPath path, DocFileElement dfElement) {
+        return new DocFilesHandler.DocFileWriter(configuration, path, dfElement);
+    }
+
+    /**
+     * {@return a new writer for the page listing external specifications referenced in the API}
+     */
+    public HtmlDocletWriter newExternalSpecsWriter() {
+        return new ExternalSpecsWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "help" page}
+     */
+    public HtmlDocletWriter newHelpWriter() {
+        return new HelpWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for an "index" page}
+     */
+    public HtmlDocletWriter newIndexWriter(DocPath path, List<Character> allFirstCharacters, List<Character> displayFirstCharacters) {
+        return new IndexWriter(configuration, path, allFirstCharacters, displayFirstCharacters);
+    }
+
+    /**
+     * {@return a new writer for the list of new API in recent releases}
+     */
+    public HtmlDocletWriter newNewAPIListWriter() {
+        return new NewAPIListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the list of preview API in this release}
+     */
+    public HtmlDocletWriter newPreviewListWriter() {
+        return new PreviewListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "search" page}
+     */
+    public HtmlDocletWriter newSearchWriter() {
+        return new SearchWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page giving the serialized forms of classes and other type elements}
+     */
+    public HtmlDocletWriter newSerializedFormWriter() {
         return new SerializedFormWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page listing system properties referenced in the API}
+     */
+    public HtmlDocletWriter newSystemPropertiesWriter() {
+        return new SystemPropertiesWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page showing the hierarchy of classes and their superclasses}
+     */
+    public HtmlDocletWriter newTreeWriter(ClassTree classTree) {
+        return new TreeWriter(configuration, classTree);
     }
 
     /**
