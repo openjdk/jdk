@@ -69,7 +69,7 @@ import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.UTF_8;
 import sun.nio.fs.DefaultFileSystemProvider;
-import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.util.SignatureFileVerifier;
 
 import static java.util.zip.ZipConstants64.*;
@@ -123,11 +123,14 @@ public class ZipFile implements ZipConstants, Closeable {
     public static final int OPEN_DELETE = 0x4;
 
     /**
-     * Flag which specifies whether the validation of the Zip64 extra
-     * fields should be disabled
+     * Flag to specify whether the Extra ZIP64 validation should be
+     * enabled.
      */
-    private static final boolean disableZip64ExtraFieldValidation =
-            GetBooleanAction.privilegedGetProperty("jdk.util.zip.disableZip64ExtraFieldValidation");
+    private static final boolean DISABLE_ZIP64_EXTRA_VALIDATION =
+            GetPropertyAction.privilegedGetProperty(
+                    "jdk.util.zip.disableZip64ExtraFieldValidation", "false")
+                    .equalsIgnoreCase("true");
+
     /**
      * Opens a zip file for reading.
      *
@@ -1208,7 +1211,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             int elen = CENEXT(cen, pos);
-            if (elen > 0 && !disableZip64ExtraFieldValidation) {
+            if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
                 long extraStartingOffset = pos + CENHDR + nlen;
                 if ((int)extraStartingOffset != extraStartingOffset) {
                     zerror("invalid CEN header (bad extra offset)");
@@ -1260,25 +1263,39 @@ public class ZipFile implements ZipConstants, Closeable {
                 zerror("Invalid CEN header (extra data field size too long)");
             }
             int currentOffset = startingOffset;
-            while (currentOffset < extraEndOffset) {
+            // Walk through each Extra Header. Each Extra Header Must consist of:
+            //       Header ID - 2 bytes
+            //       Data Size - 2 bytes:
+            while (currentOffset + Integer.BYTES <= extraEndOffset) {
                 int tag = get16(cen, currentOffset);
                 currentOffset += Short.BYTES;
 
                 int tagBlockSize = get16(cen, currentOffset);
+                currentOffset += Short.BYTES;
                 int tagBlockEndingOffset = currentOffset + tagBlockSize;
 
                 //  The ending offset for this tag block should not go past the
                 //  offset for the end of the extra field
                 if (tagBlockEndingOffset > extraEndOffset) {
-                    zerror("Invalid CEN header (invalid zip64 extra data field size)");
+                    // There are some extra headers with an invalid data size, if
+                    // found, we need to just ignore them
+                    break;
                 }
-                currentOffset += Short.BYTES;
 
                 if (tag == ZIP64_EXTID) {
                     // Get the compressed size;
                     long csize = CENSIZ(cen, cenPos);
                     // Get the uncompressed size;
                     long size = CENLEN(cen, cenPos);
+                    // if ZIP64_EXTID blocksize == 0 validate csize and size
+                    // to make sure neither field == ZIP64_MAGICVAL
+                    if (tagBlockSize == 0) {
+                        if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
+                            zerror("Invalid CEN header (invalid zip64 extra data field size)");
+                        }
+                        // Only validate the ZIP64_EXTID data if the block size > 0
+                        return;
+                    }
                     checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
                             csize, size);
                 }
@@ -1342,6 +1359,7 @@ public class ZipFile implements ZipConstants, Closeable {
             /*
              * As the fields must appear in order, the block size indicates which
              * fields to expect:
+             *  0 - May be written out by Apache Commons Compress Library
              *  8 - uncompressed size
              * 16 - uncompressed size, compressed size
              * 24 - uncompressed size, compressed sise, LOC Header offset
@@ -1349,7 +1367,7 @@ public class ZipFile implements ZipConstants, Closeable {
              * and Disk start number
              */
             return switch(blockSize) {
-                case 8, 16, 24, 28 -> true;
+                case 0, 8, 16, 24, 28 -> true;
                 default -> false;
             };
         }

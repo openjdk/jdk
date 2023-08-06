@@ -29,17 +29,19 @@
  */
 
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -251,17 +253,6 @@ public class CorruptedZipFiles {
         assertZipException(".*bad header size.*");
     }
 
-    /*
-     * A ZipException is thrown if a CEN header has an
-     * extra field length which makes the CEN header overflow into the
-     * End of central directory record.
-     */
-    @Test
-    public void excessiveExtraFieldLength() throws IOException {
-        short existingExtraLength = buffer.getShort(cenpos + CENEXT);
-        buffer.putShort(cenpos+CENEXT, (short) (existingExtraLength + 1));
-        assertZipException(".*invalid zip64 extra data field size.*");
-    }
 
     /*
      * A ZipException is thrown if a CEN header has an
