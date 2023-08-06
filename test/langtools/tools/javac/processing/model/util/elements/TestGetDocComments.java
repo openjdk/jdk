@@ -183,7 +183,7 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
     /** \u0009\u0020
      * Totality
      */
-    @ExpectedComment(" Totality\n") // No newline
+    @ExpectedComment(" Totality\n")
     private void wombat() {return ;}
 
     /**
@@ -200,4 +200,14 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
    ****/
     @ExpectedComment("") // No newline
     private void tail2() {return ;}
+
+    // Testing of line terminators, javac implementation normalizes them:
+    // * newline: \u000A
+    // * carriage return: \u000D
+    // * * carriage return + newline: \u000D\u000A
+    /**
+     * Lorem\u000A\u000D\u000D\u000Aipsum
+     */
+    @ExpectedComment(" Lorem\n\n\nipsum\n")
+    private void wombat2() {return ;}
 }
