@@ -2830,6 +2830,16 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_HUGEPAGE 14
 #endif
 
+// Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
+// supported by OpenJDK share the same flag value.
+#define MAP_FIXED_NOREPLACE_value 0x100000
+#ifndef MAP_FIXED_NOREPLACE
+  #define MAP_FIXED_NOREPLACE MAP_FIXED_NOREPLACE_value
+#else
+  // Sanity-check our assumed default value if we build with a new enough libc.
+  static_assert(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
+#endif
+
 int os::Linux::commit_memory_impl(char* addr, size_t size,
                                   size_t alignment_hint, bool exec) {
   int err = os::Linux::commit_memory_impl(addr, size, exec);
@@ -3470,8 +3480,23 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 // may not start from the requested address. Unlike Linux mmap(), this
 // function returns null to indicate failure.
 static char* anon_mmap(char* requested_addr, size_t bytes) {
-  // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  // If a requested address was given:
+  //
+  // The POSIX-conform way is to *omit* MAP_FIXED. This will leave existing mappings intact.
+  // If the requested mapping area is blocked by a pre-existing mapping, the kernel will map
+  // somewhere else. On Linux, that alternative address appears to have no relation to the
+  // requested address.
+  // Unfortunately, this is not what we need - if we specified a request address, we'd want
+  // to map there and nowhere else. Therefore we will unmap the block again, which means we
+  // just executed a needless mmap->munmap cycle.
+  // Since Linux 4.17, the kernel offers MAP_FIXED_NOREPLACE. With this flag, if a pre-
+  // existing mapping exists, the kernel will not map at an alternative point but instead
+  // return an error. We can therefore save that unnessassary mmap-munmap cycle.
+  //
+  // Backward compatibility: Older kernels will ignore the unknown flag; so mmap will behave
+  // as in mode (a).
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS |
+                    ((requested_addr != nullptr) ? MAP_FIXED_NOREPLACE : 0);
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
   // touch an uncommitted page. Otherwise, the read/write might
@@ -4209,6 +4234,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
+    log_trace(os, map)("Kernel rejected " PTR_FORMAT ", offered " PTR_FORMAT ".", p2i(requested_addr), p2i(addr));
     anon_munmap(addr, bytes);
   }
 
