@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,15 @@ package sun.nio.cs;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Arrays;
-import sun.nio.cs.DoubleByte;
-import sun.nio.cs.Surrogate;
 import static sun.nio.cs.CharsetMapping.*;
 
 public class HKSCS {
 
     public static class Decoder extends DoubleByte.Decoder {
-        static int b2Min = 0x40;
-        static int b2Max = 0xfe;
+        private static final int b2Min = 0x40;
+        private static final int b2Max = 0xfe;
 
         private final char[][] b2cBmp;
         private final char[][] b2cSupp;
@@ -73,7 +69,7 @@ public class HKSCS {
 
         public char decodeDoubleEx(int b1, int b2) {
             /* if the b2cSupp is null, the subclass need
-               to override the methold
+               to override the method
             if (b2cSupp == null)
                 return UNMAPPABLE_DECODING;
              */
@@ -415,7 +411,7 @@ public class HKSCS {
             return dp;
         }
 
-        static char[] C2B_UNMAPPABLE = new char[0x100];
+        private static final char[] C2B_UNMAPPABLE = new char[0x100];
         static {
             Arrays.fill(C2B_UNMAPPABLE, (char)UNMAPPABLE_ENCODING);
         }

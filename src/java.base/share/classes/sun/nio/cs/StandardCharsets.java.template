@@ -189,7 +189,7 @@ public class StandardCharsets extends CharsetProvider {
         }
         return new Iterator<Charset>() {
 
-                Iterator<String> i = charsetNames.iterator();
+                final Iterator<String> i = charsetNames.iterator();
 
                 public boolean hasNext() {
                     return i.hasNext();

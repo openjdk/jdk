@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class UTF_32Coder {
 
     protected static class Decoder extends CharsetDecoder {
         private int currentBO;
-        private int expectedBO;
+        private final int expectedBO;
 
         protected Decoder(Charset cs, int bo) {
             super(cs, 0.25f, 1.0f);
@@ -114,9 +114,9 @@ class UTF_32Coder {
     }
 
     protected static class Encoder extends CharsetEncoder {
-        private boolean doBOM = false;
+        private final boolean doBOM;
         private boolean doneBOM = true;
-        private int byteOrder;
+        private final int byteOrder;
 
         protected void put(int cp, ByteBuffer dst) {
             if (byteOrder==BIG) {

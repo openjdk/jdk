@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ public abstract class UnicodeEncoder extends CharsetEncoder {
     protected static final int BIG = 0;
     protected static final int LITTLE = 1;
 
-    private int byteOrder;      /* Byte order in use */
-    private boolean usesMark;   /* Write an initial BOM */
+    private final int byteOrder;      /* Byte order in use */
+    private final boolean usesMark;   /* Write an initial BOM */
     private boolean needsMark;
 
     protected UnicodeEncoder(Charset cs, int bo, boolean m) {

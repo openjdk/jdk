@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class ThreadLocalCoders {
     private abstract static class Cache {
 
         // Thread-local reference to array of cached objects, in LRU order
-        private ThreadLocal<Object[]> cache = new ThreadLocal<>();
+        private final ThreadLocal<Object[]> cache = new ThreadLocal<>();
         private final int size;
 
         Cache(int size) {
@@ -85,7 +85,7 @@ public class ThreadLocalCoders {
 
     }
 
-    private static Cache decoderCache = new Cache(CACHE_SIZE) {
+    private static final Cache decoderCache = new Cache(CACHE_SIZE) {
             boolean hasName(Object ob, Object name) {
                 if (name instanceof Charset)
                     return ((CharsetDecoder)ob).charset().equals(name);
@@ -109,7 +109,7 @@ public class ThreadLocalCoders {
         return cd;
     }
 
-    private static Cache encoderCache = new Cache(CACHE_SIZE) {
+    private static final Cache encoderCache = new Cache(CACHE_SIZE) {
             boolean hasName(Object ob, Object name) {
                 if (name instanceof Charset)
                     return ((CharsetEncoder)ob).charset().equals(name);

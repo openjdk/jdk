@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,7 @@
 package sun.nio.cs;
 
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.*;
 import java.security.*;
 
@@ -149,7 +144,7 @@ public class CharsetMapping {
         public int cp2;  //CC of composite
     }
 
-    static Comparator<Entry> comparatorBytes =
+    private static final Comparator<Entry> comparatorBytes =
         new Comparator<Entry>() {
             public int compare(Entry m1, Entry m2) {
                 return m1.bs - m2.bs;
@@ -159,7 +154,7 @@ public class CharsetMapping {
             }
     };
 
-    static Comparator<Entry> comparatorCP =
+    private static final Comparator<Entry> comparatorCP =
         new Comparator<Entry>() {
             public int compare(Entry m1, Entry m2) {
                 return m1.cp - m2.cp;
@@ -169,7 +164,7 @@ public class CharsetMapping {
             }
     };
 
-    static Comparator<Entry> comparatorComp =
+    private static final Comparator<Entry> comparatorComp =
         new Comparator<Entry>() {
             public int compare(Entry m1, Entry m2) {
                  int v = m1.cp - m2.cp;

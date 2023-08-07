@@ -35,7 +35,6 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import jdk.internal.misc.VM;
-import sun.nio.cs.Surrogate;
 import sun.security.action.GetPropertyAction;
 
 public class GB18030
@@ -2843,7 +2842,7 @@ public class GB18030
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    static String decoderIndex2[] = {
+    static final String[] decoderIndex2 = {
         innerDecoderIndex0,
         innerDecoderIndex1,
         innerDecoderIndex2,
@@ -5934,7 +5933,7 @@ public class GB18030
         112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 0
     };
 
-    static String index2[] = {
+    static final String[] index2 = {
         innerIndex0,
         innerIndex1,
         innerIndex2,
@@ -12313,7 +12312,7 @@ public class GB18030
         181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196
     };
 
-    static String encoderIndex2[] = {
+    static final String[] encoderIndex2 = {
         innerEncoderIndex0,
         innerEncoderIndex1,
         innerEncoderIndex2,
