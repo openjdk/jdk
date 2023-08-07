@@ -149,7 +149,7 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
 
 void ChunkPool::deallocate_chunk(Chunk* p) {
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
-  Chunk* c = (Chunk*)p;
+  Chunk* c = p;
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
     pool->return_to_pool(c);
@@ -187,7 +187,7 @@ Chunk::Chunk(size_t length) : _len(length) {
 
 void Chunk::chop(Chunk* k) {
   while (k != nullptr) {
-    Chunk *tmp = k->next();
+    Chunk* tmp = k->next();
     // clear out this chunk (to detect allocation bugs)
     if (ZapResourceArea) memset(k->bottom(), badResourceValue, k->length());
     ChunkPool::deallocate_chunk(k);
@@ -247,7 +247,7 @@ void Arena::set_size_in_bytes(size_t size) {
 // Total of all Chunks in arena
 size_t Arena::used() const {
   size_t sum = _chunk->length() - (_max-_hwm); // Size leftover in this Chunk
-  Chunk *k = _first;
+  Chunk* k = _first;
   while( k != _chunk) {         // Whilst have Chunks in a row
     sum += k->length();         // Total size of this Chunk
     k = k->next();              // Bump along to next Chunk
@@ -265,7 +265,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
     return nullptr;
   }
 
-  Chunk *k = _chunk;            // Get filled-up chunk address
+  Chunk* k = _chunk;            // Get filled-up chunk address
   _chunk = ChunkPool::allocate_chunk(len, alloc_failmode);
 
   if (_chunk == nullptr) {
@@ -328,7 +328,7 @@ bool Arena::contains( const void *ptr ) const {
   if (_chunk == nullptr) return false;
   if( (void*)_chunk->bottom() <= ptr && ptr < (void*)_hwm )
     return true;                // Check for in this chunk
-  for (Chunk *c = _first; c; c = c->next()) {
+  for (Chunk* c = _first; c; c = c->next()) {
     if (c == _chunk) continue;  // current chunk has been processed
     if ((void*)c->bottom() <= ptr && ptr < (void*)c->top()) {
       return true;              // Check for every chunk in Arena
