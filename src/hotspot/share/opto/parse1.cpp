@@ -2349,8 +2349,20 @@ void Parse::return_current(Node* value) {
     _exits.jvms()->alloc_state() = jvms()->alloc_state();
   } else {
     _exits.map()->merge_replaced_nodes_with(map());
-    AllocationStateMerger mp(_exits.jvms()->alloc_state());
-    mp.merge(jvms()->alloc_state(), &_exits, _exits.control()->as_Region(), _first_return);
+
+    if (DoPartialEscapeAnalysis) {
+      PEAState& as =_exits.jvms()->alloc_state();
+      PEAState& newin = jvms()->alloc_state();
+      AllocationStateMerger mp(as);
+      // if value is a tracking object and PEA needs to create a phi node to merge it,
+      // we need to use _exits.argument(0)
+      ObjID obj = PEA()->is_alias(value);
+      if (as.contains(obj) && newin.contains(obj)) {
+        Node* phi = _exits.argument(0);
+        mp.merge_at_phi_creation(PEA(), newin, phi->as_Phi(), phi->in(_first_return-1), value);
+      }
+      mp.merge(newin, &_exits, _exits.control()->as_Region(), _first_return);
+    }
   }
 
   stop_and_kill_map();          // This CFG path dies here

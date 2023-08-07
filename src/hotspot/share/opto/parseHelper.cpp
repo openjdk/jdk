@@ -968,7 +968,7 @@ void AllocationStateMerger::merge_at_phi_creation(const PartialEscapeAnalysis* p
     ObjectState* os2 = newin.contains(obj2) ? newin.get_object_state(obj2) : nullptr;
 
     // obj1 != obj2 if n points to something else. It could be the other object, null or a ConP.
-    // we don't any here because PEA doesn't create phi in this case.
+    // we do nothing here because PEA doesn't create phi in this case.
     if (obj1 == obj2 && os2 != nullptr) { // n points to the same object and pred_as is trakcing.
       if (!os1->is_virtual() || !os2->is_virtual()) {
         if (os2->is_virtual()) {

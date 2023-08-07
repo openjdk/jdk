@@ -151,6 +151,7 @@ public:
   PartialEscapeAnalysis(Arena* arena): _aliases(), _objects(arena, 2, 0, nullptr) {}
 
   ObjID is_alias(Node* node) const {
+    assert(node != nullptr || !_aliases.contains(node), "_aliases.contain(nullptr) must return false");
     if (_aliases.contains(node)) {
       return *(_aliases.get(node));
     } else {
