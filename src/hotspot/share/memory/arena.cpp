@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -274,8 +275,12 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
     _chunk = k;                 // restore the previous value of _chunk
     return nullptr;
   }
-  if (k) k->set_next(_chunk);   // Append new chunk to end of linked list
-  else _first = _chunk;
+
+  if (k != nullptr) {
+    k->set_next(_chunk);        // Append new chunk to end of linked list
+  } else {
+    _first = _chunk;
+  }
   _hwm  = _chunk->bottom();     // Save the cached hwm, max
   _max =  _chunk->top();
   set_size_in_bytes(size_in_bytes() + len);
