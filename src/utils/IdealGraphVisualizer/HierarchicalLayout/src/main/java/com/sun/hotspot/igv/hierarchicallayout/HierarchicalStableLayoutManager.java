@@ -454,6 +454,13 @@ public class HierarchicalStableLayoutManager {
         }
     }
 
+    /**
+     * Indicate that the layout should be redrawn with a static algorithm
+     */
+    public void setShouldRedrawLayout(boolean shouldRedrawLayout) {
+        this.shouldRedrawLayout = shouldRedrawLayout;
+    }
+
     public void updateLayout(HashSet<? extends Vertex> vertices, HashSet<? extends Link> links) {
         currentVertices = vertices;
         currentLinks = links;
@@ -467,6 +474,8 @@ public class HierarchicalStableLayoutManager {
         new ProcessInput().run();
 
         if (shouldRedrawLayout) {
+            // If the layout is too messy it should be redrawn using the static algorithm,
+            // currently HierarchicalLayoutManager
             manager.doLayout(new LayoutGraph(links, vertices));
             nodes = manager.getNodes();
             shouldRedrawLayout = false;

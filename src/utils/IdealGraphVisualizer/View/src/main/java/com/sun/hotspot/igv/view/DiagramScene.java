@@ -697,6 +697,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         manager.setMaxLayerLength(10);
         manager.doLayout(new LayoutGraph(edges, figures));
+        hierarchicalStableLayoutManager.setShouldRedrawLayout(true);
     }
 
     private void doClusteredLayout(HashSet<Connection> edges) {
