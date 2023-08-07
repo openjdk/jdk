@@ -125,7 +125,7 @@ public class BigContrastMetalTheme extends ContrastMetalTheme {
         table.put("TextField.border", textBorder);
         table.put("PasswordField.border", textBorder);
         table.put("TextArea.border", textBorder);
-        table.put("TextPane.font", textBorder);
+        table.put("TextPane.font", controlFont);
 
         table.put("ScrollPane.border", blackLineBorder);
 

@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -96,11 +98,11 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
 
     /**
      * Remaps the whole ClassModel into a new class file, including the class name.
+     * @param context Classfile context
      * @param clm class model to re-map
      * @return re-mapped class file bytes
      */
-    default byte[] remapClass(ClassModel clm) {
-        return Classfile.build(map(clm.thisClass().asSymbol()),
-                clb -> clm.forEachElement(resolve(clb).consumer()));
+    default byte[] remapClass(Classfile context, ClassModel clm) {
+        return context.transform(clm, map(clm.thisClass().asSymbol()), this);
     }
 }

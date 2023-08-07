@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,8 +116,8 @@ static jboolean loadSocketExtensionFuncs
     return JNI_TRUE;
 }
 
-jint
-sctpHandleSocketError(JNIEnv *env, jint errorValue)
+jint sctpHandleSocketErrorWithMessage(JNIEnv *env, jint errorValue,
+                                      const char* message)
 {
     char *xn;
     switch (errorValue) {
@@ -127,9 +127,8 @@ sctpHandleSocketError(JNIEnv *env, jint errorValue)
             xn= JNU_JAVANETPKG "ProtocolException";
             break;
         case ECONNREFUSED:
-            xn = JNU_JAVANETPKG "ConnectException";
-            break;
         case ETIMEDOUT:
+        case ENOTCONN:
             xn = JNU_JAVANETPKG "ConnectException";
             break;
         case EHOSTUNREACH:
@@ -144,8 +143,17 @@ sctpHandleSocketError(JNIEnv *env, jint errorValue)
             break;
     }
     errno = errorValue;
-    JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    if (message == NULL) {
+        JNU_ThrowByNameWithLastError(env, xn, "NioSocketError");
+    } else {
+        JNU_ThrowByNameWithMessageAndLastError(env, xn, message);
+    }
     return IOS_THROWN;
+}
+
+jint sctpHandleSocketError(JNIEnv *env, jint errorValue)
+{
+    return sctpHandleSocketErrorWithMessage(env, errorValue, NULL);
 }
 
 /*
@@ -194,7 +202,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
                                          "Protocol not supported");
             return IOS_THROWN;
         } else {
-            return sctpHandleSocketError(env, errno);
+            return sctpHandleSocketErrorWithMessage(env, errno, "socket call failed");
         }
     }
 
@@ -209,7 +217,7 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpNet_socket0
     //event.sctp_partial_delivery_event = 1;
     //event.sctp_adaptation_layer_event = 1;
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_EVENTS, &event, sizeof(event)) != 0) {
-       sctpHandleSocketError(env, errno);
+       sctpHandleSocketErrorWithMessage(env, errno, "setsockopt failed");
     }
     return fd;
 }

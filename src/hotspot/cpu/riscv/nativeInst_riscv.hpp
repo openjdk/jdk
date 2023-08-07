@@ -624,7 +624,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
+    uint32_t value = Assembler::ld_instr(instr);
     // 0xc0201073 encodes CSRRW x0, instret, x0
     return value == 0xc0201073;
   }

@@ -597,9 +597,9 @@ public:
     ClassLoaderData* loader_b = b[0]->class_loader_data();
 
     if (loader_a != loader_b) {
-      return intx(loader_a) - intx(loader_b);
+      return checked_cast<int>(intptr_t(loader_a) - intptr_t(loader_b));
     } else {
-      return intx(a[0]) - intx(b[0]);
+      return checked_cast<int>(intptr_t(a[0]) - intptr_t(b[0]));
     }
   }
 
@@ -1357,6 +1357,10 @@ public:
     ResourceMark rm;
     _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
+    if (record->_klass->array_klasses() != nullptr) {
+      record->_klass->array_klasses()->cds_print_value_on(_st);
+      _st->cr();
+    }
   }
   int index() const { return _index; }
 };

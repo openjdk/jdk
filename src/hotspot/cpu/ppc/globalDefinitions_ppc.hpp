@@ -31,6 +31,12 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
+#ifdef AIX
+const size_t pd_segfault_address = -1;
+#else
+const size_t pd_segfault_address = 1024;
+#endif
+
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = true;
@@ -44,13 +50,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 128
-
-#if defined(COMPILER2) && (defined(AIX) || defined(LINUX))
-// Include Transactional Memory lock eliding optimization
-#define INCLUDE_RTM_OPT 1
-#else
-#define INCLUDE_RTM_OPT 0
-#endif
 
 #define SUPPORT_RESERVED_STACK_AREA
 

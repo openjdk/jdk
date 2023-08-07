@@ -431,6 +431,7 @@ class MacroAssembler: public Assembler {
   void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
   // Misaligned loads, will use the best way, according to the AvoidUnalignedAccess flag
+  void load_short_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
   void load_int_misaligned(Register dst, Address src, Register tmp, bool is_signed, int granularity = 1);
   void load_long_misaligned(Register dst, Address src, Register tmp, int granularity = 1);
 
@@ -595,7 +596,9 @@ class MacroAssembler: public Assembler {
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
     assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
-    guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
+    guarantee(is_simm13(offset) && is_even(offset),                                                      \
+              "offset is invalid: is_simm_13: %s offset: " INT64_FORMAT,                                 \
+              BOOL_TO_STR(is_simm13(offset)), offset);                                                   \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
   }                                                                                                      \
   INSN_ENTRY_RELOC(void, NAME(Register Rs1, Register Rs2, address dest, relocInfo::relocType rtype))     \
@@ -771,6 +774,7 @@ public:
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
   void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
@@ -1265,6 +1269,10 @@ public:
   }
 
   // vector pseudo instructions
+  inline void vl1r_v(VectorRegister vd, Register rs) {
+    vl1re8_v(vd, rs);
+  }
+
   inline void vmnot_m(VectorRegister vd, VectorRegister vs) {
     vmnand_mm(vd, vs, vs);
   }
@@ -1279,6 +1287,10 @@ public:
 
   inline void vfneg_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
     vfsgnjn_vv(vd, vs, vs, vm);
+  }
+
+  inline void vfabs_v(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked) {
+    vfsgnjx_vv(vd, vs, vs, vm);
   }
 
   inline void vmsgt_vv(VectorRegister vd, VectorRegister vs2, VectorRegister vs1, VectorMask vm = unmasked) {

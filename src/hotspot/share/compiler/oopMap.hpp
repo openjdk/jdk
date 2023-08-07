@@ -54,9 +54,9 @@ enum class derived_pointer : intptr_t {};
 class OopMapValue: public StackObj {
   friend class VMStructs;
 private:
-  short _value;
-  int value() const                                 { return _value; }
-  void set_value(int value)                         { _value = value; }
+  unsigned short _value;
+  unsigned short value() const                      { return _value; }
+  void set_value(unsigned short value)              { _value = value; }
   short _content_reg;
 
 public:
@@ -88,8 +88,8 @@ public:
   }
 
  private:
-    void set_reg_type(VMReg p, oop_types t) {
-    set_value((p->value() << register_shift) | t);
+  void set_reg_type(VMReg p, oop_types t) {
+    set_value(checked_cast<unsigned short>((p->value() << register_shift) | t));
     assert(reg() == p, "sanity check" );
     assert(type() == t, "sanity check" );
   }
@@ -103,7 +103,7 @@ public:
     } else {
       assert (!r->is_valid(), "valid VMReg not allowed");
     }
-    _content_reg = r->value();
+    _content_reg = checked_cast<short>(r->value());
   }
 
  public:
@@ -111,12 +111,12 @@ public:
   void write_on(CompressedWriteStream* stream) {
     stream->write_int(value());
     if(is_callee_saved() || is_derived_oop()) {
-      stream->write_int(content_reg()->value());
+      stream->write_int(checked_cast<int>(content_reg()->value()));
     }
   }
 
   void read_from(CompressedReadStream* stream) {
-    set_value(stream->read_int());
+    set_value(checked_cast<unsigned short>(stream->read_int()));
     if (is_callee_saved() || is_derived_oop()) {
       set_content_reg(VMRegImpl::as_VMReg(stream->read_int(), true));
     }
@@ -128,7 +128,7 @@ public:
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
 
-  VMReg reg() const { return VMRegImpl::as_VMReg(mask_bits(value(), register_mask_in_place) >> register_shift); }
+  VMReg reg() const { return VMRegImpl::as_VMReg(checked_cast<int>(mask_bits(value(), register_mask_in_place) >> register_shift)); }
   oop_types type() const      { return (oop_types)mask_bits(value(), type_mask_in_place); }
 
   static bool legal_vm_reg_name(VMReg p) {

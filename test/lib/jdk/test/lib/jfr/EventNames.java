@@ -183,9 +183,11 @@ public class EventNames {
     public static final String ThreadContextSwitchRate = PREFIX + "ThreadContextSwitchRate";
     public static final String InitialEnvironmentVariable = PREFIX + "InitialEnvironmentVariable";
     public static final String NativeLibrary = PREFIX + "NativeLibrary";
+    public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
+    public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";
