@@ -276,7 +276,7 @@ public class Events {
     private static long lastId = -1;
     public static List<RecordedEvent> fromRecording(Recording recording) throws IOException {
         if (recording.getId() == lastId) {
-            throw new IOException("Recording with id " + lastId + " has already been dumped. Store the results in an List<RecoredEvent> instead of dumping again");
+            throw new IOException("Recording with id " + lastId + " has already been dumped. Store the results in a List<RecordedEvent> instead of dumping the recording again");
         }
         lastId = recording.getId();
         return RecordingFile.readAllEvents(makeCopy(recording));

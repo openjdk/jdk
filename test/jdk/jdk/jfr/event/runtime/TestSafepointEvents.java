@@ -68,7 +68,7 @@ public class TestSafepointEvents {
 
         try {
             // Verify that each event type was seen at least once
-            List<RecordedEvent> events =  Events.fromRecording(recording);
+            List<RecordedEvent> events = Events.fromRecording(recording);
             for (String name : EVENT_NAMES) {
                 boolean found = false;
                 for (RecordedEvent event : events) {
