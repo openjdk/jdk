@@ -42,8 +42,8 @@ public class TestLoadIndexedMismatch {
     public static char work() {
         // LoadIndexed (B)
         byte b = ARR[0];
-        // StringUTF16.charAt intrinsic, LoadIndexed (C)
-        char c = Helper.charAt(ARR, 0);
+        // StringUTF16.getChar intrinsic, LoadIndexed (C)
+        char c = Helper.getChar(ARR, 0);
         return c;
     }
 
