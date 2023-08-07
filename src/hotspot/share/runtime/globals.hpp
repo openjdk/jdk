@@ -802,7 +802,7 @@ const int ObjectAlignmentInBytes = 8;
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
   /* aggressive prefetching, while still leaving the room for segregating */\
   /* among the distinct pages.                                            */\
-  product(intx, ContendedPaddingWidth, 128,                                 \
+  product(int, ContendedPaddingWidth, 128,                                  \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
           constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
