@@ -33,6 +33,14 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
+// Must be the same as in os::attempt_reserve_memory_between()
+struct ARMB_constants {
+  static constexpr uintptr_t absolute_max = NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024);
+  static constexpr unsigned max_attempts = 32;
+  static constexpr unsigned min_random_value_range = 16;
+  static constexpr unsigned total_shuffle_threshold = 1024;
+};
+
 // Testing os::attempt_reserve_memory_between()
 
 static void release_if_needed(char* p, size_t s) {
@@ -50,9 +58,9 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t by
     EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
     EXPECT_TRUE(is_aligned(addr, os::vm_allocation_granularity())) << ERRINFO;
     EXPECT_LE(addr, max - bytes) << ERRINFO;
-    EXPECT_LE(addr, os::get_highest_attach_address() - bytes) << ERRINFO;
+    EXPECT_LE(addr, (char*)ARMB_constants::absolute_max - bytes) << ERRINFO;
     EXPECT_GE(addr, min) << ERRINFO;
-    EXPECT_GE(addr, os::get_lowest_attach_address()) << ERRINFO;
+    EXPECT_GE(addr, os::vm_min_address()) << ERRINFO;
   }
   return addr;
 }
@@ -156,13 +164,6 @@ public:
     release_if_needed(_p1, _p1_size);
     release_if_needed(_p2, _p2_size);
   }
-};
-
-// Must be the same as in os::attempt_reserve_memory_between()
-struct ARMB_constants {
-  static constexpr unsigned max_attempts = 32;
-  static constexpr unsigned min_random_value_range = 16;
-  static constexpr unsigned total_shuffle_threshold = 1024;
 };
 
 // Test that, when reserving in a range randomly, we get random results

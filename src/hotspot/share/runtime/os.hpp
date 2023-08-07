@@ -420,9 +420,7 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
-  // Returns the minimal and maximal address one should use for reserving memory
-  static char* get_lowest_attach_address();
-  static char* get_highest_attach_address();
+  static char* vm_min_address();
 
   inline static size_t cds_core_region_alignment();
 

@@ -2158,13 +2158,12 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return addr;
 }
 
-char* os::get_lowest_attach_address() {
-  return (char*)(MAX2(os::vm_allocation_granularity(), M));
-}
-
-char* os::get_highest_attach_address() {
-  // 128 TB
-  return (char*)(128 * 1024 * G);
+char* os::vm_min_address() {
+  // On AIX, we need to make sure we don't block the sbrk. However, this is
+  // done at actual reservation time, where we honor a "no-mmap" area following
+  // the break. See MaxExpectedDataSegmentSize. So we can return a very low
+  // address here.
+  return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
 }
 
 // Used to convert frequent JVM_Yield() to nops

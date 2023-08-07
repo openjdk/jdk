@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
@@ -94,7 +93,8 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   assert(is_valid_base(_base), "Address must be a valid encoding base");
 }
 
-
+// Given an address p, return true if p can be used as an encoding base.
+//  (Some platforms have restrictions of what constitutes a valid base address).
 bool CompressedKlassPointers::is_valid_base(address p) {
 #ifdef AARCH64
   // Below 32G, base must be aligned to 4G.

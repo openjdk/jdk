@@ -1822,19 +1822,14 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-char* os::get_lowest_attach_address() {
+char* os::vm_min_address() {
 #ifdef __APPLE__
-  // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp. -pagezero_size
-  // linker option).
+  // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
+  // -pagezero_size linker option).
   return (char*)((size_t)4 * G);
 #else
-  return (char*)os::vm_allocation_granularity();
+  return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
 #endif
-}
-
-char* os::get_highest_attach_address() {
-  // 128 TB
-  return (char*)(128 * 1024 * G);
 }
 
 // Used to convert frequent JVM_Yield() to nops

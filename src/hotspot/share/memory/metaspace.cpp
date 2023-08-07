@@ -582,36 +582,42 @@ bool Metaspace::class_space_is_initialized() {
   return MetaspaceContext::context_class() != nullptr;
 }
 
+// Reserve a range of memory that is to contain narrow Klass IDs. If "strict_base"
+// is true, the memory must be located at an address that can be directly used as
+// encoding base, otherwise the API has more leeway (e.g. optimizing reservation
+// for zero-based encoding).
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool strict_base) {
 
   char* result = nullptr;
   const bool randomize = RandomizeClassSpaceLocation;
 
-  // If strict_base is given, we are to return space that starts at an address that is directly
-  // usable as encoding base. In that case, we don't need to bother with low address reservation
-  // to get zero-based encoding.
+  // If strict_base, there is no need bothering with low-address reservation since we cannot set
+  // the encoding base to zero.
   const bool try_in_low_address_ranges = !strict_base;
 
   // First try to reserve in low address ranges.
   if (try_in_low_address_ranges) {
     constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
     log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for unscaled narrow Klass encoding", unscaled_max);
-    result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max, size, Metaspace::reserve_alignment(), randomize);
+    result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max,
+                                                size, Metaspace::reserve_alignment(), randomize);
     if (result == nullptr) {
       constexpr uintptr_t zerobased_max = unscaled_max << LogKlassAlignmentInBytes;
       log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for zero-based narrow Klass encoding", zerobased_max);
-      result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max, size, Metaspace::reserve_alignment(), randomize);
+      result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max,
+                                                  size, Metaspace::reserve_alignment(), randomize);
     }
   } // end: low-address reservation
 
   if (result == nullptr) {
-    // Failing zero-based allocation, or in strict_base mode, try to come up with an optimized start address
-    // that
-    // - only has bits set in the third quadrant, in order to use a single 16-bit move
-    // - additionally, has the low LogKlassAlignmentInBytes of the third quadrant set to 9, in order to
-    //   be able to apply the right-shifted base with a single 16-bit move.
-    // That leaves, atm, 13 bits (32 GB - 256 TB). This gets cut down by many kernels to 128 TB. Still, it
-    //  leaves us with a value range of 12 bits for randomness.
+    // Failing zero-based allocation, or in strict_base mode, try to come up with
+    // an optimized start address that:
+    // - only has bits set in the third quadrant, to use a single 16-bit move
+    // - additionally, has the low LogKlassAlignmentInBytes of the third quadrant
+    //   set to 9, to be able to apply the right-shifted base with a single 16-bit
+    //   move.
+    // That leaves 13 bits (32 GB - 256 TB). This gets cut down by many kernels to
+    // 128 TB. Still, it leaves us with a value range of 12 bits for randomness.
     constexpr int lo_zero_bits = (sizeof(narrowKlass) * 8) + LogKlassAlignmentInBytes;
     constexpr int hi_zero_bits = 16;
 
@@ -620,7 +626,8 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     constexpr uint64_t min = alignment;
     constexpr uint64_t max = nth_bit(64 - hi_zero_bits);
 
-    log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X " with " SIZE_FORMAT_X " alignment", min, max, alignment);
+    log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X
+                              " with " SIZE_FORMAT_X " alignment", min, max, alignment);
     result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
   }
 
@@ -629,15 +636,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
-/*
-  if (result != nullptr) {
-    if (strict_base && !CompressedKlassPointers::is_valid_base((address)result)) {
-      log_warning(metaspace, map)(PTR_FORMAT " is not a valid encoding base.", p2i(result));
-      os::release_memory(result, size);
-      result = nullptr;
-    }
-  }
-*/
+
   // Wrap resulting range in ReservedSpace
   ReservedSpace rs;
   if (result != nullptr) {
@@ -774,7 +773,7 @@ void Metaspace::global_initialize() {
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
-      address base = (address)CompressedClassSpaceBaseAddress;
+      const address base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
@@ -792,7 +791,7 @@ void Metaspace::global_initialize() {
       }
     }
 
-    // ...otherwise let JVM choose the best placing:
+    // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
       rs = Metaspace::reserve_address_space_for_compressed_classes(size, false);
     }

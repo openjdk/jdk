@@ -74,15 +74,9 @@ public:
 
 #ifdef _LP64
 
-  // Reserve a range of memory that is to contain narrow Klass IDs. This memory
-  // is later used as klass range to initialize narrow Klass encoding.
-  // If "strict_base" is true, the memory must be located at an address that
-  // can be later used directly as encoding base
-  // (see CompressedKlassPointers::initialize_for_given_encoding()).
-  // If "strict_base" is false, the reservation logic has more leeway and just has
-  // to reserve memory for which valid encoding settings exist (see
-  // CompressedKlassPointers::initialize()). The difference only matters on
-  // AArch64.
+  // Reserve a range of memory that is to contain narrow Klass IDs. If "strict_base" is true,
+  // the memory must be located at an address that can be directly used as encoding base,
+  // otherwise the API has more leeway (e.g. optimizing reservation for zero-based encoding).
   static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool strict_base);
 
   // Given a prereserved space, use that to set up the compressed class space list.

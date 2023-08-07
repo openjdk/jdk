@@ -1793,12 +1793,13 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // Number of mmap attemts we will undertake.
   constexpr unsigned max_attempts = 32;
 
-  // In randomization mode: We require a minimum number of possible attach points for randomness. Below
-  // that we refuse to reserve anything.
+  // In randomization mode: We require a minimum number of possible attach points for
+  // randomness. Below that we refuse to reserve anything.
   constexpr unsigned min_random_value_range = 16;
 
-  // In randomization mode: If the possible value range is below this threshold, we use a total shuffle
-  // without regard for address space fragmentation, otherwise we attempt to minimize fragmentation.
+  // In randomization mode: If the possible value range is below this threshold, we
+  // use a total shuffle without regard for address space fragmentation, otherwise
+  // we attempt to minimize fragmentation.
   constexpr unsigned total_shuffle_threshold = 1024;
 
 #define ARGSFMT " range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
@@ -1811,8 +1812,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   assert(is_aligned(bytes, os::vm_page_size()), "size not page aligned (" ARGSFMT ")", ARGSFMTARGS);
   assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
 
-  char* const absolute_max = os::get_highest_attach_address();
-  char* const absolute_min = os::get_lowest_attach_address();
+  char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
+  char* const absolute_min = os::vm_min_address();
 
   const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
 
@@ -1837,9 +1838,10 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   const size_t num_attach_points = (size_t)((hi_att - lo_att) / alignment_adjusted) + 1;
   assert(num_attach_points > 0, "Sanity");
 
-  // If this fires, the input range is too large for the given alignment (we work with int below to
-  // keep things simple). The lowest alignment on all platforms is 4 KB, so this gives us a minimum
-  // of 8 TB range between max and min.
+  // If this fires, the input range is too large for the given alignment (we work
+  // with int below to keep things simple). Since alignment is bound to page size,
+  // and the lowest page size is 4K, this gives us a minimum of 4K*4G=8TB address
+  // range.
   assert(num_attach_points <= UINT_MAX,
          "Too many possible attach points - range too large or alignment too small (" ARGSFMT ")", ARGSFMTARGS);
 
@@ -1853,9 +1855,12 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     }
 
     // We pre-calc the attach points:
-    // 1 We divide the attach range into equidistant sections and calculate an attach point within each section.
-    // 2 We wiggle those attach points around within their section (depends on attach point granularity)
-    // 3 Should that not be enough to get effective randomization, shuffle all attach points
+    // 1 We divide the attach range into equidistant sections and calculate an attach
+    //   point within each section.
+    // 2 We wiggle those attach points around within their section (depends on attach
+    //   point granularity)
+    // 3 Should that not be enough to get effective randomization, shuffle all
+    //   attach points
     // 4 Otherwise, re-order them to get an optimized probing sequence.
     unsigned random_points[max_attempts];
     const unsigned stepsize = (unsigned)num_attach_points / num_attempts;
@@ -1868,17 +1873,23 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     }
 
     if (num_attach_points < total_shuffle_threshold) {
-      // 3: shuffle
+      // 3:
+      // The numeber of possible attach points is too low for the "wiggle" from
+      // point 2 to be enough to provide randomization. In that case, shuffle
+      // all attach points at the cost of possible fragmentation (e.g. if we
+      // end up mapping into the middle of the range).
       for (unsigned i = num_attempts - 1; i >= 1; i--) {
         unsigned j = frand.next() % i;
         swap(random_points[i], random_points[j]);
       }
     } else {
       // 4
-      // We are here if have a large enough attach point number to reach the randomness goal without shuffling. In that case,
-      // we optimize the probing by sorting the attach points: We attempt outermost points first, then work ourselves up to
-      // the middle. That reduces address space fragmentation. We also alternate hemispheres, which increases the chance
-      // of successfull mappings if the previous mapping had been blocked by large maps.
+      // We have a large enough number of attach points to satisfy the randomness
+      // goal without. In that case, we optimize probing by sorting the attach
+      // points: We attempt outermost points first, then work ourselves up to
+      // the middle. That reduces address space fragmentation. We also alternate
+      // hemispheres, which increases the chance of successfull mappings if the
+      // previous mapping had been blocked by large maps.
       unsigned tmp[max_attempts];
       for (unsigned i = 0; i < num_attempts; i++) {
         tmp[i] = random_points[i];
@@ -1891,9 +1902,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
 
     DEBUG_ONLY(print_points("after hemi split", random_points, num_attempts);)
 
-    // Now reserve:
-    // We try with every precalculated address, but should the kernel give us an address nearby,
-    // accept that; the bar for "nearby" is high though, to prevent degradation of randomness.
+    // Now reserve
     const unsigned allowed_deviation = stepsize / 8;
     for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
       const unsigned candidate_offset = random_points[i];
@@ -1909,8 +1918,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   else
 
   {
-    // Non-randomized. We just attempt to reserve by probing sequentially. We alternate between hemispheres,
-    // working ourselves up to the middle.
+    // Non-randomized. We just attempt to reserve by probing sequentially. We
+    // alternate between hemispheres, working ourselves up to the middle.
     const int stepsize = (unsigned)num_attach_points / num_attempts;
     const size_t stepsize_bytes = stepsize * alignment_adjusted;
     char* candidate_lo = lo_att;
@@ -1940,8 +1949,8 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
 #define ERRFMTARGS p2i(result), ARGSFMTARGS
     assert(result >= min, "OOB min (" ERRFMT ")", ERRFMTARGS);
     assert((result + bytes) <= max, "OOB max (" ERRFMT ")", ERRFMTARGS);
-    assert(result >= os::get_lowest_attach_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
-    assert((result + bytes) <= os::get_highest_attach_address(), "OOB vm.map max (" ERRFMT ")", ERRFMTARGS);
+    assert(result >= os::vm_min_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
+    assert((result + bytes) <= absolute_max, "OOB vm.map max (" ERRFMT ")", ERRFMTARGS);
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));

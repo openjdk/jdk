@@ -3423,13 +3423,8 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   return res;
 }
 
-char* os::get_lowest_attach_address() {
-  return (char*)(MAX2(os::vm_allocation_granularity(), M));
-}
-
-char* os::get_highest_attach_address() {
-  // 128 TB
-  return (char*)(128 * 1024 * G);
+char* os::vm_min_address() {
+  return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
