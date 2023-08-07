@@ -36,6 +36,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
