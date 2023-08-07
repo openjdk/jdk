@@ -734,7 +734,6 @@ sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-aarch64
 
 ############################################################################
 
