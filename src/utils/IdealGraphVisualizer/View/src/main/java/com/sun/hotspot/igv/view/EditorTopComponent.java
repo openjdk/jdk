@@ -175,10 +175,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
 
-        JToggleButton newLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
-        newLayoutButton.setSelected(diagramViewModel.getShowStableSea());
-        layoutButtons.add(newLayoutButton);
-        toolBar.add(newLayoutButton);
+        JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
+        stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
+        layoutButtons.add(stableSeaLayoutButton);
+        toolBar.add(stableSeaLayoutButton);
 
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
         seaLayoutButton.setSelected(diagramViewModel.getShowSea());
