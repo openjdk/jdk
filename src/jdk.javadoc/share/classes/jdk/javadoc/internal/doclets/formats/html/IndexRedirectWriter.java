@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -58,22 +57,19 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
     public static void generate(HtmlConfiguration configuration, DocPath fileName, DocPath target)
             throws DocFileIOException {
-        IndexRedirectWriter indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
-        indexRedirect.generateIndexFile();
+        var indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
+        indexRedirect.buildPage();
     }
 
-    private DocPath target;
+    private final DocPath target;
 
     private IndexRedirectWriter(HtmlConfiguration configuration, DocPath filename, DocPath target) {
         super(configuration, filename);
         this.target = target;
     }
 
-    /**
-     * Generate an index file that redirects to an alternate file.
-     * @throws DocFileIOException if there is a problem generating the file
-     */
-    private void generateIndexFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")

@@ -965,12 +965,12 @@ public:
   // Set the annotation name:
   void set_annotation(ID id) {
     assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
-    _annotations_present |= nth_bit((int)id);
+    _annotations_present |= (int)nth_bit((int)id);
   }
 
   void remove_annotation(ID id) {
     assert((int)id >= 0 && (int)id < (int)_annotation_LIMIT, "oob");
-    _annotations_present &= ~nth_bit((int)id);
+    _annotations_present &= (int)~nth_bit((int)id);
   }
 
   // Report if the annotation is present.
@@ -1737,8 +1737,8 @@ const ClassFileParser::unsafe_u2* ClassFileParser::parse_localvariable_table(con
                                                                              TRAPS) {
   const char* const tbl_name = (isLVTT) ? "LocalVariableTypeTable" : "LocalVariableTable";
   *localvariable_table_length = cfs->get_u2(CHECK_NULL);
-  const unsigned int size =
-    (*localvariable_table_length) * sizeof(Classfile_LVT_Element) / sizeof(u2);
+  const unsigned int size = checked_cast<unsigned>(
+    (*localvariable_table_length) * sizeof(Classfile_LVT_Element) / sizeof(u2));
 
   const ConstantPool* const cp = _cp;
 
@@ -2349,7 +2349,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
       calculated_attribute_length =
           sizeof(max_stack) + sizeof(max_locals) + sizeof(code_length);
-      calculated_attribute_length +=
+      calculated_attribute_length += checked_cast<unsigned int>(
         code_length +
         sizeof(exception_table_length) +
         sizeof(code_attributes_count) +
@@ -2357,15 +2357,15 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             ( sizeof(u2) +   // start_pc
               sizeof(u2) +   // end_pc
               sizeof(u2) +   // handler_pc
-              sizeof(u2) );  // catch_type_index
+              sizeof(u2) )); // catch_type_index
 
       while (code_attributes_count--) {
         cfs->guarantee_more(6, CHECK_NULL);  // code_attribute_name_index, code_attribute_length
         const u2 code_attribute_name_index = cfs->get_u2_fast();
         const u4 code_attribute_length = cfs->get_u4_fast();
         calculated_attribute_length += code_attribute_length +
-                                       sizeof(code_attribute_name_index) +
-                                       sizeof(code_attribute_length);
+                                       (unsigned)sizeof(code_attribute_name_index) +
+                                       (unsigned)sizeof(code_attribute_length);
         check_property(valid_symbol_at(code_attribute_name_index),
                        "Invalid code attribute name index %u in class file %s",
                        code_attribute_name_index,
@@ -2479,7 +2479,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       }
       method_parameters_seen = true;
       method_parameters_length = cfs->get_u1_fast();
-      const u2 real_length = (method_parameters_length * 4u) + 1u;
+      const u4 real_length = (method_parameters_length * 4u) + 1u;
       if (method_attribute_length != real_length) {
         classfile_parse_error(
           "Invalid MethodParameters method attribute length %u in class file",
@@ -3202,7 +3202,7 @@ u2 ClassFileParser::parse_classfile_permitted_subclasses_attribute(const ClassFi
 //    u2 attributes_count;
 //    attribute_info_attributes[attributes_count];
 //  }
-u2 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* const cfs,
+u4 ClassFileParser::parse_classfile_record_attribute(const ClassFileStream* const cfs,
                                                      const ConstantPool* cp,
                                                      const u1* const record_attribute_start,
                                                      TRAPS) {
@@ -3404,7 +3404,7 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
   // The attribute contains a counted array of counted tuples of shorts,
   // represending bootstrap specifiers:
   //    length*{bootstrap_method_index, argument_count*{argument_index}}
-  const int operand_count = (attribute_byte_length - sizeof(u2)) / sizeof(u2);
+  const unsigned int operand_count = (attribute_byte_length - (unsigned)sizeof(u2)) / (unsigned)sizeof(u2);
   // operand_count = number of shorts in attr, except for leading length
 
   // The attribute is copied into a short[] array.
@@ -4812,7 +4812,7 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
         const char* c = (const char*) memchr(signature, JVM_SIGNATURE_ENDCLASS, length - 1);
         // Format check signature
         if (c != nullptr) {
-          int newlen = c - (char*) signature;
+          int newlen = pointer_delta_as_int(c, (char*) signature);
           bool legal = verify_unqualified_name(signature, newlen, LegalClass);
           if (!legal) {
             classfile_parse_error("Class name is empty or contains illegal character "
@@ -5022,7 +5022,7 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
       if (p[0] == 'J' || p[0] == 'D') {
         args_size++;
       }
-      length -= nextp - p;
+      length -= pointer_delta_as_int(nextp, p);
       p = nextp;
       nextp = skip_over_field_signature(p, false, length, CHECK_0);
     }
@@ -5241,7 +5241,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // size is equal to the number of methods in the class. If
   // that changes, then InstanceKlass::idnum_can_increment()
   // has to be changed accordingly.
-  ik->set_initial_method_idnum(ik->methods()->length());
+  ik->set_initial_method_idnum(checked_cast<u2>(ik->methods()->length()));
 
   ik->set_this_class_index(_this_class_index);
 
