@@ -1621,8 +1621,7 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       const char* spacer = "          " LP64_ONLY("        ");
       st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      if (on_heap
-          && *fv.location != 0 && *fv.location > -100 && *fv.location < 100
+      if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
 #if !defined(PPC64)
           && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
 #else  // !defined(PPC64)
