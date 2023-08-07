@@ -34,7 +34,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
-#include "gmock/gmock.h"
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
