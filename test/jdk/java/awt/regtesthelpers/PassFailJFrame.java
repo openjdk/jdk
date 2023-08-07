@@ -261,17 +261,22 @@ public class PassFailJFrame {
         windowList.add(frame);
     }
 
-    private static void captureScreen(Rectangle bounds) {
+    private static Robot createRobot() {
         if (robot == null) {
             try {
                 robot = new Robot();
             } catch (AWTException e) {
                 String errorMsg = "Failed to create an instance of Robot.";
                 JOptionPane.showMessageDialog(frame, errorMsg, "Failed",
-                        JOptionPane.ERROR_MESSAGE);
+                                              JOptionPane.ERROR_MESSAGE);
                 forceFail(errorMsg + e.getMessage());
             }
         }
+        return robot;
+    }
+
+    private static void captureScreen(Rectangle bounds) {
+        Robot robot = createRobot();
 
         List<Image> imageList = robot.createMultiResolutionScreenCapture(bounds)
                                      .getResolutionVariants();
