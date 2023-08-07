@@ -2828,6 +2828,10 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   jmethodID* jmeths = methods_jmethod_ids_acquire();
   if (jmeths != (jmethodID*)nullptr) {
     release_set_methods_jmethod_ids(nullptr);
+    size_t count = (size_t)jmeths[0];
+    for (size_t i = 1; i <= count; i++) {
+      *((Method**)jmeths[i]) = nullptr;
+    }
     FreeHeap(jmeths);
   }
 
