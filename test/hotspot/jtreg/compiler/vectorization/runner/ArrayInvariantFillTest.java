@@ -42,7 +42,7 @@
  *                   compiler.vectorization.runner.ArrayInvariantFillTest
  *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
- * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
