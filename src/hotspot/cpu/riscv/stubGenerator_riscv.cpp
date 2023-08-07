@@ -3960,7 +3960,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = rtmp1 + x + ac
     reg_cache.get_u32(rtmp2, k, rmask32);
     __ addw(rtmp1, rtmp1, rtmp2);
-    __ li(rtmp2, t);
+    __ mv(rtmp2, t);
     __ addw(rtmp1, rtmp1, rtmp2);
 
     // a += rtmp1 + x + ac
@@ -4153,7 +4153,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(ofs, ofs_arg);
       __ mv(limit, limit_arg);
     }
-    __ li(rmask32, MASK_32);
+    __ mv(rmask32, MASK_32);
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
