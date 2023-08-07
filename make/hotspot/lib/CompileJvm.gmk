@@ -88,6 +88,12 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
+ifeq ($(DEBUG_LEVEL), fastdebug)
+  ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
+    DISABLED_WARNINGS_gcc += stringop-overflow
+  endif
+endif
+
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
@@ -96,6 +102,10 @@ ifneq ($(DEBUG_LEVEL), release)
   DISABLED_WARNINGS_clang += tautological-constant-out-of-range-compare
   # Some reasonable asserts produce warnings on GCC <= 7
   DISABLED_WARNINGS_gcc += strict-overflow
+endif
+
+ifeq ($(call check-jvm-feature, zero), true)
+  DISABLED_WARNINGS_gcc += dangling-pointer
 endif
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
