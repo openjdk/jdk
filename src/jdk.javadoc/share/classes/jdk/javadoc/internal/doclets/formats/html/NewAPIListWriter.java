@@ -25,9 +25,12 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.List;
+
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
@@ -35,12 +38,8 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
-
-import java.util.List;
 
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 
@@ -54,23 +53,28 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
      *
      * @param configuration the configuration for this doclet
      */
-    public NewAPIListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, configuration.newAPIPageBuilder);
+    public NewAPIListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.NEW_LIST, configuration.newAPIPageBuilder);
     }
 
-    /**
-     * If the "New API" page is configured this method instantiates a NewAPIListWriter
-     * and generates the file.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the new API list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.NEW)) {
-            NewAPIListWriter writer = new NewAPIListWriter(configuration, DocPaths.NEW_LIST);
-            writer.generateSummaryListFile(PageMode.NEW, "new elements",
-                    Text.of(getHeading(configuration)), "doclet.Window_New_List");
-        }
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.NEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "new elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return Text.of(getHeading(configuration));
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_New_List";
     }
 
     @Override

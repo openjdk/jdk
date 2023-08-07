@@ -38,25 +38,41 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  */
 public class DocFileElement implements DocletElement {
 
+    private final Element element;
     private final PackageElement packageElement;
     private final FileObject fo;
 
+    /**
+     * Creates a pseudo-element that wraps a {@code doc-files} HTML file.
+     *
+     * @param utils the standard utilities class
+     * @param element the module element or package element that "owns" the {@code doc-files} subdirectory
+     * @param fo the file object
+     *
+     * @throws IllegalArgumentException if the given element is not a module element or package element
+     */
     public DocFileElement(Utils utils, Element element, FileObject fo) {
+        this.element = element;
         this.fo = fo;
 
-        switch(element.getKind()) {
-            case MODULE:
+        switch (element.getKind()) {
+            case MODULE -> {
                 ModuleElement moduleElement = (ModuleElement) element;
                 packageElement = utils.elementUtils.getPackageElement(moduleElement, "");
-                break;
+            }
 
-            case PACKAGE:
+            case PACKAGE ->
                 packageElement = (PackageElement) element;
-                break;
 
-            default:
-                throw new AssertionError("unknown kind: " + element.getKind());
+            default -> throw new IllegalArgumentException(element.getKind() + ":" + element);
         }
+    }
+
+    /**
+     * {@return the element that "owns" the {@code doc-files} directory}
+     */
+    public Element getElement() {
+        return element;
     }
 
     @Override

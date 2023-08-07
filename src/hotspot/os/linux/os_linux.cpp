@@ -1795,6 +1795,12 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
   void * result = ::dlopen(filename, RTLD_LAZY);
+
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   if (result == nullptr) {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -1806,9 +1812,19 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   }
   return result;
 }
@@ -3563,27 +3579,6 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
-bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
-                                                    size_t page_size) {
-  bool result = false;
-  void *p = mmap(nullptr, page_size * 2, PROT_READ|PROT_WRITE,
-                 MAP_ANONYMOUS|MAP_PRIVATE,
-                 -1, 0);
-  if (p != MAP_FAILED) {
-    void *aligned_p = align_up(p, page_size);
-
-    result = madvise(aligned_p, page_size, MADV_HUGEPAGE) == 0;
-
-    munmap(p, page_size * 2);
-  }
-
-  if (warn && !result) {
-    warning("TransparentHugePages is not supported by the operating system.");
-  }
-
-  return result;
-}
-
 int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
   if (page_size != HugePages::default_static_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
@@ -3715,13 +3710,9 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   }
 
   if (UseTransparentHugePages) {
-    bool warn_on_failure = !FLAG_IS_DEFAULT(UseTransparentHugePages);
-    if (transparent_huge_pages_sanity_check(warn_on_failure, page_size)) {
-      UseHugeTLBFS = false;
-      UseSHM = false;
-      return true;
-    }
-    UseTransparentHugePages = false;
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return true;
   }
 
   if (UseHugeTLBFS) {
