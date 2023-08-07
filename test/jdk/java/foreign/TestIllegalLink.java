@@ -191,6 +191,11 @@ public class TestIllegalLink extends NativeTestHelper {
                     NO_OPTIONS,
                     "has unexpected size"
             },
+            {
+                    FunctionDescriptor.ofVoid(),
+                    new Linker.Option[]{Linker.Option.isTrivial(), Linker.Option.captureCallState("errno")},
+                    "Incompatible linker options: captureCallState, isTrivial"
+            },
         }));
 
         for (ValueLayout illegalLayout : List.of(C_CHAR, ValueLayout.JAVA_CHAR, C_BOOL, C_SHORT, C_FLOAT)) {

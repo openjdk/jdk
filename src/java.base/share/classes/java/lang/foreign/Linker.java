@@ -729,6 +729,8 @@ public sealed interface Linker permits AbstractLinker {
          * }
          * }
          *
+         * @apiNote This linker option can not be combined with {@link #isTrivial}.
+         *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
          *                                  is unsupported on the current platform.
