@@ -28,6 +28,7 @@ package sun.awt.screencast;
 import sun.awt.UNIXToolkit;
 import sun.security.action.GetPropertyAction;
 
+import javax.swing.Timer;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -53,6 +54,10 @@ public class ScreencastHelper {
     private static final int ERROR = -1;
     private static final int DENIED = -11;
     private static final int OUT_OF_BOUNDS = -12;
+
+    private static final int DELAY_BEFORE_SESSION_CLOSE = 2000;
+
+    private static final Timer timerCloseSession;
 
     private ScreencastHelper() {
     }
@@ -80,6 +85,16 @@ public class ScreencastHelper {
         }
 
         IS_NATIVE_LOADED = !loadFailed;
+
+        if (IS_NATIVE_LOADED) {
+            timerCloseSession =
+                    new Timer(DELAY_BEFORE_SESSION_CLOSE, e -> closeSession());
+
+            timerCloseSession.setRepeats(false);
+            timerCloseSession.start();
+        } else {
+            timerCloseSession = null;
+        }
     }
 
     public static boolean isAvailable() {
@@ -105,10 +120,14 @@ public class ScreencastHelper {
                 ).toList();
     }
 
+    private static synchronized native void closeSession();
+
     public static synchronized void getRGBPixels(
             int x, int y, int width, int height, int[] pixelArray
     ) {
         if (!IS_NATIVE_LOADED) return;
+
+        timerCloseSession.restart();
 
         Rectangle captureArea = new Rectangle(x, y, width, height);
 

@@ -43,6 +43,8 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
                                       (*env)->ExceptionDescribe(env); \
                                    }
 
+static volatile gboolean sessionClosed = TRUE;
+
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
 
@@ -89,8 +91,8 @@ static void doCleanup() {
         struct ScreenProps *screenProps = &screenSpace.screens[i];
         if (screenProps->data) {
             if (screenProps->data->stream) {
-                fp_pw_thread_loop_lock(pw.loop);
                 fp_pw_stream_disconnect(screenProps->data->stream);
+                fp_pw_thread_loop_lock(pw.loop);
                 fp_pw_stream_destroy(screenProps->data->stream);
                 fp_pw_thread_loop_unlock(pw.loop);
                 screenProps->data->stream = NULL;
@@ -124,6 +126,8 @@ static void doCleanup() {
         free(screenSpace.screens);
         screenSpace.screens = NULL;
     }
+
+    sessionClosed = TRUE;
 }
 
 /**
@@ -132,6 +136,10 @@ static void doCleanup() {
 static gboolean initScreencast(const gchar *token,
                                GdkRectangle *affectedBounds,
                                gint affectedBoundsLength) {
+    if (!sessionClosed) {
+        return TRUE;
+    }
+
     fp_pw_init(NULL, NULL);
 
     pw.pwFd = RESULT_ERROR;
@@ -145,6 +153,7 @@ static gboolean initScreencast(const gchar *token,
         return FALSE;
     }
 
+    sessionClosed = FALSE;
     return TRUE;
 }
 
@@ -386,8 +395,19 @@ static gboolean connectStream(int index) {
 
     data->screenProps = &screenSpace.screens[index];
 
-    data->hasFormat = FALSE;
+    if (!sessionClosed && data->stream) {
+        fp_pw_thread_loop_lock(pw.loop);
+        int result = fp_pw_stream_set_active(data->stream, TRUE);
+        fp_pw_thread_loop_unlock(pw.loop);
 
+        DEBUG_SCREEN_PREFIX(data->screenProps,
+                            "stream %p: activate result |%i|\n",
+                            data->stream, result);
+
+        return result == 0; // 0 - success
+    };
+
+    data->hasFormat = FALSE;
 
     data->stream = fp_pw_stream_new(
             pw.core,
@@ -505,60 +525,64 @@ static const struct pw_core_events coreEvents = {
  * @return TRUE on success
  */
 static gboolean doLoop(GdkRectangle requestedArea) {
-    pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
+    if (!pw.loop && !sessionClosed) {
+        pw.loop = fp_pw_thread_loop_new("AWT Pipewire Thread", NULL);
 
-    if (!pw.loop) {
-        DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
-        doCleanup();
-        return FALSE;
-    }
+        if (!pw.loop) {
+            DEBUG_SCREENCAST("!!! Could not create a loop\n", NULL);
+            doCleanup();
+            return FALSE;
+        }
 
-    pw.context = fp_pw_context_new(
-            fp_pw_thread_loop_get_loop(pw.loop),
-            NULL,
-            0
-    );
+        pw.context = fp_pw_context_new(
+                fp_pw_thread_loop_get_loop(pw.loop),
+                NULL,
+                0
+        );
 
-    if (!pw.context) {
-        DEBUG_SCREENCAST("!!! Could not create a pipewire context\n", NULL);
-        doCleanup();
-        return FALSE;
-    }
+        if (!pw.context) {
+            DEBUG_SCREENCAST("!!! Could not create a pipewire context\n", NULL);
+            doCleanup();
+            return FALSE;
+        }
 
-    if (fp_pw_thread_loop_start(pw.loop) != 0) {
-        DEBUG_SCREENCAST("!!! Could not start pipewire thread loop\n", NULL);
-        doCleanup();
-        return FALSE;
-    }
+        if (fp_pw_thread_loop_start(pw.loop) != 0) {
+            DEBUG_SCREENCAST("!!! Could not start pipewire thread loop\n", NULL);
+            doCleanup();
+            return FALSE;
+        }
 
-    fp_pw_thread_loop_lock(pw.loop);
+        fp_pw_thread_loop_lock(pw.loop);
 
-    pw.core = fp_pw_context_connect_fd(
-            pw.context,
-            pw.pwFd,
-            NULL,
-            0
-    );
+        pw.core = fp_pw_context_connect_fd(
+                pw.context,
+                pw.pwFd,
+                NULL,
+                0
+        );
 
-    if (!pw.core) {
-        DEBUG_SCREENCAST("!!! Could not create pipewire core\n", NULL);
-        goto fail;
-    }
-
-    pw_core_add_listener(pw.core, &pw.coreListener, &coreEvents, NULL);
-
-    for (int i = 0; i < screenSpace.screenCount; ++i) {
-        struct PwStreamData *data =
-                (struct PwStreamData*) malloc(sizeof (struct PwStreamData));
-        if (!data) {
-            ERR("failed to allocate memory\n");
+        if (!pw.core) {
+            DEBUG_SCREENCAST("!!! Could not create pipewire core\n", NULL);
             goto fail;
         }
 
-        memset(data, 0, sizeof (struct PwStreamData));
+        pw_core_add_listener(pw.core, &pw.coreListener, &coreEvents, NULL);
+    }
 
+    for (int i = 0; i < screenSpace.screenCount; ++i) {
         struct ScreenProps *screen = &screenSpace.screens[i];
-        screen->data = data;
+        if (!screen->data && !sessionClosed) {
+            struct PwStreamData *data =
+                    (struct PwStreamData*) malloc(sizeof (struct PwStreamData));
+            if (!data) {
+                ERR("failed to allocate memory\n");
+                goto fail;
+            }
+
+            memset(data, 0, sizeof (struct PwStreamData));
+
+            screen->data = data;
+        }
 
         DEBUG_SCREEN_PREFIX(screen, "@@@ adding screen %i\n", i);
         if (checkScreen(i, requestedArea)) {
@@ -785,6 +809,17 @@ static void arrayToRectangles(JNIEnv *env,
 
 /*
  * Class:     sun_awt_screencast_ScreencastHelper
+ * Method:    closeSession
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_screencast_ScreencastHelper_closeSession(JNIEnv *env, jclass cls) {
+    DEBUG_SCREENCAST("closing screencast session\n\n", NULL);
+    doCleanup();
+}
+
+/*
+ * Class:     sun_awt_screencast_ScreencastHelper
  * Method:    getRGBPixelsImpl
  * Signature: (IIII[I[ILjava/lang/String;)I
  */
@@ -896,11 +931,12 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
 
             fp_pw_thread_loop_lock(pw.loop);
             fp_pw_stream_set_active(screenProps->data->stream, FALSE);
-            fp_pw_stream_disconnect(screenProps->data->stream);
             fp_pw_thread_loop_unlock(pw.loop);
+
+            screenProps->captureDataReady = FALSE;
         }
     }
-    doCleanup();
+
     releaseToken(env, jtoken, token);
     return 0;
 }
