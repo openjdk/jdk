@@ -509,9 +509,12 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // first the method
   Method** m_addr = interpreter_frame_method_addr();
   if (m_addr == nullptr) {
-    return false;
+      return false;
   }
-  Method* m = *m_addr;
+  Method* m = SafeFetchN(m_addr, nullptr);
+  if (m == nullptr) {
+      return false;
+  }
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
