@@ -44,6 +44,6 @@ public class EnableNewLayoutAction extends EnableLayoutAction {
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        editor.getModel().setNewLayout(this.isSelected());
+        editor.getModel().setShowStableSea(this.isSelected());
     }
 }

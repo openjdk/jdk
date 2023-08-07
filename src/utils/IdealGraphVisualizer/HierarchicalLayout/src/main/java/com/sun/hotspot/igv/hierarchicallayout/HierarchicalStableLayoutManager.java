@@ -30,7 +30,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
 
-public class NewLayoutManager {
+public class HierarchicalStableLayoutManager {
 
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
@@ -84,7 +84,7 @@ public class NewLayoutManager {
         }
     }
 
-    public NewLayoutManager() {
+    public HierarchicalStableLayoutManager() {
         oldVertices = new HashSet<>();
         oldLinks = new HashSet<>();
         manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);

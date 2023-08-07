@@ -36,7 +36,7 @@ public class Settings {
         public static final int SEA_OF_NODES = 0;
         public static final int CLUSTERED_SEA_OF_NODES = 1;
         public static final int CONTROL_FLOW_GRAPH = 2;
-        public static final int NEW_LAYOUT = 3;
+        public static final int STABLE_SEA_OF_NODES = 3;
     }
 
     public static final String NODE_TEXT = "nodeText";
