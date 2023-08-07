@@ -4020,10 +4020,10 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     bool node_flags_set = false;
     do {
       if (!node_flags_set) {
-        fprintf(fp_cpp, "%s node->add_flag(%s%s", indent, strncmp(node->_name, prefix, strlen(prefix)) != 0 ? prefix : "", node->_name);
+        fprintf(fp_cpp, "%s node->add_flag(%s%s", indent, prefix, node->_name);
         node_flags_set = true;
       } else {
-        fprintf(fp_cpp, " | %s%s", strncmp(node->_name, prefix, strlen(prefix)) != 0 ? prefix : "", node->_name);
+        fprintf(fp_cpp, " | %s%s", prefix, node->_name);
       }
     } while ((node = node->next()) != nullptr);
     if (node_flags_set) {

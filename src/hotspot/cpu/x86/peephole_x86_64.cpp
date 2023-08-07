@@ -194,8 +194,8 @@ bool Peephole::test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, Ph
       }
       juint required_flags = 0;
       // Search for the uses of the node and compute which flags are required
-      for (DUIterator i = test_to_check->outs(); test_to_check->has_out(i); i++) {
-        MachNode* node_out = test_to_check->out(i)->isa_Mach();
+      for (DUIterator_Fast imax, i = test_to_check->fast_outs(imax); i < imax; i++) {
+        MachNode* node_out = test_to_check->fast_out(i)->isa_Mach();
         bool found_correct_oper = false;
         for (uint16_t j = 0; j < node_out->_num_opnds; ++j) {
           MachOper* operand = node_out->_opnds[j];

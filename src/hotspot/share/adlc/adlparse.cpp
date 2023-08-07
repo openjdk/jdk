@@ -229,7 +229,7 @@ void ADLParser::instr_parse(void) {
     else if (!strcmp(ident, "opcode"))           instr->_opcode    = opcode_parse(instr);
     else if (!strcmp(ident, "size"))             instr->_size      = size_parse(instr);
     else if (!strcmp(ident, "effect"))           effect_parse(instr);
-    else if (!strcmp(ident, "flag"))             instr->_flag = flag_parse(instr);
+    else if (!strcmp(ident, "flag"))             instr->_flag      = flag_parse(instr);
     else if (!strcmp(ident, "expand"))           instr->_exprule   = expand_parse(instr);
     else if (!strcmp(ident, "rewrite"))          instr->_rewrule   = rewrite_parse();
     else if (!strcmp(ident, "constraint")) {

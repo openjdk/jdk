@@ -7650,7 +7650,6 @@ instruct addI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
   match(Set dst (AddI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
-
   format %{ "addl    $dst, $src\t# int" %}
   ins_encode %{
     __ addl($dst$$Register, $src$$Register);
@@ -7677,7 +7676,6 @@ instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
 
-
   ins_cost(150); // XXX
   format %{ "addl    $dst, $src\t# int" %}
   ins_encode %{
@@ -7691,7 +7689,6 @@ instruct addI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
   match(Set dst (StoreI dst (AddI (LoadI dst) src)));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
-
 
   ins_cost(150); // XXX
   format %{ "addl    $dst, $src\t# int" %}
@@ -10539,7 +10536,6 @@ instruct blsrL_rReg_rReg(rRegL dst, rRegL src, immL_M1 minus_1, rFlagsReg cr)
   predicate(UseBMI1Instructions);
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_clears_overflow_flag);
-
 
   format %{ "blsrq  $dst, $src" %}
 

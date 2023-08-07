@@ -30,7 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @summary Test that patterns leading to Conv2B are correctly expanded.
+ * @summary Test that unnessercary test instructions are not present in the final code
  * @bug 8312213
  * @library /test/lib /
  * @requires vm.compiler2.enabled
