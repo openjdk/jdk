@@ -90,6 +90,31 @@ public class TestStringEncoding {
     }
 
     @Test(dataProvider = "strings")
+    public void testStringsHeap(String testString) {
+        for (Charset charset : singleByteCharsets()) {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment text = arena.allocateFrom(testString, charset);
+                text = toHeapSegment(text);
+
+                int expectedByteLength =
+                        testString.getBytes(charset).length + 1;
+
+                assertEquals(text.byteSize(), expectedByteLength);
+
+                String roundTrip = text.getString(0, charset);
+                if (charset.newEncoder().canEncode(testString)) {
+                    assertEquals(roundTrip, testString);
+                }
+            }
+        }
+    }
+
+    MemorySegment toHeapSegment(MemorySegment segment) {
+        var heapArray = segment.toArray(JAVA_BYTE);
+        return MemorySegment.ofArray(heapArray);
+    }
+
+    @Test(dataProvider = "strings")
     public void unboundedSegment(String testString) {
         testModifyingSegment(testString,
                 standardCharsets(),
