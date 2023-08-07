@@ -57,9 +57,9 @@ public class CopyInterference {
     private static final AtomicBoolean running = new AtomicBoolean(true);
 
     private static class CopyTask implements Runnable {
-        Path source;
-        Path target;
-        CopyOption[] options;
+        final Path source;
+        final Path target;
+        final CopyOption[] options;
 
         CopyTask(Path source, Path target, CopyOption[] options) {
             this.source = source;
@@ -82,8 +82,9 @@ public class CopyInterference {
             } catch (IOException e) {
                 running.set(false);
                 throw new RuntimeException("Unexpected exception", e);
+            } finally {
+                running.set(false);
             }
-            running.set(false);
         }
     }
 
