@@ -218,7 +218,7 @@ Symbol* ClassLoader::package_from_class_name(const Symbol* name, bool* bad_class
     }
     return nullptr;
   }
-  return SymbolTable::new_symbol(name, start - base, end - base);
+  return SymbolTable::new_symbol(name, pointer_delta_as_int(start, base), pointer_delta_as_int(end, base));
 }
 
 // Given a fully qualified package name, find its defining package in the class loader's
@@ -269,9 +269,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
         // debug builds so that we guard against use-after-free bugs.
         FREE_RESOURCE_ARRAY_IN_THREAD(current, char, path, path_len);
 #endif
+        // We don't verify the length of the classfile stream fits in an int, but this is the
+        // bootloader so we have control of this.
         // Resource allocated
         return new ClassFileStream(buffer,
-                                   st.st_size,
+                                   checked_cast<int>(st.st_size),
                                    _dir,
                                    ClassFileStream::verify);
       }
@@ -420,7 +422,7 @@ ClassFileStream* ClassPathImageEntry::open_stream_for_loader(JavaThread* current
     // Resource allocated
     assert(this == (ClassPathImageEntry*)ClassLoader::get_jrt_entry(), "must be");
     return new ClassFileStream((u1*)data,
-                               (int)size,
+                               checked_cast<int>(size),
                                _name,
                                ClassFileStream::verify,
                                true); // from_boot_loader_modules_image
@@ -1345,8 +1347,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-
-  ClassLoaderExt::record_result(classpath_index, ik, redefined);
+  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
 }
 #endif // INCLUDE_CDS
 

@@ -52,7 +52,8 @@ class klassVtable {
 
  public:
   klassVtable(Klass* klass, void* base, int length) : _klass(klass) {
-    _tableOffset = (address)base - (address)klass; _length = length;
+    _tableOffset = int((address)base - (address)klass);
+    _length = length;
   }
 
   // accessors

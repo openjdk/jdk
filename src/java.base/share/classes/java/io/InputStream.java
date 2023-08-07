@@ -201,7 +201,10 @@ public abstract class InputStream implements Closeable {
      *
      * @implSpec
      * The {@code read(b)} method for class {@code InputStream}
-     * has the same effect as: <pre>{@code  read(b, 0, b.length) }</pre>
+     * has the same effect as:
+     * {@snippet lang=java :
+     *     read(b, 0, b.length)
+     * }
      *
      * @param      b   the buffer into which the data is read.
      * @return     the total number of bytes read into the buffer, or

@@ -912,6 +912,25 @@ main a[href*="://"]:focus::after {
       </svg>');
 }
 /*
+ * Styles for header/section anchor links
+ */
+a.anchor-link {
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+:hover > a.anchor-link {
+    opacity: 80%;
+}
+a.anchor-link:hover,
+a.anchor-link:focus-visible,
+a.anchor-link.visible {
+    opacity: 100%;
+}
+a.anchor-link > img {
+    width: 0.9em;
+    height: 0.9em;
+}
+/*
  * Styles for copy-to-clipboard buttons
  */
 button.copy {
@@ -953,17 +972,6 @@ button.copy:hover span,
 button.copy:focus-visible span,
 button.copy.visible span {
     opacity: 100%;
-}
-/* header/section copy button */
-button.copy-header {
-    margin: 0 0.2em;
-    padding: 0 4px;
-    height: 1.16em;
-    opacity: 0;
-}
-button.copy-header img {
-    height: 0.88em;
-    top: 0.1em;
 }
 /* search page copy button */
 button#page-search-copy {

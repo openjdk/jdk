@@ -480,6 +480,8 @@ if `configure` does not automatically locate the platform FreeType files.
 Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
 on all platforms except Windows and macOS.
 
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    libfontconfig-dev`.
   * To install on an rpm-based Linux, try running `sudo yum install
     fontconfig-devel`.
 

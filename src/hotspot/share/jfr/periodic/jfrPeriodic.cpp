@@ -95,6 +95,10 @@ PeriodicType JfrPeriodicEventSet::type(void) {
   return _type;
 }
 
+TRACE_REQUEST_FUNC(ResidentSetSize) {
+  os::jfr_report_memory_info();
+}
+
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;

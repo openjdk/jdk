@@ -101,8 +101,8 @@ public class CompilerToVMHelper {
         }
     }
 
-    public static Object resolvePossiblyCachedConstantInPool(ConstantPool constantPool, int cpi) {
-        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.resolvePossiblyCachedConstantInPool((HotSpotConstantPool) constantPool, cpi);
+    public static Object lookupConstantInPool(ConstantPool constantPool, int cpi, boolean resolve) {
+        DirectHotSpotObjectConstantImpl obj = (DirectHotSpotObjectConstantImpl) CTVM.lookupConstantInPool((HotSpotConstantPool) constantPool, cpi, resolve);
         return obj.object;
     }
 
@@ -130,11 +130,6 @@ public class CompilerToVMHelper {
             ConstantPool constantPool, int cpi, byte opcode) {
         HotSpotResolvedJavaMethodImpl caller = null;
         return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode, null);
-    }
-
-    public static void resolveInvokeDynamicInPool(
-            ConstantPool constantPool, int cpi) {
-        CTVM.resolveInvokeDynamicInPool((HotSpotConstantPool) constantPool, cpi);
     }
 
     public static void resolveInvokeHandleInPool(
@@ -275,11 +270,6 @@ public class CompilerToVMHelper {
             int initialSkip,
             InspectedFrameVisitor<T> visitor) {
         return CTVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
-    }
-
-    public static void materializeVirtualObjects(
-            HotSpotStackFrameReference stackFrame, boolean invalidate) {
-        CTVM.materializeVirtualObjects(stackFrame, invalidate);
     }
 
     public static int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectType type,

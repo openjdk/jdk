@@ -753,7 +753,10 @@ public final class System {
      * <tr><th scope="row">{@systemProperty java.specification.name}</th>
      *     <td>Java Runtime Environment specification  name</td></tr>
      * <tr><th scope="row">{@systemProperty java.class.version}</th>
-     *     <td>Java class format version number</td></tr>
+     *     <td>{@linkplain java.lang.reflect.ClassFileFormatVersion#latest() Latest}
+     *     Java class file format version recognized by the Java runtime as {@code "MAJOR.MINOR"}
+     *     where {@link java.lang.reflect.ClassFileFormatVersion#major() MAJOR} and {@code MINOR}
+     *     are both formatted as decimal integers</td></tr>
      * <tr><th scope="row">{@systemProperty java.class.path}</th>
      *     <td>Java class path  (refer to
      *        {@link ClassLoader#getSystemClassLoader()} for details)</td></tr>
@@ -2392,9 +2395,6 @@ public final class System {
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);
             }
-            public String fastUUID(long lsb, long msb) {
-                return Long.fastUUID(lsb, msb);
-            }
             @SuppressWarnings("removal")
             public void addNonExportedPackages(ModuleLayer layer) {
                 SecurityManager.addNonExportedPackages(layer);
@@ -2616,19 +2616,6 @@ public final class System {
 
             public Object scopedValueBindings() {
                 return Thread.scopedValueBindings();
-            }
-
-            public Object findScopedValueBindings() {
-                return Thread.findScopedValueBindings();
-            }
-
-            public void setScopedValueBindings(Object bindings) {
-                Thread.setScopedValueBindings(bindings);
-            }
-
-            @ForceInline
-            public void ensureMaterializedForStackWalk(Object value) {
-                Thread.ensureMaterializedForStackWalk(value);
             }
 
             public Continuation getContinuation(Thread thread) {

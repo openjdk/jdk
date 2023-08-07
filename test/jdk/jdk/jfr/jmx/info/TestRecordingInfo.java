@@ -35,6 +35,7 @@ import jdk.jfr.RecordingState;
 import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.management.jfr.RecordingInfo;
 import jdk.test.lib.jfr.CommonHelper;
+import jdk.test.lib.Asserts;
 
 /**
  * @test
@@ -62,6 +63,16 @@ public class TestRecordingInfo {
         FlightRecorderMXBean bean = JmxHelper.getFlighteRecorderMXBean();
         RecordingInfo info = JmxHelper.verifyExists(recording.getId(), bean.getRecordings());
 
+        String text = info.toString();
+        assertContains(text, "name");
+        assertContains(text, String.valueOf(info.getName()));
+        assertContains(text, "id");
+        assertContains(text, String.valueOf(info.getId()));
+        assertContains(text, "maxAge");
+        assertContains(text, String.valueOf(info.getMaxAge()));
+        assertContains(text, "maxSize");
+        assertContains(text, String.valueOf(info.getMaxSize()));
+
         System.out.println(JmxHelper.asString(recording));
         System.out.println(JmxHelper.asString(info));
         JmxHelper.verifyEquals(info, recording);
@@ -70,4 +81,9 @@ public class TestRecordingInfo {
         recording.close();
     }
 
+    private static void assertContains(String text, String match) {
+        if (!text.contains(match)) {
+            Asserts.fail("Expected '" + text + "' to contain '" + match + '"');
+        }
+    }
 }

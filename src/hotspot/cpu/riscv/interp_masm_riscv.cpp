@@ -36,6 +36,8 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -79,9 +81,8 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notChar);
   sign_extend(result, result, 16);
 
-  // Nothing to do for T_INT
   bind(done);
-  addw(result, result, zr);
+  sign_extend(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -220,7 +221,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     // plain index.
     assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
     xori(index, index, -1);
-    addw(index, index, zr);
+    sign_extend(index, index, 32);
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(xbcp, bcp_offset));
   } else {
@@ -379,7 +380,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_i(Register r) {
   addi(esp, esp, -wordSize);
-  addw(r, r, zr); // signed extended
+  sign_extend(r, r, 32);
   sd(r, Address(esp, 0));
 }
 
@@ -763,6 +764,12 @@ void InterpreterMacroAssembler::remove_activation(
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    lw(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
+    subw(t0, t0, StackOverflow::stack_guard_enabled);
+    beqz(t0, no_reserved_zone_enabling);
 
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
@@ -1980,8 +1987,25 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   get_cache_index_at_bcp(index, cache, 1, sizeof(u4));
   // Get address of invokedynamic array
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
+  la(cache, Address(cache, 0));
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, cache, bcp_offset, sizeof(u2));
+  // Take shortcut if the size is a power of 2
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    slli(index, index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
+  } else {
+    mv(cache, sizeof(ResolvedFieldEntry));
+    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
+  }
+  // Get address of field entries array
+  ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
   la(cache, Address(cache, 0));

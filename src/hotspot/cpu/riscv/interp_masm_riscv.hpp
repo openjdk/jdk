@@ -172,7 +172,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
 
-  // Load float value from 'address'. The value is loaded onto the FPU register v0.
+  // Load float value from 'address'. The value is loaded onto the fp register f10.
   void load_float(Address src);
   void load_double(Address src);
 
@@ -300,6 +300,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 
 #ifdef ASSERT
   void verify_access_flags(Register access_flags, uint32_t flag,

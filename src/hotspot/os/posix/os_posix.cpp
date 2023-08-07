@@ -42,6 +42,7 @@
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -85,16 +86,6 @@
 #ifndef MAP_ANONYMOUS
   #define MAP_ANONYMOUS MAP_ANON
 #endif
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 static jlong initial_time_count = 0;
 
@@ -771,9 +762,9 @@ FILE* os::fdopen(int fd, const char* mode) {
   return ::fdopen(fd, mode);
 }
 
-ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
+ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
   ssize_t res;
-  RESTARTABLE(::write(fd, buf, (size_t) nBytes), res);
+  RESTARTABLE(::write(fd, buf, nBytes), res);
   return res;
 }
 

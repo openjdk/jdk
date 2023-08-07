@@ -283,8 +283,8 @@ public:
 
   virtual void set_stack_version(bool flag) {
     RegClass::set_stack_version(flag);
-    assert((_rclasses[0] != NULL), "Register class NULL for condition code == true");
-    assert((_rclasses[1] != NULL), "Register class NULL for condition code == false");
+    assert((_rclasses[0] != nullptr), "Register class null for condition code == true");
+    assert((_rclasses[1] != nullptr), "Register class null for condition code == false");
     _rclasses[0]->set_stack_version(flag);
     _rclasses[1]->set_stack_version(flag);
   }
@@ -689,12 +689,12 @@ public:
 class PeepChild : public Form {
 public:
   const int   _inst_num;         // Number of instruction (-1 if only named)
-  const char *_inst_op;          // Instruction's operand, NULL if number == -1
+  const char *_inst_op;          // Instruction's operand, null if number == -1
   const char *_inst_name;        // Name of the instruction
 
 public:
   PeepChild(char *inst_name)
-    : _inst_num(-1), _inst_op(NULL), _inst_name(inst_name) {};
+    : _inst_num(-1), _inst_op(nullptr), _inst_name(inst_name) {};
   PeepChild(int inst_num, char *inst_op, char *inst_name)
     : _inst_num(inst_num), _inst_op(inst_op), _inst_name(inst_name) {};
   ~PeepChild();

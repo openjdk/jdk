@@ -145,6 +145,56 @@ class JfrStopFlightRecordingDCmd : public JfrDCmd {
   }
 };
 
+class JfrViewFlightRecordingDCmd : public JfrDCmd {
+ public:
+  JfrViewFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
+
+  static const char* name() {
+    return "JFR.view";
+  }
+  static const char* description() {
+    return "Display event data in predefined views";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
+    return p;
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdView";
+  }
+  static int num_arguments() {
+    return 7;
+  }
+};
+
+class JfrQueryFlightRecordingDCmd : public JfrDCmd {
+ public:
+  JfrQueryFlightRecordingDCmd(outputStream* output, bool heap) : JfrDCmd(output, heap, num_arguments()) {}
+
+  static const char* name() {
+    return "JFR.query";
+  }
+  static const char* description() {
+    return "Query and display event data in a tabular form";
+  }
+  static const char* impact() {
+    return "Medium";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
+    return p;
+  }
+  virtual const char* javaClass() const {
+    return "jdk/jfr/internal/dcmd/DCmdQuery";
+  }
+  static int num_arguments() {
+    return 5;
+  }
+};
+
 class JfrConfigureFlightRecorderDCmd : public DCmdWithParser {
   friend class JfrOptionSet;
  protected:
