@@ -336,13 +336,8 @@ static void setup_app_data(struct hsdis_app_data* app_data,
                                  app_data->printf_stream,
                                  app_data->printf_callback,
                                  native_bfd,
-#ifdef LIBARCH_riscv64
-                                 /* On RISC-V we don't get the 'standard' instruction set if not empty string */
-                                 app_data->insn_options);
-#else
                                  /* On PowerPC we get warnings, if we pass empty options */
                                  (caller_options == NULL) ? NULL : app_data->insn_options);
-#endif
 
   /* Finish linking together the various callback blocks. */
   app_data->dinfo.application_data = (void*) app_data;
