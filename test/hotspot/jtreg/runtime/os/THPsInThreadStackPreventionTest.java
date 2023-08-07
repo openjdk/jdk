@@ -208,7 +208,7 @@ public class THPsInThreadStackPreventionTest {
 
                 // explicitly disable the no-THP-workaround:
                 finalargs.add("-XX:+UnlockDiagnosticVMOptions");
-                finalargs.add("-XX:+DisableTHPStackMitigation");
+                finalargs.add("-XX:-THPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);

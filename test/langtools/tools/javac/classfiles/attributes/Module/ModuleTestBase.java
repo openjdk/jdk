@@ -21,10 +21,9 @@
  * questions.
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Module_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -70,98 +69,101 @@ public class ModuleTestBase {
     }
 
     protected void testModuleAttribute(Path modulePath, ModuleDescriptor moduleDescriptor) throws Exception {
-        ClassFile classFile = ClassFile.read(modulePath.resolve("module-info.class"));
-        Module_attribute moduleAttribute = (Module_attribute) classFile.getAttribute("Module");
-        ConstantPool constantPool = classFile.constant_pool;
-        testModuleName(moduleDescriptor, moduleAttribute, constantPool);
+        ClassModel classFile = Classfile.of().parse(modulePath.resolve("module-info.class"));
+        ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.MODULE).orElse(null);
+        assert moduleAttribute != null;
+        testModuleName(moduleDescriptor, moduleAttribute);
         testModuleFlags(moduleDescriptor, moduleAttribute);
-        testRequires(moduleDescriptor, moduleAttribute, constantPool);
-        testExports(moduleDescriptor, moduleAttribute, constantPool);
-        testOpens(moduleDescriptor, moduleAttribute, constantPool);
-        testProvides(moduleDescriptor, moduleAttribute, constantPool);
-        testUses(moduleDescriptor, moduleAttribute, constantPool);
+        testRequires(moduleDescriptor, moduleAttribute);
+        testExports(moduleDescriptor, moduleAttribute);
+        testOpens(moduleDescriptor, moduleAttribute);
+        testProvides(moduleDescriptor, moduleAttribute);
+        testUses(moduleDescriptor, moduleAttribute);
     }
 
-    private void testModuleName(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(constantPool.getModuleInfo(module.module_name).getName(), moduleDescriptor.name, "Unexpected module name");
+    private void testModuleName(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.moduleName().name().stringValue(), moduleDescriptor.name, "Unexpected module name");
     }
 
-    private void testModuleFlags(ModuleDescriptor moduleDescriptor, Module_attribute module) {
-        tr.checkEquals(module.module_flags, moduleDescriptor.flags, "Unexpected module flags");
+    private void testModuleFlags(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.moduleFlagsMask(), moduleDescriptor.flags, "Unexpected module flags");
     }
 
-    private void testRequires(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(module.requires_count, moduleDescriptor.requires.size(), "Wrong amount of requires.");
+    private void testRequires(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.requires().size(), moduleDescriptor.requires.size(), "Wrong amount of requires.");
 
         List<Requires> actualRequires = new ArrayList<>();
-        for (Module_attribute.RequiresEntry require : module.requires) {
+        for (ModuleRequireInfo require : module.requires()) {
             actualRequires.add(new Requires(
-                    require.getRequires(constantPool),
-                    require.requires_flags));
+                    require.requires().name().stringValue(),
+                    require.requiresFlagsMask()));
         }
         tr.checkContains(actualRequires, moduleDescriptor.requires, "Lists of requires don't match");
     }
 
-    private void testExports(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(module.exports_count, moduleDescriptor.exports.size(), "Wrong amount of exports.");
-        for (Module_attribute.ExportsEntry export : module.exports) {
-            String pkg = constantPool.getPackageInfo(export.exports_index).getName();
+    private void testExports(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.exports().size(), moduleDescriptor.exports.size(), "Wrong amount of exports.");
+        for (ModuleExportInfo export : module.exports()) {
+            String pkg = export.exportedPackage().name().stringValue();
             if (tr.checkTrue(moduleDescriptor.exports.containsKey(pkg), "Unexpected export " + pkg)) {
                 Export expectedExport = moduleDescriptor.exports.get(pkg);
-                tr.checkEquals(expectedExport.mask, export.exports_flags, "Wrong export flags");
+                tr.checkEquals(expectedExport.mask, export.exportsFlagsMask(), "Wrong export flags");
                 List<String> expectedTo = expectedExport.to;
-                tr.checkEquals(export.exports_to_count, expectedTo.size(), "Wrong amount of exports to");
+                tr.checkEquals(export.exportsTo().size(), expectedTo.size(), "Wrong amount of exports to");
                 List<String> actualTo = new ArrayList<>();
-                for (int toIdx : export.exports_to_index) {
-                    actualTo.add(constantPool.getModuleInfo(toIdx).getName());
+                for (ModuleEntry toIdx : export.exportsTo()) {
+                    actualTo.add(toIdx.name().stringValue());
                 }
                 tr.checkContains(actualTo, expectedTo, "Lists of \"exports to\" don't match.");
             }
         }
     }
 
-    private void testOpens(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(module.opens_count, moduleDescriptor.opens.size(), "Wrong amount of opens.");
-        for (Module_attribute.OpensEntry open : module.opens) {
-            String pkg = constantPool.getPackageInfo(open.opens_index).getName();
+    private void testOpens(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.opens().size(), moduleDescriptor.opens.size(), "Wrong amount of opens.");
+        for (ModuleOpenInfo open : module.opens()) {
+            String pkg = open.openedPackage().name().stringValue();
             if (tr.checkTrue(moduleDescriptor.opens.containsKey(pkg), "Unexpected open " + pkg)) {
                 Open expectedOpen = moduleDescriptor.opens.get(pkg);
-                tr.checkEquals(expectedOpen.mask, open.opens_flags, "Wrong open flags");
+                tr.checkEquals(expectedOpen.mask, open.opensFlagsMask(), "Wrong open flags");
                 List<String> expectedTo = expectedOpen.to;
-                tr.checkEquals(open.opens_to_count, expectedTo.size(), "Wrong amount of opens to");
+                tr.checkEquals(open.opensTo().size(), expectedTo.size(), "Wrong amount of opens to");
                 List<String> actualTo = new ArrayList<>();
-                for (int toIdx : open.opens_to_index) {
-                    actualTo.add(constantPool.getModuleInfo(toIdx).getName());
+                for (ModuleEntry toIdx : open.opensTo()) {
+                    actualTo.add(toIdx.name().stringValue());
                 }
                 tr.checkContains(actualTo, expectedTo, "Lists of \"opens to\" don't match.");
             }
         }
     }
 
-    private void testUses(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        tr.checkEquals(module.uses_count, moduleDescriptor.uses.size(), "Wrong amount of uses.");
+    private void testUses(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        tr.checkEquals(module.uses().size(), moduleDescriptor.uses.size(), "Wrong amount of uses.");
         List<String> actualUses = new ArrayList<>();
-        for (int usesIdx : module.uses_index) {
-            String uses = constantPool.getClassInfo(usesIdx).getBaseName();
+        for (ClassEntry usesIdx : module.uses()) {
+            if (!usesIdx.asSymbol().isClassOrInterface()) continue; //get basename
+            String uses = usesIdx.asInternalName();
             actualUses.add(uses);
         }
         tr.checkContains(actualUses, moduleDescriptor.uses, "Lists of uses don't match");
     }
 
-    private void testProvides(ModuleDescriptor moduleDescriptor, Module_attribute module, ConstantPool constantPool) throws ConstantPoolException {
-        int moduleProvidesCount = Arrays.asList(module.provides).stream()
-                .mapToInt(e -> e.with_index.length)
+    private void testProvides(ModuleDescriptor moduleDescriptor, ModuleAttribute module) {
+        int moduleProvidesCount = module.provides().stream()
+                .mapToInt(e -> e.providesWith().size())
                 .sum();
         int moduleDescriptorProvidesCount = moduleDescriptor.provides.values().stream()
                 .mapToInt(impls -> impls.size())
                 .sum();
         tr.checkEquals(moduleProvidesCount, moduleDescriptorProvidesCount, "Wrong amount of provides.");
         Map<String, List<String>> actualProvides = new HashMap<>();
-        for (Module_attribute.ProvidesEntry provide : module.provides) {
-            String provides = constantPool.getClassInfo(provide.provides_index).getBaseName();
+        for (ModuleProvideInfo provide : module.provides()) {
+            if (!provide.provides().asSymbol().isClassOrInterface()) continue;
+            String provides = provide.provides().asInternalName();
             List<String> impls = new ArrayList<>();
-            for (int i = 0; i < provide.with_count; i++) {
-                String with = constantPool.getClassInfo(provide.with_index[i]).getBaseName();
+            for (ClassEntry withEntry: provide.providesWith()) {
+                if (!withEntry.asSymbol().isClassOrInterface()) continue;
+                String with = withEntry.asInternalName();
                 impls.add(with);
             }
             actualProvides.put(provides, impls);
@@ -191,7 +193,7 @@ public class ModuleTestBase {
     }
 
     public enum ModuleFlag implements Mask {
-        OPEN("open", Module_attribute.ACC_OPEN);
+        OPEN("open", Classfile.ACC_OPEN);
 
         private final String token;
         private final int mask;
@@ -208,9 +210,9 @@ public class ModuleTestBase {
     }
 
     public enum RequiresFlag implements Mask {
-        TRANSITIVE("transitive", Module_attribute.ACC_TRANSITIVE),
-        STATIC("static", Module_attribute.ACC_STATIC_PHASE),
-        MANDATED("", Module_attribute.ACC_MANDATED);
+        TRANSITIVE("transitive", Classfile.ACC_TRANSITIVE),
+        STATIC("static", Classfile.ACC_STATIC_PHASE),
+        MANDATED("", Classfile.ACC_MANDATED);
 
         private final String token;
         private final int mask;
@@ -227,7 +229,7 @@ public class ModuleTestBase {
     }
 
     public enum ExportsFlag implements Mask {
-        SYNTHETIC("", Module_attribute.ACC_SYNTHETIC);
+        SYNTHETIC("", Classfile.ACC_SYNTHETIC);
 
         private final String token;
         private final int mask;
@@ -244,7 +246,7 @@ public class ModuleTestBase {
     }
 
     public enum OpensFlag implements Mask {
-        SYNTHETIC("", Module_attribute.ACC_SYNTHETIC);
+        SYNTHETIC("", Classfile.ACC_SYNTHETIC);
 
         private final String token;
         private final int mask;
@@ -326,7 +328,7 @@ public class ModuleTestBase {
 
         private static final String LINE_END = ";\n";
 
-        StringBuilder content = new StringBuilder("");
+        StringBuilder content = new StringBuilder();
 
         public ModuleDescriptor(String moduleName, ModuleFlag... flags) {
             this.name = moduleName;
@@ -370,7 +372,7 @@ public class ModuleTestBase {
             List<String> tos = Pattern.compile(",")
                     .splitAsStream(to)
                     .map(String::trim)
-                    .collect(Collectors.toList());
+                    .toList();
             this.exports.compute(toInternalForm(pkg), (k,v) -> new Export(k, computeMask(flags)))
                     .to.addAll(tos);
 
@@ -396,7 +398,7 @@ public class ModuleTestBase {
             List<String> tos = Pattern.compile(",")
                     .splitAsStream(to)
                     .map(String::trim)
-                    .collect(Collectors.toList());
+                    .toList();
             this.opens.compute(toInternalForm(pkg), (k,v) -> new Open(toInternalForm(k), computeMask(flags)))
                     .to.addAll(tos);
 

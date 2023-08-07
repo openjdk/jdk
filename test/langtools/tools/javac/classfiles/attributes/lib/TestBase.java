@@ -33,8 +33,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;
@@ -127,10 +126,9 @@ public class TestBase {
      * @param is an input stream
      * @return class file that is read from {@code is}
      * @throws IOException if I/O error occurs
-     * @throws ConstantPoolException if constant pool error occurs
      */
-    public ClassFile readClassFile(InputStream is) throws IOException, ConstantPoolException {
-        return ClassFile.read(is);
+    public ClassModel readClassFile(InputStream is) throws IOException {
+        return Classfile.of().parse(is.readAllBytes());
     }
 
     /**
@@ -139,9 +137,8 @@ public class TestBase {
      * @param fileObject a file object
      * @return class file that is read from {@code fileObject}
      * @throws IOException if I/O error occurs
-     * @throws ConstantPoolException if constant pool error occurs
      */
-    public ClassFile readClassFile(JavaFileObject fileObject) throws IOException, ConstantPoolException {
+    public ClassModel readClassFile(JavaFileObject fileObject) throws IOException {
         try (InputStream is = fileObject.openInputStream()) {
             return readClassFile(is);
         }
@@ -153,9 +150,8 @@ public class TestBase {
      * @param clazz a class
      * @return class file that is read from {@code clazz}
      * @throws IOException if I/O error occurs
-     * @throws ConstantPoolException if constant pool error occurs
      */
-    public ClassFile readClassFile(Class<?> clazz) throws IOException, ConstantPoolException {
+    public ClassModel readClassFile(Class<?> clazz) throws IOException {
         return readClassFile(getClassFile(clazz));
     }
 
@@ -165,9 +161,8 @@ public class TestBase {
      * @param className a class name
      * @return class file that is read from {@code className}
      * @throws IOException if I/O error occurs
-     * @throws ConstantPoolException if constant pool error occurs
      */
-    public ClassFile readClassFile(String className) throws IOException, ConstantPoolException {
+    public ClassModel readClassFile(String className) throws IOException {
         return readClassFile(getClassFile(className + ".class"));
     }
 
@@ -177,9 +172,8 @@ public class TestBase {
      * @param file a file
      * @return class file that is read from {@code file}
      * @throws IOException if I/O error occurs
-     * @throws ConstantPoolException if constant pool error occurs
      */
-    public ClassFile readClassFile(File file) throws IOException, ConstantPoolException {
+    public ClassModel readClassFile(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
             return readClassFile(is);
         }
