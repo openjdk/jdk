@@ -49,6 +49,9 @@ public:
 
   void operator delete(void*) = delete;
   void* operator new(size_t) = delete;
+
+  Chunk(size_t length);
+
   enum {
     // default sizes; make them slightly smaller than 2**k to guard against
     // buddy-system style malloc implementations
