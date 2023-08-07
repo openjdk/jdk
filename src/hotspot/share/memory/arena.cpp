@@ -203,7 +203,8 @@ void Chunk::next_chop(Chunk* k) {
 
 Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
-  _first = _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
+  _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
+  _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
@@ -211,7 +212,8 @@ Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0) 
 }
 
 Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
-  _first = _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
+  _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
+  _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
