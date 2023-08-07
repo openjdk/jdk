@@ -129,28 +129,31 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
          SIZE_FORMAT ".", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
+  Chunk* chunk = nullptr;
   if (pool != nullptr) {
     Chunk* c = pool->take_from_pool();
     if (c != nullptr) {
       assert(c->length() == length, "wrong length?");
-      return c;
+      chunk = c;
     }
   }
-  // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
-  size_t bytes = ARENA_ALIGN(sizeof(Chunk)) + length;
-  void* p = os::malloc(bytes, mtChunk, CALLER_PC);
-  if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
-    vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
+  if (chunk == nullptr) {
+    // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
+    size_t bytes = ARENA_ALIGN(sizeof(Chunk)) + length;
+    void* p = os::malloc(bytes, mtChunk, CALLER_PC);
+    if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+      vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
+    }
+    chunk = (Chunk*)p;
   }
-  Chunk* chunk = ::new(p) Chunk(length);
+  ::new(chunk) Chunk(length);
   // We rely on arena alignment <= malloc alignment.
-  assert(is_aligned(p, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
+  assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
   return chunk;
 }
 
-void ChunkPool::deallocate_chunk(Chunk* p) {
+void ChunkPool::deallocate_chunk(Chunk* c) {
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.
-  Chunk* c = p;
   ChunkPool* pool = ChunkPool::get_pool_for_size(c->length());
   if (pool != nullptr) {
     pool->return_to_pool(c);
