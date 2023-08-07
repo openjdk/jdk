@@ -55,12 +55,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
-#include "safefetch.hpp"
 #include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
@@ -785,11 +785,6 @@ void os::init_random(unsigned int initval) {
 
 
 int os::next_random(unsigned int rand_seed) {
-#ifdef ASSERT
-  if (LimitRandomness) {
-    return rand_seed & 1 ? INT_MAX : 0;
-  }
-#endif
   /* standard, well-known linear congruential random generator with
    * next_rand = (16807*seed) mod (2**31-1)
    * see
@@ -1789,8 +1784,8 @@ static void print_points(const char* s, unsigned* points, unsigned num) {
 }
 #endif
 
-// Given an address range [min, max), attempts to reserve memory within this area by blindly probing
-// (either randomly or sequentially).
+// Given an address range [min, max), attempts to reserve memory within this area, with the given alignmend.
+// If randomize is true, the location will be randomized.
 char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
 
   // Please keep the following constants in sync with the companion gtests:

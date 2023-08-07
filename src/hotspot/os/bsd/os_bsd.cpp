@@ -1816,7 +1816,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
-    log_trace(os, map)("requested " PTR_FORMAT " got " PTR_FORMAT, p2i(requested_addr), p2i(addr));
     anon_munmap(addr, bytes);
   }
 

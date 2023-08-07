@@ -60,23 +60,12 @@ class CompressedKlassPointers : public AllStatic {
   static void set_range(size_t range);
   static void set_shift(int shift);
 
-  // Helper function: Will attempt to reserve in low address range such
-  // that the returned memory is usable for unscaled mode; failing that, for
-  // zero-based mode.
-  static char* reserve_klass_range_low(size_t size);
-
 public:
 
   // Given an address p, return true if p can be used as an encoding base.
   //  (Some platforms have restrictions of what constitutes a valid base
   //   address).
   static bool is_valid_base(address p);
-
-  // Reserve a range of memory that is to contain narrow Klass IDs. This memory
-  // is later used as klass range to initialize narrow Klass encoding.
-  // - strict_base=true: returned address must be *directly* usable as encoding base
-  //   (will get fed as base to initialize_for_given_encoding())
-  static char* reserve_klass_range(size_t size, bool strict_base);
 
   // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
   // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for

@@ -207,7 +207,7 @@ static void test_attempt_reserve_memory_between_random_distribution(unsigned num
 #define ERRINFO " num_possible_attach_points: " << num_possible_attach_points << " total_shuffle? " << total_shuffled \
                 << " expected variance: " << expected_variance << " with fudge: " << expected_variance_with_fudge \
                 << " alignment: " << alignment << " bytes: " << bytes;
-std::cout << ERRINFO;
+
   for (unsigned i = 0; i < num_tries &&
        num_uniq < expected_variance_with_fudge; // Stop early if we confirmed enough variance.
        i ++) {

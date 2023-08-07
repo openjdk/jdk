@@ -1996,10 +1996,6 @@ const int ObjectAlignmentInBytes = 8;
           "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
                                                                             \
-  develop(bool, LimitRandomness, false,                                     \
-          "If true, force internal randomizer to return either 0 or "       \
-          "always")                                                         \
-                                                                            \
 
 // end of RUNTIME_FLAGS
 

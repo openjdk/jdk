@@ -436,8 +436,8 @@ class os: AllStatic {
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
-  // Given an address range [min, max), attempts to reserve memory at a possibly randomized location
-  // within this area and with a given alignment. Possibly uses help from the OS.
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignmend.
+  // If randomize is true, the location will be randomized.
   static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);

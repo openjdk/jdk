@@ -22,13 +22,10 @@
  *
  */
 
-#include "compressedKlass.hpp"
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/os.hpp"
-#include "memory/metaspace.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -58,19 +55,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   set_base(requested_base);
   set_shift(requested_shift);
   set_range(encoding_range_size);
-}
-
-bool CompressedKlassPointers::is_valid_base(address p) {
-#ifdef AARCH64
-  // Below 32G, base must be aligned to 4G.
-  // Above that point, base must be aligned to 32G
-  if (p < (address)(32 * G)) {
-    return is_aligned(p, 4 * G);
-  }
-  return is_aligned(p, (4 << LogKlassAlignmentInBytes) * G);
-#else
-  return true;
-#endif
 }
 
 // Given an address range [addr, addr+len) which the encoding is supposed to
@@ -110,19 +94,18 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   assert(is_valid_base(_base), "Address must be a valid encoding base");
 }
 
-char* CompressedKlassPointers::reserve_klass_range_low(size_t size) {
-  const bool randomize = RandomizeClassSpaceLocation;
-  constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
-  constexpr uintptr_t zerobased_max = unscaled_max << LogKlassAlignmentInBytes;
 
-  // First try for unscaled (lower 4G); failing that, try for zero-based (lower 32G)
-  log_debug(metaspace, map)("Trying for unscaled class space...");
-  char* result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max, size, Metaspace::reserve_alignment(), randomize);
-  if (result == nullptr) {
-    log_debug(metaspace, map)("Trying for zero-based class space...");
-    result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max, size, Metaspace::reserve_alignment(), randomize);
+bool CompressedKlassPointers::is_valid_base(address p) {
+#ifdef AARCH64
+  // Below 32G, base must be aligned to 4G.
+  // Above that point, base must be aligned to 32G
+  if (p < (address)(32 * G)) {
+    return is_aligned(p, 4 * G);
   }
-  return result;
+  return is_aligned(p, (4 << LogKlassAlignmentInBytes) * G);
+#else
+  return true;
+#endif
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
