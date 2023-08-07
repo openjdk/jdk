@@ -84,8 +84,9 @@ import java.io.PrintStream;
  * added to the container.
  * <p>
  * BoxLayout attempts to arrange components
- * at their preferred widths (for horizontal layout)
- * or heights (for vertical layout).
+ * at their preferred widths (for a horizontal layout)
+ * or heights (for a vertical layout).
+ * <p>
  * For a horizontal layout,
  * if not all the components are the same height,
  * BoxLayout attempts to make all the components
@@ -106,7 +107,7 @@ import java.io.PrintStream;
  * horizontal alignment is done based on the leading edge of the component.
  * In other words, an X alignment value of 0.0 means the left edge of a
  * component if the container's {@code ComponentOrientation} is left to
- * right and it means the right edge of the component otherwise.
+ * right, and it means the right edge of the component otherwise.
  * <p>
  * Instead of using BoxLayout directly, many programs use the Box class.
  * The Box class is a lightweight container that uses a BoxLayout.
