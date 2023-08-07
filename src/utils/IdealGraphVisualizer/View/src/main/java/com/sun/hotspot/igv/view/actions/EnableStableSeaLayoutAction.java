@@ -26,20 +26,20 @@ package com.sun.hotspot.igv.view.actions;
 import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.beans.PropertyChangeEvent;
 
-public class EnableNewLayoutAction extends EnableLayoutAction {
+public class EnableStableSeaLayoutAction extends EnableLayoutAction {
 
-    public EnableNewLayoutAction(EditorTopComponent etc) {
+    public EnableStableSeaLayoutAction(EditorTopComponent etc) {
         super(etc);
     }
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/new_layout.png";
+        return "com/sun/hotspot/igv/view/images/stable_sea.png";
     }
 
     @Override
     protected String getDescription() {
-        return "New Layout";
+        return "Show stable sea of nodes";
     }
 
     @Override
