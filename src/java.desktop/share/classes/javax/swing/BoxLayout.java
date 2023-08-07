@@ -50,11 +50,12 @@ import java.io.Serializable;
  * </div>
  * <p>
  * Nesting multiple panels with different combinations of horizontal and
- * vertical gives an effect similar to GridBagLayout, without the
+ * vertical gives an effect similar to
+ * {@link java.awt.GridBagLayout GridBagLayout}, without the
  * complexity. The diagram shows two panels arranged horizontally, each
  * of which contains 3 components arranged vertically.
  *
- * <p> The BoxLayout manager is constructed with an axis parameter that
+ * <p> The {@code BoxLayout} manager is constructed with an axis parameter that
  * specifies the type of layout that will be done. There are four choices:
  *
  * <ul>
@@ -98,7 +99,7 @@ import java.io.Serializable;
  * BoxLayout attempts to make all the components
  * as high as the highest component.
  * If that's not possible for a particular component,
- * then BoxLayout aligns that component vertically,
+ * then {@code BoxLayout} aligns that component vertically,
  * according to the component's Y alignment.
  * By default, a component has a Y alignment of 0.5,
  * which means that the vertical center of the component
@@ -106,7 +107,7 @@ import java.io.Serializable;
  * the vertical centers of other components with 0.5 Y alignment.
  * <p>
  * Similarly, for a vertical layout,
- * BoxLayout attempts to make all components in the column
+ * {@code BoxLayout} attempts to make all components in the column
  * as wide as the widest component.
  * If that fails, it aligns them horizontally
  * according to their X alignments.  For {@code PAGE_AXIS} layout,
@@ -115,9 +116,11 @@ import java.io.Serializable;
  * component if the container's {@code ComponentOrientation} is left to
  * right, and it means the right edge of the component otherwise.
  * <p>
- * Instead of using BoxLayout directly, many programs use the Box class.
- * The Box class is a lightweight container that uses a BoxLayout.
- * It also provides handy methods to help you use BoxLayout well.
+ * Instead of using {@code BoxLayout} directly,
+ * many programs use the {@link Box} class.
+ * The {@code Box} class is a lightweight container that uses
+ * the {@code BoxLayout} layout manager.
+ * It also provides handy methods to help you use {@code BoxLayout} well.
  * Adding components to multiple nested boxes is a powerful way to get
  * the arrangement you want.
  * <p>
