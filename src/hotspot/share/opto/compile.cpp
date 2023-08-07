@@ -2326,8 +2326,9 @@ void Compile::Optimize() {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
-        igvn.set_delay_transform(false);
+        if (failing()) return;
 
+        igvn.set_delay_transform(false);
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
       }
@@ -4337,10 +4338,13 @@ void Compile::record_failure(const char* reason) {
 
 Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
   : TraceTime(name, accumulator, CITime, CITimeVerbose),
-    _compile(nullptr), _log(nullptr), _phase_name(name), _dolog(CITimeVerbose)
+    _compile(Compile::current()),
+    _log(nullptr),
+    _phase_name(name),
+    _dolog(CITimeVerbose)
 {
+  assert(_compile != nullptr, "sanity check");
   if (_dolog) {
-    _compile = Compile::current();
     _log = _compile->log();
   }
   if (_log != nullptr) {
@@ -4358,7 +4362,7 @@ Compile::TracePhase::~TracePhase() {
   }
 
   if (VerifyIdealNodeCount) {
-    Compile::current()->print_missing_nodes();
+    _compile->print_missing_nodes();
   }
 #endif
 
@@ -4894,7 +4898,16 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         const Type* t_no_spec = t->remove_speculative();
         if (t_no_spec != t) {
           bool in_hash = igvn.hash_delete(n);
-          assert(in_hash, "node should be in igvn hash table");
+#ifdef ASSERT
+          if (!in_hash) {
+            tty->print_cr("current graph:");
+            n->dump_bfs(MaxNodeLimit, nullptr, "S$");
+            tty->cr();
+            tty->print_cr("erroneous node:");
+            n->dump();
+            assert(false, "node should be in igvn hash table");
+          }
+#endif
           tn->set_type(t_no_spec);
           igvn.hash_insert(n);
           igvn._worklist.push(n); // give it a chance to go away
