@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -228,20 +229,7 @@ public class PassFailJFrame {
         buttonsPanel.add(btnFail);
 
         if (enableScreenCapture) {
-            JComboBox<String> screenShortType = new JComboBox<String>();
-            screenShortType.addItem("Capture Full Screen");
-            screenShortType.addItem("Capture Individual Frame");
-
-            JButton btnScreenCapture = new JButton("ScreenShot");
-
-            JPanel panel = new JPanel();
-            panel.add(screenShortType);
-            panel.add(btnScreenCapture);
-            btnScreenCapture.addActionListener((e) -> {
-                captureScreen(screenShortType.getSelectedIndex());
-            });
-
-            buttonsPanel.add(panel);
+            buttonsPanel.add(createCapturePanel());
         }
 
         frame.addWindowListener(new WindowAdapter() {
@@ -259,6 +247,34 @@ public class PassFailJFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         windowList.add(frame);
+    }
+
+    private static JComponent createCapturePanel() {
+        JComboBox<CaptureType> screenShortType = new JComboBox<>(CaptureType.values());
+
+        JButton capture = new JButton("ScreenShot");
+        capture.addActionListener((e) ->
+                captureScreen((CaptureType) screenShortType.getSelectedItem()));
+
+        JPanel panel = new JPanel();
+        panel.add(screenShortType);
+        panel.add(capture);
+        return panel;
+    }
+
+    private enum CaptureType {
+        FULL_SCREEN("Capture Full Screen"),
+        WINDOWS("Capture Individual Frame");
+
+        private final String type;
+        CaptureType(String type) {
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return type;
+        }
     }
 
     private static Robot createRobot() {
@@ -291,20 +307,25 @@ public class PassFailJFrame {
         }
     }
 
-    private static void captureScreen(int selectedIndex) {
-        if (selectedIndex == 0) {
-            Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
-                                             .getScreenDevices())
-                  .map(GraphicsDevice::getDefaultConfiguration)
-                  .map(GraphicsConfiguration::getBounds)
-                  .forEach(PassFailJFrame::captureScreen);
-        }
-
-        if (selectedIndex == 1) {
-            windowList.stream()
-                      .filter(Window::isShowing)
-                      .map(Window::getBounds)
+    private static void captureScreen(CaptureType type) {
+        switch (type) {
+            case FULL_SCREEN:
+                Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
+                                                 .getScreenDevices())
+                      .map(GraphicsDevice::getDefaultConfiguration)
+                      .map(GraphicsConfiguration::getBounds)
                       .forEach(PassFailJFrame::captureScreen);
+                break;
+
+            case WINDOWS:
+                windowList.stream()
+                          .filter(Window::isShowing)
+                          .map(Window::getBounds)
+                          .forEach(PassFailJFrame::captureScreen);
+                break;
+
+            default:
+                throw new IllegalStateException("Unexpected value of capture type");
         }
 
         JOptionPane.showMessageDialog(frame,
