@@ -26,10 +26,16 @@
 
 package javax.swing;
 
-import java.awt.*;
+import java.awt.AWTError;
+import java.awt.Component;
+import java.awt.ComponentOrientation;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager2;
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.io.PrintStream;
+import java.io.Serializable;
 
 /**
  * A layout manager that allows multiple components to be laid out either
