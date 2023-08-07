@@ -324,7 +324,11 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  Method* m = *interpreter_frame_method_addr();
+  Method** m_addr = interpreter_frame_method_addr();
+  if (m_addr == nullptr) {
+    return false;
+  }
+  Method* m = *m_addr;
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
