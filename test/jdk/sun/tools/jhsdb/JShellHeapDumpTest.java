@@ -150,7 +150,7 @@ public class JShellHeapDumpTest {
         System.out.println("Starting Jshell");
         long startTime = System.currentTimeMillis();
         try {
-            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jshell"));
+            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jshell"), "-J-Duser.language=en", "-J-Duser.country=US");
             jShellProcess = ProcessTools.startProcess("JShell", pb,
                                                       s -> {  // warm-up predicate
                                                           return s.contains("Welcome to JShell");

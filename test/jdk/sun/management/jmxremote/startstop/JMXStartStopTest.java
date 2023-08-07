@@ -393,6 +393,8 @@ public class JMXStartStopTest {
         List<String> pbArgs = new ArrayList<>(Arrays.asList(
                 "-cp",
                 System.getProperty("test.class.path"),
+                "-Duser.language=en",
+                "-Duser.country=US",
                 "-XX:+UsePerfData"
         ));
         pbArgs.addAll(Arrays.asList(args));
