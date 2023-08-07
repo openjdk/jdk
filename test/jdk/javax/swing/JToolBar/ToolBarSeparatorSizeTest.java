@@ -27,14 +27,10 @@
  * @key headful
  * @summary Verifies if Adding JSeparator to JToolBar "pushes" buttons added
  *          after separator to edge
- * @run main ToolBarSeparatorTest
+ * @run main ToolBarSeparatorSizeTest
  */
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.image.BufferedImage;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 
@@ -48,7 +44,7 @@ import javax.swing.SwingUtilities;
 
 import javax.imageio.ImageIO;
 
-public class ToolBarSeparatorTest {
+public class ToolBarSeparatorSizeTest {
 
     private static JFrame frame;
     private static JSeparator separator;
