@@ -98,13 +98,8 @@ public class PrintLatinCJKTest implements Printable {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Test Instructions")
-                .instructions(info)
-                .testTimeOut(10)
-                .rows(10)
-                .columns(45)
-                .build();
+        PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
+                "Frame", info, 10, 10, 45);
         showFrame();
         passFailJFrame.awaitAndCheck();
     }
