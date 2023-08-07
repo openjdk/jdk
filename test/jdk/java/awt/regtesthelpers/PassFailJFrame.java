@@ -35,7 +35,6 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.MultiResolutionImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -57,7 +57,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
-
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
@@ -267,46 +266,46 @@ public class PassFailJFrame {
             try {
                 robot = new Robot();
             } catch (AWTException e) {
-                String errorMsg = "Failed to create the " +
-                        "instance of Robot.";
+                String errorMsg = "Failed to create an instance of Robot.";
                 JOptionPane.showMessageDialog(frame, errorMsg, "Failed",
                         JOptionPane.ERROR_MESSAGE);
                 forceFail(errorMsg + e.getMessage());
             }
         }
-        MultiResolutionImage multiResolutionImage = robot
-                .createMultiResolutionScreenCapture(bounds);
-        List<Image> imageList =
-                multiResolutionImage.getResolutionVariants();
+
+        List<Image> imageList = robot.createMultiResolutionScreenCapture(bounds)
+                                     .getResolutionVariants();
         Image image = imageList.get(imageList.size() - 1);
-        File file = new java.io.File("CaptureScreen_" +
-                imgCounter.incrementAndGet() + ".png");
+
+        File file = new File("CaptureScreen_"
+                             + imgCounter.incrementAndGet() + ".png");
         try {
             ImageIO.write((RenderedImage) image, "png", file);
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
     private static void captureScreen(int selectedIndex) {
         if (selectedIndex == 0) {
             Arrays.stream(GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .getScreenDevices())
-                    .map(GraphicsDevice::getDefaultConfiguration)
-                    .map(GraphicsConfiguration::getBounds)
-                    .forEach(PassFailJFrame::captureScreen);
+                                             .getScreenDevices())
+                  .map(GraphicsDevice::getDefaultConfiguration)
+                  .map(GraphicsConfiguration::getBounds)
+                  .forEach(PassFailJFrame::captureScreen);
         }
 
         if (selectedIndex == 1) {
             windowList.stream()
-                    .filter(Window::isShowing)
-                    .map(Window::getBounds)
-                    .forEach(PassFailJFrame::captureScreen);
+                      .filter(Window::isShowing)
+                      .map(Window::getBounds)
+                      .forEach(PassFailJFrame::captureScreen);
         }
 
-        JOptionPane.showMessageDialog(frame, "Screen Captured " +
-                        "Successfully", "Screen Capture",
-                JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(frame,
+                                      "Screen Captured Successfully",
+                                      "Screen Capture",
+                                      JOptionPane.INFORMATION_MESSAGE);
     }
 
     private static String convertMillisToTimeStr(long millis) {
