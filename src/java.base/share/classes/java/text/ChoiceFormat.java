@@ -497,6 +497,7 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Generates a hash code for the message format object.
      */
+    @Override
     public int hashCode() {
         int result = choiceLimits.length;
         if (choiceFormats.length > 0) {
@@ -509,11 +510,11 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Equality comparison between two
      */
+    @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
         if (this == obj)                      // quick check
             return true;
-        if (getClass() != obj.getClass())
+        if (obj == null || getClass() != obj.getClass())
             return false;
         ChoiceFormat other = (ChoiceFormat) obj;
         return (Arrays.equals(choiceLimits, other.choiceLimits)

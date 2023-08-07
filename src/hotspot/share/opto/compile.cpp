@@ -519,6 +519,12 @@ void Compile::print_compile_messages() {
     tty->print_cr("** Bailout: Recompile without iterative escape analysis**");
     tty->print_cr("*********************************************************");
   }
+  if (do_reduce_allocation_merges() != ReduceAllocationMerges && PrintOpto) {
+    // Recompiling without reducing allocation merges
+    tty->print_cr("*********************************************************");
+    tty->print_cr("** Bailout: Recompile without reduce allocation merges **");
+    tty->print_cr("*********************************************************");
+  }
   if ((eliminate_boxing() != EliminateAutoBox) && PrintOpto) {
     // Recompiling without boxing elimination
     tty->print_cr("*********************************************************");
@@ -2301,10 +2307,10 @@ void Compile::Optimize() {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop::optimize(igvn, LoopOptsMaxUnroll);
-      if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
     bool progress;
+    print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
     do {
       ConnectionGraph::do_analysis(this, &igvn);
 
@@ -2326,9 +2332,11 @@ void Compile::Optimize() {
 
         igvn.optimize();
         print_method(PHASE_ITER_GVN_AFTER_ELIMINATION, 2);
-
-        if (failing())  return;
       }
+
+      ConnectionGraph::verify_ram_nodes(this, root());
+      if (failing())  return;
+
       progress = do_iterative_escape_analysis() &&
                  (macro_count() < mcount) &&
                  ConnectionGraph::has_candidates(this);
