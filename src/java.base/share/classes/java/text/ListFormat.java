@@ -126,6 +126,8 @@ public class ListFormat extends Format {
     private static final Pattern PARSE_START = Pattern.compile("(.*?)\\{0}(.*?)\\{1}");
     private static final Pattern PARSE_MIDDLE = Pattern.compile("\\{0}(.*?)\\{1}");
     private static final Pattern PARSE_END = Pattern.compile("\\{0}(.*?)\\{1}(.*?)");
+    private static final Pattern PARSE_TWO = Pattern.compile("(.*?)\\{0}(.*?)\\{1}(.*?)");
+    private static final Pattern PARSE_THREE = Pattern.compile("(.*?)\\{0}(.*?)\\{1}(.*?)\\{2}(.*?)");
     private transient Pattern startPattern;
     private transient String middleBetween;
     private transient Pattern endPattern;
@@ -163,13 +165,24 @@ public class ListFormat extends Format {
             throw new IllegalArgumentException("end pattern is incorrect: " + patterns[END]);
         }
 
-        // generate two/three patterns, if empty
-        if (patterns[TWO] == null || patterns[TWO].isEmpty()) {
+        // Validate two/three patterns, if given. Otherwise, generate them
+        if (patterns[TWO] != null && !patterns[TWO].isEmpty()) {
+            m = PARSE_TWO.matcher(patterns[TWO]);
+            if (!m.matches()) {
+                throw new IllegalArgumentException("pattern for two is incorrect: " + patterns[TWO]);
+            }
+        } else {
             patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
         }
-        if (patterns[THREE] == null || patterns[THREE].isEmpty()) {
+        if (patterns[THREE] != null && !patterns[THREE].isEmpty()) {
+            m = PARSE_THREE.matcher(patterns[THREE]);
+            if (!m.matches()) {
+                throw new IllegalArgumentException("pattern for three is incorrect: " + patterns[THREE]);
+            }
+        } else {
             patterns[THREE] = startBefore + "{0}" + startBetween + "{1}" + endBetween + "{2}" + endAfter;
         }
+
         startPattern = Pattern.compile(startBefore + "(.+?)" + startBetween);
         endPattern = Pattern.compile(endBetween + "(.+?)" + endAfter);
     }
@@ -184,19 +197,21 @@ public class ListFormat extends Format {
 
     /**
      * {@return the list format object for the default
-     * {@link Locale.Category#FORMAT FORMAT Locale}, {@code STANDARD} type,
-     * and {@code FULL} style}
+     * {@link Locale.Category#FORMAT FORMAT Locale}, {@link Type#STANDARD STANDARD} type,
+     * and {@link Style#FULL FULL} style}
      */
     public static ListFormat getInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), Type.STANDARD, Style.FULL);
     }
 
     /**
-     * {@return the list format object for the specified {@code Locale}, {@code Type},
-     * and {@code Style}}
-     * @param locale Locale to be used, not null
-     * @param type type of the list format. One of STANDARD/OR/UNIT, not null
-     * @param style style of the list format. One of FULL/SHORT/NARROW, not null
+     * {@return the list format object for the specified {@link Locale}, {@link Type Type},
+     * and {@link Style Style}}
+     * @param locale {@code Locale} to be used, not null
+     * @param type type of the list format. One of {@code STANDARD}, {@code OR},
+     *             or {@code UNIT}, not null
+     * @param style style of the list format. One of {@code FULL}, {@code SHORT},
+     *              or {@code NARROW}, not null
      * @throws NullPointerException if any of the arguments are null
      */
     public static ListFormat getInstance(Locale locale, Type type, Style style) {
@@ -212,7 +227,8 @@ public class ListFormat extends Format {
      * {@return the list format for the specified patterns}
      * <p>
      * This factory returns an instance based on the customized patterns array,
-     * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
+     * instead of letting the runtime provide appropriate patterns for the {@code Locale},
+     * {@code Type}, or {@code Style}.
      * <p>
      * The patterns array should contain five String patterns, each corresponding to the Unicode LDML's
      * {@code listPatternPart}, i.e., "start", "middle", "end", two element, and three element patterns
@@ -339,7 +355,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the parsed list of Strings from the {@code source} String}
+     * {@return the parsed list of strings from the {@code source} string}
      *
      * Note that {@link #format(List)} and this method
      * may not guarantee a round-trip, if the input strings contain ambiguous
@@ -347,7 +363,7 @@ public class ListFormat extends Format {
      * formatted as {@code "a, b, and c"}, but may be parsed as
      * {@code "a", "b", "c"}.
      *
-     * @param source the String to parse, not null.
+     * @param source the string to parse, not null.
      * @throws ParseException if parse failed
      * @throws NullPointerException if source is null
      */
@@ -362,7 +378,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * Parses text from a string to produce a list of {@code String}s.
+     * Parses text from a string to produce a list of strings.
      * <p>
      * The method attempts to parse text starting at the index given by
      * {@code parsePos}.
@@ -377,11 +393,11 @@ public class ListFormat extends Format {
      * See the {@link #parse(String)} method for more information
      * on list parsing.
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @param source A string, part of which should be parsed.
      * @param parsePos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return A {@code List} of {@code String} parsed from the string. In case of
-     *         error, returns null.
+     * @return A list of string parsed from the {@code source}.
+     *            In case of error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
      */
     @Override
@@ -424,8 +440,10 @@ public class ListFormat extends Format {
         if (parsed instanceof Object[] objs) {
             parsePos.setErrorIndex(-1);
             return Arrays.asList(objs);
+        } else {
+            // MessageFormat.parseObject() failed
+            return null;
         }
-        throw new InternalError("MessageFormat.parseObject() should return Object[]");
     }
 
     @Override
@@ -439,7 +457,11 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@inheritDoc}
+     * Checks if this {@code ListFormat} is equal to another {@code ListFormat}.
+     * The comparison is based on the {@code Locale} and formatting patterns, given or
+     * generated with {@code Locale}, {@code Type}, and {@code Style}.
+     * @param obj the object to check, {@code null} returns {@code false}
+     * @return {@code true} if this is equals to the other {@code ListFormat}
      */
     @Override
     public boolean equals(Object obj) {

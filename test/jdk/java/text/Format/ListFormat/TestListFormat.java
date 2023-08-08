@@ -86,6 +86,21 @@ public class TestListFormat {
             "",
             "",
     };
+    private static final String[] CUSTOM_PATTERNS_IAE_TWO = {
+            "sbef {0} sbet {1}",
+            "{0} mid {1}",
+            "{0} ebet {1} eaft",
+            "{1}error{0}",
+            "",
+    };
+    private static final String[] CUSTOM_PATTERNS_IAE_THREE = {
+            "sbef {0} sbet {1}",
+            "{0} mid {1}",
+            "{0} ebet {1} eaft",
+            "",
+            "{0}error{1}",
+    };
+
 
     @Test
     void getAvailableLocales() {
@@ -117,6 +132,8 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_IAE_START, "start pattern is incorrect: {0}"),
                 arguments(CUSTOM_PATTERNS_IAE_MIDDLE, "middle pattern is incorrect: {0} {1} {2}"),
                 arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect: error {0} ebet {1}"),
+                arguments(CUSTOM_PATTERNS_IAE_TWO, "pattern for two is incorrect: {1}error{0}"),
+                arguments(CUSTOM_PATTERNS_IAE_THREE, "pattern for three is incorrect: {0}error{1}"),
         };
     }
 
