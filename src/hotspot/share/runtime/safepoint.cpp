@@ -100,7 +100,7 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
     event.set_safepointId(safepoint_id);
     event.set_initialThreadCount(initial_number_of_threads);
     event.set_runningThreadCount(threads_waiting_to_block);
-    event.set_iterations(iterations);
+    event.set_iterations(checked_cast<u4>(iterations));
     event.commit();
   }
 }

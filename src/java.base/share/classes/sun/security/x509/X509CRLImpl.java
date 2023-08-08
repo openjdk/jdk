@@ -233,8 +233,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
 
             // revokedCertificates (optional)
             nextByte = (byte)derStrm.peekByte();
-            if ((nextByte == DerValue.tag_SequenceOf)
-                    && (! ((nextByte & 0x0c0) == 0x080))) {
+            if ((nextByte == DerValue.tag_SequenceOf)) {
                 DerValue[] badCerts = derStrm.getSequence(4);
 
                 X500Principal crlIssuer = getIssuerX500Principal();
