@@ -36,7 +36,7 @@
 #include <dirent.h>
 
 StaticHugePageSupport::StaticHugePageSupport() :
-  _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX) {}
+  _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
 os::PageSizes StaticHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
@@ -141,15 +141,24 @@ void StaticHugePageSupport::print_on(outputStream* os) {
   } else {
     os->print_cr("  unknown.");
   }
+  if (_inconsistent) {
+    os->print_cr("  Support inconsistent. JVM will not use static hugepages.");
+  }
 }
 
 void StaticHugePageSupport::scan_os() {
   _default_hugepage_size = scan_default_hugepagesize();
   if (_default_hugepage_size > 0) {
     _pagesizes = scan_hugepages();
-    assert(_pagesizes.contains(_default_hugepage_size),
-           "Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
-           "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+    // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
+    // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
+    // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
+    // sure about the state of hugepage support by the kernel, so we won't use static hugepages.
+    if (!_pagesizes.contains(_default_hugepage_size)) {
+      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+                         "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+      _inconsistent = true;
+    }
   }
   _initialized = true;
   LogTarget(Info, pagesize) lt;

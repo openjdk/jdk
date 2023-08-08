@@ -86,8 +86,7 @@ jobs:
           - target-cpu: riscv64
             gnu-arch: riscv64
             debian-arch: riscv64
-            debian-repository: https://deb.debian.org/debian-ports
-            debian-keyring: /usr/share/keyrings/debian-ports-archive-keyring.gpg
+            debian-repository: https://httpredir.debian.org/debian/
             debian-version: sid
 
     steps:
@@ -140,6 +139,7 @@ jobs:
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
           --resolve-deps
+          --variant=minbase
           $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
           ${{ matrix.debian-version }}
           sysroot

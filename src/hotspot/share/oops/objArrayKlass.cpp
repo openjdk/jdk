@@ -169,17 +169,14 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
 
 oop ObjArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
   int length = *sizes;
-  // Call to lower_dimension uses this pointer, so most be called before a
-  // possible GC
-  Klass* ld_klass = lower_dimension();
+  ArrayKlass* ld_klass = lower_dimension();
   // If length < 0 allocate will throw an exception.
   objArrayOop array = allocate(length, CHECK_NULL);
   objArrayHandle h_array (THREAD, array);
   if (rank > 1) {
     if (length != 0) {
       for (int index = 0; index < length; index++) {
-        ArrayKlass* ak = ArrayKlass::cast(ld_klass);
-        oop sub_array = ak->multi_allocate(rank-1, &sizes[1], CHECK_NULL);
+        oop sub_array = ld_klass->multi_allocate(rank - 1, &sizes[1], CHECK_NULL);
         h_array->obj_at_put(index, sub_array);
       }
     } else {
@@ -308,7 +305,7 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
 }
 
 
-Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
+ArrayKlass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -326,9 +323,8 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
       if (higher_dimension() == nullptr) {
 
         // Create multi-dim klass object and link them together
-        Klass* k =
+        ObjArrayKlass* ak =
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* ak = ObjArrayKlass::cast(k);
         ak->set_lower_dimension(this);
         // use 'release' to pair with lock-free load
         release_set_higher_dimension(ak);
@@ -337,12 +333,12 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
     }
   }
 
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass *ak = higher_dimension();
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_or_null(int n) {
+ArrayKlass* ObjArrayKlass::array_klass_or_null(int n) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
@@ -353,15 +349,15 @@ Klass* ObjArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass *ak = higher_dimension();
   return ak->array_klass_or_null(n);
 }
 
-Klass* ObjArrayKlass::array_klass(TRAPS) {
+ArrayKlass* ObjArrayKlass::array_klass(TRAPS) {
   return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* ObjArrayKlass::array_klass_or_null() {
+ArrayKlass* ObjArrayKlass::array_klass_or_null() {
   return array_klass_or_null(dimension() +  1);
 }
 

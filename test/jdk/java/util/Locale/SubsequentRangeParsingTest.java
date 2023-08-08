@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug 8166884
+ * @bug 8166994
  * @summary Checks the subsequent call to parse the same language ranges
  *          which must generate the same list of language ranges
  *          i.e. the priority list containing equivalents, as in the
  *          first call
- * @run junit Bug8166994
+ * @run junit SubsequentRangeParsingTest
  */
 
 import java.util.Arrays;
@@ -43,7 +43,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug8166994 {
+public class SubsequentRangeParsingTest {
 
     /*
      * Checks that consecutive calls to parse the same language ranges

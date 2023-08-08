@@ -29,14 +29,14 @@
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver HugePageDetection
+ * @run driver TestHugePageDetection
  */
 
 import java.util.*;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class HugePageDetection {
+public class TestHugePageDetection {
 
     public static void main(String[] args) throws Exception {
 

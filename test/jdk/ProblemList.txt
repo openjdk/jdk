@@ -506,9 +506,10 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
-sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865,8308807 linux-aarch64,macosx-all,aix-ppc64
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865,8308807 macosx-all,aix-ppc64
+sun/management/jdp/JdpSpecificAddressTest.java                  8241865,8308807 macosx-all,aix-ppc64
+sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
 
@@ -528,12 +529,15 @@ javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 
 
 # jdk_net
 
-java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
-java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
+java/net/MulticastSocket/NoLoopbackPackets.java                 7122846,8308807 macosx-all,aix-ppc64
+java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
 
-java/net/MulticastSocket/Test.java                              7145658 macosx-all
+java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
+
+java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
+java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 
 ############################################################################
 
@@ -546,6 +550,8 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
+
+java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 
 ############################################################################
 
@@ -603,8 +609,6 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
-sun/security/pkcs11/Cipher/TestKATForGCM.java                   8240611 linux-x64,macosx-x64
-
 
 ############################################################################
 
@@ -730,6 +734,7 @@ sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-aarch64
 
 ############################################################################
 
@@ -755,6 +760,12 @@ jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x6
 ############################################################################
 
 # jdk_jpackage
+
+############################################################################
+
+# jdk_foreign
+
+java/foreign/TestByteBuffer.java 8309475 aix-ppc64
 
 ############################################################################
 # Client manual tests

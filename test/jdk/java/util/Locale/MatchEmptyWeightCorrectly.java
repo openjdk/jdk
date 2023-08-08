@@ -25,7 +25,7 @@
  * @bug 8035133
  * @summary Checks that the tags matching the range with quality weight q=0
  *          e.g. en;q=0 must be elimited and must not be the part of output
- * @run junit Bug8035133
+ * @run junit MatchEmptyWeightCorrectly
  */
 
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug8035133 {
+public class MatchEmptyWeightCorrectly {
 
     // Ensure weights with 'q=0' work as expected during lookup
     @ParameterizedTest
