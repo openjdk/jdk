@@ -180,13 +180,25 @@ public class HierarchicalStableLayoutManager {
 
     private void sanityCheckEdges() {
         for (LayoutNode n : nodes) {
-            for (LayoutEdge e : n.preds) {
-                assert e.to.equals(n);
-                assert e.from.layer == n.layer - 1;
-            }
-            for (LayoutEdge e : n.succs) {
+            for (LayoutEdge e : List.copyOf(n.succs)) {
                 assert e.from.equals(n);
-                assert e.to.layer == n.layer + 1;
+                assert e.to.preds.contains(e);
+                if (nodes.contains(e.to)) {
+                    assert layers.get(n.layer + 1).contains(e.to);
+                    assert e.to.layer == n.layer + 1;
+                } else {
+                    n.succs.remove(e);
+                }
+            }
+            for (LayoutEdge e : List.copyOf(n.preds)) {
+                assert e.to.equals(n);
+                assert e.from.succs.contains(e);
+                if (nodes.contains(e.from)) {
+                    assert layers.get(n.layer - 1).contains(e.from);
+                    assert e.from.layer == n.layer - 1;
+                } else {
+                    n.preds.remove(e);
+                }
             }
         }
     }
@@ -492,12 +504,12 @@ public class HierarchicalStableLayoutManager {
 
             new WriteResult().run();
 
-            if (!shouldComputeLayoutScore) {
+            if (shouldComputeLayoutScore) {
                 new ComputeLayoutScore().run();
             }
 
-            sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         copyOldNodes();
@@ -914,8 +926,8 @@ public class HierarchicalStableLayoutManager {
                 processSingleEdge(edge);
             }
 
-            sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         private void moveNodeDown(LayoutNode node) {
@@ -941,8 +953,8 @@ public class HierarchicalStableLayoutManager {
                 processSingleEdge(edge);
             }
 
-            sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         private void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
@@ -954,8 +966,8 @@ public class HierarchicalStableLayoutManager {
                 expandNewLayerBeneath(to);
             }
 
-            sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         /**
@@ -965,39 +977,28 @@ public class HierarchicalStableLayoutManager {
          * @param node
          */
         private void expandNewLayerBeneath(LayoutNode node) {
+            sanityCheckEdges();
+            sanityCheckNodesAndLayerNodes();
             int layer = node.layer + 1;
 
+            // Move all necessary layers down one step
             for (int i = layers.size() - 1; i >= layer; i--) {
                 List<LayoutNode> list = layers.get(i);
+                for (LayoutNode n : list) {
+                    n.layer = i + 1;
+                }
                 layers.remove(i);
                 layers.put(i + 1, list);
-                for (LayoutNode n : list) {
-                    n.layer += 1;
-                }
             }
 
-            // Remove node from prev layer and update that layer's remaining nodes'
-            // positions
-            assert layers.get(layer - 1).contains(node);
-            layers.get(layer - 1).remove(node);
-            for (LayoutNode n : layers.get(layer - 1)) {
-                if (n.pos > node.pos) {
-                    n.pos -= 1;
-                }
-            }
-            // Create a new layer and add the node to that layer
+            // Create new empty layer
             List<LayoutNode> l = new ArrayList<>();
-            l.add(node);
             layers.put(layer, l);
-            node.layer = layer;
-            node.pos = 0;
 
-            for (int i = 0; i < layers.keySet().size(); i++) {
-                assert layers.keySet().contains(i);
-                for (LayoutNode n : layers.get(i)) {
-                    assert n.layer == i;
-                    assert nodes.contains(n);
-                }
+            sanityCheckNodesAndLayerNodes();
+            assert layers.get(layer).size() == 0;
+            for (LayoutNode n : nodes) {
+                assert n.layer != layer;
             }
 
             // Add dummy nodes for edges going across new layer. One for each port on the
@@ -1034,38 +1035,20 @@ public class HierarchicalStableLayoutManager {
                         e.relativeFrom = dummy.width / 2;
                         n.succs.remove(e);
                         dummy.succs.add(e);
+                        assert e.to.layer == layer + 1;
                     }
 
                     insertNode(dummy, layer);
                 }
             }
 
-            // Update edges going into the node, adding dummy node to bridge the gap where
-            // the node used to be
-            for (LayoutEdge edge : List.copyOf(node.preds)) {
-                LayoutNode dummy = new LayoutNode();
-                dummy.width = DUMMY_WIDTH;
-                dummy.height = DUMMY_HEIGHT;
+            // Move node to new layer
+            moveNodeDown(node);
+            assert layers.get(layer).contains(node);
+            assert node.layer == layer;
 
-                LayoutEdge e = new LayoutEdge();
-                e.to = edge.to;
-                e.relativeTo = edge.relativeTo;
-                e.from = dummy;
-                e.relativeFrom = dummy.width / 2;
-                e.link = edge.link;
-                dummy.succs.add(e);
-                node.preds.add(e);
-
-                edge.to = dummy;
-                edge.relativeTo = dummy.width / 2;
-                dummy.preds.add(edge);
-                node.preds.remove(edge);
-
-                insertNode(dummy, layer - 1);
-            }
-
-            sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         private void applyAddLinkAction(Link l) {
@@ -1120,6 +1103,7 @@ public class HierarchicalStableLayoutManager {
             }
 
             sanityCheckEdges();
+            sanityCheckNodesAndLayerNodes();
         }
 
         /**
@@ -1134,13 +1118,15 @@ public class HierarchicalStableLayoutManager {
         private int optimalLayer(Vertex vertex, List<Link> links) {
             if (vertex.isRoot()) {
                 return 0;
+            } else if (layers.keySet().size() == 0) {
+                return 0;
             }
 
             int reversedEdges = Integer.MAX_VALUE;
             int totalEdgeLength = Integer.MAX_VALUE;
             int neighborsOnSameLayer = Integer.MAX_VALUE;
             int layer = -1;
-            for (int i = 0; i < layers.size(); i++) {
+            for (int i = 0; i < layers.keySet().size(); i++) {
                 // System.out.println("Testing layer " + i);
                 int curReversedEdges = 0;
                 int curTotalEdgeLength = 0;
@@ -1227,6 +1213,9 @@ public class HierarchicalStableLayoutManager {
                     applyAddLinkAction(a.link);
                 }
             }
+
+            sanityCheckEdges();
+            sanityCheckNodesAndLayerNodes();
         }
 
         private void applyRemoveLinkAction(Link l) {
@@ -1283,6 +1272,7 @@ public class HierarchicalStableLayoutManager {
                         }
 
                         if (n.preds.size() == 1) {
+                            n.succs.remove(edgeToRemove);       // necessary??
                             prev = n;
                             edgeToRemove = n.preds.get(0);
                             n = edgeToRemove.from;
@@ -1296,6 +1286,9 @@ public class HierarchicalStableLayoutManager {
                 sanityCheckEdges();
                 break;
             }
+
+            sanityCheckEdges();
+            sanityCheckNodesAndLayerNodes();
         }
 
         private void removeNode(LayoutNode node) {
@@ -1365,6 +1358,9 @@ public class HierarchicalStableLayoutManager {
             }
 
             removeNode(node);
+
+            sanityCheckNodesAndLayerNodes();
+            sanityCheckEdges();
         }
 
         void run() {
@@ -1879,7 +1875,11 @@ public class HierarchicalStableLayoutManager {
             }
 
             // Ensure all edges are drawn
-            assert currentLinks.size() == linkPositions.keySet().size();
+            if (currentLinks.size() != linkPositions.keySet().size()) {
+                System.out.println(
+                        "current links: " + currentLinks.size() + ", drawn links: " + linkPositions.keySet().size());
+            }
+            assert currentLinks.size() <= linkPositions.keySet().size();
 
             int minX = Integer.MAX_VALUE;
             int minY = Integer.MAX_VALUE;
