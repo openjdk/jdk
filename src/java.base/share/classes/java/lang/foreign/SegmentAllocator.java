@@ -106,10 +106,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -130,10 +128,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -154,10 +150,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -178,10 +172,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -202,10 +194,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -226,10 +216,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -250,10 +238,8 @@ public interface SegmentAllocator {
      *
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -277,10 +263,8 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  Objects.requireNonNull(value);
-     *  Objects.requireNonNull(layout);
-     *  VarHandle handle = layout.varHandle();
-     *  MemorySegment seg = allocate(layout);
-     *  handle.set(seg, value);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(layout));
+     *  seg.set(layout, 0, value);
      *  return seg;
      * }
      *
@@ -469,7 +453,7 @@ public interface SegmentAllocator {
      * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
-     *                                  or if {@code byteAlignment} is not a power of 2.
+     * or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment allocate(long byteSize, long byteAlignment);
 
