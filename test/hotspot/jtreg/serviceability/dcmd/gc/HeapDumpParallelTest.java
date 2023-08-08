@@ -24,10 +24,12 @@
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -40,7 +42,7 @@ import jdk.test.lib.hprof.HprofParser;
  * @bug 8306441
  * @summary Verify the integrity of generated heap dump and capability of parallel dump
  * @library /test/lib
- * @run driver HeapDumpParallelTest
+ * @run main HeapDumpParallelTest
  */
 
 public class HeapDumpParallelTest {
@@ -50,6 +52,11 @@ public class HeapDumpParallelTest {
         dcmdOut.shouldContain("Heap dump file created");
         OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
         appOut.shouldContain("[heapdump]");
+        String opts = Arrays.asList(Utils.getTestJavaOpts()).toString();
+        if (opts.contains("-XX:+UseSerialGC") || opts.contains("-XX:+UseEpsilonGC")) {
+            System.out.println("UseSerialGC detected.");
+            expectSerial = true;
+        }
         if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
             appOut.shouldContain("Dump heap objects in parallel");
             appOut.shouldContain("Merge heap files complete");
