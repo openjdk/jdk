@@ -1837,8 +1837,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       // This code is used to generate 1 prefetch instruction per cache line.
 
       // Generate several prefetch instructions.
-      int step_size = AllocatePrefetchStepSize;
-      int distance = AllocatePrefetchDistance;
+      uint step_size = AllocatePrefetchStepSize;
+      uint distance = AllocatePrefetchDistance;
 
       // Next cache address.
       Node *cache_adr = new AddPNode(old_eden_top, old_eden_top,
@@ -1875,8 +1875,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node *prefetch_adr;
       Node *prefetch;
       // Generate several prefetch instructions.
-      int step_size = AllocatePrefetchStepSize;
-      int distance = AllocatePrefetchDistance;
+      uint step_size = AllocatePrefetchStepSize;
+      uint distance = AllocatePrefetchDistance;
       for ( intx i = 0; i < lines; i++ ) {
         prefetch_adr = new AddPNode( old_eden_top, new_eden_top,
                                             _igvn.MakeConX(distance) );

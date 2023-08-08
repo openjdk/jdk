@@ -1587,7 +1587,7 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of lookupswitch entries for rewriting to binary " \
           "switch")                                                         \
                                                                             \
-  develop(int, StopInterpreterAt, 0,                                        \
+  develop(intx, StopInterpreterAt, 0,                                        \
           "Stop interpreter execution at specified bytecode number")        \
                                                                             \
   develop(intx, TraceBytecodesAt, 0,                                        \
