@@ -45,6 +45,7 @@ public class StringComparisons {
     public boolean utf16;
 
     public String string;
+    public String mismatchString;
     public String equalString;
     public String endsWithA;
     public String endsWithB;
@@ -54,6 +55,7 @@ public class StringComparisons {
     public void setup() {
         String c = utf16 ? "\uff11" : "c";
         string = c.repeat(size);
+        mismatchString = c.repeat(size + 1);
         equalString = c.repeat(size);
         endsWithA = c.repeat(size).concat("A");
         endsWithB = c.repeat(size).concat("B");
@@ -68,6 +70,15 @@ public class StringComparisons {
     @Benchmark
     public boolean endsWith() {
         return startsWithA.endsWith(string);
+    }
+    @Benchmark
+    public boolean startsWithMismatch() {
+        return endsWithA.startsWith(mismatchString);
+    }
+
+    @Benchmark
+    public boolean endsWithMismatch() {
+        return endsWithA.endsWith(string);
     }
 
     @Benchmark

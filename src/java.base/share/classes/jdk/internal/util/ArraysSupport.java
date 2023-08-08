@@ -335,11 +335,8 @@ public class ArraysSupport {
         // assert length <= a.length
         // assert length <= b.length
 
-        int i = 0;
-        if (length > 7) {
-            if (a[0] != b[0])
-                return 0;
-            i = vectorizedMismatch(
+        if (length > 0) {
+            int i = vectorizedMismatch(
                     a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
                     b, Unsafe.ARRAY_BYTE_BASE_OFFSET,
                     length, LOG2_ARRAY_BYTE_INDEX_SCALE);
@@ -347,12 +344,12 @@ public class ArraysSupport {
                 return i;
             // Align to tail
             i = length - ~i;
-//            assert i >= 0 && i <= 7;
-        }
-        // Tail < 8 bytes
-        for (; i < length; i++) {
-            if (a[i] != b[i])
-                return i;
+            //            assert i >= 0 && i <= 7;
+            // Tail < 8 bytes
+            for (; i < length; i++) {
+                if (a[i] != b[i])
+                    return i;
+            }
         }
         return -1;
     }
@@ -383,24 +380,20 @@ public class ArraysSupport {
         // assert 0 <= bFromIndex < b.length
         // assert 0 <= bFromIndex + length <= b.length
         // assert length >= 0
-
-        int i = 0;
-        if (length > 7) {
-            if (a[aFromIndex] != b[bFromIndex])
-                return 0;
+        if (length > 0) {
             int aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
             int bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
-            i = vectorizedMismatch(
+            int i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
                     length, LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0)
                 return i;
             i = length - ~i;
-        }
-        for (; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i])
-                return i;
+            for (; i < length; i++) {
+                if (a[aFromIndex + i] != b[bFromIndex + i])
+                    return i;
+            }
         }
         return -1;
     }
