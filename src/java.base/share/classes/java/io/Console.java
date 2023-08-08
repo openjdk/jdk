@@ -33,6 +33,7 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.natives.NativeConsole;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
@@ -367,13 +368,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     private static native String encoding();
-    private static final boolean istty = istty();
+    private static final boolean istty = NativeConsole.istty();
     static final Charset CHARSET;
     static {
         Charset cs = null;
 
         if (istty) {
-            String csname = encoding();
+            String csname = NativeConsole.encoding();
             if (csname == null) {
                 csname = GetPropertyAction.privilegedGetProperty("stdout.encoding");
             }
