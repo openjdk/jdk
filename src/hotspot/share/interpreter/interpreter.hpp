@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ class InterpreterCodelet: public Stub {
   void    initialize(const char* description, Bytecodes::Code bytecode);
 
   // Interpreter-specific attributes
-  int         code_size() const                  { return code_end() - code_begin(); }
+  int         code_size() const                  { return (int)(code_end() - code_begin()); }
   const char* description() const                { return _description; }
   Bytecodes::Code bytecode() const               { return _bytecode; }
 #ifndef PRODUCT
@@ -109,7 +109,7 @@ class CodeletMark: ResourceMark {
   int codelet_size() {
     // Request the whole code buffer (minus a little for alignment).
     // The commit call below trims it back for each codelet.
-    int codelet_size = AbstractInterpreter::code()->available_space() - 2*K;
+    int codelet_size = AbstractInterpreter::code()->available_space() - (int)(2*K);
 
     // Guarantee there's a little bit of code space left.
     guarantee(codelet_size > 0 && (size_t)codelet_size > 2*K,

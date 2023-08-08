@@ -119,7 +119,6 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
@@ -429,7 +428,7 @@ java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
 java/awt/Frame/DisposeParentGC/DisposeParentGC.java 8079786 macosx-all
 
-java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223,8274106 macosx-aarch64,linux-all,windows-all
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223,8274106 macosx-all,linux-all,windows-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
 java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
@@ -472,13 +471,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
-# jdk_foreign
-
-java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
-java/foreign/TestLargeSegmentCopy.java generic-x86
-
-############################################################################
-
 # jdk_lang
 
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
@@ -486,6 +478,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/invoke/MethodHandleProxies/BasicTest.java              8312482 linux-all
+java/lang/invoke/MethodHandleProxies/WrapperHiddenClassTest.java 8312482 linux-all
 
 ############################################################################
 
@@ -512,9 +506,10 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865 linux-aarch64,macosx-all
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865 macosx-all
-sun/management/jdp/JdpSpecificAddressTest.java                  8241865 macosx-all
+sun/management/jdp/JdpDefaultsTest.java                         8241865,8308807 linux-aarch64,macosx-all,aix-ppc64
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865,8308807 macosx-all,aix-ppc64
+sun/management/jdp/JdpSpecificAddressTest.java                  8241865,8308807 macosx-all,aix-ppc64
+sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
 
@@ -528,16 +523,21 @@ javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 g
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 8149084 linux-aarch64
+
 ############################################################################
 
 # jdk_net
 
-java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
-java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
+java/net/MulticastSocket/NoLoopbackPackets.java                 7122846,8308807 macosx-all,aix-ppc64
+java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 macosx-all,aix-ppc64
 
-java/net/MulticastSocket/Test.java                              7145658 macosx-all
+java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
 java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
+
+java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
+java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
 
 ############################################################################
 
@@ -550,6 +550,8 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
+
+java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 
 ############################################################################
 
@@ -582,8 +584,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
-sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -609,8 +609,6 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
-sun/security/pkcs11/Cipher/TestKATForGCM.java                   8240611 linux-x64,macosx-x64
-
 
 ############################################################################
 
@@ -736,12 +734,11 @@ sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-aarch64
 
 ############################################################################
 
 # jdk_other
-
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
@@ -763,6 +760,12 @@ jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x6
 ############################################################################
 
 # jdk_jpackage
+
+############################################################################
+
+# jdk_foreign
+
+java/foreign/TestByteBuffer.java 8309475 aix-ppc64
 
 ############################################################################
 # Client manual tests

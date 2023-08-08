@@ -266,4 +266,3 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
   expand = true; // Does not matter.
   return 0;
 }
-

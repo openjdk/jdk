@@ -1555,9 +1555,7 @@ header extends java/lang/Object nestMembers jdk/internal/vm/vector/VectorSupport
 innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorSpecies outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorSpecies flags 9
 innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorPayload outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorPayload flags 9
 innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorMask outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorMask flags 9
-innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
 innerclass innerClass jdk/internal/vm/vector/VectorSupport$VectorShuffle outerClass jdk/internal/vm/vector/VectorSupport innerClassName VectorShuffle flags 9
--method name shuffleIota descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;IIIILjdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;
--method name shuffleToVector descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector;
+innerclass innerClass jdk/internal/vm/vector/VectorSupport$Vector outerClass jdk/internal/vm/vector/VectorSupport innerClassName Vector flags 9
 method name indexPartiallyInUpperRange descriptor (Ljava/lang/Class;Ljava/lang/Class;IJJLjdk/internal/vm/vector/VectorSupport$IndexPartiallyInUpperRangeOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorMask; flags 9 signature <E:Ljava/lang/Object;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;>(Ljava/lang/Class<+TM;>;Ljava/lang/Class<TE;>;IJJLjdk/internal/vm/vector/VectorSupport$IndexPartiallyInUpperRangeOperation<TE;TM;>;)TM; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 

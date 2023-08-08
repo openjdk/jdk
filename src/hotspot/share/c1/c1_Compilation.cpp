@@ -54,7 +54,7 @@ typedef enum {
     _t_codeemit,
     _t_codeinstall,
   max_phase_timers
-} TimerName;
+} TimerId;
 
 static const char * timer_name[] = {
   "compile",
@@ -73,24 +73,26 @@ static const char * timer_name[] = {
 };
 
 static elapsedTimer timers[max_phase_timers];
-static int totalInstructionNodes = 0;
+static uint totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
   CompileLog* _log;
-  TimerName _timer;
+  TimerId _timer_id;
+  bool _dolog;
 
  public:
-  PhaseTraceTime(TimerName timer)
-  : TraceTime("", &timers[timer], CITime || CITimeEach, Verbose),
-    _log(nullptr), _timer(timer)
+  PhaseTraceTime(TimerId timer_id)
+  : TraceTime(timer_name[timer_id], &timers[timer_id], CITime, CITimeVerbose),
+    _log(nullptr), _timer_id(timer_id), _dolog(CITimeVerbose)
   {
-    if (Compilation::current() != nullptr) {
+    if (_dolog) {
+      assert(Compilation::current() != nullptr, "sanity check");
       _log = Compilation::current()->log();
     }
 
     if (_log != nullptr) {
-      _log->begin_head("phase name='%s'", timer_name[_timer]);
+      _log->begin_head("phase name='%s'", timer_name[_timer_id]);
       _log->stamp();
       _log->end_head();
     }
@@ -98,7 +100,7 @@ class PhaseTraceTime: public TraceTime {
 
   ~PhaseTraceTime() {
     if (_log != nullptr)
-      _log->done("phase name='%s'", timer_name[_timer]);
+      _log->done("phase name='%s'", timer_name[_timer_id]);
   }
 };
 
@@ -587,11 +589,11 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _cfg_printer_output(nullptr)
 #endif // PRODUCT
 {
-  PhaseTraceTime timeit(_t_compile);
   _arena = Thread::current()->resource_area();
   _env->set_compiler_data(this);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
+  PhaseTraceTime timeit(_t_compile);
 #ifndef PRODUCT
   if (PrintCFGToFile) {
     _cfg_printer_output = new CFGPrinterOutput(this);

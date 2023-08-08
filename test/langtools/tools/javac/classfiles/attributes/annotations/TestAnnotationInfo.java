@@ -21,10 +21,8 @@
  * questions.
  */
 
-import com.sun.tools.classfile.Annotation;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.AnnotationValue;
 
 import java.lang.annotation.RetentionPolicy;
 import java.util.*;
@@ -47,21 +45,20 @@ public class TestAnnotationInfo {
         elementValues = Arrays.asList(values);
     }
 
-    public void testAnnotation(TestResult testResult, ClassFile classFile, Annotation annotation)
-            throws ConstantPoolException {
-        testResult.checkEquals(classFile.constant_pool.getUTF8Value(annotation.type_index),
+    public void testAnnotation(TestResult testResult, ClassModel classFile, Annotation annotation) {
+        testResult.checkEquals(annotation.classSymbol().descriptorString(),
                 String.format("L%s;", annotationName), "Testing annotation name : " + annotationName);
-        testResult.checkEquals(annotation.num_element_value_pairs,
+        testResult.checkEquals(annotation.elements().size(),
                 elementValues.size(), "Number of element values");
-        if (!testResult.checkEquals(annotation.num_element_value_pairs, elementValues.size(),
+        if (!testResult.checkEquals(annotation.elements().size(), elementValues.size(),
                 "Number of element value pairs")) {
             return;
         }
-        for (int i = 0; i < annotation.num_element_value_pairs; ++i) {
-            Annotation.element_value_pair pair = annotation.element_value_pairs[i];
-            testResult.checkEquals(classFile.constant_pool.getUTF8Value(pair.element_name_index),
+        for (int i = 0; i < annotation.elements().size(); ++i) {
+            AnnotationElement pair = annotation.elements().get(i);
+            testResult.checkEquals(pair.name().stringValue(),
                     elementValues.get(i).elementName, "element_name_index : " + elementValues.get(i).elementName);
-            elementValues.get(i).elementValue.testElementValue(testResult, classFile, pair.value);
+            elementValues.get(i).elementValue.testElementValue(testResult, classFile, pair.value());
         }
     }
 
@@ -101,9 +98,8 @@ public class TestAnnotationInfo {
         }
 
         public abstract void testElementValue(TestResult testResult,
-                                              ClassFile classFile,
-                                              Annotation.element_value element_value)
-                throws ConstantPoolException;
+                                              ClassModel classFile,
+                                              AnnotationValue element_value);
     }
 
     public static class TestIntegerElementValue extends TestElementValue {
@@ -116,15 +112,19 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Integer_info info =
-                    (ConstantPool.CONSTANT_Integer_info) classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value, "const_value_index : " + value);
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            switch (element_value.tag()) {
+                case 'B':
+                    testResult.checkEquals((int)((AnnotationValue.OfByte) element_value).byteValue(), value, "const_value_index : " + value);
+                    break;
+                case 'S':
+                    testResult.checkEquals((int)((AnnotationValue.OfShort) element_value).shortValue(), value, "const_value_index : " + value);
+                    break;
+                default:
+                    testResult.checkEquals(((AnnotationValue.OfInteger) element_value).intValue(), value, "const_value_index : " + value);
+            }
         }
 
         @Override
@@ -143,15 +143,11 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Integer_info info =
-                    (ConstantPool.CONSTANT_Integer_info) classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value ? 1 : 0, "const_value_index : " + value);
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfBoolean ev = (AnnotationValue.OfBoolean) element_value;
+            testResult.checkEquals(ev.booleanValue(), value, "const_value_index : " + value);
         }
 
         @Override
@@ -170,16 +166,12 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Integer_info info =
-                    (ConstantPool.CONSTANT_Integer_info)
-                            classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, (int) value, "const_value_index : " + value);
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfCharacter ev =
+                    (AnnotationValue.OfCharacter) element_value;
+            testResult.checkEquals(ev.charValue(), value, "const_value_index : " + value);
         }
 
         @Override
@@ -198,15 +190,12 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPool.InvalidIndex {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Long_info info =
-                    (ConstantPool.CONSTANT_Long_info) classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value, "const_value_index");
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfLong ev =
+                    (AnnotationValue.OfLong) element_value;
+            testResult.checkEquals(ev.longValue(), value, "const_value_index");
         }
 
         @Override
@@ -225,15 +214,12 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPool.InvalidIndex {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Float_info info =
-                    (ConstantPool.CONSTANT_Float_info) classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value, "const_value_index");
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfFloat ev =
+                    (AnnotationValue.OfFloat) element_value;
+            testResult.checkEquals(ev.floatValue(), value, "const_value_index");
         }
 
         @Override
@@ -252,15 +238,12 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Double_info info = (ConstantPool.CONSTANT_Double_info)
-                    classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value, "const_value_index");
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfDouble ev =
+                    (AnnotationValue.OfDouble) element_value;
+            testResult.checkEquals(ev.doubleValue(), value, "const_value_index");
         }
 
         @Override
@@ -279,15 +262,12 @@ public class TestAnnotationInfo {
 
         @Override
         public void testElementValue(TestResult testResult,
-                                     ClassFile classFile,
-                                     Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Primitive_element_value ev =
-                    (Annotation.Primitive_element_value) element_value;
-            ConstantPool.CONSTANT_Utf8_info info =
-                    (ConstantPool.CONSTANT_Utf8_info) classFile.constant_pool.get(ev.const_value_index);
-            testResult.checkEquals(info.value, value, "const_value_index");
+                                     ClassModel classFile,
+                                     AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfString ev =
+                    (AnnotationValue.OfString) element_value;
+            testResult.checkEquals(ev.stringValue(), value, "const_value_index");
         }
 
         @Override
@@ -309,14 +289,13 @@ public class TestAnnotationInfo {
         @Override
         public void testElementValue(
                 TestResult testResult,
-                ClassFile classFile,
-                Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Enum_element_value ev = (Annotation.Enum_element_value) element_value;
-            testResult.checkEquals(classFile.constant_pool.getUTF8Info(ev.type_name_index).value,
+                ClassModel classFile,
+                AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfEnum ev = (AnnotationValue.OfEnum) element_value;
+            testResult.checkEquals(ev.classSymbol().descriptorString(),
                     String.format("L%s;", typeName), "type_name_index");
-            testResult.checkEquals(classFile.constant_pool.getUTF8Info(ev.const_name_index).value,
+            testResult.checkEquals(ev.constantName().stringValue(),
                     constName, "const_name_index");
         }
 
@@ -351,16 +330,14 @@ public class TestAnnotationInfo {
         @Override
         public void testElementValue(
                 TestResult testResult,
-                ClassFile classFile,
-                Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Class_element_value ev = (Annotation.Class_element_value) element_value;
+                ClassModel classFile,
+                AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfClass ev = (AnnotationValue.OfClass) element_value;
             String expectedClassName = className.replace(".class", "");
             expectedClassName = mappedClassName.getOrDefault(expectedClassName,
                     String.format("Ljava/lang/%s;", expectedClassName));
-            testResult.checkEquals(
-                    classFile.constant_pool.getUTF8Info(ev.class_info_index).value,
+            testResult.checkEquals(ev.classSymbol().descriptorString(),
                     expectedClassName, "class_info_index : " + expectedClassName);
         }
 
@@ -381,14 +358,13 @@ public class TestAnnotationInfo {
         @Override
         public void testElementValue(
                 TestResult testResult,
-                ClassFile classFile,
-                Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation.Array_element_value ev = (Annotation.Array_element_value) element_value;
+                ClassModel classFile,
+                AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            AnnotationValue.OfArray ev = (AnnotationValue.OfArray) element_value;
 
             for (int i = 0; i < values.size(); ++i) {
-                values.get(i).testElementValue(testResult, classFile, ev.values[i]);
+                values.get(i).testElementValue(testResult, classFile, ev.values().get(i));
             }
         }
 
@@ -413,21 +389,20 @@ public class TestAnnotationInfo {
         @Override
         public void testElementValue(
                 TestResult testResult,
-                ClassFile classFile,
-                Annotation.element_value element_value)
-                throws ConstantPoolException {
-            testTag(testResult, element_value.tag);
-            Annotation ev = ((Annotation.Annotation_element_value) element_value).annotation_value;
+                ClassModel classFile,
+                AnnotationValue element_value) {
+            testTag(testResult, element_value.tag());
+            Annotation ev = ((AnnotationValue.OfAnnotation) element_value).annotation();
             testResult.checkEquals(
-                    classFile.constant_pool.getUTF8Info(ev.type_index).value,
+                    ev.classSymbol().descriptorString(),
                     String.format("L%s;", annotationName),
                     "type_index");
-            for (int i = 0; i < ev.num_element_value_pairs; ++i) {
-                Annotation.element_value_pair pair = ev.element_value_pairs[i];
+            for (int i = 0; i < ev.elements().size(); ++i) {
+                AnnotationElement pair = ev.elements().get(i);
                 Pair expectedPair = annotation.elementValues.get(i);
-                expectedPair.elementValue.testElementValue(testResult, classFile, pair.value);
+                expectedPair.elementValue.testElementValue(testResult, classFile, pair.value());
                 testResult.checkEquals(
-                        classFile.constant_pool.getUTF8Info(pair.element_name_index).value,
+                        pair.name().stringValue(),
                         expectedPair.elementName,
                         "element_name_index");
             }

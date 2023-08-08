@@ -73,6 +73,7 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -1710,9 +1711,15 @@ void JavaThread::print_jni_stack() {
       tty->print_cr("Unable to print native stack - out of memory");
       return;
     }
-    frame f = os::current_frame();
-    VMError::print_native_stack(tty, f, this, true /*print_source_info */,
-                                -1 /* max stack */, buf, O_BUFLEN);
+    address lastpc = nullptr;
+    if (os::platform_print_native_stack(tty, nullptr, buf, O_BUFLEN, lastpc)) {
+      // We have printed the native stack in platform-specific code,
+      // so nothing else to do in this case.
+    } else {
+      frame f = os::current_frame();
+      VMError::print_native_stack(tty, f, this, true /*print_source_info */,
+                                  -1 /* max stack */, buf, O_BUFLEN);
+    }
   } else {
     print_active_stack_on(tty);
   }

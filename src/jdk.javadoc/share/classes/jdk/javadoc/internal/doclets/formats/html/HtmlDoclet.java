@@ -32,6 +32,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,8 +52,6 @@ import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -104,6 +103,11 @@ public class HtmlDoclet extends AbstractDoclet {
     private Messages messages;
 
     /**
+     * Factory for page- and member-writers.
+     */
+    private WriterFactory writerFactory;
+
+    /**
      * Base path for resources for this doclet.
      */
     private static final DocPath DOCLET_RESOURCES = DocPath
@@ -113,6 +117,7 @@ public class HtmlDoclet extends AbstractDoclet {
     public void init(Locale locale, Reporter reporter) {
         configuration = new HtmlConfiguration(initiatingDoclet, locale, reporter);
         messages = configuration.getMessages();
+        writerFactory = configuration.getWriterFactory();
     }
 
     /**
@@ -205,15 +210,17 @@ public class HtmlDoclet extends AbstractDoclet {
      * TreeWriter generation first to ensure the Class Hierarchy is built
      * first and then can be used in the later generation.
      *
-     * For new format.
-     *
      * @throws DocletException if there is a problem while writing the other files
      */
     @Override // defined by AbstractDoclet
     protected void generateOtherFiles(ClassTree classTree)
             throws DocletException {
         super.generateOtherFiles(classTree);
-        HtmlOptions options = configuration.getOptions();
+
+        writerFactory.newConstantsSummaryWriter().buildPage();
+        writerFactory.newSerializedFormWriter().buildPage();
+
+        var options = configuration.getOptions();
         if (options.linkSource()) {
             SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
         }
@@ -239,44 +246,49 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createTree()) {
-            TreeWriter.generate(configuration, classTree);
+            writerFactory.newTreeWriter(classTree).buildPage();
         }
 
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.DEPRECATED))) {
-            DeprecatedListWriter.generate(configuration);
-        }
-
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.PREVIEW))) {
-            PreviewListWriter.generate(configuration);
-        }
-
-        if (configuration.conditionalPages.contains((HtmlConfiguration.ConditionalPage.NEW))) {
-            NewAPIListWriter.generate(configuration);
+        for (var cp : EnumSet.of(
+                HtmlConfiguration.ConditionalPage.DEPRECATED,
+                HtmlConfiguration.ConditionalPage.PREVIEW,
+                HtmlConfiguration.ConditionalPage.NEW)) {
+            if (configuration.conditionalPages.contains(cp)) {
+                var w = switch (cp) {
+                    case DEPRECATED -> writerFactory.newDeprecatedListWriter();
+                    case NEW -> writerFactory.newNewAPIListWriter();
+                    case PREVIEW -> writerFactory.newPreviewListWriter();
+                    default -> throw new AssertionError();
+                };
+                w.buildPage();
+            }
         }
 
         if (options.createOverview()) {
-            if (configuration.showModules) {
-                ModuleIndexWriter.generate(configuration);
-            } else {
-                PackageIndexWriter.generate(configuration);
-            }
+            var w = configuration.showModules
+                    ? writerFactory.newModuleIndexWriter()
+                    : writerFactory.newPackageIndexWriter();
+            w.buildPage();
         }
 
         if (options.createIndex()) {
             if (!options.noExternalSpecsPage()){
-                ExternalSpecsWriter.generate(configuration);
+                writerFactory.newExternalSpecsWriter().buildPage();
             }
-            SystemPropertiesWriter.generate(configuration);
+            writerFactory.newSystemPropertiesWriter().buildPage();
+
             configuration.mainIndex.addElements();
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
             allClassesIndex.addElements();
-            AllClassesIndexWriter.generate(configuration, allClassesIndex);
+
+            writerFactory.newAllClassesIndexWriter(allClassesIndex).buildPage();
             if (!configuration.packages.isEmpty()) {
-                AllPackagesIndexWriter.generate(configuration);
+                writerFactory.newAllPackagesIndexWriter().buildPage();
             }
+
             configuration.mainIndex.createSearchIndexFiles();
             IndexWriter.generate(configuration);
-            SearchWriter.generate(configuration);
+            writerFactory.newSearchWriter().buildPage();
         }
 
         if (options.createOverview()) {
@@ -286,8 +298,10 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.helpFile().isEmpty() && !options.noHelp()) {
-            HelpWriter.generate(configuration);
+            var w = writerFactory.newHelpWriter();
+            w.buildPage();
         }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
         DocFile f;
@@ -317,6 +331,16 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         copyLegalFiles(options.createIndex());
+    }
+
+    @Override
+    protected void generateFiles() throws DocletException {
+        super.generateFiles();
+
+        if (configuration.tagletManager != null) { // may be null, if no files generated, perhaps because of errors
+            configuration.tagletManager.printReport();
+        }
+
     }
 
     private void copyJqueryFiles() throws DocletException {
@@ -378,13 +402,12 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
-        BuilderFactory f = configuration.getBuilderFactory();
         for (TypeElement te : typeElems) {
             if (utils.hasHiddenTag(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            f.getClassBuilder(te, classTree).build();
+            writerFactory.newClassWriter(te, classTree).buildPage();
         }
     }
 
@@ -393,9 +416,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (configuration.showModules) {
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             for (ModuleElement mdle : mdles) {
-                AbstractBuilder moduleSummaryBuilder =
-                        configuration.getBuilderFactory().getModuleSummaryBuilder(mdle);
-                moduleSummaryBuilder.build();
+                writerFactory.newModuleWriter(mdle).buildPage();
             }
         }
     }
@@ -410,9 +431,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                AbstractBuilder packageSummaryBuilder =
-                        configuration.getBuilderFactory().getPackageSummaryBuilder(pkg);
-                packageSummaryBuilder.build();
+                writerFactory.newPackageWriter(pkg).buildPage();
                 if (options.createTree()) {
                     PackageTreeWriter.generate(configuration, pkg, options.noDeprecated());
                 }
