@@ -232,7 +232,7 @@ static double get_cpu_load(int which_logical_cpu, CPUPerfCounters* counters, dou
  */
 static int SCANF_ARGS(2, 0) vread_statdata(const char* procfile, _SCANFMT_ const char* fmt, va_list args) {
   FILE*f;
-  int n;
+  ssize_t n;
   char buf[2048];
 
   if ((f = os::fopen(procfile, "r")) == nullptr) {

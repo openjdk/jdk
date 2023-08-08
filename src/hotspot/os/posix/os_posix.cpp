@@ -89,7 +89,7 @@
 
 static jlong initial_time_count = 0;
 
-static int clock_tics_per_sec = 100;
+static int64_t clock_tics_per_sec = 100;
 
 // Platform minimum stack allowed
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
@@ -445,7 +445,7 @@ void os::Posix::print_load_average(outputStream* st) {
 // for reboot at least on my test machines
 void os::Posix::print_uptime_info(outputStream* st) {
   int bootsec = -1;
-  int currsec = time(nullptr);
+  int64_t currsec = time(nullptr);
   struct utmpx* ent;
   setutxent();
   while ((ent = getutxent())) {
@@ -456,7 +456,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   }
 
   if (bootsec != -1) {
-    os::print_dhm(st, "OS uptime:", (long) (currsec-bootsec));
+    os::print_dhm(st, "OS uptime:", currsec-bootsec);
   }
 }
 
@@ -799,19 +799,19 @@ int os::socket_close(int fd) {
   return ::close(fd);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
   RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 
@@ -1332,7 +1332,7 @@ static jlong millis_to_nanos_bounded(jlong millis) {
 
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
-  DEBUG_ONLY(int max_secs = MAX_SECS;)
+  DEBUG_ONLY(int64_t max_secs = MAX_SECS;)
 
   if (timeout < 0) {
     timeout = 0;
@@ -1414,7 +1414,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
 
 // Time since start-up in seconds to a fine granularity.
 double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+  return ((double)os::elapsed_counter()) / (double)os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {
