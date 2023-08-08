@@ -694,6 +694,12 @@
       <setting name="period">everyChunk</setting>
     </event>
 
+    <event name="jdk.NativeLibraryLoad">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.ModuleRequire">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>

@@ -936,7 +936,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
 
-  if (!DisableTHPStackMitigation) {
+  if (THPStackMitigation) {
     // In addition to the glibc guard page that prevents inter-thread-stack hugepage
     // coalescing (see comment in os::Linux::default_guard_size()), we also make
     // sure the stack size itself is not huge-page-size aligned; that makes it much
@@ -1795,6 +1795,12 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
                                 int ebuflen) {
   void * result = ::dlopen(filename, RTLD_LAZY);
+
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   if (result == nullptr) {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -1806,9 +1812,19 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   } else {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   }
   return result;
 }
@@ -3086,7 +3102,7 @@ bool os::Linux::libnuma_init() {
 
 size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
 
-  if (!DisableTHPStackMitigation) {
+  if (THPStackMitigation) {
     // If THPs are unconditionally enabled, the following scenario can lead to huge RSS
     // - parent thread spawns, in quick succession, multiple child threads
     // - child threads are slow to start
@@ -3748,15 +3764,15 @@ void os::large_page_init() {
   // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
   // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
   // thread stacks unless the user explicitly allowed THP formation by manually disabling
-  // -XX:+DisableTHPStackMitigation.
+  // -XX:-THPStackMitigation.
   if (HugePages::thp_mode() == THPMode::always) {
-    if (DisableTHPStackMitigation) {
-      log_info(pagesize)("JVM will *not* prevent THPs in thread stacks. This may cause high RSS.");
-    } else {
+    if (THPStackMitigation) {
       log_info(pagesize)("JVM will attempt to prevent THPs in thread stacks.");
+    } else {
+      log_info(pagesize)("JVM will *not* prevent THPs in thread stacks. This may cause high RSS.");
     }
   } else {
-    FLAG_SET_ERGO(DisableTHPStackMitigation, true); // Mitigation not needed
+    FLAG_SET_ERGO(THPStackMitigation, false); // Mitigation not needed
   }
 
   // 1) Handle the case where we do not want to use huge pages

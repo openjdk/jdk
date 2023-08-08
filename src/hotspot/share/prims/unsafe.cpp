@@ -108,7 +108,7 @@ static inline jlong field_offset_to_byte_offset(jlong field_offset) {
   return field_offset;
 }
 
-static inline jlong field_offset_from_byte_offset(jlong byte_offset) {
+static inline int field_offset_from_byte_offset(int byte_offset) {
   return byte_offset;
 }
 
