@@ -482,7 +482,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) {
-      return false;
+    return false;
   }
 
   // stack frames shouldn't be much larger than max_stack elements
