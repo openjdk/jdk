@@ -3586,12 +3586,19 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   return true;
 }
 
-Node* LibraryCallKit::scopedValueCache_helper() {
-  ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
-  const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+const Type* LibraryCallKit::scopedValueCache_type() {
+  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
+  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
+  // Because we create the scopedValue cache lazily we have to make the
+  // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
+  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
+  return objects_type;
+}
 
+Node* LibraryCallKit::scopedValueCache_helper() {
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
   // We cannot use immutable_memory() because we might flip onto a
@@ -3604,15 +3611,8 @@ Node* LibraryCallKit::scopedValueCache_helper() {
 
 //------------------------inline_native_scopedValueCache------------------
 bool LibraryCallKit::inline_native_scopedValueCache() {
-  ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
-  const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
-  const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
-
-  // Because we create the scopedValue cache lazily we have to make the
-  // type of the result BotPTR.
-  bool xk = etype->klass_is_exact();
-  const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
   Node* cache_obj_handle = scopedValueCache_helper();
+  const Type* objects_type = scopedValueCache_type();
   set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
 
   return true;
@@ -3622,9 +3622,10 @@ bool LibraryCallKit::inline_native_scopedValueCache() {
 bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
   Node* cache_obj_handle = scopedValueCache_helper();
+  const Type* objects_type = scopedValueCache_type();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
-  access_store_at(nullptr, cache_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
+  access_store_at(nullptr, cache_obj_handle, adr_type, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   return true;
 }

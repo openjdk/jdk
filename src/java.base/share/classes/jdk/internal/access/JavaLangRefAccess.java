@@ -54,7 +54,7 @@ public interface JavaLangRefAccess {
     /**
      * Constructs a new NativeReferenceQueue.
      *
-     * Invoked by MethodType.ConcurrentWeakInternSet
+     * Invoked by jdk.internal.util.ReferencedKeyMap
      */
     <T> ReferenceQueue<T> newNativeReferenceQueue();
 }

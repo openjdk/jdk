@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1540,7 +1540,7 @@ public class Exhaustiveness extends TestRunner {
                "1 error");
     }
 
-    private static final int NESTING_CONSTANT = 5;
+    private static final int NESTING_CONSTANT = 4;
 
     Set<String> createDeeplyNestedVariants() {
         Set<String> variants = new HashSet<>();
@@ -1964,6 +1964,34 @@ public class Exhaustiveness extends TestRunner {
                        }
                    }
                    record Rec(Object o) {}
+               }
+               """);
+    }
+
+    @Test //JDK-8311815:
+    public void testAmbiguousRecordUsage(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                 record Pair(I i1, I i2) {}
+                 sealed interface I {}
+                 record C() implements I {}
+                 record D() implements I {}
+
+                 void exhaustinvenessWithInterface(Pair pairI) {
+                   switch (pairI) {
+                     case Pair(D fst, C snd) -> {
+                     }
+                     case Pair(C fst, C snd) -> {
+                     }
+                     case Pair(C fst, I snd) -> {
+                     }
+                     case Pair(D fst, D snd) -> {
+                     }
+                   }
+                 }
                }
                """);
     }
