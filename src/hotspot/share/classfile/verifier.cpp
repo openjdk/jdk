@@ -344,30 +344,30 @@ Symbol* Verifier::inference_verify(
 TypeOrigin TypeOrigin::null() {
   return TypeOrigin();
 }
-TypeOrigin TypeOrigin::local(u2 index, StackMapFrame* frame) {
+TypeOrigin TypeOrigin::local(int index, StackMapFrame* frame) {
   assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(CF_LOCALS, index, StackMapFrame::copy(frame),
      frame->local_at(index));
 }
-TypeOrigin TypeOrigin::stack(u2 index, StackMapFrame* frame) {
+TypeOrigin TypeOrigin::stack(int index, StackMapFrame* frame) {
   assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(CF_STACK, index, StackMapFrame::copy(frame),
       frame->stack_at(index));
 }
-TypeOrigin TypeOrigin::sm_local(u2 index, StackMapFrame* frame) {
+TypeOrigin TypeOrigin::sm_local(int index, StackMapFrame* frame) {
   assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(SM_LOCALS, index, StackMapFrame::copy(frame),
       frame->local_at(index));
 }
-TypeOrigin TypeOrigin::sm_stack(u2 index, StackMapFrame* frame) {
+TypeOrigin TypeOrigin::sm_stack(int index, StackMapFrame* frame) {
   assert(frame != nullptr, "Must have a frame");
   return TypeOrigin(SM_STACK, index, StackMapFrame::copy(frame),
       frame->stack_at(index));
 }
-TypeOrigin TypeOrigin::bad_index(u2 index) {
+TypeOrigin TypeOrigin::bad_index(int index) {
   return TypeOrigin(BAD_INDEX, index, nullptr, VerificationType::bogus_type());
 }
-TypeOrigin TypeOrigin::cp(u2 index, VerificationType vt) {
+TypeOrigin TypeOrigin::cp(int index, VerificationType vt) {
   return TypeOrigin(CONST_POOL, index, nullptr, vt);
 }
 TypeOrigin TypeOrigin::signature(VerificationType vt) {
@@ -702,8 +702,8 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 // For clang, the only good constant format string is a literal constant format string.
 #define bad_type_msg "Bad type on operand stack in %s"
 
-  int32_t max_stack = m->verifier_max_stack();
-  int32_t max_locals = m->max_locals();
+  u2 max_stack = m->verifier_max_stack();
+  u2 max_locals = m->max_locals();
   constantPoolHandle cp(THREAD, m->constants());
 
   // Method signature was checked in ClassFileParser.
@@ -715,7 +715,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   // Set initial locals
   VerificationType return_type = current_frame.set_locals_from_arg( m, current_type());
 
-  int32_t stackmap_index = 0; // index to the stackmap array
+  u2 stackmap_index = 0; // index to the stackmap array
 
   u4 code_length = m->code_size();
 
@@ -762,7 +762,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
     if (was_recursively_verified())  return;
 
     opcode = bcs.raw_next();
-    u2 bci = bcs.bci();
+    int bci = bcs.bci();
 
     // Set current frame's offset to bci
     current_frame.set_offset(bci);
@@ -781,7 +781,6 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
     // Merge with the next instruction
     {
-      u2 index;
       int target;
       VerificationType type, type2;
       VerificationType atype;
@@ -883,50 +882,55 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_iload_0 :
         case Bytecodes::_iload_1 :
         case Bytecodes::_iload_2 :
-        case Bytecodes::_iload_3 :
-          index = opcode - Bytecodes::_iload_0;
+        case Bytecodes::_iload_3 : {
+          int index = opcode - Bytecodes::_iload_0;
           verify_iload(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_lload :
           verify_lload(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_lload_0 :
         case Bytecodes::_lload_1 :
         case Bytecodes::_lload_2 :
-        case Bytecodes::_lload_3 :
-          index = opcode - Bytecodes::_lload_0;
+        case Bytecodes::_lload_3 : {
+          int index = opcode - Bytecodes::_lload_0;
           verify_lload(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_fload :
           verify_fload(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_fload_0 :
         case Bytecodes::_fload_1 :
         case Bytecodes::_fload_2 :
-        case Bytecodes::_fload_3 :
-          index = opcode - Bytecodes::_fload_0;
+        case Bytecodes::_fload_3 : {
+          int index = opcode - Bytecodes::_fload_0;
           verify_fload(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_dload :
           verify_dload(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_dload_0 :
         case Bytecodes::_dload_1 :
         case Bytecodes::_dload_2 :
-        case Bytecodes::_dload_3 :
-          index = opcode - Bytecodes::_dload_0;
+        case Bytecodes::_dload_3 : {
+          int index = opcode - Bytecodes::_dload_0;
           verify_dload(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_aload :
           verify_aload(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_aload_0 :
         case Bytecodes::_aload_1 :
         case Bytecodes::_aload_2 :
-        case Bytecodes::_aload_3 :
-          index = opcode - Bytecodes::_aload_0;
+        case Bytecodes::_aload_3 : {
+          int index = opcode - Bytecodes::_aload_0;
           verify_aload(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_iaload :
           type = current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
@@ -1054,50 +1058,55 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         case Bytecodes::_istore_0 :
         case Bytecodes::_istore_1 :
         case Bytecodes::_istore_2 :
-        case Bytecodes::_istore_3 :
-          index = opcode - Bytecodes::_istore_0;
+        case Bytecodes::_istore_3 : {
+          int index = opcode - Bytecodes::_istore_0;
           verify_istore(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_lstore :
           verify_lstore(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_lstore_0 :
         case Bytecodes::_lstore_1 :
         case Bytecodes::_lstore_2 :
-        case Bytecodes::_lstore_3 :
-          index = opcode - Bytecodes::_lstore_0;
+        case Bytecodes::_lstore_3 : {
+          int index = opcode - Bytecodes::_lstore_0;
           verify_lstore(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_fstore :
           verify_fstore(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_fstore_0 :
         case Bytecodes::_fstore_1 :
         case Bytecodes::_fstore_2 :
-        case Bytecodes::_fstore_3 :
-          index = opcode - Bytecodes::_fstore_0;
+        case Bytecodes::_fstore_3 : {
+          int index = opcode - Bytecodes::_fstore_0;
           verify_fstore(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_dstore :
           verify_dstore(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_dstore_0 :
         case Bytecodes::_dstore_1 :
         case Bytecodes::_dstore_2 :
-        case Bytecodes::_dstore_3 :
-          index = opcode - Bytecodes::_dstore_0;
+        case Bytecodes::_dstore_3 : {
+          int index = opcode - Bytecodes::_dstore_0;
           verify_dstore(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_astore :
           verify_astore(bcs.get_index(), &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
         case Bytecodes::_astore_0 :
         case Bytecodes::_astore_1 :
         case Bytecodes::_astore_2 :
-        case Bytecodes::_astore_3 :
-          index = opcode - Bytecodes::_astore_0;
+        case Bytecodes::_astore_3 : {
+          int index = opcode - Bytecodes::_astore_0;
           verify_astore(index, &current_frame, CHECK_VERIFY(this));
           no_control_flow = false; break;
+          }
         case Bytecodes::_iastore :
           type = current_frame.pop_stack(
             VerificationType::integer_type(), CHECK_VERIFY(this));
@@ -1708,7 +1717,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_new :
         {
-          index = bcs.get_index_u2();
+          u2 index = bcs.get_index_u2();
           verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           VerificationType new_class_type =
             cp_index_to_type(index, cp, CHECK_VERIFY(this));
@@ -1718,7 +1727,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                 "Illegal new instruction");
             return;
           }
-          type = VerificationType::uninitialized_type(bci);
+          type = VerificationType::uninitialized_type(checked_cast<u2>(bci));
           current_frame.push_stack(type, CHECK_VERIFY(this));
           no_control_flow = false; break;
         }
@@ -1745,7 +1754,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_checkcast :
         {
-          index = bcs.get_index_u2();
+          u2 index = bcs.get_index_u2();
           verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           VerificationType klass_type = cp_index_to_type(
@@ -1754,7 +1763,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         }
         case Bytecodes::_instanceof : {
-          index = bcs.get_index_u2();
+          u2 index = bcs.get_index_u2();
           verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           current_frame.pop_stack(object_type(), CHECK_VERIFY(this));
           current_frame.push_stack(
@@ -1768,7 +1777,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
           no_control_flow = false; break;
         case Bytecodes::_multianewarray :
         {
-          index = bcs.get_index_u2();
+          u2 index = bcs.get_index_u2();
           u2 dim = *(bcs.bcp()+3);
           verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
           VerificationType new_array_type =
@@ -1877,7 +1886,7 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
       class_format_error("Illegal exception table handler_pc %d", handler_pc);
       return;
     }
-    int catch_type_index = exhandlers.catch_type_index(i);
+    u2 catch_type_index = exhandlers.catch_type_index(i);
     if (catch_type_index != 0) {
       VerificationType catch_type = cp_index_to_type(
         catch_type_index, cp, CHECK_VERIFY(this));
@@ -1930,12 +1939,12 @@ void ClassVerifier::verify_local_variable_table(u4 code_length, char* code_data,
   }
 }
 
-u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
+u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, int bci,
                                         StackMapFrame* current_frame,
                                         StackMapTable* stackmap_table,
                                         bool no_control_flow, TRAPS) {
   if (stackmap_index < stackmap_table->get_frame_count()) {
-    u2 this_offset = stackmap_table->get_offset(stackmap_index);
+    int this_offset = stackmap_table->get_offset(stackmap_index);
     if (no_control_flow && this_offset > bci) {
       verify_error(ErrorContext::missing_stackmap(bci),
                    "Expecting a stack map frame");
@@ -1970,7 +1979,7 @@ u2 ClassVerifier::verify_stackmap_table(u2 stackmap_index, u2 bci,
 // Since this method references the constant pool, call was_recursively_verified()
 // before calling this method to make sure a prior class load did not cause the
 // current class to get verified.
-void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit,
+void ClassVerifier::verify_exception_handler_targets(int bci, bool this_uninit,
                                                      StackMapFrame* current_frame,
                                                      StackMapTable* stackmap_table, TRAPS) {
   constantPoolHandle cp (THREAD, _method->constants());
@@ -2009,7 +2018,7 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit,
 }
 
 void ClassVerifier::verify_cp_index(
-    u2 bci, const constantPoolHandle& cp, int index, TRAPS) {
+    int bci, const constantPoolHandle& cp, u2 index, TRAPS) {
   int nconstants = cp->length();
   if ((index <= 0) || (index >= nconstants)) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
@@ -2020,7 +2029,7 @@ void ClassVerifier::verify_cp_index(
 }
 
 void ClassVerifier::verify_cp_type(
-    u2 bci, int index, const constantPoolHandle& cp, unsigned int types, TRAPS) {
+    int bci, u2 index, const constantPoolHandle& cp, unsigned int types, TRAPS) {
 
   // In some situations, bytecode rewriting may occur while we're verifying.
   // In this case, a constant pool cache exists and some indices refer to that
@@ -2039,7 +2048,7 @@ void ClassVerifier::verify_cp_type(
 }
 
 void ClassVerifier::verify_cp_class_type(
-    u2 bci, int index, const constantPoolHandle& cp, TRAPS) {
+    int bci, u2 index, const constantPoolHandle& cp, TRAPS) {
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
@@ -2137,7 +2146,7 @@ bool ClassVerifier::is_protected_access(InstanceKlass* this_class,
 
 void ClassVerifier::verify_ldc(
     int opcode, u2 index, StackMapFrame* current_frame,
-    const constantPoolHandle& cp, u2 bci, TRAPS) {
+    const constantPoolHandle& cp, int bci, TRAPS) {
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   unsigned int types = 0;
@@ -2340,7 +2349,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
   SignatureStream sig_stream(field_sig, false);
   VerificationType stack_object_type;
   int n = change_sig_to_verificationType(&sig_stream, field_type);
-  u2 bci = bcs->bci();
+  int bci = bcs->bci();
   bool is_assignable;
   switch (bcs->raw_code()) {
     case Bytecodes::_getstatic: {
@@ -2459,9 +2468,9 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
   ResourceMark rm;
   // Create bytecode stream.
   RawBytecodeStream bcs(method());
-  u4 code_length = method()->code_size();
+  int code_length = method()->code_size();
   bcs.set_start(start_bc_offset);
-  u4 target;
+
   // Create stack for storing bytecode start offsets for if* and *switch.
   GrowableArray<u4>* bci_stack = new GrowableArray<u4>(30);
   // Create stack for handlers for try blocks containing this handler.
@@ -2478,13 +2487,13 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
     if (bcs.is_last_bytecode()) {
       // if no more starting offsets to parse or if at the end of the
       // method then return false.
-      if ((bci_stack->is_empty()) || ((u4)bcs.end_bci() == code_length))
+      if ((bci_stack->is_empty()) || (bcs.end_bci() == code_length))
         return false;
       // Pop a bytecode starting offset and scan from there.
       bcs.set_start(bci_stack->pop());
     }
     Bytecodes::Code opcode = bcs.raw_next();
-    u4 bci = bcs.bci();
+    int bci = bcs.bci();
 
     // If the bytecode is in a TRY block, push its handlers so they
     // will get parsed.
@@ -2506,8 +2515,8 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
       case Bytecodes::_if_acmpeq:
       case Bytecodes::_if_acmpne:
       case Bytecodes::_ifnull:
-      case Bytecodes::_ifnonnull:
-        target = bcs.dest();
+      case Bytecodes::_ifnonnull: {
+        int target = bcs.dest();
         if (visited_branches->contains(bci)) {
           if (bci_stack->is_empty()) {
             if (handler_stack->is_empty()) {
@@ -2537,10 +2546,11 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
           visited_branches->append(bci);
         }
         break;
+        }
 
       case Bytecodes::_goto:
-      case Bytecodes::_goto_w:
-        target = (opcode == Bytecodes::_goto ? bcs.dest() : bcs.dest_w());
+      case Bytecodes::_goto_w: {
+        int target = (opcode == Bytecodes::_goto ? bcs.dest() : bcs.dest_w());
         if (visited_branches->contains(bci)) {
           if (bci_stack->is_empty()) {
             if (handler_stack->is_empty()) {
@@ -2561,6 +2571,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
           visited_branches->append(bci);
         }
         break;
+        }
 
       // Check that all switch alternatives end in 'athrow' bytecodes. Since it
       // is  difficult to determine where each switch alternative ends, parse
@@ -2575,7 +2586,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
       case Bytecodes::_tableswitch:
         {
           address aligned_bcp = align_up(bcs.bcp() + 1, jintSize);
-          u4 default_offset = Bytes::get_Java_u4(aligned_bcp) + bci;
+          int default_offset = Bytes::get_Java_u4(aligned_bcp) + bci;
           int keys, delta;
           if (opcode == Bytecodes::_tableswitch) {
             jint low = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
@@ -2597,7 +2608,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
 
           // Push the switch alternatives onto the stack.
           for (int i = 0; i < keys; i++) {
-            u4 target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
+            int target = bci + (jint)Bytes::get_Java_u4(aligned_bcp+(3+i*delta)*jintSize);
             if (target > code_length) return false;
             bci_stack->push(target);
           }
@@ -2640,7 +2651,7 @@ void ClassVerifier::verify_invoke_init(
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
     bool *this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS) {
-  u2 bci = bcs->bci();
+  int bci = bcs->bci();
   VerificationType type = current_frame->pop_stack(
     VerificationType::reference_check(), CHECK_VERIFY(this));
   if (type == VerificationType::uninitialized_this_type()) {
@@ -2845,7 +2856,7 @@ void ClassVerifier::verify_invoke_instructions(
   int nargs = mth_sig_verif_types->num_args();
 
   // Check instruction operands
-  u2 bci = bcs->bci();
+  int bci = bcs->bci();
   if (opcode == Bytecodes::_invokeinterface) {
     address bcp = bcs->bcp();
     // 4905268: count operand in invokeinterface should be nargs+1, not nargs.
@@ -2988,7 +2999,7 @@ void ClassVerifier::verify_invoke_instructions(
 }
 
 VerificationType ClassVerifier::get_newarray_type(
-    u2 index, u2 bci, TRAPS) {
+    u2 index, int bci, TRAPS) {
   const char* from_bt[] = {
     nullptr, nullptr, nullptr, nullptr, "[Z", "[C", "[F", "[D", "[B", "[S", "[I", "[J",
   };
@@ -3003,7 +3014,7 @@ VerificationType ClassVerifier::get_newarray_type(
 }
 
 void ClassVerifier::verify_anewarray(
-    u2 bci, u2 index, const constantPoolHandle& cp,
+    int bci, u2 index, const constantPoolHandle& cp,
     StackMapFrame* current_frame, TRAPS) {
   verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
   current_frame->pop_stack(
@@ -3043,14 +3054,14 @@ void ClassVerifier::verify_anewarray(
   current_frame->push_stack(new_array_type, CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_iload(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_iload(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->get_local(
     index, VerificationType::integer_type(), CHECK_VERIFY(this));
   current_frame->push_stack(
     VerificationType::integer_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_lload(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_lload(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->get_local_2(
     index, VerificationType::long_type(),
     VerificationType::long2_type(), CHECK_VERIFY(this));
@@ -3059,14 +3070,14 @@ void ClassVerifier::verify_lload(u2 index, StackMapFrame* current_frame, TRAPS) 
     VerificationType::long2_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_fload(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_fload(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->get_local(
     index, VerificationType::float_type(), CHECK_VERIFY(this));
   current_frame->push_stack(
     VerificationType::float_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_dload(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_dload(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->get_local_2(
     index, VerificationType::double_type(),
     VerificationType::double2_type(), CHECK_VERIFY(this));
@@ -3075,20 +3086,20 @@ void ClassVerifier::verify_dload(u2 index, StackMapFrame* current_frame, TRAPS) 
     VerificationType::double2_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_aload(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_aload(int index, StackMapFrame* current_frame, TRAPS) {
   VerificationType type = current_frame->get_local(
     index, VerificationType::reference_check(), CHECK_VERIFY(this));
   current_frame->push_stack(type, CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_istore(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_istore(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->pop_stack(
     VerificationType::integer_type(), CHECK_VERIFY(this));
   current_frame->set_local(
     index, VerificationType::integer_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_lstore(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_lstore(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->pop_stack_2(
     VerificationType::long2_type(),
     VerificationType::long_type(), CHECK_VERIFY(this));
@@ -3097,13 +3108,13 @@ void ClassVerifier::verify_lstore(u2 index, StackMapFrame* current_frame, TRAPS)
     VerificationType::long2_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_fstore(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_fstore(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->pop_stack(VerificationType::float_type(), CHECK_VERIFY(this));
   current_frame->set_local(
     index, VerificationType::float_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_dstore(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_dstore(int index, StackMapFrame* current_frame, TRAPS) {
   current_frame->pop_stack_2(
     VerificationType::double2_type(),
     VerificationType::double_type(), CHECK_VERIFY(this));
@@ -3112,20 +3123,20 @@ void ClassVerifier::verify_dstore(u2 index, StackMapFrame* current_frame, TRAPS)
     VerificationType::double2_type(), CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_astore(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_astore(int index, StackMapFrame* current_frame, TRAPS) {
   VerificationType type = current_frame->pop_stack(
     VerificationType::reference_check(), CHECK_VERIFY(this));
   current_frame->set_local(index, type, CHECK_VERIFY(this));
 }
 
-void ClassVerifier::verify_iinc(u2 index, StackMapFrame* current_frame, TRAPS) {
+void ClassVerifier::verify_iinc(int index, StackMapFrame* current_frame, TRAPS) {
   VerificationType type = current_frame->get_local(
     index, VerificationType::integer_type(), CHECK_VERIFY(this));
   current_frame->set_local(index, type, CHECK_VERIFY(this));
 }
 
 void ClassVerifier::verify_return_value(
-    VerificationType return_type, VerificationType type, u2 bci,
+    VerificationType return_type, VerificationType type, int bci,
     StackMapFrame* current_frame, TRAPS) {
   if (return_type == VerificationType::bogus_type()) {
     verify_error(ErrorContext::bad_type(bci,

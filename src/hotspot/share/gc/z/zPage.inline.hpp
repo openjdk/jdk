@@ -180,7 +180,7 @@ inline ZPhysicalMemory& ZPage::physical_memory() {
 
 inline uint8_t ZPage::numa_id() {
   if (_numa_id == (uint8_t)-1) {
-    _numa_id = ZNUMA::memory_id(untype(ZOffset::address(start())));
+    _numa_id = checked_cast<uint8_t>(ZNUMA::memory_id(untype(ZOffset::address(start()))));
   }
 
   return _numa_id;
@@ -207,7 +207,7 @@ inline uint64_t ZPage::last_used() const {
 }
 
 inline void ZPage::set_last_used() {
-  _last_used = ceil(os::elapsedTime());
+  _last_used = (uint64_t)ceil(os::elapsedTime());
 }
 
 inline bool ZPage::is_in(zoffset offset) const {
