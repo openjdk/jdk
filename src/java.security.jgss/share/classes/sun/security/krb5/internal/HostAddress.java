@@ -97,11 +97,9 @@ public class HostAddress implements Cloneable {
             return false;
         }
 
-        if (addrType != h.addrType ||
-            (address != null && h.address == null) ||
-            (address == null && h.address != null))
-            return false;
-        return address == null || Arrays.equals(address, h.address);
+        return addrType == h.addrType
+                && (address == null) == (h.address == null)
+                && Arrays.equals(address, h.address);
     }
 
     private static synchronized InetAddress getLocalInetAddress()
