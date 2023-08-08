@@ -307,7 +307,7 @@ Method* frame::safe_interpreter_frame_method() const {
   if (m_addr == nullptr) {
     return nullptr;
   }
-  return (Method*) SafeFetchN((intptr_t*) m_addr, nullptr);
+  return (Method*) SafeFetchN((intptr_t*) m_addr, 0);
 }
 
 bool frame::should_be_deoptimized() const {
