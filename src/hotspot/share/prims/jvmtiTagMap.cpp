@@ -2320,7 +2320,10 @@ bool StackRefCollector::do_frame(vframe* vf) {
       // Follow oops from compiled nmethod.
       if (jvf->cb() != nullptr && jvf->cb()->is_nmethod()) {
         _blk->set_context(_thread_tag, _tid, _depth, method);
-        jvf->cb()->as_nmethod()->oops_do(_blk);
+        // Need to apply load barriers for unmounted vthreads.
+        nmethod* nm = jvf->cb()->as_nmethod();
+        nm->run_nmethod_entry_barrier();
+        nm->oops_do(_blk);
         if (_blk->stopped()) {
           return false;
         }

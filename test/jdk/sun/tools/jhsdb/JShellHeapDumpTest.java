@@ -150,7 +150,16 @@ public class JShellHeapDumpTest {
         System.out.println("Starting Jshell");
         long startTime = System.currentTimeMillis();
         try {
-            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jshell"), "-J-Duser.language=en", "-J-Duser.country=US");
+            JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jshell");
+            if (doSleep) {
+                launcher.addVMArgs(Utils.getTestJavaOpts());
+            } else {
+                // Don't allow use of SerialGC. See JDK-8313655.
+                launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
+            }
+            ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
+            pb.command().add("-J-Duser.language=en");
+            pb.command().add("-J-Duser.country=US");
             jShellProcess = ProcessTools.startProcess("JShell", pb,
                                                       s -> {  // warm-up predicate
                                                           return s.contains("Welcome to JShell");
