@@ -108,7 +108,7 @@ class AixAttachListener: AllStatic {
   static bool is_shutdown()     { return _shutdown; }
 
   // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
+  static int write_fully(int s, char* buf, size_t len);
 
   static AixAttachOperation* dequeue();
 };
@@ -285,8 +285,8 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  int off = 0;
-  int left = max_len;
+  ssize_t off = 0;
+  ssize_t left = max_len;
 
   do {
     int n;
@@ -414,9 +414,9 @@ AixAttachOperation* AixAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int AixAttachListener::write_fully(int s, char* buf, int len) {
+int AixAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
-    int n = ::write(s, buf, len);
+    ssize_t n = ::write(s, buf, len);
     if (n == -1) {
       if (errno != EINTR) return -1;
     } else {

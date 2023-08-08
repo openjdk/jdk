@@ -102,7 +102,7 @@ class BsdAttachListener: AllStatic {
   static int listener()                 { return _listener; }
 
   // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
+  static int write_fully(int s, char* buf, size_t len);
 
   static BsdAttachOperation* dequeue();
 };
@@ -266,11 +266,11 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  int off = 0;
-  int left = max_len;
+  ssize_t off = 0;
+  ssize_t left = max_len;
 
   do {
-    int n;
+    ssize_t n;
     RESTARTABLE(read(s, buf+off, left), n);
     assert(n <= left, "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
@@ -280,7 +280,7 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
     if (n == 0) {
       break;
     }
-    for (int i=0; i<n; i++) {
+    for (ssize_t i=0; i<n; i++) {
       if (buf[off+i] == 0) {
         // EOS found
         str_count++;
@@ -383,9 +383,9 @@ BsdAttachOperation* BsdAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int BsdAttachListener::write_fully(int s, char* buf, int len) {
+int BsdAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
-    int n = ::write(s, buf, len);
+    ssize_t n = ::write(s, buf, len);
     if (n == -1) {
       if (errno != EINTR) return -1;
     } else {
