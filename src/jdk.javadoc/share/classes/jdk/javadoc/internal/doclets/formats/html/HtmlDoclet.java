@@ -424,13 +424,8 @@ public class HtmlDoclet extends AbstractDoclet {
     private void copyResource(DocPath sourcePath, DocPath targetPath, boolean replaceNewLine)
             throws DocletException {
         DocPath resourcePath = DocPaths.RESOURCES.resolve(sourcePath);
-        // Look for resource in formats/html resources first
+        // Resolve resources against doclets.formats.html package
         URL resourceURL = HtmlConfiguration.class.getResource(resourcePath.getPath());
-        // If not found try toolkit resources
-        if (resourceURL == null) {
-            resourceURL = BaseConfiguration.class.getResource(resourcePath.getPath());
-        }
-        // Found in neither location, throw exception
         if (resourceURL == null) {
             throw new ResourceIOException(sourcePath, new FileNotFoundException(resourcePath.getPath()));
         }
