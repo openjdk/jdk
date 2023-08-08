@@ -101,10 +101,7 @@ public class HostAddress implements Cloneable {
             (address != null && h.address == null) ||
             (address == null && h.address != null))
             return false;
-        if (address != null && h.address != null) {
-            return Arrays.equals(address, h.address);
-        }
-        return true;
+        return address == null || Arrays.equals(address, h.address);
     }
 
     private static synchronized InetAddress getLocalInetAddress()

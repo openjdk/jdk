@@ -152,10 +152,7 @@ public class HostAddresses implements Cloneable {
         if ((addresses == null && addrs.addresses != null) ||
             (addresses != null && addrs.addresses == null))
             return false;
-        if (addresses != null && addrs.addresses != null) {
-            return Arrays.equals(addresses, addrs.addresses);
-        }
-        return true;
+        return addresses == null || Arrays.equals(addresses, addrs.addresses);
     }
 
    /**
