@@ -40,6 +40,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReentrantLock;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
@@ -129,36 +130,41 @@ public final class Channels {
             private ByteBuffer bb;
             private byte[] bs;           // Invoker's previous array
             private byte[] b1;
+            private final ReentrantLock readLock = new ReentrantLock();
 
             @Override
-            public synchronized int read() throws IOException {
-                if (b1 == null)
-                    b1 = new byte[1];
-                int n = this.read(b1);
-                if (n == 1)
-                    return b1[0] & 0xff;
-                return -1;
+            public int read() throws IOException {
+                readLock.lock();
+                try {
+                    if (b1 == null)
+                        b1 = new byte[1];
+                    int n = this.read(b1);
+                    if (n == 1)
+                        return b1[0] & 0xff;
+                    return -1;
+                } finally {
+                    readLock.unlock();
+                }
             }
 
             @Override
-            public synchronized int read(byte[] bs, int off, int len)
-                    throws IOException
-            {
+            public int read(byte[] bs, int off, int len) throws IOException {
                 Objects.checkFromIndexSize(off, len, bs.length);
                 if (len == 0) {
                     return 0;
                 }
 
-                ByteBuffer bb = ((this.bs == bs)
-                                 ? this.bb
-                                 : ByteBuffer.wrap(bs));
-                bb.position(off);
-                bb.limit(Math.min(off + len, bb.capacity()));
-                this.bb = bb;
-                this.bs = bs;
-
                 boolean interrupted = false;
+                readLock.lock();
                 try {
+                    ByteBuffer bb = ((this.bs == bs)
+                            ? this.bb
+                            : ByteBuffer.wrap(bs));
+                    bb.position(off);
+                    bb.limit(Math.min(off + len, bb.capacity()));
+                    this.bb = bb;
+                    this.bs = bs;
+
                     for (;;) {
                         try {
                             return ch.read(bb).get();
@@ -169,6 +175,7 @@ public final class Channels {
                         }
                     }
                 } finally {
+                    readLock.unlock();
                     if (interrupted)
                         Thread.currentThread().interrupt();
                 }
@@ -202,35 +209,39 @@ public final class Channels {
             private ByteBuffer bb;
             private byte[] bs;   // Invoker's previous array
             private byte[] b1;
+            private final ReentrantLock writeLock = new ReentrantLock();
 
             @Override
-            public synchronized void write(int b) throws IOException {
-                if (b1 == null)
-                    b1 = new byte[1];
-                b1[0] = (byte) b;
-                this.write(b1);
+            public void write(int b) throws IOException {
+                writeLock.lock();
+                try {
+                    if (b1 == null)
+                        b1 = new byte[1];
+                    b1[0] = (byte) b;
+                    this.write(b1);
+                } finally {
+                    writeLock.unlock();
+                }
             }
 
             @Override
-            public synchronized void write(byte[] bs, int off, int len)
-                    throws IOException
-            {
-                if ((off < 0) || (off > bs.length) || (len < 0) ||
-                    ((off + len) > bs.length) || ((off + len) < 0)) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
+            public void write(byte[] bs, int off, int len) throws IOException {
+                Objects.checkFromIndexSize(off, len, bs.length);
+                if (len == 0) {
                     return;
                 }
-                ByteBuffer bb = ((this.bs == bs)
-                                 ? this.bb
-                                 : ByteBuffer.wrap(bs));
-                bb.limit(Math.min(off + len, bb.capacity()));
-                bb.position(off);
-                this.bb = bb;
-                this.bs = bs;
 
                 boolean interrupted = false;
+                writeLock.lock();
                 try {
+                    ByteBuffer bb = ((this.bs == bs)
+                            ? this.bb
+                            : ByteBuffer.wrap(bs));
+                    bb.limit(Math.min(off + len, bb.capacity()));
+                    bb.position(off);
+                    this.bb = bb;
+                    this.bs = bs;
+
                     while (bb.remaining() > 0) {
                         try {
                             ch.write(bb).get();
@@ -241,6 +252,7 @@ public final class Channels {
                         }
                     }
                 } finally {
+                    writeLock.unlock();
                     if (interrupted)
                         Thread.currentThread().interrupt();
                 }
@@ -287,7 +299,7 @@ public final class Channels {
         private final InputStream in;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
-        private final Object readLock = new Object();
+        private final ReentrantLock readLock = new ReentrantLock();
 
         ReadableByteChannelImpl(InputStream in) {
             this.in = in;
@@ -305,7 +317,8 @@ public final class Channels {
             int len = dst.remaining();
             int totalRead = 0;
             int bytesRead = 0;
-            synchronized (readLock) {
+            readLock.lock();
+            try {
                 while (totalRead < len) {
                     int bytesToRead = Math.min((len - totalRead),
                                                TRANSFER_SIZE);
@@ -329,6 +342,8 @@ public final class Channels {
                     return -1;
 
                 return totalRead;
+            } finally {
+                readLock.unlock();
             }
         }
 
@@ -368,7 +383,7 @@ public final class Channels {
         private final OutputStream out;
         private static final int TRANSFER_SIZE = 8192;
         private byte[] buf = new byte[0];
-        private final Object writeLock = new Object();
+        private final ReentrantLock writeLock = new ReentrantLock();
 
         WritableByteChannelImpl(OutputStream out) {
             this.out = out;
@@ -382,7 +397,8 @@ public final class Channels {
 
             int len = src.remaining();
             int totalWritten = 0;
-            synchronized (writeLock) {
+            writeLock.lock();
+            try {
                 while (totalWritten < len) {
                     int bytesToWrite = Math.min((len - totalWritten),
                                                 TRANSFER_SIZE);
@@ -398,6 +414,8 @@ public final class Channels {
                     totalWritten += bytesToWrite;
                 }
                 return totalWritten;
+            } finally {
+                writeLock.unlock();
             }
         }
 
