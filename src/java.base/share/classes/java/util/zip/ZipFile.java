@@ -1287,15 +1287,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     long csize = CENSIZ(cen, cenPos);
                     // Get the uncompressed size;
                     long size = CENLEN(cen, cenPos);
-                    // if ZIP64_EXTID blocksize == 0 validate csize and size
-                    // to make sure neither field == ZIP64_MAGICVAL
-                    if (tagBlockSize == 0) {
-                        if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
-                            zerror("Invalid CEN header (invalid zip64 extra data field size)");
-                        }
-                        // Only validate the ZIP64_EXTID data if the block size > 0
-                        return;
-                    }
+
                     checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
                             csize, size);
                 }
@@ -1323,6 +1315,15 @@ public class ZipFile implements ZipConstants, Closeable {
             // length.
             if (!isZip64ExtBlockSizeValid(blockSize)) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
+            }
+            // if ZIP64_EXTID blocksize == 0 validate csize and size
+            // to make sure neither field == ZIP64_MAGICVAL
+            if (blockSize == 0) {
+                if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
+                    zerror("Invalid CEN header (invalid zip64 extra data field size)");
+                }
+                // Only validate the ZIP64_EXTID data if the block size > 0
+                return;
             }
             // Check the uncompressed size is not negative
             // Note we do not need to check blockSize is >= 8 as
