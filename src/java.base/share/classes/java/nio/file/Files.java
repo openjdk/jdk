@@ -1408,8 +1408,9 @@ public final class Files {
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory, or the
-     *          source is a non-empty directory containing entries that would
-     *          be required to be moved <i>(optional specific exceptions)</i>
+     *          source is a non-empty directory containing entries that would be
+     *          required to be moved and the target location is on a different
+     *          {@code FileStore} <i>(optional specific exceptions)</i>
      * @throws  AtomicMoveNotSupportedException
      *          if the options array contains the {@code ATOMIC_MOVE} option but
      *          the file cannot be moved as an atomic file system operation.
