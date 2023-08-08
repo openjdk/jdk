@@ -20,23 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /**
  * @test
  * @bug 8313345
- * @summary TODO
+ * @summary Test SuperWord with a CMove that does not have a matching bool pack.
  * @requires vm.compiler2.enabled
- * @library /test/lib /
- * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestCMoveWithoutBoolPack*::fill -Xbatch
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,*TestCMoveWithoutBoolPack*::fill -Xbatch
  *                   compiler.vectorization.TestCMoveWithoutBoolPack
- * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestCMoveWithoutBoolPack*::fill -Xbatch
+ * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=compileonly,*TestCMoveWithoutBoolPack*::fill -Xbatch
  *                   -XX:+UseCMoveUnconditionally
  *                   compiler.vectorization.TestCMoveWithoutBoolPack
  */
 
 package compiler.vectorization;
-
-import compiler.lib.ir_framework.*;
-import java.util.Random;
 
 public class TestCMoveWithoutBoolPack {
 
