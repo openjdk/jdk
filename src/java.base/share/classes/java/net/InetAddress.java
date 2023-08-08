@@ -790,8 +790,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * {@linkplain InetAddressResolver resolver}.
      *
      * <p>The system-wide resolver will be used to do a reverse name lookup of the IP address.
-     * The lookup may fail for reasons such as the host not being registered with the name
-     * service. In such cases, where the resolver isn't able to determine the fully qualified
+     * The lookup can fail for many reasons that include the host not being registered with the name
+     * service. If the resolver is unable to determine the fully qualified
      * domain name, this method returns the {@linkplain #getHostAddress() textual representation}
      * of the IP address.
      *
