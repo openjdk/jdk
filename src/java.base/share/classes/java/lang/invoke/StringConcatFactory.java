@@ -1111,6 +1111,7 @@ public final class StringConcatFactory {
         pos = 0;
         for (String fragment : fragments) {
             lastFragment = fragment;
+            initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, fragment);
 
             if (ttypes.length <= pos) {
                 break;
@@ -1119,13 +1120,13 @@ public final class StringConcatFactory {
             Class<?> ttype = ttypes[pos];
             // (long,byte[],ttype) -> long
             MethodHandle prepender = prepender(lastFragment.isEmpty() ? null : fragment, ttype);
-            initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, fragment);
             // (byte[],long,ttypes...) -> String (unchanged)
             mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,1, 0, 2 + pos);
 
             pos++;
         }
 
+        initialLengthCoder -= lastFragment.length();
         MethodHandle newArrayCombinator = lastFragment.isEmpty() ? newArray() :
                 newArrayWithSuffix(lastFragment);
         // (long,ttypes...) -> String
