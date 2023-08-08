@@ -31,15 +31,13 @@
 // Tests the assignment operator of ReservedMemoryRegion
 TEST_VM(NMT, ReservedRegionCopy) {
   address dummy1 = (address)0x10000000;
-  ReservedMemoryRegion region1(dummy1, os::vm_page_size(), CALLER_PC);
-  region1.add_committed_region(dummy1, os::vm_page_size(), CALLER_PC);
-  region1.set_flag(mtThreadStack);
-  region1.set_call_stack(NativeCallStack(&dummy1, 1));
+  NativeCallStack stack1(&dummy1, 1);
+  ReservedMemoryRegion region1(dummy1, os::vm_page_size(), stack1, mtThreadStack);
+  region1.add_committed_region(dummy1, os::vm_page_size(), stack1);
   address dummy2 = (address)0x20000000;
-  ReservedMemoryRegion region2(dummy2, os::vm_page_size(), CALLER_PC);
-  region2.add_committed_region(dummy2, os::vm_page_size(), CALLER_PC);
-  region2.set_flag(mtCode);
-  region2.set_call_stack(NativeCallStack(&dummy2, 1));
+  NativeCallStack stack2(&dummy2, 1);
+  ReservedMemoryRegion region2(dummy2, os::vm_page_size(), stack2, mtCode);
+  region2.add_committed_region(dummy2, os::vm_page_size(), stack2);
 
   region2 = region1;
 
