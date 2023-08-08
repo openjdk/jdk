@@ -37,7 +37,6 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/safefetch.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubCodeGenerator.hpp"
@@ -325,14 +324,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // first the method
 
-  Method** m_addr = interpreter_frame_method_addr();
-  if (m_addr == nullptr) {
-    return false;
-  }
-  Method* m = (Method*) SafeFetchN((intptr_t*) m_addr, 0);
-  if (m == 0) {
-    return false;
-  }
+  Method* m = safe_interpreter_frame_method();
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
