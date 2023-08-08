@@ -77,8 +77,7 @@ import jdk.internal.javac.PreviewFeature;
 public interface SegmentAllocator {
 
     /**
-     * Converts a Java string into a UTF-8 encoded, null-terminated C string,
-     * storing the result into a memory segment.
+     * {@return a new memory segment with a Java string converted into a UTF-8 encoded, null-terminated C string}
      * <p>
      * This method always replaces malformed-input and unmappable-character
      * sequences with this charset's default replacement byte array.  The
@@ -93,7 +92,6 @@ public interface SegmentAllocator {
      * @implSpec The default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
-     * @return a new segment containing the converted C string.
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
@@ -284,9 +282,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code byte} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -300,9 +303,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code short} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -316,9 +324,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code char} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -332,9 +345,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code int} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -348,9 +366,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code float} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -364,9 +387,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code long} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
@@ -380,9 +408,14 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code double} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
-     * to allocate a segment after which the provided {@code elements} are written into the segment as
-     * specified by the provided {@code layout}.
+     * @implSpec The default implementation is equivalent to:
+     * {@snippet lang=java :
+     *  int size = Objects.requireNonNull(elements).length;
+     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
+     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  return seg;
+     * }
      *
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
