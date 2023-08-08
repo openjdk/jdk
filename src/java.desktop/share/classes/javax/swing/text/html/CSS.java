@@ -1356,11 +1356,11 @@ public class CSS implements Serializable {
       return colorstr;
     }
 
-     /**
-      * Convert a "#FFFFFF" hex string to a Color.
-      * If the color specification is bad, an attempt
-      * will be made to fix it up.
-      */
+    /**
+     * Convert a "#FFFFFF" hex string to a Color.
+     * If the color specification is bad, an attempt
+     * will be made to fix it up.
+     */
     static final Color hexToColor(String value) {
         String digits;
         int n = value.length();
@@ -1392,6 +1392,8 @@ public class CSS implements Serializable {
          return c;
      }
 
+    private static Map<String, Color> colorNames;
+
     /**
      * Convert a color string such as "RED" or "#NNNNNN" or "rgb(r, g, b)"
      * or "rgba(r, g, b, a)" to a Color.
@@ -1410,6 +1412,9 @@ public class CSS implements Serializable {
         } else if (strlc.charAt(0) == '#') {
             return hexToColor(str);
         } else {
+            if(colorNames == null) {
+                colorNames = initColorNames();
+            }
             Color color = colorNames.get(strlc);
             if (color != null) {
                 return color;
@@ -1419,8 +1424,8 @@ public class CSS implements Serializable {
         }
     }
 
-    private static final Map<String, Color> colorNames =
-        Map.ofEntries(
+    private static Map<String, Color> initColorNames() {
+        return Map.ofEntries(
             Map.entry("aliceblue", new Color(240, 248, 255)),
             Map.entry("antiquewhite", new Color(250, 235, 215)),
             Map.entry("aqua", new Color(0, 255, 255)),
@@ -1570,7 +1575,8 @@ public class CSS implements Serializable {
             Map.entry("whitesmoke", new Color(245, 245, 245)),
             Map.entry("yellow", new Color(255, 255, 0)),
             Map.entry("yellowgreen", new Color(154, 205, 50))
-        );
+            );
+    }
 
     /**
      * Parses a String in the format <code>rgb(r, g, b)</code> where

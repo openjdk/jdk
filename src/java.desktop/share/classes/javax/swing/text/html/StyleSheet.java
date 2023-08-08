@@ -1014,14 +1014,21 @@ public class StyleSheet extends StyleContext {
     }
 
     /**
-     * Converts a color string such as "RED",  "rgb(r g b)",
+     * Converts a color string such as "RED",  "rgb(r g b)", "rgb(r g b a)",
      * "rgba(r g b a)" or "#NNN", "#NNNN", "#NNNNNN",
      * "#NNNNNNNN" to a Color.
      * <p>
-     * Note : This will only convert string colors using names or 3, 4, 6, 8
-     * digit hexadecimal notations as specified by the CSS Color Module Level 4
-     * and rgb or rgba HTML3.2 strings.
+     * Note: This will only convert strings which use any of the following:
+     * <ul>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#named-colors">named colors</a>,</li>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#hex-notation">hex color notation</a>
+     * starting with {@code #} followed by 3, 4, 6, or 8 hexadecimal digits,</li>
+     *   <li><a href="https://www.w3.org/TR/css-color-4/#rgb-functions">`rgb()` and `rgba()`
+     * functions</a></li>
+     * </ul>
+     * as specified by the <a href="https://www.w3.org/TR/css-color-4/">CSS Color Module Level 4</a>.
      * Otherwise, it will return null.
+     * <p>
      * This method is case-insensitive.
      * <p>
      * The following code defines instances of the same color :
