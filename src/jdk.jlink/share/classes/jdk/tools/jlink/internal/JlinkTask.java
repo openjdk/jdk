@@ -541,7 +541,7 @@ public class JlinkTask {
             cf.modules().stream()
               .sorted(Comparator.comparing(ResolvedModule::name))
               .forEach(rm -> log.format("%s %s%s%n",
-                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (jmod-less)"));
+                                        rm.name(), rm.reference().location().get(), config.useModulePath() ? "" : " (run-image)"));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
