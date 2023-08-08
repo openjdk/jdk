@@ -37,6 +37,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -52,6 +53,7 @@ class ChannelInputStream extends InputStream {
     private ByteBuffer bb;
     private byte[] bs;       // Invoker's previous array
     private byte[] b1;
+    private final ReentrantLock readLock = new ReentrantLock();
 
     /**
      * Initialize a ChannelInputStream that reads from the given channel.
@@ -76,31 +78,40 @@ class ChannelInputStream extends InputStream {
     }
 
     @Override
-    public synchronized int read() throws IOException {
-        if (b1 == null)
-            b1 = new byte[1];
-        int n = read(b1);
-        if (n == 1)
-            return b1[0] & 0xff;
-        return -1;
+    public int read() throws IOException {
+        readLock.lock();
+        try {
+            if (b1 == null)
+                b1 = new byte[1];
+            int n = read(b1);
+            if (n == 1)
+                return b1[0] & 0xff;
+            return -1;
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
-    public synchronized int read(byte[] bs, int off, int len)
-        throws IOException
-    {
+    public int read(byte[] bs, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, bs.length);
-        if (len == 0)
+        if (len == 0) {
             return 0;
+        }
 
-        ByteBuffer bb = ((this.bs == bs)
-                         ? this.bb
-                         : ByteBuffer.wrap(bs));
-        bb.limit(Math.min(off + len, bb.capacity()));
-        bb.position(off);
-        this.bb = bb;
-        this.bs = bs;
-        return read(bb);
+        readLock.lock();
+        try {
+            ByteBuffer bb = ((this.bs == bs)
+                    ? this.bb
+                    : ByteBuffer.wrap(bs));
+            bb.limit(Math.min(off + len, bb.capacity()));
+            bb.position(off);
+            this.bb = bb;
+            this.bs = bs;
+            return read(bb);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -200,24 +211,29 @@ class ChannelInputStream extends InputStream {
     }
 
     @Override
-    public synchronized long skip(long n) throws IOException {
-        // special case where the channel is to a file
-        if (ch instanceof SeekableByteChannel sbc) {
-            long pos = sbc.position();
-            long newPos;
-            if (n > 0) {
-                newPos = pos + n;
-                long size = sbc.size();
-                if (newPos < 0 || newPos > size) {
-                    newPos = size;
+    public long skip(long n) throws IOException {
+        readLock.lock();
+        try {
+            // special case where the channel is to a file
+            if (ch instanceof SeekableByteChannel sbc) {
+                long pos = sbc.position();
+                long newPos;
+                if (n > 0) {
+                    newPos = pos + n;
+                    long size = sbc.size();
+                    if (newPos < 0 || newPos > size) {
+                        newPos = size;
+                    }
+                } else {
+                    newPos = Long.max(pos + n, 0);
                 }
-            } else {
-                newPos = Long.max(pos + n, 0);
+                sbc.position(newPos);
+                return newPos - pos;
             }
-            sbc.position(newPos);
-            return newPos - pos;
+            return super.skip(n);
+        } finally {
+            readLock.unlock();
         }
-        return super.skip(n);
     }
 
     @Override

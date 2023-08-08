@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * An OutputStream that writes bytes to a channel.
@@ -44,6 +45,7 @@ class ChannelOutputStream extends OutputStream {
     private ByteBuffer bb;
     private byte[] bs;       // Invoker's previous array
     private byte[] b1;
+    private final ReentrantLock writeLock = new ReentrantLock();
 
     /**
      * Initialize a ChannelOutputStream that writes to the given channel.
@@ -72,37 +74,46 @@ class ChannelOutputStream extends OutputStream {
     }
 
     @Override
-    public synchronized void write(int b) throws IOException {
-        if (b1 == null)
-            b1 = new byte[1];
-        b1[0] = (byte) b;
-        write(b1);
+    public void write(int b) throws IOException {
+        writeLock.lock();
+        try {
+            if (b1 == null)
+                b1 = new byte[1];
+            b1[0] = (byte) b;
+            write(b1);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void write(byte[] bs, int off, int len)
-        throws IOException
-    {
+    public void write(byte[] bs, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, bs.length);
         if (len == 0) {
             return;
         }
-        ByteBuffer bb = ((this.bs == bs)
-                         ? this.bb
-                         : ByteBuffer.wrap(bs));
-        bb.limit(Math.min(off + len, bb.capacity()));
-        bb.position(off);
-        this.bb = bb;
-        this.bs = bs;
 
-        if (ch instanceof SelectableChannel sc) {
-            synchronized (sc.blockingLock()) {
-                if (!sc.isBlocking())
-                    throw new IllegalBlockingModeException();
+        writeLock.lock();
+        try {
+            ByteBuffer bb = ((this.bs == bs)
+                    ? this.bb
+                    : ByteBuffer.wrap(bs));
+            bb.limit(Math.min(off + len, bb.capacity()));
+            bb.position(off);
+            this.bb = bb;
+            this.bs = bs;
+
+            if (ch instanceof SelectableChannel sc) {
+                synchronized (sc.blockingLock()) {
+                    if (!sc.isBlocking())
+                        throw new IllegalBlockingModeException();
+                    writeFully(bb);
+                }
+            } else {
                 writeFully(bb);
             }
-        } else {
-            writeFully(bb);
+        } finally {
+            writeLock.unlock();
         }
     }
 
