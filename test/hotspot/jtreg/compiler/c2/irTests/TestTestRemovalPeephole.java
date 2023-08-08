@@ -38,6 +38,7 @@ import jdk.test.lib.Utils;
  * @run driver compiler.c2.irTests.TestTestRemovalPeephole
  */
 public class TestTestRemovalPeephole {
+    static volatile boolean field;
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -47,7 +48,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testIntAddtionEquals0(int x, int y) {
         int result = x + y;
-        return result == 0;
+        if (result == 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -55,7 +60,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testIntAddtionNotEquals0(int x, int y) {
         int result = x + y;
-        return result != 0;
+        if (result != 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -63,7 +72,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testLongAddtionEquals0(long x, long y) {
         long result = x + y;
-        return result == 0;
+        if (result == 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -71,7 +84,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testLongAddtionNotEquals0(long x, long y) {
         long result = x + y;
-        return result != 0;
+        if (result != 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -79,7 +96,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testIntOrEquals0(int x, int y) {
         int result = x | y;
-        return result == 0;
+        if (result == 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -87,7 +108,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testIntOrNotEquals0(int x, int y) {
         int result = x | y;
-        return result != 0;
+        if (result != 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -95,7 +120,11 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testLongOrEquals0(long x, long y) {
         long result = x | y;
-        return result == 0;
+        if (result == 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
@@ -103,23 +132,35 @@ public class TestTestRemovalPeephole {
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testLongOrNotEquals0(long x, long y) {
         long result = x | y;
-        return result != 0;
+        if (result != 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42}) // TODO switch to Argument.RANDOM_EACH once conditional moving works with the peephole
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testIntOrGreater0(int x, int y) {
         int result = x | y;
-        return result > 0;
+        if (result > 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42}) // TODO switch to Argument.RANDOM_EACH once conditional moving works with the peephole
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.X86_TESTI_REG, IRNode.X86_TESTL_REG}, phase = CompilePhase.FINAL_CODE)
     public boolean testLongOrGreater0(long x, long y) {
         long result = x | y;
-        return result > 0;
+        if (result > 0) {
+            field = true;
+            return true;
+        }
+        return false;
     }
 
     @DontCompile
