@@ -101,7 +101,7 @@ public class TestIllegalLink extends NativeTestHelper {
         return new Object[][]{
             { Linker.Option.firstVariadicArg(0) },
             { Linker.Option.captureCallState("errno") },
-            { Linker.Option.isTrivial() },
+            { Linker.Option.critical() },
         };
     }
 
@@ -193,8 +193,8 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(),
-                    new Linker.Option[]{Linker.Option.isTrivial(), Linker.Option.captureCallState("errno")},
-                    "Incompatible linker options: captureCallState, isTrivial"
+                    new Linker.Option[]{Linker.Option.critical(), Linker.Option.captureCallState("errno")},
+                    "Incompatible linker options: captureCallState, critical"
             },
         }));
 

@@ -55,8 +55,8 @@ public class CallOverheadConstant {
     }
 
     @Benchmark
-    public void panama_blank_trivial() throws Throwable {
-        func_trivial.invokeExact();
+    public void panama_blank_critical() throws Throwable {
+        func_critical.invokeExact();
     }
 
     @Benchmark
@@ -70,8 +70,8 @@ public class CallOverheadConstant {
     }
 
     @Benchmark
-    public int panama_identity_trivial() throws Throwable {
-        return (int) identity_trivial.invokeExact(10);
+    public int panama_identity_critical() throws Throwable {
+        return (int) identity_critical.invokeExact(10);
     }
 
     @Benchmark

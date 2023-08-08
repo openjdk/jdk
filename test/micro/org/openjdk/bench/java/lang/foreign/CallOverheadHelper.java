@@ -34,14 +34,14 @@ public class CallOverheadHelper extends CLayouts {
     static final Linker abi = Linker.nativeLinker();
 
     static final MethodHandle func;
-    static final MethodHandle func_trivial;
+    static final MethodHandle func_critical;
     static final MethodHandle func_v;
-    static final MethodHandle func_trivial_v;
+    static final MethodHandle func_critical_v;
     static MemorySegment func_addr;
     static final MethodHandle identity;
-    static final MethodHandle identity_trivial;
+    static final MethodHandle identity_critical;
     static final MethodHandle identity_v;
-    static final MethodHandle identity_trivial_v;
+    static final MethodHandle identity_critical_v;
     static MemorySegment identity_addr;
     static final MethodHandle identity_struct;
     static final MethodHandle identity_struct_v;
@@ -113,17 +113,17 @@ public class CallOverheadHelper extends CLayouts {
             MethodType mt = MethodType.methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             func_v = abi.downcallHandle(fd);
-            func_trivial_v = abi.downcallHandle(fd, Linker.Option.isTrivial());
+            func_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
             func = insertArguments(func_v, 0, func_addr);
-            func_trivial = insertArguments(func_trivial_v, 0, func_addr);
+            func_critical = insertArguments(func_critical_v, 0, func_addr);
         }
         {
             identity_addr = loaderLibs.find("identity").orElseThrow();
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
             identity_v = abi.downcallHandle(fd);
-            identity_trivial_v = abi.downcallHandle(fd, Linker.Option.isTrivial());
+            identity_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
             identity = insertArguments(identity_v, 0, identity_addr);
-            identity_trivial = insertArguments(identity_trivial_v, 0, identity_addr);
+            identity_critical = insertArguments(identity_critical_v, 0, identity_addr);
         }
         identity_struct_addr = loaderLibs.find("identity_struct").orElseThrow();
         identity_struct_v = abi.downcallHandle(

@@ -729,7 +729,7 @@ public sealed interface Linker permits AbstractLinker {
          * }
          * }
          *
-         * @apiNote This linker option can not be combined with {@link #isTrivial}.
+         * @apiNote This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save.
          * @throws IllegalArgumentException if at least one of the provided {@code capturedState} names
@@ -773,19 +773,19 @@ public sealed interface Linker permits AbstractLinker {
         }
 
         /**
-         * {@return a linker option used to mark a foreign function as <em>trivial</em>}
+         * {@return a linker option used to mark a foreign function as <em>critical</em>}
          * <p>
-         * A trivial function is a function that has an extremely short running time
-         * in all cases (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).
+         * A critical function is a function that has an extremely short running time in all cases
+         * (similar to calling an empty function), and does not call back into Java (e.g. using an upcall stub).
          * <p>
          * Using this linker option is a hint which some implementations may use to apply
-         * optimizations that are only valid for trivial functions.
+         * optimizations that are only valid for critical functions.
          * <p>
-         * Using this linker option when linking non trivial functions is likely to have adverse effects,
+         * Using this linker option when linking non-critical functions is likely to have adverse effects,
          * such as loss of performance, or JVM crashes.
          */
-        static Option isTrivial() {
-            return LinkerOptions.IsTrivial.INSTANCE;
+        static Option critical() {
+            return LinkerOptions.Critical.INSTANCE;
         }
     }
 }

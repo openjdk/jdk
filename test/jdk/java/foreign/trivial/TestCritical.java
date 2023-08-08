@@ -24,7 +24,7 @@
 /*
  * @test
  * @library ../ /test/lib
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestTrivial
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCritical
  */
 
 import org.testng.annotations.Test;
@@ -41,21 +41,21 @@ import java.lang.invoke.VarHandle;
 
 import static org.testng.Assert.assertEquals;
 
-public class TestTrivial extends NativeTestHelper {
+public class TestCritical extends NativeTestHelper {
 
     static {
-        System.loadLibrary("Trivial");
+        System.loadLibrary("Critical");
     }
 
     @Test
     public void testEmpty() throws Throwable {
-        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("empty", FunctionDescriptor.ofVoid(), Linker.Option.critical());
         handle.invokeExact();
     }
 
     @Test
     public void testIdentity() throws Throwable {
-        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("identity", FunctionDescriptor.of(C_INT, C_INT), Linker.Option.critical());
         int result = (int) handle.invokeExact(42);
         assertEquals(result, 42);
     }
@@ -66,7 +66,7 @@ public class TestTrivial extends NativeTestHelper {
                 C_LONG_LONG.withName("x"),
                 C_LONG_LONG.withName("y"));
 
-        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.isTrivial());
+        MethodHandle handle = downcallHandle("with_return_buffer", FunctionDescriptor.of(bigLayout), Linker.Option.critical());
         VarHandle vhX = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("x"));
         VarHandle vhY = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("y"));
         try (Arena arena = Arena.ofConfined()) {

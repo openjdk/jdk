@@ -64,8 +64,8 @@ public class LinkerOptions {
         }
 
         LinkerOptions linkerOptions = new LinkerOptions(optionMap);
-        if (linkerOptions.hasCapturedCallState() && linkerOptions.isTrivial()) {
-            throw new IllegalArgumentException("Incompatible linker options: captureCallState, isTrivial");
+        if (linkerOptions.hasCapturedCallState() && linkerOptions.isCritical()) {
+            throw new IllegalArgumentException("Incompatible linker options: captureCallState, critical");
         }
         return linkerOptions;
     }
@@ -101,9 +101,9 @@ public class LinkerOptions {
         return getOption(FirstVariadicArg.class).index();
     }
 
-    public boolean isTrivial() {
-        IsTrivial it = getOption(IsTrivial.class);
-        return it != null;
+    public boolean isCritical() {
+        Critical c = getOption(Critical.class);
+        return c != null;
     }
 
     @Override
@@ -119,7 +119,7 @@ public class LinkerOptions {
     }
 
     public sealed interface LinkerOptionImpl extends Linker.Option
-            permits CaptureCallState, FirstVariadicArg, IsTrivial {
+            permits CaptureCallState, FirstVariadicArg, Critical {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -145,8 +145,8 @@ public class LinkerOptions {
         }
     }
 
-    public record IsTrivial() implements LinkerOptionImpl {
-        public static IsTrivial INSTANCE = new IsTrivial();
+    public record Critical() implements LinkerOptionImpl {
+        public static Critical INSTANCE = new Critical();
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {
