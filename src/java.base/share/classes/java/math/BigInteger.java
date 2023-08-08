@@ -3951,7 +3951,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return -1;
         if (len1 > len2)
             return 1;
-        int i = ArraysSupport.mismatch(m1, 0, m2, 0, len1);
+        int i = ArraysSupport.mismatch(m1, m2, len1);
         if (i != -1)
             return ((m1[i] & LONG_MASK) < (m2[i] & LONG_MASK)) ? -1 : 1;
         return 0;
@@ -4022,7 +4022,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (mag.length != xInt.mag.length)
             return false;
 
-        return ArraysSupport.mismatch(mag, 0, xInt.mag, 0, mag.length) == -1;
+        return ArraysSupport.mismatch(mag, xInt.mag, mag.length) == -1;
     }
 
     /**
