@@ -29,6 +29,7 @@ import java.util.List;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -42,30 +43,32 @@ import jdk.test.lib.hprof.HprofParser;
  * @run driver HeapDumpParallelTest
  */
 
-class HeapDumpParallel extends LingeredApp {
-    public static void main(String[] args) {
-        System.out.println("Hello world");
-        LingeredApp.main(args);
-    }
-}
-
 public class HeapDumpParallelTest {
-    static HeapDumpParallel theApp;
 
-    private static void checkAndVerify(OutputAnalyzer out, LingeredApp app, File heapDumpFile, boolean expectSerial) {
-        out.shouldHaveExitValue(0);
-        out.shouldContain("Heap dump file created");
+    private static void checkAndVerify(OutputAnalyzer dcmdOut, LingeredApp app, File heapDumpFile, boolean expectSerial) throws IOException {
+        dcmdOut.shouldHaveExitValue(0);
+        dcmdOut.shouldContain("Heap dump file created");
+        OutputAnalyzer appOut = new OutputAnalyzer(app.getProcessStdout());
+        appOut.shouldContain("[heapdump]");
         if (!expectSerial && Runtime.getRuntime().availableProcessors() > 1) {
-            Asserts.assertTrue(app.getProcessStdout().contains("Dump heap objects in parallel"));
-            Asserts.assertTrue(app.getProcessStdout().contains("Merge heap files complete"));
+            appOut.shouldContain("Dump heap objects in parallel");
+            appOut.shouldContain("Merge heap files complete");
         } else {
-            Asserts.assertFalse(app.getProcessStdout().contains("Dump heap objects in parallel"));
-            Asserts.assertFalse(app.getProcessStdout().contains("Merge heap files complete"));
+            appOut.shouldNotContain("Dump heap objects in parallel");
+            appOut.shouldNotContain("Merge heap files complete");
         }
         verifyHeapDump(heapDumpFile);
         if (heapDumpFile.exists()) {
             heapDumpFile.delete();
         }
+    }
+
+    private static LingeredApp launchApp() throws IOException {
+        LingeredApp theApp = new LingeredApp();
+        LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
+                             "-XX:-UseDynamicNumberOfGCThreads",
+                             "-XX:ParallelGCThreads=2");
+        return theApp;
     }
 
     public static void main(String[] args) throws Exception {
@@ -76,48 +79,44 @@ public class HeapDumpParallelTest {
             heapDumpFile.delete();
         }
 
+        LingeredApp theApp = launchApp();
         try {
-            theApp = new HeapDumpParallel();
-            LingeredApp.startApp(theApp, "-Xlog:heapdump", "-Xmx512m",
-                                "-XX:-UseDynamicNumberOfGCThreads",
-                                "-XX:ParallelGCThreads=2");
             // Expect error message
-            OutputAnalyzer out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + -1);
+            OutputAnalyzer out = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), "-parallel=" + -1);
             out.shouldContain("Invalid number of parallel dump threads.");
 
             // Expect serial dump because 0 implies to disable parallel dump
-            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + 0);
-            checkAndVerify(out, theApp, heapDumpFile, true);
+            test(heapDumpFile, "-parallel=" + 0, true);
 
             // Expect serial dump
-            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + 1);
-            checkAndVerify(out, theApp, heapDumpFile, true);
+            test(heapDumpFile,  "-parallel=" + 1, true);
 
             // Expect parallel dump
-            out = attachWith(heapDumpFile, theApp.getPid(), "-parallel=" + Integer.MAX_VALUE);
-            checkAndVerify(out, theApp, heapDumpFile, false);
+            test(heapDumpFile, "-parallel=" + Integer.MAX_VALUE, false);
 
             // Expect parallel dump
-            out = attachWith(heapDumpFile, theApp.getPid(), "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors());
-            checkAndVerify(out, theApp, heapDumpFile, false);
+            test(heapDumpFile, "-gz=9 -overwrite -parallel=" + Runtime.getRuntime().availableProcessors(), false);
         } finally {
-            LingeredApp.stopApp(theApp);
+            theApp.stopApp();
         }
     }
 
-    private static OutputAnalyzer attachWith(File heapDumpFile, long lingeredAppPid, String arg) throws Exception {
-        //jcmd <pid> GC.heap_dump -parallel=cpucount <file_path>
-        JDKToolLauncher launcher = JDKToolLauncher
-                .createUsingTestJDK("jcmd")
-                .addToolArg(Long.toString(lingeredAppPid))
-                .addToolArg("GC.heap_dump")
-                .addToolArg(arg)
-                .addToolArg(heapDumpFile.getAbsolutePath());
+    private static void test(File heapDumpFile, String arg, boolean expectSerial) throws Exception {
+        LingeredApp theApp = launchApp();
+        try {
+            OutputAnalyzer dcmdOut = attachJcmdHeapDump(heapDumpFile, theApp.getPid(), arg);
+            theApp.stopApp();
+            checkAndVerify(dcmdOut, theApp, heapDumpFile, expectSerial);
+        } finally {
+            theApp.stopApp();
+        }
+    }
 
-        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
-        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
-        return output;
+    private static OutputAnalyzer attachJcmdHeapDump(File heapDumpFile, long lingeredAppPid, String arg) throws Exception {
+        // e.g. jcmd <pid> GC.heap_dump -parallel=cpucount <file_path>
+        System.out.println("Testing pid " + lingeredAppPid);
+        PidJcmdExecutor executor = new PidJcmdExecutor("" + lingeredAppPid);
+        return executor.execute("GC.heap_dump " + arg + " " + heapDumpFile.getAbsolutePath());
     }
 
     private static void verifyHeapDump(File dump) {
