@@ -188,7 +188,7 @@ extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
   if (jfieldIDWorkaround::is_instance_jfieldID(k, id)) {
     uintptr_t as_uint = (uintptr_t) id;
-    intptr_t offset = raw_instance_offset(id);
+    int offset = raw_instance_offset(id);
     if (is_checked_jfieldID(id)) {
       if (!klass_hash_ok(k, id)) {
         return false;
@@ -206,7 +206,7 @@ bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
 }
 
 
-intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
+intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, int offset) {
   if (offset <= small_offset_mask) {
     Klass* field_klass = k;
     Klass* super_klass = field_klass->super();
@@ -249,7 +249,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
 void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
   guarantee(jfieldIDWorkaround::is_instance_jfieldID(k, id), "must be an instance field" );
   uintptr_t as_uint = (uintptr_t) id;
-  intptr_t offset = raw_instance_offset(id);
+  int offset = raw_instance_offset(id);
   if (VerifyJNIFields) {
     if (is_checked_jfieldID(id)) {
       guarantee(klass_hash_ok(k, id),
@@ -413,7 +413,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
 
   // First check if this is a static field
   if (modifiers & JVM_ACC_STATIC) {
-    intptr_t offset = InstanceKlass::cast(k1)->field_offset( slot );
+    int offset = InstanceKlass::cast(k1)->field_offset( slot );
     JNIid* id = InstanceKlass::cast(k1)->jni_id_for(offset);
     assert(id != nullptr, "corrupt Field object");
     debug_only(id->set_is_static_field_id();)
@@ -425,7 +425,7 @@ JNI_ENTRY(jfieldID, jni_FromReflectedField(JNIEnv *env, jobject field))
   // The slot is the index of the field description in the field-array
   // The jfieldID is the offset of the field within the object
   // It may also have hash bits for k, if VerifyJNIFields is turned on.
-  intptr_t offset = InstanceKlass::cast(k1)->field_offset( slot );
+  int offset = InstanceKlass::cast(k1)->field_offset( slot );
   assert(InstanceKlass::cast(k1)->contains_field_offset(offset), "stay within object");
   ret = jfieldIDWorkaround::to_instance_jfieldID(k1, offset);
   return ret;
@@ -1884,6 +1884,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
 JNI_END
 
+// TODO: make this a template
 
 #define DEFINE_SETFIELD(Argument,Fieldname,Result,SigType,unionType \
                         , EntryProbe, ReturnProbe) \
@@ -1901,7 +1902,6 @@ JNI_ENTRY_NO_PRESERVE(void, jni_Set##Result##Field(JNIEnv *env, jobject obj, jfi
     field_value.unionType = value; \
     o = JvmtiExport::jni_SetField_probe(thread, obj, o, k, fieldID, false, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   o->Fieldname##_field_put(offset, value); \
   ReturnProbe; \
 JNI_END
@@ -2094,7 +2094,6 @@ JNI_ENTRY(void, jni_SetStatic##Result##Field(JNIEnv *env, jclass clazz, jfieldID
     field_value.unionType = value; \
     JvmtiExport::jni_SetField_probe(thread, nullptr, nullptr, id->holder(), fieldID, true, SigType, (jvalue *)&field_value); \
   } \
-  if (SigType == JVM_SIGNATURE_BOOLEAN) { value = ((jboolean)value) & 1; } \
   id->holder()->java_mirror()-> Fieldname##_field_put (id->offset(), value); \
   ReturnProbe;\
 JNI_END
