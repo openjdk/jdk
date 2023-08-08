@@ -228,17 +228,6 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // The "requestor" generation is performing some garbage collection
-  // action for which it would be useful to have scratch space.  The
-  // requestor promises to allocate no more than "max_alloc_words" in any
-  // older generation (via promotion say.)   Any blocks of space that can
-  // be provided are returned as a list of ScratchBlocks, sorted by
-  // decreasing size.
-  ScratchBlock* gather_scratch(Generation* requestor, size_t max_alloc_words);
-  // Allow each generation to reset any scratch space that it has
-  // contributed as it needs.
-  void release_scratch();
-
   // Ensure parsability
   void ensure_parsability(bool retire_tlabs) override;
 

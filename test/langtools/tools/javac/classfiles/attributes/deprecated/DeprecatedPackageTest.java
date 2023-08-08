@@ -29,14 +29,19 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main DeprecatedPackageTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Deprecated_attribute;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.attribute.DeprecatedAttribute;
 
 public class DeprecatedPackageTest extends TestResult {
 
@@ -78,12 +83,11 @@ public class DeprecatedPackageTest extends TestResult {
         addTestCase(src);
         printf("Testing test case: \n%s\n", src);
         try {
-            ClassFile cf = readClassFile(compile(
+            ClassModel cm = readClassFile(compile(
                         new String[]{"package-info.java", package_info},
                         new String[]{"notDeprecated.java", src})
                     .getClasses().get(CLASS_NAME));
-            Deprecated_attribute attr =
-                    (Deprecated_attribute) cf.getAttribute(Attribute.Deprecated);
+            DeprecatedAttribute attr = cm.findAttribute(Attributes.DEPRECATED).orElse(null);
             checkNull(attr, "Class can not have deprecated attribute : " + CLASS_NAME);
         } catch (Exception e) {
             addFailure(e);

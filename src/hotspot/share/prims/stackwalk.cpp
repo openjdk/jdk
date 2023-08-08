@@ -80,7 +80,7 @@ void BaseFrameStream::set_continuation(Handle cont) {
   _continuation.replace(cont());
 }
 
-JavaFrameStream::JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont)
+JavaFrameStream::JavaFrameStream(JavaThread* thread, jlong mode, Handle cont_scope, Handle cont)
   : BaseFrameStream(thread, cont),
    _vfst(cont.is_null()
       ? vframeStream(thread, cont_scope)

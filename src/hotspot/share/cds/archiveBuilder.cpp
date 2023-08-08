@@ -262,7 +262,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    sort_symbols_and_fix_hash();
+    log_info(cds)("Sorting symbols ... ");
+    _symbols->sort(compare_symbols_by_address);
     sort_klasses();
 
     // TODO -- we need a proper estimate for the archived modules, etc,
@@ -277,16 +278,6 @@ int ArchiveBuilder::compare_symbols_by_address(Symbol** a, Symbol** b) {
   } else {
     assert(a[0] > b[0], "Duplicated symbol %s unexpected", (*a)->as_C_string());
     return 1;
-  }
-}
-
-void ArchiveBuilder::sort_symbols_and_fix_hash() {
-  log_info(cds)("Sorting symbols and fixing identity hash ... ");
-  os::init_random(0x12345678);
-  _symbols->sort(compare_symbols_by_address);
-  for (int i = 0; i < _symbols->length(); i++) {
-    assert(_symbols->at(i)->is_permanent(), "archived symbols must be permanent");
-    _symbols->at(i)->update_identity_hash();
   }
 }
 
@@ -646,6 +637,14 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   newtop = dump_region->top();
 
   memcpy(dest, src, bytes);
+
+  // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
+  if (DumpSharedSpaces && (src_info->msotype() == MetaspaceObj::SymbolType)) {
+    Symbol* buffered_symbol = (Symbol*)dest;
+    assert(((Symbol*)src)->is_permanent(), "archived symbols must be permanent");
+    buffered_symbol->update_identity_hash();
+  }
+
   {
     bool created;
     _buffered_to_src_table.put_if_absent((address)dest, src, &created);

@@ -609,8 +609,6 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
-sun/security/pkcs11/Cipher/TestKATForGCM.java                   8240611 linux-x64,macosx-x64
-
 
 ############################################################################
 
@@ -736,6 +734,7 @@ sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
+sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-aarch64
 
 ############################################################################
 
