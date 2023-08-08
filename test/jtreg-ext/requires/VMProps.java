@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -556,7 +557,7 @@ public class VMProps implements Callable<Map<String, String>> {
 
         if (isSupported) {
            try {
-              isSupported = checkDockerSupport();
+              isSupported = checkContainerSupport();
            } catch (Exception e) {
               isSupported = false;
            }
@@ -600,16 +601,27 @@ public class VMProps implements Callable<Map<String, String>> {
                 });
     }
 
-    private boolean checkDockerSupport() throws IOException, InterruptedException {
-        log("checkDockerSupport(): entering");
-        ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-        Map<String, String> logFileNames = redirectOutputToLogFile("checkDockerSupport(): <container> ps",
-                                                      pb, "container-ps");
+    private boolean checkContainerSupport() throws IOException, InterruptedException {
+        log("checkContainerSupport(): entering");
+
+        // Consult CONTAINER_REQUIRES_COMMAND first.
+        // See open/test/lib/jdk/test/lib/Container.java
+        log("checkContainerSupport(): CONTAINER_REQUIRES_COMMAND = "
+            + Container.CONTAINER_REQUIRES_COMMAND);
+        // If not defined or empty no check is needed; OK to run container tests.
+        if (Container.CONTAINER_REQUIRES_COMMAND.isEmpty()) {
+            return true;
+        }
+
+        List<String> args = Arrays.asList(Container.CONTAINER_REQUIRES_COMMAND.split(" "));
+        ProcessBuilder pb = new ProcessBuilder(args);
+        Map<String, String> logFileNames = redirectOutputToLogFile("checkContainerSupport(): <container command> ",
+                                                      pb, "container-command");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 
-        log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
+        log(String.format("checkContainerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
         if (exitValue != 0) {
             printLogfileContent(logFileNames);
         }
