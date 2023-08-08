@@ -98,7 +98,6 @@ public class HostAddress implements Cloneable {
         }
 
         return addrType == h.addrType
-                && (address == null) == (h.address == null)
                 && Arrays.equals(address, h.address);
     }
 
