@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8313809
- * @summary String template fails with java.lang.StringIndexOutOfBoundsException if the string contains euro symbol.
+ * @summary String template fails with java.lang.StringIndexOutOfBoundsException if last fragment is UTF16
+.
  * @enablePreview true
  */
 
