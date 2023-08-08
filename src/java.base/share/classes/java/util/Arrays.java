@@ -7771,12 +7771,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(char[] a, char[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
@@ -7898,12 +7902,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(short[] a, short[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
@@ -8025,12 +8033,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(int[] a, int[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
@@ -8152,12 +8164,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(long[] a, long[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
@@ -8279,12 +8295,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(float[] a, float[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
@@ -8406,12 +8426,16 @@ public final class Arrays {
      * @since 9
      */
     public static int mismatch(double[] a, double[] b) {
-        int length = Math.min(a.length, b.length); // Check null array refs
-        if (a == b)
-            return -1;
-
-        int i = ArraysSupport.mismatch(a, b, length);
-        return (i < 0 && a.length != b.length) ? length : i;
+        if (a.length == b.length) { // Check null array refs
+            if (a == b) {
+                return -1;
+            }
+            return ArraysSupport.mismatch(a, b, a.length);
+        } else {
+            int length = Math.min(a.length, b.length);
+            int i = ArraysSupport.mismatch(a, b, length);
+            return (i < 0) ? length : i;
+        }
     }
 
     /**
