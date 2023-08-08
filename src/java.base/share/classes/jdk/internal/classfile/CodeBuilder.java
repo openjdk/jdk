@@ -406,7 +406,6 @@ public sealed interface CodeBuilder
      * @param slot local variable slot
      * @return this builder
      */
-
     default CodeBuilder loadInstruction(TypeKind tk, int slot) {
         with(LoadInstruction.of(tk, slot));
         return this;
@@ -807,7 +806,6 @@ public sealed interface CodeBuilder
      * Create new label bound with current position
      * @return this builder
      */
-
     default Label newBoundLabel() {
         var label = newLabel();
         labelBinding(label);
@@ -965,7 +963,6 @@ public sealed interface CodeBuilder
      * Push null
      * @return this builder
      */
-
     default CodeBuilder aconst_null() {
         return with(ConstantInstruction.ofIntrinsic(Opcode.ACONST_NULL));
     }
