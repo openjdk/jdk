@@ -2478,7 +2478,7 @@ public class JavacParserTest extends TestCase {
         List<String> codes = new LinkedList<>();
 
         for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" +  d.getCode());
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
         }
 
         assertEquals("testDanglingElse: " + codes,
