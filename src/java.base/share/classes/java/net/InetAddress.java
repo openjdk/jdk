@@ -731,8 +731,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * <p>If this InetAddress was created with a host name,
      * this host name will be remembered and returned;
      * otherwise, a reverse name lookup will be performed
-     * and the result will be returned based on the system
-     * configured resolver. If a lookup of the name service
+     * and the result will be returned based on the system-wide
+     * resolver. If a lookup of the name service
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
@@ -1580,7 +1580,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
     /**
      * Given the name of a host, returns an array of its IP addresses,
-     * based on the configured system {@linkplain InetAddressResolver resolver}.
+     * based on the system-wide {@linkplain InetAddressResolver resolver}.
      *
      * <p> The host name can either be a machine name, such as
      * "{@code www.example.com}", or a textual representation of its IP
