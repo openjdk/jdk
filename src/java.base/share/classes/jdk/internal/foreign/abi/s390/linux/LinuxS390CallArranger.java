@@ -109,7 +109,7 @@ public class LinuxS390CallArranger {
         return new Bindings(csb.build(), returnInMemory);
     }
 
-    public static  MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
+    public static MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, false, options);
 
         MethodHandle handle = new DowncallLinker(CLinux, bindings.callingSequence).getBoundMethodHandle();
@@ -121,8 +121,7 @@ public class LinuxS390CallArranger {
         return handle;
     }
 
-    public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc,
-            LinkerOptions options) {
+    public static UpcallStubFactory arrangeUpcall(MethodType mt, FunctionDescriptor cDesc, LinkerOptions options) {
         Bindings bindings = getBindings(mt, cDesc, true, options);
 
         final boolean dropReturn = true; /* drop return, since we don't have bindings for it */
@@ -218,26 +217,26 @@ public class LinuxS390CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
-                        .vmStore(storage, type);
+                            .vmStore(storage, type);
                 }
                 case STRUCT_SFA -> {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, layout.byteSize() == 4);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), true);
                     bindings.bufferLoad(0, type)
-                        .vmStore(storage, type);
+                            .vmStore(storage, type);
                 }
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     bindings.copy(layout)
-                        .unboxAddress();
+                            .unboxAddress();
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     bindings.unboxAddress()
-                        .vmStore(storage, long.class);
+                            .vmStore(storage, long.class);
                 }
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.
@@ -268,32 +267,32 @@ public class LinuxS390CallArranger {
                 case STRUCT_REGISTER -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout)
-                        .dup();
+                            .dup();
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.vmLoad(storage, type)
-                        .bufferStore(0, type);
+                            .bufferStore(0, type);
                 }
                 case STRUCT_SFA -> {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout)
-                        .dup();
+                            .dup();
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, layout.byteSize() == 4);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), true);
                     bindings.vmLoad(storage, type)
-                        .bufferStore(0, type);
+                            .bufferStore(0, type);
                 }
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     bindings.vmLoad(storage, long.class)
-                        .boxAddress(layout);
+                            .boxAddress(layout);
                 }
                 case POINTER -> {
                     AddressLayout addressLayout = (AddressLayout) layout;
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     bindings.vmLoad(storage, long.class)
-                        .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
+                            .boxAddressRaw(Utils.pointeeByteSize(addressLayout), Utils.pointeeByteAlign(addressLayout));
                 }
                 case INTEGER -> {
                     // We could use carrier != long.class for BoxBindingCalculator, but C always uses 64 bit slots.

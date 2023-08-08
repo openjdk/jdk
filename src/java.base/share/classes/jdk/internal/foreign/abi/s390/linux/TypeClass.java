@@ -41,8 +41,6 @@ public enum TypeClass {
     INTEGER,
     FLOAT;
 
-    private static final int MAX_AGGREGATE_REGS_SIZE = 1;
-
     private static TypeClass classifyValueType(ValueLayout type) {
         Class<?> carrier = type.carrier();
         if (carrier == boolean.class || carrier == byte.class || carrier == char.class ||

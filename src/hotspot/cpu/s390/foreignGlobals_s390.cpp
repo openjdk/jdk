@@ -151,7 +151,6 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
         __ freg2mem_opt(as_FloatRegister(from_reg), Address(Z_SP, reg2offset(to_reg, out_stk_bias)), true);
       } else {
         assert(to_reg.stack_size() == 4, "size should match");
-        // s390 needs 4 Byte offset
         __ freg2mem_opt(as_FloatRegister(from_reg), Address(Z_SP, reg2offset(to_reg, out_stk_bias)), false);
       }
       break;
