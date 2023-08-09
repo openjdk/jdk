@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -56,6 +57,15 @@ enum AttachListenerState {
   AL_NOT_INITIALIZED,
   AL_INITIALIZING,
   AL_INITIALIZED
+};
+
+class AttachListenerThread : public JavaThread {
+private:
+  static void thread_entry(JavaThread* thread, TRAPS);
+
+public:
+  AttachListenerThread() : JavaThread(&AttachListenerThread::thread_entry) {}
+  bool is_AttachListener_thread() const { return true; }
 };
 
 class AttachListener: AllStatic {

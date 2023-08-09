@@ -979,11 +979,21 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   log_info(os)("attempting shared library load of %s", filename);
 
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
 
@@ -998,6 +1008,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(error_report);
+  event.commit();
+#endif
 
   return nullptr;
 #endif // STATIC_BUILD
@@ -1008,11 +1023,22 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return os::get_default_process_handle();
 #else
   log_info(os)("attempting shared library load of %s", filename);
+
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
 
@@ -1029,7 +1055,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(error_report);
+  event.commit();
+#endif
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
