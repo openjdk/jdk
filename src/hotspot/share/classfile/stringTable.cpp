@@ -227,7 +227,7 @@ class StringTableLookupOop : public StackObj {
     _found = Handle(_thread, value->resolve());
     return true;
   }
-  
+ 
   bool is_dead(WeakHandle* value) {
     oop val_oop = value->peek();
     return val_oop == nullptr;
