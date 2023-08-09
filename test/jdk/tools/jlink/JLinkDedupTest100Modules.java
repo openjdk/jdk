@@ -65,6 +65,8 @@ public class JLinkDedupTest100Modules {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
 
+
+
     private static boolean hasJmods() {
         if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
             System.err.println("Test skipped. NO jmods directory");
@@ -124,5 +126,16 @@ public class JLinkDedupTest100Modules {
         int exitCode = process.waitFor();
         if (exitCode != 0)
              throw new AssertionError("JLink100ModulesTest failed to launch");
+
+        //verify();
+
+    }
+    static void verify() {
+        Path binDir = SRC_DIR.resolve("out-jlink-dedup").toAbsolutePath();
+        Path bin = binDir.resolve("jimage");
+
+        ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
+                "--dir=dir out-jlink-dedup/lib/modules");
+
     }
 }
