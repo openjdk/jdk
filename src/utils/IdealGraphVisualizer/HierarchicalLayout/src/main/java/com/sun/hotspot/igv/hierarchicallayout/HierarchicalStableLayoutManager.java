@@ -765,8 +765,10 @@ public class HierarchicalStableLayoutManager {
          * @param layer
          */
         private void insertNode(LayoutNode node, int layer) {
+            assert layers.keySet().contains(layer) || layer == 0;
+
             node.layer = layer;
-            List<LayoutNode> layerNodes = layers.get(layer);
+            List<LayoutNode> layerNodes = layers.getOrDefault(layer, new ArrayList<LayoutNode>());
 
             if (layerNodes.size() == 0) {
                 node.pos = 0;
@@ -780,6 +782,7 @@ public class HierarchicalStableLayoutManager {
                 }
             }
             layerNodes.add(node);
+            layers.put(layer, layerNodes);
 
             if (!nodes.contains(node)) {
                 nodes.add(node);
