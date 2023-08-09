@@ -325,6 +325,15 @@ uint G1CMRootMemRegions::num_root_regions() const {
   return (uint)_num_root_regions;
 }
 
+bool G1CMRootMemRegions::contains(const MemRegion mr) const {
+  for (uint i = 0; i < _num_root_regions; i++) {
+    if (_root_regions[i].equals(mr)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void G1CMRootMemRegions::notify_scan_done() {
   MutexLocker x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
   _scan_in_progress = false;
@@ -994,6 +1003,10 @@ void G1ConcurrentMark::add_root_region(HeapRegion* r) {
   root_regions()->add(r->top_at_mark_start(), r->top());
 }
 
+bool G1ConcurrentMark::is_root_region(HeapRegion* r) {
+  return root_regions()->contains(MemRegion(r->top_at_mark_start(), r->top()));
+}
+
 void G1ConcurrentMark::root_region_scan_abort_and_wait() {
   root_regions()->abort();
   root_regions()->wait_until_scan_finished();
@@ -1362,8 +1375,8 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
-        log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
-                      hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
+        log_trace(gc, marking)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
+                               hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
         hr->set_containing_set(nullptr);
         if (hr->is_humongous()) {
@@ -1867,6 +1880,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       HeapWord* bottom = curr_region->bottom();
       HeapWord* limit = curr_region->top_at_mark_start();
 
+      log_trace(gc, marking)("Claim region %u bottom " PTR_FORMAT " tams " PTR_FORMAT, curr_region->hrm_index(), p2i(curr_region->bottom()), p2i(curr_region->top_at_mark_start()));
       // notice that _finger == end cannot be guaranteed here since,
       // someone else might have moved the finger even further
       assert(_finger >= end, "the finger should have moved forward");

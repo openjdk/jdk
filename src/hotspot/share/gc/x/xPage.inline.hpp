@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ inline XPhysicalMemory& XPage::physical_memory() {
 
 inline uint8_t XPage::numa_id() {
   if (_numa_id == (uint8_t)-1) {
-    _numa_id = XNUMA::memory_id(XAddress::good(start()));
+    _numa_id = checked_cast<uint8_t>(XNUMA::memory_id(XAddress::good(start())));
   }
 
   return _numa_id;
@@ -158,7 +158,7 @@ inline uint64_t XPage::last_used() const {
 }
 
 inline void XPage::set_last_used() {
-  _last_used = ceil(os::elapsedTime());
+  _last_used = (uint64_t)ceil(os::elapsedTime());
 }
 
 inline bool XPage::is_in(uintptr_t addr) const {

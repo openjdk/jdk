@@ -110,6 +110,7 @@
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
+#include "services/attachListener.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -237,6 +238,7 @@
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
+  nonstatic_field(InstanceKlass,               _nest_members,                                 Array<jushort>*)                       \
   nonstatic_field(InstanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(InstanceKlass,               _static_field_size,                            int)                                   \
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
@@ -244,6 +246,7 @@
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
+  nonstatic_field(InstanceKlass,               _nest_host_index,                              u2)                                    \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
   volatile_nonstatic_field(InstanceKlass,      _oop_map_cache,                                OopMapCache*)                          \
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
@@ -1260,6 +1263,7 @@
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
         declare_type(StringDedupThread, JavaThread)                       \
+        declare_type(AttachListenerThread, JavaThread)                    \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
