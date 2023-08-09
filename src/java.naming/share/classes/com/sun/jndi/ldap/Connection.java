@@ -644,9 +644,9 @@ public final class Connection implements Runnable {
                     }
                 } finally {
 
-                    flushCloseOutputStream();
+                    flushAndCloseOutputStream();
                     // 8313657 socket is not closed until GC is run
-                    closeConnectionSocket();
+                    closeOpenedSocket();
                     tryUnpauseReader();
 
                     if (!notifyParent) {
@@ -683,7 +683,7 @@ public final class Connection implements Runnable {
     }
 
     // flush and close output stream
-    private void flushCloseOutputStream() {
+    private void flushAndCloseOutputStream() {
         try {
             outStream.flush();
         } catch (IOException ioEx) {
@@ -699,7 +699,7 @@ public final class Connection implements Runnable {
     }
 
     // close socket
-    private void closeConnectionSocket() {
+    private void closeOpenedSocket() {
         try {
             sock.close();
         } catch (IOException ioEx) {

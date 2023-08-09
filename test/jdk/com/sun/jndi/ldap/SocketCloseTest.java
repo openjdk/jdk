@@ -43,6 +43,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary make sure socket is closed when the error happens for OutputStream flushing
  * The value of provider url can be random, not necessary to be the one in the code
  * @library /test/lib
+ * @run main/othervm SocketCloseTest
  */
 
 public class SocketCloseTest {
@@ -54,6 +55,11 @@ public class SocketCloseTest {
     };
 
     public static void main(String[] args) throws Exception {
+        SocketCloseTest scTest = new SocketCloseTest();
+        scTest.runCloseSocketScenario();
+    }
+
+    public void runCloseSocketScenario() throws Exception {
         Hashtable<String, Object> props = new Hashtable<>();
 
         props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -66,13 +72,9 @@ public class SocketCloseTest {
                 System.out.println(SOCKET_CLOSED_MSG);
             } else {
                 System.out.println(SOCKET_NOT_CLOSED_MSG);
+                throw e;
             }
         }
-
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm("SocketCloseTest");
-        outputAnalyzer.stdoutShouldContain(SOCKET_CLOSED_MSG);
-        outputAnalyzer.stdoutShouldNotContain(SOCKET_NOT_CLOSED_MSG);
-        outputAnalyzer.stdoutShouldContain(BAD_FLUSH);
     }
 
     public static class CustomSocketFactory extends SocketFactory {
