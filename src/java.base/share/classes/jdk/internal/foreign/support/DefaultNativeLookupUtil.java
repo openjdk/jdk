@@ -1,11 +1,13 @@
-package jdk.internal.foreign;
+package jdk.internal.foreign.support;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.NoSuchElementException;
 
 public final class DefaultNativeLookupUtil {
 
@@ -23,13 +25,13 @@ public final class DefaultNativeLookupUtil {
 
     public static MethodHandle downcallOfVoid(String name, MemoryLayout... types) {
         return Linker.nativeLinker().downcallHandle(
-                Linker.nativeLinker().defaultLookup().find(name).orElseThrow(),
+                lookup(name),
                 FunctionDescriptor.ofVoid(types));
     }
 
     public static MethodHandle downcall(String name, MemoryLayout resLayout, MemoryLayout... types) {
         return Linker.nativeLinker().downcallHandle(
-                Linker.nativeLinker().defaultLookup().find(name).orElseThrow(),
+                lookup(name),
                 FunctionDescriptor.of(resLayout, types));
     }
 
@@ -41,5 +43,16 @@ public final class DefaultNativeLookupUtil {
         return returnValue == 1;
     }
 
+    private static MemorySegment lookup(String name) {
+        try {
+            return Linker.nativeLinker()
+                    .defaultLookup()
+                    .find(name)
+                    .orElseThrow();
+        } catch (NoSuchElementException e) {
+            // Avoid creating a new lambda for each call using `Optional::orElseThrow`
+            throw new NoSuchElementException("Unable to find " + name, e);
+        }
+    }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,19 @@
  * questions.
  */
 
-#include "jni.h"
-#include "jni_util.h"
-#include "jvm.h"
-#include "java_io_Console.h"
+package jdk.internal.natives;
 
-#include <stdlib.h>
-#include <unistd.h>
+import java.lang.foreign.ValueLayout;
 
-JNIEXPORT jboolean JNICALL
-Java_java_io_Console_istty(JNIEnv *env, jclass cls)
-{
-    return isatty(fileno(stdin)) && isatty(fileno(stdout));
-}
+// https://learn.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+public final class WindowsTypes {
 
-JNIEXPORT jstring JNICALL
-Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
-{
-    return NULL;
+    private WindowsTypes() {}
+
+    public static final ValueLayout DWORD = ValueLayout.JAVA_INT;
+    public static final ValueLayout UINT = ValueLayout.JAVA_INT;
+
+    public static final ValueLayout PVOID = ValueLayout.ADDRESS;
+    public static final ValueLayout HANDLE = PVOID;
+
 }

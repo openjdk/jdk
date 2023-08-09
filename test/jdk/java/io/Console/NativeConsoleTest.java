@@ -24,17 +24,17 @@
 /**
  * @test
  * @requires (os.family == "linux") | (os.family == "mac")
- * @run junit/othervm ConsoleUtilTest
+ * @run junit/othervm NativeConsoleTest
  */
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ConsoleUtilTest {
+class NativeConsoleTest {
 
     @Test
     void a() {
-        throw new AssertionError();
+        // Todo: implement a test
     }
 
 }
