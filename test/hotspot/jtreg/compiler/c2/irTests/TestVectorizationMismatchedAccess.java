@@ -50,13 +50,10 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        Object alignVector = wb.getVMFlag("AlignVector");
-        if (alignVector != null && !((Boolean)alignVector)) {
-            if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
-                throw new RuntimeException("fix test that was written for a little endian platform");
-            }
-            TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
+            throw new RuntimeException("fix test that was written for a little endian platform");
         }
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
     }
 
     static int size = 1024;
@@ -229,9 +226,8 @@ public class TestVectorizationMismatchedAccess {
         runAndVerify2(() -> testByteByte1(byteArray, byteArray), 0);
     }
 
-    // It would be legal to vectorize this one but it's not currently
     @Test
-    //@IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteByte2(byte[] dest, byte[] src) {
         for (int i = 1; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));

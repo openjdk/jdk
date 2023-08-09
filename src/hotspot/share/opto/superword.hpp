@@ -268,6 +268,87 @@ class VectorElementSizeStats {
   }
 };
 
+// When alignment is required, we must adjust the pre-loop iteration count pre_iter.
+// We find the set of pre_iter which guarantee alignment:
+//
+//   pre_iter = pre_r + pre_q * m  (for any m >= 0)
+//
+// Such that the address is aligned for any j >= 0:
+//
+//   adr = base + offset + invar + scale * init
+//                               + scale * pre_stride * pre_iter
+//                               + scale * main_stride * j
+//
+// There is either a valid solution (r, q, mem_ref, aw) or otherwise a failure reason.
+class AlignmentSolution {
+private:
+  bool _valid = false;
+  const char* _reason = nullptr;
+  int _r = 0;
+  int _q = 1;
+  MemNode* _mem_ref = nullptr;
+  int _aw = 0;
+public:
+  AlignmentSolution(const int r, const int q, MemNode* mem_ref, int aw) :
+                    _valid(true), _reason(nullptr),
+                    _r(r), _q(q), _mem_ref(mem_ref), _aw(aw) {
+    assert(q > 0 && is_power_of_2(q), "q must be power of 2");
+    assert(0 <= r && r < q, "r must be in modulo space of q");
+    assert(is_trivial() || (_mem_ref != nullptr && _mem_ref->memory_size() <= _aw),
+           "trivial solution or must have mem_ref and aw");
+    assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
+  }
+  AlignmentSolution(const char* reason) : _valid(false), _reason(reason), _r(0), _q(1) {}
+  static AlignmentSolution make_trivial() {
+    return AlignmentSolution(0, 1, nullptr, 1);
+  }
+  bool is_valid() const { return _valid; }
+  const char* reason() const { assert(!is_valid(), "only invalid has reason"); return _reason; }
+  int r() const { assert(is_valid(), "only valid has solution"); return _r; }
+  int q() const { assert(is_valid(), "only valid has solution"); return _q; }
+  MemNode* mem_ref() const { assert(is_valid(), "valid and not trivial"); return _mem_ref; }
+  int aw() const { assert(is_valid() && !is_trivial(), "valid and not trivial"); return _aw; }
+  bool is_trivial() const { return r() == 0 && q() == 1; }
+  AlignmentSolution filter(const AlignmentSolution& other) const {
+    if (!is_valid() || !other.is_valid()) {
+      return AlignmentSolution("invalid solution input to filter");
+    }
+    AlignmentSolution s1 = *this;
+    AlignmentSolution s2 = other;
+    if (s1.q() > s2.q()) {
+      swap(s1, s2);
+    }
+    assert(s1.q() <= s2.q(), "s1 is a smaller modulo space than s2");
+    if (mod(s2.r(), s1.q()) == s1.r()) {
+      // "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
+      return s2; // return the subset
+    } else {
+      // neither is subset of the other -> no intersection
+      return AlignmentSolution("input solutions have empty intersection");
+    }
+  }
+  void print() {
+    if (is_valid()) {
+      if (is_trivial()) {
+        tty->print_cr("pre_iter >= 0 (trivial)");
+      } else {
+        tty->print_cr("pre_iter = pre_r(%d) + m * pre_q(%d) (for any m >= 0) -> mem_ref[%d] %% aw(%d)",
+                      r(), q(), mem_ref()->_idx, aw());
+      }
+    } else {
+      tty->print_cr("no solution: %s", reason());
+    }
+  }
+  // Compute modulo and ensure that we get a positive remainder
+  static int mod(int i, int q) {
+    assert(q >= 1, "modulo value must be large enough");
+    int r = i % q;
+    r = (r >= 0) ? r : r + q;
+    assert(0 <= r && r < q, "remainder must fit in modulo space");
+    return r;
+  }
+};
+
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -326,6 +407,7 @@ class SuperWord : public ResourceObj {
   bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
   bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
   bool     is_trace_loop_reverse() { return (_vector_loop_debug & 64) > 0; }
+  bool     is_trace_align_vector() { return (_vector_loop_debug & 128) > 0; }
 #endif
   bool     do_vector_loop()        { return _do_vector_loop; }
   bool     do_reserve_copy()       { return _do_reserve_copy; }
@@ -510,20 +592,12 @@ private:
   void find_adjacent_refs();
   // Tracing support
   #ifndef PRODUCT
-  void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
-  // If strict memory alignment is required (vectors_should_be_aligned), then check if
-  // mem_ref is aligned with best_align_to_mem_ref.
-  bool mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                                          MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                          Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
   int get_iv_adjustment(MemNode* mem);
-  // Can the preloop align the reference to position zero in the vector?
-  bool ref_is_alignable(SWPointer& p);
   // Construct dependency graph.
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
@@ -565,6 +639,10 @@ private:
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
+  // Ensure all packs are aligned, if AlignVector is on.
+  void filter_packs_for_alignment();
+  // Find the set of alignment solutions for load/store pack p.
+  AlignmentSolution pack_alignment_solution(Node_List* p);
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
@@ -614,9 +692,8 @@ private:
   int memory_alignment(MemNode* s, int iv_adjust);
   // Smallest type containing range of values
   const Type* container_type(Node* n);
-  // Adjust pre-loop limit so that in main loop, a load/store reference
-  // to align_to_ref will be a position zero in the vector.
-  void align_initial_loop_index(MemNode* align_to_ref);
+  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Find pre loop end from main loop.  Returns null if none.
   CountedLoopEndNode* find_pre_loop_end(CountedLoopNode *cl) const;
   // Is the use of d1 in u1 at the same operand position as d2 in u2?

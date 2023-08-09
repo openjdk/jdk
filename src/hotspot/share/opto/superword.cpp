@@ -605,17 +605,23 @@ bool SuperWord::SLP_extract() {
   if (cl->is_main_loop()) {
     compute_vector_element_type();
 
-    // Attempt vectorization
-
     find_adjacent_refs();
 
-    if (align_to_ref() == nullptr) {
-      return false; // Did not find memory reference to align vectors
+    if (_packset.length() == 0) {
+#ifndef PRODUCT
+      if (TraceSuperWord) {
+        tty->print_cr("\nNo pair packs generated, abort SuperWord.");
+        tty->cr();
+      }
+#endif
+      return false;
     }
 
     extend_packlist();
 
     combine_packs();
+
+    filter_packs_for_alignment();
 
     construct_my_pack_map();
 
@@ -670,8 +676,7 @@ bool SuperWord::SLP_extract() {
 //------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
 // This is the initial set of packs that will then be extended by
-// following use->def and def->use links.  The align positions are
-// assigned relative to the reference "align_to_ref"
+// following use->def and def->use links.
 void SuperWord::find_adjacent_refs() {
   // Get list of memory operations
   Node_List memops;
@@ -689,25 +694,21 @@ void SuperWord::find_adjacent_refs() {
     tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
   }
 
-  Node_List align_to_refs;
   int max_idx;
-  int best_iv_adjustment = 0;
-  MemNode* best_align_to_mem_ref = nullptr;
+
+  // Take the first mem_ref as the reference to align to. The pre-loop trip count is
+  // modified to align this reference to a vector-aligned address. If strict alignment
+  // is required, we may change the reference later (see filter_packs_for_alignment).
+  MemNode* align_to_mem_ref = nullptr;
 
   while (memops.size() != 0) {
     // Find a memory reference to align to.
     MemNode* mem_ref = find_align_to_ref(memops, max_idx);
     if (mem_ref == nullptr) break;
-    align_to_refs.push(mem_ref);
     int iv_adjustment = get_iv_adjustment(mem_ref);
 
-    if (best_align_to_mem_ref == nullptr) {
-      // Set memory reference which is the best from all memory operations
-      // to be used for alignment. The pre-loop trip count is modified to align
-      // this reference to a vector-aligned address.
-      best_align_to_mem_ref = mem_ref;
-      best_iv_adjustment = iv_adjustment;
-      NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
+    if (align_to_mem_ref == nullptr) {
+      align_to_mem_ref = mem_ref;
     }
 
     SWPointer align_to_ref_p(mem_ref, this, nullptr, false);
@@ -724,90 +725,26 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    if (mem_ref_has_no_alignment_violation(mem_ref, iv_adjustment, align_to_ref_p,
-                                           best_align_to_mem_ref, best_iv_adjustment,
-                                           align_to_refs)) {
-      // Create initial pack pairs of memory operations for which alignment was set.
-      for (uint i = 0; i < memops.size(); i++) {
-        Node* s1 = memops.at(i);
-        int align = alignment(s1);
-        if (align == top_align) continue;
-        for (uint j = 0; j < memops.size(); j++) {
-          Node* s2 = memops.at(j);
-          if (alignment(s2) == top_align) continue;
-          if (s1 != s2 && are_adjacent_refs(s1, s2)) {
-            if (stmts_can_pack(s1, s2, align)) {
-              Node_List* pair = new Node_List();
-              pair->push(s1);
-              pair->push(s2);
-              if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-                _packset.append(pair);
-              }
+    // Create initial pack pairs of memory operations for which alignment was set.
+    for (uint i = 0; i < memops.size(); i++) {
+      Node* s1 = memops.at(i);
+      int align = alignment(s1);
+      if (align == top_align) continue;
+      for (uint j = 0; j < memops.size(); j++) {
+        Node* s2 = memops.at(j);
+        if (alignment(s2) == top_align) continue;
+        if (s1 != s2 && are_adjacent_refs(s1, s2)) {
+          if (stmts_can_pack(s1, s2, align)) {
+            Node_List* pair = new Node_List();
+            pair->push(s1);
+            pair->push(s2);
+            if (!_do_vector_loop || same_origin_idx(s1, s2)) {
+              _packset.append(pair);
             }
           }
         }
       }
-    } else {
-      // Cannot create pairs for mem_ref. Reject all related memops forever.
-
-      // First, remove remaining memory ops of the same memory slice from the list.
-      for (int i = memops.size() - 1; i >= 0; i--) {
-        MemNode* s = memops.at(i)->as_Mem();
-        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
-          memops.remove(i);
-        }
-      }
-
-      // Second, remove already constructed packs of the same memory slice.
-      for (int i = _packset.length() - 1; i >= 0; i--) {
-        Node_List* p = _packset.at(i);
-        MemNode* s = p->at(0)->as_Mem();
-        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
-          remove_pack_at(i);
-        }
-      }
-
-      // If needed find the best memory reference for loop alignment again.
-      if (same_memory_slice(mem_ref, best_align_to_mem_ref) || same_velt_type(mem_ref, best_align_to_mem_ref)) {
-        // Put memory ops from remaining packs back on memops list for
-        // the best alignment search.
-        uint orig_msize = memops.size();
-        for (int i = 0; i < _packset.length(); i++) {
-          Node_List* p = _packset.at(i);
-          MemNode* s = p->at(0)->as_Mem();
-          assert(!same_velt_type(s, mem_ref), "sanity");
-          memops.push(s);
-        }
-        best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
-        if (best_align_to_mem_ref == nullptr) {
-          if (TraceSuperWord) {
-            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == nullptr");
-          }
-          // best_align_to_mem_ref will be used for adjusting the pre-loop limit in
-          // SuperWord::align_initial_loop_index. Find one with the biggest vector size,
-          // smallest data size and smallest iv offset from memory ops from remaining packs.
-          if (_packset.length() > 0) {
-            if (orig_msize == 0) {
-              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
-            } else {
-              for (uint i = 0; i < orig_msize; i++) {
-                memops.remove(0);
-              }
-              best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
-              assert(best_align_to_mem_ref == nullptr, "sanity");
-              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
-            }
-            assert(best_align_to_mem_ref != nullptr, "sanity");
-          }
-          break;
-        }
-        best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
-        NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
-        // Restore list.
-        while (memops.size() > orig_msize)
-          (void)memops.pop();
-      }
-    } // unaligned memory accesses
+    }
 
     // Remove used mem nodes.
     for (int i = memops.size() - 1; i >= 0; i--) {
@@ -816,66 +753,14 @@ void SuperWord::find_adjacent_refs() {
         memops.remove(i);
       }
     }
+  } // while (memops.size() != 0)
 
-  } // while (memops.size() != 0
-  set_align_to_ref(best_align_to_mem_ref);
+  set_align_to_ref(align_to_mem_ref);
 
   if (TraceSuperWord) {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
   }
-}
-
-#ifndef PRODUCT
-void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment) {
-  if (is_trace_adjacent()) {
-    tty->print("SuperWord::find_adjacent_refs best_align_to_mem_ref = %d, best_iv_adjustment = %d",
-       best_align_to_mem_ref->_idx, best_iv_adjustment);
-       best_align_to_mem_ref->dump();
-  }
-}
-#endif
-
-// If strict memory alignment is required (vectors_should_be_aligned), then check if
-// mem_ref is aligned with best_align_to_mem_ref.
-bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                                                   MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                                   Node_List &align_to_refs) {
-  if (!vectors_should_be_aligned()) {
-    // Alignment is not required by the hardware. No violation possible.
-    return true;
-  }
-
-  // All vectors need to be memory aligned, modulo their vector_width. This is more strict
-  // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
-  //
-  // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
-  // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
-  // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
-  // we check the following 3 conditions.
-
-  // (1) All packs are aligned with best_align_to_mem_ref.
-  if (memory_alignment(mem_ref, best_iv_adjustment) != 0) {
-    return false;
-  }
-  // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
-  int vw = vector_width(mem_ref);
-  int vw_best = vector_width(best_align_to_mem_ref);
-  if (vw > vw_best) {
-    // We only align to vector_width of best_align_to_mem_ref during pre-loop.
-    // A mem_ref with a larger vector_width might thus not be vector_width aligned.
-    return false;
-  }
-  // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
-  //     address = base + k*iv + constant [+ invar]
-  //     memory_alignment ignores the invariant.
-  SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
-  if (!align_to_ref_p.invar_equals(p2)) {
-    // Do not vectorize memory accesses with different invariants
-    // if unaligned memory accesses are not allowed.
-    return false;
-  }
-  return true;
 }
 
 //------------------------------find_align_to_ref---------------------------
@@ -889,12 +774,6 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
     SWPointer p1(s1, this, nullptr, false);
-    // Only discard unalignable memory references if vector memory references
-    // should be aligned on this platform.
-    if (vectors_should_be_aligned() && !ref_is_alignable(p1)) {
-      *cmp_ct.adr_at(i) = 0;
-      continue;
-    }
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
@@ -983,95 +862,6 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   return nullptr;
 }
 
-//------------------span_works_for_memory_size-----------------------------
-static bool span_works_for_memory_size(MemNode* mem, int span, int mem_size, int offset) {
-  bool span_matches_memory = false;
-  if ((mem_size == type2aelembytes(T_BYTE) || mem_size == type2aelembytes(T_SHORT))
-    && ABS(span) == type2aelembytes(T_INT)) {
-    // There is a mismatch on span size compared to memory.
-    for (DUIterator_Fast jmax, j = mem->fast_outs(jmax); j < jmax; j++) {
-      Node* use = mem->fast_out(j);
-      if (!VectorNode::is_type_transition_to_int(use)) {
-        return false;
-      }
-    }
-    // If all uses transition to integer, it means that we can successfully align even on mismatch.
-    return true;
-  }
-  else {
-    span_matches_memory = ABS(span) == mem_size;
-  }
-  return span_matches_memory && (ABS(offset) % mem_size) == 0;
-}
-
-//------------------------------ref_is_alignable---------------------------
-// Can the preloop align the reference to position zero in the vector?
-bool SuperWord::ref_is_alignable(SWPointer& p) {
-  if (!p.has_iv()) {
-    return true;   // no induction variable
-  }
-  CountedLoopEndNode* pre_end = pre_loop_end();
-  assert(pre_end->stride_is_con(), "pre loop stride is constant");
-  int preloop_stride = pre_end->stride_con();
-
-  int span = preloop_stride * p.scale_in_bytes();
-  int mem_size = p.memory_size();
-  int offset   = p.offset_in_bytes();
-  // Stride one accesses are alignable if offset is aligned to memory operation size.
-  // Offset can be unaligned when UseUnalignedAccesses is used.
-  if (span_works_for_memory_size(p.mem(), span, mem_size, offset)) {
-    return true;
-  }
-  // If the initial offset from start of the object is computable,
-  // check if the pre-loop can align the final offset accordingly.
-  //
-  // In other words: Can we find an i such that the offset
-  // after i pre-loop iterations is aligned to vw?
-  //   (init_offset + pre_loop) % vw == 0              (1)
-  // where
-  //   pre_loop = i * span
-  // is the number of bytes added to the offset by i pre-loop iterations.
-  //
-  // For this to hold we need pre_loop to increase init_offset by
-  //   pre_loop = vw - (init_offset % vw)
-  //
-  // This is only possible if pre_loop is divisible by span because each
-  // pre-loop iteration increases the initial offset by 'span' bytes:
-  //   (vw - (init_offset % vw)) % span == 0
-  //
-  int vw = vector_width_in_bytes(p.mem());
-  assert(vw > 1, "sanity");
-  Node* init_nd = pre_end->init_trip();
-  if (init_nd->is_Con() && p.invar() == nullptr) {
-    int init = init_nd->bottom_type()->is_int()->get_con();
-    int init_offset = init * p.scale_in_bytes() + offset;
-    if (init_offset < 0) { // negative offset from object start?
-      return false;        // may happen in dead loop
-    }
-    if (vw % span == 0) {
-      // If vm is a multiple of span, we use formula (1).
-      if (span > 0) {
-        return (vw - (init_offset % vw)) % span == 0;
-      } else {
-        assert(span < 0, "nonzero stride * scale");
-        return (init_offset % vw) % -span == 0;
-      }
-    } else if (span % vw == 0) {
-      // If span is a multiple of vw, we can simplify formula (1) to:
-      //   (init_offset + i * span) % vw == 0
-      //     =>
-      //   (init_offset % vw) + ((i * span) % vw) == 0
-      //     =>
-      //   init_offset % vw == 0
-      //
-      // Because we add a multiple of vw to the initial offset, the final
-      // offset is a multiple of vw if and only if init_offset is a multiple.
-      //
-      return (init_offset % vw) == 0;
-    }
-  }
-  return false;
-}
 //---------------------------get_vw_bytes_special------------------------
 int SuperWord::get_vw_bytes_special(MemNode* s) {
   // Get the vector width in bytes.
@@ -1117,10 +907,6 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     // several iterations are needed to align memory operations in main-loop even
     // if offset is 0.
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-    // iv_adjustment_in_bytes must be a multiple of elt_size if vector memory
-    // references should be aligned on this platform.
-    assert((ABS(iv_adjustment_in_bytes) % elt_size) == 0 || !vectors_should_be_aligned(),
-           "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {
     // This memory op is not dependent on iv (scale == 0)
@@ -1932,6 +1718,349 @@ void SuperWord::combine_packs() {
   }
 }
 
+#ifndef PRODUCT
+void print_icon_or_idx(Node* n) {
+  if (n == nullptr) {
+    tty->print("(0)");
+  } else if (n->is_ConI()) {
+    jint val = n->as_ConI()->get_int();
+    tty->print("(%d)", val);
+  } else {
+    tty->print("[%d]", n->_idx);
+  }
+}
+#endif
+
+// Find the set of alignment solutions for load/store pack p.
+AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
+  assert(p != nullptr && (p->at(0)->is_Load() || p->at(0)->is_Store()), "only load/store packs");
+
+  // All vector loads and stores need to be memory aligned. The alignment width (aw) in
+  // principle is the vector width (vw). But when vw > ObjectAlignmentInBytes this is
+  // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
+  // aligned. For example, the relative offset between two arrays is only guaranteed to
+  // be divisible by ObjectAlignmentInBytes.
+  uint psize       = p->size();
+  MemNode* mem_ref = p->at(0)->as_Mem();
+  int esize        = mem_ref->memory_size();
+  int vw           = psize * esize;
+  int aw           = MIN2(vw, ObjectAlignmentInBytes);
+
+  CountedLoopEndNode* pre_end = pre_loop_end();
+  assert(pre_end->stride_is_con(), "pre loop stride is constant");
+  int pre_stride   = pre_end->stride_con();
+  int unroll       = _lp->unrolled_count();
+  int main_stride  = iv_stride();
+  Node* init_node  = pre_end->init_trip();
+  assert(pre_stride * unroll == main_stride, "unrolled stride must be consistent");
+
+  SWPointer mem_ref_p(mem_ref, this, nullptr, false);
+  assert(mem_ref_p.has_iv(), "pack must have iv dependency");
+  int scale        = mem_ref_p.scale_in_bytes();
+  int offset       = mem_ref_p.offset_in_bytes();
+  Node* base       = mem_ref_p.base();
+  Node* invar      = mem_ref_p.invar();
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print(" pack mem_ref:");
+    mem_ref->dump();
+    tty->print_cr("  vw = psize(%d) * esize(%d) = %d", psize, esize, vw);
+    tty->print_cr("  aw = min(vw(%d), ObjectAlignmentInBytes(%d)) = %d",
+                  vw, ObjectAlignmentInBytes, aw);
+
+    if (!init_node->is_ConI()) {
+      tty->print("  init:");
+      init_node->dump();
+    }
+
+    if (invar != nullptr) {
+      tty->print("  invar:");
+      invar->dump();
+    }
+
+    // iv = init + pre_iter * pre_stride + j * main_stride
+    tty->print("  iv = init");
+    print_icon_or_idx(init_node);
+    tty->print_cr(" + pre_iter * pre_stride(%d) + j * main_stride(%d)",
+                  pre_stride, main_stride);
+
+    // adr = base + offset + invar + scale * iv
+    tty->print("  adr = base");
+    print_icon_or_idx(base);
+    tty->print(" + offset(%d) + invar", offset);
+    print_icon_or_idx(invar);
+    tty->print_cr(" + scale(%d) * iv", scale);
+  }
+#endif
+
+  // Out of simplicity: variable init values not supported.
+  if (!init_node->is_ConI()) {
+    return AlignmentSolution("variable init values not supported");
+  }
+  jint init        = init_node->as_ConI()->get_int();
+
+  // Out of simplicity: mem_ref with invariant not supported.
+  if (invar != nullptr) {
+    return AlignmentSolution("mem_ref with invariant not supported");
+  }
+
+  // Out of simplicity: non power-of-2 stride not supported.
+  if (!is_power_of_2(abs(pre_stride))) {
+    return AlignmentSolution("non power-of-2 stride not supported");
+  }
+  assert(is_power_of_2(abs(pre_stride)), "pre_stride is power of 2");
+  assert(is_power_of_2(unroll), "unroll factor is power of 2");
+  assert(is_power_of_2(abs(main_stride)), "main_stride is power of 2");
+
+  // Out of simplicity: non power-of-2 scale not supported.
+  if (abs(scale) == 0 || !is_power_of_2(scale)) {
+    return AlignmentSolution("non power-of-2 scale not supported");
+  }
+
+  // We analyze the adress of the mem_ref:
+  //
+  //   adr = base + offset + invar + scale * iv
+  //
+  //       = base + offset + invar + scale * init
+  //                               + scale * pre_iter * pre_stride
+  //                               + scale * j * main_stride
+  //
+  //       = base                                (=0 mod aw)
+  //         + invar                             (=0, invar not allowed)
+  //         + C1                                (const)
+  //         + C2 * pre_iter                     (adjustable term)
+  //         + C3 * j                            (for any j >= 0)
+  //
+  // With the following constants:
+  //
+  int C1 = offset + scale * init;
+  int C2 = scale * pre_stride;
+  int C3 = scale * main_stride;
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print("      = base[%d] + ", base->_idx);
+    tty->print_cr("C1(%d) + C2(%d) * pre_iter + C3(%d) * j", C1, C2, C3);
+    tty->print_cr("  C1 = offset(%d) + scale(%d) * init(%d) = %d",
+                  offset, scale, init, C1);
+    tty->print_cr("  C2 = scale(%d) * pre_stride(%d) = %d",
+                  scale, pre_stride, C2);
+    tty->print_cr("  C3 = scale(%d) * main_stride(%d) = %d",
+                  scale, main_stride, C3);
+  }
+#endif
+
+  // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0
+  // Since "invar = 0" and "base % vw = 0":
+  //
+  //   C1 + C2 * pre_iter + C3 * j = 0 (modulo aw)        (1)
+  //
+  // Since this holds for any j >= 0, we require:
+  //
+  //   C3 % aw = 0                                        (2*)
+  //   C1 + C2 * pre_iter = 0 (modulo aw)                 (3)
+  //
+  int C3_mod_aw = AlignmentSolution::mod(C3, aw);
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print_cr("  EQ(1 ): C1(%d) + C2(%d) * pre_iter + C3(%d) * j = 0 (mod aw(%d))",
+                  C1, C2, C3, aw);
+    tty->print_cr("  EQ(2*): C3(%d) %% aw(%d) = scale(%d) * main_stride(%d) %% aw(%d) = %d = 0",
+                  C3, aw, scale, main_stride, aw, C3_mod_aw);
+  }
+#endif
+
+  if (C3_mod_aw != 0) {
+    // So far this assert has never triggered.
+    assert(false, "EQ(2*) not satisfied");
+    return AlignmentSolution("EQ(2*) not satisfied (cannot align across main-loop iterations)");
+  }
+
+  // We can assume that abs(C2) is a power of 2.
+  // If abs(C2) >= aw, then for any pre_iter >= 0: C2 * pre_iter = 0 (mod aw),
+  // and hence we require (else there is no solution):
+  //
+  //   C1 % aw = 0                                        (4*)
+  //
+  assert(abs(C2) > 0 && is_power_of_2(abs(C2)), "abs(C2) must be power of 2");
+  assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
+  bool abs_C2_ge_aw = abs(C2) >= aw;
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print_cr("  abs(C2(%d)) >= aw(%d) -> %s", C2, aw,
+                  abs_C2_ge_aw ? "true (pre-loop limit adjustment makes no difference)" :
+                                 "false (pre-loop limit adjustment changes alignment)");
+  }
+#endif
+
+  if (abs_C2_ge_aw) {
+    int C1_mod_aw = AlignmentSolution::mod(C1, aw);
+
+#ifndef PRODUCT
+    if (is_trace_align_vector()) {
+      tty->print_cr("  EQ(4*): C1(%d) %% aw(%d) = %d = 0",
+                    C1, aw, C1_mod_aw);
+    }
+#endif
+
+    if (C1_mod_aw != 0) {
+      return AlignmentSolution("EQ(4*) not satisfied (offset and init not aligned)");
+    } else {
+      return AlignmentSolution::make_trivial(); // any pre_iter >= 0
+    }
+  }
+
+  // Otherwise, if abs(C2) < aw, we can find all solutions of pre_iter by
+  // defined in terms of the smallest possible pre_q >= 0 and 0 <= pre_r < pre_q:
+  //
+  //   pre_iter = pre_r + pre_q * m  (for any m >= 0)     (5)
+  //   C1 + C2 * pre_r + C2 * pre_q * m = 0 (modulo aw)   (6)
+  //
+  // Since this holds for any m >= 0, we require:
+  //
+  //   C2 * pre_q = 0 (modulo aw)                         (7)
+  //   C1 + C2 * pre_r = 0 (modulo aw)                    (8*)
+  //
+  // Given that abs(C2) is a powers of 2, and abs(C2) < aw:
+  //
+  int  pre_q = aw / abs(C2); //                           (9*)
+  //
+  // We brute force the solution for pre_r by enumerating
+  // all values 0..pre_q-1 and checking EQ(8*).
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print_cr("  pre_q = aw(%d) / abs(C2(%d)) = %d",
+                  aw, C2, pre_q);
+    tty->print_cr("  EQ(8*): brute force pre_r = 0..%d", pre_q - 1);
+  }
+#endif
+
+  for (int pre_r = 0; pre_r < pre_q; pre_r++) {
+    int EQ8_val = AlignmentSolution::mod(C1 + C2 * pre_r, aw);
+
+#ifndef PRODUCT
+    if (is_trace_align_vector()) {
+      tty->print_cr("   try pre_r = %d: (C1(%d) + C2(%d) * pre_r(%d)) %% aw(%d) = %d = 0",
+                    pre_r, C1, C2, pre_r, aw, EQ8_val);
+    }
+#endif
+
+    if (EQ8_val == 0) {
+      return AlignmentSolution(pre_r, pre_q, mem_ref, aw);
+    }
+  }
+  return AlignmentSolution("EQ(8*) has no solution for pre_r");
+}
+
+// Ensure that all packs can be aligned. We analyze each pack address, and if and how
+// it can be aligned by adjusting the number of pre-loop iterations. This is how the
+// pre-loop and unrolled main-loop look like for memref (adr):
+//
+// iv = init
+// i = 0 // single-iteration counter
+//
+// pre-loop:
+//   iv = init + i * pre_stride
+//   adr = base + offset + invar + scale * iv
+//   adr = base + offset + invar + scale * (init + i * pre_stride)
+//   iv += pre_stride
+//   i++
+//
+// pre_iter = i // number of iterations in the pre-loop
+// iv = init + pre_iter * pre_stride
+//
+// j = 0 // main-loop iteration counter
+// main_stride = unroll * pre_stride
+//
+// main-loop:
+//   i = pre_iter + j * unroll
+//   iv = init + i * pre_stride = init + pre_iter * pre_stride + j * unroll * pre_stride
+//                              = init + pre_iter * pre_stride + j * main_stride
+//   adr = base + offset + invar + scale * iv // must be aligned
+//   iv += main_stride
+//   i  += unroll
+//   j++
+//
+// Find an alignment solution: find the set of pre_iter that memory align all packs.
+// Start with the maximal set (pre_iter >= 0) and filter it with the constraints
+// that the packs impose. If a pack is not compatible with the current solution, we
+// remove it from the packset.
+void SuperWord::filter_packs_for_alignment() {
+  // We do not need to filter if no alignment is required.
+  if (!vectors_should_be_aligned()) {
+    return;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord || is_trace_align_vector()) {
+    tty->print_cr("\nfilter_packs_for_alignment:");
+  }
+#endif
+
+  // Find an alignment solution: find the set of pre_iter that memory align all packs.
+  // Start with the maximal set (pre_iter >= 0) and filter it with the constraints
+  // that the packs impose.
+  AlignmentSolution current = AlignmentSolution::make_trivial();
+  int mem_ops_count = 0;
+  int mem_ops_rejected = 0;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      if (p->at(0)->is_Load() || p->at(0)->is_Store()) {
+        mem_ops_count++;
+        // Find solution for pack p, and filter with current solution.
+        AlignmentSolution s = pack_alignment_solution(p);
+        AlignmentSolution intersect = current.filter(s);
+
+#ifndef PRODUCT
+        if (is_trace_align_vector()) {
+	  tty->print("  solution for pack:         ");
+          s.print();
+	  tty->print("  intersection with current: ");
+          intersect.print();
+        }
+#endif
+
+	if (intersect.is_valid()) {
+          // Solution is compatible.
+          current = intersect;
+	} else {
+          // Solution failed or is not compatible, remove pack i.
+          _packset.at_put(i, nullptr);
+          mem_ops_rejected++;
+        }
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord || is_trace_align_vector()) {
+    tty->print("\n final solution: ");
+    current.print();
+    tty->print_cr(" rejected mem_ops packs: %d of %d", mem_ops_rejected, mem_ops_count);
+    tty->cr();
+  }
+#endif
+
+  assert(current.is_valid(), "solution must be valid");
+  if (!current.is_trivial()) {
+    // Solution is not trivial -> must change pre-limit to acheive alignment
+    set_align_to_ref(current.mem_ref());
+  }
+
+  // Compress list. TODO: improve
+  for (int i = _packset.length() - 1; i >= 0; i--) {
+    Node_List* p1 = _packset.at(i);
+    if (p1 == nullptr) {
+      _packset.remove_at(i);
+    }
+  }
+}
+
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_packs).
@@ -2604,10 +2733,7 @@ bool SuperWord::output() {
 #endif
 
   if (cl->is_main_loop()) {
-    // MUST ENSURE main loop's initial value is properly aligned:
-    //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
-
-    align_initial_loop_index(align_to_ref());
+    adjust_pre_loop_limit_to_align_main_loop_vectors();
 
     // Insert extract (unpack) operations for scalar uses
     for (int i = 0; i < _packset.length(); i++) {
@@ -3850,12 +3976,12 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
   return dep;
 }
 
-
-//----------------------------align_initial_loop_index---------------------------
-// Adjust pre-loop limit so that in main loop, a load/store reference
-// to align_to_ref will be a position zero in the vector.
-//   (iv + k) mod vector_align == 0
-void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
+// Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory align
+// the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
+// iteration count by adjusting the pre-loop limit.
+void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+  MemNode* align_to_ref = _align_to_ref;
+  assert(align_to_ref != nullptr, "align_to_ref must be set");
   assert(lp()->is_main_loop(), "");
   CountedLoopEndNode* pre_end = pre_loop_end();
   Node* pre_opaq1 = pre_end->limit();
