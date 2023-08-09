@@ -64,5 +64,5 @@ bool CompilerThread::can_call_java() const {
 
 // Hide native compiler threads from external view.
 bool CompilerThread::is_hidden_from_external_view() const {
-  return _compiler == nullptr || !_compiler->is_jvmci() || UseJVMCINativeLibrary;
+  return _compiler == nullptr || _compiler->is_hidden_from_external_view();
 }
