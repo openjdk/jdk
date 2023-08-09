@@ -48,7 +48,7 @@ STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
   // Our four static pools
-  static const int _num_pools = 4;
+  static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
 
   Chunk*       _first;
@@ -70,6 +70,7 @@ class ChunkPool {
     _first = chunk;
   }
 
+  // Clear this pool of all contained chunks
   void prune() {
     // Free all chunks while in ThreadCritical lock
     // so NMT adjustment is stable.
@@ -104,6 +105,7 @@ public:
     }
   }
 
+  // Returns an initialized Chunk of requested size
   static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
