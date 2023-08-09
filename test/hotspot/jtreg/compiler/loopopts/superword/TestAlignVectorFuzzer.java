@@ -34,9 +34,9 @@
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
  *                                 -XX:LoopUnrollLimit=10000
- *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVector::test*,128
- *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVector::*
- *                                 compiler.loopopts.superword.TestAlignVector
+ *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
+ *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
 package compiler.loopopts.superword;
 
@@ -62,7 +62,7 @@ import jdk.test.lib.Utils;
 // TODO: benchmark no alignment if not required: benefits vs overhead?
 //       -> more for future: in this change we should still align everything we can
 
-public class TestAlignVector {
+public class TestAlignVectorFuzzer {
 
     static final int RANGE_CON = 1024 * 8;
     static final int ITERATIONS = 10;
