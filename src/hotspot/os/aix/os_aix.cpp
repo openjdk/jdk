@@ -79,6 +79,9 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here (sorted alphabetically)
 #ifdef AIX_XLC_GE_17
@@ -828,7 +831,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%d=%s) for attributes: %s.",
                             thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
-    log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Checking JVM parameter MaxExpectedDataSegmentSize (currently " SIZE_FORMAT "k)  might be helpful", MaxExpectedDataSegmentSize/K);
     LogStream st(Log(os, thread)::info());
     os::Posix::print_rlimit_info(&st);
     os::print_memory_info(&st);
@@ -1113,6 +1117,11 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != nullptr) {
@@ -1120,6 +1129,13 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
+
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
+
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1133,6 +1149,12 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
+
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   }
   return nullptr;
 }

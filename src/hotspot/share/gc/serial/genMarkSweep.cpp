@@ -33,6 +33,7 @@
 #include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -43,6 +44,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
@@ -125,29 +127,31 @@ void GenMarkSweep::invoke_at_safepoint(bool clear_all_softrefs) {
 }
 
 void GenMarkSweep::allocate_stacks() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  // Scratch request on behalf of old generation; will do no allocation.
-  ScratchBlock* scratch = gch->gather_scratch(gch->old_gen(), 0);
+  void* scratch = nullptr;
+  size_t num_words;
+  DefNewGeneration* young_gen = (DefNewGeneration*)GenCollectedHeap::heap()->young_gen();
+  young_gen->contribute_scratch(scratch, num_words);
 
-  // $$$ To cut a corner, we'll only use the first scratch block, and then
-  // revert to malloc.
   if (scratch != nullptr) {
-    _preserved_count_max =
-      scratch->num_words * HeapWordSize / sizeof(PreservedMark);
+    _preserved_count_max = num_words * HeapWordSize / sizeof(PreservedMark);
   } else {
     _preserved_count_max = 0;
   }
 
   _preserved_marks = (PreservedMark*)scratch;
   _preserved_count = 0;
+
+  _preserved_overflow_stack_set.init(1);
 }
 
 
 void GenMarkSweep::deallocate_stacks() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  gch->release_scratch();
+  if (_preserved_count_max != 0) {
+    DefNewGeneration* young_gen = (DefNewGeneration*)GenCollectedHeap::heap()->young_gen();
+    young_gen->reset_scratch();
+  }
 
-  _preserved_overflow_stack.clear(true);
+  _preserved_overflow_stack_set.reclaim();
   _marking_stack.clear();
   _objarray_stack.clear(true);
 }

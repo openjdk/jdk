@@ -130,6 +130,11 @@ public class TestDereferencePath {
         A.byteOffset(PathElement.groupElement("b"), PathElement.dereferenceElement());
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testBadDerefInSlice() {
+        A.sliceHandle(PathElement.groupElement("b"), PathElement.dereferenceElement());
+    }
+
     static final MemoryLayout A_MULTI_NO_TARGET = MemoryLayout.structLayout(
             ValueLayout.ADDRESS.withName("bs")
     );
@@ -137,5 +142,17 @@ public class TestDereferencePath {
     @Test(expectedExceptions = IllegalArgumentException.class)
     void badDerefAddressNoTarget() {
         A_MULTI_NO_TARGET.varHandle(PathElement.groupElement("bs"), PathElement.dereferenceElement());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void badDerefMisAligned() {
+        MemoryLayout struct = MemoryLayout.structLayout(
+            ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
+
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(struct.byteSize() + 1).asSlice(1);
+            VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
+            vhX.set(segment, 42); // should throw
+        }
     }
 }

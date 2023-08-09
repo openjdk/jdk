@@ -530,9 +530,11 @@
   declare_constant(CodeInstaller::REGISTER_PRIMITIVE)                     \
   declare_constant(CodeInstaller::REGISTER_OOP)                           \
   declare_constant(CodeInstaller::REGISTER_NARROW_OOP)                    \
+  declare_constant(CodeInstaller::REGISTER_VECTOR)                        \
   declare_constant(CodeInstaller::STACK_SLOT_PRIMITIVE)                   \
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
+  declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \

@@ -67,21 +67,22 @@
 //    option, you must first specify +UnlockDiagnosticVMOptions.
 //    (This master switch also affects the behavior of -Xprintflags.)
 //
-// EXPERIMENTAL flags are in support of features that are not
-//    part of the officially supported product, but are available
+// EXPERIMENTAL flags are in support of features that may not be
+//    an officially supported part of a product, but may be available
 //    for experimenting with. They could, for example, be performance
 //    features that may not have undergone full or rigorous QA, but which may
 //    help performance in some cases and released for experimentation
 //    by the community of users and developers. This flag also allows one to
 //    be able to build a fully supported product that nonetheless also
 //    ships with some unsupported, lightly tested, experimental features.
+//    Refer to the documentation of any products using this code for details
+//    on support and fitness for production.
 //    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
 //    UnlockExperimentalVMOptions flag, which allows the control and
 //    modification of the experimental flags.
 //
 // Nota bene: neither diagnostic nor experimental options should be used casually,
-//    and they are not supported on production loads, except under explicit
-//    direction from support engineers.
+//    Refer to the documentation of any products using this code for details.
 //
 // MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
@@ -801,7 +802,7 @@ const int ObjectAlignmentInBytes = 8;
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
   /* aggressive prefetching, while still leaving the room for segregating */\
   /* among the distinct pages.                                            */\
-  product(intx, ContendedPaddingWidth, 128,                                 \
+  product(int, ContendedPaddingWidth, 128,                                  \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
           constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
@@ -931,6 +932,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, TraceCompilerThreads, false, DIAGNOSTIC,                    \
              "Trace creation and removal of compiler threads")              \
+                                                                            \
+  product(ccstr, LogClassLoadingCauseFor, nullptr,                          \
+          "Apply -Xlog:class+load+cause* to classes whose fully "           \
+          "qualified name contains this string (\"*\" matches "             \
+          "any class).")                                                    \
                                                                             \
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \
@@ -1109,11 +1115,11 @@ const int ObjectAlignmentInBytes = 8;
           "X, Y and Z in 0=off ; 1=jsr292 only; 2=all methods")             \
           constraint(TypeProfileLevelConstraintFunc, AfterErgo)             \
                                                                             \
-  product(intx, TypeProfileArgsLimit,     2,                                \
+  product(int, TypeProfileArgsLimit,     2,                                 \
           "max number of call arguments to consider for type profiling")    \
           range(0, 16)                                                      \
                                                                             \
-  product(intx, TypeProfileParmsLimit,    2,                                \
+  product(int, TypeProfileParmsLimit,    2,                                 \
           "max number of incoming parameters to consider for type profiling"\
           ", -1 for all")                                                   \
           range(-1, 64)                                                     \
@@ -1238,7 +1244,7 @@ const int ObjectAlignmentInBytes = 8;
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer. "              \
           "-1: use system-specific value (automatically determined")        \
-          constraint(AllocatePrefetchDistanceConstraintFunc,AfterMemoryInit)\
+          range(-1, 512)                                                    \
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
@@ -1286,9 +1292,10 @@ const int ObjectAlignmentInBytes = 8;
           "(0 means none)")                                                 \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, SafepointTimeoutDelay, 10000,                               \
-          "Delay in milliseconds for option SafepointTimeout")              \
-          range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
+  product(double, SafepointTimeoutDelay, 10000,                             \
+          "Delay in milliseconds for option SafepointTimeout; "             \
+          "supports sub-millisecond resolution with fractional values.")    \
+          range(0, max_jlongDouble LP64_ONLY(/MICROUNITS))                  \
                                                                             \
   product(bool, UseSystemMemoryBarrier, false,                              \
           "Try to enable system memory barrier if supported by OS")         \
@@ -1376,7 +1383,7 @@ const int ObjectAlignmentInBytes = 8;
           "Limit on traps (of one kind) at a particular BCI")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                \
+  product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \
@@ -1585,6 +1592,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(intx, TraceBytecodesAt, 0,                                        \
           "Trace bytecodes starting with specified bytecode number")        \
+                                                                            \
+  develop(intx, TraceBytecodesStopAt, 0,                                    \
+          "Stop bytecode tracing at the specified bytecode number")         \
                                                                             \
   /* Priorities */                                                          \
   product_pd(bool, UseThreadPriorities,  "Use native thread priorities")    \
@@ -1975,6 +1985,13 @@ const int ObjectAlignmentInBytes = 8;
           "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
+                                                                            \
+  product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \
+          "Interval, in ms, at which the JVM will trim the native heap if " \
+          "the platform supports that. Lower values will reclaim memory "   \
+          "more eagerly at the cost of higher overhead. A value of 0 "      \
+          "(default) disables native heap trimming.")                       \
+          range(0, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 

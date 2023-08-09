@@ -463,7 +463,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit),
+            configure_args: concat(common.configure_args_32bit,
+                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -1187,9 +1188,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7.2",
+            version: "7.3",
             build_number: "1",
-            file: "bundles/jtreg-7.2+1.zip",
+            file: "bundles/jtreg-7.3+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1519,7 +1520,7 @@ var getVersionNumbers = function () {
 var isWsl = function (input) {
     return ( input.build_osenv == "wsl"
              || (input.build_os == "linux"
-                 && java.lang.System.getProperty("os.version").contains("Microsoft")));
+                 && java.lang.System.getProperty("os.version").toLowerCase().contains("microsoft")));
 }
 
 var error = function (s) {

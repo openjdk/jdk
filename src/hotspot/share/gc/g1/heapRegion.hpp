@@ -483,7 +483,7 @@ public:
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
-  void note_evacuation_failure(bool during_concurrent_start);
+  void note_evacuation_failure();
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
@@ -529,7 +529,7 @@ public:
   }
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure();
+  void handle_evacuation_failure(bool retain);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

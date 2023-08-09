@@ -228,6 +228,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
                  $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
+      LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBFALLBACKLINKER)

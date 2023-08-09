@@ -1,25 +1,24 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
@@ -123,17 +122,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 2%i4"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 2%a8"
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 4%c2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -142,7 +141,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_INT.withName("z").withByteAlignment(1)
                             ).withByteAlignment(1)),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -152,7 +151,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withName("z").withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%s2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -160,7 +159,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Layout alignment must be natural alignment"
+                    "Unsupported layout: 1%i4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -173,17 +172,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
-                    "Layout does not have the right byte order"
+                    "Unsupported layout: I4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
