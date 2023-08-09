@@ -75,13 +75,13 @@ public class ModuleWriter extends HtmlDocletWriter {
      * Map of module elements and modifiers required by this module.
      */
     private final Map<ModuleElement, Content> requires
-            = new TreeMap<>(comparators.makeModuleComparator());
+            = new TreeMap<>(comparators.moduleComparator());
 
     /**
      * Map of indirect modules and modifiers, transitive closure, required by this module.
      */
     private final Map<ModuleElement, Content> indirectModules
-            = new TreeMap<>(comparators.makeModuleComparator());
+            = new TreeMap<>(comparators.moduleComparator());
 
     /**
      * Details about a package in a module.
@@ -111,44 +111,44 @@ public class ModuleWriter extends HtmlDocletWriter {
     /**
      * Map of packages of this module, and details of whether they are exported or opened.
      */
-    private final Map<PackageElement, PackageEntry> packages = new TreeMap<>(utils.comparators.makePackageComparator());
+    private final Map<PackageElement, PackageEntry> packages = new TreeMap<>(utils.comparators.packageComparator());
 
     /**
      * Map of indirect modules (transitive closure) and their exported packages.
      */
     private final Map<ModuleElement, SortedSet<PackageElement>> indirectPackages
-            = new TreeMap<>(comparators.makeModuleComparator());
+            = new TreeMap<>(comparators.moduleComparator());
 
     /**
      * Map of indirect modules (transitive closure) and their open packages.
      */
     private final Map<ModuleElement, SortedSet<PackageElement>> indirectOpenPackages
-            = new TreeMap<>(comparators.makeModuleComparator());
+            = new TreeMap<>(comparators.moduleComparator());
 
     /**
      * Set of services used by the module.
      */
     private final SortedSet<TypeElement> uses
-            = new TreeSet<>(comparators.makeAllClassesComparator());
+            = new TreeSet<>(comparators.allClassesComparator());
 
     /**
      * Map of services used by the module and specified using @uses javadoc tag, and description.
      */
     private final Map<TypeElement, Content> usesTrees
-            = new TreeMap<>(comparators.makeAllClassesComparator());
+            = new TreeMap<>(comparators.allClassesComparator());
 
     /**
      * Map of services provided by this module, and set of its implementations.
      */
     private final Map<TypeElement, SortedSet<TypeElement>> provides
-            = new TreeMap<>(comparators.makeAllClassesComparator());
+            = new TreeMap<>(comparators.allClassesComparator());
 
     /**
      * Map of services provided by the module and specified using @provides javadoc tag, and
      * description.
      */
     private final Map<TypeElement, Content> providesTrees
-            = new TreeMap<>(comparators.makeAllClassesComparator());
+            = new TreeMap<>(comparators.allClassesComparator());
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -165,12 +165,8 @@ public class ModuleWriter extends HtmlDocletWriter {
         computeModulesData();
     }
 
-    /**
-     * Build the module summary.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildModuleDoc();
     }
 
@@ -186,7 +182,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
         addModuleFooter();
         printDocument(content);
-        var docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
+        var docFilesHandler = configuration.getWriterFactory().newDocFilesHandler(mdle);
         docFilesHandler.copyDocFiles();
     }
 
@@ -348,7 +344,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                 // Include package if in details mode, or exported to all (i.e. targetModules == null)
                 if (moduleMode == ModuleMode.ALL || targetMdles == null) {
                     PackageEntry packageEntry = packages.computeIfAbsent(p, pkg -> new PackageEntry());
-                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.comparators.makeModuleComparator());
+                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.comparators.moduleComparator());
                     if (targetMdles != null) {
                         mdleList.addAll(targetMdles);
                     }
@@ -366,7 +362,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                 // Include package if in details mode, or opened to all (i.e. targetModules == null)
                 if (moduleMode == ModuleMode.ALL || targetMdles == null) {
                     PackageEntry packageEntry = packages.computeIfAbsent(p, pkg -> new PackageEntry());
-                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.comparators.makeModuleComparator());
+                    SortedSet<ModuleElement> mdleList = new TreeSet<>(utils.comparators.moduleComparator());
                     if (targetMdles != null) {
                         mdleList.addAll(targetMdles);
                     }
@@ -378,7 +374,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         // Get all the exported and opened packages, for the transitive closure of the module, to be displayed in
         // the indirect packages tables.
         dependentModules.forEach((module, mod) -> {
-            SortedSet<PackageElement> exportedPackages = new TreeSet<>(utils.comparators.makePackageComparator());
+            SortedSet<PackageElement> exportedPackages = new TreeSet<>(utils.comparators.packageComparator());
             ElementFilter.exportsIn(module.getDirectives()).forEach(directive -> {
                 PackageElement pkg = directive.getPackage();
                 if (shouldDocument(pkg)) {
@@ -393,7 +389,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             if (!exportedPackages.isEmpty()) {
                 indirectPackages.put(module, exportedPackages);
             }
-            SortedSet<PackageElement> openPackages = new TreeSet<>(utils.comparators.makePackageComparator());
+            SortedSet<PackageElement> openPackages = new TreeSet<>(utils.comparators.packageComparator());
             if (module.isOpen()) {
                 openPackages.addAll(utils.getModulePackageMap().getOrDefault(module, Set.of()));
             } else {
@@ -425,7 +421,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             TypeElement u = directive.getService();
             if (shouldDocument(u)) {
                 List<? extends TypeElement> implList = directive.getImplementations();
-                SortedSet<TypeElement> implSet = new TreeSet<>(utils.comparators.makeAllClassesComparator());
+                SortedSet<TypeElement> implSet = new TreeSet<>(utils.comparators.allClassesComparator());
                 implSet.addAll(implList);
                 provides.put(u, implSet);
             }
@@ -609,7 +605,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     /**
      * Add the package summary for the module.
      *
-     * @param li
+     * @param li the tree to which the summary will be added
      */
     public void addPackageSummary(HtmlTree li) {
         var table = new Table<PackageElement>(HtmlStyle.summaryTable)
@@ -681,6 +677,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            // TODO: consider deprecation info, addPackageDeprecationInfo
             addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);

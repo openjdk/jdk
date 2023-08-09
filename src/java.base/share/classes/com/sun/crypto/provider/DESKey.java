@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.DESKeySpec;
 
@@ -108,26 +109,24 @@ final class DESKey implements SecretKey {
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-        for (int i = 1; i < this.key.length; i++) {
-            retval += this.key[i] * i;
-        }
-        return(retval ^= "des".hashCode());
+        return Arrays.hashCode(this.key) ^ "des".hashCode();
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof SecretKey))
+        if (!(obj instanceof SecretKey that))
             return false;
 
-        String thatAlg = ((SecretKey)obj).getAlgorithm();
+        String thatAlg = that.getAlgorithm();
         if (!(thatAlg.equalsIgnoreCase("DES")))
             return false;
 
-        byte[] thatKey = ((SecretKey)obj).getEncoded();
+        byte[] thatKey = that.getEncoded();
         boolean ret = MessageDigest.isEqual(this.key, thatKey);
         java.util.Arrays.fill(thatKey, (byte)0x00);
         return ret;

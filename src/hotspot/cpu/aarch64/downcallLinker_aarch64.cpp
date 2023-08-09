@@ -168,7 +168,7 @@ void DowncallStubGenerator::generate() {
   assert(_abi._shadow_space_bytes == 0, "not expecting shadow space on AArch64");
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
-  bool should_save_return_value = !_needs_return_buffer && _needs_transition;
+  bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 
