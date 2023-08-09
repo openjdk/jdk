@@ -88,7 +88,7 @@ public class NextDropActionTest {
             final DragSourceListener dsl = new DragSourceAdapter() {
                 boolean firstCall = true;
                 public void dragDropEnd(DragSourceDropEvent e) {
-                    System.err.println("DragSourseListener.dragDropEnd(): " +
+                    System.err.println("DragSourceListener.dragDropEnd(): " +
                             " firstCall=" + firstCall +
                             " drop action=" + e.getDropAction());
                     if (firstCall) {
@@ -140,18 +140,22 @@ public class NextDropActionTest {
                 robot.keyRelease(KeyEvent.VK_CONTROL);
                 LOCK.wait(WAIT_TIMEOUT);
             }
+
             if (!firstEnd) {
-                System.err.println("DragSourseListener.dragDropEnd() " +
+                System.err.println("DragSourceListener.dragDropEnd() " +
                         "was not called, returning");
                 return;
             }
+
+            robot.delay(1000);
 
             synchronized (LOCK) {
                 Util.doDragDrop(robot, startPoint, endPoint);
                 LOCK.wait(WAIT_TIMEOUT);
             }
+
             if (!secondEnd) {
-                System.err.println("DragSourseListener.dragDropEnd() " +
+                System.err.println("DragSourceListener.dragDropEnd() " +
                         "was not called, returning");
                 return;
             }
