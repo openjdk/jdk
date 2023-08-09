@@ -627,7 +627,7 @@ ConcurrentHashTable<CONFIG, F>::
     if (lookup_f.equals(node->value())) {
       break;
     }
-    if (have_dead != nullptr && !(*have_dead) && lookup_f.is_dead(node->value())) {
+    if (!(*have_dead) && lookup_f.is_dead(node->value())) {
       *have_dead = true;
     }
     node = node->next();
@@ -863,7 +863,7 @@ template <typename LOOKUP_FUNC>
 inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
   internal_get(Thread* thread, LOOKUP_FUNC& lookup_f, bool* grow_hint)
 {
-  bool clean = nullptr;
+  bool clean = false;
   size_t loops = 0;
   VALUE* ret = nullptr;
 
