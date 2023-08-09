@@ -2196,6 +2196,18 @@ bool SuperWord::profitable(Node_List* p) {
       }
     }
   }
+  if (p0->is_CMove()) {
+    // Verify that CMove has a matching Bool pack
+    BoolNode* bol = p0->in(1)->as_Bool();
+    if (bol == nullptr || my_pack(bol) == nullptr) {
+      return false;
+    }
+    // Verify that Bool has a matching Cmp pack
+    CmpNode* cmp = bol->in(1)->as_Cmp();
+    if (cmp == nullptr || my_pack(cmp) == nullptr) {
+      return false;
+    }
+  }
   return true;
 }
 
