@@ -351,6 +351,12 @@ public class TestAdaptVarHandles {
         assertEquals(value, 42);
     }
 
+    @Test
+    public void testCollectCoordinatesVoidFilterType() {
+        VarHandle handle = MethodHandles.collectCoordinates(intHandle, 0, VOID_FILTER);
+        assertEquals(handle.coordinateTypes(), List.of(String.class, MemorySegment.class));
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadCollectCoordinatesNegativePos() {
         MethodHandles.collectCoordinates(intHandle, -1, SUM_OFFSETS);
@@ -364,11 +370,6 @@ public class TestAdaptVarHandles {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadCollectCoordinatesWrongFilterType() {
         MethodHandles.collectCoordinates(intHandle, 0, SUM_OFFSETS);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadCollectCoordinatesWrongVoidFilterType() {
-        MethodHandles.collectCoordinates(intHandle, 0, VOID_FILTER);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

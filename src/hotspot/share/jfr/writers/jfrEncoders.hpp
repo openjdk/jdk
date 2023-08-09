@@ -77,15 +77,15 @@ inline size_t BigEndianEncoderImpl::encode(T value, u1* dest) {
        return 0;
      }
      case 2: {
-       Bytes::put_Java_u2(dest, value);
+       Bytes::put_Java_u2(dest, static_cast<u2>(value));
        return 2;
      }
      case 4: {
-       Bytes::put_Java_u4(dest, value);
+       Bytes::put_Java_u4(dest, static_cast<u4>(value));
        return 4;
      }
      case 8: {
-       Bytes::put_Java_u8(dest, value);
+       Bytes::put_Java_u8(dest, static_cast<u8>(value));
        return 8;
      }
   }

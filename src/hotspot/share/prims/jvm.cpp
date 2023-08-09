@@ -608,7 +608,8 @@ JVM_END
 
 JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
   // as implemented in the classic virtual machine; return 0 if object is null
-  return handle == nullptr ? 0 : ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)) ;
+  return handle == nullptr ? 0 :
+         checked_cast<jint>(ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)));
 JVM_END
 
 
@@ -1016,8 +1017,11 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                   ik->is_hidden() ? "is hidden" : "is not hidden");
     }
   }
-  assert(Reflection::is_same_class_package(lookup_k, ik),
-         "lookup class and defined class are in different packages");
+
+  if ((!is_hidden || is_nestmate) && !Reflection::is_same_class_package(lookup_k, ik)) {
+    // non-hidden class or nestmate class must be in the same package as the Lookup class
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class and defined class are in different packages");
+  }
 
   if (init) {
     ik->initialize(CHECK_NULL);
@@ -1589,7 +1593,7 @@ static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   int modifiers = java_lang_reflect_Field::modifiers(reflected);
 
   InstanceKlass* ik = InstanceKlass::cast(k);
-  intptr_t offset = ik->field_offset(slot);
+  int offset = ik->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class

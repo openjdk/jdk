@@ -3750,6 +3750,47 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   return stub;
 }
 
+// For c2: call to return a leased buffer.
+RuntimeStub* StubGenerator::generate_jfr_return_lease() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  CodeBuffer code("jfr_return_lease", 1024, 64);
+  MacroAssembler* _masm = new MacroAssembler(&code);
+  address start = __ pc();
+
+  __ enter();
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
+  __ movptr(c_rarg0, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+  __ reset_last_Java_frame(true);
+
+  __ leave();
+  __ ret(0);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
 #endif // INCLUDE_JFR
 
 // Continuation point for throwing of implicit exceptions that are
@@ -3949,9 +3990,17 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  JFR_ONLY(generate_jfr_stubs();)
 }
+
+#if INCLUDE_JFR
+void StubGenerator::generate_jfr_stubs() {
+  StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+  StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+  StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+  StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+}
+#endif
 
 void StubGenerator::generate_final_stubs() {
   // Generates the rest of stubs and initializes the entry points
