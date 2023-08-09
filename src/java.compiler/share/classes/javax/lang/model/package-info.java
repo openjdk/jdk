@@ -61,7 +61,10 @@
  * the {@link javax.lang.model.type type} package models <em>uses</em>
  * of types. In general, distinct uses can have individualized
  * information separate from the information associated with the
- * definition. For example, consider the uses of {@code
+ * definition. In some sense, the information in the definition is
+ * shared by all the uses.
+
+ * <p>For example, consider the uses of {@code
  * java.lang.String} in the string processing method {@code
  * identityOrEmpty} below:
  *
@@ -82,48 +85,7 @@
  * cases. The <em>definition</em> of {@code java.lang.String} itself
  * is annotated with neither of the type annotations in question.
  *
- * <p>Due to the {@code javax.lang.model} API already including a
- * separation between definitions ({@link javax.lang.model.element})
- * and uses ({@link javax.lang.model.type}), adding support for type
- * annotations as a language feature in the API was straightforward:
- *
- * <ul>
- *
- * <li>Existing annotation-reading methods were pulled out of {@link
- * javax.lang.model.element.Element} into a new interface, {@link
- * AnnotatedConstruct}.
- *
- * <li>{@link javax.lang.model.element.Element} extended {@code
- * AnnotatedConstruct}, preserving the existing ability to read
- * declaration annotations.
- *
- * <li>{@link javax.lang.model.type.TypeMirror} was retrofitted to
- * extend {@code AnnotatedConstruct}, adding the ability to read type
- * annotations.
- *
- * </ul>
- *
- * In contrast, core reflection did <em>not</em> have a separation
- * between definition and usages for types, {@link java.lang.Class
- * java.lang.Class} is used for both purposes. When support for type
- * annotations was added to that API, a new interface hierarchy of
- * {@linkplain java.lang.reflect.AnnotatedType annotated types} needed
- * to be added, with separate interfaces to model {@linkplain
- * java.lang.reflect.AnnotatedArrayType arrays}, {@linkplain
- * java.lang.reflect.AnnotatedParameterizedType parameterized types},
- * {@linkplain java.lang.reflect.AnnotatedTypeVariable type
- * variables}, and {@linkplain java.lang.reflect.AnnotatedWildcardType
- * wildcards}. In addition, new methods returning these new annotated
- * type objects had to be added to {@code java.lang.Class}, {@code
- * java.lang.Method}, {@code java.lang.Constructor}, and elsewhere.
- *
- * <p> The core reflection updates to support type annotations needed
- * many more new interfaces and new methods compared to the {@code
- * javax.lang.model} changes because of the lack of separation between
- * the definition and use of a type. The {@linkplain
- * java.lang.reflect.AnnotatedType annotated type hierarchy} was
- * needed to provide the structure to support use-specific
- * information.
+ * <p>TODO: Short example of java.util.Set instantiations.
  *
  * <h3><a id=elementTypeMapping>Mapping between Elements and Types</a></h3>
  *
@@ -152,6 +114,8 @@
  * java.util.Set<E>}, and the type {@code java.util.Set<String>} would
  * all {@linkplain javax.lang.model.type.DeclaredType#asElement() map
  * to} the element for {@code java.util.Set}.
+
+ * TODO: discuss mapping via Types utility method (also covers modules and packages)
  *
  * @since 1.6
  *
