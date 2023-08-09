@@ -105,7 +105,7 @@ public class SendReceiveMaxSize {
                     .filter(Predicate.not(InetAddress::isLoopbackAddress))
                     .findFirst()
                     .orElse((Inet6Address) InetAddress.getByName("::1"));
-	    if (Platform.isAix()) {
+            if (Platform.isAix()) {
                 testcases.add(new Object[]{
                         supplier(() -> DatagramChannel.open()),
                         IPV6_SNDBUF_AIX,
@@ -117,7 +117,7 @@ public class SendReceiveMaxSize {
                         IPv6Addr
                 });
             }
-	    else
+            else
             {
                 testcases.add(new Object[]{
                         supplier(() -> DatagramChannel.open()),
@@ -158,8 +158,8 @@ public class SendReceiveMaxSize {
                     if (sender.getOption(SO_SNDBUF) < capacity)
                         sender.setOption(SO_SNDBUF, capacity);
                     if (receiver.getOption(SO_RCVBUF) < capacity+28){
-			throw new Error("system value " + receiver.getOption(SO_RCVBUF) + " for UDP receive buffer too small to hold capacity " + capacity);
-		    }
+                        throw new Error("system value " + receiver.getOption(SO_RCVBUF) + " for UDP receive buffer too small to hold capacity " + capacity);
+                    }
                 }
                 byte[] testData = new byte[capacity];
                 random.nextBytes(testData);
