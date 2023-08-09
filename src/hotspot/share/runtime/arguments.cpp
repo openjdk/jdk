@@ -1177,7 +1177,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  int  quote_c        = 0;
+  char quote_c        = 0;
   bool result         = true;
 
   char c = checked_cast<char>(getc(stream));
