@@ -2343,22 +2343,22 @@ class MethodArityHistogram {
 
   void print_histogram_helper(int n, uint64_t* histo, const char* name) {
     const int N = MIN2(9, n);
-    uint64_t sum = 0;
-    uint64_t weighted_sum = 0;
-    for (int i = 0; i <= n; i++) { sum += histo[i]; weighted_sum += (i*histo[i]); }
+    double sum = 0;
+    double weighted_sum = 0;
+    for (int i = 0; i <= n; i++) { sum += (double)histo[i]; weighted_sum += (double)(i*histo[i]); }
     if (sum >= 1) { // prevent divide by zero or divide overflow
-      uint64_t rest = sum;
-      double percent = (double)sum / 100;
+      double rest = sum;
+      double percent = sum / 100;
       for (int i = 0; i <= N; i++) {
-        rest -= histo[i];
+        rest -= (double)histo[i];
         tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], (double)histo[i] / percent);
       }
-      tty->print_cr("rest: " INT64_FORMAT_W(12) " (%5.1f%%)", rest, (double)rest / percent);
-      tty->print_cr("(avg. %s = %3.1f, max = %d)", name, (double)weighted_sum / (double)sum, n);
+      tty->print_cr("rest: " INT64_FORMAT_W(12) " (%5.1f%%)", (int64_t)rest, rest / percent);
+      tty->print_cr("(avg. %s = %3.1f, max = %d)", name, weighted_sum / sum, n);
       tty->print_cr("(total # of compiled calls = " INT64_FORMAT_W(14) ")", _total_compiled_calls);
       tty->print_cr("(max # of compiled calls   = " INT64_FORMAT_W(14) ")", _max_compiled_calls_per_method);
     } else {
-      tty->print_cr("Histogram generation failed for %s. n = %d, sum = %zu", name, n, sum);
+      tty->print_cr("Histogram generation failed for %s. n = %d, sum = %7.5f", name, n, sum);
     }
   }
 
