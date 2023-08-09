@@ -265,7 +265,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(CITimeEach)                                                 \
   do_uintx_flag(CodeCacheSegmentSize)                                      \
   do_intx_flag(CodeEntryAlignment)                                         \
-  do_intx_flag(ContendedPaddingWidth)                                      \
+  do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \
   do_bool_flag(EnableContended)                                            \

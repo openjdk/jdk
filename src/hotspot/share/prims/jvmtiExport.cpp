@@ -1066,6 +1066,9 @@ bool JvmtiExport::has_early_class_hook_env() {
 
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
+// This flag is read by C2 during VM internal objects allocation
+int JvmtiExport::_should_notify_object_alloc = 0;
+
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
