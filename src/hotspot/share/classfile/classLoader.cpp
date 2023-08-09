@@ -803,7 +803,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
 // Note that at dump time, ClassLoader::_app_classpath_entries are NOT used for
 // loading app classes. Instead, the app class are loaded by the
 // jdk/internal/loader/ClassLoaders$AppClassLoader instance.
-void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
+bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
                                                ClassPathEntry* entry,
                                                bool check_for_duplicates) {
 #if INCLUDE_CDS
@@ -813,8 +813,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
     while (e != nullptr) {
       if (strcmp(e->name(), entry->name()) == 0) {
         // entry already exists
-        delete entry;
-        return;
+        return false;
       }
       e = e->next();
     }
@@ -832,6 +831,7 @@ void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   if (entry->is_jar_file()) {
     ClassLoaderExt::process_jar_manifest(current, entry);
   }
+  return true;
 #endif
 }
 
@@ -855,7 +855,10 @@ bool ClassLoader::update_class_path_entry_list(JavaThread* current,
     if (is_boot_append) {
       add_to_boot_append_entries(new_entry);
     } else {
-      add_to_app_classpath_entries(current, new_entry, check_for_duplicates);
+      if (!add_to_app_classpath_entries(current, new_entry, check_for_duplicates)) {
+        // new_entry is not saved, free it now
+        delete new_entry;
+      }
     }
     return true;
   } else {
