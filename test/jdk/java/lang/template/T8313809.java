@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,40 +21,23 @@
  * questions.
  */
 
-package listpkg;
-
-
-/**
- * Example class containing "list" matching full name.
- * @param <E> type parameter
+/*
+ * @test
+ * @bug 8313809
+ * @summary String template fails with java.lang.StringIndexOutOfBoundsException if last fragment is UTF16
+.
+ * @enablePreview true
  */
-public interface List<E> {
 
-    List add(E e);
+import static java.util.FormatProcessor.FMT;
 
-    void remove(int i);
-
-    int size();
-
-    static <E> List<E> of() {
-        return null;
-    }
-    static <E> List<E> of(E e1) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3, E e4) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return null;
-    }
-    static <E> List<E> of(E... elements) {
-        return null;
+public class T8313809 {
+    public static void main(final String[] args) throws Exception {
+        double sum = 12.34;
+        final String message = FMT."The sum is : %f\{sum} €"; // this fails
+        if (!message.equals("The sum is : 12.340000 €")) {
+            throw new RuntimeException("Incorrect result");
+        }
     }
 }
+

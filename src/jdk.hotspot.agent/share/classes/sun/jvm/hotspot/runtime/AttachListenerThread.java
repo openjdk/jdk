@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,42 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package listpkg;
+package sun.jvm.hotspot.runtime;
 
+import java.io.*;
 
-/**
- * Example class containing "list" matching full name.
- * @param <E> type parameter
- */
-public interface List<E> {
+import sun.jvm.hotspot.debugger.Address;
 
-    List add(E e);
+public class AttachListenerThread extends JavaThread {
 
-    void remove(int i);
+  public AttachListenerThread (Address addr) {
+    super(addr);
+  }
 
-    int size();
+  public boolean isJavaThread() { return false; }
 
-    static <E> List<E> of() {
-        return null;
-    }
-    static <E> List<E> of(E e1) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3, E e4) {
-        return null;
-    }
-    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return null;
-    }
-    static <E> List<E> of(E... elements) {
-        return null;
-    }
+  public boolean isAttachListenerThread() { return true; }
+
 }
