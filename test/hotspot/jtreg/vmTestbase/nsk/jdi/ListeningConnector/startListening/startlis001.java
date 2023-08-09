@@ -103,16 +103,13 @@ public class startlis001 {
          * matches the address which was set via connector's arguments.
          * Empty host address causes listening for local connections only (loopback interface).
          * */
-        String hostname = "localhost";
         List<String> validAddresses = new LinkedList<>();
-        validAddresses.add(hostname);
+        makeValidAddresses("localhost", validAddresses);
         try {
-            Arrays.stream(InetAddress.getAllByName(hostname))
-                    .forEach(address -> validAddresses.add(address.getHostAddress()));
+            makeValidAddresses(InetAddress.getLocalHost().getHostName(),
+                               validAddresses);
         } catch (UnknownHostException e) {
-            log.complain("FAILURE: caught UnknownHostException " +
-                    e.getMessage());
-            totalRes = false;
+            // cannot resolve the local host name, skip it
         }
 
         port = argHandler.getTransportPortIfNotDynamic();
@@ -204,6 +201,18 @@ public class startlis001 {
 
         if (totalRes) return PASSED;
         else return FAILED;
+    }
+
+    private void makeValidAddresses(String hostname, List<String> validAddresses) {
+        validAddresses.add(hostname);
+        try {
+            Arrays.stream(InetAddress.getAllByName(hostname))
+                    .forEach(address -> validAddresses.add(address.getHostAddress()));
+        } catch (UnknownHostException e) {
+            log.complain("FAILURE: caught UnknownHostException " +
+                    e.getMessage());
+            totalRes = false;
+        }
     }
 
     private VirtualMachine attachTarget() {
