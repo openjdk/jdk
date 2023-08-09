@@ -167,16 +167,14 @@ public class ListFormat extends Format {
 
         // Validate two/three patterns, if given. Otherwise, generate them
         if (patterns[TWO] != null && !patterns[TWO].isEmpty()) {
-            m = PARSE_TWO.matcher(patterns[TWO]);
-            if (!m.matches()) {
+            if (!PARSE_TWO.matcher(patterns[TWO]).matches()) {
                 throw new IllegalArgumentException("pattern for two is incorrect: " + patterns[TWO]);
             }
         } else {
             patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
         }
         if (patterns[THREE] != null && !patterns[THREE].isEmpty()) {
-            m = PARSE_THREE.matcher(patterns[THREE]);
-            if (!m.matches()) {
+            if (!PARSE_THREE.matcher(patterns[THREE]).matches()) {
                 throw new IllegalArgumentException("pattern for three is incorrect: " + patterns[THREE]);
             }
         } else {
