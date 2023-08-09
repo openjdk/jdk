@@ -136,11 +136,11 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     assert(false, "buffer_length too small");
     return nullptr;
   }
-  const int milliseconds_per_microsecond = 1000;
+  const int milliseconds_per_second = 1000;
   const time_t seconds_since_19700101 =
-    milliseconds_since_19700101 / milliseconds_per_microsecond;
+    milliseconds_since_19700101 / milliseconds_per_second;
   const int milliseconds_after_second =
-    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_microsecond);
+    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_second);
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
   if (utc) {

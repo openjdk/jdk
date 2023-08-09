@@ -1579,8 +1579,8 @@ void Arguments::set_heap_size() {
   // then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    julong reasonable_max = (julong)((phys_mem * (julong)MaxRAMPercentage) / 100);
-    const julong reasonable_min = (julong)((phys_mem * (julong)MinRAMPercentage) / 100);
+    julong reasonable_max = (julong)(((double)phys_mem * MaxRAMPercentage) / 100);
+    const julong reasonable_min = (julong)(((double)phys_mem * MinRAMPercentage) / 100);
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
       reasonable_max = reasonable_min;
@@ -1664,7 +1664,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      julong reasonable_initial = (julong)((phys_mem * (julong)InitialRAMPercentage) / 100);
+      julong reasonable_initial = (julong)(((double)phys_mem * InitialRAMPercentage) / 100);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
@@ -2735,7 +2735,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
 
-      if (FLAG_SET_CMDLINE(MaxTenuringThreshold, (uint)max_tenuring_thresh) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(MaxTenuringThreshold, max_tenuring_thresh) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
 
