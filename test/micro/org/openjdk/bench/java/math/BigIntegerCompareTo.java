@@ -24,6 +24,7 @@
 package org.openjdk.bench.java.math;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,57 +38,52 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 3, time = 5)
+@Measurement(iterations = 3, time = 5)
 @Fork(value = 3)
 public class BigIntegerCompareTo {
 
-    // The below list was derived from stats gathered from running tests in
-    // the security area, which is the biggest client of BigInteger in JDK.
-    //
-    // Every time bigInteger1.compareTo(bigInteger2) was called, the
-    // Math.min(bigInteger1.bitLength(), bigInteger2.bitLength()) value
-    // was recorded. Recorded values were then sorted by frequency in
-    // descending order. Top 20 of the most frequent values were then picked.
-    @Param({
-              "19",
-              "18",
-              "17",
-              "16",
-               "1",
-              "15",
-              "14",
-               "2",
-              "13",
-               "0",
-              "12",
-            "1536",
-            "1024",
-            "1535",
-            "1023",
-              "11",
-             "512",
-             "256",
-             "255",
-            "1534",
-    })
-    private int nBits;
+    public enum Group {S, M, L}
 
-    private BigInteger x, y;
+    @Param({"S", "M", "L"})
+    private Group group;
+
+    private static final int MAX_LENGTH = Arrays.stream(Group.values())
+            .mapToInt(p -> getNumbersOfBits(p).length)
+            .max()
+            .getAsInt();
+
+    private BigInteger[] numbers;
 
     @Setup
     public void setup() {
-        var p = Shared.createPair(nBits);
-        x = p.x();
-        y = p.y();
+        int[] nBits = getNumbersOfBits(group);
+        numbers = new BigInteger[2 * MAX_LENGTH];
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            var p = Shared.createPair(nBits[i % nBits.length]);
+            numbers[2 * i] = p.x();
+            numbers[2 * i + 1] = p.y();
+        }
+    }
+
+    private static int[] getNumbersOfBits(Group p) {
+        // the below arrays were derived from stats gathered from running tests in
+        // the security area, which is the biggest client of BigInteger in JDK
+        return switch (p) {
+            case S -> new int[]{0, 1, 2, 11, 12, 13, 14, 15, 16, 17, 18, 19};
+            case M -> new int[]{255, 256, 512};
+            case L -> new int[]{1023, 1024, 1534, 1535, 1536};
+        };
     }
 
     @Benchmark
-    public int testCompareTo() {
-        return x.compareTo(y);
+    public void testCompareTo(Blackhole bh) {
+        for (int i = 0; i < numbers.length; i += 2)
+            bh.consume(numbers[i].compareTo(numbers[i + 1]));
     }
 }

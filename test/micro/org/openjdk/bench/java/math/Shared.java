@@ -99,7 +99,7 @@ public final class Shared {
 
     public record Pair(BigInteger x, BigInteger y) {
         public Pair {
-            if (x.signum() != y.signum())
+            if (x.signum() == -y.signum()) // if the pair comprises positive and negative
                 throw new IllegalArgumentException("x.signum()=" + x.signum()
                         + ", y=signum()=" + y.signum());
             if (y.bitLength() - x.bitLength() > 1)

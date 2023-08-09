@@ -24,6 +24,7 @@
 package org.openjdk.bench.java.math;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,54 +38,50 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 3, time = 5)
+@Measurement(iterations = 3, time = 5)
 @Fork(value = 3)
 public class BigIntegerHashCode {
 
-    // The below list was derived from stats gathered from running tests in
-    // the security area, which is the biggest client of BigInteger in JDK.
-    //
-    // Every time BigInteger.hashCode() was called, BigInteger.bitLength() of
-    // the receiver was recorded. Recorded values were then sorted by frequency
-    // in descending order. Top 20 of the most frequent value were then picked.
-    @Param({
-             "256",
-             "521",
-            "1024",
-            "2048",
-             "384",
-            "3072",
-            "4096",
-             "512",
-             "768",
-            "5120",
-            "6144",
-            "2049",
-            "1025",
-              "13",
-             "767",
-               "7",
-            "2047",
-             "511",
-               "2",
-              "64",
-    })
-    private int nBits;
+    public enum Group {S, M, L}
 
-    private BigInteger x;
+    @Param({"S", "M", "L"})
+    private Group group;
+
+    private static final int MAX_LENGTH = Arrays.stream(Group.values())
+            .mapToInt(p -> getNumbersOfBits(p).length)
+            .max()
+            .getAsInt();
+
+    private BigInteger[] numbers;
 
     @Setup
     public void setup() {
-        x = Shared.createSingle(nBits);
+        int[] nBits = getNumbersOfBits(group);
+        numbers = new BigInteger[MAX_LENGTH];
+        for (int i = 0; i < MAX_LENGTH; i++) {
+            numbers[i] = Shared.createSingle(nBits[i % nBits.length]);
+        }
+    }
+
+    private static int[] getNumbersOfBits(Group p) {
+        // the below arrays were derived from stats gathered from running tests in
+        // the security area, which is the biggest client of BigInteger in JDK
+        return switch (p) {
+            case S -> new int[]{2, 7, 13, 64};
+            case M -> new int[]{256, 384, 511, 512, 521, 767, 768};
+            case L -> new int[]{1024, 1025, 2047, 2048, 2049, 3072, 4096, 5120, 6144};
+        };
     }
 
     @Benchmark
-    public int testHashCode() {
-        return x.hashCode();
+    public void testHashCode(Blackhole bh) {
+        for (var n : numbers)
+            bh.consume(n.hashCode());
     }
 }
