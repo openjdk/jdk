@@ -25,18 +25,11 @@ package compiler.vectorization.runner;
 
 import compiler.lib.ir_framework.*;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import java.io.File;
-
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 import jdk.test.whitebox.WhiteBox;
@@ -59,24 +52,16 @@ public class VectorizationTestRunner {
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
         // each test method returning a primitive value or an array of primitive type.
-        // Some VM options like "-Xint" may mess with the compiler control for the
-        // correctness check. We disable the check in these cases.
-        boolean use_intp = WB.getBooleanVMFlag("UseInterpreter");
-        boolean use_comp = WB.getBooleanVMFlag("UseCompiler");
-        if (use_intp && use_comp) {
-            for (Method method : klass.getDeclaredMethods()) {
-                try {
-                    if (method.isAnnotationPresent(Test.class)) {
-                        verifyTestMethod(method);
-                        runTestOnMethod(method);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException("Test failed in " + klass.getName() +
-                            "." + method.getName() + ": " + e.getMessage());
+        for (Method method : klass.getDeclaredMethods()) {
+            try {
+                if (method.isAnnotationPresent(Test.class)) {
+                    verifyTestMethod(method);
+                    runTestOnMethod(method);
                 }
+            } catch (Exception e) {
+                throw new RuntimeException("Test failed in " + klass.getName() +
+                        "." + method.getName() + ": " + e.getMessage());
             }
-        } else {
-            System.out.println("WARNING: Correctness check is skipped due to extra compiler control flags");
         }
 
         // 2) Vectorization ability test
@@ -120,7 +105,6 @@ public class VectorizationTestRunner {
 
         // Temporarily disable the compiler and invoke the method to get reference
         // result from the interpreter
-        assert(WB.getBooleanVMFlag("UseCompiler"));
         WB.setBooleanVMFlag("UseCompiler", false);
         try {
             expected = method.invoke(this);
