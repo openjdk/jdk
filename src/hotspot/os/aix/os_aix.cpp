@@ -1127,7 +1127,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // a MEMBER module that is a member of an archive.
   int flen = strlen(filename);
   if (flen > 0 && filename[flen - 1] == ')') {
-    dflags = RTLD_LAZY | RTLD_MEMBER;
+    dflags |= RTLD_MEMBER;
   }
 
   void * result= ::dlopen(filename, dflags);
