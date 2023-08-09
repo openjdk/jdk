@@ -424,7 +424,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                             interrupts = interruptible ? -1 : 1;
                         else {
                             interrupts = 1;   // re-assert if cleared
-                            cancelIgnoringExceptions(this);
+                            try {
+                                cancel(true);
+                            } catch (Throwable ignore) {
+                            }
                         }
                     }
                     else if (deadline != 0L) {
@@ -606,22 +609,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     final int getForkJoinTaskStatusMarkerBit() {
         return status & MARKER;
-    }
-
-    /**
-     * Cancels with mayInterruptIfRunning, ignoring any exceptions
-     * thrown by cancel. Used only when cancelling tasks upon pool or
-     * worker thread termination. Cancel is spec'ed not to throw any
-     * exceptions, but if it does anyway, we have no recourse, so
-     * guard against this case.
-     */
-    static final void cancelIgnoringExceptions(ForkJoinTask<?> t) {
-        if (t != null) {
-            try {
-                t.cancel(true);
-            } catch (Throwable ignore) {
-            }
-        }
     }
 
     // public methods
