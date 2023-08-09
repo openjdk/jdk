@@ -34,8 +34,8 @@ import java.util.spi.ToolProvider;
 
 /*
  * @test
- * @summary Make sure that 100 modules can be linked using jlink and deducplication works correctlyk.
- * @bug 8240567
+ * @summary Make sure that 100 modules can be linked using jlink and dedcplication works correctlyk.
+ * @bug 8311591
  * @library ../lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
@@ -44,7 +44,7 @@ import java.util.spi.ToolProvider;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @build tests.*
+ * @build tests.* jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTest100Modules
  */
 public class JLinkDedupTest100Modules {
@@ -65,20 +65,26 @@ public class JLinkDedupTest100Modules {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
 
-
+    private static boolean hasJmods() {
+        if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
+            System.err.println("Test skipped. NO jmods directory");
+            return false;
+        }
+        return true;
+    }
     /*
      * Compiles all modules used by the test
      */
-    @BeforeTest
-    public void compileAll() throws Throwable {
+    public static void compileAll() throws Throwable {
         if (!hasJmods()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
-            assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
-                    "--module-source-path", SRC_DIR.toString()));
+            CompilerUtils.compile(msrc, MODS_DIR,
+                    "--module-source-path", SRC_DIR.toString());
         }
     }
+
 
 
     static void report(String command, String[] args) {
@@ -90,60 +96,22 @@ public class JLinkDedupTest100Modules {
         JAVAC_TOOL.run(System.out, System.err, args);
     }
 
-    public static void main(String[] args) throws Exception {
-        Path src = Paths.get("bug8240567");
+    public static void main(String[] args) throws Throwable {
 
-        StringJoiner mainModuleInfoContent = new StringJoiner(";\n  requires ", "module bug8240567x {\n  requires ", ";\n}");
-
-        for (int i = 0; i < 1_000; i++) {
-            String name = "module" + i + "x";
-            Path moduleDir = Files.createDirectories(src.resolve(name));
-
-            StringBuilder moduleInfoContent = new StringBuilder("module ");
-            moduleInfoContent.append(name).append(" {\n");
-            if (i != 0) {
-                moduleInfoContent.append("  requires module0x;\n");
-            }
-            moduleInfoContent.append("}\n");
-            Files.writeString(moduleDir.resolve("module-info.java"), moduleInfoContent.toString());
-
-            mainModuleInfoContent.add(name);
-        }
-
-        // create module reading the generated modules
-        Path mainModulePath = src.resolve("bug8240567x");
-        Files.createDirectories(mainModulePath);
-        Path mainModuleInfo = mainModulePath.resolve("module-info.java");
-        Files.writeString(mainModuleInfo, mainModuleInfoContent.toString());
-
-        Path mainClassDir = mainModulePath.resolve("testpackage");
-        Files.createDirectories(mainClassDir);
-
-        Files.writeString(mainClassDir.resolve("JLink100ModulesTest.java"), """
-                package testpackage;
-
-                public class JLink100ModulesTest {
-                    public static void main(String[] args) throws Exception {
-                        System.out.println("JLink100ModulesTest started.");
-                    }
-                }
-                """);
-
-        String out = src.resolve("out").toString();
-        javac(new String[]{
-                "-d", out,
-                "--module-source-path", src.toString(),
-                "--module", "bug8240567x"
-        });
+        compileAll();
 
         JImageGenerator.getJLinkTask()
-                .modulePath(out)
-                .output(src.resolve("out-jlink"))
-                .addMods("bug8240567x")
+                .modulePath(MODULE_PATH)
+                .output(SRC_DIR.resolve("out-jlink"))
+                .addMods("m1")
+                .addMods("m2")
+                .addMods("m2")
+                .addMods("m3")
+                .addMods("m4")
                 .call()
                 .assertSuccess();
 
-        Path binDir = src.resolve("out-jlink").resolve("bin").toAbsolutePath();
+        Path binDir = SRC_DIR.resolve("out-jlink").resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
