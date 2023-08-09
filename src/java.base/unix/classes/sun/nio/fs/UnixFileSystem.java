@@ -669,7 +669,7 @@ abstract class UnixFileSystem
                            attrs.mode());
             } catch (UnixException x) {
                 if (x.errno() == EEXIST && flags.replaceExisting)
-                    throw new FileSystemException(toString());
+                    throw new FileSystemException(target.toString());
                 x.rethrowAsIOException(target);
             }
 
