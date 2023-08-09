@@ -1874,8 +1874,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if ((phase & IDLE) != 0)
                     reactivate(w);        // pool stopped before released
                 if (w.top - w.base > 0) {
-                    for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; )
-                        ForkJoinTask.cancelIgnoringExceptions(t);
+                    for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; ) {
+                         try {
+                             t.cancel(false);
+                         } catch (Throwable ignore) {
+                         }
+                    }
                 }
             }
         }
@@ -2793,8 +2797,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                         } catch (Throwable ignore) {
                         }
                     }
-                    for (ForkJoinTask<?> t; (t = q.poll(null)) != null; )
-                        ForkJoinTask.cancelIgnoringExceptions(t);
+                    for (ForkJoinTask<?> t; (t = q.poll(null)) != null; ) {
+                        try {
+                            t.cancel(false);
+                        } catch (Throwable ignore) {
+                        }
+                    }
                 }
             }
             if (((e = runState) & TERMINATED) == 0 && ctl == 0L) {
