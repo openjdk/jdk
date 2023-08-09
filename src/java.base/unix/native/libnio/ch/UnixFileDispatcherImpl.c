@@ -45,6 +45,11 @@
 #define fstatvfs64 fstatvfs
 #endif
 
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/ioctl.h>
+#endif
+
 #include "jni.h"
 #include "nio.h"
 #include "nio_util.h"
@@ -169,7 +174,7 @@ Java_sun_nio_ch_UnixFileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject 
     if (fstat64(fd, &fbuf) < 0)
         return handle(env, -1, "Size failed");
 
-#ifdef BLKGETSIZE64
+#if defined(__linux__)
     if (S_ISBLK(fbuf.st_mode)) {
         uint64_t size;
         if (ioctl(fd, BLKGETSIZE64, &size) < 0)

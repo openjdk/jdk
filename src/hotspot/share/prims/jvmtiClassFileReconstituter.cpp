@@ -1026,7 +1026,13 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
       case Bytecodes::_getstatic       :  // fall through
       case Bytecodes::_putstatic       :  // fall through
       case Bytecodes::_getfield        :  // fall through
-      case Bytecodes::_putfield        :  // fall through
+      case Bytecodes::_putfield        :  {
+        int field_index = Bytes::get_native_u2(bcp+1);
+        u2 pool_index = mh->constants()->resolved_field_entry_at(field_index)->constant_pool_index();
+        assert(pool_index < mh->constants()->length(), "sanity check");
+        Bytes::put_Java_u2((address)(p+1), pool_index);     // java byte ordering
+        break;
+      }
       case Bytecodes::_invokevirtual   :  // fall through
       case Bytecodes::_invokespecial   :  // fall through
       case Bytecodes::_invokestatic    :  // fall through
