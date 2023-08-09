@@ -70,6 +70,22 @@ public class StringUtils {
     }
 
     /**Call {@link #of(String, String)} to calculate the distance.
+     *
+     * <h2>Usage Examples</h2>
+     *
+     * Pick top three vocabulary words whose normalized distance from
+     * the misspelled word is no greater than one-third.
+     *
+     * {@snippet :
+     *     record Pair(String word, int distance) { }
+     *
+     *     var suggestions = vocabulary.stream()
+     *             .map(v -> new Pair(v, DamerauLevenshteinDistance.of(v, misspelledWord)))
+     *             .filter(p -> Double.compare(1.0 / 3, ((double) p.distance()) / p.word().length()) >= 0)
+     *             .sorted(Comparator.comparingDouble(Pair::distance))
+     *             .limit(3)
+     *             .toList();
+     * }
      */
     public static final class DamerauLevenshteinDistance {
 
