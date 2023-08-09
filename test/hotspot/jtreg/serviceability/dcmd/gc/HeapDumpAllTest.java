@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.IOException;
-
 import jdk.test.lib.dcmd.CommandExecutor;
 
 /*
@@ -42,7 +40,7 @@ public class HeapDumpAllTest extends HeapDumpTest {
     }
 
     @Override
-    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite) throws Exception {
         // Trigger gc by hand, so the created heap dump isnt't too large and
         // takes too long to parse.
         System.gc();
