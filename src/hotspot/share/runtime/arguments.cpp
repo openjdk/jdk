@@ -1180,7 +1180,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   int  quote_c        = 0;
   bool result         = true;
 
-  int c = getc(stream);
+  char c = checked_cast<char>(getc(stream));
   while(c != EOF && pos < (int)(sizeof(token)-1)) {
     if (in_white_space) {
       if (in_comment) {
@@ -1189,7 +1189,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace(c)) {
           in_white_space = false;
-          token[pos++] = checked_cast<char>(c);
+          token[pos++] = c;
         }
       }
     } else {
@@ -1209,10 +1209,10 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = checked_cast<char>(c);
+        token[pos++] = c;
       }
     }
-    c = getc(stream);
+    c = checked_cast<char>(getc(stream));
   }
   if (pos > 0) {
     token[pos] = '\0';
