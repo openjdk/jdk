@@ -1965,15 +1965,15 @@ static const char* system_assertion_options[] = {
   "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
 };
 
-bool Arguments::parse_uintx(const char* value,
-                            uintx* uintx_arg,
-                            uintx min_size) {
-  uintx n;
+bool Arguments::parse_uint(const char* value,
+                           uint* uint_arg,
+                           uint min_size) {
+  uint n;
   if (!parse_integer(value, &n)) {
     return false;
   }
   if (n >= min_size) {
-    *uintx_arg = n;
+    *uint_arg = n;
     return true;
   } else {
     return false;
@@ -2728,8 +2728,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:MaxTenuringThreshold=", &tail)) {
-      uintx max_tenuring_thresh = 0;
-      if (!parse_uintx(tail, &max_tenuring_thresh, 0)) {
+      uint max_tenuring_thresh = 0;
+      if (!parse_uint(tail, &max_tenuring_thresh, 0)) {
         jio_fprintf(defaultStream::error_stream(),
                     "Improperly specified VM option \'MaxTenuringThreshold=%s\'\n", tail);
         return JNI_EINVAL;
