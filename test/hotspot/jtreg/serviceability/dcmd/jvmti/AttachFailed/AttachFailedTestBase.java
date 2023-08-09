@@ -39,7 +39,7 @@ public abstract class AttachFailedTestBase {
      * Build path to shared object according to platform rules
      */
     public static String getSharedObjectPath(String name) {
-        String libname = Platform.sharedLibraryPrefix() + name + "." + Platform.sharedLibraryExt();
+        String libname = Platform.buildSharedLibraryName(name);
 
         return Paths.get(Utils.TEST_NATIVE_PATH, libname)
                     .toAbsolutePath()

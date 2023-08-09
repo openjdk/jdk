@@ -70,12 +70,10 @@ public class TestNativeLibrariesEvent {
     }
 
     private static List<String> getExpectedLibs() throws Throwable {
-        String libTemplate = Platform.sharedLibraryPrefix() + "%s." + Platform.sharedLibraryExt();
-
         List<String> libs = new ArrayList<String>();
         String[] names = { "jvm", "java", "zip" };
         for (String name : names) {
-            libs.add(String.format(libTemplate, name));
+            libs.add(Platform.buildSharedLibraryName(name));
         }
         return libs;
     }

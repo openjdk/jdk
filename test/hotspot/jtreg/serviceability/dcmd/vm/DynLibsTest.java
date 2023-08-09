@@ -44,12 +44,9 @@ public class DynLibsTest {
 
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.dynlibs");
-
-        String osDependentBaseString = Platform.sharedLibraryPrefix() + "%s." + Platform.sharedLibraryExt();
-
-        output.shouldContain(String.format(osDependentBaseString, "jvm"));
-        output.shouldContain(String.format(osDependentBaseString, "java"));
-        output.shouldContain(String.format(osDependentBaseString, "management"));
+        output.shouldContain(Platform.buildSharedLibraryName("jvm"));
+        output.shouldContain(Platform.buildSharedLibraryName("java"));
+        output.shouldContain(Platform.buildSharedLibraryName("management"));
     }
 
     @Test

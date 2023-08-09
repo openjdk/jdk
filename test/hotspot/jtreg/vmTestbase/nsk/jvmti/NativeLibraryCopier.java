@@ -34,12 +34,12 @@ import java.nio.file.Paths;
 public class NativeLibraryCopier {
     public static void main(String[] args) {
         Path src = Paths.get(Utils.TEST_NATIVE_PATH)
-                        .resolve(libname(args[0]))
+                        .resolve(Platform.buildSharedLibraryName(args[0]))
                         .toAbsolutePath();
 
         Path dstDir = Paths.get(".");
         for (int i = 1; i < args.length; ++i) {
-            Path dst = dstDir.resolve(libname(args[i])).toAbsolutePath();
+            Path dst = dstDir.resolve(Platform.buildSharedLibraryName(args[i])).toAbsolutePath();
             System.out.println("copying " + src + " to " + dst);
             try {
                 Files.copy(src, dst);
@@ -47,9 +47,5 @@ public class NativeLibraryCopier {
                 throw new Error("can't copy " + src + " to " + dst, e);
             }
         }
-    }
-
-    private static String libname(String name) {
-        return Platform.sharedLibraryPrefix() + name + "." + Platform.sharedLibraryExt();
     }
 }

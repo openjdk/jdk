@@ -63,8 +63,7 @@ public class LoadAgentDcmdTest {
                       "'-Dtest.jdk=/path/to/jdk'.");
         }
 
-        Path libpath = Paths.get(jdkPath, jdkLibPath(),
-                                 Platform.sharedLibraryPrefix() + "instrument." + Platform.sharedLibraryExt());
+        Path libpath = Paths.get(jdkPath, jdkLibPath(), Platform.buildSharedLibraryName("instrument"));
 
         if (!libpath.toFile().exists()) {
             throw new FileNotFoundException(

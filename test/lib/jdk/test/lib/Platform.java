@@ -374,6 +374,15 @@ public class Platform {
         }
     }
 
+    /**
+     * Returns the usual full shared lib name of a name without prefix and extension, e.g. for jsig
+     * "libjsig.so" on linux, "jsig.dll" on windows.
+     * @return the full shared lib name
+     */
+    public static String buildSharedLibraryName(String name) {
+        return sharedLibraryPrefix() + name + "." + sharedLibraryExt();
+    }
+
     /*
      * Returns name of system variable containing paths to shared native libraries.
      */
