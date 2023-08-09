@@ -55,6 +55,7 @@ import java.util.function.Predicate;
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
+import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static jdk.test.lib.net.IPSupport.hasIPv4;
 import static jdk.test.lib.net.IPSupport.hasIPv6;
 import static jdk.test.lib.net.IPSupport.preferIPv4Stack;
@@ -65,6 +66,7 @@ import static org.testng.Assert.assertTrue;
 public class SendReceiveMaxSize {
     private final static int IPV4_SNDBUF = 65507;
     private final static int IPV6_SNDBUF = 65527;
+    private final static int IPV6_SNDBUF_AIX = 65487;
     private final static Class<IOException> IOE = IOException.class;
     private final static Random random = RandomFactory.getRandom();
 
@@ -103,16 +105,31 @@ public class SendReceiveMaxSize {
                     .filter(Predicate.not(InetAddress::isLoopbackAddress))
                     .findFirst()
                     .orElse((Inet6Address) InetAddress.getByName("::1"));
-            testcases.add(new Object[]{
-                    supplier(() -> DatagramChannel.open()),
-                    IPV6_SNDBUF,
-                    IPv6Addr
-            });
-            testcases.add(new Object[]{
-                    supplier(() -> DatagramChannel.open(INET6)),
-                    IPV6_SNDBUF,
-                    IPv6Addr
-            });
+	    if (Platform.isAix()) {
+                testcases.add(new Object[]{
+                        supplier(() -> DatagramChannel.open()),
+                        IPV6_SNDBUF_AIX,
+                        IPv6Addr
+                });
+                testcases.add(new Object[]{
+                        supplier(() -> DatagramChannel.open(INET6)),
+                        IPV6_SNDBUF_AIX,
+                        IPv6Addr
+                });
+            }
+	    else
+            {
+                testcases.add(new Object[]{
+                        supplier(() -> DatagramChannel.open()),
+                        IPV6_SNDBUF,
+                        IPv6Addr
+                });
+                testcases.add(new Object[]{
+                        supplier(() -> DatagramChannel.open(INET6)),
+                        IPV6_SNDBUF,
+                        IPv6Addr
+                });
+            }
         }
         return testcases.toArray(Object[][]::new);
     }
@@ -140,6 +157,9 @@ public class SendReceiveMaxSize {
                 if (!Platform.isOSX()) {
                     if (sender.getOption(SO_SNDBUF) < capacity)
                         sender.setOption(SO_SNDBUF, capacity);
+                    if (receiver.getOption(SO_RCVBUF) < capacity+28){
+			throw new Error("system value " + receiver.getOption(SO_RCVBUF) + " for UDP receive buffer too small to hold capacity " + capacity);
+		    }
                 }
                 byte[] testData = new byte[capacity];
                 random.nextBytes(testData);
