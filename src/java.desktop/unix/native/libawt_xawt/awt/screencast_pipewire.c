@@ -44,6 +44,7 @@ int DEBUG_SCREENCAST_ENABLED = FALSE;
                                    }
 
 static volatile gboolean sessionClosed = TRUE;
+static GString *activeSessionToken;
 
 struct ScreenSpace screenSpace = {0};
 static struct PwLoopData pw = {0};
@@ -127,6 +128,7 @@ static void doCleanup() {
         screenSpace.screens = NULL;
     }
 
+    gtk->g_string_set_size(activeSessionToken, 0);
     sessionClosed = TRUE;
 }
 
@@ -136,8 +138,22 @@ static void doCleanup() {
 static gboolean initScreencast(const gchar *token,
                                GdkRectangle *affectedBounds,
                                gint affectedBoundsLength) {
+    gboolean isSameToken = !token
+            ? FALSE
+            : strcmp(token, activeSessionToken->str) == 0;
+
     if (!sessionClosed) {
-        return TRUE;
+        if (isSameToken) {
+            DEBUG_SCREENCAST("Reusing active session.\n", NULL);
+            return TRUE;
+        } else {
+            DEBUG_SCREENCAST(
+                    "Active session has a different token |%s| -> |%s|,"
+                    " closing current session.\n",
+                    activeSessionToken->str, token
+            );
+            doCleanup();
+        }
     }
 
     fp_pw_init(NULL, NULL);
@@ -153,6 +169,7 @@ static gboolean initScreencast(const gchar *token,
         return FALSE;
     }
 
+    gtk->g_string_printf(activeSessionToken, "%s", token);
     sessionClosed = FALSE;
     return TRUE;
 }
@@ -770,6 +787,8 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_screencast_ScreencastHelper_loadPipewire
         return JNI_FALSE;
     }
 
+    activeSessionToken = gtk->g_string_new("");
+
     gboolean usable = initXdgDesktopPortal();
     portalScreenCastCleanup();
     return usable;
@@ -840,7 +859,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_screencast_ScreencastHelper_getRGBPixelsImpl
         boundsLen = (*env)->GetArrayLength(env, affectedScreensBoundsArray);
         EXCEPTION_CHECK_DESCRIBE();
         if (boundsLen % 4 != 0) {
-            DEBUG_SCREENCAST("%s:%i incorrect array length\n", __FUNCTION__, __LINE__);
+            DEBUG_SCREENCAST("incorrect array length\n", NULL);
             return RESULT_ERROR;
         }
         affectedBoundsLength = boundsLen / 4;
