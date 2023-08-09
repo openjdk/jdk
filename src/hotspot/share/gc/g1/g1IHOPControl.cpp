@@ -109,7 +109,7 @@ size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
   double safe_total_heap_percentage = MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
 
   return (size_t)MIN2(
-    G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
+    G1CollectedHeap::heap()->soft_max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
     _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
     );
 }
