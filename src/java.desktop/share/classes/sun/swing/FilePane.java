@@ -1590,9 +1590,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
                 // Initializer
                 {
-                    String newFolderText = UIManager.getString(FilePane.ACTION_NEW_FOLDER,
-                            getFileChooser().getLocale());
-                    putValue(Action.ACTION_COMMAND_KEY, newFolderText);
+                    putValue(Action.ACTION_COMMAND_KEY, FilePane.ACTION_NEW_FOLDER);
 
                     File currentDirectory = getFileChooser().getCurrentDirectory();
                     if (currentDirectory != null) {

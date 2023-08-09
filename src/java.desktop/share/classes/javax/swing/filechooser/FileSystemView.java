@@ -838,9 +838,9 @@ class UnixFileSystemView extends FileSystemView {
  */
 class WindowsFileSystemView extends FileSystemView {
 
-    private static final String newFolderString =
+    private static String newFolderString =
             UIManager.getString("FileChooser.win32.newFolder");
-    private static final String newFolderNextString  =
+    private static String newFolderNextString  =
             UIManager.getString("FileChooser.win32.newFolder.subsequent");
 
     public Boolean isTraversable(File f) {
@@ -899,6 +899,10 @@ class WindowsFileSystemView extends FileSystemView {
             throw new IOException("Containing directory is null:");
         }
         // Using NT's default folder name
+        newFolderString =
+                UIManager.getString("FileChooser.win32.newFolder");
+        newFolderNextString  =
+                UIManager.getString("FileChooser.win32.newFolder.subsequent");
         File newFolder = createFileObject(containingDir, newFolderString);
         int i = 2;
         while (newFolder.exists() && i < 100) {
