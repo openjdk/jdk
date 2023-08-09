@@ -173,6 +173,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
+        new LogMessageWithLevel("Evac Fail Extra Cards", Level.DEBUG),
         new LogMessageWithLevel("Clear Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
 
@@ -264,7 +265,9 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
         new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
-        new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
+        new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),
+        new LogMessageWithLevel("New Retained Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {

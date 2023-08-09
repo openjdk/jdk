@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ public class Head extends Content {
     private boolean showTimestamp;
     private DocPath mainStylesheet;
     private List<DocPath> additionalStylesheets = List.of();
+    private List<DocPath> localStylesheets = List.of();
     private boolean index;
     private Script mainBodyScript;
     private final List<Script> scripts;
@@ -157,11 +158,13 @@ public class Head extends Content {
      *
      * @param main the main stylesheet, or null to use the default
      * @param additional a list of any additional stylesheets to be included
+     * @param local a list of module- or package-local stylesheets to be included
      * @return  this object
      */
-    public Head setStylesheets(DocPath main, List<DocPath> additional) {
+    public Head setStylesheets(DocPath main, List<DocPath> additional, List<DocPath> local) {
         this.mainStylesheet = main;
         this.additionalStylesheets = additional;
+        this.localStylesheets = local;
         return this;
     }
 
@@ -319,14 +322,19 @@ public class Head extends Content {
         if (mainStylesheet == null) {
             mainStylesheet = DocPaths.STYLESHEET;
         }
-        addStylesheet(head, mainStylesheet);
+        addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(mainStylesheet));
 
         for (DocPath path : additionalStylesheets) {
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(path));
+        }
+
+        for (DocPath path : localStylesheets) {
+            // Local stylesheets are contained in doc-files, so omit resource-files prefix
             addStylesheet(head, path);
         }
 
         if (index) {
-            addStylesheet(head, DocPaths.SCRIPT_DIR.resolve(DocPaths.JQUERY_UI_CSS));
+            addStylesheet(head, DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS));
         }
     }
 
@@ -337,7 +345,7 @@ public class Head extends Content {
 
     private void addScripts(HtmlTree head) {
         if (addDefaultScript) {
-            head.add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath()));
+            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS));
         }
         if (index) {
             if (pathToRoot != null && mainBodyScript != null) {
@@ -347,11 +355,11 @@ public class Head extends Content {
                         .append(";\n")
                         .append("loadScripts(document, 'script');");
             }
-            addScriptElement(head, DocPaths.JQUERY_JS);
-            addScriptElement(head, DocPaths.JQUERY_UI_JS);
+            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_JS));
+            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(DocPaths.JQUERY_UI_JS));
         }
         for (DocPath path : additionalScripts) {
-            addScriptElement(head, path);
+            addScriptElement(head, DocPaths.SCRIPT_FILES.resolve(path));
         }
         for (Script script : scripts) {
             head.add(script.asContent());
@@ -359,7 +367,7 @@ public class Head extends Content {
     }
 
     private void addScriptElement(HtmlTree head, DocPath filePath) {
-        DocPath scriptFile = pathToRoot.resolve(DocPaths.SCRIPT_DIR).resolve(filePath);
+        DocPath scriptFile = pathToRoot.resolve(filePath);
         head.add(HtmlTree.SCRIPT(scriptFile.getPath()));
     }
 }
