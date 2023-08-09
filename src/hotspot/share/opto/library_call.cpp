@@ -2841,8 +2841,9 @@ bool LibraryCallKit::inline_unsafe_allocate() {
       uncommon_trap(Deoptimization::Reason_intrinsic,
                     Deoptimization::Action_make_not_entrant);
     }
-    if (stopped())
+    if (stopped()) {
       return true;
+    }
 #endif //INCLUDE_JVMTI
 
   Node* test = nullptr;
