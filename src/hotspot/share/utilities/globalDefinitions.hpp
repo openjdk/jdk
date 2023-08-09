@@ -1335,8 +1335,7 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 }
 
 template<typename K> int primitive_compare(const K& k0, const K& k1) {
-  return (((uintptr_t)k0 < (uintptr_t)k1) ? -1
-       : ((uintptr_t)k0 == (uintptr_t)k1) ? 0 : 1);
+  return ((k0 < k1) ? -1 : (k0 == k1) ? 0 : 1);
 }
 
 //----------------------------------------------------------------------------------------------------
