@@ -112,10 +112,9 @@ public class SocketCloseTest {
         }
     }
 
-    public static class LdapInputStream extends InputStream {
+    private static class LdapInputStream extends InputStream {
         private LdapOutputStream los;
         private ByteArrayInputStream bos;
-        int pos = 0;
 
         public LdapInputStream(LdapOutputStream los) {
             this.los = los;
@@ -124,12 +123,11 @@ public class SocketCloseTest {
         @Override
         public int read() throws IOException {
             bos = new ByteArrayInputStream(BIND_RESPONSE);
-            int next = bos.read();
-            return next;
+            return bos.read();
         }
     }
 
-    public static class LdapOutputStream extends OutputStream {
+    private static class LdapOutputStream extends OutputStream {
 
         @Override
         public void write(int b) throws IOException {
@@ -143,7 +141,7 @@ public class SocketCloseTest {
         }
     }
 
-    public static class CustomSocket extends Socket {
+    private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
         private LdapOutputStream output = new LdapOutputStream();
         private LdapInputStream input = new LdapInputStream(output);
