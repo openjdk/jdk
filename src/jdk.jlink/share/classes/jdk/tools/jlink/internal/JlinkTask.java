@@ -183,7 +183,11 @@ public class JlinkTask {
         }, true, "--full-version"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreSigning = true;
-        }, "--ignore-signing-information"),};
+        }, "--ignore-signing-information"),
+        new Option<JlinkTask>(false, (task, opt, arg) -> {
+            task.options.runImageOnlyWarning = true;
+        }, "--run-image-only-warnings"),};
+
 
     private static final String PROGNAME = "jlink";
     private final OptionsValues options = new OptionsValues();
@@ -223,6 +227,7 @@ public class JlinkTask {
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
+        boolean runImageOnlyWarning = false;
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
@@ -392,7 +397,8 @@ public class JlinkTask {
         return new JlinkConfiguration(options.output,
                                       roots,
                                       finder,
-                                      useModulePath);
+                                      useModulePath,
+                                      !options.runImageOnlyWarning);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -582,7 +588,8 @@ public class JlinkTask {
                         targetPlatform.arch().byteOrder(), targetPlatform);
             }
         }
-        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning, config.useModulePath());
+        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath,
+                               ignoreSigning, config.useModulePath(), config.failOnMod());
     }
 
     /*
@@ -853,17 +860,20 @@ public class JlinkTask {
         final boolean ignoreSigning;
         final Runtime.Version version;
         final Set<Archive> archives;
+        final boolean failOnMod;
 
         ImageHelper(Configuration cf,
                     Map<String, Path> modsPaths,
                     Platform targetPlatform,
                     Path packagedModulesPath,
                     boolean ignoreSigning,
-                    boolean useModulePath) throws IOException {
+                    boolean useModulePath,
+                    boolean failOnMod) throws IOException {
             Objects.requireNonNull(targetPlatform);
             this.targetPlatform = targetPlatform;
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
+            this.failOnMod = failOnMod;
 
             // use the version of java.base module, if present, as
             // the release version for multi-release JAR files
@@ -919,7 +929,7 @@ public class JlinkTask {
                 }
             } else if (ModuleFinder.ofSystem().find(module).isPresent()){
                 // the path is a JRTPath, when using a jmod-less image
-                return new JmodLessArchive(module, path);
+                return new JmodLessArchive(module, path, failOnMod);
             } else {
                 throw new IllegalArgumentException(
                     taskHelper.getMessage("err.not.modular.format", module, path));

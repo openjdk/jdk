@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -123,6 +124,10 @@ public abstract class AbstractJmodLessTest {
     }
 
     protected Path jlinkUsingImage(JlinkSpec spec, OutputAnalyzerHandler handler) throws Exception {
+        return jlinkUsingImage(spec, handler, new DefaultSuccessExitPredicate());
+    }
+
+    protected Path jlinkUsingImage(JlinkSpec spec, OutputAnalyzerHandler handler, Predicate<OutputAnalyzer> exitChecker) throws Exception {
         String jmodLessGeneratedImage = "target-jmodless-" + spec.getName();
         Path targetImageDir = spec.getHelper().createNewImageDir(jmodLessGeneratedImage);
         Path targetJlink = spec.getImageToUse().resolve("bin").resolve(getJlink());
@@ -146,23 +151,26 @@ public abstract class AbstractJmodLessTest {
         } catch (Throwable t) {
             throw new AssertionError("Executing process failed!", t);
         }
-        if (analyzer.getExitValue() != 0) {
+        if (!exitChecker.test(analyzer)) {
             if (DEBUG) {
                 System.err.println("Process stdout was: ");
                 System.err.println(analyzer.getStdout());
                 System.err.println("Process stderr was: ");
                 System.err.println(analyzer.getStderr());
             }
-            throw new AssertionError("Expected jlink to pass given a jmodless image");
+            throw new AssertionError("Expected jlink to pass/fail given a jmodless image. Exit code was: " + analyzer.getExitValue());
         }
         handler.handleAnalyzer(analyzer); // Give tests a chance to process in/output
 
-        // validate the resulting image; Includes running 'java -version'
-        JImageValidator validator = new JImageValidator(spec.getValidatingModule(), spec.getExpectedLocations(),
-                targetImageDir.toFile(), spec.getUnexpectedLocations(), Collections.emptyList(), spec.getExpectedFiles());
-        validator.validate(); // This doesn't validate locations
-        if (!spec.getExpectedLocations().isEmpty() || !spec.getUnexpectedLocations().isEmpty()) {
-            JImageValidator.validate(targetImageDir.resolve("lib").resolve("modules"), spec.getExpectedLocations(), spec.getUnexpectedLocations());
+        // validate the resulting image; Includes running 'java -version', only do this
+        // if the jlink succeeded.
+        if (analyzer.getExitValue() == 0) {
+            JImageValidator validator = new JImageValidator(spec.getValidatingModule(), spec.getExpectedLocations(),
+                    targetImageDir.toFile(), spec.getUnexpectedLocations(), Collections.emptyList(), spec.getExpectedFiles());
+            validator.validate(); // This doesn't validate locations
+            if (!spec.getExpectedLocations().isEmpty() || !spec.getUnexpectedLocations().isEmpty()) {
+                JImageValidator.validate(targetImageDir.resolve("lib").resolve("modules"), spec.getExpectedLocations(), spec.getUnexpectedLocations());
+            }
         }
         return targetImageDir;
     }
@@ -453,6 +461,15 @@ public abstract class AbstractJmodLessTest {
         @Override
         public void handleAnalyzer(OutputAnalyzer out) {
             // nothing
+        }
+
+    }
+
+    static class DefaultSuccessExitPredicate implements Predicate<OutputAnalyzer> {
+
+        @Override
+        public boolean test(OutputAnalyzer t) {
+            return t.getExitValue() == 0;
         }
 
     }

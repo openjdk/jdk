@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.Platform;
+import jdk.tools.jlink.internal.RunImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -162,6 +163,9 @@ public final class AddJmodResourcesPlugin extends AbstractPlugin {
                 HexFormat format = HexFormat.of();
                 return format.formatHex(db);
             }
+        } catch (RunImageLinkException e) {
+            // JmodLessArchive::JmodLessFile.content() may throw this on sha mismatch
+            throw (RuntimeException)e.getCause();
         } catch (Exception e) {
             throw new AssertionError("Failed to generate hash sum for " + entry.path());
         }

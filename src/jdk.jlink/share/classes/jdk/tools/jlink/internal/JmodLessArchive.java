@@ -53,14 +53,16 @@ public class JmodLessArchive implements Archive {
     private final Path path;
     private final ModuleReference ref;
     private final List<JmodLessFile> files = new ArrayList<>();
+    private final boolean failOnMod;
 
-    JmodLessArchive(String module, Path path) {
+    JmodLessArchive(String module, Path path, boolean failOnMod) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
                     .find(module)
                     .orElseThrow(() ->
                         new IllegalArgumentException("Module " + module + " not part of the JDK install"));
+        this.failOnMod = failOnMod;
     }
 
     @Override
@@ -121,7 +123,7 @@ public class JmodLessArchive implements Archive {
             // Add classes/resources from image module
             files.addAll(ref.open().list().map(s -> {
                 return new JmodLessFile(JmodLessArchive.this, s,
-                        Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */);
+                        Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, failOnMod);
             }).collect(Collectors.toList()));
         }
     }
@@ -136,7 +138,7 @@ public class JmodLessArchive implements Archive {
                 files.addAll(Arrays.asList(input.split("\n")).stream()
                         .map(s -> {
                             TypePathMapping m = mappingResource(s);
-                            return new JmodLessFile(JmodLessArchive.this, m.resPath, m.resType, m.sha, m.symlink);
+                            return new JmodLessFile(JmodLessArchive.this, m.resPath, m.resType, m.sha, m.symlink, failOnMod);
                         })
                         .filter(m -> m != null)
                         .collect(Collectors.toList()));
@@ -193,13 +195,15 @@ public class JmodLessArchive implements Archive {
         final Archive archive;
         final String sha; // Checksum for non-resource files
         final boolean symlink;
+        final boolean failOnMod;
 
-        JmodLessFile(Archive archive, String resPath, Type resType, String sha, boolean symlink) {
+        JmodLessFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
             this.resPath = resPath;
             this.resType = toEntryType(resType);
             this.archive = archive;
             this.sha = sha;
             this.symlink = symlink;
+            this.failOnMod = failOnMod;
         }
 
         Entry toEntry() {
@@ -234,9 +238,15 @@ public class JmodLessArchive implements Archive {
                     if (resType != Archive.Entry.EntryType.CLASS_OR_RESOURCE) {
                         // Read from the base JDK image.
                         Path path = BASE.resolve(resPath);
-                        if (shaSumMismatch(path, sha, symlink) && !warningProduced) {
-                            System.err.printf("WARNING: %s has been modified. Please double check!%n", path.toString());
-                            warningProduced = true;
+                        if (shaSumMismatch(path, sha, symlink)) {
+                            String msg = String.format("%s has been modified. Please double check!%n", path.toString());
+                            if (failOnMod) {
+                                IllegalStateException ise = new IllegalStateException(msg);
+                                throw new RunImageLinkException(ise);
+                            } else if (!warningProduced) {
+                                System.err.printf("WARNING: %s", msg);
+                                warningProduced = true;
+                            }
                         }
                         if (symlink) {
                             path = BASE.resolve(sha);

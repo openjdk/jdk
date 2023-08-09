@@ -21,14 +21,9 @@
  * questions.
  */
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 import java.util.Scanner;
 
-import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 /*
@@ -45,7 +40,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g ModifiedFilesWarningTest
  */
-public class ModifiedFilesWarningTest extends AbstractJmodLessTest {
+public class ModifiedFilesWarningTest extends ModifiedFilesTest {
 
     public static void main(String[] args) throws Exception {
         ModifiedFilesWarningTest test = new ModifiedFilesWarningTest();
@@ -53,39 +48,23 @@ public class ModifiedFilesWarningTest extends AbstractJmodLessTest {
     }
 
     @Override
-    void runTest(Helper helper) throws Exception {
-        Path initialImage = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
-                .name("java-base-jlink-with-mod")
-                .addModule("java.base")
-                .addModule("jdk.jlink")
-                .validatingModule("java.base")
-                .helper(helper)
-                .build());
+    String initialImageName() {
+        return "java-base-jlink-with-mod-warn";
+    }
 
-        // modify net.properties config file
-        Path netPropertiesFile = initialImage.resolve("conf").resolve("net.properties");
-        Properties props = new Properties();
-        try (InputStream is = Files.newInputStream(netPropertiesFile)) {
-            props.load(is);
-        }
-        String prevVal = (String)props.put("java.net.useSystemProxies", Boolean.TRUE.toString());
-        if (prevVal == null || Boolean.getBoolean(prevVal) != false) {
-            throw new AssertionError("Expected previous value to be false!");
-        }
-        try (OutputStream out = Files.newOutputStream(netPropertiesFile)) {
-            props.store(out, "Modified net.properties file!");
-        }
-
+    @Override
+    void testAndAssert(Path modifiedFile, Helper helper, Path initialImage) throws Exception {
         CapturingHandler handler = new CapturingHandler();
         jlinkUsingImage(new JlinkSpecBuilder()
                                 .helper(helper)
                                 .imagePath(initialImage)
-                                .name("java-base-jlink-with-mod-target")
+                                .name("java-base-jlink-with-mod-warn-target")
                                 .addModule("java.base")
                                 .validatingModule("java.base")
+                                .extraJlinkOpt("--run-image-only-warnings") // only generate a warning
                                 .build(), handler);
         // verify we get the warning message
-        expectMatch(netPropertiesFile.toString(), handler.stdErr());
+        expectMatch(modifiedFile.toString(), handler.stdErr());
         expectMatch("WARNING: ", handler.stdErr());
         expectMatch("has been modified", handler.stdErr());
     }
@@ -104,20 +83,6 @@ public class ModifiedFilesWarningTest extends AbstractJmodLessTest {
         }
         if (!foundMatch) {
             throw new AssertionError(String.format("Expected to find '%s' in '%s'", string, lines));
-        }
-    }
-
-    static class CapturingHandler extends OutputAnalyzerHandler {
-
-        private OutputAnalyzer output;
-
-        public String stdErr() {
-            return output.getStderr();
-        }
-
-        @Override
-        public void handleAnalyzer(OutputAnalyzer out) {
-            this.output = out;
         }
     }
 }
