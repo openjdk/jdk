@@ -25,8 +25,8 @@
  * @test
  * @bug 8307184
  * @summary Test basic operation of Elements.getDocComments
- * @library /tools/javac/lib
- * @build   JavacTestingAbstractProcessor TestGetDocComments
+ * @library /tools/lib /tools/javac/lib
+ * @build   toolbox.ToolBox JavacTestingAbstractProcessor TestGetDocComments
  * @compile -processor TestGetDocComments -proc:only TestGetDocComments.java
  */
 
@@ -36,6 +36,7 @@ import java.util.function.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
+import toolbox.ToolBox;
 
 /**
  * Test basic workings of Elements.getDocComments
@@ -56,11 +57,8 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
 
                         if (!expectedCommentStr.equals(actualComment)) {
                             messager.printError("Unexpected doc comment found", element);
-                            System.out.println("Actual");
-                            System.out.println(actualComment);
-                            System.out.println("Expected");
-                            System.out.println(expectedCommentStr);
-                            stringDiffer(actualComment, expectedCommentStr);
+                            (new ToolBox()).checkEqual(expectedCommentStr.lines().toList(),
+                                                       actualComment.lines().toList());
                         }
                     }
                 }
@@ -71,26 +69,6 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
             }
         }
         return true;
-    }
-
-    void stringDiffer(String actual, String expected) {
-        if (actual.length() != expected.length()) {
-            System.out.println("Strings have different lengths");
-        }
-
-        int minLength = Integer.min(actual.length(), expected.length());
-
-        for (int i = 0; i < minLength; i++) {
-            char actualChar = actual.charAt(i);
-            char expectedChar = expected.charAt(i);
-            if (actualChar != expectedChar ) {
-                System.out.println("First difference at index " + i +
-                                   "\t expected char " + expectedChar +
-                                   " got actual char " + actualChar);
-                return;
-            }
-        }
-        System.out.println("One string contains a suffix not found on the other.");
     }
 
     @interface ExpectedComment {
