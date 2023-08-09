@@ -33,6 +33,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -502,6 +503,9 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
+  // Initialize random for updating the hash of symbols
+  os::init_random(0x12345678);
+
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
@@ -542,8 +546,6 @@ void VM_PopulateDumpSharedSpace::doit() {
     log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
-
-  MetaspaceShared::exit_after_static_dump();
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -660,11 +662,14 @@ void MetaspaceShared::preload_and_dump() {
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
-  } else {
-    // On success, the VM_PopulateDumpSharedSpace op should have
-    // exited the VM.
-    ShouldNotReachHere();
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // Restore the java loaders that were cleared at dump time
+  if (use_full_module_graph()) {
+    HeapShared::restore_loader_data();
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
@@ -792,7 +797,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
@@ -870,6 +875,14 @@ bool MetaspaceShared::is_shared_dynamic(void* p) {
   }
 }
 
+bool MetaspaceShared::is_shared_static(void* p) {
+  if (is_in_shared_metaspace(p) && !is_shared_dynamic(p)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // This function is called when the JVM is unable to load the specified archive(s) due to one
 // of the following conditions.
 // - There's an error that indicates that the archive(s) files were corrupt or otherwise damaged.
@@ -891,14 +904,6 @@ void MetaspaceShared::unrecoverable_writing_error(const char* message) {
     log_error(cds)("%s", message);
   }
   vm_direct_exit(1);
-}
-
-// We have finished dumping the static archive. At this point, there may be pending VM
-// operations. We have changed some global states (such as vmClasses::_klasses) that
-// may cause these VM operations to fail. For safety, forget these operations and
-// exit the VM directly.
-void MetaspaceShared::exit_after_static_dump() {
-  os::_exit(0);
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
@@ -1466,8 +1471,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer);
-    SymbolTable::serialize_shared_table_header(&rc, false);
-    SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
+    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }

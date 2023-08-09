@@ -97,31 +97,19 @@ public class FieldWriter extends AbstractMemberWriter {
         }
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param fieldContent the content to which the documentation will be added
-     */
-    protected void buildSignature(Content fieldContent) {
-        fieldContent.add(getSignature(currentElement));
+    @Override
+    protected void buildSignature(Content target) {
+        target.add(getSignature(currentElement));
     }
 
-    /**
-     * Build the deprecation information.
-     *
-     * @param fieldContent the content to which the documentation will be added
-     */
-    protected void buildDeprecationInfo(Content fieldContent) {
-        addDeprecated(currentElement, fieldContent);
+    @Override
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentElement, target);
     }
 
-    /**
-     * Build the preview information.
-     *
-     * @param fieldContent the content to which the documentation will be added
-     */
-    protected void buildPreviewInfo(Content fieldContent) {
-        addPreview(currentElement, fieldContent);
+    @Override
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentElement, target);
     }
 
     /**
@@ -145,10 +133,8 @@ public class FieldWriter extends AbstractMemberWriter {
         addTags(currentElement, fieldContent);
     }
 
-
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content content) {
+    public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_FIELD_SUMMARY);
         Content memberContent = new ContentBuilder();
         writer.addSummaryHeader(this, memberContent);
@@ -282,9 +268,5 @@ public class FieldWriter extends AbstractMemberWriter {
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
-    }
-
-    protected Content getMemberHeader(){
-        return writer.getMemberHeader();
     }
 }

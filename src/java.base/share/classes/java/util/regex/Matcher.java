@@ -274,13 +274,40 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public MatchResult toMatchResult() {
-        String capturedText = hasMatch()
-                ? text.subSequence(first, last).toString()
-                : null;
+        int minStart;
+        String capturedText;
+        if (hasMatch()) {
+            minStart = minStart();
+            capturedText = text.subSequence(minStart, maxEnd()).toString();
+        } else {
+            minStart = -1;
+            capturedText = null;
+        }
         return new ImmutableMatchResult(first, last, groupCount(),
                 groups.clone(), capturedText,
-                namedGroups()
-        );
+                namedGroups(), minStart);
+    }
+
+    private int minStart() {
+        int r = text.length();
+        for (int group = 0; group <= groupCount(); ++group) {
+            int start = groups[group * 2];
+            if (start >= 0) {
+                r = Math.min(r, start);
+            }
+        }
+        return r;
+    }
+
+    private int maxEnd() {
+        int r = 0;
+        for (int group = 0; group <= groupCount(); ++group) {
+            int end = groups[group * 2 + 1];
+            if (end >= 0) {
+                r = Math.max(r, end);
+            }
+        }
+        return r;
     }
 
     private static class ImmutableMatchResult implements MatchResult {
@@ -290,16 +317,18 @@ public final class Matcher implements MatchResult {
         private final int[] groups;
         private final String text;
         private final Map<String, Integer> namedGroups;
+        private final int minStart;
 
         ImmutableMatchResult(int first, int last, int groupCount,
                              int[] groups, String text,
-                             Map<String, Integer> namedGroups) {
+                             Map<String, Integer> namedGroups, int minStart) {
             this.first = first;
             this.last = last;
             this.groupCount = groupCount;
             this.groups = groups;
             this.text = text;
             this.namedGroups = namedGroups;
+            this.minStart = minStart;
         }
 
         @Override
@@ -345,7 +374,7 @@ public final class Matcher implements MatchResult {
             checkGroup(group);
             if ((groups[group * 2] == -1) || (groups[group * 2 + 1] == -1))
                 return null;
-            return text.substring(groups[group * 2] - first, groups[group * 2 + 1] - first);
+            return text.substring(groups[group * 2] - minStart, groups[group * 2 + 1] - minStart);
         }
 
         @Override

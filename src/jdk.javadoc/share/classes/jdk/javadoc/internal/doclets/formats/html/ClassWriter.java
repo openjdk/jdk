@@ -33,7 +33,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
@@ -82,7 +81,6 @@ public class ClassWriter extends SubWriterHolderWriter {
                      "java.io.Serializable");
 
     protected final TypeElement typeElement;
-    protected final VisibleMemberTable visibleMemberTable;
 
     protected final ClassTree classTree;
     protected final PropertyUtils.PropertyHelper pHelper;
@@ -99,7 +97,6 @@ public class ClassWriter extends SubWriterHolderWriter {
         configuration.currentTypeElement = typeElement;
         this.classTree = classTree;
 
-        visibleMemberTable = configuration.getVisibleMemberTable(typeElement);
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
 
         switch (typeElement.getKind()) {
@@ -113,7 +110,8 @@ public class ClassWriter extends SubWriterHolderWriter {
         return pHelper;
     }
 
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildClassDoc();
     }
 
@@ -697,7 +695,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addFunctionalInterfaceInfo (Content target) {
-        if (isFunctionalInterface()) {
+        if (utils.isFunctionalInterface(typeElement)) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.functionalInterface));
             var dd = new HtmlTree(TagName.DD);
@@ -706,17 +704,6 @@ public class ClassWriter extends SubWriterHolderWriter {
             target.add(dl);
         }
     }
-
-    public boolean isFunctionalInterface() {
-        List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
-        for (AnnotationMirror anno : annotationMirrors) {
-            if (utils.isFunctionalInterface(anno)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 
     protected void addClassDeprecationInfo(Content classInfo) {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(typeElement);
