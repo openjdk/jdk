@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,9 +167,9 @@ public class Basic {
             Files.delete(file);
         }
 
-        // create link (to file that doesn't exist) and test reading of
-        // permissions
         if (TestUtil.supportsLinks(dir)) {
+            // create link (to file that doesn't exist) and test reading of
+            // permissions
             Path link = dir.resolve("link");
             System.out.format("create link %s\n", link);
             Files.createSymbolicLink(link, file);
@@ -184,6 +184,52 @@ public class Basic {
                 }
             } finally {
                 Files.delete(link);
+            }
+
+            // test that setting permissions on a link-free path with
+            // the NOFOLLOW_LINKS option succeeds when the path does
+            // not have read permission but fails on a path with links
+
+            // ensure there are no links in the path to test
+            Path realDir = dir.toRealPath();
+
+            // realDir/a/b/c/d
+            Path leaf = realDir.resolve(Path.of("a", "b", "c", "d"));
+            Files.createDirectories(leaf);
+
+            // realDir/a/b/c/d/FUBAR
+            Path sansLinks = Files.createTempFile(leaf, "FU", "BAR");
+
+            PosixFileAttributeView sansView =
+                Files.getFileAttributeView(sansLinks,
+                                           PosixFileAttributeView.class,
+                                           LinkOption.NOFOLLOW_LINKS);
+            sansView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
+            sansView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
+
+            // reinstate read permission
+            sansView.setPermissions(Set.of(PosixFilePermission.OWNER_READ,
+                                           PosixFilePermission.OWNER_WRITE));
+
+            // lien -> realDir/a/b/c
+            Path lien = realDir.resolve(Path.of("a", "lien"));
+            Files.createSymbolicLink(lien,
+                                     realDir.resolve(Path.of("a", "b", "c")));
+
+            // lien/d/FUBAR
+            Path withLinks = lien.resolve(Path.of("d"),
+                                          sansLinks.getFileName());
+
+            PosixFileAttributeView withView =
+                Files.getFileAttributeView(withLinks,
+                                           PosixFileAttributeView.class,
+                                           LinkOption.NOFOLLOW_LINKS);
+            withView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
+            try {
+                withView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
+                throw new RuntimeException("AccessDeniedException not thrown");
+            } catch (AccessDeniedException expected) {
+                System.err.println("Ignored expected AccessDeniedException");
             }
         }
 

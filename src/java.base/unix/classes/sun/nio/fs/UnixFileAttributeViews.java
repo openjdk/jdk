@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,30 @@ class UnixFileAttributeViews {
                     }
                 }
             } catch (UnixException x) {
+                if (!followLinks && x.errno() == UnixConstants.EACCES) {
+                    //
+                    // check whether file's path contains any symlinks, and if
+                    // not, retry setting the mode as if followLinks were true
+                    //
+                    UnixPath p = file;
+                    try {
+                        boolean containsLink =
+                            UnixFileAttributes.get(p, false).isSymbolicLink();
+                        while (!containsLink) {
+                            p = p.getParent();
+                            if (p == null)
+                                break;
+                            containsLink =
+                                UnixFileAttributes.get(p, false).isSymbolicLink();
+                        }
+                        if (!containsLink) {
+                            chmod(file, mode);
+                            return;
+                        }
+                    } catch (UnixException y) {
+                        x.addSuppressed(y);
+                    }
+                }
                 x.rethrowAsIOException(file);
             }
         }
