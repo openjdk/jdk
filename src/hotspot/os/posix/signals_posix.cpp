@@ -679,7 +679,7 @@ static void UserHandler(int sig, siginfo_t* siginfo, void* context) {
   os::signal_notify(sig);
 }
 
-static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
+static void print_signal_handler_name(outputStream* os, address handler, char* buf, int buflen) {
   // We demangle, but omit arguments - signal handlers should have always the same prototype.
   os::print_function_and_library_name(os, handler, buf, buflen,
                                        true, // shorten_path
@@ -1404,7 +1404,7 @@ static void print_signal_set_short(outputStream* st, const sigset_t* set) {
 
 static void print_single_signal_handler(outputStream* st,
                                         const struct sigaction* act,
-                                        char* buf, size_t buflen) {
+                                        char* buf, int buflen) {
 
   address handler = get_signal_handler(act);
   if (HANDLER_IS_DFL(handler)) {
@@ -1429,7 +1429,7 @@ static void print_single_signal_handler(outputStream* st,
 // - otherwise, if this signal handler was installed by us and replaced another handler to which we
 //    are not chained (e.g. if chaining is off), print that one too.
 void PosixSignals::print_signal_handler(outputStream* st, int sig,
-                                        char* buf, size_t buflen) {
+                                        char* buf, int buflen) {
 
   st->print("%10s: ", os::exception_name(sig, buf, buflen));
 
@@ -1469,7 +1469,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   }
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
+void os::print_signal_handlers(outputStream* st, char* buf, int buflen) {
   st->print_cr("Signal Handlers:");
   PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
   PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
@@ -1726,10 +1726,10 @@ int SR_initialize() {
   char *s;
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
-    int sig = ::strtol(s, 0, 10);
+    int64_t sig = ::strtol(s, 0, 10);
     if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
-      PosixSignals::SR_signum = sig;
+      PosixSignals::SR_signum = checked_cast<int>(sig);
     } else {
       warning("You set _JAVA_SR_SIGNUM=" INT64_FORMAT ". It must be in range [%d, %d]. Using %d instead.",
               sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);

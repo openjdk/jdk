@@ -1104,7 +1104,7 @@ void networkStream::flush() {
   if (size() != 0) {
     ssize_t result = os::raw_send(_socket, (char *)base(), size(), 0);
     assert(result != -1, "connection error");
-    assert(result == size(), "didn't send enough data");
+    assert(result >= 0 && (size_t)result == size(), "didn't send enough data");
   }
   reset();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public:
 
   static void hotspot_sigmask(Thread* thread);
 
-  static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);
+  static void print_signal_handler(outputStream* st, int sig, char* buf, int buflen);
 
   // Suspend-resume
   static bool do_suspend(OSThread* osthread);

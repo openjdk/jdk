@@ -2094,7 +2094,7 @@ bool os::signal_thread(Thread* thread, int sig, const char* reason) {
   return false;
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
+void os::print_signal_handlers(outputStream* st, char* buf, int buflen) {
   // do nothing
 }
 
