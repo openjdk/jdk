@@ -112,11 +112,21 @@ public final class Shared {
         if (nBits < 0) {
             throw new IllegalArgumentException(String.valueOf(nBits));
         }
+        if (nBits == 0) {
+            return new BigInteger(nBits, new byte[0]);
+        }
         int nBytes = (nBits + 7) / 8;
         var r = new Random();
-        var b = new byte[nBytes];
-        r.nextBytes(b);
-        var x = new BigInteger(b).shiftRight(nBytes * 8 - nBits);
+        var bytes = new byte[nBytes];
+        r.nextBytes(bytes);
+        // Create a BigInteger of the exact bit length by:
+        // 1. ensuring that the most significant bit is set so that
+        //    no leading zeros are truncated, and
+        // 2. explicitly specifying signum, so it's not calculated from
+        //    the passed bytes, which must represent magnitude only
+        bytes[0] |= (byte) 0b1000_0000;
+        var x = new BigInteger(/* positive */ 1, bytes)
+                .shiftRight(nBytes * 8 - nBits);
         if (x.bitLength() != nBits)
             throw new AssertionError(x.bitLength() + ", " + nBits);
         return x;
