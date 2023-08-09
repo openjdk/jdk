@@ -1,7 +1,7 @@
-package m1.p1;
+package p1;
 
 
-import m3.p3.ServiceInterface;
+import p3.ServiceInterface;
 
 public class AInterface implements ServiceInterface {
 

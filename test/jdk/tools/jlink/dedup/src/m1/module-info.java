@@ -1,8 +1,8 @@
-import m1.p1.AInterface;
-import m3.service.ServiceInterface;
+import p1.AInterface;
+import p3.ServiceInterface;
 
 module m1 {
-    exports m1.p1;
+    exports p1;
 
     requires transitive java.desktop;
     requires m3;

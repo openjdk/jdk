@@ -1,4 +1,4 @@
-package m3.p3;
+package p3;
 
 public interface ServiceInterface {
 

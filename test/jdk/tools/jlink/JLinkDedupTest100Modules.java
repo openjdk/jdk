@@ -29,14 +29,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.StringJoiner;
 import java.util.spi.ToolProvider;
 
 /*
  * @test
  * @summary Make sure that 100 modules can be linked using jlink and dedcplication works correctlyk.
  * @bug 8311591
- * @library ../lib
+ * @library /test/lib
+ *          ../lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -44,7 +44,7 @@ import java.util.spi.ToolProvider;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @build tests.* jdk.test.lib.compiler.CompilerUtils
+ * @build tests.* JLinkDedupTest100Modules jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTest100Modules
  */
 public class JLinkDedupTest100Modules {
@@ -52,7 +52,7 @@ public class JLinkDedupTest100Modules {
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String TEST_SRC = System.getProperty("test.src");
 
-    private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
+    private static final Path SRC_DIR = Paths.get(TEST_SRC, "dedup", "src");
     private static final Path MODS_DIR = Paths.get("mods");
 
     private static final String MODULE_PATH =
@@ -102,7 +102,7 @@ public class JLinkDedupTest100Modules {
 
         JImageGenerator.getJLinkTask()
                 .modulePath(MODULE_PATH)
-                .output(SRC_DIR.resolve("out-jlink"))
+                .output(SRC_DIR.resolve("out-jlink-dedup"))
                 .addMods("m1")
                 .addMods("m2")
                 .addMods("m2")
@@ -111,13 +111,13 @@ public class JLinkDedupTest100Modules {
                 .call()
                 .assertSuccess();
 
-        Path binDir = SRC_DIR.resolve("out-jlink").resolve("bin").toAbsolutePath();
+        Path binDir = SRC_DIR.resolve("out-jlink-dedup").resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+BytecodeVerificationLocal",
-                "-m", "bug8240567x/testpackage.JLink100ModulesTest");
+                "-m", "m4/p4.Main");
         processBuilder.inheritIO();
         processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();

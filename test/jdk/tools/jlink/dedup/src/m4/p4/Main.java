@@ -1,6 +1,6 @@
-package m4.p4;
+package p4;
 
-import m3.p3.ServiceInterface;
+import p3.ServiceInterface;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;

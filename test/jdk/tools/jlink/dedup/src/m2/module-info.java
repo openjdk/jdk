@@ -1,12 +1,12 @@
-import m2.p2.BInterface;
-import m3.p3.ServiceInterface;
+import p2.BInterface;
+import p3.ServiceInterface;
 
 module m2 {
-    exports m2.p2 to m3;
+    exports p2 to m3;
 
     requires transitive java.desktop;
     requires m3;
 
-    provides ServiceInterface
+    provides p3.ServiceInterface
             with BInterface;
 }
