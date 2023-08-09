@@ -50,9 +50,6 @@ public class NativeLibraryCopier {
     }
 
     private static String libname(String name) {
-        return String.format("%s%s.%s",
-                Platform.isWindows() ? "" : "lib",
-                name,
-                Platform.sharedLibraryExt());
+        return Platform.sharedLibraryPrefix() + name + "." + Platform.sharedLibraryExt();
     }
 }

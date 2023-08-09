@@ -79,9 +79,8 @@ class DynamicLoadWarningTest {
     @BeforeAll
     static void setup() throws Exception {
         // get absolute path to JVM TI agents
-        String prefix = Platform.isWindows() ? "" : "lib";
-        String libname1 = prefix + JVMTI_AGENT1_LIB + "." + Platform.sharedLibraryExt();
-        String libname2 = prefix + JVMTI_AGENT2_LIB + "." + Platform.sharedLibraryExt();
+        String libname1 = Platform.sharedLibraryPrefix() + JVMTI_AGENT1_LIB + "." + Platform.sharedLibraryExt();
+        String libname2 = Platform.sharedLibraryPrefix() + JVMTI_AGENT2_LIB + "." + Platform.sharedLibraryExt();
         jvmtiAgentPath1 = Path.of(Utils.TEST_NATIVE_PATH, libname1).toAbsolutePath().toString();
         jvmtiAgentPath2 = Path.of(Utils.TEST_NATIVE_PATH, libname2).toAbsolutePath().toString();
 

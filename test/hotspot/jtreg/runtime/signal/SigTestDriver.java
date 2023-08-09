@@ -144,7 +144,7 @@ public class SigTestDriver {
     }
 
     private static Path libjsig() {
-        return Platform.jvmLibDir().resolve((Platform.isWindows() ? "" : "lib")
-                + "jsig." + Platform.sharedLibraryExt());
+        return Platform.jvmLibDir().resolve(Platform.sharedLibraryPrefix() + "jsig."
+                + Platform.sharedLibraryExt());
     }
 }
