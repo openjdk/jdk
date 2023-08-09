@@ -121,7 +121,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     private static final MethodTypeDesc MTD_StringArray = MethodTypeDesc.of(CD_String.arrayType());
     private static final MethodTypeDesc MTD_SystemModules = MethodTypeDesc.of(CD_SYSTEM_MODULES);
 
-    private int moduleDescriptorsPerMethod = 75;
+    private int moduleDescriptorsPerMethod = 1;
     private boolean enabled;
 
     public SystemModulesPlugin() {
