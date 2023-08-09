@@ -443,7 +443,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, LogEvents, true, DIAGNOSTIC,                                \
           "Enable the various ring buffer event logs")                      \
                                                                             \
-  product(uintx, LogEventsBufferEntries, 20, DIAGNOSTIC,                    \
+  product(int, LogEventsBufferEntries, 20, DIAGNOSTIC,                      \
           "Number of ring buffer event logs")                               \
           range(1, NOT_LP64(1*K) LP64_ONLY(1*M))                            \
                                                                             \
