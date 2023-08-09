@@ -105,7 +105,7 @@ public:
     }
   }
 
-  // Returns an initialized Chunk of requested size
+  // Returns an initialized and null-terminated Chunk of requested size
   static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
