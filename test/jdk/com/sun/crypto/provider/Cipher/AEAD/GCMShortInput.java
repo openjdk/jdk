@@ -28,8 +28,8 @@
  */
 
 import java.nio.ByteBuffer;
-import java.security.GeneralSecurityException;
 
+import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -50,8 +50,8 @@ public class GCMShortInput {
         cipher.init(Cipher.DECRYPT_MODE, keySpec, params);
         try {
             cipher.doFinal(ByteBuffer.allocate(0), ByteBuffer.allocate(0));
-            throw new AssertionError("GeneralSecurityException expected");
-        } catch (GeneralSecurityException e) {
+            throw new AssertionError("AEADBadTagException expected");
+        } catch (AEADBadTagException e) {
             // expected
         }
     }
