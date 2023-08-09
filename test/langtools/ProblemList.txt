@@ -54,7 +54,6 @@ tools/javac/modules/SourceInSymlinkTest.java                                    
 # javap
 
 tools/javap/output/RepeatingTypeAnnotations.java                                8057687    generic-all    emit correct byte code an attributes for type annotations
-tools/javap/T6587786.java                                                       8195589    generic-all    T6587786.java failed after JDK-8189997
 
 ###########################################################################
 #
