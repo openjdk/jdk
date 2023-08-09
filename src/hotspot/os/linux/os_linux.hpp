@@ -167,6 +167,8 @@ class os::Linux {
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
 
+  static jlong sendfile(int out_fd, int in_fd, jlong* offset, jlong count);
+
   // Determine if the vmid is the parent pid for a child in a PID namespace.
   // Return the namespace pid if so, otherwise -1.
   static int get_namespace_pid(int vmid);
