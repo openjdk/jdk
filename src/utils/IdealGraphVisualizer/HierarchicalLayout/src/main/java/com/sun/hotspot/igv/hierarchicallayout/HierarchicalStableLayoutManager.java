@@ -55,7 +55,7 @@ public class HierarchicalStableLayoutManager {
     private HashSet<? extends Vertex> oldVertices;
     private HashSet<? extends Link> oldLinks;
     private boolean shouldRedrawLayout = true;
-    private final boolean shouldRemoveEmptyLayers = false;
+    private boolean shouldRemoveEmptyLayers = true;
     private final boolean shouldComputeLayoutScore = false;
 
     enum Action {
@@ -182,8 +182,8 @@ public class HierarchicalStableLayoutManager {
         for (LayoutNode n : nodes) {
             for (LayoutEdge e : List.copyOf(n.succs)) {
                 assert e.from.equals(n);
-                assert e.to.preds.contains(e);
                 if (nodes.contains(e.to)) {
+                    assert e.to.preds.contains(e);
                     assert layers.get(n.layer + 1).contains(e.to);
                     assert e.to.layer == n.layer + 1;
                 } else {
@@ -192,8 +192,8 @@ public class HierarchicalStableLayoutManager {
             }
             for (LayoutEdge e : List.copyOf(n.preds)) {
                 assert e.to.equals(n);
-                assert e.from.succs.contains(e);
                 if (nodes.contains(e.from)) {
+                    assert e.from.succs.contains(e);
                     assert layers.get(n.layer - 1).contains(e.from);
                     assert e.from.layer == n.layer - 1;
                 } else {
@@ -919,10 +919,10 @@ public class HierarchicalStableLayoutManager {
                     node.preds.add(e);
                     node.preds.remove(edge);
                 }
-                removeNode(predNode);
+                removeNodeWithoutRemovingLayer(predNode);
             }
 
-            removeNode(node);
+            removeNodeWithoutRemovingLayer(node);
             insertNode(node, node.layer - 1);
 
             for (LayoutEdge edge : List.copyOf(node.succs)) {
@@ -946,10 +946,10 @@ public class HierarchicalStableLayoutManager {
                     node.succs.add(e);
                     node.succs.remove(edge);
                 }
-                removeNode(succNode);
+                removeNodeWithoutRemovingLayer(succNode);
             }
 
-            removeNode(node);
+            removeNodeWithoutRemovingLayer(node);
             insertNode(node, node.layer + 1);
 
             for (LayoutEdge edge : List.copyOf(node.preds)) {
@@ -1286,12 +1286,18 @@ public class HierarchicalStableLayoutManager {
                     n.succs.remove(edgeToRemove);
                     prev.preds.remove(edgeToRemove);
                 }
-                sanityCheckEdges();
                 break;
             }
 
             sanityCheckEdges();
             sanityCheckNodesAndLayerNodes();
+        }
+
+        private void removeNodeWithoutRemovingLayer(LayoutNode node) {
+            boolean prevShouldRemoveEmptyLayers = shouldRemoveEmptyLayers;
+            shouldRemoveEmptyLayers = false;
+            removeNode(node);
+            shouldRemoveEmptyLayers = prevShouldRemoveEmptyLayers;
         }
 
         private void removeNode(LayoutNode node) {
@@ -1310,7 +1316,7 @@ public class HierarchicalStableLayoutManager {
                 if (n.pos > pos) {
                     n.pos -= 1;
                 }
-                if (n.vertex != null) {
+                if (n.vertex != null || n.preds.size() > 1) {
                     onlyDummiesLeft = false;
                 }
             }
@@ -1326,14 +1332,15 @@ public class HierarchicalStableLayoutManager {
                     }
                 }
                 for (LayoutNode n : remainingLayerNodes) {
-                    assert n.preds.size() == 1;
-                    LayoutEdge predEdge = n.preds.get(0);
-                    LayoutNode fromNode = predEdge.from;
-                    fromNode.succs.remove(predEdge);
-                    for (LayoutEdge e : n.succs) {
-                        e.from = fromNode;
-                        e.relativeFrom = predEdge.relativeFrom;
-                        fromNode.succs.add(e);
+                    if (n.preds.size() == 1) {
+                        LayoutEdge predEdge = n.preds.get(0);
+                        LayoutNode fromNode = predEdge.from;
+                        fromNode.succs.remove(predEdge);
+                        for (LayoutEdge e : n.succs) {
+                            e.from = fromNode;
+                            e.relativeFrom = predEdge.relativeFrom;
+                            fromNode.succs.add(e);
+                        }
                     }
                     nodes.remove(n);
                 }
@@ -1408,17 +1415,17 @@ public class HierarchicalStableLayoutManager {
                     layoutedNodes.add(n);
                 }
             }
-            Set<Link> missingLinks = new HashSet<>(currentLinks);
-            missingLinks.removeAll(layoutedLinks);
-            for (Link l : missingLinks) {
-                applyAddLinkAction(l);
-                layoutedLinks.add(l);
-            }
             Set<Link> superfluousLinks = new HashSet<>(layoutedLinks);
             superfluousLinks.removeAll(currentLinks);
             for (Link l : superfluousLinks) {
                 applyRemoveLinkAction(l);
                 layoutedLinks.remove(l);
+            }
+            Set<Link> missingLinks = new HashSet<>(currentLinks);
+            missingLinks.removeAll(layoutedLinks);
+            for (Link l : missingLinks) {
+                applyAddLinkAction(l);
+                layoutedLinks.add(l);
             }
             assert currentVertices.size() == layoutedNodes.size();
             assert currentLinks.size() == layoutedLinks.size();
