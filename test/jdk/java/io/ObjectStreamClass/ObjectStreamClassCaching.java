@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,29 +30,93 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-/* @test
+/*
+ * @test id=G1
+ * @requires vm.gc.G1
  * @bug 8277072
  * @library /test/lib/
- * @summary ObjectStreamClass caches keep ClassLoaders alive
- * @run testng/othervm -Xmx10m -XX:SoftRefLRUPolicyMSPerMB=1 ObjectStreamClassCaching
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (G1 GC)
+ * @run testng/othervm -Xmx64m -XX:+UseG1GC ObjectStreamClassCaching
+ */
+
+/*
+ * @test id=Parallel
+ * @requires vm.gc.Parallel
+ * @bug 8277072
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (Parallel GC)
+ * @run testng/othervm -Xmx64m -XX:+UseParallelGC ObjectStreamClassCaching
+ */
+
+/*
+ * @test id=Z
+ * @requires vm.gc.Z
+ * @bug 8277072
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (Z GC)
+ * @run testng/othervm -Xmx64m -XX:+UseZGC ObjectStreamClassCaching
+ */
+
+/*
+ * @test id=Shenandoah
+ * @requires vm.gc.Shenandoah
+ * @bug 8277072
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (Shenandoah GC)
+ * @run testng/othervm -Xmx64m -XX:+UseShenandoahGC ObjectStreamClassCaching
+ */
+
+/*
+ * @test id=Serial
+ * @requires vm.gc.Serial
+ * @bug 8277072
+ * @library /test/lib/
+ * @summary ObjectStreamClass caches keep ClassLoaders alive (Serial GC)
+ * @run testng/othervm -Xmx64m -XX:+UseSerialGC ObjectStreamClassCaching
  */
 public class ObjectStreamClassCaching {
 
+    /**
+     * Test methods execute in same VM and are ordered by name.
+     * We test effectiveness 1st which is sensitive to previous allocations when ZGC is used.
+     */
     @Test
-    public void testCachingEffectiveness() throws Exception {
-        var ref = lookupObjectStreamClass(TestClass.class);
+    public void test1CacheEffectiveness() throws Exception {
+        var list = new ArrayList<>();
+        var ref1 = lookupObjectStreamClass(TestClass1.class);
+        var ref2 = newWeakRef();
+        boolean oome = false;
+        try {
+            while (!ref2.refersTo(null)) {
+                list.add(new byte[1024 * 1024 * 1]); // 1 MiB chunks
+                System.out.println("1MiB allocated...");
+                Thread.sleep(5L);
+            }
+        } catch (OutOfMemoryError e) {
+            // release
+            list = null;
+            oome = true;
+        }
+        assertFalse(oome, "WeakReference was not cleared although memory was pressed hard");
+        assertFalse(ref1.refersTo(null),
+                    "Cache lost entry together with WeakReference being cleared although memory was not under pressure");
         System.gc();
         Thread.sleep(100L);
-        // to trigger any ReferenceQueue processing...
-        lookupObjectStreamClass(AnotherTestClass.class);
-        assertFalse(ref.refersTo(null),
-                    "Cache lost entry although memory was not under pressure");
     }
 
     @Test
-    public void testCacheReleaseUnderMemoryPressure() throws Exception {
-        var ref = lookupObjectStreamClass(TestClass.class);
-        pressMemoryHard(ref);
+    public void test2CacheReleaseUnderMemoryPressure() throws Exception {
+        var list = new ArrayList<>();
+        var ref = lookupObjectStreamClass(TestClass2.class);
+        try {
+            while (!ref.refersTo(null)) {
+                list.add(new byte[1024 * 1024 * 4]); // 4 MiB chunks
+                System.out.println("4MiB allocated...");
+            }
+        } catch (OutOfMemoryError e) {
+            // release
+            list = null;
+        }
         System.gc();
         Thread.sleep(100L);
         assertTrue(ref.refersTo(null),
@@ -60,24 +124,18 @@ public class ObjectStreamClassCaching {
     }
 
     // separate method so that the looked-up ObjectStreamClass is not kept on stack
-    private static WeakReference<?> lookupObjectStreamClass(Class<?> cl) {
+    private static Reference<?> lookupObjectStreamClass(Class<?> cl) {
         return new WeakReference<>(ObjectStreamClass.lookup(cl));
     }
 
-    private static void pressMemoryHard(Reference<?> ref) {
-        try {
-            var list = new ArrayList<>();
-            while (!ref.refersTo(null)) {
-                list.add(new byte[1024 * 1024 * 64]); // 64 MiB chunks
-            }
-        } catch (OutOfMemoryError e) {
-            // release
-        }
+    // separate method so that the new Object() is not kept on stack
+    private static Reference<?> newWeakRef() {
+        return new WeakReference<>(new Object());
     }
-}
 
-class TestClass implements Serializable {
-}
+    static class TestClass1 implements Serializable {
+    }
 
-class AnotherTestClass implements Serializable {
+    static class TestClass2 implements Serializable {
+    }
 }
