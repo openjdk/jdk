@@ -1422,7 +1422,7 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
 objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
   size_t size = objArrayOopDesc::object_size(length);
-  Klass* ak = array_klass(n, CHECK_NULL);
+  ArrayKlass* ak = array_klass(n, CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   return o;
@@ -1486,7 +1486,7 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
   }
 }
 
-Klass* InstanceKlass::array_klass(int n, TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
   // Need load-acquire for lock-free read
   if (array_klasses_acquire() == nullptr) {
     ResourceMark rm(THREAD);
@@ -1508,7 +1508,7 @@ Klass* InstanceKlass::array_klass(int n, TRAPS) {
   return oak->array_klass(n, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null(int n) {
+ArrayKlass* InstanceKlass::array_klass_or_null(int n) {
   // Need load-acquire for lock-free read
   ObjArrayKlass* oak = array_klasses_acquire();
   if (oak == nullptr) {
@@ -1518,11 +1518,11 @@ Klass* InstanceKlass::array_klass_or_null(int n) {
   }
 }
 
-Klass* InstanceKlass::array_klass(TRAPS) {
+ArrayKlass* InstanceKlass::array_klass(TRAPS) {
   return array_klass(1, THREAD);
 }
 
-Klass* InstanceKlass::array_klass_or_null() {
+ArrayKlass* InstanceKlass::array_klass_or_null() {
   return array_klass_or_null(1);
 }
 
