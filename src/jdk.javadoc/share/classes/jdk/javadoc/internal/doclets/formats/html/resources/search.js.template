@@ -413,7 +413,7 @@ $(function() {
         var id = hdr.attr("id") || hdr.parent("section").attr("id") || hdr.children("a").attr("id");
         if (id) {
             hdr.append(" <a href='#" + id + "' class='anchor-link' aria-label='" + messages.linkToSection
-                + "'><img src='" + pathtoroot + "link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
+                + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
                 + " width='16' height='16'></a>");
         }
     });

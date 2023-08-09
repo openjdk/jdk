@@ -37,7 +37,7 @@ var tableTab = "table-tab";
 var activeTableTab = "active-table-tab";
 
 function loadScripts(doc, tag) {
-    createElem(doc, tag, 'search.js');
+    createElem(doc, tag, 'script-files/search.js');
 
     createElem(doc, tag, 'module-search-index.js');
     createElem(doc, tag, 'package-search-index.js');
