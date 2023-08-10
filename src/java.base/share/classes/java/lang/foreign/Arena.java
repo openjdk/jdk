@@ -267,9 +267,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * other than the arena's owner thread.
      */
     @Override
-    default MemorySegment allocate(long byteSize, long byteAlignment) {
-        return ((MemorySessionImpl)scope()).allocate(byteSize, byteAlignment);
-    }
+    MemorySegment allocate(long byteSize, long byteAlignment);
 
     /**
      * {@return the arena scope}

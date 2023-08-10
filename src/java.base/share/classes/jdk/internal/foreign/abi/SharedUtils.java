@@ -90,7 +90,7 @@ public final class SharedUtils {
         }
 
         @Override
-        public MemorySegment allocate(long byteSize) {
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
             throw new UnsupportedOperationException();
         }
 

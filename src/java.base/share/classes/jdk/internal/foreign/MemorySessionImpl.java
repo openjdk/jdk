@@ -29,10 +29,13 @@ package jdk.internal.foreign;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
+import java.util.function.Function;
+
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -86,6 +89,12 @@ public abstract sealed class MemorySessionImpl
             @Override
             public void close() {
                 MemorySessionImpl.this.close();
+            }
+
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
+                return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, MemorySessionImpl.this);
             }
         };
     }
@@ -151,11 +160,6 @@ public abstract sealed class MemorySessionImpl
 
     public static MemorySessionImpl createImplicit(Cleaner cleaner) {
         return new ImplicitSession(cleaner);
-    }
-
-    public MemorySegment allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-        return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, this);
     }
 
     public abstract void release0();
