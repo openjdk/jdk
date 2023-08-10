@@ -1002,13 +1002,11 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         int prevWindowState = peer.getState();
         if (prevWindowState == windowState) return;
-        System.out.println("check1");
 
         if ((windowState & Frame.ICONIFIED) != 0) {
             // Treat all state bit masks with ICONIFIED bit as ICONIFIED state.
             windowState = Frame.ICONIFIED;
         }
-        System.out.println("check2");
 
         switch (windowState) {
             case Frame.ICONIFIED:
@@ -1022,24 +1020,18 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 break;
             case Frame.MAXIMIZED_BOTH:
                 if (prevWindowState == Frame.ICONIFIED) {
-                    System.out.println("check3");
                     // let's return into the normal states first
                     execute(CWrapper.NSWindow::deminiaturize);
                     waitForWindowState(Frame.NORMAL);
-                    System.out.println("check4");
                 }
                 maximize();
-                System.out.println("check5");
                 break;
             case Frame.NORMAL:
-                System.out.println("check6");
                 if (prevWindowState == Frame.ICONIFIED) {
                     execute(CWrapper.NSWindow::deminiaturize);
-                    System.out.println("check7");
                 } else if (prevWindowState == Frame.MAXIMIZED_BOTH) {
                     // the zoom call toggles between the normal and the max states
                     unmaximize();
-                    System.out.println("check8");
                 }
                 break;
             default:
