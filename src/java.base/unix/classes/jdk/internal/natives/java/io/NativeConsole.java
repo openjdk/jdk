@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static jdk.internal.foreign.support.DefaultNativeLookupUtil.*;
-import static jdk.internal.foreign.support.InvokeUtil.invokeAsInt;
+import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 
 public final class NativeConsole {
 
@@ -49,6 +49,10 @@ public final class NativeConsole {
     private static final MethodHandle IS_A_TTY = downcall("isatty", JAVA_INT, JAVA_INT);
 
     static boolean isatty(int fd) {
-        return invokeAsInt(IS_A_TTY, fd) == 1;
+        try {
+            return (int) IS_A_TTY.invokeExact(fd) == 1;
+        } catch (Throwable t) {
+            throw newInternalError(IS_A_TTY, t);
+        }
     }
 }

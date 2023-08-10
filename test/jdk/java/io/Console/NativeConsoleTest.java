@@ -28,13 +28,18 @@
  */
 
 import org.junit.jupiter.api.*;
+
+import java.io.Console;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class NativeConsoleTest {
 
     @Test
-    void a() {
-        // Todo: implement a test
+    void console() {
+        // Make sure the console can be loaded
+        Console console = System.console();
+
     }
 
 }

@@ -30,8 +30,7 @@ import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 
 import static jdk.internal.foreign.support.DefaultNativeLookupUtil.downcall;
-import static jdk.internal.foreign.support.DefaultNativeLookupUtil.downcallOfVoid;
-import static jdk.internal.foreign.support.InvokeUtil.invokeAsInt;
+import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 import static jdk.internal.natives.WindowsConstants.*;
 import static jdk.internal.natives.WindowsMethods.getFileType;
 import static jdk.internal.natives.WindowsMethods.getStdHandle;
@@ -53,7 +52,7 @@ public final class NativeConsole {
     }
 
     public static String encoding() {
-        int cp = invokeAsInt(GET_CONSOLE_CP);
+        int cp = getConsoleCP();
         if (cp >= 874 && cp <= 950) {
             return "ms" + cp;
         }
@@ -65,7 +64,23 @@ public final class NativeConsole {
 
     // Native methods
 
+/*    static {
+        try {
+            System.loadLibrary("Kernel32");
+        } catch (Throwable t) {
+            System.load("some path");
+        }
+    }*/
+
     // https://learn.microsoft.com/en-us/windows/console/getconsolecp
     private static final MethodHandle GET_CONSOLE_CP = downcall("GetConsoleCP", UINT);
+
+    static int getConsoleCP() {
+        try {
+            return (int) GET_CONSOLE_CP.invokeExact();
+        } catch (Throwable t) {
+            throw newInternalError(GET_CONSOLE_CP, t);
+        }
+    }
 
 }

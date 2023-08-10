@@ -42,9 +42,7 @@ public class ModuleSelectionTest {
         var con = System.console();
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
-        var istty = (boolean)MethodHandles.privateLookupIn(Console.class, MethodHandles.lookup())
-                .findStatic(Console.class, "istty", MethodType.methodType(boolean.class))
-                .invoke();
+        var istty = con.isTerminal();
         var impl = con != null ? MethodHandles.privateLookupIn(pc, MethodHandles.lookup())
                 .findGetter(pc, "delegate", jdkc)
                 .invoke(con) : null;

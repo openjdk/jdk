@@ -4,6 +4,7 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -47,6 +48,7 @@ public final class DefaultNativeLookupUtil {
         try {
             return Linker.nativeLinker()
                     .defaultLookup()
+                    .or(SymbolLookup.loaderLookup())
                     .find(name)
                     .orElseThrow();
         } catch (NoSuchElementException e) {

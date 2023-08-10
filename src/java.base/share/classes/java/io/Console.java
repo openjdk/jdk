@@ -369,7 +369,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     // private static native String encoding();
     private static final boolean ISTTY = NativeConsole.istty();
-    static final Charset CHARSET;
+    private static final Charset CHARSET;
     private static final Console CONSOLE;
 
     static {
@@ -438,5 +438,4 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         return c;
     }
 
-    //private static native boolean istty();
 }

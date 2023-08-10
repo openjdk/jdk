@@ -29,8 +29,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import static jdk.internal.foreign.support.DefaultNativeLookupUtil.downcall;
-import static jdk.internal.foreign.support.InvokeUtil.invokeAsInt;
-import static jdk.internal.foreign.support.InvokeUtil.invokeAsSegment;
+import static jdk.internal.foreign.support.InvokeUtil.*;
 import static jdk.internal.natives.WindowsTypes.DWORD;
 import static jdk.internal.natives.WindowsTypes.HANDLE;
 
@@ -42,14 +41,22 @@ public final class WindowsMethods {
     private static final MethodHandle GET_FILE_TYPE = downcall("GetFileType", DWORD, HANDLE);
 
     public static int getFileType(MemorySegment hFile) {
-        return invokeAsInt(GET_FILE_TYPE, hFile);
+        try {
+            return (int) GET_FILE_TYPE.invokeExact(hFile);
+        } catch (Throwable t) {
+            throw newInternalError(GET_FILE_TYPE, t);
+        }
     }
 
     // https://learn.microsoft.com/en-us/windows/console/getstdhandle
     private static final MethodHandle GET_STD_HANDLE = downcall("GetStdHandle", HANDLE, DWORD);
 
     public static MemorySegment getStdHandle(int nStdHandle) {
-        return invokeAsSegment(GET_STD_HANDLE, nStdHandle);
+        try {
+            return (MemorySegment) GET_STD_HANDLE.invokeExact(nStdHandle);
+        } catch (Throwable t) {
+            throw newInternalError(GET_STD_HANDLE, t);
+        }
     }
 
 }
