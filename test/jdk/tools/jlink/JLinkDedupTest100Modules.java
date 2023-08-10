@@ -21,8 +21,12 @@
  * questions.
  */
 
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import tests.JImageGenerator;
+import tests.JImageValidator;
 import tests.Result;
 
 import java.io.File;
@@ -119,9 +123,11 @@ public class JLinkDedupTest100Modules {
              throw new AssertionError("JLinkDedupTest100Modules failed to launch");
 
         extractJImage(src);
+        decompileWitJavap(src);
+
 
     }
-    static void extractJImage(Path src) {
+    static void extractJImage(Path src) throws Throwable {
         Path binDir = src.resolve("out-jlink-dedup").toAbsolutePath();
         Path outputDir = src.resolve("dir");
         Path jimageDir = binDir.resolve("lib","modules");
@@ -134,5 +140,23 @@ public class JLinkDedupTest100Modules {
         System.out.println("REsult dir " +result.getFile());
         result.assertSuccess();
 
+
+    }
+
+    static void decompileWitJavap(Path srcDir) throws Exception {
+        //dir/java.base/jdk/internal/module/SystemModules\$all.class
+        Path systemModuleClass  = srcDir.resolve("dir","java.base","jdk","internal","module", "SystemModules$all.class");
+
+        JDKToolLauncher javap = JDKToolLauncher.create("javap")
+                .addToolArg("-verbose")
+                .addToolArg("-p")       // Shows all classes and members.
+                .addToolArg("-c")       // Prints out disassembled code
+                //.addToolArg("-s")       // Prints internal type signatures.
+                .addToolArg(systemModuleClass.toString());
+        ProcessBuilder pb = new ProcessBuilder(javap.getCommand());
+        OutputAnalyzer out = ProcessTools.executeProcess(pb);
+        out.shouldHaveExitValue(0);
+        // TODO: Check for subs with addAll?
+        System.out.println("disassmebly " + out.getStdout());
     }
 }
