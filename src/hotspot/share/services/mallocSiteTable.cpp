@@ -101,7 +101,8 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
   return true;
 }
 
-#define ASSERT_MST_BOUNDS(bucket_idx, bucket_pos) assert(bucket_idx <= MAX_MALLOCSITE_TABLE_SIZE && bucket_pos < MAX_BUCKET_LENGTH, "overflow");
+#define ASSERT_MALLOCSITE_TABLE_BUCKET(index, position) \
+  assert(index <= MAX_MALLOCSITE_TABLE_SIZE && position < MAX_MALLOCSITE_TABLE_BUCKET_LENGTH, "overflow");
 
 /*
  *  The hashtable does not have deletion policy on individual entry,
@@ -131,7 +132,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint16_t*
     if (Atomic::replace_if_null(&_table[index], entry)) {
       *bucket_idx = index;
       *bucket_pos = 0;
-      ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
+      ASSERT_MALLOCSITE_TABLE_BUCKET(*bucket_idx, *bucket_pos)
       return entry->data();
     }
 
@@ -140,18 +141,18 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint16_t*
 
   unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != nullptr && pos_idx < MAX_BUCKET_LENGTH) {
+  while (head != nullptr && pos_idx < MAX_MALLOCSITE_TABLE_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
         *bucket_idx = index;
         *bucket_pos = pos_idx;
-        ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
+        ASSERT_MALLOCSITE_TABLE_BUCKET(*bucket_idx, *bucket_pos)
         return head->data();
       }
     }
 
-    if (head->next() == nullptr && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
+    if (head->next() == nullptr && pos_idx < (MAX_MALLOCSITE_TABLE_BUCKET_LENGTH - 1)) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
       if (entry == nullptr) return nullptr;
@@ -159,7 +160,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint16_t*
         pos_idx ++;
         *bucket_idx = index;
         *bucket_pos = pos_idx;
-        ASSERT_MST_BOUNDS(*bucket_idx, *bucket_pos)
+        ASSERT_MALLOCSITE_TABLE_BUCKET(*bucket_idx, *bucket_pos)
         return entry->data();
       }
       // contended, other thread won

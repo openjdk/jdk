@@ -109,9 +109,9 @@ class MallocSiteTable : AllStatic {
   static const int table_size = 4099;
 
   // Table cannot be wider than a 16bit bucket idx can hold
-#define MAX_MALLOCSITE_TABLE_SIZE (USHRT_MAX - 1)
+#define MAX_MALLOCSITE_TABLE_SIZE           (USHRT_MAX - 1)
   // Each bucket chain cannot be longer than what a 16 bit pos idx can hold (hopefully way shorter)
-#define MAX_BUCKET_LENGTH         (USHRT_MAX - 1)
+#define MAX_MALLOCSITE_TABLE_BUCKET_LENGTH  (USHRT_MAX - 1)
 
   STATIC_ASSERT(table_size <= MAX_MALLOCSITE_TABLE_SIZE);
 
