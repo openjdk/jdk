@@ -140,9 +140,9 @@ public class SendReceiveMaxSize {
                     if (sender.getOption(SO_SNDBUF) < capacity)
                         sender.setOption(SO_SNDBUF, capacity);
                     if (receiver.getOption(SO_RCVBUF) < capacity+28){
-                        throw new Error("system value " + 
-                                        receiver.getOption(SO_RCVBUF) + 
-                                        " for UDP receive buffer too small to hold capacity " + 
+                        throw new Error("system value " +
+                                        receiver.getOption(SO_RCVBUF) +
+                                        " for UDP receive buffer too small to hold capacity " +
                                         capacity);
                     }
                 }
