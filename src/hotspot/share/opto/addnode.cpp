@@ -216,8 +216,8 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // the other input's symbols.
 const Type* AddNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
   }
