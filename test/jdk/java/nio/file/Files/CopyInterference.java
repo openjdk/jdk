@@ -74,13 +74,11 @@ public class CopyInterference {
                     Files.copy(source, target, options);
                 }
             } catch (FileAlreadyExistsException e) {
-                running.set(false);
                 throw new RuntimeException("Unexpected exception", e);
             } catch (FileSystemException e) {
                 System.out.printf("Expected FileSystemException: \"%s\"%n",
                                   e.getMessage());
             } catch (IOException e) {
-                running.set(false);
                 throw new RuntimeException("Unexpected exception", e);
             } finally {
                 running.set(false);
