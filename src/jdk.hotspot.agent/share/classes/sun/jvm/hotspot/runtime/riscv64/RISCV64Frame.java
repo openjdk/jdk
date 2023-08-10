@@ -71,7 +71,7 @@ public class RISCV64Frame extends Frame {
   // Native frames
   private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
 
-  private static VMReg fp = new VMReg(8);
+  private static VMReg fp = new VMReg(8 << 1);
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
