@@ -374,10 +374,10 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  // Note: When equals() returns "true", the symbol's refcount is incremented.
-  // This is need to ensure that symbol is kept alive before equals() returns to caller,
-  // so that another thread could not clean the symbol up concurrently. The caller is
-  // responsible for decrementing the refcount, when symbol is no longer needed.
+  // Note: When equals() returns "true", the symbol's refcount is incremented. This is
+  // needed to ensure that the symbol is kept alive before equals() returns to the caller,
+  // so that another thread cannot clean the symbol up concurrently. The caller is
+  // responsible for decrementing the refcount, when the symbol is no longer needed.
   bool equals(Symbol* value) {
     assert(value != nullptr, "expected valid value");
     Symbol *sym = value;
