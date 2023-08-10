@@ -32,8 +32,22 @@
 address CompressedKlassPointers::_base = nullptr;
 int CompressedKlassPointers::_shift = 0;
 size_t CompressedKlassPointers::_range = 0;
+uint64_t CompressedKlassPointers::_combo = (uint64_t)-1;
 
 #ifdef _LP64
+
+void CompressedKlassPointers::init_combo() {
+  assert(UseCompressedClassPointers, "Why are we here?");
+  const uint64_t base_i = (uint64_t)_base;
+  assert((base_i & ~mask_base) == 0, "Base not page aligned?");
+  assert(_shift <= 63, "Sanity");
+
+  _combo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
+
+  assert(base_from_combo() == _base, "combo encoding");
+  assert(shift_from_combo() == _shift, "combo encoding");
+  assert(use_compressed_class_pointers() == UseCompressedClassPointers, "combo encoding");
+}
 
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
@@ -54,6 +68,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   set_base(requested_base);
   set_shift(requested_shift);
   set_range(encoding_range_size);
+  init_combo();
 }
 
 // Given an address range [addr, addr+len) which the encoding is supposed to
@@ -90,6 +105,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   set_base(base);
   set_shift(shift);
   set_range(range);
+  init_combo();
 }
 
 // Given an address p, return true if p can be used as an encoding base.
