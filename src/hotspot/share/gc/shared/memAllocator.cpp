@@ -96,7 +96,7 @@ class MemAllocator::Allocation::PreserveObj: StackObj {
   oop* const _obj_ptr;
 
 public:
-  PreserveObj(Thread* thread, oop* obj_ptr)
+  PreserveObj(JavaThread* thread, oop* obj_ptr)
     : _handle_mark(thread),
       _handle(thread, *obj_ptr),
       _obj_ptr(obj_ptr)
