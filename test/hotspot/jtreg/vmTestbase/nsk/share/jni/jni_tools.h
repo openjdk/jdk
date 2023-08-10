@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@
 #define LL "I64"
 #include <STDDEF.H>
 
+// Turn off -Wconversion warnings
+__pragma(warning(disable : 4244))
+
 #else // !_WIN32
 
 #include <stdint.h>
@@ -51,6 +54,9 @@
 #else
 #define LL "ll"
 #endif
+
+// Turn off -Wconversion warnings
+# pragma GCC diagnostic ignored "-Wconversion"
 
 #endif // !_WIN32
 

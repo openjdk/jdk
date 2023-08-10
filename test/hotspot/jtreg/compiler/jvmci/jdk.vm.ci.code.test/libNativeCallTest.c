@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ JNIEXPORT jfloat JNICALL Java_jdk_vm_ci_code_test_NativeCallTest__1FF(JNIEnv *en
 }
 
 jfloat JNICALL SDILDS(jfloat a, jdouble b, jint c, jlong d, jdouble e, jfloat f) {
-  return (jfloat)(a + b + c + d + e + f);
+  return (jfloat)(a + b + (jdouble)c + (jdouble)d + (jdouble)e + f);
 }
 
 JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getSDILDS(JNIEnv *env, jclass clazz) {
@@ -64,7 +64,7 @@ jfloat JNICALL F32SDILDS(jfloat f00, jfloat f01, jfloat f02, jfloat f03, jfloat 
                   f08 + f09 + f0a + f0b + f0c + f0d + f0e + f0f +
                   f10 + f11 + f12 + f13 + f14 + f15 + f16 + f17 +
                   f18 + f19 + f1a + f1b + f1c + f1d + f1e + f1f +
-                  a +   b +   c +   d +   e + f);
+                  a + b + (jdouble)c + (jdouble)d + e + f);
 }
 
 JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getF32SDILDS(JNIEnv *env, jclass clazz) {
@@ -98,7 +98,7 @@ jfloat JNICALL D32SDILDS(jdouble d00, jdouble d01, jdouble d02, jdouble d03, jdo
                   d08 + d09 + d0a + d0b + d0c + d0d + d0e + d0f +
                   d10 + d11 + d12 + d13 + d14 + d15 + d16 + d17 +
                   d18 + d19 + d1a + d1b + d1c + d1d + d1e + d1f +
-                  a +   b +   c +   d +   e + f);
+                  a + b + (jdouble)c + (jdouble)d + e + f);
 }
 
 JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getD32SDILDS(JNIEnv *env, jclass clazz) {
@@ -131,8 +131,8 @@ jfloat JNICALL I32SDILDS(jint i00, jint i01, jint i02, jint i03, jint i04, jint 
   return (jfloat)(i00 + i01 + i02 + i03 + i04 + i05 + i06 + i07 +
                   i08 + i09 + i0a + i0b + i0c + i0d + i0e + i0f +
                   i10 + i11 + i12 + i13 + i14 + i15 + i16 + i17 +
-                  i18 + i19 + i1a + i1b + i1c + i1d + i1e + i1f +
-                  a +   b +   c +   d +   e + f);
+                  i18 + i19 + i1a + i1b + i1c + i1d + i1e + i1f) +
+                  (jfloat)(a + b + c + (jdouble)d + e + f);
 }
 
 JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getI32SDILDS(JNIEnv *env, jclass clazz) {
@@ -165,7 +165,7 @@ jfloat JNICALL L32SDILDS(jlong l00, jlong l01, jlong l02, jlong l03, jlong l04, 
                   l08 + l09 + l0a + l0b + l0c + l0d + l0e + l0f +
                   l10 + l11 + l12 + l13 + l14 + l15 + l16 + l17 +
                   l18 + l19 + l1a + l1b + l1c + l1d + l1e + l1f +
-                  a +   b +   c +   d +   e + f);
+                  (jlong)a + (jlong)b + c + d + (jlong)e + (jlong)f);
 }
 
 JNIEXPORT jlong JNICALL Java_jdk_vm_ci_code_test_NativeCallTest_getL32SDILDS(JNIEnv *env, jclass clazz) {

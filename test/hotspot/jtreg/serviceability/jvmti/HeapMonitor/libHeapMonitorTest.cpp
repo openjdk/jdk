@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -436,7 +436,7 @@ static double event_storage_get_average_size(EventStorage* storage) {
   max_size = storage->live_object_count;
 
   for (i = 0; i < max_size; i++) {
-    accumulation += storage->live_objects[i]->size;
+    accumulation += (double)storage->live_objects[i]->size;
   }
 
   event_storage_unlock(storage);

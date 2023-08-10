@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,18 @@
  */
 
 #include <stdlib.h>
+
+#ifdef _WIN32
+
+// Turn off -Wconversion warnings
+__pragma(warning(disable : 4244))
+
+#else // !_WIN32
+
+// Turn off -Wconversion warnings
+# pragma GCC diagnostic ignored "-Wconversion"
+
+#endif // !_WIN32
 
 // checked malloc to trap OOM conditions
 static void* c_malloc(JNIEnv* env, size_t size) {

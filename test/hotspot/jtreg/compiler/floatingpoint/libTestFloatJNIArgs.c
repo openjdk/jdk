@@ -50,7 +50,7 @@ JNIEXPORT jfloat JNICALL Java_compiler_floatingpoint_TestFloatJNIArgs_addFloatsI
    jfloat  f5, jfloat  f6, jfloat  f7, jfloat  f8,
    jfloat  f9, jfloat f10, jfloat f11, jfloat f12,
    jfloat f13, jfloat f14, jfloat f15, jint a16, jint a17) {
-  return f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12 + f13 + f14 + f15 + a16 + a17;
+  return f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12 + f13 + f14 + f15 + (jfloat)a16 + (jfloat)a17;
 }
 
 JNIEXPORT jdouble JNICALL Java_compiler_floatingpoint_TestFloatJNIArgs_add15doubles

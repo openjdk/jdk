@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,7 +374,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   memset(&callbacks, 0, sizeof(callbacks));
   memset(&caps, 0, sizeof(caps));
-  caps.can_support_virtual_threads = vt_support_enabled;
+  caps.can_support_virtual_threads = vt_support_enabled & 1;
   caps.can_get_owned_monitor_info = 1;
   caps.can_get_owned_monitor_stack_depth_info = 1;
   caps.can_get_current_contended_monitor = 1;

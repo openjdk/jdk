@@ -114,7 +114,7 @@ size_t get_java_stacksize () {
     fprintf(stderr, "Test ERROR. Can't get a valid value for the default stacksize.\n");
     exit(7);
   }
-  return jdk_args.javaStackSize;
+  return (size_t)jdk_args.javaStackSize;
 }
 
 // Call DoOverflow::`method` on JVM
@@ -246,7 +246,7 @@ int main (int argc, const char** argv) {
   JavaVMInitArgs vm_args;
   JavaVMOption options[3];
   JNIEnv* env;
-  int optlen;
+  size_t optlen;
   char *javaclasspath = NULL;
   char javaclasspathopt[4096];
 
