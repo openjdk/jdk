@@ -72,6 +72,8 @@ class CompilerThread : public JavaThread {
 
   virtual bool can_call_java() const;
 
+  // Returns true if this CompilerThread is hidden from JVMTI and FlightRecorder.  C1 and C2 are
+  // always hidden but JVMCI compiler threads might be hidden.
   virtual bool is_hidden_from_external_view() const;
 
   void set_compiler(AbstractCompiler* c)         { _compiler = c; }

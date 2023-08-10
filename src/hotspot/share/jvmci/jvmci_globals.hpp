@@ -159,8 +159,8 @@ class fileStream;
                                                                             \
   product(bool, LibJVMCICompilerThreadHidden, true, DIAGNOSTIC,             \
           "If true then native JVMCI compiler threads are hidden from "     \
-          "JVMTI and FlightRecorder.  This must be set to false if you"     \
-          "wish to use a Java debugger against JVMCI threads")              \
+          "JVMTI and FlightRecorder.  This must be set to false if you "    \
+          "wish to use a Java debugger against JVMCI threads.")             \
                                                                             \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
