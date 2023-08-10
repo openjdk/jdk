@@ -3728,7 +3728,10 @@ Node* GraphKit::new_instance(Node* klass_node,
 //-------------------------------new_array-------------------------------------
 // helper for both newarray and anewarray
 // The 'length' parameter is (obviously) the length of the array.
-// See comments on new_instance for the meaning of the other arguments.
+// The optional arguments are for specialized use by intrinsics:
+//  - If 'return_size_val', report the non-padded array size (sum of header size
+//    and array body) to the caller.
+//  - deoptimize_on_exception controls how Java exceptions are handled (rethrow vs deoptimize)
 Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
                           Node* length,         // number of array elements
                           int   nargs,          // number of arguments to push back for uncommon trap
