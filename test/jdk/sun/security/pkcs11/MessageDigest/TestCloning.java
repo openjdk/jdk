@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6414899 8242332 8312428
+ * @bug 6414899 8242332
  * @summary Ensure the cloning functionality works.
  * @author Valerie Peng
  * @library /test/lib ..
@@ -38,6 +38,8 @@ import java.security.Provider;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.List;
+
+import jtreg.SkippedException;
 
 public class TestCloning extends PKCS11Test {
 
@@ -57,6 +59,9 @@ public class TestCloning extends PKCS11Test {
         r.nextBytes(data1);
         r.nextBytes(data2);
         System.out.println("Testing against provider " + p.getName());
+
+        boolean skipTest = true;
+
         for (String alg : ALGS) {
             System.out.println("Digest algo: " + alg);
             MessageDigest md = MessageDigest.getInstance(alg, p);
@@ -68,10 +73,16 @@ public class TestCloning extends PKCS11Test {
                 continue;
             }
 
+            // start testing below
+            skipTest = false;
+
             // repeat the test again after generating digest once
             for (int j = 0; j < 10; j++) {
                 md = testCloning(md, p);
             }
+        }
+        if (skipTest) {
+            throw new SkippedException("Test Skipped!");
         }
     }
 

@@ -24,10 +24,11 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.stream.IntStream;
+import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8080462 8226651 8242332 8312428
+ * @bug 8080462 8226651 8242332
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
@@ -54,6 +55,8 @@ public class SignatureTestPSS extends PKCS11Test {
      */
     private static final int UPDATE_TIMES_HUNDRED = 100;
 
+    private static boolean skipTest = true;
+
     public static void main(String[] args) throws Exception {
         main(new SignatureTestPSS(), args);
     }
@@ -61,8 +64,7 @@ public class SignatureTestPSS extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (!PSSUtil.isSignatureSupported(p)) {
-            System.out.println("Skip testing " + SIGALG + " due to no support");
-            return;
+            throw new SkippedException("Skip due to no support for " + SIGALG);
         }
 
         for (int kSize : KEYSIZES) {
@@ -83,6 +85,11 @@ public class SignatureTestPSS extends PKCS11Test {
                     checkSignature(p, DATA, pubKey, privKey, hash, mgfHash, s);
                 }
             };
+        }
+
+        // start testing below
+        if (skipTest) {
+            throw new SkippedException("Test Skipped");
         }
     }
 
@@ -109,6 +116,8 @@ public class SignatureTestPSS extends PKCS11Test {
                 return;
             }
         }
+        // start testing below
+        skipTest = false;
 
         for (int i = 0; i < UPDATE_TIMES_HUNDRED; i++) {
             sig.update(data);

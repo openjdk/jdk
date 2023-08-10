@@ -24,9 +24,11 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import jtreg.SkippedException;
+
 /**
  * @test
- * @bug 8080462 8226651 8242332 8312428
+ * @bug 8080462 8226651 8242332
  * @summary Ensure that PSS key and params check are implemented properly
  *         regardless of call sequence
  * @library /test/lib ..
@@ -41,12 +43,13 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         main(new KeyAndParamCheckForPSS(), args);
     }
 
+    private static boolean skipTest = true;
+
     @Override
     public void main(Provider p) throws Exception {
         if (!PSSUtil.isSignatureSupported(p)) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
-            return;
+            throw new SkippedException("Skip due to no support for " +
+                    SIGALG);
         }
 
         // NOTE: key length >= (digest length + 2) in bytes
@@ -69,6 +72,10 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         runTest(p, 1040, "SHA3-512", "SHA3-256");
         runTest(p, 1040, "SHA3-512", "SHA3-384");
         runTest(p, 1040, "SHA3-512", "SHA3-512");
+
+        if (skipTest) {
+            throw new SkippedException("Test Skipped");
+        }
     }
 
     private static void runTest(Provider p, int keySize, String hashAlg,
@@ -100,7 +107,8 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
         try {
             sig.setParameter(paramsGood);
             sig.initSign(priv);
-            System.out.println("test#1: good params pass");
+            // algorithm support confirmed
+            skipTest = false;
         } catch (Exception ex) {
             if (s == PSSUtil.AlgoSupport.MAYBE) {
                 // confirmed to be unsupported; skip the rest of the test
@@ -115,14 +123,13 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
             sig.initSign(priv);
             throw new RuntimeException("Expected IKE not thrown");
         } catch (InvalidKeyException ike) {
-            System.out.println("test#1: got expected IKE");
+            // expected
         }
 
         // test#2 - setParameter then initVerify
         sig = Signature.getInstance(SIGALG, p);
         sig.setParameter(paramsGood);
         sig.initVerify(pub);
-        System.out.println("test#2: good params pass");
 
         sig = Signature.getInstance(SIGALG, p);
         try {
@@ -130,14 +137,13 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
             sig.initVerify(pub);
             throw new RuntimeException("Expected IKE not thrown");
         } catch (InvalidKeyException ike) {
-            System.out.println("test#2: got expected IKE");
+            // expected
         }
 
         // test#3 - initSign, then setParameter
         sig = Signature.getInstance(SIGALG, p);
         sig.initSign(priv);
         sig.setParameter(paramsGood);
-        System.out.println("test#3: good params pass");
 
         sig = Signature.getInstance(SIGALG, p);
         try {
@@ -145,14 +151,13 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
             sig.setParameter(paramsBad);
             throw new RuntimeException("Expected IAPE not thrown");
         } catch (InvalidAlgorithmParameterException iape) {
-            System.out.println("test#3: got expected IAPE");
+            // expected
         }
 
         // test#4 - initVerify, then setParameter
         sig = Signature.getInstance(SIGALG, p);
         sig.setParameter(paramsGood);
         sig.initVerify(pub);
-        System.out.println("test#4: good params pass");
 
         sig = Signature.getInstance(SIGALG, p);
         try {
@@ -160,7 +165,7 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
             sig.setParameter(paramsBad);
             throw new RuntimeException("Expected IAPE not thrown");
         } catch (InvalidAlgorithmParameterException iape) {
-            System.out.println("test#4: got expected IAPE");
+            // expected
         }
     }
 }
