@@ -831,8 +831,8 @@ bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   if (entry->is_jar_file()) {
     ClassLoaderExt::process_jar_manifest(current, entry);
   }
-  return true;
 #endif
+  return true;
 }
 
 // Returns true IFF the file/dir exists and the entry was successfully created.
