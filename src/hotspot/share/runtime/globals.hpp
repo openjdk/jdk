@@ -1705,7 +1705,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
-  product(bool, UseNewCode, false, DIAGNOSTIC,                              \
+  product(bool, UseNewCode, true, DIAGNOSTIC,                               \
           "Testing Only: Use the new version while testing")                \
                                                                             \
   product(bool, UseNewCode2, false, DIAGNOSTIC,                             \
