@@ -25,8 +25,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.tools.jlink.internal.Jlink;
-import jdk.tools.jlink.plugin.Plugin;
 import tests.JImageGenerator;
 import tests.Result;
 
@@ -34,7 +32,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 
 /*
  * @test
@@ -49,10 +46,10 @@ import java.util.Collections;
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @build tests.* JLinkDedupTest100Modules jdk.test.lib.compiler.CompilerUtils
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTest100Modules
+ * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne
  */
-public class JLinkDedupTest100Modules {
+public class JLinkDedupTestBatchSizeOne {
 
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String TEST_SRC = System.getProperty("test.src");
@@ -123,7 +120,7 @@ public class JLinkDedupTest100Modules {
 
     }
 
-    static void extractJImage(Path src) throws Throwable {
+    static void extractJImage(Path src) {
         Path binDir = src.resolve("out-jlink-dedup").toAbsolutePath();
         Path outputDir = src.resolve("dir");
         Path jimageDir = binDir.resolve("lib", "modules");
@@ -148,14 +145,11 @@ public class JLinkDedupTest100Modules {
                 //.addToolArg("-s")       // Prints internal type signatures.
                 .addToolArg(systemModuleClass.toString());
         ProcessBuilder pb = new ProcessBuilder(javap.getCommand());
+        pb.inheritIO();
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         out.shouldHaveExitValue(0);
-        // TODO: Check for subs with addAll?
+        // TODO: Check for generated subs with addAll?
         System.out.println("disassembly " + out.getStdout());
-    }
-
-    private static Plugin createPlugin(String name) {
-        return Jlink.newPlugin(name, Collections.emptyMap(), null);
     }
 
 }
