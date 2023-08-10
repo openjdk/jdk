@@ -822,19 +822,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     }
 
     /**
-     * Returns the fully qualified domain name for this address.
+     * Returns the fully qualified domain name for the given address.
      *
      * <p>If there is a security manager, this method first
      * calls its {@code checkConnect} method
      * with the hostname and {@code -1}
      * as its arguments to see if the calling code is allowed to know
-     * the hostname for this IP address, i.e., to connect to the host.
+     * the hostname for the given IP address, i.e., to connect to the host.
      * If the operation is not allowed, it will return
      * the textual representation of the IP address.
      *
      * @param check make security check if true
      *
-     * @return  the fully qualified domain name for this IP address.
+     * @return  the fully qualified domain name for the given IP address.
      *          If either the operation is not allowed by the security check
      *          or the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
