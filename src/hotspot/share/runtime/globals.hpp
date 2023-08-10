@@ -1234,7 +1234,7 @@ const int ObjectAlignmentInBytes = 8;
           "When using recompilation, never interpret methods "              \
           "containing loops")                                               \
                                                                             \
-  product(intx,  AllocatePrefetchStyle, 1,                                  \
+  product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
           "1 = generate prefetch instructions for each allocation, "        \
           "2 = use TLAB watermark to gate allocation prefetch, "            \
