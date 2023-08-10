@@ -35,10 +35,6 @@ import java.security.spec.*;
  */
 public class KeyAndParamCheckForPSS extends PKCS11Test {
 
-    /**
-     * ALGORITHM name, fixed as RSA for PKCS11
-     */
-    private static final String KEYALG = "RSA";
     private static final String SIGALG = "RSASSA-PSS";
 
     public static void main(String[] args) throws Exception {

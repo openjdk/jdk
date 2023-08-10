@@ -42,10 +42,10 @@ public class PSSUtil {
 
     public static boolean isSignatureSupported(Provider p) {
         try {
-            Signature.getInstance("RSASSA-PSS", p);
+            Signature.getInstance(SIGALG, p);
             return true;
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skip testing RSASSA-PSS" +
+            System.out.println("Skip testing " + SIGALG +
                 " due to no support");
             return false;
         }
@@ -56,7 +56,7 @@ public class PSSUtil {
         AlgoSupport status = AlgoSupport.YES;
         for (String h : hashAlgs) {
             String sigAlg = (h.startsWith("SHA3-")?
-                    h : h.replace("-","")) + "withRSASSA-PSS";
+                    h : h.replace("-","")) + "with" + SIGALG;
             try {
                 Signature.getInstance(sigAlg, p);
                 // Yes, proceed to check next hash algorithm

@@ -35,8 +35,6 @@ import java.util.stream.IntStream;
  */
 public class SignatureTestPSS extends PKCS11Test {
 
-    // PKCS11 does not support RSASSA-PSS keys yet
-    private static final String KEYALG = "RSA";
     private static final String SIGALG = "RSASSA-PSS";
 
     private static final int[] KEYSIZES = { 2048, 3072 };
@@ -63,8 +61,7 @@ public class SignatureTestPSS extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         if (!PSSUtil.isSignatureSupported(p)) {
-            System.out.println("Skip testing RSASSA-PSS" +
-                " due to no support");
+            System.out.println("Skip testing " + SIGALG + " due to no support");
             return;
         }
 
