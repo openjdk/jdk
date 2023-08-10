@@ -144,10 +144,10 @@ TEST(os, test_random) {
 
   ASSERT_EQ(num, 1043618065) << "bad seed";
   // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-  int intmean = mean*100;
+  int intmean = (int)(mean*100);
   ASSERT_EQ(intmean, 50);
   // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-  int intvariance = variance*100;
+  int intvariance = (int)(variance*100);
   ASSERT_EQ(intvariance, 33);
   const double eps = 0.0001;
   t = fabsd(mean - 0.5018);
@@ -223,7 +223,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   // Test dumping readable memory
   address arr = (address)os::malloc(100, mtInternal);
-  for (int c = 0; c < 100; c++) {
+  for (u1 c = 0; c < 100; c++) {
     arr[c] = c;
   }
 
