@@ -1247,11 +1247,13 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
+#ifdef ASSERT
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceEnomemOnLibjvmciInit");
     if (val != nullptr && strcmp(val, "true") == 0) {
       *create_JavaVM_err = JNI_ENOMEM;
       return nullptr;
     }
+#endif
 
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
@@ -2062,12 +2064,14 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
+#ifdef ASSERT
   if (JVMCIENV->has_pending_exception()) {
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.compileMethodExceptionIsFatal");
     if (val != nullptr && strcmp(val, "true") == 0) {
       fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
     }
   }
+#endif
 
   if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
     return;
