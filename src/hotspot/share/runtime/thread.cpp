@@ -450,10 +450,10 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("cpu=%.2fms ",
-              os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
+              (double)os::thread_cpu_time(const_cast<Thread*>(this), true) / 1000000.0
               );
     st->print("elapsed=%.2fs ",
-              _statistical_info.getElapsedTime() / 1000.0
+              (double)_statistical_info.getElapsedTime() / 1000.0
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();

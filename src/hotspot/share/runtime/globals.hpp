@@ -726,10 +726,10 @@ const int ObjectAlignmentInBytes = 8;
   /* because of overflow issue                                   */         \
   product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
           "The maximum number of monitors to deflate, unlink and delete "   \
-          "at one time (minimum is 1024).")                      \
+          "at one time (minimum is 1024).")                                 \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
+  product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval, "   \
           "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \

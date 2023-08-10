@@ -95,7 +95,7 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
                                              uint64_t safepoint_id,
                                              int initial_number_of_threads,
                                              int threads_waiting_to_block,
-                                             uint64_t iterations) {
+                                             int iterations) {
   if (event.should_commit()) {
     event.set_safepointId(safepoint_id);
     event.set_initialThreadCount(initial_number_of_threads);
