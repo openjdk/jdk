@@ -146,15 +146,17 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
+  uint16_t index = 0;
+  uint16_t position = 0;
   MallocMemorySummary::record_malloc(size, flags);
-  uint16_t bucket_idx = 0;
-  uint16_t bucket_pos = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::allocation_at(stack, size, &bucket_idx, &bucket_pos, flags);
+    MallocHeader::BucketInfo bucket = MallocSiteTable::allocation_at(stack, size, flags);
+    index = bucket.index;
+    position = bucket.position;
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, bucket_idx, bucket_pos);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, MallocHeader::BucketInfo(index, position));
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
@@ -189,7 +191,7 @@ void* MallocTracker::record_free_block(void* memblock) {
 void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
   MallocMemorySummary::record_free(free_info.size, free_info.flags);
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(free_info.size, free_info.bucket_idx, free_info.bucket_pos);
+    MallocSiteTable::deallocation_at(free_info.size, free_info.bucket);
   }
 }
 

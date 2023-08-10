@@ -172,11 +172,11 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint16_t*
 }
 
 // Access malloc site
-MallocSite* MallocSiteTable::malloc_site(uint16_t bucket_idx, uint16_t bucket_pos) {
-  assert(bucket_idx < table_size, "Invalid bucket index");
-  MallocSiteHashtableEntry* head = _table[bucket_idx];
+MallocSite* MallocSiteTable::malloc_site(MallocHeader::BucketInfo bucket) {
+  assert(bucket.index < table_size, "Invalid bucket index");
+  MallocSiteHashtableEntry* head = _table[bucket.index];
   for (size_t index = 0;
-       index < bucket_pos && head != nullptr;
+       index < bucket.position && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
   assert(head != nullptr, "Invalid position index");
   return head->data();

@@ -124,8 +124,8 @@ class MallocSiteTable : AllStatic {
 
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
-  static inline bool access_stack(NativeCallStack& stack, uint16_t bucket_idx, uint16_t bucket_pos) {
-    MallocSite* site = malloc_site(bucket_idx, bucket_pos);
+  static inline bool access_stack(NativeCallStack& stack, MallocHeader::BucketInfo bucket) {
+    MallocSite* site = malloc_site(bucket);
     if (site != nullptr) {
       stack = *site->call_stack();
       return true;
@@ -134,22 +134,19 @@ class MallocSiteTable : AllStatic {
   }
 
   // Record a new allocation from specified call path.
-  // Return true if the allocation is recorded successfully and updates mst index and position
-  // to indicate the entry where the allocation information was recorded.
-  // Return false only occurs under rare scenarios:
-  //  1. out of memory
-  //  2. overflow hash bucket
-  static inline bool allocation_at(const NativeCallStack& stack, size_t size,
-      uint16_t* bucket_idx, uint16_t* bucket_pos, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, bucket_idx, bucket_pos, flags);
+  // Returns BucketInfo to indicate where the allocation information was recorded.
+  static inline MallocHeader::BucketInfo allocation_at(const NativeCallStack& stack, size_t size, MEMFLAGS flags) {
+    uint16_t bucket_idx = 0;
+    uint16_t bucket_pos = 0;
+    MallocSite* site = lookup_or_add(stack, &bucket_idx, &bucket_pos, flags);
     if (site != nullptr) site->allocate(size);
-    return site != nullptr;
+    return MallocHeader::BucketInfo(bucket_idx, bucket_pos);
   }
 
-  // Record memory deallocation. mst index and position indicate where the allocation
-  // information was recorded.
-  static inline bool deallocation_at(size_t size, uint16_t bucket_idx, uint16_t bucket_pos) {
-    MallocSite* site = malloc_site(bucket_idx, bucket_pos);
+  // Record memory deallocation.
+  // BucketInfo indicate allocation information.
+  static inline bool deallocation_at(size_t size, MallocHeader::BucketInfo bucket) {
+    MallocSite* site = malloc_site(bucket);
     if (site != nullptr) {
       site->deallocate(size);
       return true;
@@ -166,7 +163,7 @@ class MallocSiteTable : AllStatic {
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
 
   static MallocSite* lookup_or_add(const NativeCallStack& key, uint16_t* bucket_idx, uint16_t* bucket_pos, MEMFLAGS flags);
-  static MallocSite* malloc_site(uint16_t bucket_idx, uint16_t bucket_pos);
+  static MallocSite* malloc_site(MallocHeader::BucketInfo bucket);
   static bool walk(MallocSiteWalker* walker);
 
   static inline unsigned int hash_to_index(unsigned int hash) {

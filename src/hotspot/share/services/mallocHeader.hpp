@@ -111,11 +111,20 @@ class outputStream;
  */
 
 class MallocHeader {
+
+public:
+  struct alignas(uint32_t) BucketInfo {
+    const uint16_t index;
+    const uint16_t position;
+    inline BucketInfo(uint16_t idx, uint16_t pos) : index(idx), position(pos) { }
+  };
+  STATIC_ASSERT(sizeof(BucketInfo) == sizeof(uint32_t));
+
+private:
   NONCOPYABLE(MallocHeader);
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
-  const uint16_t _bucket_idx;
-  const uint16_t _bucket_pos;
+  const BucketInfo _bucket;
   const MEMFLAGS _flags;
   const uint8_t _unused;
   uint16_t _canary;
@@ -145,12 +154,11 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
-    const uint16_t bucket_idx;
-    const uint16_t bucket_pos;
+    const BucketInfo bucket;
     const MEMFLAGS flags;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint16_t bucket_idx, uint16_t bucket_pos);
+  inline MallocHeader(size_t size, MEMFLAGS flags, BucketInfo bucket);
 
   inline size_t   size()  const { return _size; }
   inline MEMFLAGS flags() const { return _flags; }
@@ -158,7 +166,7 @@ public:
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
-    return FreeInfo{this->_size, this->_bucket_idx, this->_bucket_pos, this->_flags};
+    return FreeInfo{this->_size, this->_bucket, this->_flags};
   }
   inline void mark_block_as_dead();
   inline void revive();
@@ -186,6 +194,5 @@ public:
 
 // This needs to be true on both 64-bit and 32-bit platforms
 STATIC_ASSERT(sizeof(MallocHeader) == (sizeof(uint64_t) * 2));
-
 
 #endif // SHARE_SERVICES_MALLOCHEADER_HPP
