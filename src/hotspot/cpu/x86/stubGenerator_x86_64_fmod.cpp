@@ -292,11 +292,6 @@ address StubGenerator::generate_libmFmod() {
     //   __asm { stmxcsr DWORD PTR[mxcsr] }
     //   mxcsr_rz = 0x7f80 | mxcsr;
     __ push(rax);
-    __ stmxcsr(Address(rsp, 0));
-    __ movl(rax, Address(rsp, 0));
-    __ movl(rcx, rax);
-    __ orl(rcx, 0x7f80);
-    __ movl(Address(rsp, 0x04), rcx);
 
     //     // |x|, |y|
     //     a = DP_AND(x, DP_CONST(7fffffffffffffff));
@@ -319,6 +314,12 @@ address StubGenerator::generate_libmFmod() {
 
     //   if (((mxcsr & 0x6000)!=0x2000) && (a < b * 0x1p+260))
     __ bind(L_104a);
+    __ stmxcsr(Address(rsp, 0));
+    __ movl(rax, Address(rsp, 0));
+    __ movl(rcx, rax);
+    __ orl(rcx, 0x7f80);
+    __ movl(Address(rsp, 0x04), rcx);
+
     __ andl(rax, 0x6000);
     __ cmpl(rax, 0x2000);
     __ jcc(Assembler::equal, L_10c1);
