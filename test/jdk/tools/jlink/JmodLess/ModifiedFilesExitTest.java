@@ -51,6 +51,7 @@ public class ModifiedFilesExitTest extends ModifiedFilesTest {
         if (handler.analyzer().getExitValue() == 0) {
             throw new AssertionError("Expected jlink to fail due to modified file!");
         }
+        handler.analyzer().stdoutShouldContain(modifiedFile.toString() + " has been modified");
     }
 
 }

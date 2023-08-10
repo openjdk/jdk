@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-import jdk.test.lib.process.OutputAnalyzer;
 import tests.Helper;
 
 public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
@@ -44,6 +43,7 @@ public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
                 .addModule("java.base")
                 .addModule("jdk.jlink")
                 .validatingModule("java.base")
+                .addExtraOption("--run-image-ignore-single-hop")
                 .helper(helper)
                 .build());
 
@@ -68,23 +68,5 @@ public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
             props.store(out, "Modified net.properties file!");
         }
         return netPropertiesFile;
-    }
-
-    static class CapturingHandler extends OutputAnalyzerHandler {
-
-        private OutputAnalyzer output;
-
-        public String stdErr() {
-            return output.getStderr();
-        }
-
-        public OutputAnalyzer analyzer() {
-            return output;
-        }
-
-        @Override
-        public void handleAnalyzer(OutputAnalyzer out) {
-            this.output = out;
-        }
     }
 }

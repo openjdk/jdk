@@ -116,6 +116,9 @@ public abstract class AbstractJmodLessTest {
         for (String m: baseSpec.getModules()) {
             builder.addModule(m);
         }
+        for (String extra: baseSpec.getExtraOptions()) {
+            builder.extraJlinkOpt(extra);
+        }
         return jlinkUsingImage(builder.build());
     }
 
@@ -158,7 +161,12 @@ public abstract class AbstractJmodLessTest {
                 System.err.println("Process stderr was: ");
                 System.err.println(analyzer.getStderr());
             }
-            throw new AssertionError("Expected jlink to pass/fail given a jmodless image. Exit code was: " + analyzer.getExitValue());
+            // if the exit checker failed, we expected the other outcome
+            // i.e. fail for success and success for fail.
+            boolean successExit = analyzer.getExitValue() == 0;
+            String msg = String.format("Expected jlink to %s given a jmodless image. Exit code was: %d",
+                                       (successExit ? "fail" : "pass"), analyzer.getExitValue());
+            throw new AssertionError(msg);
         }
         handler.handleAnalyzer(analyzer); // Give tests a chance to process in/output
 

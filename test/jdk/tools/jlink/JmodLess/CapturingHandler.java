@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,25 +21,22 @@
  * questions.
  */
 
-package jdk.tools.jlink.internal;
+import jdk.test.lib.process.OutputAnalyzer;
 
-/**
- * Exception thrown for links without packaged modules. I.e. run-image link.
- *
- */
-public class RunImageLinkException extends IllegalStateException {
+class CapturingHandler extends AbstractJmodLessTest.OutputAnalyzerHandler {
 
-    private static final long serialVersionUID = -1848914673073119403L;
+    private OutputAnalyzer output;
 
-    private final IllegalArgumentException iae;
-
-    public RunImageLinkException(IllegalArgumentException cause) {
-        super(cause);
-        this.iae = cause;
+    public String stdErr() {
+        return output.getStderr();
     }
 
-    public IllegalArgumentException getReason() {
-        return iae;
+    public OutputAnalyzer analyzer() {
+        return output;
     }
 
+    @Override
+    public void handleAnalyzer(OutputAnalyzer out) {
+        this.output = out;
+    }
 }

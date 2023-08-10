@@ -25,6 +25,7 @@
 
 package jdk.tools.jlink.internal;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -48,14 +49,19 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
 public class JmodLessArchive implements Archive {
 
+    private static final String JAVA_BASE_MODULE = "java.base";
+    // File marker in lib/modules file for java.base indicating it got created
+    // with a run-image-type link.
+    private static final String JMODLESS_SINGLE_HOP_STAMP = ".runimage.stamp";
     private static final String OTHER_RESOURCES_FILE = "jmod_resources";
     private final String module;
     private final Path path;
     private final ModuleReference ref;
     private final List<JmodLessFile> files = new ArrayList<>();
     private final boolean failOnMod;
+    private final boolean singleHop;
 
-    JmodLessArchive(String module, Path path, boolean failOnMod) {
+    JmodLessArchive(String module, Path path, boolean failOnMod, boolean singleHop) {
         this.module = module;
         this.path = path;
         this.ref = ModuleFinder.ofSystem()
@@ -63,6 +69,7 @@ public class JmodLessArchive implements Archive {
                     .orElseThrow(() ->
                         new IllegalArgumentException("Module " + module + " not part of the JDK install"));
         this.failOnMod = failOnMod;
+        this.singleHop = singleHop;
     }
 
     @Override
@@ -81,6 +88,9 @@ public class JmodLessArchive implements Archive {
             collectFiles();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (RunImageLinkException e) {
+            // populate single-hop issue
+            throw e.getReason();
         }
         return files.stream()
                     .sorted((a, b) -> {return a.resPath.compareTo(b.resPath);})
@@ -121,11 +131,27 @@ public class JmodLessArchive implements Archive {
         if (files.isEmpty()) {
             addNonClassResources();
             // Add classes/resources from image module
-            files.addAll(ref.open().list().map(s -> {
+            files.addAll(ref.open().list()
+                                   .map(s -> {
                 return new JmodLessFile(JmodLessArchive.this, s,
                         Type.CLASS_OR_RESOURCE, null /* sha */, false /* symlink */, failOnMod);
             }).collect(Collectors.toList()));
+            // if we use single-hop and we find a stamp file we fail the link
+            if (files.stream().anyMatch(f -> { return JMODLESS_SINGLE_HOP_STAMP.equals(f.resPath);})) {
+                String msg = "Run image links only allow single-hop.";
+                IllegalArgumentException ise = new IllegalArgumentException(msg);
+                throw new RunImageLinkException(ise);
+            };
+            // add/persist a special, empty file for java.base so as to support
+            // the single-hop-only runimage-jlink
+            if (singleHop && JAVA_BASE_MODULE.equals(module)) {
+                files.add(createJmodLessSingleHopStamp());
+            }
         }
+    }
+
+    private JmodLessFile createJmodLessSingleHopStamp() {
+        return new JmodLessStampFile(this, JMODLESS_SINGLE_HOP_STAMP, Type.CLASS_OR_RESOURCE, null, false, failOnMod);
     }
 
     private void addNonClassResources() throws IOException {
@@ -241,7 +267,7 @@ public class JmodLessArchive implements Archive {
                         if (shaSumMismatch(path, sha, symlink)) {
                             String msg = String.format("%s has been modified. Please double check!%n", path.toString());
                             if (failOnMod) {
-                                IllegalStateException ise = new IllegalStateException(msg);
+                                IllegalArgumentException ise = new IllegalArgumentException(msg);
                                 throw new RunImageLinkException(ise);
                             } else if (!warningProduced) {
                                 System.err.printf("WARNING: %s", msg);
@@ -308,6 +334,32 @@ public class JmodLessArchive implements Archive {
             default:
                 throw new IllegalArgumentException("Unknown type: " + input);
             }
+        }
+    }
+
+    // Stamp file marker for single-hop implementation
+    static class JmodLessStampFile extends JmodLessFile {
+        JmodLessStampFile(Archive archive, String resPath, Type resType, String sha, boolean symlink, boolean failOnMod) {
+            super(archive, resPath, resType, sha, symlink, failOnMod);
+        }
+
+        @Override
+        Entry toEntry() {
+            return new Entry(archive, resPath, resPath, resType) {
+
+                @Override
+                public long size() {
+                    // empty file
+                    return 0;
+                }
+
+                @Override
+                public InputStream stream() throws IOException {
+                    // empty content
+                    return new ByteArrayInputStream(new byte[0]);
+                }
+
+            };
         }
     }
 

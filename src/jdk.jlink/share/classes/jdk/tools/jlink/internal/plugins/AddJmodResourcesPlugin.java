@@ -49,7 +49,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 /**
  * Plugin to collect resources from jmod which aren't classes or
- * resources.
+ * resources. Needed for the the run-image-based jlink.
  */
 public final class AddJmodResourcesPlugin extends AbstractPlugin {
 
@@ -164,8 +164,9 @@ public final class AddJmodResourcesPlugin extends AbstractPlugin {
                 return format.formatHex(db);
             }
         } catch (RunImageLinkException e) {
-            // JmodLessArchive::JmodLessFile.content() may throw this on sha mismatch
-            throw (RuntimeException)e.getCause();
+            // JmodLessArchive::JmodLessFile.content() may throw this when
+            // getting the content(). Populate the actual reason.
+            throw e.getReason();
         } catch (Exception e) {
             throw new AssertionError("Failed to generate hash sum for " + entry.path());
         }

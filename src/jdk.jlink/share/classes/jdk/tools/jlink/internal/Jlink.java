@@ -149,6 +149,7 @@ public final class Jlink {
         private final ModuleFinder finder;
         private final boolean useModulePath;
         private final boolean failOnMod;
+        private final boolean singleHop;
 
         /**
          * jlink configuration,
@@ -161,12 +162,14 @@ public final class Jlink {
                                   Set<String> modules,
                                   ModuleFinder finder,
                                   boolean useModulePath,
-                                  boolean failOnMod) {
+                                  boolean failOnMod,
+                                  boolean singleHop) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
             this.useModulePath = useModulePath;
             this.failOnMod = failOnMod;
+            this.singleHop = singleHop;
         }
 
         /**
@@ -197,6 +200,10 @@ public final class Jlink {
 
         public boolean failOnMod() {
             return failOnMod;
+        }
+
+        public boolean singleHop() {
+            return singleHop;
         }
 
         /**

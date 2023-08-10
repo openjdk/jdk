@@ -66,6 +66,7 @@ public class SystemModulesTest extends AbstractJmodLessTest {
                                                             .addModule("jdk.jcmd")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
+                                                            .addExtraOption("--run-image-ignore-single-hop")
                                                             .build());
         // Verify that SystemModules$0.class etc. are there
         JImageValidator.validate(javaseJmodless.resolve("lib").resolve("modules"),
