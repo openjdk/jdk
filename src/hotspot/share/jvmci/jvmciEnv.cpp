@@ -864,7 +864,7 @@ DO_THROW(InvalidInstalledCodeException)
 DO_THROW(UnsatisfiedLinkError)
 DO_THROW(UnsupportedOperationException)
 DO_THROW(OutOfMemoryError)
-DO_THROW(ClassNotFoundException)
+DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 

@@ -576,7 +576,7 @@ C2V_VMENTRY_0(jboolean, shouldInlineMethod,(JNIEnv* env, jobject, ARGUMENT_PAIR(
   return CompilerOracle::should_inline(method) || method->force_inline();
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGUMENT_PAIR(accessing_klass), jboolean resolve))
+C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGUMENT_PAIR(accessing_klass), jint accessing_klass_loader, jboolean resolve))
   JVMCIObject name = JVMCIENV->wrap(jname);
   const char* str = JVMCIENV->as_utf8_string(name);
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
@@ -593,15 +593,20 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
     class_loader = Handle(THREAD, accessing_klass->class_loader());
     protection_domain = Handle(THREAD, accessing_klass->protection_domain());
   } else {
-    // Use the System class loader
-    class_loader = Handle(THREAD, SystemDictionary::java_system_loader());
+    switch (accessing_klass_loader) {
+      case 0: break; // class_loader is already null, the boot loader
+      case 1: class_loader = Handle(THREAD, SystemDictionary::java_platform_loader()); break;
+      case 2: class_loader = Handle(THREAD, SystemDictionary::java_system_loader()); break;
+      default:
+        JVMCI_THROW_MSG_0(InternalError, err_msg("Illegal class loader value: %d", accessing_klass_loader));
+    }
     JVMCIENV->runtime()->initialize(JVMCI_CHECK_NULL);
   }
 
   if (resolve) {
     resolved_klass = SystemDictionary::resolve_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
     if (resolved_klass == nullptr) {
-      JVMCI_THROW_MSG_NULL(ClassNotFoundException, str);
+      JVMCI_THROW_MSG_NULL(NoClassDefFoundError, str);
     }
   } else {
     if (Signature::has_envelope(class_name)) {
@@ -3108,7 +3113,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "isCompilable",                                 CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(isCompilable)},
   {CC "hasNeverInlineDirective",                      CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(hasNeverInlineDirective)},
   {CC "shouldInlineMethod",                           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(shouldInlineMethod)},
-  {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "Z)" HS_RESOLVED_TYPE,                                        FN_PTR(lookupType)},
+  {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "IZ)" HS_RESOLVED_TYPE,                                       FN_PTR(lookupType)},
   {CC "lookupJClass",                                 CC "(J)" HS_RESOLVED_TYPE,                                                            FN_PTR(lookupJClass)},
   {CC "getArrayType",                                 CC "(C" HS_KLASS2 ")" HS_KLASS,                                                       FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
