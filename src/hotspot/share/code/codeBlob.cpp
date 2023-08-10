@@ -201,7 +201,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
     char stub_id[256];
     assert(strlen(name1) + strlen(name2) < sizeof(stub_id), "");
     jio_snprintf(stub_id, sizeof(stub_id), "%s%s", name1, name2);
-    if (PrintStubCode) {
+    if (false && PrintStubCode) {
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
