@@ -23,13 +23,13 @@
 
 import jdk.test.lib.compiler.CompilerUtils;
 import tests.JImageGenerator;
+import tests.Result;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.spi.ToolProvider;
 
 /*
  * @test
@@ -62,11 +62,6 @@ public class JLinkDedupTest100Modules {
     // the names of the modules in this test
     private static String[] modules = new String[] {"m1", "m2", "m3", "m4"};
 
-    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
-            .orElseThrow(() -> new RuntimeException("javac tool not found"));
-
-
-
     private static boolean hasJmods() {
         if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
             System.err.println("Test skipped. NO jmods directory");
@@ -88,23 +83,19 @@ public class JLinkDedupTest100Modules {
     }
 
 
-
     static void report(String command, String[] args) {
         System.out.println(command + " " + String.join(" ", Arrays.asList(args)));
     }
 
-    static void javac(String[] args) {
-        report("javac", args);
-        JAVAC_TOOL.run(System.out, System.err, args);
-    }
 
     public static void main(String[] args) throws Throwable {
 
         compileAll();
+        Path src = Paths.get("bug8311591");
 
         JImageGenerator.getJLinkTask()
                 .modulePath(MODULE_PATH)
-                .output(SRC_DIR.resolve("out-jlink-dedup"))
+                .output(src.resolve("out-jlink-dedup"))
                 .addMods("m1")
                 .addMods("m2")
                 .addMods("m2")
@@ -113,7 +104,7 @@ public class JLinkDedupTest100Modules {
                 .call()
                 .assertSuccess();
 
-        Path binDir = SRC_DIR.resolve("out-jlink-dedup").resolve("bin").toAbsolutePath();
+        Path binDir = src.resolve("out-jlink-dedup").resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
@@ -125,17 +116,23 @@ public class JLinkDedupTest100Modules {
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
         if (exitCode != 0)
-             throw new AssertionError("JLink100ModulesTest failed to launch");
+             throw new AssertionError("JLinkDedupTest100Modules failed to launch");
 
-        //verify();
+        extractJImage(src);
 
     }
-    static void verify() {
-        Path binDir = SRC_DIR.resolve("out-jlink-dedup").toAbsolutePath();
-        Path bin = binDir.resolve("jimage");
+    static void extractJImage(Path src) {
+        Path binDir = src.resolve("out-jlink-dedup").toAbsolutePath();
+        Path outputDir = src.resolve("dir");
+        Path jimageDir = binDir.resolve("lib","modules");
 
-        ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
-                "--dir=dir out-jlink-dedup/lib/modules");
+        Result result = JImageGenerator.getJImageTask()
+                .dir(outputDir)
+                .image(jimageDir)
+                .extract();
+
+        System.out.println("REsult dir " +result.getFile());
+        result.assertSuccess();
 
     }
 }
