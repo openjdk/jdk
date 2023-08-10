@@ -175,7 +175,7 @@ public class NextDropActionTest {
 
 class Util {
     public static int sign(int n) {
-        return n < 0 ? -1 : n == 0 ? 0 : 1;
+        return Integer.compare(n, 0);
     }
 
     public static void doDragDrop(Robot robot, Point startPoint, Point endPoint) {
