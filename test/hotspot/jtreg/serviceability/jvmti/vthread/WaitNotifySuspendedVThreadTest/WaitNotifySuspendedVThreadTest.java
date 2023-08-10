@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * @summary Test verifies that raw jvmti monitor wait/notify works for
+ * @summary Test verifies that JVMTI raw monitor wait/notify works for
  * suspended virtual thread.
  *
  * @requires vm.continuations
