@@ -78,7 +78,7 @@ public class TestHeapDumpForInvokeDynamic {
         SAOutput.shouldContain(heapDumpFileName);
         System.out.println(SAOutput.getOutput());
 
-        HprofParser.parseAndVerify(heapDumpFileName);
+        HprofParser.parseAndVerify(new File(heapDumpFileName));
     }
 
     public static void main (String... args) throws Exception {
