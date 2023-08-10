@@ -3217,7 +3217,6 @@ intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
 
 bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
-  bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   switch (id) {
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:
@@ -3230,3 +3229,4 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
+
