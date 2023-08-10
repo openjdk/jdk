@@ -66,15 +66,12 @@ public class JLinkDedupTestBatchSizeOne {
 
     private static boolean hasJmods() {
         if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
-            System.err.println("Test skipped. NO jmods directory");
+            System.err.println("Test skipped. No jmods directory");
             return false;
         }
         return true;
     }
 
-    /*
-     * Compiles all modules used by the test
-     */
     public static void compileAll() throws Throwable {
         if (!hasJmods()) return;
 
@@ -117,7 +114,6 @@ public class JLinkDedupTestBatchSizeOne {
 
         extractJImage(src);
         decompileWitJavap(src);
-
     }
 
     static void extractJImage(Path src) {
@@ -135,21 +131,15 @@ public class JLinkDedupTestBatchSizeOne {
     }
 
     static void decompileWitJavap(Path srcDir) throws Exception {
-        //dir/java.base/jdk/internal/module/SystemModules\$all.class
         Path systemModuleClass = srcDir.resolve("dir", "java.base", "jdk", "internal", "module", "SystemModules$all.class");
-
         JDKToolLauncher javap = JDKToolLauncher.create("javap")
                 .addToolArg("-verbose")
                 .addToolArg("-p")       // Shows all classes and members.
                 .addToolArg("-c")       // Prints out disassembled code
-                //.addToolArg("-s")       // Prints internal type signatures.
                 .addToolArg(systemModuleClass.toString());
         ProcessBuilder pb = new ProcessBuilder(javap.getCommand());
         pb.inheritIO();
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         out.shouldHaveExitValue(0);
-        // TODO: Check for generated subs with addAll?
-        System.out.println("disassembly " + out.getStdout());
     }
-
 }

@@ -1,6 +1,4 @@
 package p1;
-
-
 import p3.ServiceInterface;
 
 public class AInterface implements ServiceInterface {
