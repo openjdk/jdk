@@ -80,6 +80,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     <td>Foo Bar Baz</td>
  * </tbody>
  * </table>
+ * Note that the above chart represents the examples in the CLDR definition,
+ * and there could be different patterns from other locale providers.
  * <p>
  * Alternatively, Locale, Type, and/or Style independent instances
  * can be created with {@link #getInstance(String[])}. The String array to the
@@ -405,7 +407,7 @@ public class ListFormat extends Format {
         var sm = startPattern.matcher(source);
         var em = endPattern.matcher(source);
         Object parsed = null;
-        if (sm.find(parsePos.index) && em.find(parsePos.index)) {
+        if (sm.find(parsePos.getIndex()) && em.find(parsePos.getIndex())) {
             // get em to the last
             var c = em.start();
             while (em.find()) {
@@ -431,7 +433,7 @@ public class ListFormat extends Format {
 
         // return the entire source from parsePos if still no match
         if (parsed == null) {
-            parsed = new String[]{source.substring(parsePos.index)};
+            parsed = new String[]{source.substring(parsePos.getIndex())};
             parsePos.setIndex(source.length());
         }
 
