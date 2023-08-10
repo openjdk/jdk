@@ -25,19 +25,20 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.tools.jlink.internal.Jlink;
+import jdk.tools.jlink.plugin.Plugin;
 import tests.JImageGenerator;
-import tests.JImageValidator;
 import tests.Result;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.Collections;
 
 /*
  * @test
- * @summary Make sure that 100 modules can be linked using jlink and dedcplication works correctlyk.
+ * @summary Make sure that modules can be linked using jlink and deduplication works correctly when creating sub methods
  * @bug 8311591
  * @library /test/lib
  *          ../lib
@@ -64,7 +65,7 @@ public class JLinkDedupTest100Modules {
                     File.pathSeparator + MODS_DIR.toString();
 
     // the names of the modules in this test
-    private static String[] modules = new String[] {"m1", "m2", "m3", "m4"};
+    private static String[] modules = new String[]{"m1", "m2", "m3", "m4"};
 
     private static boolean hasJmods() {
         if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
@@ -73,6 +74,7 @@ public class JLinkDedupTest100Modules {
         }
         return true;
     }
+
     /*
      * Compiles all modules used by the test
      */
@@ -86,14 +88,7 @@ public class JLinkDedupTest100Modules {
         }
     }
 
-
-    static void report(String command, String[] args) {
-        System.out.println(command + " " + String.join(" ", Arrays.asList(args)));
-    }
-
-
     public static void main(String[] args) throws Throwable {
-
         compileAll();
         Path src = Paths.get("bug8311591");
 
@@ -105,6 +100,7 @@ public class JLinkDedupTest100Modules {
                 .addMods("m2")
                 .addMods("m3")
                 .addMods("m4")
+                .option("--system-modules=batchSize=1")
                 .call()
                 .assertSuccess();
 
@@ -120,32 +116,30 @@ public class JLinkDedupTest100Modules {
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
         if (exitCode != 0)
-             throw new AssertionError("JLinkDedupTest100Modules failed to launch");
+            throw new AssertionError("JLinkDedupTest100Modules failed to launch");
 
         extractJImage(src);
         decompileWitJavap(src);
 
-
     }
+
     static void extractJImage(Path src) throws Throwable {
         Path binDir = src.resolve("out-jlink-dedup").toAbsolutePath();
         Path outputDir = src.resolve("dir");
-        Path jimageDir = binDir.resolve("lib","modules");
+        Path jimageDir = binDir.resolve("lib", "modules");
 
         Result result = JImageGenerator.getJImageTask()
                 .dir(outputDir)
                 .image(jimageDir)
                 .extract();
 
-        System.out.println("REsult dir " +result.getFile());
+        System.out.println("jimage extracted dir " + result.getFile());
         result.assertSuccess();
-
-
     }
 
     static void decompileWitJavap(Path srcDir) throws Exception {
         //dir/java.base/jdk/internal/module/SystemModules\$all.class
-        Path systemModuleClass  = srcDir.resolve("dir","java.base","jdk","internal","module", "SystemModules$all.class");
+        Path systemModuleClass = srcDir.resolve("dir", "java.base", "jdk", "internal", "module", "SystemModules$all.class");
 
         JDKToolLauncher javap = JDKToolLauncher.create("javap")
                 .addToolArg("-verbose")
@@ -157,6 +151,11 @@ public class JLinkDedupTest100Modules {
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         out.shouldHaveExitValue(0);
         // TODO: Check for subs with addAll?
-        System.out.println("disassmebly " + out.getStdout());
+        System.out.println("disassembly " + out.getStdout());
     }
+
+    private static Plugin createPlugin(String name) {
+        return Jlink.newPlugin(name, Collections.emptyMap(), null);
+    }
+
 }
