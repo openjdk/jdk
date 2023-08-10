@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,12 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.Platform;
-import jdk.test.lib.Utils;
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 
 /*
  * @test
@@ -81,7 +82,6 @@ public class InfoTest {
     }
 
     // Main can be used to run the tests from the command line with only testng.jar.
-    @SuppressWarnings("raw_types")
     public static void main(String[] args) {
         Class<?>[] testclass = {InfoTest.class};
         TestNG testng = new TestNG();
@@ -163,7 +163,12 @@ public class InfoTest {
                     if (info.user().isPresent()) {
                         String user = info.user().get();
                         Assert.assertNotNull(user, "User name");
-                        Assert.assertEquals(user, whoami, "User name");
+                        if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
+                            System.out.println("Test seems to be run as Administrator. " +
+                                    "Check for user correctness is not possible.");
+                        } else {
+                            Assert.assertEquals(user, whoami, "User name");
+                        }
                     }
 
                     Optional<String> command = info.command();
@@ -294,7 +299,12 @@ public class InfoTest {
                 if (info.user().isPresent()) {
                     String user = info.user().get();
                     Assert.assertNotNull(user);
-                    Assert.assertEquals(user, whoami);
+                    if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
+                        System.out.println("Test seems to be run as Administrator. " +
+                                "Check for user correctness is not possible.");
+                    } else {
+                        Assert.assertEquals(user, whoami);
+                    }
                 }
                 if (info.command().isPresent()) {
                     String command = info.command().get();
@@ -397,7 +407,7 @@ public class InfoTest {
             Instant end = Instant.now().plusMillis(500L);
             while (end.isBefore(Instant.now())) {
                 // burn the cpu time checking the time
-                long x = r.nextLong();
+                r.nextLong();
             }
             if (self.info().totalCpuDuration().isPresent()) {
                 Duration totalCpu = self.info().totalCpuDuration().get();
@@ -410,6 +420,7 @@ public class InfoTest {
             }
         }
     }
+
     /**
      * Check two Durations, the second should be greater than the first or
      * within the supplied Epsilon.
