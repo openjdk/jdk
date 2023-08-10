@@ -535,7 +535,7 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String dockerSupport() {
         log("Entering dockerSupport()");
 
-        boolean isSupported = false;
+        boolean isSupported = true;
         if (Platform.isLinux()) {
            // currently docker testing is only supported for Linux,
            // on certain platforms
@@ -612,8 +612,10 @@ public class VMProps implements Callable<Map<String, String>> {
         if (Container.CONTAINER_REQUIRES_COMMAND.isEmpty()) {
             return true;
         }
+        String unescaped = Container.CONTAINER_REQUIRES_COMMAND.replace("\\u0020", " ");
+        log("checkContainerSupport(): unescaped = " + unescaped);
 
-        List<String> args = Arrays.asList(Container.CONTAINER_REQUIRES_COMMAND.split(" "));
+        List<String> args = Arrays.asList(unescaped.split(" "));
         ProcessBuilder pb = new ProcessBuilder(args);
         Map<String, String> logFileNames = redirectOutputToLogFile("checkContainerSupport(): <container command> ",
                                                       pb, "container-command");
