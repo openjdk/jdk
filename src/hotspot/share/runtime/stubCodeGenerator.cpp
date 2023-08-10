@@ -95,7 +95,7 @@ void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
     ls.cr();
   }
 
-  if (_print_code) {
+  if (_print_code && (strcmp(cdesc->name(), "oop_disjoint_arraycopy_uninit") == 0)) {
 #ifndef PRODUCT
     // Find the assembly code remarks in the outer CodeBuffer.
     AsmRemarks* remarks = &_masm->code_section()->outer()->asm_remarks();
