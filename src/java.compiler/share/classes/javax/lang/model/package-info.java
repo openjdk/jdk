@@ -46,7 +46,7 @@
  * language constructs, like the {@linkplain javax.lang.model.element
  * element} representing {@code java.util.Set}, and the family of
  * {@linkplain javax.lang.model.type types} that may be associated
- * with an element, like the raw type {@code java.util.Set}, {@code
+ * with an element, like the raw type {@code java.util.Set},{@code
  * java.util.Set<String>}, and {@code java.util.Set<T>}.
  *
  * <p>Unless otherwise specified, methods in this package will throw
@@ -57,7 +57,7 @@
  * <h3><a id=DefUse>Definitions and Uses</a></h3>
  *
  * In broad terms the {@link javax.lang.model.element element} package
- * models the declarations, <em>definitions</em>, of elements while
+ * models the declarations, that is <em>definitions</em>, of elements while
  * the {@link javax.lang.model.type type} package models <em>uses</em>
  * of types. In general, distinct uses can have individualized
  * information separate from the information associated with the
@@ -85,7 +85,13 @@
  * cases. The <em>definition</em> of {@code java.lang.String} itself
  * is annotated with neither of the type annotations in question.
  *
- * <p>TODO: Short example of java.util.Set instantiations.
+ * <p>Another example, consider the declaration of the generic
+ * interface (JLS {@jls 9.1.2}) {@code java.util.Set} which has one
+ * type parameter. This declaration captures commonality between the
+ * many parameterized types (JLS {@jls 4.5}) derived from that
+ * declaration such as {@code java.util.Set<String>}, {@code
+ * java.util.Set<E>}, {@code java.util.Set<?>}, and also the raw type
+ * (JLS {@jls 4.8}) {@code java.util.Set}.
  *
  * <h3><a id=elementTypeMapping>Mapping between Elements and Types</a></h3>
  *
@@ -113,9 +119,11 @@
  * {@code java.util.Set}, the prototypical type {@code
  * java.util.Set<E>}, and the type {@code java.util.Set<String>} would
  * all {@linkplain javax.lang.model.type.DeclaredType#asElement() map
- * to} the element for {@code java.util.Set}.
-
- * TODO: discuss mapping via Types utility method (also covers modules and packages)
+ * to} the element for {@code java.util.Set}. Several kinds of types
+ * can be {@linkplain
+ * javax.lang.model.util.Types#asElement(TypeMirror) mapped to
+ * elements}, but other kinds of types do <em>not</em> have an element
+ * mapping.
  *
  * @since 1.6
  *
