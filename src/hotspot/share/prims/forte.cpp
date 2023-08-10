@@ -710,11 +710,12 @@ bool Forte::is_enabled() {
 
 void Forte::register_stub(const char* name, address start, address end) {
 #if !defined(_WINDOWS)
-  assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
+  size_t code_size = pointer_delta(end, start, sizeof(jbyte));
+  assert(code_size < INT_MAX,
          "Code size exceeds maximum range");
 
   collector_func_load((char*)name, nullptr, nullptr, start,
-    pointer_delta(end, start, sizeof(jbyte)), 0, nullptr);
+                      checked_cast<int>(code_size), 0, nullptr);
 #endif // !_WINDOWS
 }
 

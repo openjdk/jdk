@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -356,7 +356,7 @@ double ThreadHeapSampler::fast_log2(const double& d) {
   assert(sizeof(d) == sizeof(x),
          "double and uint64_t do not have the same size");
   x = *reinterpret_cast<const uint64_t*>(&d);
-  const uint32_t x_high = x >> 32;
+  const uint32_t x_high = checked_cast<uint32_t>(x >> 32);
   assert(FastLogNumBits <= 20, "FastLogNumBits should be less than 20.");
   const uint32_t y = x_high >> (20 - FastLogNumBits) & FastLogMask;
   const int32_t exponent = ((x_high >> 20) & 0x7FF) - 1023;

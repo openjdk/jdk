@@ -52,6 +52,8 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected short  _sourceFileIndex;
     protected short  _innerClassesIndex;
+    protected short  _nestHostIndex;
+    protected short  _nestMembersIndex;
     protected short  _syntheticIndex;
     protected short  _deprecatedIndex;
     protected short  _constantValueIndex;
@@ -142,6 +144,14 @@ public class ClassWriter implements /* imports */ ClassConstants
         Short innerClassesIndex = utf8ToIndex.get("InnerClasses");
         _innerClassesIndex = (innerClassesIndex != null)? innerClassesIndex.shortValue() : 0;
         if (DEBUG) debugMessage("InnerClasses index = " + _innerClassesIndex);
+
+        Short nestHostIndex = utf8ToIndex.get("NestHost");
+        _nestHostIndex = (nestHostIndex != null)? nestHostIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("NestHost index = " + _nestHostIndex);
+
+        Short nestMembersIndex = utf8ToIndex.get("NestMembers");
+        _nestMembersIndex = (nestMembersIndex != null)? nestMembersIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("NestMembers index = " + _nestMembersIndex);
 
         Short bootstrapMethodsIndex = utf8ToIndex.get("BootstrapMethods");
         _bootstrapMethodsIndex = (bootstrapMethodsIndex != null) ? bootstrapMethodsIndex.shortValue() : 0;
@@ -780,6 +790,17 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (numInnerClasses != 0)
             classAttributeCount++;
 
+        short nestHost = klass.getNestHostIndex();
+        if (nestHost != 0) {
+            classAttributeCount++;
+        }
+
+        U2Array nestMembers = klass.getNestMembers();
+        final int numNestMembers = nestMembers.length();
+        if (numNestMembers != 0) {
+            classAttributeCount++;
+        }
+
         int bsmCount = klass.getConstants().getBootstrapMethodsCount();
         if (bsmCount != 0) {
             classAttributeCount++;
@@ -833,6 +854,23 @@ public class ClassWriter implements /* imports */ ClassConstants
             for (int index = 0; index < numInnerClasses * 4; index++) {
                 dos.writeShort(innerClasses.at(index));
             }
+        }
+
+        if (nestHost != 0) {
+            writeIndex(_nestHostIndex);
+            final int nestHostAttrLen = 2;
+            dos.writeInt(nestHostAttrLen);
+            dos.writeShort(nestHost);
+        }
+
+        if (numNestMembers != 0) {
+           writeIndex(_nestMembersIndex);
+           final int nestMembersAttrLen = 2 + numNestMembers * 2;
+           dos.writeInt(nestMembersAttrLen);
+           dos.writeShort(numNestMembers);
+           for (int index = 0; index < numNestMembers; index++) {
+               dos.writeShort(nestMembers.at(index));
+           }
         }
 
         // write bootstrap method attribute, if any
