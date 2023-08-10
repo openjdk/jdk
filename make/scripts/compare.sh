@@ -357,8 +357,8 @@ compare_general_files() {
                     "
                 $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [[ "$f" = *"/lib/classlist" ]] || [ "$SUFFIX" = "jar_contents" ]; then
-                # The classlist files may have some lines in random order
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files may have some lines in random order
                 OTHER_FILE=$WORK_DIR/$f.other
                 THIS_FILE=$WORK_DIR/$f.this
                 $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
