@@ -90,7 +90,6 @@ public class CopyInterference {
         throws IOException {
         Path parent = Path.of(System.getProperty("test.dir", "."));
         Path dir = Files.createTempDirectory(parent, "foobargus");
-        dir.toFile().deleteOnExit();
 
         List<Arguments> list = new ArrayList<Arguments>();
 
