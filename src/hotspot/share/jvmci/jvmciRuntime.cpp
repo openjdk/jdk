@@ -174,7 +174,6 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     RetryableAllocationMark ram(current, null_on_fail);
     obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   }
-  current->set_vm_result(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -182,7 +181,8 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     // Alternate between deoptimizing and raising an error (which will also cause a deopt)
     if (deopts++ % 2 == 0) {
       if (null_on_fail) {
-        return;
+        // Drop the allocation
+        obj = nullptr;
       } else {
         ResourceMark rm(current);
         THROW(vmSymbols::java_lang_OutOfMemoryError());
@@ -191,6 +191,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
       deopt_caller();
     }
   }
+  current->set_vm_result(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
