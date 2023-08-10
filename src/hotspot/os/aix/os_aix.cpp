@@ -1101,8 +1101,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-// Loads .dll/.so and in case of error it checks if .dll/.so was built
-// for the same architecture as Hotspot is running on.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
@@ -1122,8 +1120,17 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   event.set_name(filename);
 #endif
 
-  // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
-  void * result= ::dlopen(filename, RTLD_LAZY);
+  // RTLD_LAZY has currently the same behavior as RTLD_NOW
+  // The dl is loaded immediately with all its dependants.
+  int dflags = RTLD_LAZY;
+  // check for filename ending with ')', it indicates we want to load
+  // a MEMBER module that is a member of an archive.
+  int flen = strlen(filename);
+  if (flen > 0 && filename[flen - 1] == ')') {
+    dflags |= RTLD_MEMBER;
+  }
+
+  void * result= ::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
