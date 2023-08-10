@@ -1986,8 +1986,6 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Regist
   // Very-local scratch registers.
   const Register esp  = Rtemp1;
   const Register slot = Rtemp2;
-  const Register tmp  = R23_tmp3;
-  assert_different_registers(esp, slot, tmp);
 
   // Extracted monitor_size.
   int monitor_size = frame::interpreter_frame_monitor_size_in_bytes();
@@ -1996,10 +1994,10 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Regist
          "size of a monitor must respect alignment of SP");
 
   resize_frame(-monitor_size, /*temp*/esp); // Allocate space for new monitor
-  sub(tmp, R1_SP, esp); // esp contains fp
-  sradi(tmp, tmp, Interpreter::logStackElementSize);
+  subf(Rtemp2, esp, R1_SP); // esp contains fp
+  sradi(Rtemp2, Rtemp2, Interpreter::logStackElementSize);
   // Store relativized top_frame_sp
-  std(tmp, _ijava_state_neg(top_frame_sp), esp); // esp contains fp
+  std(Rtemp2, _ijava_state_neg(top_frame_sp), esp); // esp contains fp
 
   // Shuffle expression stack down. Recall that stack_base points
   // just above the new expression stack bottom. Old_tos and new_tos
