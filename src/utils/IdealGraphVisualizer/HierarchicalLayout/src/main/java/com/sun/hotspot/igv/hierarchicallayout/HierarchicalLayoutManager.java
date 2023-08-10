@@ -350,7 +350,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     }
                 }
 
-                // THIS PART IS NOT NECESSARY SINCE ALL EDGES CAN BE DRAWN FROM BOTTOM UP
+                // THIS PART MIGHT NOT BE NECESSARY SINCE ALL EDGES CAN BE DRAWN FROM BOTTOM UP
                 for (LayoutEdge e : n.succs) {
                     if (e.link != null && !linkPositions.containsKey(e.link)) {
                         ArrayList<Point> points = new ArrayList<>();
@@ -1182,7 +1182,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             } else {
                 ArrayList<LayoutNode> currentNodes = new ArrayList<>(nodes);
                 for (LayoutNode n : currentNodes) {
-                    for (LayoutEdge e : n.succs) {
+                    for (LayoutEdge e : List.copyOf(n.succs)) {
                         processSingleEdge(e);
                     }
                 }
@@ -1674,13 +1674,9 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 vertexToLayoutNode.put(v, node);
             }
 
-            // Set up edges
+            // Set up edges, ensuring no duplicates
             List<Link> links = new ArrayList<>();
             for (Link link1 : graph.getLinks()) {
-                if (link1.getTo().getVertex().equals(link1.getFrom().getVertex())) {
-                    // self-edge
-                    continue;
-                }
                 boolean duplicate = false;
                 for (Link link2 : links) {
                     if (link1.equals(link2)) {
