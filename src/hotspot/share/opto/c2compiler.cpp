@@ -235,6 +235,15 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
     if (StubRoutines::electronicCodeBook_decryptAESCrypt() == nullptr) return false;
     break;
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    if (StubRoutines::galoisCounterMode_AESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerRightShiftWorker:
+    if (StubRoutines::bigIntegerRightShift() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
+    break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
     break;
@@ -727,7 +736,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
-  case vmIntrinsics::_galoisCounterMode_AESCrypt:
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
@@ -739,8 +747,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
-  case vmIntrinsics::_bigIntegerRightShiftWorker:
-  case vmIntrinsics::_bigIntegerLeftShiftWorker:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:

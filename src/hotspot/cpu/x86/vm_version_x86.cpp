@@ -3225,48 +3225,6 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
       return false;
     }
     break;
-  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
-  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
-  case vmIntrinsics::_galoisCounterMode_AESCrypt:
-    if (!(supports_avx512_vaes() &&  supports_avx512vl() && supports_avx512dq())) {
-      return false;
-    }
-    break;
-  case vmIntrinsics::_bigIntegerRightShiftWorker:
-  case vmIntrinsics::_bigIntegerLeftShiftWorker:
-    if (!supports_avx512_vbmi2()) {
-      return false;
-    }
-    break;
-  case vmIntrinsics::_floatIsInfinite:
-  case vmIntrinsics::_doubleIsInfinite:
-    if (!supports_avx512dq()) {
-      return false;
-    }
-    break;
-  case vmIntrinsics::_dcopySign:
-  case vmIntrinsics::_fcopySign:
-    if (UseAVX < 3 || !is_LP64)  {
-      return false;
-    }
-    if (!supports_avx512vl()) {
-      return false;
-    }
-    break;
-#ifdef _LP64
-  case vmIntrinsics::_maxF:
-  case vmIntrinsics::_minF:
-  case vmIntrinsics::_maxD:
-  case vmIntrinsics::_minD:
-  case vmIntrinsics::_maxF_strict:
-  case vmIntrinsics::_minF_strict:
-  case vmIntrinsics::_maxD_strict:
-  case vmIntrinsics::_minD_strict:
-    if (UseAVX < 1) { // enabled for AVX only
-      return false;
-    }
-    break;
-#endif
   default:
     break;
   }
