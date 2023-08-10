@@ -2884,7 +2884,9 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (!InterceptOSException) {
+  if (InterceptOSException) {
+    goto exit;
+  } else {
     DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
 #if defined(_M_ARM64)
     address pc = (address)exceptionInfo->ContextRecord->Pc;
@@ -2900,6 +2902,7 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
                   exceptionInfo->ContextRecord);
     }
   }
+exit:
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
