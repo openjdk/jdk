@@ -3785,7 +3785,6 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   if (layout_is_con) {
     int       hsize  = Klass::layout_helper_header_size(layout_con);
     int       eshift = Klass::layout_helper_log2_element_size(layout_con);
-    BasicType etype  = Klass::layout_helper_element_type(layout_con);
     if ((round_mask & ~right_n_bits(eshift)) == 0)
       round_mask = 0;  // strength-reduce it if it goes away completely
     assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
