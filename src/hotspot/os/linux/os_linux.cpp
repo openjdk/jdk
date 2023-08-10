@@ -1601,14 +1601,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Elf32_Ehdr elf_head;
-  size_t diag_msg_max_length=ebuflen-strlen(ebuf);
-  char* diag_msg_buf=ebuf+strlen(ebuf);
-
-  if (diag_msg_max_length==0) {
+  int diag_msg_max_length=ebuflen-checked_cast<int>(strlen(ebuf));
+  if (diag_msg_max_length <= 0) {
     // No more space in ebuf for additional diagnostics message
     return nullptr;
   }
 
+  char* diag_msg_buf=ebuf+strlen(ebuf);
 
   int file_descriptor= ::open(filename, O_RDONLY | O_NONBLOCK);
 
@@ -5442,11 +5441,11 @@ static inline struct timespec get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   struct timespec filetime1 = get_mtime(file1);
   struct timespec filetime2 = get_mtime(file2);
-  time_t diff = filetime1.tv_sec - filetime2.tv_sec;
+  int diff = primitive_compare(filetime1.tv_sec, filetime2.tv_sec);
   if (diff == 0) {
-    diff = filetime1.tv_nsec - filetime2.tv_nsec;
+    diff = primitive_compare(filetime1.tv_nsec, filetime2.tv_nsec);
   }
-  return checked_cast<int>(diff);
+  return diff;
 }
 
 bool os::supports_map_sync() {

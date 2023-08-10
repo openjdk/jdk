@@ -257,7 +257,7 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // where <ver> is the protocol version (1), <cmd> is the command
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
+  const unsigned max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
     AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
@@ -266,13 +266,13 @@ BsdAttachOperation* BsdAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  ssize_t off = 0;
-  ssize_t left = max_len;
+  size_t off = 0;
+  size_t left = max_len;
 
   do {
     ssize_t n;
     RESTARTABLE(read(s, buf+off, left), n);
-    assert(n <= left, "buffer was too small, impossible!");
+    assert(n <= checked_cast<ssize_t>(left), "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
     if (n == -1) {
       return nullptr;      // reset by peer or other error
