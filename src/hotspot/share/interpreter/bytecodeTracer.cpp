@@ -35,6 +35,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -501,8 +502,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (is_linked()) {
-          int cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int field_index = get_native_index_u2();
+          cp_index = cpcache()->resolved_field_entry_at(field_index)->constant_pool_index();
         } else {
           cp_index = get_Java_index_u2();
         }

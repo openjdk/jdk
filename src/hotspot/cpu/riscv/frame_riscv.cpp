@@ -478,7 +478,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // do some validation of frame elements
 
   // first the method
-  Method* m = *interpreter_frame_method_addr();
+  Method* m = safe_interpreter_frame_method();
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) {
     return false;

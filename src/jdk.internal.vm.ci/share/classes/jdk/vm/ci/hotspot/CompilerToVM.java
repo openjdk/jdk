@@ -240,20 +240,52 @@ final class CompilerToVM {
      * Converts a name to a type.
      *
      * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
-     * @param accessingClass the context of resolution. A value of {@code null} implies that the
-     *            class should be resolved with the {@linkplain ClassLoader#getSystemClassLoader()
-     *            system class loader}.
+     * @param accessingClass the class loader of this class is used for resolution. Must not be null.
      * @param resolve force resolution to a {@link ResolvedJavaType}. If true, this method will
      *            either return a {@link ResolvedJavaType} or throw an exception
      * @return the type for {@code name} or 0 if resolution failed and {@code resolve == false}
-     * @throws ClassNotFoundException if {@code resolve == true} and the resolution failed
+     * @throws NoClassDefFoundError if {@code resolve == true} and the resolution failed
      */
-    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws ClassNotFoundException {
-        return lookupType(name, accessingClass, accessingClass != null ? accessingClass.getKlassPointer() : 0L, resolve);
+    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws NoClassDefFoundError {
+        return lookupType(name, accessingClass, accessingClass.getKlassPointer(), -1, resolve);
     }
 
-    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long klassPointer, boolean resolve) throws ClassNotFoundException;
+    /**
+     * Converts a name to a type.
+     *
+     * @param classLoader the class loader to use for resolution. Must not be {@code null},
+     *           {@link ClassLoader#getPlatformClassLoader} or {@link ClassLoader#getSystemClassLoader}
+     * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
+     * @return the type for {@code name}
+     * @throws NoClassDefFoundError if resolution failed
+     */
+    HotSpotResolvedJavaType lookupType(ClassLoader classLoader, String name) throws NoClassDefFoundError {
+        int accessingClassLoader;
+        if (classLoader == null) {
+            accessingClassLoader = 0;
+        } else if (classLoader == ClassLoader.getPlatformClassLoader()) {
+            accessingClassLoader = 1;
+        } else if (classLoader == ClassLoader.getSystemClassLoader()) {
+            accessingClassLoader = 2;
+        } else {
+            throw new IllegalArgumentException("Unsupported class loader for lookup: " + classLoader);
+        }
+        return lookupType(name, null, 0L, accessingClassLoader, true);
+    }
 
+    /**
+     * @param accessingClassLoader ignored if {@code accessingKlassPointer != 0L}. Otherwise, the supported values are:
+     *            0 - boot class loader
+     *            1 - {@linkplain ClassLoader#getPlatformClassLoader() platform class loader}
+     *            2 - {@linkplain ClassLoader#getSystemClassLoader() system class loader}
+     */
+    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long accessingKlassPointer, int accessingClassLoader, boolean resolve) throws NoClassDefFoundError;
+
+    /**
+     * Converts {@code javaClass} to a HotSpotResolvedJavaType.
+     *
+     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code true}.
+     */
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
     native HotSpotResolvedJavaType lookupJClass(long jclass);
