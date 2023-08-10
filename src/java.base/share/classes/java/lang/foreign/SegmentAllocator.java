@@ -286,8 +286,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -307,8 +306,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -328,8 +326,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -349,8 +346,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -370,8 +366,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -391,8 +386,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
@@ -412,8 +406,7 @@ public interface SegmentAllocator {
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
      *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(MemorySegment.ofArray(elements), elementLayout, 0,
-     *                     seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
      *
