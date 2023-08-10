@@ -536,7 +536,13 @@ bool Thread::set_as_starting_thread() {
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
   // NOTE: this must be called inside the main thread.
   DEBUG_ONLY(_starting_thread = this;)
-  return os::create_main_thread(JavaThread::cast(this));
+  JavaThread* main_java_thread = JavaThread::cast(this);
+  bool created = os::create_main_thread(main_java_thread);
+  if (!created) {
+    return false;
+  }
+  main_java_thread->set_native_thread_name("main");
+  return true;
 }
 
 // Ad-hoc mutual exclusion primitives: SpinLock
