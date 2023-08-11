@@ -1602,6 +1602,14 @@ C2V_VMENTRY_0(int, decodeIndyIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAI
   return cp->resolved_indy_entry_at(indy_index)->constant_pool_index();
 C2V_END
 
+C2V_VMENTRY_0(int, decodeFieldIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint field_index))
+  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
+  if (field_index < 0 || field_index >= cp->resolved_field_entries_length()) {
+    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("invalid field index %d", field_index));
+  }
+  return cp->resolved_field_entry_at(field_index)->constant_pool_index();
+C2V_END
+
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   Klass* holder = cp->klass_ref_at(index, Bytecodes::_invokehandle, CHECK);
@@ -3125,6 +3133,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL2 "I)" HS_KLASS,                                               FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL2 "I" HS_METHOD2 "B[I)" HS_KLASS,                              FN_PTR(resolveFieldInPool)},
+  {CC "decodeFieldIndexToCPIndex",                    CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(decodeFieldIndexToCPIndex)},
   {CC "decodeIndyIndexToCPIndex",                     CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(decodeIndyIndexToCPIndex)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL2 "I)V",                                                       FN_PTR(resolveInvokeHandleInPool)},
   {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(isResolvedInvokeHandleInPool)},

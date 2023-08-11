@@ -403,6 +403,12 @@ final class CompilerToVM {
 
     private native int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int encoded_indy_index, boolean resolve);
 
+    int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, int field_index) {
+        return decodeFieldIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), field_index);
+    }
+
+    private native int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int field_index);
+
     /**
      * Resolves the details for invoking the bootstrap method associated with the
      * {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
