@@ -179,7 +179,7 @@ public class PassFailJFrame {
     private PassFailJFrame(Builder builder) throws InterruptedException,
             InvocationTargetException {
         this(builder.title, builder.instructions, builder.testTimeOut,
-                builder.rows, builder.columns, builder.enableScreenCapture);
+                builder.rows, builder.columns, builder.screenCapture);
     }
 
     private static void createUI(String title, String instructions,
@@ -578,7 +578,7 @@ public class PassFailJFrame {
         private long testTimeOut;
         private int rows;
         private int columns;
-        private boolean enableScreenCapture = false;
+        private boolean screenCapture = false;
 
         public Builder title(String title) {
             this.title = title;
