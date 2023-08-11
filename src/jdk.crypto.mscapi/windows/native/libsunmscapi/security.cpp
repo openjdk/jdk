@@ -912,8 +912,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
     jbyte* pHashBuffer = NULL;
     jbyte* pSignedHashBuffer = NULL;
     NCRYPT_KEY_HANDLE hk = NULL;
-    BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
-    BCRYPT_PSS_PADDING_INFO pssInfo;
 
     __try
     {
@@ -936,6 +934,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
         }
         env->GetByteArrayRegion(jHash, 0, jHashSize, pHashBuffer);
 
+        BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+        BCRYPT_PSS_PADDING_INFO pssInfo;
         VOID* param;
         DWORD dwFlags;
 
@@ -1169,6 +1169,8 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
         env->GetByteArrayRegion(jSignedHash, 0, jSignedHashSize,
             pSignedHashBuffer);
 
+        BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+        BCRYPT_PSS_PADDING_INFO pssInfo;
         VOID* param;
         DWORD dwFlags;
 
@@ -1178,7 +1180,6 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
             dwFlags = 0;
             break;
         case 1:
-            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
             if (jHashAlgorithm) {
                 pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
                 if (pkcs1Info.pszAlgId == NULL) {
@@ -1193,7 +1194,6 @@ JNIEXPORT jboolean JNICALL Java_sun_security_mscapi_CSignature_verifyCngSignedHa
             dwFlags = NCRYPT_PAD_PKCS1_FLAG;
             break;
         case 2:
-            BCRYPT_PSS_PADDING_INFO pssInfo;
             pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
             pssInfo.cbSalt = saltLen;
             if (pssInfo.pszAlgId == NULL) {
