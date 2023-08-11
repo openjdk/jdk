@@ -43,9 +43,9 @@ public class VMInfoPrinter {
         // CPU feature independent info
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
         vmInfo.append("cpuFeatures:").append(cpuFeatures).append(System.lineSeparator());
-	long maxVectorSize = WHITE_BOX.getIntxVMFlag("MaxVectorSize");
+        long maxVectorSize = WHITE_BOX.getIntxVMFlag("MaxVectorSize");
         vmInfo.append("MaxVectorSize:").append(maxVectorSize).append(System.lineSeparator());
-	boolean maxVectorSizeIsDefault = WHITE_BOX.isDefaultVMFlag("MaxVectorSize");
+        boolean maxVectorSizeIsDefault = WHITE_BOX.isDefaultVMFlag("MaxVectorSize");
         vmInfo.append("MaxVectorSizeIsDefault:")
               .append(maxVectorSizeIsDefault ? 1 : 0)
               .append(System.lineSeparator());
@@ -56,8 +56,8 @@ public class VMInfoPrinter {
         long useAVX = 0;
         boolean useAVXIsDefault = true;
         if (cpuFeatures.contains(" sse, ")) {
-	    useAVX = WHITE_BOX.getIntVMFlag("UseAVX");
-	    useAVXIsDefault = WHITE_BOX.isDefaultVMFlag("UseAVX");
+            useAVX = WHITE_BOX.getIntVMFlag("UseAVX");
+            useAVXIsDefault = WHITE_BOX.isDefaultVMFlag("UseAVX");
         }
         vmInfo.append("UseAVX:").append(useAVX).append(System.lineSeparator());
         vmInfo.append("UseAVXIsDefault:")
