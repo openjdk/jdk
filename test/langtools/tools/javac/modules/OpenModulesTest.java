@@ -247,14 +247,11 @@ public class OpenModulesTest extends ModuleTestBase {
                                                           module.uses(),
                                                           module.provides());
 
-        Classfile.of().buildTo(miClass, cm.thisClass().asSymbol(), classBuilder -> {
-            for (ClassElement ce: cm.elementList()) {
-                if (! (ce instanceof ModuleAttribute)) {
-                    classBuilder.with(ce);
-                }
-            }
-            classBuilder.with(newModule);
-        });
+        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newModule))));
+        try (OutputStream out = Files.newOutputStream(miClass)) {
+            out.write(newBytes);
+        }
 
         Path test = base.resolve("test");
         tb.writeJavaFiles(test,

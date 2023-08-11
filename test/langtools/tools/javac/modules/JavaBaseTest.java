@@ -41,6 +41,7 @@
  * @run main JavaBaseTest
  */
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -240,13 +241,11 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        Classfile.of().buildTo(modInfo.toFile().toPath(), cm1.thisClass().asSymbol(), cb -> {
-            for (ClassElement ce: cm1) {
-                if (!(ce instanceof ModuleAttribute))
-                    cb.with(ce);
-            }
-            cb.with(modAttr2);
-        });
+        byte[] newBytes = Classfile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
+        try (OutputStream out = Files.newOutputStream(modInfo)) {
+            out.write(newBytes);
+        }
     }
 
     private void error(String message) {
