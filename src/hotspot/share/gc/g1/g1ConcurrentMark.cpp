@@ -511,6 +511,11 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
                                       });
 }
 
+void G1ConcurrentMark::old_region_reclaimed(HeapRegion* r) {
+  assert(r->is_old(), "must be");
+  clear_statistics(r);
+}
+
 void G1ConcurrentMark::reset_marking_for_restart() {
   _global_mark_stack.set_empty();
 

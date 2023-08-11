@@ -123,7 +123,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         // Update processed words and yield, for humongous objects we will yield
         // after each chunk.
         add_processed_words(mr.word_size());
-        bool yielded;
+        bool yielded = false;
         bool mark_aborted = yield_if_necessary(yielded);
         if (mark_aborted) {
           return true;
@@ -192,7 +192,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
           start = scrub_to_next_live(hr, start, limit);
         }
 
-        bool yielded;
+        bool yielded = false;
         bool mark_aborted = yield_if_necessary(yielded);
         if (mark_aborted) {
           return true;
@@ -212,7 +212,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       while (start < limit) {
         start += scan_object(hr, start);
         // Avoid stalling safepoints and stop iteration if mark cycle has been aborted.
-        bool yielded = true;
+        bool yielded = false;
         bool mark_aborted = yield_if_necessary(yielded);
         if (mark_aborted) {
           return true;
