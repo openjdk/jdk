@@ -558,17 +558,6 @@ public class PKCS7 {
     }
 
     /**
-     * Returns all signerInfos which self-verify.
-     *
-     * @exception NoSuchAlgorithmException on unrecognized algorithms.
-     * @exception SignatureException on signature handling errors.
-     */
-    public SignerInfo[] verify()
-    throws NoSuchAlgorithmException, SignatureException {
-        return verify(null);
-    }
-
-    /**
      * Returns the version number of this PKCS7 block.
      * @return the version or null if version is not specified
      *         for the content type.
