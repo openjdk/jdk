@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestClassLoaderFindNative
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -49,20 +48,22 @@ public class TestClassLoaderFindNative {
 
     @Test
     public void testSimpleLookup() {
-        assertFalse(SymbolLookup.loaderLookup().lookup("f").isEmpty());
+        assertFalse(SymbolLookup.loaderLookup().find("f").isEmpty());
     }
 
     @Test
     public void testInvalidSymbolLookup() {
-        assertTrue(SymbolLookup.loaderLookup().lookup("nonExistent").isEmpty());
+        assertTrue(SymbolLookup.loaderLookup().find("nonExistent").isEmpty());
     }
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = MemorySegment.ofAddress(
-                SymbolLookup.loaderLookup().lookup("c").get().address(),
-                ValueLayout.JAVA_INT.byteSize(),
-                MemorySession.global());
+        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(1);
         assertEquals(segment.get(JAVA_BYTE, 0), 42);
+    }
+
+    @Test
+    void testLoadLibraryBadLookupName() {
+        assertTrue(SymbolLookup.loaderLookup().find("f\u0000foobar").isEmpty());
     }
 }

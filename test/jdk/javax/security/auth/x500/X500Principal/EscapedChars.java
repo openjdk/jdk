@@ -38,7 +38,7 @@ public class EscapedChars {
 
         System.out.println("RFC2253 DN is " +
             xp.getName(X500Principal.RFC2253));
-        System.out.println("CANONICAL DN is is " +
+        System.out.println("CANONICAL DN is " +
             xp.getName(X500Principal.CANONICAL));
 
         String dn1 = xp.getName(X500Principal.CANONICAL);

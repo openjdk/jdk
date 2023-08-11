@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import javadoc.tester.JavadocTester;
 
 public class TestSerializedForm extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSerializedForm tester = new TestSerializedForm();
+        var tester = new TestSerializedForm();
         tester.runTests();
     }
 
@@ -71,7 +71,7 @@ public class TestSerializedForm extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li><code>TestSerializedForm</code></li>
                     </ul>
                     </dd>

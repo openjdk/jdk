@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ void CompilationLog::log_compile(JavaThread* thread, CompileTask* task) {
   StringLogMessage lm;
   stringStream sstr(lm.buffer(), lm.size());
   // msg.time_stamp().update_to(tty->time_stamp().ticks());
-  task->print(&sstr, NULL, true, false);
+  task->print(&sstr, nullptr, true, false);
   log(thread, "%s", (const char*)lm);
 }
 
@@ -53,7 +53,7 @@ void CompilationLog::log_nmethod(JavaThread* thread, nmethod* nm) {
 void CompilationLog::log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message) {
   StringLogMessage lm;
   lm.print("%4d   COMPILE SKIPPED: %s", task->compile_id(), reason);
-  if (retry_message != NULL) {
+  if (retry_message != nullptr) {
     lm.append(" (%s)", retry_message);
   }
   lm.print("\n");

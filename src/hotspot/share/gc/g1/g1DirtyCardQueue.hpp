@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
-    HeadTail() : _head(NULL), _tail(NULL) {}
+    HeadTail() : _head(nullptr), _tail(nullptr) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
@@ -95,10 +95,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   //
   // The paused buffers are conceptually an extension of the completed buffers
   // queue, and operations which need to deal with all of the queued buffers
-  // (such as concatenate_logs) also need to deal with any paused buffers.  In
-  // general, if a safepoint performs a GC then the paused buffers will be
-  // processed as part of it, and there won't be any paused buffers after a
-  // GC safepoint.
+  // (such as concatenating or abandoning logs) also need to deal with any
+  // paused buffers.  In general, if a safepoint performs a GC then the paused
+  // buffers will be processed as part of it, and there won't be any paused
+  // buffers after a GC safepoint.
   class PausedBuffers {
     class PausedList : public CHeapObj<mtGC> {
       BufferNode* volatile _head;
@@ -126,7 +126,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     };
 
     // The most recently created list, which might be for either the next or
-    // a previous safepoint, or might be NULL if the next list hasn't been
+    // a previous safepoint, or might be null if the next list hasn't been
     // created yet.  We only need one list because of the requirement that
     // threads calling add() must first ensure there are no paused buffers
     // from a previous safepoint.  There might be many list instances existing
@@ -175,6 +175,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   G1FreeIdSet _free_ids;
 
+  G1ConcurrentRefineStats _concatenated_refinement_stats;
   G1ConcurrentRefineStats _detached_refinement_stats;
 
   // Verify _num_cards == sum of cards in the completed queue.
@@ -193,7 +194,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Refine the cards in "node" from its index to buffer_size.
+  // Refine the cards in "node" from its index to buffer_capacity.
   // Stops processing if SuspendibleThreadSet::should_yield() is true.
   // Returns true if the entire buffer was processed, false if there
   // is a pending yield request.  The node's index is updated to exclude
@@ -210,10 +211,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Thread-safe attempt to remove and return the first buffer from
   // the _completed queue.
-  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // Returns null if the queue is empty, or if a concurrent push/append
   // interferes. It uses GlobalCounter critical section to avoid ABA problem.
   BufferNode* dequeue_completed_buffer();
-  // Remove and return a completed buffer from the list, or return NULL
+  // Remove and return a completed buffer from the list, or return null
   // if none available.
   BufferNode* get_completed_buffer();
 
@@ -267,17 +268,25 @@ public:
                                             size_t stop_at,
                                             G1ConcurrentRefineStats* stats);
 
-  // If a full collection is happening, reset partial logs, and release
-  // completed ones: the full collection will make them all irrelevant.
-  void abandon_logs();
+  // If a full collection is happening, reset per-thread refinement stats and
+  // partial logs, and release completed logs. The full collection will make
+  // them all irrelevant.
+  // precondition: at safepoint.
+  void abandon_logs_and_stats();
 
-  // If any threads have partial logs, add them to the global list of logs.
-  void concatenate_logs();
+  // Update global refinement statistics with the ones given and the ones from
+  // detached threads.
+  // precondition: at safepoint.
+  void update_refinement_stats(G1ConcurrentRefineStats& stats);
+  // Add the given thread's partial logs to the global list and return and reset
+  // its refinement stats.
+  // precondition: at safepoint.
+  G1ConcurrentRefineStats concatenate_log_and_stats(Thread* thread);
 
   // Return the total of mutator refinement stats for all threads.
-  // Also resets the stats for the threads.
   // precondition: at safepoint.
-  G1ConcurrentRefineStats get_and_reset_refinement_stats();
+  // precondition: only call after concatenate_logs_and_stats.
+  G1ConcurrentRefineStats concatenated_refinement_stats() const;
 
   // Accumulate refinement stats from threads that are detaching.
   void record_detached_refinement_stats(G1ConcurrentRefineStats* stats);

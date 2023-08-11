@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 class outputStream;
 template <typename T> class JVMTypedFlagLimit;
 
-enum class JVMFlagConstraintPhase : int {
+enum class JVMFlagConstraintPhase : char {
   // Will be validated during argument processing (Arguments::parse_argument).
   AtParse         = 0,
   // Will be validated inside Threads::create_vm(), right after Arguments::apply_ergo().
@@ -58,16 +58,16 @@ template <typename T> class JVMTypedFlagLimit;
 // To query the range information of a JVMFlag:
 //     JVMFlagLimit::get_range(JVMFlag*)
 //     JVMFlagLimit::get_range_at(int flag_enum)
-// If the given flag doesn't have a range, NULL is returned.
+// If the given flag doesn't have a range, null is returned.
 //
 // To query the constraint information of a JVMFlag:
 //     JVMFlagLimit::get_constraint(JVMFlag*)
 //     JVMFlagLimit::get_constraint_at(int flag_enum)
-// If the given flag doesn't have a constraint, NULL is returned.
+// If the given flag doesn't have a constraint, null is returned.
 
 class JVMFlagLimit {
   short _constraint_func;
-  char  _phase;
+  JVMFlagConstraintPhase  _phase;
   char  _kind;
 
 #ifdef ASSERT
@@ -85,11 +85,11 @@ protected:
 private:
   static const JVMFlagLimit* get_kind_at(JVMFlagsEnum flag_enum, int required_kind) {
     const JVMFlagLimit* limit = at(flag_enum);
-    if (limit != NULL && (limit->_kind & required_kind) != 0) {
+    if (limit != nullptr && (limit->_kind & required_kind) != 0) {
       _last_checked = flag_enum;
       return limit;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -100,10 +100,10 @@ private:
 
 public:
   void* constraint_func() const;
-  char phase() const { return _phase; }
+  JVMFlagConstraintPhase phase() const { return _phase; }
   char kind()  const { return _kind; }
 
-  constexpr JVMFlagLimit(int type_enum, short func, short phase, short kind)
+  constexpr JVMFlagLimit(int type_enum, short func, JVMFlagConstraintPhase phase, char kind)
     : _constraint_func(func), _phase(phase), _kind(kind) DEBUG_ONLY(COMMA _type_enum(type_enum)) {}
 
   static const JVMFlagLimit* get_range(const JVMFlag* flag) {
@@ -155,22 +155,22 @@ public:
   // dummy - no range or constraint. This object will not be emitted into the .o file
   // because we declare it as "const" but has no reference to it.
   constexpr JVMTypedFlagLimit(int type_enum) :
-  JVMFlagLimit(0, 0, 0, 0), _min(0), _max(0) {}
+  JVMFlagLimit(0, 0, JVMFlagConstraintPhase::AtParse, 0), _min(0), _max(0) {}
 
   // range only
   constexpr JVMTypedFlagLimit(int type_enum, T min, T max) :
-    JVMFlagLimit(type_enum, 0, 0, HAS_RANGE), _min(min), _max(max) {}
+    JVMFlagLimit(type_enum, 0, JVMFlagConstraintPhase::AtParse, HAS_RANGE), _min(min), _max(max) {}
 
   // constraint only
-  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase) :
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase) :
     JVMFlagLimit(type_enum, func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
 
   // range and constraint
-  constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, int phase)  :
+  constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase)  :
     JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   // constraint and range
-  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase, T min, T max)  :
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, JVMFlagConstraintPhase phase, T min, T max)  :
     JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   T min() const { return _min; }

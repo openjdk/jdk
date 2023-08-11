@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.file.StandardOpenOption.*;
+import static java.util.stream.Collectors.joining;
 import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
@@ -98,7 +99,7 @@ public final class SealedGraph implements Taglet {
                 .map(Objects::toString)
                 .collect(Collectors.toUnmodifiableSet());
 
-        String dotContent = Renderer.graph(typeElement, exports);
+        String dotContent = new Renderer().graph(typeElement, exports);
 
         try  {
             Files.writeString(dotFile, dotContent, WRITE, CREATE, TRUNCATE_EXISTING);
@@ -133,13 +134,10 @@ public final class SealedGraph implements Taglet {
                 (height <= 0 ? "" : " height=\"" + height + "\""));
     }
 
-    private static final class Renderer {
-
-        private Renderer() {
-        }
+    private final class Renderer {
 
         // Generates a graph in DOT format
-        static String graph(TypeElement rootClass, Set<String> exports) {
+        String graph(TypeElement rootClass, Set<String> exports) {
             final State state = new State(rootClass);
             traverse(state, rootClass, exports);
             return state.render();
@@ -147,25 +145,51 @@ public final class SealedGraph implements Taglet {
 
         static void traverse(State state, TypeElement node, Set<String> exports) {
             state.addNode(node);
-            for (TypeElement subNode : permittedSubclasses(node, exports)) {
-                if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
-                    state.addEdge(node, subNode);
+            if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
+                state.addNonSealedEdge(node);
+            } else {
+                for (TypeElement subNode : permittedSubclasses(node, exports)) {
+                    if (isInPublicApi(node, exports) && isInPublicApi(subNode, exports)) {
+                        state.addEdge(node, subNode);
+                    }
+                    traverse(state, subNode, exports);
                 }
-                traverse(state, subNode, exports);
             }
         }
 
-        private static final class State {
+        private final class State {
 
             private static final String LABEL = "label";
             private static final String TOOLTIP = "tooltip";
-            private static final String STYLE = "style";
+            private static final String LINK = "href";
+
+            private final TypeElement rootNode;
 
             private final StringBuilder builder;
 
-            private final Map<String, Map<String, String>> nodeStyleMap;
+            private final Map<String, Map<String, StyleItem>> nodeStyleMap;
+
+            private int nonSealedHierarchyCount = 0;
+
+            private sealed interface StyleItem {
+                String valueString();
+
+                record PlainString(String text) implements StyleItem {
+                    @Override
+                    public String valueString() {
+                        return "\"" + text + "\"";
+                    }
+                }
+                record HtmlString(String text) implements StyleItem {
+                    @Override
+                    public String valueString() {
+                        return "<" + text + ">";
+                    }
+                }
+            }
 
             public State(TypeElement rootNode) {
+                this.rootNode = rootNode;
                 nodeStyleMap = new LinkedHashMap<>();
                 builder = new StringBuilder()
                         .append("digraph G {")
@@ -186,12 +210,26 @@ public final class SealedGraph implements Taglet {
 
             public void addNode(TypeElement node) {
                 var styles = nodeStyleMap.computeIfAbsent(id(node), n -> new LinkedHashMap<>());
-                styles.put(LABEL, node.getSimpleName().toString());
-                styles.put(TOOLTIP, node.getQualifiedName().toString());
-                if (!(node.getModifiers().contains(Modifier.SEALED) || node.getModifiers().contains(Modifier.FINAL))) {
-                    // This indicates that the hierarchy is not closed
-                    styles.put(STYLE, "dashed");
-                }
+                styles.put(LABEL, new StyleItem.PlainString(node.getSimpleName().toString()));
+                styles.put(TOOLTIP, new StyleItem.PlainString(node.getQualifiedName().toString()));
+                styles.put(LINK, new StyleItem.PlainString(relativeLink(node)));
+            }
+
+            // A permitted class must be in the same package or in the same module.
+            // This implies the module is always the same.
+            private String relativeLink(TypeElement node) {
+                var util = SealedGraph.this.docletEnvironment.getElementUtils();
+                var rootPackage = util.getPackageOf(rootNode);
+                var nodePackage = util.getPackageOf(node);
+                var backNavigator = rootPackage.getQualifiedName().toString().chars()
+                        .filter(c -> c == '.')
+                        .mapToObj(c -> "../")
+                        .collect(joining()) +
+                        "../";
+                var forwardNavigator = nodePackage.getQualifiedName().toString()
+                        .replace(".", "/");
+
+                return backNavigator + forwardNavigator + "/" + node.getSimpleName() + ".html";
             }
 
             public void addEdge(TypeElement node, TypeElement subNode) {
@@ -203,14 +241,34 @@ public final class SealedGraph implements Taglet {
                         .append(lineSeparator());
             }
 
+            public void addNonSealedEdge(TypeElement node) {
+                // prepare open node
+                var openNodeId = "open node #" + nonSealedHierarchyCount++;
+                var styles = nodeStyleMap.computeIfAbsent(openNodeId, n -> new LinkedHashMap<>());
+                styles.put(LABEL, new StyleItem.HtmlString("<I>&lt;any&gt;</I>"));
+                styles.put(TOOLTIP, new StyleItem.PlainString("Non-sealed Hierarchy"));
+
+                // add link to parent node
+                builder.append("  ")
+                        .append('"')
+                        .append(openNodeId)
+                        .append('"')
+                        .append(" -> ")
+                        .append(quotedId(node))
+                        .append(" ")
+                        .append("[style=\"dashed\"]")
+                        .append(";")
+                        .append(lineSeparator());
+            }
+
             public String render() {
                 nodeStyleMap.forEach((nodeName, styles) -> {
                     builder.append("  ")
                             .append('"').append(nodeName).append("\" ")
                             .append(styles.entrySet().stream()
-                                    .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
-                                    .collect(Collectors.joining(" ", "[", "]")))
-                            .append(System.lineSeparator());
+                                    .map(e -> e.getKey() + "=" + e.getValue().valueString())
+                                    .collect(joining(" ", "[", "]")))
+                            .append(lineSeparator());
                 });
                 builder.append("}");
                 return builder.toString();
@@ -245,16 +303,17 @@ public final class SealedGraph implements Taglet {
         }
 
         private static boolean isInPublicApi(TypeElement typeElement, Set<String> exports) {
-           return (exports.contains(packageName(typeElement.getQualifiedName().toString())) ||
-                   exports.contains(packageName(typeElement.getSuperclass().toString()))) &&
-                   typeElement.getModifiers().contains(Modifier.PUBLIC);
+            var packageName = packageName(typeElement);
+            return packageName.isPresent() && exports.contains(packageName.get()) &&
+                    typeElement.getModifiers().contains(Modifier.PUBLIC);
         }
 
-        private static String packageName(String name) {
-            int lastDot = name.lastIndexOf('.');
-            return lastDot < 0
-                    ? ""
-                    : name.substring(0, lastDot);
+        private static Optional<String> packageName(TypeElement element) {
+            return switch (element.getNestingKind()) {
+                case TOP_LEVEL -> Optional.of(((PackageElement) element.getEnclosingElement()).getQualifiedName().toString());
+                case ANONYMOUS, LOCAL -> Optional.empty();
+                case MEMBER -> packageName((TypeElement) element.getEnclosingElement());
+            };
         }
     }
 }

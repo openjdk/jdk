@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ private:
   // constructor. The need for such an constructor should be eliminated
   // when VirtualSpace and PSVirtualSpace are unified.
   GenerationCounters()
-             : _current_size(NULL), _virtual_space(NULL), _name_space(NULL) {}
+             : _current_size(nullptr), _virtual_space(nullptr), _name_space(nullptr) {}
 
   // This constructor is used for subclasses that do not have a space
   // associated with them (e.g, in G1).

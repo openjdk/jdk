@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_constants.h"
-#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm_constants.h"
+#include "jvm_io.h"
+#include "runtime/vm_version.hpp"
+#include "utilities/tribool.hpp"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -77,7 +79,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -127,8 +129,8 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -221,6 +223,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsU:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
     case vmIntrinsics::_putCharStringU:
     case vmIntrinsics::_compressStringC:
@@ -265,8 +268,8 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!InlineThreadNatives) return true;
     break;
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -307,6 +310,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
+    break;
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:
+    if (!InlineIntrinsics) return true;
     break;
   case vmIntrinsics::_arraycopy:
     if (!InlineArrayCopy) return true;
@@ -475,9 +482,15 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_chacha20Block:
+    if (!UseChaCha20Intrinsics) return true;
+    break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
+    break;
+  case vmIntrinsics::_poly1305_processBlocks:
+    if (!UsePoly1305Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
@@ -520,6 +533,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_equalsL:
   case vmIntrinsics::_equalsU:
     if (!SpecialStringEquals) return true;
+    break;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!UseVectorizedHashCodeIntrinsic) return true;
     break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
@@ -610,7 +626,7 @@ void vmIntrinsics::init_vm_intrinsic_name_table() {
 
 const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[as_int(_none)] == NULL) {
+  if (nt[as_int(_none)] == nullptr) {
     init_vm_intrinsic_name_table();
   }
 
@@ -622,7 +638,7 @@ const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
 
 vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[as_int(_none)] == NULL) {
+  if (nt[as_int(_none)] == nullptr) {
     init_vm_intrinsic_name_table();
   }
 
@@ -635,9 +651,8 @@ vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   return _none;
 }
 
-bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
-  vmIntrinsics::ID id = method->intrinsic_id();
-  return is_disabled_by_flags(id);
+bool vmIntrinsics::is_intrinsic_available(vmIntrinsics::ID id) {
+  return VM_Version::is_intrinsic_supported(id) && !is_disabled_by_flags(id);
 }
 
 bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
@@ -645,7 +660,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 
   // not initialized yet, process Control/DisableIntrinsic
   if (vm_intrinsic_control_words[as_int(_none)].is_default()) {
-    for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
+    for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != nullptr; ++iter) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
@@ -654,7 +669,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     }
 
     // Order matters, DisableIntrinsic can overwrite ControlIntrinsic
-    for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != NULL; ++iter) {
+    for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != nullptr; ++iter) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
@@ -758,7 +773,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   default:   break;
   }
   const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);
-  if (kptr != NULL)  kname = kptr + 1;
+  if (kptr != nullptr)  kname = kptr + 1;
   int len = jio_snprintf(buf, buflen, "%s: %s%s.%s%s",
                          str, fname, kname, mname, sname);
   if (len < buflen)
@@ -791,21 +806,21 @@ vmSymbolID vmIntrinsics::class_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = 2*vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1021, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::name_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = vmSymbols::log2_SID_LIMIT + log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1022, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmSymbolID vmIntrinsics::signature_for(vmIntrinsics::ID id) {
   jlong info = intrinsic_info(id);
   int shift = log2_FLAG_LIMIT, mask = right_n_bits(vmSymbols::log2_SID_LIMIT);
   assert(((ID4(1021,1022,1023,7) >> shift) & mask) == 1023, "");
-  return vmSymbols::as_SID( (info >> shift) & mask );
+  return vmSymbols::as_SID( checked_cast<int>((info >> shift) & mask));
 }
 
 vmIntrinsics::Flags vmIntrinsics::flags_for(vmIntrinsics::ID id) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,9 +150,9 @@ public class DNSName implements GeneralNameInterface {
      * Encode the DNSName into the DerOutputStream.
      *
      * @param out the DER stream to encode the DNSName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putIA5String(name);
     }
 
@@ -169,6 +169,7 @@ public class DNSName implements GeneralNameInterface {
      * @return true iff the names are equivalent
      * according to RFC5280.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
@@ -182,10 +183,9 @@ public class DNSName implements GeneralNameInterface {
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
+    @Override
     public int hashCode() {
         return name.toUpperCase(Locale.ENGLISH).hashCode();
     }

@@ -22,11 +22,11 @@
  *
  */
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "jvm.h"
+#include "logging/log.hpp"
 #include "logTestFixture.hpp"
 #include "logTestUtils.inline.hpp"
-#include "logging/log.hpp"
 #include "unittest.hpp"
 
 class LogTest : public LogTestFixture {

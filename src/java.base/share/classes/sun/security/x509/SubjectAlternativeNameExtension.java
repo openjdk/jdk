@@ -57,7 +57,7 @@ public class SubjectAlternativeNameExtension extends Extension {
     GeneralNames        names;
 
     // Encode this extension
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (names == null || names.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -72,10 +72,8 @@ public class SubjectAlternativeNameExtension extends Extension {
      * The extension is marked non-critical.
      *
      * @param names the GeneralNames for the subject.
-     * @exception IOException on error.
      */
-    public SubjectAlternativeNameExtension(GeneralNames names)
-    throws IOException {
+    public SubjectAlternativeNameExtension(GeneralNames names) {
         this(Boolean.FALSE, names);
     }
 
@@ -84,25 +82,16 @@ public class SubjectAlternativeNameExtension extends Extension {
      * criticality and GeneralNames.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param names the GeneralNames for the subject.
-     * @exception IOException on error.
+     * @param names the GeneralNames for the subject, cannot be null or empty.
      */
-    public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names)
-    throws IOException {
+    public SubjectAlternativeNameExtension(Boolean critical, GeneralNames names) {
+        if (names == null || names.isEmpty()) {
+            throw new IllegalArgumentException("names cannot be null or empty");
+        }
         this.names = names;
         this.extensionId = PKIXExtensions.SubjectAlternativeName_Id;
         this.critical = critical.booleanValue();
         encodeThis();
-    }
-
-    /**
-     * Create a default SubjectAlternativeNameExtension. The extension
-     * is marked non-critical.
-     */
-    public SubjectAlternativeNameExtension() {
-        extensionId = PKIXExtensions.SubjectAlternativeName_Id;
-        critical = false;
-        names = new GeneralNames();
     }
 
     /**
@@ -149,10 +138,9 @@ public class SubjectAlternativeNameExtension extends Extension {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.SubjectAlternativeName_Id;
             critical = false;

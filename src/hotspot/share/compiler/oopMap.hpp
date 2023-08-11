@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,15 @@ class OopClosure;
 class CodeBlob;
 class ImmutableOopMap;
 
+enum class derived_base : intptr_t {};
 enum class derived_pointer : intptr_t {};
 
 class OopMapValue: public StackObj {
   friend class VMStructs;
 private:
-  short _value;
-  int value() const                                 { return _value; }
-  void set_value(int value)                         { _value = value; }
+  unsigned short _value;
+  unsigned short value() const                      { return _value; }
+  void set_value(unsigned short value)              { _value = value; }
   short _content_reg;
 
 public:
@@ -87,8 +88,8 @@ public:
   }
 
  private:
-    void set_reg_type(VMReg p, oop_types t) {
-    set_value((p->value() << register_shift) | t);
+  void set_reg_type(VMReg p, oop_types t) {
+    set_value(checked_cast<unsigned short>((p->value() << register_shift) | t));
     assert(reg() == p, "sanity check" );
     assert(type() == t, "sanity check" );
   }
@@ -102,7 +103,7 @@ public:
     } else {
       assert (!r->is_valid(), "valid VMReg not allowed");
     }
-    _content_reg = r->value();
+    _content_reg = checked_cast<short>(r->value());
   }
 
  public:
@@ -110,12 +111,12 @@ public:
   void write_on(CompressedWriteStream* stream) {
     stream->write_int(value());
     if(is_callee_saved() || is_derived_oop()) {
-      stream->write_int(content_reg()->value());
+      stream->write_int(checked_cast<int>(content_reg()->value()));
     }
   }
 
   void read_from(CompressedReadStream* stream) {
-    set_value(stream->read_int());
+    set_value(checked_cast<unsigned short>(stream->read_int()));
     if (is_callee_saved() || is_derived_oop()) {
       set_content_reg(VMRegImpl::as_VMReg(stream->read_int(), true));
     }
@@ -127,7 +128,7 @@ public:
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
 
-  VMReg reg() const { return VMRegImpl::as_VMReg(mask_bits(value(), register_mask_in_place) >> register_shift); }
+  VMReg reg() const { return VMRegImpl::as_VMReg(checked_cast<int>(mask_bits(value(), register_mask_in_place) >> register_shift)); }
   oop_types type() const      { return (oop_types)mask_bits(value(), type_mask_in_place); }
 
   static bool legal_vm_reg_name(VMReg p) {
@@ -230,7 +231,7 @@ class OopMapSet : public ResourceObj {
   // Collect OopMaps.
   int add_gc_map(int pc, OopMap* map);
 
-  // Methods oops_do() and all_do() filter out NULL oops and
+  // Methods oops_do() and all_do() filter out nullptr oops and
   // oop == CompressedOops::base() before passing oops
   // to closures.
 
@@ -404,7 +405,7 @@ private:
     const OopMap* _map;
     const OopMap* _other;
 
-    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(NULL) {}
+    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(nullptr) {}
 
     void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
       _kind = kind;
@@ -427,7 +428,7 @@ private:
   }
 
   bool is_last_duplicate(const OopMap* map) {
-    if (_last != NULL && _last->count() > 0 && _last->equals(map)) {
+    if (_last != nullptr && _last->count() > 0 && _last->equals(map)) {
       return true;
     }
     return false;
@@ -449,12 +450,12 @@ private:
 
 class SkipNullValue {
 public:
-  static inline bool should_skip(oop val);
+  static inline bool should_skip(void* val);
 };
 
 class IncludeAllValues {
 public:
-  static bool should_skip(oop value) { return false; }
+  static bool should_skip(void* value) { return false; }
 };
 
 template <typename OopFnT, typename DerivedOopFnT, typename ValueFilterT>
@@ -481,12 +482,12 @@ class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
   class Entry;
-  static bool _active;                                  // do not record pointers for verify pass etc.
+  static bool _active;                                           // do not record pointers for verify pass etc.
 
  public:
-  static void clear();                                  // Called before scavenge/GC
-  static void add(derived_pointer* derived, oop *base); // Called during scavenge/GC
-  static void update_pointers();                        // Called after  scavenge/GC
+  static void clear();                                           // Called before scavenge/GC
+  static void add(derived_pointer* derived, derived_base* base); // Called during scavenge/GC
+  static void update_pointers();                                 // Called after  scavenge/GC
   static bool is_empty();
   static bool is_active()                    { return _active; }
   static void set_active(bool value)         { _active = value; }

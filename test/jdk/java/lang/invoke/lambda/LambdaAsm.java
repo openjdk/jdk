@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import static java.nio.file.Files.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class LambdaAsm {
+    static final Path DUMP_LAMBDA_PROXY_CLASS_FILES = Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES");
 
     static final File TestFile = new File("A.java");
 
@@ -58,7 +59,7 @@ public class LambdaAsm {
         emitCode();
         LUtils.compile(TestFile.getName());
         LUtils.TestResult tr = LUtils.doExec(LUtils.JAVA_CMD.getAbsolutePath(),
-                "-Djdk.internal.lambda.dumpProxyClasses=.",
+                "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true",
                 "-cp", ".", "A");
         if (tr.exitValue != 0) {
             System.out.println("Error: " + tr.toString());
@@ -134,9 +135,9 @@ public class LambdaAsm {
     static void verifyInvokerBytecodeGenerator() throws Exception {
         int count = 0;
         int mcount = 0;
-        try (DirectoryStream<Path> ds = newDirectoryStream(new File(".").toPath(),
+        try (DirectoryStream<Path> ds = newDirectoryStream(DUMP_LAMBDA_PROXY_CLASS_FILES,
                 // filter in lambda proxy classes
-                "A$I$$Lambda$*.class")) {
+                "A$I$$Lambda.*.class")) {
             for (Path p : ds) {
                 System.out.println(p.toFile());
                 ClassFile cf = ClassFile.read(p.toFile());

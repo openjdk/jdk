@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -446,7 +446,7 @@ public class Introspector {
     /**
      * Throws a NotCompliantMBeanException or a SecurityException.
      * @param notCompliant the class which was under examination
-     * @param cause the raeson why NotCompliantMBeanException should
+     * @param cause the reason why NotCompliantMBeanException should
      *        be thrown.
      * @return nothing - this method always throw an exception.
      *         The return type makes it possible to write
@@ -602,9 +602,7 @@ public class Introspector {
             // return cached methods if possible
             SoftReference<List<Method>> ref = cache.get(clazz);
             if (ref != null) {
-                List<Method> cached = ref.get();
-                if (cached != null)
-                    return cached;
+                return ref.get();
             }
             return null;
         }
@@ -653,7 +651,7 @@ public class Introspector {
             methods = MBeanAnalyzer.eliminateCovariantMethods(methods);
 
             // filter out the non-getter methods
-            List<Method> result = new LinkedList<>();
+            List<Method> result = new ArrayList<>();
             for (Method m: methods) {
                 if (isReadMethod(m)) {
                     // favor isXXX over getXXX

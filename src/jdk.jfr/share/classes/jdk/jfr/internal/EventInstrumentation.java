@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Class responsible for adding instrumentation to a subclass of {@link Event}.
@@ -226,7 +227,7 @@ public final class EventInstrumentation {
                         for (AnnotationNode nameCandidate : m.visibleAnnotations) {
                             if (ANNOTATION_NAME_DESCRIPTOR.equals(nameCandidate.desc)) {
                                 List<Object> values = nameCandidate.values;
-                                if (values.size() == 1 && values.get(0)instanceof String s) {
+                                if (values.size() == 1 && values.getFirst() instanceof String s) {
                                     name = Utils.validJavaIdentifier(s, name);
                                 }
                             }
@@ -478,18 +479,20 @@ public final class EventInstrumentation {
                 methodVisitor.visitInsn(Opcodes.RETURN);
                 methodVisitor.visitLabel(l0);
                 methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                // long startTime = this.startTime
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LSTORE, 1);
                 // if (startTime == 0) {
                 // startTime = EventWriter.timestamp();
                 // } else {
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 methodVisitor.visitInsn(Opcodes.LCONST_0);
                 methodVisitor.visitInsn(Opcodes.LCMP);
                 Label durationalEvent = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, durationalEvent);
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                 methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LSTORE, 1);
                 Label commit = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, commit);
                 // if (duration == 0) {
@@ -505,8 +508,7 @@ public final class EventInstrumentation {
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, commit);
                 methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                 methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 methodVisitor.visitInsn(Opcodes.LSUB);
                 methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_DURATION, "J");
                 methodVisitor.visitLabel(commit);
@@ -531,9 +533,7 @@ public final class EventInstrumentation {
                 int fieldIndex = 0;
                 methodVisitor.visitInsn(Opcodes.DUP);
                 // stack: [EW] [EW]
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                // stack: [EW] [EW] [this]
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 // stack: [EW] [EW] [long]
                 invokeVirtual(methodVisitor, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.asmMethod);
                 // stack: [EW]

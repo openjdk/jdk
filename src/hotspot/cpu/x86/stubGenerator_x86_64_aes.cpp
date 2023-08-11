@@ -45,7 +45,7 @@
 const int AESBlockSize = 16;
 
 // Shuffle mask for fixing up 128-bit words consisting of big-endian 32-bit integers.
-ATTRIBUTE_ALIGNED(16) uint64_t KEY_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t KEY_SHUFFLE_MASK[] = {
     0x0405060700010203UL, 0x0C0D0E0F08090A0BUL
 };
 static address key_shuffle_mask_addr() {
@@ -53,7 +53,7 @@ static address key_shuffle_mask_addr() {
 }
 
 // Shuffle mask for big-endian 128-bit integers.
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_SHUFFLE_MASK[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_SHUFFLE_MASK[] = {
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
     0x08090A0B0C0D0E0FUL, 0x0001020304050607UL,
@@ -64,7 +64,7 @@ static address counter_shuffle_mask_addr() {
 }
 
 // This mask is used for incrementing counter value
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC0[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC0[] = {
     0x0000000000000000UL, 0x0000000000000000UL,
     0x0000000000000001UL, 0x0000000000000000UL,
     0x0000000000000002UL, 0x0000000000000000UL,
@@ -74,14 +74,14 @@ static address counter_mask_linc0_addr() {
   return (address)COUNTER_MASK_LINC0;
 }
 
-ATTRIBUTE_ALIGNED(16) uint64_t COUNTER_MASK_LINC1[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t COUNTER_MASK_LINC1[] = {
     0x0000000000000001UL, 0x0000000000000000UL,
 };
 static address counter_mask_linc1_addr() {
   return (address)COUNTER_MASK_LINC1;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC4[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC4[] = {
     0x0000000000000004UL, 0x0000000000000000UL,
     0x0000000000000004UL, 0x0000000000000000UL,
     0x0000000000000004UL, 0x0000000000000000UL,
@@ -91,7 +91,7 @@ static address counter_mask_linc4_addr() {
   return (address)COUNTER_MASK_LINC4;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC8[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC8[] = {
     0x0000000000000008UL, 0x0000000000000000UL,
     0x0000000000000008UL, 0x0000000000000000UL,
     0x0000000000000008UL, 0x0000000000000000UL,
@@ -101,7 +101,7 @@ static address counter_mask_linc8_addr() {
   return (address)COUNTER_MASK_LINC8;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC16[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC16[] = {
     0x0000000000000010UL, 0x0000000000000000UL,
     0x0000000000000010UL, 0x0000000000000000UL,
     0x0000000000000010UL, 0x0000000000000000UL,
@@ -111,7 +111,7 @@ static address counter_mask_linc16_addr() {
   return (address)COUNTER_MASK_LINC16;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_LINC32[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t COUNTER_MASK_LINC32[] = {
     0x0000000000000020UL, 0x0000000000000000UL,
     0x0000000000000020UL, 0x0000000000000000UL,
     0x0000000000000020UL, 0x0000000000000000UL,
@@ -121,7 +121,17 @@ static address counter_mask_linc32_addr() {
   return (address)COUNTER_MASK_LINC32;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t GHASH_POLYNOMIAL_REDUCTION[] = {
+ATTRIBUTE_ALIGNED(64) uint64_t COUNTER_MASK_ONES[] = {
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+    0x0000000000000000UL, 0x0000000000000001UL,
+};
+static address counter_mask_ones_addr() {
+  return (address)COUNTER_MASK_ONES;
+}
+
+ATTRIBUTE_ALIGNED(64) static const uint64_t GHASH_POLYNOMIAL_REDUCTION[] = {
     0x00000001C2000000UL, 0xC200000000000000UL,
     0x00000001C2000000UL, 0xC200000000000000UL,
     0x00000001C2000000UL, 0xC200000000000000UL,
@@ -131,7 +141,7 @@ static address ghash_polynomial_reduction_addr() {
   return (address)GHASH_POLYNOMIAL_REDUCTION;
 }
 
-ATTRIBUTE_ALIGNED(16) uint64_t GHASH_POLYNOMIAL_TWO_ONE[] = {
+ATTRIBUTE_ALIGNED(16) static const uint64_t GHASH_POLYNOMIAL_TWO_ONE[] = {
     0x0000000000000001UL, 0x0000000100000000UL,
 };
 static address ghash_polynomial_two_one_addr() {
@@ -1623,6 +1633,17 @@ void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, Re
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
 }
 
+// Add 128-bit integers in xmmsrc1 to xmmsrc2, then place the result in xmmdst.
+// Clobber ktmp and rscratch.
+// Used by aesctr_encrypt.
+void StubGenerator::ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                            int vector_len, KRegister ktmp, Register rscratch) {
+  __ vpaddq(xmmdst, xmmsrc1, xmmsrc2, vector_len);
+  __ evpcmpuq(ktmp, xmmdst, xmmsrc2, __ lt, vector_len);
+  __ kshiftlbl(ktmp, ktmp, 1);
+  __ evpaddq(xmmdst, ktmp, xmmdst, ExternalAddress(counter_mask_ones_addr()), /*merge*/true,
+             vector_len, rscratch);
+}
 
 // AES-ECB Encrypt Operation
 void StubGenerator::aesecb_encrypt(Register src_addr, Register dest_addr, Register key, Register len) {
@@ -2046,7 +2067,6 @@ void StubGenerator::aesecb_decrypt(Register src_addr, Register dest_addr, Regist
 }
 
 
-
 // AES Counter Mode using VAES instructions
 void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
   Register len_reg, Register used, Register used_addr, Register saved_encCounter_start) {
@@ -2104,14 +2124,17 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // The counter is incremented after each block i.e. 16 bytes is processed;
   // each zmm register has 4 counter values as its MSB
   // the counters are incremented in parallel
-  __ vpaddd(xmm8,  xmm8,  ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm9,  xmm8,  ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm10, xmm9,  ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm11, xmm10, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm12, xmm11, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm13, xmm12, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm14, xmm13, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
-  __ vpaddd(xmm15, xmm14, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+
+  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc0_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc4_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
+  ev_add128(xmm9,  xmm8,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm10, xmm9,  xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm11, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm12, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm13, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm14, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm15, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
 
   // load linc32 mask in zmm register.linc32 increments counter by 32
   __ evmovdquq(xmm19, ExternalAddress(counter_mask_linc32_addr()), Assembler::AVX_512bit, r15 /*rscratch*/);
@@ -2159,21 +2182,21 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // This is followed by incrementing counter values in zmm8-zmm15.
   // Since we will be processing 32 blocks at a time, the counter is incremented by 32.
   roundEnc(xmm21, 7);
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8,   xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm22, 7);
-  __ vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm9,   xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm23, 7);
-  __ vpaddq(xmm10, xmm10, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm10, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm24, 7);
-  __ vpaddq(xmm11, xmm11, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm11, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm25, 7);
-  __ vpaddq(xmm12, xmm12, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm12, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm26, 7);
-  __ vpaddq(xmm13, xmm13, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm13, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm27, 7);
-  __ vpaddq(xmm14, xmm14, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm14, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm28, 7);
-  __ vpaddq(xmm15, xmm15, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm15, xmm15, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   roundEnc(xmm29, 7);
 
   __ cmpl(rounds, 52);
@@ -2251,8 +2274,8 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ vpshufb(xmm3, xmm11, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm3, xmm3, xmm20, Assembler::AVX_512bit);
   // Increment counter values by 16
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
-  __ vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+  ev_add128(xmm9, xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   // AES encode rounds
   roundEnc(xmm21, 3);
   roundEnc(xmm22, 3);
@@ -2319,7 +2342,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ vpshufb(xmm1, xmm9, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm1, xmm1, xmm20, Assembler::AVX_512bit);
   // increment counter by 8
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   // AES encode
   roundEnc(xmm21, 1);
   roundEnc(xmm22, 1);
@@ -2376,8 +2399,9 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   // XOR counter with first roundkey
   __ vpshufb(xmm0, xmm8, xmm16, Assembler::AVX_512bit);
   __ evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_512bit);
+
   // Increment counter
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
   __ vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_512bit);
   __ vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_512bit);
   __ vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_512bit);
@@ -2427,7 +2451,7 @@ void StubGenerator::aesctr_encrypt(Register src_addr, Register dest_addr, Regist
   __ evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_128bit);
   // Increment counter by 1
-  __ vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_128bit);
+  ev_add128(xmm8, xmm8, xmm19, Assembler::AVX_128bit, /*ktmp*/k1, r15 /*rscratch*/);
   __ vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_128bit);
   __ vaesenc(xmm0, xmm0, xmm24, Assembler::AVX_128bit);

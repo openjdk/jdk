@@ -437,18 +437,6 @@ public class PKCS7 {
     }
 
     /**
-     * Encodes the signed data to an output stream.
-     *
-     * @param out the output stream to write the encoded data to.
-     * @exception IOException on encoding errors.
-     */
-    public void encodeSignedData(OutputStream out) throws IOException {
-        DerOutputStream derout = new DerOutputStream();
-        encodeSignedData(derout);
-        out.write(derout.toByteArray());
-    }
-
-    /**
      * Encodes the signed data to a DerOutputStream.
      *
      * @param out the DerOutputStream to write the encoded data to.
@@ -850,7 +838,7 @@ public class PKCS7 {
                 : new ContentInfo(content);
         PKCS7 pkcs7 = new PKCS7(algorithms, contentInfo,
                 signerChain, signerInfos);
-        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
+        DerOutputStream p7out = new DerOutputStream();
         pkcs7.encodeSignedData(p7out);
 
         return p7out.toByteArray();

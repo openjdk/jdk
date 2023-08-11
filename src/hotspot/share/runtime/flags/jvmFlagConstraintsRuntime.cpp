@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
                         "ObjectAlignmentInBytes (%d) must be "
-                        "less than page size (%d)\n",
+                        "less than page size (" SIZE_FORMAT ")\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -53,10 +53,10 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
 
 // Need to enforce the padding not to break the existing field alignments.
 // It is sufficient to check against the largest type size.
-JVMFlag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error ContendedPaddingWidthConstraintFunc(int value, bool verbose) {
   if ((value % BytesPerLong) != 0) {
     JVMFlag::printError(verbose,
-                        "ContendedPaddingWidth (" INTX_FORMAT ") must be "
+                        "ContendedPaddingWidth (%d) must be "
                         "a multiple of %d\n",
                         value, BytesPerLong);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -86,18 +86,6 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-
-  return JVMFlag::SUCCESS;
-}
-
-JVMFlag::Error ExtentLocalCacheSizeConstraintFunc(intx value, bool verbose) {
-  if (!is_power_of_2(value)) {
-    JVMFlag::printError(verbose,
-                        "ExtentLocalCacheSize (" INTX_FORMAT ") must be "
-                        "power of 2\n",
-                        value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void GraphKit::gen_stub(address C_function,
 
   // Drop in the last_Java_sp.  last_Java_fp is not touched.
   // Always do this after the other "last_Java_frame" fields are set since
-  // as soon as last_Java_sp != NULL the has_last_Java_frame is true and
+  // as soon as last_Java_sp != nullptr the has_last_Java_frame is true and
   // users will look at the other fields.
   //
   Node *adr_sp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_sp_offset()));
@@ -234,7 +234,7 @@ void GraphKit::gen_stub(address C_function,
   // Runtime call returning oop in TLS?  Fetch it out
   if( pass_tls ) {
     Node* adr = basic_plus_adr(top(), thread, in_bytes(JavaThread::vm_result_offset()));
-    Node* vm_result = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
+    Node* vm_result = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
     map()->set_req(TypeFunc::Parms, vm_result); // vm_result passed as result
     // clear thread-local-storage(tls)
     store_to_memory(control(), adr, null(), T_ADDRESS, NoAlias, MemNode::unordered);
@@ -243,7 +243,7 @@ void GraphKit::gen_stub(address C_function,
   //-----------------------------
   // check exception
   Node* adr = basic_plus_adr(top(), thread, in_bytes(Thread::pending_exception_offset()));
-  Node* pending = make_load(NULL, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
+  Node* pending = make_load(nullptr, adr, TypeOopPtr::BOTTOM, T_OBJECT, NoAlias, MemNode::unordered);
 
   Node* exit_memory = reset_memory();
 
@@ -254,7 +254,7 @@ void GraphKit::gen_stub(address C_function,
   Node* if_null     = _gvn.transform( new IfFalseNode(iff) );
   Node* if_not_null = _gvn.transform( new IfTrueNode(iff)  );
 
-  assert (StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   Node *exc_target = makecon(TypeRawPtr::make( StubRoutines::forward_exception_entry() ));
   Node *to_exc = new TailCallNode(if_not_null,
                                   i_o(),
@@ -267,7 +267,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // If this is a normal subroutine return, issue the return and be done.
-  Node *ret = NULL;
+  Node *ret = nullptr;
   switch( is_fancy_jump ) {
   case 0:                       // Make a return instruction
     // Return to caller, free any space for return address

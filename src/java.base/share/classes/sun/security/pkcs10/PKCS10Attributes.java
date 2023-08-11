@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,10 @@ public class PKCS10Attributes implements DerEncoder {
      * Encode the attributes in DER form to the stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out the OutputStream to marshal the contents to.
-     * @exception IOException on encoding errors.
+     * @param out the DerOutputStream to marshal the contents to.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         // first copy the elements into an array
         Collection<PKCS10Attribute> allAttrs = map.values();
         PKCS10Attribute[] attribs =
@@ -154,6 +153,7 @@ public class PKCS10Attributes implements DerEncoder {
      * @return true if all the entries match that of the Other,
      * false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other)
             return true;
@@ -167,26 +167,24 @@ public class PKCS10Attributes implements DerEncoder {
         int len = attrs.length;
         if (len != map.size())
             return false;
-        PKCS10Attribute thisAttr, otherAttr;
+        PKCS10Attribute thisAttr;
         String key;
-        for (int i=0; i < len; i++) {
-            otherAttr = attrs[i];
+        for (PKCS10Attribute otherAttr : attrs) {
             key = otherAttr.getAttributeId().toString();
 
             thisAttr = map.get(key);
             if (thisAttr == null)
                 return false;
-            if (! thisAttr.equals(otherAttr))
+            if (!thisAttr.equals(otherAttr))
                 return false;
         }
         return true;
     }
 
     /**
-     * Returns a hashcode value for this PKCS10Attributes.
-     *
-     * @return the hashcode value.
+     * {@return the hashcode value for this PKCS10Attributes}
      */
+    @Override
     public int hashCode() {
         return map.hashCode();
     }

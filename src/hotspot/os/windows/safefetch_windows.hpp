@@ -26,12 +26,13 @@
 #ifndef OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
 #define OS_WINDOWS_SAFEFETCH_WINDOWS_HPP
 
+#include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // On windows, we use structured exception handling to implement SafeFetch
 
 template <class T>
-inline T SafeFetchXX(const T* adr, T errValue) {
+ATTRIBUTE_NO_ASAN inline T SafeFetchXX(const T* adr, T errValue) {
   T v = 0;
   __try {
     v = *adr;

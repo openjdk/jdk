@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,19 +42,28 @@ protected:
   Klass* const         _klass;
   const size_t         _word_size;
 
+  // Allocate from the current thread's TLAB, without taking a new TLAB (no safepoint).
+ HeapWord* mem_allocate_inside_tlab_fast() const;
+
 private:
-  // Allocate from the current thread's TLAB, with broken-out slow path.
-  HeapWord* allocate_inside_tlab(Allocation& allocation) const;
-  HeapWord* allocate_inside_tlab_fast() const;
-  HeapWord* allocate_inside_tlab_slow(Allocation& allocation) const;
-  HeapWord* allocate_outside_tlab(Allocation& allocation) const;
+  // Allocate in a TLAB. Could allocate a new TLAB, and therefore potentially safepoint.
+  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
+  HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
+
+  // Allocate outside a TLAB. Could safepoint.
+  HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
+
+  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
+  HeapWord* mem_allocate_slow(Allocation& allocation) const;
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
     : _thread(thread),
       _klass(klass),
       _word_size(word_size)
-  { }
+  {
+    assert(_thread == Thread::current(), "must be");
+  }
 
   // Initialization provided by subclasses.
   virtual oop initialize(HeapWord* mem) const = 0;
@@ -71,20 +80,16 @@ protected:
   // back to calling CollectedHeap::mem_allocate().
   HeapWord* mem_allocate(Allocation& allocation) const;
 
-  virtual MemRegion obj_memory_range(oop obj) const {
-    return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
-  }
-
 public:
   // Allocate and fully construct the object, and perform various instrumentation. Could safepoint.
   oop allocate() const;
-  oop try_allocate_in_existing_tlab();
 };
 
 class ObjAllocator: public MemAllocator {
 public:
   ObjAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
+
   virtual oop initialize(HeapWord* mem) const;
 };
 
@@ -93,14 +98,13 @@ protected:
   const int  _length;
   const bool _do_zero;
 
-  virtual MemRegion obj_memory_range(oop obj) const;
-
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
                     Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread),
       _length(length),
       _do_zero(do_zero) {}
+
   virtual oop initialize(HeapWord* mem) const;
 };
 
@@ -108,16 +112,7 @@ class ClassAllocator: public MemAllocator {
 public:
   ClassAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
-  virtual oop initialize(HeapWord* mem) const;
-};
 
-class StackChunkAllocator : public MemAllocator {
-  const size_t _stack_size;
-
-public:
-  StackChunkAllocator(Klass* klass, size_t word_size, size_t stack_size, Thread* thread = Thread::current())
-    : MemAllocator(klass, word_size, thread),
-      _stack_size(stack_size) {}
   virtual oop initialize(HeapWord* mem) const;
 };
 

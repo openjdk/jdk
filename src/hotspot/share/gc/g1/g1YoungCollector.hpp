@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ class G1ConcurrentMark;
 class G1EvacFailureRegions;
 class G1EvacInfo;
 class G1GCPhaseTimes;
-class G1HotCardCache;
 class G1HRPrinter;
 class G1MonitoringSupport;
 class G1MonotonicArenaMemoryStats;
@@ -69,7 +68,7 @@ class G1YoungCollector {
   G1ConcurrentMark* concurrent_mark() const;
   STWGCTimer* gc_timer_stw() const;
   G1NewTracer* gc_tracer_stw() const;
-  G1HotCardCache* hot_card_cache() const;
+
   G1HRPrinter* hr_printer() const;
   G1MonitoringSupport* monitoring_support() const;
   G1GCPhaseTimes* phase_times() const;
@@ -98,9 +97,7 @@ class G1YoungCollector {
 
   void set_young_collection_default_active_worker_threads();
 
-  void flush_dirty_card_queues();
-
-  void pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* pss);
+  void pre_evacuate_collection_set(G1EvacInfo* evacuation_info);
   // Actually do the work of evacuating the parts of the collection set.
   // The has_optional_evacuation_work flag for the initial collection set
   // evacuation indicates whether one or more optional evacuation steps may
@@ -129,6 +126,8 @@ class G1YoungCollector {
   void post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
                                G1EvacInfo* evacuation_info);
 
+  // Enqueue collection set candidates as root regions.
+  void enqueue_candidates_as_root_regions();
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 

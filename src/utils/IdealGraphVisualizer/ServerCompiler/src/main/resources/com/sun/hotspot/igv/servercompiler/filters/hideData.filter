@@ -1,3 +1,1 @@
-var f = new RemoveFilter("Hide data subgraph");
-f.addRule(new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.StringPropertyMatcher("category", "data"))));
-f.apply(graph);
+remove(matches("category", "data"));

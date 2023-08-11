@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @library /test/lib
  * @summary Shutdown hook is called with virtual thread
- * @compile --enable-preview -source ${jdk.version} ShutdownHook.java
- * @run main/othervm --enable-preview ShutdownHook test
+ * @run main ShutdownHook test
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -37,7 +36,7 @@ public class ShutdownHook {
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = createTestJvm("--enable-preview", "ShutdownHook");
+            ProcessBuilder pb = createTestJvm("ShutdownHook");
             OutputAnalyzer output = executeProcess(pb);
             output.shouldContain("Shutdown Hook");
             output.shouldHaveExitValue(0);

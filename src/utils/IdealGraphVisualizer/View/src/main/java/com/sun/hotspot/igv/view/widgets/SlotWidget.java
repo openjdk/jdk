@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
     private Slot slot;
     private FigureWidget figureWidget;
-    private static double TEXT_ZOOM_FACTOR = 0.9;
-    private static double ZOOM_FACTOR = 0.6;
+    protected static double TEXT_ZOOM_FACTOR = 0.9;
+    protected static double ZOOM_FACTOR = 0.6;
     private DiagramScene diagramScene;
 
     public SlotWidget(Slot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
@@ -58,7 +58,8 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         if (slot.hasSourceNodes()) {
             this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
         }
-        this.setCheckClipping(true);
+        // No clipping, to let input slots draw gap markers outside their bounds.
+        this.setCheckClipping(false);
         parent.addChild(this);
 
         Point p = slot.getRelativePosition();

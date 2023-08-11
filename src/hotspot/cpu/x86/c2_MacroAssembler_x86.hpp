@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,12 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
 
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
-  static int entry_barrier_stub_size();
-
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
-                 Register scr, Register cx1, Register cx2,
+                 Register scr, Register cx1, Register cx2, Register thread,
                  RTMLockingCounters* rtm_counters,
                  RTMLockingCounters* stack_rtm_counters,
                  Metadata* method_data,
@@ -136,10 +133,10 @@ public:
   XMMRegister get_lane(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, Register dst, XMMRegister src, int elemindex);
   void get_elem(BasicType typ, XMMRegister dst, XMMRegister src, int elemindex, XMMRegister vtmp = xnoreg);
+  void movsxl(BasicType typ, Register dst);
 
   // vector test
-  void vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
-                  XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg, KRegister mask = knoreg);
+  void vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes);
 
  // Covert B2X
  void vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc);
@@ -293,6 +290,23 @@ public:
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
+  void arrays_hashcode(Register str1, Register cnt1, Register result,
+                       Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,
+                       XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                       XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                       XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
+                       BasicType eltype);
+
+  // helper functions for arrays_hashcode
+  int arrays_hashcode_elsize(BasicType eltype);
+  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
+  void arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
+  void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
+  void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
+
+#ifdef _LP64
+  void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
+#endif
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
@@ -310,6 +324,9 @@ public:
 
   void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                             BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void vector_signed_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                          BasicType from_elem_bt, BasicType to_elem_bt);
 
   void vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegister dst, XMMRegister zero,
                                   XMMRegister xtmp, Register rscratch, int vec_enc);
@@ -471,5 +488,8 @@ public:
 
   void rearrange_bytes(XMMRegister dst, XMMRegister shuffle, XMMRegister src, XMMRegister xtmp1,
                        XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp, KRegister ktmp, int vlen_enc);
+
+  void vector_rearrange_int_float(BasicType bt, XMMRegister dst, XMMRegister shuffle,
+                                  XMMRegister src, int vlen_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -64,4 +64,4 @@ public class AccessibleTextSequence {
         endIndex = end;
         text = txt;
     }
-};
+}

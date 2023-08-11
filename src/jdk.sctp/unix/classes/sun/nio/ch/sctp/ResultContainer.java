@@ -51,7 +51,7 @@ public class ResultContainer {
     }
 
     boolean isNotification() {
-        return type() != MESSAGE && type() != NOTHING ? true : false;
+        return type() != MESSAGE && type() != NOTHING;
     }
 
     void clear() {
@@ -68,8 +68,8 @@ public class ResultContainer {
     MessageInfoImpl getMessageInfo() {
         assert type() == MESSAGE;
 
-        if (value instanceof MessageInfoImpl)
-            return (MessageInfoImpl) value;
+        if (value instanceof MessageInfoImpl messageInfo)
+            return messageInfo;
 
         return null;
     }
@@ -77,8 +77,8 @@ public class ResultContainer {
     SendFailed getSendFailed() {
         assert type() == SEND_FAILED;
 
-        if (value instanceof SendFailed)
-            return (SendFailed) value;
+        if (value instanceof SendFailed sendFailed)
+            return sendFailed;
 
         return null;
     }
@@ -86,8 +86,8 @@ public class ResultContainer {
     AssociationChange getAssociationChanged() {
         assert type() == ASSOCIATION_CHANGED;
 
-        if (value instanceof AssociationChange)
-            return (AssociationChange) value;
+        if (value instanceof AssociationChange associationChanged)
+            return associationChanged;
 
         return null;
     }
@@ -95,8 +95,8 @@ public class ResultContainer {
     PeerAddrChange getPeerAddressChanged() {
         assert type() == PEER_ADDRESS_CHANGED;
 
-        if (value instanceof PeerAddrChange)
-            return (PeerAddrChange) value;
+        if (value instanceof PeerAddrChange peerAddressChanged)
+            return peerAddressChanged;
 
         return null;
     }
@@ -104,8 +104,8 @@ public class ResultContainer {
     Shutdown getShutdown() {
         assert type() == SHUTDOWN;
 
-        if (value instanceof Shutdown)
-            return (Shutdown) value;
+        if (value instanceof Shutdown shutdown)
+            return shutdown;
 
         return null;
     }
@@ -115,13 +115,13 @@ public class ResultContainer {
         StringBuilder sb = new StringBuilder();
         sb.append("Type: ");
         switch (type) {
-            case NOTHING:              sb.append("NOTHING");             break;
-            case MESSAGE:              sb.append("MESSAGE");             break;
-            case SEND_FAILED:          sb.append("SEND FAILED");         break;
-            case ASSOCIATION_CHANGED:  sb.append("ASSOCIATION CHANGE");  break;
-            case PEER_ADDRESS_CHANGED: sb.append("PEER ADDRESS CHANGE"); break;
-            case SHUTDOWN:             sb.append("SHUTDOWN");            break;
-            default :                  sb.append("Unknown result type");
+            case NOTHING              -> sb.append("NOTHING");
+            case MESSAGE              -> sb.append("MESSAGE");
+            case SEND_FAILED          -> sb.append("SEND FAILED");
+            case ASSOCIATION_CHANGED  -> sb.append("ASSOCIATION CHANGE");
+            case PEER_ADDRESS_CHANGED -> sb.append("PEER ADDRESS CHANGE");
+            case SHUTDOWN             -> sb.append("SHUTDOWN");
+            default                   -> sb.append("Unknown result type");
         }
         sb.append(", Value: ");
         sb.append((value == null) ? "null" : value.toString());

@@ -254,8 +254,7 @@ class SimpleSigner {
         info.setValidity(interval);
         info.setIssuer(agent);
 
-        certLocal = new X509CertImpl(info);
-        certLocal.sign(privateKey, algId.getName());
+        certLocal = X509CertImpl.newSigned(info, privateKey, algId.getName());
 
         return certLocal;
     }

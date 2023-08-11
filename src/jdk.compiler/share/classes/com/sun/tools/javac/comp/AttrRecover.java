@@ -79,6 +79,7 @@ public class AttrRecover {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected AttrRecover(Context context) {
         context.put(attrRepairKey, this);
 
@@ -156,7 +157,7 @@ public class AttrRecover {
                                     //do not touch nested classes
                                 }
                             }.translate(lambda.body);
-                            if (!voidCompatible) {
+                            if (!voidCompatible && lambda.body.hasTag(Tag.BLOCK)) {
                                 JCReturn ret = make.Return(make.Erroneous().setType(syms.errType));
                                 ((JCBlock) lambda.body).stats = ((JCBlock) lambda.body).stats.append(ret);
                                 rollback.append(() -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ public abstract non-sealed class DynamicConstantDesc<T>
     @SuppressWarnings("unchecked")
     public T resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
         try {
-            MethodHandle bsm = (MethodHandle) bootstrapMethod.resolveConstantDesc(lookup);
+            MethodHandle bsm = bootstrapMethod.resolveConstantDesc(lookup);
             if (bsm.type().parameterCount() < 2 ||
                 !MethodHandles.Lookup.class.isAssignableFrom(bsm.type().parameterType(0))) {
                 throw new BootstrapMethodError(

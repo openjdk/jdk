@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -437,7 +437,7 @@ public class BasicTableUI extends TableUI
                         return;
                     }
 
-                    Dimension delta = table.getParent().getSize();
+                    Dimension delta = SwingUtilities.getUnwrappedParent(table).getSize();
 
                     if (vertically) {
                         Rectangle r = table.getCellRect(leadRow, 0, true);
@@ -617,6 +617,9 @@ public class BasicTableUI extends TableUI
                 }
                 */
             } else if (key == CANCEL_EDITING) {
+                if (table.isEditing()) {
+                    table.getCellEditor().cancelCellEditing();
+                }
                 table.removeEditor();
             } else if (key == SELECT_ALL) {
                 table.selectAll();
@@ -2118,6 +2121,9 @@ public class BasicTableUI extends TableUI
     private void paintDraggedArea(Graphics g, int rMin, int rMax, TableColumn draggedColumn, int distance) {
         int draggedColumnIndex = viewIndexForColumn(draggedColumn);
 
+        if (draggedColumnIndex == -1) {
+            return;
+        }
         Rectangle minCell = table.getCellRect(rMin, draggedColumnIndex, true);
         Rectangle maxCell = table.getCellRect(rMax, draggedColumnIndex, true);
 

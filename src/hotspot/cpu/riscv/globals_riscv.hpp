@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 
 define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for implicit null checks
 define_pd_global(bool, TrapBasedNullChecks,      false);
-define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
+define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls past to check cast
+
+define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
 define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx, CodeEntryAlignment,       64);
@@ -96,16 +98,19 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
-  product(bool, UseRVA20U64, false, EXPERIMENTAL, "Use RVA20U64 profile")        \
+  product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
+  product(bool, UseRVC, false, "Use RVC instructions")                           \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
   product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \
-  product(bool, UseRVC, false, EXPERIMENTAL, "Use RVC instructions")             \
   product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
   product(bool, UseZbb, false, EXPERIMENTAL, "Use Zbb instructions")             \
+  product(bool, UseZbs, false, EXPERIMENTAL, "Use Zbs instructions")             \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
+  product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
+          "Use Zihintpause instructions")                                        \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
           "Use RVV instructions for left/right shift of BigInteger")
 

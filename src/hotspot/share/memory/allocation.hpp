@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -138,11 +139,13 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 /*
  * Memory types
  */
-enum class MEMFLAGS {
+enum class MEMFLAGS : uint8_t  {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
+// Extra insurance that MEMFLAGS truly has the same size as uint8_t.
+STATIC_ASSERT(sizeof(MEMFLAGS) == sizeof(uint8_t));
 
 #define MEMORY_TYPE_SHORTNAME(type, human_readable) \
   constexpr MEMFLAGS type = MEMFLAGS::type;
@@ -171,18 +174,18 @@ char* ReallocateHeap(char *old,
                      MEMFLAGS flag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-// handles NULL pointers
+// handles null pointers
 void FreeHeap(void* p);
 
 class CHeapObjBase {
  public:
-  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) throw() {
+  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   MEMFLAGS f,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
@@ -199,13 +202,13 @@ class CHeapObjBase {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) throw() {
+  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
                                     MEMFLAGS f,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
@@ -230,12 +233,12 @@ class CHeapObjBase {
 template<MEMFLAGS F>
 class CHeapObj {
  public:
-  ALWAYSINLINE void* operator new(size_t size) throw() {
+  ALWAYSINLINE void* operator new(size_t size) {
     return CHeapObjBase::operator new(size, F);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  const NativeCallStack& stack) throw() {
+                                  const NativeCallStack& stack) {
     return CHeapObjBase::operator new(size, F, stack);
   }
 
@@ -248,12 +251,12 @@ class CHeapObj {
     return CHeapObjBase::operator new(size, F, nt);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size) throw() {
+  ALWAYSINLINE void* operator new[](size_t size) {
     return CHeapObjBase::operator new[](size, F);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    const NativeCallStack& stack) throw() {
+                                    const NativeCallStack& stack) {
     return CHeapObjBase::operator new[](size, F, stack);
   }
 
@@ -279,11 +282,11 @@ class CHeapObj {
 // Calling new or delete will result in fatal error.
 
 class StackObj {
- private:
-  void* operator new(size_t size) throw();
-  void* operator new [](size_t size) throw();
-  void  operator delete(void* p);
-  void  operator delete [](void* p);
+ public:
+  void* operator new(size_t size) = delete;
+  void* operator new [](size_t size) = delete;
+  void  operator delete(void* p) = delete;
+  void  operator delete [](void* p) = delete;
 };
 
 // Base class for objects stored in Metaspace.
@@ -318,7 +321,7 @@ class MetaspaceObj {
   // into a single contiguous memory block, so we can use these
   // two pointers to quickly determine if something is in the
   // shared metaspace.
-  // When CDS is not enabled, both pointers are set to NULL.
+  // When CDS is not enabled, both pointers are set to null.
   static void* _shared_metaspace_base;  // (inclusive) low address
   static void* _shared_metaspace_top;   // (exclusive) high address
 
@@ -332,7 +335,7 @@ class MetaspaceObj {
 #if INCLUDE_CDS
   static bool is_shared(const MetaspaceObj* p) {
     // If no shared metaspace regions are mapped, _shared_metaspace_{base,top} will
-    // both be NULL and all values of p will be rejected quickly.
+    // both be null and all values of p will be rejected quickly.
     return (((void*)p) < _shared_metaspace_top &&
             ((void*)p) >= _shared_metaspace_base);
   }
@@ -367,6 +370,7 @@ class MetaspaceObj {
   f(ConstantPoolCache) \
   f(Annotations) \
   f(MethodCounters) \
+  f(SharedClassPathEntry) \
   f(RecordComponent)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
@@ -383,7 +387,7 @@ class MetaspaceObj {
     METASPACE_OBJ_TYPES_DO(METASPACE_OBJ_TYPE_NAME_CASE)
     default:
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -423,13 +427,13 @@ extern char* resource_allocate_bytes(Thread* thread, size_t size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-extern void resource_free_bytes( char *old, size_t size );
+extern void resource_free_bytes( Thread* thread, char *old, size_t size );
 
 //----------------------------------------------------------------------
 // Base class for objects allocated in the resource area.
 class ResourceObj {
  public:
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return resource_allocate_bytes(size);
   }
 
@@ -497,23 +501,23 @@ protected:
   void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
 
   // Arena allocations
-  void* operator new(size_t size, Arena *arena) throw();
-  void* operator new [](size_t size, Arena *arena) throw() = delete;
+  void* operator new(size_t size, Arena *arena);
+  void* operator new [](size_t size, Arena *arena) = delete;
 
   // Resource allocations
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     address res = (address)resource_allocate_bytes(size);
     DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
     return res;
   }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
-    DEBUG_ONLY(if (res != NULL) set_allocation_type(res, RESOURCE_AREA);)
+    DEBUG_ONLY(if (res != nullptr) set_allocation_type(res, RESOURCE_AREA);)
     return res;
   }
 
-  void* operator new [](size_t size) throw() = delete;
-  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) throw() = delete;
+  void* operator new [](size_t size) = delete;
+  void* operator new [](size_t size, const std::nothrow_t& nothrow_constant) = delete;
   void  operator delete(void* p);
   void  operator delete [](void* p) = delete;
 
@@ -548,7 +552,10 @@ protected:
                                     (new_size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
 
 #define FREE_RESOURCE_ARRAY(type, old, size)\
-  resource_free_bytes((char*)(old), (size) * sizeof(type))
+  resource_free_bytes(Thread::current(), (char*)(old), (size) * sizeof(type))
+
+#define FREE_RESOURCE_ARRAY_IN_THREAD(thread, type, old, size)\
+  resource_free_bytes(thread, (char*)(old), (size) * sizeof(type))
 
 #define FREE_FAST(old)\
     /* nop */
@@ -624,6 +631,8 @@ class ArrayAllocator : public AllStatic {
   static E* allocate_malloc(size_t length, MEMFLAGS flags);
   static E* allocate_mmap(size_t length, MEMFLAGS flags);
 
+  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
+
   static void free_malloc(E* addr, size_t length);
   static void free_mmap(E* addr, size_t length);
 
@@ -653,6 +662,7 @@ class MallocArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
   static E* allocate(size_t length, MEMFLAGS flags);
+  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
   static void free(E* addr);
 };
 

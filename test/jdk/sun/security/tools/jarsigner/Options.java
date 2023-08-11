@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@
  *          java.base/sun.security.x509
  */
 
-import com.sun.jarsigner.ContentSigner;
-import com.sun.jarsigner.ContentSignerParameters;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.util.JarUtils;
@@ -52,19 +50,6 @@ public class Options {
 
     public static void main(String[] args) throws Exception {
 
-        // Help
-        boolean lastLineHasAltSigner = false;
-        for (String line : SecurityTools.jarsigner("--help").asLines()) {
-            if (line.contains("-altsigner")) {
-                lastLineHasAltSigner = true;
-            } else {
-                if (lastLineHasAltSigner) {
-                    Asserts.assertTrue(line.contains("deprecated and will be removed"));
-                }
-                lastLineHasAltSigner = false;
-            }
-        }
-
         // Prepares raw file
         Files.write(Path.of("a"), List.of("a"));
 
@@ -76,38 +61,6 @@ public class Options {
                 "-keystore jks -storepass changeit -keypass changeit -dname" +
                         " CN=A -alias a -genkeypair -keyalg rsa")
                 .shouldHaveExitValue(0);
-
-        // -altsign
-        SecurityTools.jarsigner(
-                "-debug -signedjar altsign.jar -keystore jks -storepass changeit" +
-                        " -altsigner Options$X" +
-                        " -altsignerpath " + System.getProperty("test.classes") +
-                        " a.jar a")
-                .shouldContain("removed in a future release: -altsigner")
-                .shouldContain("removed in a future release: -altsignerpath")
-                .shouldContain("PKCS7.parse");  // signature not parseable
-                                                // but signing succeeds
-
-        try (JarFile jf = new JarFile("altsign.jar")) {
-            JarEntry je = jf.getJarEntry("META-INF/A.RSA");
-            try (InputStream is = jf.getInputStream(je)) {
-                if (!Arrays.equals(is.readAllBytes(), "1234".getBytes())) {
-                    throw new Exception("altsign go wrong");
-                }
-            }
-        }
-
-        // -altsign with no -altsignerpath
-        Files.copy(Path.of(System.getProperty("test.classes"), "Options$X.class"),
-                Path.of("Options$X.class"));
-        SecurityTools.jarsigner(
-                "-debug -signedjar altsign.jar -keystore jks -storepass changeit" +
-                        " -altsigner Options$X" +
-                        " a.jar a")
-                .shouldContain("removed in a future release: -altsigner")
-                .shouldNotContain("removed in a future release: -altsignerpath")
-                .shouldContain("PKCS7.parse");  // signature not parseable
-                                                // but signing succeeds
 
         // -sigfile, -digestalg, -sigalg, -internalsf, -sectionsonly
         SecurityTools.jarsigner(
@@ -154,13 +107,5 @@ public class Options {
         }
 
         // TSA-related ones are checked in ts.sh
-    }
-
-    public static class X extends ContentSigner {
-        @Override
-        public byte[] generateSignedData(ContentSignerParameters parameters,
-                boolean omitContent, boolean applyTimestamp) {
-            return "1234".getBytes();
-        }
     }
 }

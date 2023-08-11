@@ -37,9 +37,9 @@ public class AnnoProc extends AbstractProcessor {
             try {
                 FileObject fo1 = filer.createResource(
                     StandardLocation.CLASS_OUTPUT, "", "HelloWorld.txt");
-                Writer out = fo1.openWriter();
-                out.write("Hello World!");
-                out.close();
+                try (Writer out = fo1.openWriter()) {
+                    out.write("Hello World!");
+                }
                 FileObject fo2 = filer.createResource(
                     StandardLocation.CLASS_OUTPUT, "", "HelloWorld.txt");
             } catch (IOException e) {

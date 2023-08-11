@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1536,8 +1536,8 @@ public final class Main {
                 subjectPubKey,
                 signerSubjectKeyId);
         info.setExtensions(ext);
-        X509CertImpl cert = new X509CertImpl(info);
-        cert.sign(privateKey, sigAlgName);
+        X509CertImpl cert = X509CertImpl
+                .newSigned(info, privateKey, sigAlgName);
         dumpCert(cert, out);
         for (Certificate ca: keyStore.getCertificateChain(alias)) {
             if (ca instanceof X509Certificate xca) {
@@ -1582,15 +1582,20 @@ public final class Main {
             int d = id.indexOf(':');
             if (d >= 0) {
                 CRLExtensions ext = new CRLExtensions();
-                ext.setExtension("Reason", new CRLReasonCodeExtension(Integer.parseInt(id.substring(d+1))));
+                int code = Integer.parseInt(id.substring(d+1));
+                if (code <= 0) {
+                    throw new Exception("Reason code must be positive");
+                }
+                ext.setExtension("Reason", new CRLReasonCodeExtension(code));
                 badCerts[i] = new X509CRLEntryImpl(new BigInteger(id.substring(0, d)),
                         firstDate, ext);
             } else {
                 badCerts[i] = new X509CRLEntryImpl(new BigInteger(ids.get(i)), firstDate);
             }
         }
-        X509CRLImpl crl = new X509CRLImpl(owner, firstDate, lastDate, badCerts);
-        crl.sign(privateKey, sigAlgName);
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(owner, firstDate, lastDate, badCerts),
+                privateKey, sigAlgName);
         if (rfc) {
             out.println("-----BEGIN X509 CRL-----");
             out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(crl.getEncodedInternal()));
@@ -1831,6 +1836,11 @@ public final class Main {
             if (!"PBE".equalsIgnoreCase(keyAlgName)) {
                 useDefaultPBEAlgorithm = false;
             }
+
+            SecretKeyConstraintsParameters skcp =
+                    new SecretKeyConstraintsParameters(secKey);
+            checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                    keyAlgName, skcp);
 
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString(
@@ -3228,8 +3238,8 @@ public final class Main {
                 null);
         certInfo.setExtensions(ext);
         // Sign the new certificate
-        X509CertImpl newCert = new X509CertImpl(certInfo);
-        newCert.sign(privKey, sigAlgName);
+        X509CertImpl newCert = X509CertImpl.newSigned(
+                certInfo, privKey, sigAlgName);
 
         // Store the new certificate as a single-element certificate chain
         keyStore.setKeyEntry(alias, privKey,
@@ -4631,6 +4641,9 @@ public final class Main {
                     continue;
                 }
                 int exttype = oneOf(name, extSupported);
+                if (exttype != -1 && value != null && value.isEmpty()) {
+                    throw new Exception(rb.getString("Illegal.value.") + extstr);
+                }
                 switch (exttype) {
                     case 0:     // BC
                         int pathLen = -1;
@@ -5060,6 +5073,16 @@ public final class Main {
         }
     }
 
+    private void checkWeakConstraint(String label, String keyAlg,
+            SecretKeyConstraintsParameters skcp) {
+        try {
+            LEGACY_CHECK.permits(keyAlg, skcp, false);
+        } catch (CertPathValidatorException e) {
+            weakWarnings.add(String.format(
+                    rb.getString("key.algorithm.weak"), label, keyAlg));
+        }
+    }
+
     private void checkWeak(String label, CRL crl, Key key) {
         if (crl instanceof X509CRLImpl impl) {
             checkWeak(label, impl.getSigAlgName(), key);
@@ -5292,13 +5315,15 @@ class Pair<A, B> {
         return "Pair[" + fst + "," + snd + "]";
     }
 
-    public boolean equals(Object other) {
+    @Override
+    public boolean equals(Object obj) {
         return
-            other instanceof Pair &&
-            Objects.equals(fst, ((Pair)other).fst) &&
-            Objects.equals(snd, ((Pair)other).snd);
+            obj instanceof Pair<?, ?> other &&
+            Objects.equals(fst, other.fst) &&
+            Objects.equals(snd, other.snd);
     }
 
+    @Override
     public int hashCode() {
         if (fst == null) return (snd == null) ? 0 : snd.hashCode() + 1;
         else if (snd == null) return fst.hashCode() + 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,15 +145,14 @@ public class X509CertInfo {
      *
      * @param out an output stream to which the certificate is appended.
      * @exception CertificateException on encoding errors.
-     * @exception IOException on other errors.
      */
     public void encode(DerOutputStream out)
-            throws CertificateException, IOException {
+            throws CertificateException {
         if (rawCertInfo == null) {
             emit(out);
             rawCertInfo = out.toByteArray();
         } else {
-            out.write(rawCertInfo.clone());
+            out.writeBytes(rawCertInfo.clone());
         }
     }
 
@@ -170,7 +169,7 @@ public class X509CertInfo {
                 rawCertInfo = tmp.toByteArray();
             }
             return rawCertInfo.clone();
-        } catch (IOException | CertificateException e) {
+        } catch (CertificateException e) {
             throw new CertificateEncodingException(e.toString());
         }
     }
@@ -180,51 +179,27 @@ public class X509CertInfo {
      * certificates are not both X.509 certs, otherwise it
      * compares them as binary data.
      *
-     * @param other the object being compared with this one
+     * @param obj the object being compared with this one
      * @return true iff the certificates are equivalent
      */
-    public boolean equals(Object other) {
-        if (other instanceof X509CertInfo) {
-            return equals((X509CertInfo) other);
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Compares two certificates, returning false if any data
-     * differs between the two.
-     *
-     * @param other the object being compared with this one
-     * @return true iff the certificates are equivalent
-     */
-    public boolean equals(X509CertInfo other) {
-        if (this == other) {
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
-        } else if (rawCertInfo == null || other.rawCertInfo == null) {
-            return false;
-        } else if (rawCertInfo.length != other.rawCertInfo.length) {
-            return false;
         }
-        for (int i = 0; i < rawCertInfo.length; i++) {
-            if (rawCertInfo[i] != other.rawCertInfo[i]) {
-                return false;
-            }
-        }
-        return true;
+        return obj instanceof X509CertInfo other
+                && rawCertInfo != null
+                && other.rawCertInfo != null
+                && Arrays.equals(rawCertInfo, other.rawCertInfo);
     }
 
     /**
      * Calculates a hash code value for the object.  Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
-        int     retval = 0;
-
-        for (int i = 1; i < rawCertInfo.length; i++) {
-            retval += rawCertInfo[i] * i;
-        }
-        return retval;
+        return Arrays.hashCode(rawCertInfo);
     }
 
     /**
@@ -464,8 +439,7 @@ public class X509CertInfo {
     /*
      * Marshal the contents of a "raw" certificate into a DER sequence.
      */
-    private void emit(DerOutputStream out)
-    throws CertificateException, IOException {
+    private void emit(DerOutputStream out) throws CertificateException {
         DerOutputStream tmp = new DerOutputStream();
 
         // version number, iff not V1

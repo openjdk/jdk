@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
 #include "utilities/debug.hpp"
 
 BufferNodeList::BufferNodeList() :
-  _head(NULL), _tail(NULL), _entry_count(0) {}
+  _head(nullptr), _tail(nullptr), _entry_count(0) {}
 
 BufferNodeList::BufferNodeList(BufferNode* head,
                                BufferNode* tail,
                                size_t entry_count) :
   _head(head), _tail(tail), _entry_count(entry_count)
 {
-  assert((_head == NULL) == (_tail == NULL), "invariant");
-  assert((_head == NULL) == (_entry_count == 0), "invariant");
+  assert((_head == nullptr) == (_tail == nullptr), "invariant");
+  assert((_head == nullptr) == (_entry_count == 0), "invariant");
 }

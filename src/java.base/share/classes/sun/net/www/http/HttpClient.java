@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,11 @@ import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetworkClient;
-import sun.net.ProgressSource;
 import sun.net.www.MessageHeader;
 import sun.net.www.HeaderParser;
 import sun.net.www.MeteredStream;
 import sun.net.www.ParseUtil;
-import sun.net.www.protocol.http.AuthenticatorKeys;
+import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
@@ -117,6 +116,8 @@ public class HttpClient extends NetworkClient {
        The default value is 'true'. */
     private static final boolean cacheSPNEGOProp;
 
+    protected volatile AuthCacheImpl authcache;
+
     volatile boolean keepingAlive;    /* this is a keep-alive connection */
     volatile boolean disableKeepAlive;/* keep-alive has been disabled for this
                                          connection - this will be used when
@@ -167,8 +168,6 @@ public class HttpClient extends NetworkClient {
             logger.severe(msg);
         }
     }
-
-    protected volatile String authenticatorKey;
 
     /**
      * A NOP method kept for backwards binary compatibility
@@ -350,10 +349,11 @@ public class HttpClient extends NetworkClient {
                 }
             }
             if (ret != null) {
-                String ak = httpuc == null ? AuthenticatorKeys.DEFAULT
-                     : httpuc.getAuthenticatorKey();
+                AuthCacheImpl ak = httpuc == null
+                    ? AuthCacheImpl.getDefault()
+                    : httpuc.getAuthCache();
                 boolean compatible = Objects.equals(ret.proxy, p)
-                     && Objects.equals(ret.getAuthenticatorKey(), ak);
+                     && Objects.equals(ret.getAuthCache(), ak);
                 if (compatible) {
                     ret.lock();
                     try {
@@ -385,7 +385,7 @@ public class HttpClient extends NetworkClient {
         if (ret == null) {
             ret = new HttpClient(url, p, to);
             if (httpuc != null) {
-                ret.authenticatorKey = httpuc.getAuthenticatorKey();
+                ret.authcache = httpuc.getAuthCache();
             }
         } else {
             @SuppressWarnings("removal")
@@ -423,10 +423,8 @@ public class HttpClient extends NetworkClient {
             to, useCache, httpuc);
     }
 
-    public final String getAuthenticatorKey() {
-        String k = authenticatorKey;
-        if (k == null) return AuthenticatorKeys.DEFAULT;
-        return k;
+    public final AuthCacheImpl getAuthCache() {
+        return authcache == null ? AuthCacheImpl.getDefault() : authcache;
     }
 
     /* return it to the cache as still usable, if:
@@ -741,7 +739,7 @@ public class HttpClient extends NetworkClient {
     /** Parse the first line of the HTTP request.  It usually looks
         something like: {@literal "HTTP/1.0 <number> comment\r\n"}. */
 
-    public boolean parseHTTP(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    public boolean parseHTTP(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -758,7 +756,7 @@ public class HttpClient extends NetworkClient {
                 serverInput = new HttpCaptureInputStream(serverInput, capture);
             }
             serverInput = new BufferedInputStream(serverInput);
-            return (parseHTTPHeader(responses, pi, httpuc));
+            return (parseHTTPHeader(responses, httpuc));
         } catch (SocketTimeoutException stex) {
             // We don't want to retry the request when the app. sets a timeout
             // but don't close the server if timeout while waiting for 100-continue
@@ -785,7 +783,7 @@ public class HttpClient extends NetworkClient {
                     checkTunneling(httpuc);
                     afterConnect();
                     writeRequests(requests, poster);
-                    return parseHTTP(responses, pi, httpuc);
+                    return parseHTTP(responses, httpuc);
                 }
             }
             throw e;
@@ -805,7 +803,7 @@ public class HttpClient extends NetworkClient {
         }
     }
 
-    private boolean parseHTTPHeader(MessageHeader responses, ProgressSource pi, HttpURLConnection httpuc)
+    private boolean parseHTTPHeader(MessageHeader responses, HttpURLConnection httpuc)
     throws IOException {
         /* If "HTTP/*" is found in the beginning, return true.  Let
          * HttpURLConnection parse the mime header itself.
@@ -951,7 +949,7 @@ public class HttpClient extends NetworkClient {
                         checkTunneling(httpuc);
                         afterConnect();
                         writeRequests(requests, poster);
-                        return parseHTTP(responses, pi, httpuc);
+                        return parseHTTP(responses, httpuc);
                     }
                 }
                 throw new SocketException("Unexpected end of file from server");
@@ -994,7 +992,7 @@ public class HttpClient extends NetworkClient {
                 || (code >= 102 && code <= 199)) {
             logFinest("Ignoring interim informational 1xx response: " + code);
             responses.reset();
-            return parseHTTPHeader(responses, pi, httpuc);
+            return parseHTTPHeader(responses, httpuc);
         }
 
         long cl = -1;
@@ -1067,11 +1065,6 @@ public class HttpClient extends NetworkClient {
             // In this case, content length is well known, so it is okay
             // to wrap the input stream with KeepAliveStream/MeteredStream.
 
-            if (pi != null) {
-                // Progress monitor is enabled
-                pi.setContentType(responses.findValue("content-type"));
-            }
-
             // If disableKeepAlive == true, the client will not be returned
             // to the cache. But we still need to use a keepalive stream to
             // allow the multi-message authentication exchange on the connection
@@ -1079,39 +1072,13 @@ public class HttpClient extends NetworkClient {
             if (useKeepAliveStream)   {
                 // Wrap KeepAliveStream if keep alive is enabled.
                 logFinest("KeepAlive stream used: " + url);
-                serverInput = new KeepAliveStream(serverInput, pi, cl, this);
+                serverInput = new KeepAliveStream(serverInput, cl, this);
                 failedOnce = false;
             }
             else        {
-                serverInput = new MeteredStream(serverInput, pi, cl);
+                serverInput = new MeteredStream(serverInput, cl);
             }
         }
-        else if (cl == -1)  {
-            // In this case, content length is unknown - the input
-            // stream would simply be a regular InputStream or
-            // ChunkedInputStream.
-
-            if (pi != null) {
-                // Progress monitoring is enabled.
-
-                pi.setContentType(responses.findValue("content-type"));
-
-                // Wrap MeteredStream for tracking indeterministic
-                // progress, even if the input stream is ChunkedInputStream.
-                serverInput = new MeteredStream(serverInput, pi, cl);
-            }
-            else    {
-                // Progress monitoring is disabled, and there is no
-                // need to wrap an unknown length input stream.
-
-                // ** This is an no-op **
-            }
-        }
-        else    {
-            if (pi != null)
-                pi.finishTracking();
-        }
-
         return ret;
     }
 

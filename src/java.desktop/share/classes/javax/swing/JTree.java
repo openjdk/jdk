@@ -92,6 +92,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.SwingUtilities2.Section;
 
@@ -4739,6 +4740,26 @@ public class JTree extends JComponent implements Scrollable, Accessible
         protected class AccessibleJTreeNode extends AccessibleContext
             implements Accessible, AccessibleComponent, AccessibleSelection,
             AccessibleAction {
+
+            static {
+                SwingAccessor.setAccessibleComponentAccessor(new AccessibleJTreeNodeAccessor());
+            }
+
+            private static class AccessibleJTreeNodeAccessor implements SwingAccessor.AccessibleComponentAccessor {
+
+                private AccessibleJTreeNodeAccessor() {}
+
+                @Override
+                public Accessible getCurrentAccessible(AccessibleContext ac) {
+                    if (ac instanceof AccessibleJTreeNode) {
+                        Component c = ((AccessibleJTreeNode) ac).getCurrentComponent();
+                        if (c instanceof Accessible) {
+                            return (Accessible)c;
+                        }
+                    }
+                    return null;
+                }
+            }
 
             private JTree tree = null;
             private TreeModel treeModel = null;

@@ -63,7 +63,7 @@ public abstract class StreamPrintService implements PrintService {
      * Constructs a {@code StreamPrintService} object.
      */
     private StreamPrintService() {
-    };
+    }
 
     /**
      * Constructs a {@code StreamPrintService} object.

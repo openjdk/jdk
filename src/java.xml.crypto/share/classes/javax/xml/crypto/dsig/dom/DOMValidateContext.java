@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,12 @@ import org.w3c.dom.Node;
  * method). When enabled, validation of XML signatures are subject to
  * stricter checking of algorithms and other constraints as specified by the
  * <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
+ * The mode can be disabled by setting the property to {@code Boolean.FALSE}.
+ * The mode can also be enabled or disabled by setting the
+ * {@systemProperty org.jcp.xml.dsig.secureValidation} system property to
+ * "true" or "false". Any other value for the system property is also treated
+ * as "false". If the system property is set, it supersedes the
+ * {@code DOMValidateContext} property value.
  *
  * @author Sean Mullan
  * @author JSR 105 Expert Group

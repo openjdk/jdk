@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ import java.io.IOException;
  * @summary Verify Signal mask is cleared by ProcessBuilder start
  * @bug 8234262
  * @requires (os.family == "linux" | os.family == "mac")
+ * @comment Don't allow -Xcomp, it disturbs the relative timing of the sleep and kill commands
+ * @requires (vm.compMode != "Xcomp")
  * @run main/othervm UnblockSignals
  * @run main/othervm -Xrs UnblockSignals
  */

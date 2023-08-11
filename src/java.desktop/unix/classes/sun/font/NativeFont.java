@@ -211,7 +211,7 @@ public class NativeFont extends PhysicalFont {
         while (pos >=0) {
             sb.replace(pos+1, pos+2, "*");
             pos = sb.indexOf("-0-", pos);
-        };
+        }
         String xlfd = sb.toString();
         return haveBitmapFonts(xlfd.getBytes(UTF_8));
     }

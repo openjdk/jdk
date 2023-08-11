@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,7 +557,7 @@ public:
 class ObjArrayTask
 {
 public:
-  ObjArrayTask(oop o = NULL, int idx = 0): _obj(o), _index(idx) { }
+  ObjArrayTask(oop o = nullptr, int idx = 0): _obj(o), _index(idx) { }
   ObjArrayTask(oop o, size_t idx): _obj(o), _index(int(idx)) {
     assert(idx <= size_t(max_jint), "too big");
   }
@@ -618,7 +618,7 @@ class ScannerTask {
   }
 
 public:
-  ScannerTask() : _p(NULL) {}
+  ScannerTask() : _p(nullptr) {}
 
   explicit ScannerTask(oop* p) : _p(encode(p, OopTag)) {}
 

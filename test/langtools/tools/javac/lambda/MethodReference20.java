@@ -17,7 +17,7 @@ class MethodReference20<X> {
 
     static void test(SAM<Integer> s) {   }
 
-    public static void main(String[] args) {
+    public static void meth() {
         SAM<Integer> s = MethodReference20<String>::new;
         test(MethodReference20<String>::new);
     }

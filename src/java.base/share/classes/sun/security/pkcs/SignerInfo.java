@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,13 +212,10 @@ public class SignerInfo implements DerEncoder {
      * DER encode this object onto an output stream.
      * Implements the {@code DerEncoder} interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream seq = new DerOutputStream();
         seq.putInteger(version);
         DerOutputStream issuerAndSerialNumber = new DerOutputStream();
@@ -432,16 +429,11 @@ public class SignerInfo implements DerEncoder {
             boolean[] keyUsageBits = cert.getKeyUsage();
             if (keyUsageBits != null) {
                 KeyUsageExtension keyUsage;
-                try {
-                    // We don't care whether this extension was marked
-                    // critical in the certificate.
-                    // We're interested only in its value (i.e., the bits set)
-                    // and treat the extension as critical.
-                    keyUsage = new KeyUsageExtension(keyUsageBits);
-                } catch (IOException ioe) {
-                    throw new SignatureException("Failed to parse keyUsage "
-                                                 + "extension");
-                }
+                // We don't care whether this extension was marked
+                // critical in the certificate.
+                // We're interested only in its value (i.e., the bits set)
+                // and treat the extension as critical.
+                keyUsage = new KeyUsageExtension(keyUsageBits);
 
                 boolean digSigAllowed
                         = keyUsage.get(KeyUsageExtension.DIGITAL_SIGNATURE);
@@ -545,7 +537,16 @@ public class SignerInfo implements DerEncoder {
                     digAlg = "SHA" + digAlg.substring(4);
                 }
                 if (keyAlg.equals("EC")) keyAlg = "ECDSA";
-                return digAlg + "with" + keyAlg;
+                String sigAlg = digAlg + "with" + keyAlg;
+                try {
+                    Signature.getInstance(sigAlg);
+                    return sigAlg;
+                } catch (NoSuchAlgorithmException e) {
+                    // Possibly an unknown modern signature algorithm,
+                    // in this case, encAlg should already be a signature
+                    // algorithm.
+                    return encAlg;
+                }
         }
     }
 

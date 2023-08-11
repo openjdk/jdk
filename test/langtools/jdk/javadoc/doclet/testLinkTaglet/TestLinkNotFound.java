@@ -39,7 +39,7 @@ import java.nio.file.Path;
 public class TestLinkNotFound extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestLinkNotFound tester = new TestLinkNotFound();
+        var tester = new TestLinkNotFound();
         tester.runTests();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1162,7 +1162,7 @@ public final class Float extends Number
         }
 
         // No bits set in significand beyond the *first* exponent bit,
-        // not just the sigificand; quantity is added to the exponent
+        // not just the significand; quantity is added to the exponent
         // to implement a carry out from rounding the significand.
         assert (0xf800 & signif_bits) == 0x0;
 
@@ -1218,7 +1218,7 @@ public final class Float extends Number
      * of the integer value returned is the same as that of the
      * integer that would be returned by the call:
      * <pre>
-     *    new Float(f1).compareTo(new Float(f2))
+     *    Float.valueOf(f1).compareTo(Float.valueOf(f2))
      * </pre>
      *
      * @param   f1        the first {@code float} to compare.

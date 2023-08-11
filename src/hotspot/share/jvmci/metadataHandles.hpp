@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ struct _jmetadata {
 
 #ifdef METADATA_TRACK_NAMES
   void initialize() {
-    _value = NULL;
-    _name = NULL;
+    _value = nullptr;
+    _name = nullptr;
   }
 #endif
 
@@ -59,11 +59,11 @@ struct _jmetadata {
 #ifdef METADATA_TRACK_NAMES
   const char* name() { return _name; }
   void set_name(const char* name) {
-    if (_name != NULL) {
+    if (_name != nullptr) {
       os::free((void*) _name);
-      _name = NULL;
+      _name = nullptr;
     }
-    if (name != NULL) {
+    if (name != nullptr) {
       _name = os::strdup(name);
     }
   }
@@ -83,7 +83,7 @@ class MetadataHandleBlock : public CHeapObj<mtJVMCI> {
 
   // Free handles always have their low bit set so those pointers can
   // be distinguished from handles which are in use.  The last handle
-  // on the free list has a NULL pointer with the tag bit set, so it's
+  // on the free list has a null pointer with the tag bit set, so it's
   // clear that the handle has been reclaimed.  The _free_list is
   // always a real pointer to a handle.
 
@@ -93,7 +93,7 @@ class MetadataHandleBlock : public CHeapObj<mtJVMCI> {
 
   MetadataHandleBlock() {
     _top = 0;
-    _next = NULL;
+    _next = nullptr;
 #ifdef METADATA_TRACK_NAMES
     for (int i = 0; i < block_size_in_handles; i++) {
       _handles[i].initialize();
@@ -113,7 +113,7 @@ class MetadataHandleBlock : public CHeapObj<mtJVMCI> {
 // JVMCI maintains direct references to metadata. To make these references safe in the face of
 // class redefinition, they are held in handles so they can be scanned during GC. They are
 // managed in a cooperative way between the Java code and HotSpot. A handle is filled in and
-// passed back to the Java code which is responsible for setting the handle to NULL when it
+// passed back to the Java code which is responsible for setting the handle to null when it
 // is no longer in use. This is done by jdk.vm.ci.hotspot.HandleCleaner. The
 // rebuild_free_list function notices when the handle is clear and reclaims it for re-use.
 class MetadataHandles : public CHeapObj<mtJVMCI> {
@@ -140,7 +140,7 @@ class MetadataHandles : public CHeapObj<mtJVMCI> {
   }
 
   HandleRecord* get_handle() {
-    assert(_last != NULL, "sanity");
+    assert(_last != nullptr, "sanity");
     // Try last block
     if (_last->_top < MetadataHandleBlock::block_size_in_handles) {
       _num_handles++;
@@ -149,7 +149,7 @@ class MetadataHandles : public CHeapObj<mtJVMCI> {
       // Try free list
       return get_free_handle();
     }
-    return NULL;
+    return nullptr;
   }
 
   void rebuild_free_list();
@@ -158,8 +158,8 @@ class MetadataHandles : public CHeapObj<mtJVMCI> {
 
  public:
   MetadataHandles() {
-    _head = NULL;
-    _last = NULL;
+    _head = nullptr;
+    _last = nullptr;
     _free_list = 0;
     _allocate_before_rebuild = 0;
     _num_blocks = 0;
@@ -178,7 +178,7 @@ class MetadataHandles : public CHeapObj<mtJVMCI> {
   void chain_free_list(HandleRecord* handle) {
     handle->set_value((Metadata*) (ptr_tag | _free_list));
 #ifdef METADATA_TRACK_NAMES
-    handle->set_name(NULL);
+    handle->set_name(nullptr);
 #endif
     _free_list = (intptr_t) handle;
     _num_free_handles++;

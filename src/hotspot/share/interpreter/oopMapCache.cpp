@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/generateOopMap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
@@ -60,7 +62,7 @@ class OopMapCacheEntry: private InterpreterOopMap {
 
  public:
   OopMapCacheEntry() : InterpreterOopMap() {
-    _next = NULL;
+    _next = nullptr;
 #ifdef ASSERT
     _resource_allocate_bit_mask = false;
 #endif
@@ -190,15 +192,15 @@ InterpreterOopMap::~InterpreterOopMap() {
 }
 
 bool InterpreterOopMap::is_empty() const {
-  bool result = _method == NULL;
-  assert(_method != NULL || (_bci == 0 &&
+  bool result = _method == nullptr;
+  assert(_method != nullptr || (_bci == 0 &&
     (_mask_size == 0 || _mask_size == USHRT_MAX) &&
     _bit_mask[0] == 0), "Should be completely empty");
   return result;
 }
 
 void InterpreterOopMap::initialize() {
-  _method    = NULL;
+  _method    = nullptr;
   _mask_size = USHRT_MAX;  // This value should cause a failure quickly
   _bci       = 0;
   _expression_stack_size = 0;
@@ -332,7 +334,7 @@ void OopMapCacheEntry::fill(const methodHandle& method, int bci) {
   // Flush entry to deallocate an existing entry
   flush();
   set_method(method());
-  set_bci(bci);
+  set_bci(checked_cast<unsigned short>(bci));  // bci is always u2
   if (method->is_native()) {
     // Native method activations have oops only among the parameters and one
     // extra oop following the parameters (the mirror for static native methods).
@@ -443,16 +445,16 @@ inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int 
          ^ ((unsigned int) method->size_of_parameters() << 6);
 }
 
-OopMapCacheEntry* volatile OopMapCache::_old_entries = NULL;
+OopMapCacheEntry* volatile OopMapCache::_old_entries = nullptr;
 
 OopMapCache::OopMapCache() {
   _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry*, _size, mtClass);
-  for(int i = 0; i < _size; i++) _array[i] = NULL;
+  for(int i = 0; i < _size; i++) _array[i] = nullptr;
 }
 
 
 OopMapCache::~OopMapCache() {
-  assert(_array != NULL, "sanity check");
+  assert(_array != nullptr, "sanity check");
   // Deallocate oop maps that are allocated out-of-line
   flush();
   // Deallocate array
@@ -470,8 +472,8 @@ bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) 
 void OopMapCache::flush() {
   for (int i = 0; i < _size; i++) {
     OopMapCacheEntry* entry = _array[i];
-    if (entry != NULL) {
-      _array[i] = NULL;  // no barrier, only called in OopMapCache destructor
+    if (entry != nullptr) {
+      _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
       entry->flush();
       FREE_C_HEAP_OBJ(entry);
     }
@@ -482,7 +484,7 @@ void OopMapCache::flush_obsolete_entries() {
   assert(SafepointSynchronize::is_at_safepoint(), "called by RedefineClasses in a safepoint");
   for (int i = 0; i < _size; i++) {
     OopMapCacheEntry* entry = _array[i];
-    if (entry != NULL && !entry->is_empty() && entry->method()->is_old()) {
+    if (entry != nullptr && !entry->is_empty() && entry->method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
       // to pin it down so flush the entry.
       if (log_is_enabled(Debug, redefine, class, oopmap)) {
@@ -491,7 +493,7 @@ void OopMapCache::flush_obsolete_entries() {
           ("flush: %s(%s): cached entry @%d",
            entry->method()->name()->as_C_string(), entry->method()->signature()->as_C_string(), i);
       }
-      _array[i] = NULL;
+      _array[i] = nullptr;
       entry->flush();
       FREE_C_HEAP_OBJ(entry);
     }
@@ -506,7 +508,7 @@ void OopMapCache::lookup(const methodHandle& method,
   assert(SafepointSynchronize::is_at_safepoint(), "called by GC in a safepoint");
   int probe = hash_value_for(method, bci);
   int i;
-  OopMapCacheEntry* entry = NULL;
+  OopMapCacheEntry* entry = nullptr;
 
   if (log_is_enabled(Debug, interpreter, oopmap)) {
     static int count = 0;
@@ -519,7 +521,7 @@ void OopMapCache::lookup(const methodHandle& method,
   // Search hashtable for match
   for(i = 0; i < _probe_depth; i++) {
     entry = entry_at(probe + i);
-    if (entry != NULL && !entry->is_empty() && entry->match(method, bci)) {
+    if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
       entry_for->resource_copy(entry);
       assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
       log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
@@ -540,6 +542,7 @@ void OopMapCache::lookup(const methodHandle& method,
     // at this time. We give the caller of lookup() a copy of the
     // interesting info via parameter entry_for, but we don't add it to
     // the cache. See the gory details in Method*.cpp.
+    tmp->flush();
     FREE_C_HEAP_OBJ(tmp);
     return;
   }
@@ -547,8 +550,8 @@ void OopMapCache::lookup(const methodHandle& method,
   // First search for an empty slot
   for(i = 0; i < _probe_depth; i++) {
     entry = entry_at(probe + i);
-    if (entry == NULL) {
-      if (put_at(probe + i, tmp, NULL)) {
+    if (entry == nullptr) {
+      if (put_at(probe + i, tmp, nullptr)) {
         assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
         return;
       }
@@ -590,8 +593,8 @@ void OopMapCache::enqueue_for_cleanup(OopMapCacheEntry* entry) {
 // list, so no synchronization needed.
 void OopMapCache::cleanup_old_entries() {
   OopMapCacheEntry* entry = _old_entries;
-  _old_entries = NULL;
-  while (entry != NULL) {
+  _old_entries = nullptr;
+  while (entry != nullptr) {
     if (log_is_enabled(Debug, interpreter, oopmap)) {
       ResourceMark rm;
       log_debug(interpreter, oopmap)("cleanup entry %s at bci %d",
@@ -610,5 +613,6 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   tmp->initialize();
   tmp->fill(method, bci);
   entry->resource_copy(tmp);
+  tmp->flush();
   FREE_C_HEAP_OBJ(tmp);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,7 @@ void NativeCall::insert(address code_pos, address entry) {
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(Patching_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
-  assert (instr_addr != NULL, "illegal address for code patching");
+  assert (instr_addr != nullptr, "illegal address for code patching");
 
   NativeCall* n_call =  nativeCall_at (instr_addr); // checking that it is a call
   guarantee((intptr_t)instr_addr % BytesPerWord == 0, "must be aligned");
@@ -510,12 +510,27 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;
+#ifdef _LP64
+  union {
+    jlong cb_long;
+    unsigned char code_buffer[8];
+  } u;
+
+  u.cb_long = *(jlong *)verified_entry;
+
+  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
+  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
+
+  u.code_buffer[0] = instruction_code;
+  *(int32_t*)(u.code_buffer + 1) = (int32_t)disp;
+
+  Atomic::store((jlong *) verified_entry, u.cb_long);
+  ICache::invalidate_range(verified_entry, 8);
+
+#else
   unsigned char code_buffer[5];
   code_buffer[0] = instruction_code;
   intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-#ifdef AMD64
-  guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
   *(int32_t*)(code_buffer + 1) = (int32_t)disp;
 
   check_verified_entry_alignment(entry, verified_entry);
@@ -546,6 +561,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
   *(int32_t*)verified_entry = *(int32_t *)code_buffer;
   // Invalidate.  Opteron requires a flush after every write.
   n_jump->wrote(0);
+#endif // _LP64
 
 }
 
@@ -600,7 +616,7 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 // (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
-   assert (instr_addr != NULL, "illegal address for code patching (4)");
+   assert (instr_addr != nullptr, "illegal address for code patching (4)");
    NativeGeneralJump* n_jump =  nativeGeneralJump_at (instr_addr); // checking that it is a jump
 
    // Temporary code

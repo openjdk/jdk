@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "D3DPipeline.h"
 #include "D3DVertexCacher.h"
 #include "D3DPaints.h"
-
-#include "math.h"
 
 // non-texturized macros
 
@@ -259,8 +259,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
         } else {
             // diagonal
             if (x1 > x2 && y1 > y2) {
-                // ^
-                //  \ case -> inverse
+                /* ^
+                    \ case -> inverse */
                 fx1 = (float)x2;
                 fy1 = (float)y2;
                 fx2 = (float)x1;
@@ -273,8 +273,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
                 fx2 = (float)x1;
                 fy2 = (float)y1;
             } else {
-                // \      ^
-                //  v or /  - leave as is
+                /* \      ^
+                    v or /  - leave as is */
                 fx1 = (float)x1;
                 fy1 = (float)y1;
                 fx2 = (float)x2;
@@ -282,8 +282,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
             }
 
             if (fx2 > fx1 && fy2 > fy1) {
-                // \
-                //  v
+                /* \
+                    v */
                 fx1 += DD_FX1;
                 fy1 += DD_FY1;
                 fx2 += DD_FX2;
@@ -566,10 +566,10 @@ HRESULT D3DVertexCacher::FillParallelogramAA(float fx11, float fy11,
         ADJUST_PGRAM(py, dy21, ph);
         ADJUST_PGRAM(px, dx12, pw);
         ADJUST_PGRAM(py, dy12, ph);
-        float px1 = floor(px);
-        float py1 = floor(py);
-        float px2 = ceil(px + pw);
-        float py2 = ceil(py + ph);
+        float px1 = floorf(px);
+        float py1 = floorf(py);
+        float px2 = ceilf(px + pw);
+        float py2 = ceilf(py + ph);
         float u11, v11, u12, v12, u21, v21, u22, v22;
         TRANSFORM(om, u11, v11, px1, py1);
         TRANSFORM(om, u21, v21, px2, py1);
@@ -615,10 +615,10 @@ HRESULT D3DVertexCacher::DrawParallelogramAA(float ox11, float oy11,
         ADJUST_PGRAM(oy, oy21, oh);
         ADJUST_PGRAM(ox, ox12, ow);
         ADJUST_PGRAM(oy, oy12, oh);
-        float ox11 = floor(ox);
-        float oy11 = floor(oy);
-        float ox22 = ceil(ox + ow);
-        float oy22 = ceil(oy + oh);
+        float ox11 = floorf(ox);
+        float oy11 = floorf(oy);
+        float ox22 = ceilf(ox + ow);
+        float oy22 = ceilf(oy + oh);
         float ou11, ov11, ou12, ov12, ou21, ov21, ou22, ov22;
         TRANSFORM(om, ou11, ov11, ox11, oy11);
         TRANSFORM(om, ou21, ov21, ox22, oy11);

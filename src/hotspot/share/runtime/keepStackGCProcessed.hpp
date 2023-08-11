@@ -43,8 +43,6 @@ class KeepStackGCProcessedMark : public StackObj {
 public:
   KeepStackGCProcessedMark(JavaThread* jt);
   ~KeepStackGCProcessedMark();
-
-  static bool stack_is_kept_gc_processed(JavaThread* jt) NOT_DEBUG({ return true; }) ;
 };
 
 

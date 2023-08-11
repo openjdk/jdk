@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.x509;
 
 import java.io.IOException;
+import java.util.Objects;
+
 import sun.security.util.*;
 
 
@@ -35,7 +37,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicyId {
+public class CertificatePolicyId implements DerEncoder {
     private final ObjectIdentifier id;
 
     /**
@@ -44,7 +46,7 @@ public class CertificatePolicyId {
      * @param id the ObjectIdentifier for the policy id.
      */
     public CertificatePolicyId(ObjectIdentifier id) {
-        this.id = id;
+        this.id = Objects.requireNonNull(id);
     }
 
     /**
@@ -77,9 +79,9 @@ public class CertificatePolicyId {
      * Write the CertificatePolicyId to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the object to.
-     * @exception IOException on errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putOID(id);
     }
 
@@ -90,18 +92,16 @@ public class CertificatePolicyId {
      *
      * @return true iff the ids are identical.
      */
-    public boolean equals(Object other) {
-        if (other instanceof CertificatePolicyId)
-            return id.equals(((CertificatePolicyId) other).getIdentifier());
-        else
-            return false;
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof CertificatePolicyId other
+                && id.equals(other.getIdentifier());
     }
 
     /**
-     * Returns a hash code value for this object.
-     *
-     * @return a hash code value
+     * {@return a hash code value for this object}
      */
+    @Override
     public int hashCode() {
       return id.hashCode();
     }

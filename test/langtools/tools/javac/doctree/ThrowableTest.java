@@ -96,7 +96,7 @@ DocComment[DOC_COMMENT, pos:1
   block tags: 1
     Erroneous[ERRONEOUS, pos:1, prefPos:18
       code: compiler.err.dc.ref.unexpected.input
-      body: @throws_Exceptio...n##fragment_text
+      body: @throws_Exception##fragment_text
     ]
 ]
 */

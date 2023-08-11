@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,30 +26,17 @@
  * @bug 4993819
  * @summary standard extensions path is hard-coded in default
  *      system policy file
- * @run main/manual ExtDirsChange
+ * @run main/othervm/policy=ExtDirsChange.policy ExtDirsChange
  */
 
-/*
- * Run this test manually with:
- * javac ExtDirChange
- * rm ExtDirsA*.class ExtDirsB*.class
- * java    -Djava.security.manager \
- *         -Dtest.src=. \
- *         -Djava.security.policy=ExtDirsChange.policy \
- *         -Djava.security.debug=parser \
- *         -cp ExtDirsA/a.jar:ExtDirsB/b.jar:. \
- *         ExtDirsChange
- */
-
-import java.io.File;
 import java.security.*;
 
 public class ExtDirsChange {
     public static void main(String args[]) throws Exception {
-        System.out.println("java.ext.dirs: " +
-            System.getProperty("java.ext.dirs"));
+        System.out.println("java.policy.dirs: " +
+                System.getProperty("java.policy.dirs"));
 
-        // Uses default security policy and java.ext.dirs
+        // Uses default security policy and java.policy.dirs
         try {
             ExtDirsA a = new ExtDirsA();
             a.go();
@@ -58,14 +45,14 @@ public class ExtDirsChange {
             System.out.println("Setup OK");
         }
 
-        // Change java.ext.dirs and refresh policy
+        // Change java.policy.dirs and refresh policy
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                // Change java.ext.dirs
-                System.setProperty("java.ext.dirs",
-                    "ExtDirsA" + File.pathSeparator + "ExtDirsB");
-                System.out.println("java.ext.dirs: " +
-                    System.getProperty("java.ext.dirs"));
+                // Change java.policy.dirs
+                System.setProperty("java.policy.dirs",
+                        System.getProperty("test.classes"));
+                System.out.println("java.policy.dirs: " +
+                        System.getProperty("java.policy.dirs"));
                 return null;
             }
         });
@@ -79,7 +66,7 @@ public class ExtDirsChange {
             System.out.println("Setup before refresh OK");
         }
 
-        // Refresh policy using updated java.ext.dirs
+        // Refresh policy using updated java.policy.dirs
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 Policy.getPolicy().refresh();
@@ -99,13 +86,13 @@ public class ExtDirsChange {
         }
 
         // Test with blank java.ext.dir
-        // Change java.ext.dirs and refresh policy
+        // Change java.policy.dirs and refresh policy
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                // Change java.ext.dirs
-                System.setProperty("java.ext.dirs", " ");
-                System.out.println("java.ext.dirs: " +
-                    System.getProperty("java.ext.dirs"));
+                // Change java.policy.dirs
+                System.setProperty("java.policy.dirs", " ");
+                System.out.println("java.policy.dirs: " +
+                        System.getProperty("java.policy.dirs"));
                 Policy.getPolicy().refresh();
                 return null;
             }

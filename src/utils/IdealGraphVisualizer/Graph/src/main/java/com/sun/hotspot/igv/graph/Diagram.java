@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  */
 package com.sun.hotspot.igv.graph;
 
-import com.sun.hotspot.igv.data.*;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.data.*;
 import java.awt.Font;
 import java.util.*;
 
@@ -110,6 +110,14 @@ public class Diagram {
                 c.setStyle(Connection.ConnectionStyle.BOLD);
             } else if (e.getState() == InputEdge.State.DELETED) {
                 c.setStyle(Connection.ConnectionStyle.DASHED);
+            }
+        }
+
+        for (Figure f : figures) {
+            int i = 0;
+            for (InputSlot inputSlot : f.getInputSlots()) {
+                inputSlot.setOriginalIndex(i);
+                i++;
             }
         }
 
@@ -268,4 +276,14 @@ public class Diagram {
 
         System.out.println("=============================================================");
     }
+
+    public Figure getRootFigure() {
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
+        Figure root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Root"));
+        if (root == null) {
+            root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Start"));
+        }
+        return root;
+    }
+
 }

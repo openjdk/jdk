@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,11 +88,10 @@ public class Test12 extends Test {
             join (r);
             System.out.println ("OK");
         } finally {
-            delay();
             if (s1 != null)
-                s1.stop(2);
+                s1.stop(0);
             if (s2 != null)
-                s2.stop(2);
+                s2.stop(0);
             if (executor != null)
                 executor.shutdown ();
         }

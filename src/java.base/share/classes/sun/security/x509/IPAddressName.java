@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,9 +226,9 @@ public class IPAddressName implements GeneralNameInterface {
      * Encode the IPAddress name into the DerOutputStream.
      *
      * @param out the DER stream to encode the IPAddressName to.
-     * @exception IOException on encoding errors.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         out.putOctetString(address);
     }
 
@@ -310,6 +310,7 @@ public class IPAddressName implements GeneralNameInterface {
      *
      * @return true iff the names are identical.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
@@ -334,10 +335,8 @@ public class IPAddressName implements GeneralNameInterface {
                 }
             }
             // Now compare masks
-            for (int i=maskLen; i < address.length; i++)
-                if (address[i] != other[i])
-                    return false;
-            return true;
+            return Arrays.equals(address, maskLen, address.length, other,
+                    maskLen, address.length);
         } else {
             // Two IPv4 host addresses or two IPv6 host addresses
             // Compare bytes
@@ -346,17 +345,11 @@ public class IPAddressName implements GeneralNameInterface {
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
+    @Override
     public int hashCode() {
-        int retval = 0;
-
-        for (int i=0; i<address.length; i++)
-            retval += address[i] * i;
-
-        return retval;
+        return Arrays.hashCode(address);
     }
 
     /**
@@ -401,11 +394,12 @@ public class IPAddressName implements GeneralNameInterface {
         else {
             IPAddressName otherName = (IPAddressName)inputName;
             byte[] otherAddress = otherName.address;
-            if (otherAddress.length == 4 && address.length == 4)
+            if ((otherAddress.length == 4 && address.length == 4) ||
+                    (otherAddress.length == 16 && address.length == 16)) {
                 // Two host addresses
                 constraintType = NAME_SAME_TYPE;
-            else if ((otherAddress.length == 8 && address.length == 8) ||
-                     (otherAddress.length == 32 && address.length == 32)) {
+            } else if ((otherAddress.length == 8 && address.length == 8) ||
+                       (otherAddress.length == 32 && address.length == 32)) {
                 // Two subnet addresses
                 // See if one address fully encloses the other address
                 boolean otherSubsetOfThis = true;
@@ -440,7 +434,8 @@ public class IPAddressName implements GeneralNameInterface {
                     constraintType = NAME_WIDENS;
                 else
                     constraintType = NAME_SAME_TYPE;
-            } else if (otherAddress.length == 8 || otherAddress.length == 32) {
+            } else if ((otherAddress.length == 8 && address.length == 4) ||
+                       (otherAddress.length == 32 && address.length == 16)) {
                 //Other is a subnet, this is a host address
                 int i = 0;
                 int maskOffset = otherAddress.length/2;
@@ -454,7 +449,8 @@ public class IPAddressName implements GeneralNameInterface {
                     constraintType = NAME_WIDENS;
                 else
                     constraintType = NAME_SAME_TYPE;
-            } else if (address.length == 8 || address.length == 32) {
+            } else if ((otherAddress.length == 4 && address.length == 8) ||
+                       (otherAddress.length == 16 && address.length == 32)) {
                 //This is a subnet, other is a host address
                 int i = 0;
                 int maskOffset = address.length/2;

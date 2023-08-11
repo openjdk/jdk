@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,13 +92,19 @@ public class DocPaths {
     }
 
     /** The name of the default javascript file. */
-    public static final DocPath JAVASCRIPT = DocPath.create("script.js");
+    public static final DocPath SCRIPT_JS = DocPath.create("script.js");
 
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the link icon file. */
+    public static final DocPath LINK_SVG = DocPath.create("link.svg");
+
+    /** The name of the default jQuery directory. */
+    public static final DocPath JQUERY_DIR = DocPath.create("jquery");
+
     /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.0.min.js");
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.1.min.js");
 
     /** The name of the default jQuery UI stylesheet file. */
     public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
@@ -142,8 +148,11 @@ public class DocPaths {
     /** The name of the file for preview elements. */
     public static final DocPath PREVIEW_LIST = DocPath.create("preview-list.html");
 
+    /** The name of the directory for the resource files. */
+    public static final DocPath RESOURCE_FILES = DocPath.create("resource-files");
+
     /** The name of the directory for the script files. */
-    public static final DocPath SCRIPT_DIR = DocPath.create("script-dir");
+    public static final DocPath SCRIPT_FILES = DocPath.create("script-files");
 
     /** The name of the file for search page. */
     public static final DocPath SEARCH_PAGE = DocPath.create("search.html");

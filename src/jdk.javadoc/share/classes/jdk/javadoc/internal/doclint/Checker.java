@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
@@ -348,6 +349,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
         String s = env.trees.getCharacters(tree);
@@ -356,6 +358,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         return null;
 
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitEscape(EscapeTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
+        checkAllowsText(tree);
+        markEnclosingTag(Flag.HAS_TEXT);
+        return null;
     }
 
     void checkAllowsText(DocTree tree) {
@@ -482,15 +492,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     case START_ELEMENT -> {
                         if (top.tag.blockType == HtmlTag.BlockType.INLINE) {
                             Name name = ((StartElementTree) top.tree).getName();
-                            env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
-                                    treeName, name);
+                            // Links may use block display style so issue warning instead of error
+                            if ("a".equalsIgnoreCase(name.toString())) {
+                                env.messages.warning(HTML, tree, "dc.tag.not.allowed.element.default.style",
+                                        treeName, name);
+                            } else {
+                                env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.element",
+                                        treeName, name);
+                            }
                             return;
                         }
                     }
 
                     case LINK, LINK_PLAIN -> {
                         String name = top.tree.getKind().tagName;
-                        env.messages.error(HTML, tree, "dc.tag.not.allowed.inline.tag",
+                        env.messages.warning(HTML, tree, "dc.tag.not.allowed.tag.default.style",
                                 treeName, name);
                         return;
                     }

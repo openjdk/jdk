@@ -96,7 +96,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
                 public Void run() {
-                    sendNotification(createNotication(recording));
+                    sendNotification(createNotification(recording));
                     return null;
                 }
             }, context);
@@ -111,7 +111,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
     private static final String OPTION_DUMP_ON_EXIT = "dumpOnExit";
     private static final String OPTION_DURATION = "duration";
     private static final String OPTION_DESTINATION = "destination";
-    private static final List<String> OPTIONS = Arrays.asList(new String[] { OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, OPTION_DESTINATION, });
+    private static final List<String> OPTIONS = Arrays.asList(OPTION_DUMP_ON_EXIT, OPTION_DURATION, OPTION_NAME, OPTION_MAX_AGE, OPTION_MAX_SIZE, OPTION_DISK, OPTION_DESTINATION);
     private final StreamManager streamHandler = new StreamManager();
     private final Map<Long, Object> changes = new ConcurrentHashMap<>();
     private final AtomicLong sequenceNumber = new AtomicLong();
@@ -282,6 +282,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         for (Map.Entry<String, String> entry : ops.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
+            // Keys and values may be sent over the network
             if (!(key instanceof String)) {
                 throw new IllegalArgumentException("Option key must not be null, or other type than " + String.class);
             }
@@ -302,13 +303,13 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         validateOption(ops, OPTION_DURATION, MBeanUtils::duration);
         validateOption(ops, OPTION_DESTINATION, x -> MBeanUtils.destination(r, x));
 
-        // All OK, now set them.atomically
-        setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, x -> r.setDumpOnExit(x));
-        setOption(ops, OPTION_DISK, "true", MBeanUtils::booleanValue, x -> r.setToDisk(x));
-        setOption(ops, OPTION_NAME, String.valueOf(r.getId()), Function.identity(), x -> r.setName(x));
-        setOption(ops, OPTION_MAX_AGE, null, MBeanUtils::duration, x -> r.setMaxAge(x));
-        setOption(ops, OPTION_MAX_SIZE, "0", MBeanUtils::size, x -> r.setMaxSize(x));
-        setOption(ops, OPTION_DURATION, null, MBeanUtils::duration, x -> r.setDuration(x));
+        // All OK, now set them
+        setOption(ops, OPTION_DUMP_ON_EXIT, "false", MBeanUtils::booleanValue, r::setDumpOnExit);
+        setOption(ops, OPTION_DISK, "true", MBeanUtils::booleanValue, r::setToDisk);
+        setOption(ops, OPTION_NAME, String.valueOf(r.getId()), Function.identity(), r::setName);
+        setOption(ops, OPTION_MAX_AGE, null, MBeanUtils::duration, r::setMaxAge);
+        setOption(ops, OPTION_MAX_SIZE, "0", MBeanUtils::size, r::setMaxSize);
+        setOption(ops, OPTION_DURATION, null, MBeanUtils::duration, r::setDuration);
         setOption(ops, OPTION_DESTINATION, null, x -> MBeanUtils.destination(r, x), x -> setOptionDestination(r, x));
     }
 
@@ -457,7 +458,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
         listeners.removeAll(toBeRemoved);
     }
 
-    private Notification createNotication(Recording recording) {
+    private Notification createNotification(Recording recording) {
         try {
             Long id = recording.getId();
             Object oldValue = changes.get(recording.getId());
@@ -470,7 +471,7 @@ final class FlightRecorderMXBeanImpl extends StandardEmitterMBean implements Fli
             return new AttributeChangeNotification(getObjectName(), sequenceNumber.incrementAndGet(), System.currentTimeMillis(), "Recording " + recording.getName() + " is "
                     + recording.getState(), ATTRIBUTE_RECORDINGS, newValue.getClass().getName(), oldValue, newValue);
         } catch (AttributeNotFoundException | MBeanException | ReflectionException e) {
-            throw new RuntimeException("Could not create notifcation for FlightRecorderMXBean. " + e.getMessage(), e);
+            throw new RuntimeException("Could not create notification for FlightRecorderMXBean. " + e.getMessage(), e);
         }
     }
 }

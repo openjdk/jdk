@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8054572
+ * @requires (os.family == "mac")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests if JComboBox displays correctly when editable/non-editable

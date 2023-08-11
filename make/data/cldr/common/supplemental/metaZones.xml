@@ -333,6 +333,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone to="2022-10-30 08:00" from="1998-04-05 09:00" mzone="Mexico_Pacific"/>
 				<usesMetazone from="2022-10-30 08:00" mzone="America_Central"/>
 			</timezone>
+			<timezone type="America/Ciudad_Juarez">
+				<usesMetazone to="1998-04-05 09:00" mzone="America_Central"/>
+				<usesMetazone to="2022-10-30 08:00" from="1998-04-05 09:00" mzone="Mexico_Pacific"/>
+				<usesMetazone to="2022-11-30 06:00" from="2022-10-30 08:00" mzone="America_Central"/>
+				<usesMetazone from="2022-11-30 06:00" mzone="America_Mountain"/>
+			</timezone>
 			<timezone type="America/Coral_Harbour">
 				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
@@ -621,8 +627,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone mzone="America_Eastern"/>
 			</timezone>
 			<timezone type="America/Pangnirtung">
-				<usesMetazone to="1995-04-02 06:00" mzone="Atlantic"/>
-				<usesMetazone to="1999-10-31 06:00" from="1995-04-02 06:00" mzone="America_Eastern"/>
+				<usesMetazone to="1999-10-31 06:00" mzone="America_Eastern"/>
 				<usesMetazone to="2000-10-29 07:00" from="1999-10-31 06:00" mzone="America_Central"/>
 				<usesMetazone from="2000-10-29 07:00" mzone="America_Eastern"/>
 			</timezone>

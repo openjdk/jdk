@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.lang.reflect.Proxy;
 /*
  * @test
  * @summary Basic test of proxy module mapping and the access to Proxy class
- * @modules java.base/sun.invoke
+ * @modules java.base/jdk.internal.misc
  */
 
 public class ProxyModuleMapping {
@@ -37,10 +37,10 @@ public class ProxyModuleMapping {
         Module unnamed = ld.getUnnamedModule();
         new ProxyModuleMapping(Runnable.class).test();
 
-        // unnamed module gets access to sun.invoke package (e.g. via --add-exports)
-        new ProxyModuleMapping(sun.invoke.WrapperInstance.class).test();
+        // unnamed module gets access to jdk.internal.misc package (e.g. via --add-exports)
+        new ProxyModuleMapping(jdk.internal.misc.VM.BufferPool.class).test();
 
-        Class<?> modulePrivateIntf = Class.forName("sun.net.ProgressListener");
+        Class<?> modulePrivateIntf = Class.forName("sun.net.PlatformSocketImpl");
         new ProxyModuleMapping(modulePrivateIntf).test();
     }
 

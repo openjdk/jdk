@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,12 @@ public class CallingSequence {
     private final List<Binding> returnBindings;
     private final List<List<Binding>> argumentBindings;
 
+    private final LinkerOptions linkerOptions;
+
     public CallingSequence(boolean forUpcall, MethodType callerMethodType, MethodType calleeMethodType, FunctionDescriptor desc,
                            boolean needsReturnBuffer, long returnBufferSize, long allocationSize,
-                           List<List<Binding>> argumentBindings, List<Binding> returnBindings) {
+                           List<List<Binding>> argumentBindings, List<Binding> returnBindings,
+                           LinkerOptions linkerOptions) {
         this.forUpcall = forUpcall;
         this.callerMethodType = callerMethodType;
         this.calleeMethodType = calleeMethodType;
@@ -54,6 +57,7 @@ public class CallingSequence {
         this.allocationSize = allocationSize;
         this.returnBindings = returnBindings;
         this.argumentBindings = argumentBindings;
+        this.linkerOptions = linkerOptions;
     }
 
     /**
@@ -158,7 +162,7 @@ public class CallingSequence {
     /**
      * The size of the return buffer, if one is needed.
      *
-     * {@see #needsReturnBuffer}
+     * @see #needsReturnBuffer
      *
      * @return the return buffer size
      */
@@ -179,6 +183,20 @@ public class CallingSequence {
 
     public boolean hasReturnBindings() {
         return !returnBindings.isEmpty();
+    }
+
+    public int capturedStateMask() {
+        return linkerOptions.capturedCallState()
+                .mapToInt(CapturableState::mask)
+                .reduce(0, (a, b) -> a | b);
+    }
+
+    public boolean needsTransition() {
+        return !linkerOptions.isTrivial();
+    }
+
+    public int numLeadingParams() {
+        return 2 + (linkerOptions.hasCapturedCallState() ? 1 : 0); // 2 for addr, allocator
     }
 
     public String asString() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ struct AtomicAddTestSupport {
     T zero = 0;
     T five = 5;
     Atomic::store(&_test_value, zero);
-    T value = Atomic::fetch_and_add(&_test_value, five);
+    T value = Atomic::fetch_then_add(&_test_value, five);
     EXPECT_EQ(zero, value);
     EXPECT_EQ(five, Atomic::load(&_test_value));
   }
@@ -82,7 +82,7 @@ TEST(AtomicAddTest, ptr) {
   EXPECT_EQ(five, Atomic::load(&_test_value));
 
   Atomic::store(&_test_value, zero);
-  value = Atomic::fetch_and_add(&_test_value, 6);
+  value = Atomic::fetch_then_add(&_test_value, 6);
   EXPECT_EQ(zero, value);
   EXPECT_EQ(six, Atomic::load(&_test_value));
 };
@@ -199,3 +199,113 @@ TEST(AtomicEnumTest, scoped_enum) {
   Support().test_cmpxchg(B, C);
   Support().test_xchg(B, C);
 }
+
+template<typename T>
+struct AtomicBitopsTestSupport {
+  volatile T _test_value;
+
+  // At least one byte differs between _old_value and _old_value op _change_value.
+  static const T _old_value =    static_cast<T>(UCONST64(0x7f5300007f530044));
+  static const T _change_value = static_cast<T>(UCONST64(0x3800530038005322));
+
+  AtomicBitopsTestSupport() : _test_value(0) {}
+
+  void fetch_then_and() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value & _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::fetch_then_and(&_test_value, _change_value);
+    EXPECT_EQ(_old_value, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+  void fetch_then_or() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value | _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::fetch_then_or(&_test_value, _change_value);
+    EXPECT_EQ(_old_value, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+  void fetch_then_xor() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value ^ _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::fetch_then_xor(&_test_value, _change_value);
+    EXPECT_EQ(_old_value, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+  void and_then_fetch() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value & _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::and_then_fetch(&_test_value, _change_value);
+    EXPECT_EQ(expected, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+  void or_then_fetch() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value | _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::or_then_fetch(&_test_value, _change_value);
+    EXPECT_EQ(expected, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+  void xor_then_fetch() {
+    Atomic::store(&_test_value, _old_value);
+    T expected = _old_value ^ _change_value;
+    EXPECT_NE(_old_value, expected);
+    T result = Atomic::xor_then_fetch(&_test_value, _change_value);
+    EXPECT_EQ(expected, result);
+    EXPECT_EQ(expected, Atomic::load(&_test_value));
+  }
+
+#define TEST_BITOP(name) { SCOPED_TRACE(XSTR(name)); name(); }
+
+  void operator()() {
+    TEST_BITOP(fetch_then_and)
+    TEST_BITOP(fetch_then_or)
+    TEST_BITOP(fetch_then_xor)
+    TEST_BITOP(and_then_fetch)
+    TEST_BITOP(or_then_fetch)
+    TEST_BITOP(xor_then_fetch)
+  }
+
+#undef TEST_BITOP
+};
+
+template<typename T>
+const T AtomicBitopsTestSupport<T>::_old_value;
+
+template<typename T>
+const T AtomicBitopsTestSupport<T>::_change_value;
+
+TEST(AtomicBitopsTest, int8) {
+  AtomicBitopsTestSupport<int8_t>()();
+}
+
+TEST(AtomicBitopsTest, uint8) {
+  AtomicBitopsTestSupport<uint8_t>()();
+}
+
+TEST(AtomicBitopsTest, int32) {
+  AtomicBitopsTestSupport<int32_t>()();
+}
+
+TEST(AtomicBitopsTest, uint32) {
+  AtomicBitopsTestSupport<uint32_t>()();
+}
+
+#ifdef _LP64
+TEST(AtomicBitopsTest, int64) {
+  AtomicBitopsTestSupport<int64_t>()();
+}
+
+TEST(AtomicBitopsTest, uint64) {
+  AtomicBitopsTestSupport<uint64_t>()();
+}
+#endif // _LP64

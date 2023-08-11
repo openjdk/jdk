@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.foreign.Utils;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Constructor;
@@ -52,9 +53,10 @@ final class VarHandles {
         }
     };
 
-    static VarHandle makeFieldHandle(MemberName f, Class<?> refc, Class<?> type, boolean isWriteAllowedOnFinalFields) {
+    static VarHandle makeFieldHandle(MemberName f, Class<?> refc, boolean isWriteAllowedOnFinalFields) {
         if (!f.isStatic()) {
             long foffset = MethodHandleNatives.objectFieldOffset(f);
+            Class<?> type = f.getFieldType();
             if (!type.isPrimitive()) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
                        ? new VarHandleReferences.FieldInstanceReadOnly(refc, foffset, type)
@@ -105,65 +107,65 @@ final class VarHandles {
             }
         }
         else {
-            // TODO This is not lazy on first invocation
-            // and might cause some circular initialization issues
+            Class<?> decl = f.getDeclaringClass();
+            var vh = makeStaticFieldVarHandle(decl, f, isWriteAllowedOnFinalFields);
+            return maybeAdapt(UNSAFE.shouldBeInitialized(decl)
+                    ? new LazyInitializingVarHandle(vh, decl)
+                    : vh);
+        }
+    }
 
-            // Replace with something similar to direct method handles
-            // where a barrier is used then elided after use
-
-            if (UNSAFE.shouldBeInitialized(refc))
-                UNSAFE.ensureClassInitialized(refc);
-
-            Object base = MethodHandleNatives.staticFieldBase(f);
-            long foffset = MethodHandleNatives.staticFieldOffset(f);
-            if (!type.isPrimitive()) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleReferences.FieldStaticReadOnly(base, foffset, type)
-                       : new VarHandleReferences.FieldStaticReadWrite(base, foffset, type));
-            }
-            else if (type == boolean.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBooleans.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBooleans.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == byte.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBytes.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBytes.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == short.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleShorts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleShorts.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == char.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleChars.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleChars.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == int.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleInts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleInts.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == long.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleLongs.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleLongs.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == float.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleFloats.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleFloats.FieldStaticReadWrite(base, foffset));
-            }
-            else if (type == double.class) {
-                return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleDoubles.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleDoubles.FieldStaticReadWrite(base, foffset));
-            }
-            else {
-                throw new UnsupportedOperationException();
-            }
+    static VarHandle makeStaticFieldVarHandle(Class<?> decl, MemberName f, boolean isWriteAllowedOnFinalFields) {
+        Object base = MethodHandleNatives.staticFieldBase(f);
+        long foffset = MethodHandleNatives.staticFieldOffset(f);
+        Class<?> type = f.getFieldType();
+        if (!type.isPrimitive()) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleReferences.FieldStaticReadOnly(decl, base, foffset, type)
+                    : new VarHandleReferences.FieldStaticReadWrite(decl, base, foffset, type));
+        }
+        else if (type == boolean.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleBooleans.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleBooleans.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == byte.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleBytes.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleBytes.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == short.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleShorts.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleShorts.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == char.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleChars.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleChars.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == int.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleInts.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleInts.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == long.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleLongs.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleLongs.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == float.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleFloats.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleFloats.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else if (type == double.class) {
+            return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
+                    ? new VarHandleDoubles.FieldStaticReadOnly(decl, base, foffset)
+                    : new VarHandleDoubles.FieldStaticReadWrite(decl, base, foffset));
+        }
+        else {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -183,12 +185,10 @@ final class VarHandles {
     }
 
     // Required by instance static field handles
-    static Field getStaticFieldFromBaseAndOffset(Object base,
+    static Field getStaticFieldFromBaseAndOffset(Class<?> declaringClass,
                                                  long offset,
                                                  Class<?> fieldType) {
-        // @@@ This is a little fragile assuming the base is the class
-        Class<?> receiverType = (Class<?>) base;
-        for (Field f : receiverType.getDeclaredFields()) {
+        for (Field f : declaringClass.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) continue;
 
             if (offset == UNSAFE.staticFieldOffset(f)) {
@@ -315,7 +315,7 @@ final class VarHandles {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        long size = Wrapper.forPrimitiveType(carrier).bitWidth() / 8;
+        long size = Utils.byteWidthOfPrimitive(carrier);
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = false;
 
@@ -563,14 +563,14 @@ final class VarHandles {
         List<Class<?>> targetCoordinates = target.coordinateTypes();
         if (pos < 0 || pos >= targetCoordinates.size()) {
             throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
-        } else if (filter.type().returnType() == void.class) {
-            throw newIllegalArgumentException("Invalid filter type " + filter.type() + " ; filter cannot be void");
-        } else if (filter.type().returnType() != targetCoordinates.get(pos)) {
+        } else if (filter.type().returnType() != void.class && filter.type().returnType() != targetCoordinates.get(pos)) {
             throw newIllegalArgumentException("Invalid filter type " + filter.type() + " for coordinate type " + targetCoordinates.get(pos));
         }
 
         List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
-        newCoordinates.remove(pos);
+        if (filter.type().returnType() != void.class) {
+            newCoordinates.remove(pos);
+        }
         newCoordinates.addAll(pos, filter.type().parameterList());
 
         return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
@@ -635,8 +635,8 @@ final class VarHandles {
             } else {
                 throw new AssertionError("Cannot get here");
             }
-        } else if (handle instanceof DelegatingMethodHandle) {
-            return exceptionTypes(((DelegatingMethodHandle)handle).getTarget());
+        } else if (handle instanceof DelegatingMethodHandle delegatingMh) {
+            return exceptionTypes(delegatingMh.getTarget());
         } else if (handle instanceof NativeMethodHandle) {
             return new Class<?>[0];
         }
@@ -731,16 +731,7 @@ final class VarHandles {
 //            Object getAndUpdate(Object value);
 //        }
 //
-//        static class HandleType {
-//            final Class<?> receiver;
-//            final Class<?>[] intermediates;
-//            final Class<?> value;
-//
-//            HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//                this.receiver = receiver;
-//                this.intermediates = intermediates;
-//                this.value = value;
-//            }
+//        record HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
 //        }
 //
 //        /**
@@ -816,10 +807,8 @@ final class VarHandles {
 //            List<Class<?>> params = new ArrayList<>();
 //            if (receiver != null)
 //                params.add(receiver);
-//            for (int i = 0; i < intermediates.length; i++) {
-//                params.add(intermediates[i]);
-//            }
-//            for (Parameter p : m.getParameters()) {
+//            java.util.Collections.addAll(params, intermediates);
+//            for (var p : m.getParameters()) {
 //                params.add(value);
 //            }
 //            return MethodType.methodType(returnType, params);
@@ -828,7 +817,7 @@ final class VarHandles {
 //        static String generateMethod(MethodType mt) {
 //            Class<?> returnType = mt.returnType();
 //
-//            LinkedHashMap<String, Class<?>> params = new LinkedHashMap<>();
+//            var params = new java.util.LinkedHashMap<String, Class<?>>();
 //            params.put("handle", VarHandle.class);
 //            for (int i = 0; i < mt.parameterCount(); i++) {
 //                params.put("arg" + i, mt.parameterType(i));
@@ -841,7 +830,7 @@ final class VarHandles {
 //            String SIGNATURE = getSignature(mt);
 //            String PARAMS = params.entrySet().stream().
 //                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(joining(", "));
+//                    collect(java.util.stream.Collectors.joining(", "));
 //            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
 //                    replace("<RETURN>", RETURN).
 //                    replace("<NAME>", NAME).
@@ -851,12 +840,10 @@ final class VarHandles {
 //            // Generate method
 //            params.remove("ad");
 //
-//            List<String> LINK_TO_STATIC_ARGS = params.keySet().stream().
-//                    collect(toList());
+//            List<String> LINK_TO_STATIC_ARGS = new ArrayList<>(params.keySet());
 //            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
 //
-//            List<String> LINK_TO_INVOKER_ARGS = params.keySet().stream().
-//                    collect(toList());
+//            List<String> LINK_TO_INVOKER_ARGS = new ArrayList<>(params.keySet());
 //            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
 //
 //            RETURN = returnType == void.class
@@ -884,10 +871,8 @@ final class VarHandles {
 //                    replaceAll("<RETURN>", RETURN).
 //                    replace("<RESULT_ERASED>", RESULT_ERASED).
 //                    replace("<RETURN_ERASED>", RETURN_ERASED).
-//                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
-//                            collect(joining(", "))).
-//                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
-//                            collect(joining(", ")))
+//                    replaceAll("<LINK_TO_STATIC_ARGS>", String.join(", ", LINK_TO_STATIC_ARGS)).
+//                    replace("<LINK_TO_INVOKER_ARGS>", String.join(", ", LINK_TO_INVOKER_ARGS))
 //                    .indent(4);
 //        }
 //
@@ -916,30 +901,7 @@ final class VarHandles {
 //        }
 //
 //        static char getCharType(Class<?> pt) {
-//            if (pt == void.class) {
-//                return 'V';
-//            }
-//            else if (!pt.isPrimitive()) {
-//                return 'L';
-//            }
-//            else if (pt == boolean.class) {
-//                return 'Z';
-//            }
-//            else if (pt == int.class) {
-//                return 'I';
-//            }
-//            else if (pt == long.class) {
-//                return 'J';
-//            }
-//            else if (pt == float.class) {
-//                return 'F';
-//            }
-//            else if (pt == double.class) {
-//                return 'D';
-//            }
-//            else {
-//                throw new IllegalStateException(pt.getName());
-//            }
+//            return Wrapper.forBasicType(pt).basicTypeChar();
 //        }
 //    }
 }

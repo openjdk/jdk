@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,28 @@
 
 class MacroAssembler;
 
+bool ForeignGlobals::is_foreign_linker_supported() {
+  return false;
+}
+
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   ShouldNotCallThis();
   return {};
 }
 
-VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
-  Unimplemented();
-  return VMRegImpl::Bad();
-}
-
-int RegSpiller::pd_reg_size(VMReg reg) {
+int RegSpiller::pd_reg_size(VMStorage reg) {
   Unimplemented();
   return -1;
 }
 
-void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMStorage reg) {
   Unimplemented();
 }
 
-void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg) {
   Unimplemented();
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
   Unimplemented();
 }

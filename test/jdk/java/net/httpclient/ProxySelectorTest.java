@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,9 @@
  * @bug 8244205
  * @summary checks that a different proxy returned for
  *          the same host:port is taken into account
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
- * @library /test/lib http2/server
- * @build HttpServerAdapters DigestEchoServer Http2TestServer ProxySelectorTest
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build DigestEchoServer ProxySelectorTest jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.http.auth.tunneling.disabledSchemes
  *       -Djdk.httpclient.HttpClient.log=headers,requests
@@ -83,9 +74,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.err;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -216,13 +211,13 @@ public class ProxySelectorTest implements HttpServerAdapters {
     @DataProvider(name = "all")
     public Object[][] positive() {
         return new Object[][] {
-                { Schemes.HTTP,  HttpClient.Version.HTTP_1_1, httpURI,   true},
+                { Schemes.HTTP,  HTTP_1_1, httpURI,   true},
                 { Schemes.HTTP,  HttpClient.Version.HTTP_2,   http2URI,  true},
-                { Schemes.HTTPS, HttpClient.Version.HTTP_1_1, httpsURI,  true},
+                { Schemes.HTTPS, HTTP_1_1, httpsURI,  true},
                 { Schemes.HTTPS, HttpClient.Version.HTTP_2,   https2URI, true},
-                { Schemes.HTTP,  HttpClient.Version.HTTP_1_1, httpURI,   false},
+                { Schemes.HTTP,  HTTP_1_1, httpURI,   false},
                 { Schemes.HTTP,  HttpClient.Version.HTTP_2,   http2URI,  false},
-                { Schemes.HTTPS, HttpClient.Version.HTTP_1_1, httpsURI,  false},
+                { Schemes.HTTPS, HTTP_1_1, httpsURI,  false},
                 { Schemes.HTTPS, HttpClient.Version.HTTP_2,   https2URI, false},
         };
     }
@@ -329,30 +324,26 @@ public class ProxySelectorTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new PlainServerHandler("plain-server"), "/http1/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
-        proxyHttpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        proxyHttpTestServer = HttpTestServer.create(HTTP_1_1);
         proxyHttpTestServer.addHandler(new PlainServerHandler("proxy-server"), "/http1/proxy/");
         proxyHttpTestServer.addHandler(new PlainServerHandler("proxy-server"), "/http2/proxy/");
         proxyHttpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
-        authProxyHttpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        authProxyHttpTestServer = HttpTestServer.create(HTTP_1_1);
         authProxyHttpTestServer.addHandler(new UnauthorizedHandler("auth-proxy-server"), "/http1/proxy/");
         authProxyHttpTestServer.addHandler(new UnauthorizedHandler("auth-proxy-server"), "/http2/proxy/");
         proxyHttpURI = "http://" + httpTestServer.serverAuthority() + "/http1";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(new PlainServerHandler("https-server"),"/https1/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new PlainServerHandler("plain-server"), "/http2/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new PlainServerHandler("https-server"), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 

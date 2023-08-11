@@ -122,7 +122,7 @@ public class ToolProviderTest {
                 // system property
                 System.getProperty("java.home");
                 if (haveSecurityManager) {
-                    throw new Error("exception exception not thrown");
+                    throw new Error("exception not thrown");
                 }
             } catch (SecurityException e) {
                 if (!haveSecurityManager) {

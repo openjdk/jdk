@@ -108,8 +108,8 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Other", Level.INFO),
 
         // Pre Evacuate Collection Set
-        new LogMessageWithLevel("Prepare TLABs", Level.DEBUG),
-        new LogMessageWithLevel("Concatenate Dirty Card Logs", Level.DEBUG),
+        new LogMessageWithLevel("JT Retire TLABs And Flush Logs", Level.DEBUG),
+        new LogMessageWithLevel("Non-JT Flush Logs", Level.DEBUG),
         new LogMessageWithLevel("Choose Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
@@ -126,7 +126,6 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merged Howl ArrayOfCards", Level.DEBUG),
         new LogMessageWithLevel("Merged Howl BitMap", Level.DEBUG),
         new LogMessageWithLevel("Merged Howl Full", Level.DEBUG),
-        new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
         new LogMessageWithLevel("Merged Cards", Level.DEBUG),
@@ -174,16 +173,16 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste", Level.DEBUG),
+        new LogMessageWithLevel("Evac Fail Extra Cards", Level.DEBUG),
         new LogMessageWithLevel("Clear Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
 
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
-        new LogMessageWithLevel("Reset Hot Card Cache", Level.DEBUG),
-        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
@@ -193,8 +192,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
         new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
         new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Prepare For Mutator", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
     };
 
@@ -267,7 +265,9 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
         new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
-        new LogMessageWithLevel("Evacuation Failure Regions", Level.DEBUG),
+        new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
+        new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),
+        new LogMessageWithLevel("New Retained Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
@@ -278,7 +278,6 @@ public class TestGCLogMessages {
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -291,7 +290,6 @@ public class TestGCLogMessages {
                                                    "-Xmn16M",
                                                    "-Xms32M",
                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 
@@ -368,9 +366,8 @@ public class TestGCLogMessages {
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
-            WB.g1StartConcMarkCycle();
+            WB.g1StartConcurrentGC();
         }
     }
 
 }
-

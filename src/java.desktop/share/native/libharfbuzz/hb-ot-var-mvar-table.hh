@@ -43,7 +43,7 @@ struct VariationValueRecord
 
   public:
   Tag           valueTag;       /* Four-byte tag identifying a font-wide measure. */
-  HBUINT32              varIdx;         /* Outer/inner index into VariationStore item. */
+  VarIdx        varIdx;         /* Outer/inner index into VariationStore item. */
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -114,6 +114,15 @@ protected:
 };
 
 } /* namespace OT */
+
+
+#define HB_ADD_MVAR_VAR(tag, field) \
+       c->serializer->check_assign (table->field, \
+                                    roundf (table->field + \
+                                            MVAR.get_var (tag, \
+                                                          c->plan->normalized_coords.arrayZ, \
+                                                          c->plan->normalized_coords.length)), \
+                                    HB_SERIALIZE_ERROR_INT_OVERFLOW)
 
 
 #endif /* HB_OT_VAR_MVAR_TABLE_HH */

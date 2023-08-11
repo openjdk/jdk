@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.math.BigInteger;
 import java.security.KeyRep;
 import java.security.PrivateKey;
 import java.security.InvalidKeyException;
-import java.security.ProviderException;
 import javax.crypto.spec.DHParameterSpec;
 import sun.security.util.*;
 
@@ -44,7 +43,7 @@ import sun.security.util.*;
  *
  *
  * @see DHPublicKey
- * @see java.security.KeyAgreement
+ * @see javax.crypto.KeyAgreement
  */
 final class DHPrivateKey implements PrivateKey,
         javax.crypto.interfaces.DHPrivateKey, Serializable {
@@ -80,8 +79,6 @@ final class DHPrivateKey implements PrivateKey,
      * @param x the private value
      * @param p the prime modulus
      * @param g the base generator
-     *
-     * @throws ProviderException if the key cannot be encoded
      */
     DHPrivateKey(BigInteger x, BigInteger p, BigInteger g)
         throws InvalidKeyException {
@@ -97,24 +94,18 @@ final class DHPrivateKey implements PrivateKey,
      * @param p the prime modulus
      * @param g the base generator
      * @param l the private-value length
-     *
-     * @throws ProviderException if the key cannot be encoded
      */
     DHPrivateKey(BigInteger x, BigInteger p, BigInteger g, int l) {
         this.x = x;
         this.p = p;
         this.g = g;
         this.l = l;
-        try {
-            byte[] xbytes = x.toByteArray();
-            DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
-            this.key = val.toByteArray();
-            val.clear();
-            Arrays.fill(xbytes, (byte)0);
-            encode();
-        } catch (IOException e) {
-            throw new ProviderException("Cannot produce ASN.1 encoding", e);
-        }
+        byte[] xbytes = x.toByteArray();
+        DerValue val = new DerValue(DerValue.tag_Integer, xbytes);
+        this.key = val.toByteArray();
+        val.clear();
+        Arrays.fill(xbytes, (byte) 0);
+        encode();
     }
 
     /**
@@ -221,46 +212,42 @@ final class DHPrivateKey implements PrivateKey,
      */
     private void encode() {
         if (this.encodedKey == null) {
-            try {
-                DerOutputStream tmp = new DerOutputStream();
+            DerOutputStream tmp = new DerOutputStream();
 
-                //
-                // version
-                //
-                tmp.putInteger(PKCS8_VERSION);
+            //
+            // version
+            //
+            tmp.putInteger(PKCS8_VERSION);
 
-                //
-                // privateKeyAlgorithm
-                //
-                DerOutputStream algid = new DerOutputStream();
+            //
+            // privateKeyAlgorithm
+            //
+            DerOutputStream algid = new DerOutputStream();
 
-                // store OID
-                algid.putOID(DHPublicKey.DH_OID);
-                // encode parameters
-                DerOutputStream params = new DerOutputStream();
-                params.putInteger(this.p);
-                params.putInteger(this.g);
-                if (this.l != 0) {
-                    params.putInteger(this.l);
-                }
-                // wrap parameters into SEQUENCE
-                DerValue paramSequence = new DerValue(DerValue.tag_Sequence,
-                                                      params.toByteArray());
-                // store parameter SEQUENCE in algid
-                algid.putDerValue(paramSequence);
-                // wrap algid into SEQUENCE
-                tmp.write(DerValue.tag_Sequence, algid);
-
-                // privateKey
-                tmp.putOctetString(this.key);
-
-                // make it a SEQUENCE
-                DerValue val = DerValue.wrap(DerValue.tag_Sequence, tmp);
-                this.encodedKey = val.toByteArray();
-                val.clear();
-            } catch (IOException e) {
-                throw new AssertionError(e);
+            // store OID
+            algid.putOID(DHPublicKey.DH_OID);
+            // encode parameters
+            DerOutputStream params = new DerOutputStream();
+            params.putInteger(this.p);
+            params.putInteger(this.g);
+            if (this.l != 0) {
+                params.putInteger(this.l);
             }
+            // wrap parameters into SEQUENCE
+            DerValue paramSequence = new DerValue(DerValue.tag_Sequence,
+                    params.toByteArray());
+            // store parameter SEQUENCE in algid
+            algid.putDerValue(paramSequence);
+            // wrap algid into SEQUENCE
+            tmp.write(DerValue.tag_Sequence, algid);
+
+            // privateKey
+            tmp.putOctetString(this.key);
+
+            // make it a SEQUENCE
+            DerValue val = DerValue.wrap(DerValue.tag_Sequence, tmp);
+            this.encodedKey = val.toByteArray();
+            val.clear();
         }
     }
 
@@ -300,18 +287,18 @@ final class DHPrivateKey implements PrivateKey,
      * Calculates a hash code value for the object.
      * Objects that are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return Objects.hash(x, p, g);
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
-        if (!(obj instanceof javax.crypto.interfaces.DHPrivateKey)) {
+        if (!(obj instanceof javax.crypto.interfaces.DHPrivateKey other)) {
             return false;
         }
-        javax.crypto.interfaces.DHPrivateKey other =
-                (javax.crypto.interfaces.DHPrivateKey) obj;
         DHParameterSpec otherParams = other.getParams();
         return ((this.x.compareTo(other.getX()) == 0) &&
                 (this.p.compareTo(otherParams.getP()) == 0) &&

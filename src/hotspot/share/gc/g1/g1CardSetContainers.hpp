@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,6 @@ class G1CardSetInlinePtr : public StackObj {
   }
 
   static ContainerPtr merge(ContainerPtr orig_value, uint card_in_region, uint idx, uint bits_per_card);
-
-  static uint card_at(ContainerPtr value, uint const idx, uint const bits_per_card) {
-    uint8_t card_pos = card_pos_for(idx, bits_per_card);
-    uint result = ((uintptr_t)value >> card_pos) & (((uintptr_t)1 << bits_per_card) - 1);
-    return result;
-  }
 
   uint find(uint const card_idx, uint const bits_per_card, uint start_at, uint num_cards);
 
@@ -230,7 +224,7 @@ public:
 
   uint next(uint const idx, size_t const size_in_bits) {
     BitMapView bm(_bits, size_in_bits);
-    return static_cast<uint>(bm.get_next_one_offset(idx));
+    return static_cast<uint>(bm.find_first_set_bit(idx));
   }
 
   static size_t header_size_in_bytes();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,16 +92,26 @@ public final class DefaultCompressPlugin extends AbstractPlugin implements Resou
         if (level != null) {
             switch (level) {
                 case LEVEL_0:
+                    System.err.println(getMessage("compress.warn.argumentdeprecated", LEVEL_0));
                     ss = null;
                     zip = null;
                     break;
                 case LEVEL_1:
+                    System.err.println(getMessage("compress.warn.argumentdeprecated", LEVEL_1));
                     ss = new StringSharingPlugin(resFilter);
                     break;
                 case LEVEL_2:
+                    System.err.println(getMessage("compress.warn.argumentdeprecated", LEVEL_2));
                     zip = new ZipPlugin(resFilter);
                     break;
                 default:
+                    if (level.length() == 5 && level.startsWith("zip-")) {
+                        try {
+                            int zipLevel = Integer.parseInt(level.substring(4));
+                            zip = new ZipPlugin(resFilter, zipLevel);
+                            break;
+                        } catch (NumberFormatException ignored) {}
+                    }
                     throw new IllegalArgumentException("Invalid compression level " + level);
             }
         } else {

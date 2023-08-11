@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.media.sound;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,9 +43,6 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
 
     private static final boolean[] dontResetControls = new boolean[128];
     static {
-        for (int i = 0; i < dontResetControls.length; i++)
-            dontResetControls[i] = false;
-
         dontResetControls[0] = true;   // Bank Select (MSB)
         dontResetControls[32] = true;  // Bank Select (LSB)
         dontResetControls[7] = true;   // Channel Volume (MSB)
@@ -1032,9 +1028,7 @@ public final class SoftChannel implements MidiChannel, ModelDirectedPlayer {
         }
         if (keybasedcontroller_active[noteNumber] == null) {
             keybasedcontroller_active[noteNumber] = new boolean[128];
-            Arrays.fill(keybasedcontroller_active[noteNumber], false);
             keybasedcontroller_value[noteNumber] = new double[128];
-            Arrays.fill(keybasedcontroller_value[noteNumber], 0);
         }
 
         if (value == -1) {

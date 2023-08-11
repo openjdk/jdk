@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8133632
  * @summary javax.net.ssl.SSLEngine does not properly handle received
  *      SSL fatal alerts
- * @ignore the dependent implementation details are changed
- * @run main/othervm EngineCloseOnAlert
+ * @run main EngineCloseOnAlert
  */
 
 import java.io.FileInputStream;
@@ -40,23 +39,20 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
 
 public class EngineCloseOnAlert {
 
-    private static final String pathToStores = "../etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
+    private static final String PATH_TO_STORES = "../etc";
+    private static final String KEYSTORE_FILENAME = "keystore";
+    private static final String TRUSTSTORE_FILENAME = "truststore";
     private static final String passwd = "passphrase";
-    private static final String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
+    private static final String KEYSTORE_PATH =
+            System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
+                "/" + KEYSTORE_FILENAME;
+    private static final String TRUSTSTORE_PATH =
+            System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
+                "/" + TRUSTSTORE_FILENAME;
 
     private static KeyManagerFactory KMF;
     private static TrustManagerFactory TMF;
-    private static TrustManagerFactory EMPTY_TMF;
 
-    private static final String[] TLS10ONLY = { "TLSv1" };
-    private static final String[] TLS12ONLY = { "TLSv1.2" };
     private static final String[] ONECIPHER =
             { "TLS_RSA_WITH_AES_128_CBC_SHA" };
 
@@ -91,6 +87,7 @@ public class EngineCloseOnAlert {
         }
     }
 
+    private static final String TLSv12 = "TLSv1.2";
     private static final TestCase clientReceivesAlert = new TestCase() {
         @Override
         public void runTest() throws Exception {
@@ -104,7 +101,9 @@ public class EngineCloseOnAlert {
             // match the requested ciphers offered by the client.  This
             // will generate an alert from the server to the client.
 
-            SSLContext context = SSLContext.getDefault();
+            SSLContext context = SSLContext.getInstance(TLSv12);
+            context.init(null, null, null);
+
             SSLEngine client = context.createSSLEngine();
             SSLEngine server = context.createSSLEngine();
             client.setUseClientMode(true);
@@ -136,7 +135,8 @@ public class EngineCloseOnAlert {
                 serverResult = server.wrap(plain, raw);
                 System.out.println("Server result: " + serverResult);
                 runDelegatedTasks(serverResult, server);
-            } catch (SSLException e) {
+                throw new RuntimeException("The expected SSLHandshakeException was not thrown.");
+            } catch (SSLHandshakeException e) {
                 // This is the expected code path
                 System.out.println("Server throws exception: " + e);
                 System.out.println("Server engine state: " +
@@ -147,16 +147,13 @@ public class EngineCloseOnAlert {
             }
             raw.clear();
 
-            // The above should show that isInboundDone returns true, and
-            // handshake status is NEED_WRAP. That is the correct behavior,
-            // wrap will put a fatal alert message in the buffer.
             serverResult = server.wrap(plain, raw);
             System.out.println("Server result (wrap after exception): " +
                     serverResult);
             System.out.println("Server engine closure state: isInboundDone="
                     + server.isInboundDone() + ", isOutboundDone="
                     + server.isOutboundDone());
-            checkEngineState(server, NEED_UNWRAP, true, true);
+            checkEngineState(server, NOT_HANDSHAKING, true, true);
             raw.flip();
 
             System.out.println("Server-to-Client:\n-----------------\n" +
@@ -167,7 +164,8 @@ public class EngineCloseOnAlert {
                 clientResult = client.unwrap(raw, plain);
                 System.out.println("Client result (unwrap alert): " +
                     clientResult);
-            } catch (SSLException e) {
+                throw new RuntimeException("Client did not throw the expected SSLException.");
+            } catch (SSLHandshakeException e) {
                 System.out.println("Client throws exception: " + e);
                 System.out.println("Engine closure status: isInboundDone="
                         + client.isInboundDone() + ", isOutboundDone="
@@ -188,17 +186,16 @@ public class EngineCloseOnAlert {
     private static final TestCase serverReceivesAlert = new TestCase() {
         @Override
         public void runTest() throws Exception {
-            SSLContext cliContext = SSLContext.getDefault();
-            SSLContext servContext = SSLContext.getInstance("TLS");
+            SSLContext cliContext = SSLContext.getInstance(TLSv12);
+            cliContext.init(null, null, null);
+            SSLContext servContext = SSLContext.getInstance(TLSv12);
             servContext.init(KMF.getKeyManagers(), TMF.getTrustManagers(),
                     null);
             SSLEngine client = cliContext.createSSLEngine();
             SSLEngine server = servContext.createSSLEngine();
             client.setUseClientMode(true);
-            client.setEnabledProtocols(TLS12ONLY);
             client.setEnabledCipherSuites(ONECIPHER);
             server.setUseClientMode(false);
-            server.setEnabledProtocols(TLS10ONLY);
             SSLEngineResult clientResult;
             SSLEngineResult serverResult;
             ByteBuffer raw = ByteBuffer.allocate(32768);
@@ -232,36 +229,41 @@ public class EngineCloseOnAlert {
             System.out.println("Server-to-Client:\n-----------------\n" +
                     dumpHexBytes(raw, 16, "\n", ":"));
 
-            // The client should parse this and throw an exception because
-            // It is unwiling to do TLS 1.0
+            // Change the handshake type field to client_hello which will
+            // cause the client to generate an unexpected_message alert
+            raw.put(5, (byte)0x1);
             clientResult = client.unwrap(raw, plain);
             checkEngineState(client, NEED_TASK, false, false);
             runDelegatedTasks(clientResult, client);
-            checkEngineState(client, NEED_UNWRAP, false, false);
-
-            try {
-                client.unwrap(raw, plain);
-            } catch (SSLException e) {
-                System.out.println("Client throws exception: " + e);
-                System.out.println("Engine closure status: isInboundDone="
-                        + client.isInboundDone() + ", isOutboundDone="
-                        + client.isOutboundDone() + ", handshake status="
-                        + client.getHandshakeStatus());
-                checkEngineState(client, NEED_WRAP, true, false);
-            }
+            checkEngineState(client, NEED_WRAP, true, false);
             raw.clear();
 
             // Now the client should wrap the exception
+            try {
+                client.wrap(plain, raw);
+                throw new RuntimeException("The expected exception was not "
+                    + "thrown after the client processed an unexpected message.");
+            } catch (SSLProtocolException exc) {
+                // this is the expected code path
+                System.out.println("Client throws expected exception: " + exc);
+                System.out.println("Client engine state: " +
+                        "isInboundDone = "+ client.isInboundDone() +
+                        ", isOutboundDone = " + client.isOutboundDone() +
+                        ", handshake status = " + client.getHandshakeStatus());
+                checkEngineState(client, NEED_WRAP, true, false);
+            }
+            raw.clear();
             client.wrap(plain, raw);
-            checkEngineState(client, NEED_UNWRAP, true, true);
-            raw.flip();
+            checkEngineState(client, NOT_HANDSHAKING, true, true);
             System.out.println("Client-to-Server:\n-----------------\n" +
                     dumpHexBytes(raw, 16, "\n", ":"));
+            raw.flip();
 
             try {
                 server.unwrap(raw, plain);
-                checkEngineState(server, NEED_UNWRAP, false, false);
-            } catch (SSLException e) {
+                throw new RuntimeException("The server did not throw an "
+                        + "SSLProtocolException after parsing an alert message.");
+            } catch (SSLProtocolException e) {
                 System.out.println("Server throws exception: " + e);
                 System.out.println("Engine closure status: isInboundDone="
                         + server.isInboundDone() + ", isOutboundDone="
@@ -338,15 +340,15 @@ public class EngineCloseOnAlert {
         KeyStore empty_ts = KeyStore.getInstance("PKCS12");
         char[] passphrase = passwd.toCharArray();
 
-        keystore.load(new FileInputStream(keyFilename), passphrase);
-        truststore.load(new FileInputStream(trustFilename), passphrase);
+        keystore.load(new FileInputStream(KEYSTORE_PATH), passphrase);
+        truststore.load(new FileInputStream(TRUSTSTORE_PATH), passphrase);
         empty_ts.load(null, "".toCharArray());
 
         KMF = KeyManagerFactory.getInstance("PKIX");
         KMF.init(keystore, passphrase);
         TMF = TrustManagerFactory.getInstance("PKIX");
         TMF.init(truststore);
-        EMPTY_TMF = TrustManagerFactory.getInstance("PKIX");
+        TrustManagerFactory EMPTY_TMF = TrustManagerFactory.getInstance("PKIX");
         EMPTY_TMF.init(truststore);
     }
 

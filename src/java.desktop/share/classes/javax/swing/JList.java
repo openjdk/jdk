@@ -717,7 +717,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      *
      * @param width the width to be used for all cells in the list
      * @see #setPrototypeCellValue
-     * @see #setFixedCellWidth
+     * @see #getFixedCellWidth
      * @see JComponent#addPropertyChangeListener
      */
     @BeanProperty(visualUpdate = true, description

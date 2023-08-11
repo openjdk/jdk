@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,7 +1230,7 @@ public class KeepAliveTest {
             System.out.println("ProxyHostUsingSystemProperty:" + System.getProperty("http.proxyHost"));
             System.out.println("http.keepAlive.time.server=" + System.getProperty("http.keepAlive.time.server"));
             System.out.println("http.keepAlive.time.proxy=" + System.getProperty("http.keepAlive.time.proxy"));
-            Class clientVectorClass = Class.forName("sun.net.www.http.ClientVector");
+            Class clientVectorClass = Class.forName("sun.net.www.http.KeepAliveCache$ClientVector");
             //      System.out.println("clientVectorClass=" + clientVectorClass);
             Field napField = clientVectorClass.getDeclaredField("nap");
             napField.setAccessible(true);

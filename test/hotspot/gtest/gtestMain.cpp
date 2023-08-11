@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,23 @@
  *
  */
 
+#include "jni.h"
+#include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "unittest.hpp"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __APPLE__
-#  include <dlfcn.h>
+#include <dlfcn.h>
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
 #endif
-
-#include "jni.h"
-#include "unittest.hpp"
-
-#include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.
@@ -94,6 +92,7 @@ static int init_jvm(int argc, char **argv, bool disable_error_handling, JavaVM**
   JNIEnv* env;
 
   int ret = JNI_CreateJavaVM(jvm_ptr, (void**)&env, &args);
+  delete[] options;
   if (ret == JNI_OK) {
     // CreateJavaVM leaves WXExec context, while gtests
     // calls internal functions assuming running in WXWwrite.
@@ -232,7 +231,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   bool is_vmassert_test = false;
   bool is_othervm_test = false;
   // death tests facility is used for both regular death tests, other vm and vmassert tests
-  if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
+  if (::testing::GTEST_FLAG(internal_run_death_test).length() > 0) {
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
     const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
@@ -246,7 +245,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
-    fprintf(stderr, "ERROR: You must specify a JDK to use for running the unit tests.\n");
+    fprintf(stderr, "ERROR: You must specify a JDK (-jdk <image>, --jdk=<image> or -jdk:<image>) to use for running the unit tests.\n");
     os::exit(1);
   }
 #ifndef _WIN32

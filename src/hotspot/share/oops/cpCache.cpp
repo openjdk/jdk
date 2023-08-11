@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -59,16 +61,16 @@
 void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(0 < index && index < 0x10000, "sanity check");
   _indices = index;
-  _f1 = NULL;
+  _f1 = nullptr;
   _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
 }
 
-int ConstantPoolCacheEntry::make_flags(TosState state,
+intx ConstantPoolCacheEntry::make_flags(TosState state,
                                        int option_bits,
                                        int field_index_or_method_params) {
   assert(state < number_of_states, "Invalid state in make_flags");
-  int f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
+  intx f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
   // Preserve existing flag bit values
   // The low bits are a field offset, or else the method parameter size.
 #ifdef ASSERT
@@ -101,7 +103,7 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
 
 // Sets f1, ordering with previous writes.
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
-  assert(f1 != NULL, "");
+  assert(f1 != nullptr, "");
   Atomic::release_store(&_f1, f1);
 }
 
@@ -158,12 +160,12 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
                                                        int vtable_index,
                                                        bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
-  assert(method->interpreter_entry() != NULL, "should have been set at this point");
+  assert(method->interpreter_entry() != nullptr, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
 
   int byte_no = -1;
   bool change_to_virtual = false;
-  InstanceKlass* holder = NULL;  // have to declare this outside the switch
+  InstanceKlass* holder = nullptr;  // have to declare this outside the switch
   switch (invoke_code) {
     case Bytecodes::_invokeinterface:
       holder = method->method_holder();
@@ -251,7 +253,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_init_thread(Thread::current()),
+             method->method_holder()->is_init_thread(JavaThread::current()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -343,10 +345,6 @@ void ConstantPoolCacheEntry::set_method_handle(const constantPoolHandle& cpool, 
   set_method_handle_common(cpool, Bytecodes::_invokehandle, call_info);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(const constantPoolHandle& cpool, const CallInfo &call_info) {
-  set_method_handle_common(cpool, Bytecodes::_invokedynamic, call_info);
-}
-
 void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& cpool,
                                                       Bytecodes::Code invoke_code,
                                                       const CallInfo &call_info) {
@@ -396,7 +394,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    (                   1      << is_final_shift            ),
                    adapter->size_of_parameters());
 
-  LogStream* log_stream = NULL;
+  LogStream* log_stream = nullptr;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
   if (lsh_indy.is_enabled()) {
     ResourceMark rm;
@@ -432,10 +430,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
-    objArrayOop resolved_references = cpool->resolved_references();
-    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
-    resolved_references->obj_at_put(appendix_index, appendix());
+    oop old_oop = cpool->set_resolved_reference_at(appendix_index, appendix());
+    assert(old_oop == nullptr, "init just once");
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -445,7 +441,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
 
-  if (log_stream != NULL) {
+  if (log_stream != nullptr) {
     this->print(log_stream, 0, cpool->cache());
   }
 
@@ -453,39 +449,12 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   assert(this->has_local_signature(), "proper storage of signature flag");
 }
 
-bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
-  const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
-
-  assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
-  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
-         "No LinkageError exception");
-
-  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
-
-  // if f1 is not null or the indy_resolution_failed flag is set then another
-  // thread either succeeded in resolving the method or got a LinkageError
-  // exception, before this thread was able to record its failure.  So, clear
-  // this thread's exception and return false so caller can use the earlier
-  // thread's result.
-  if (!is_f1_null() || indy_resolution_failed()) {
-    CLEAR_PENDING_EXCEPTION;
-    return false;
-  }
-
-  Symbol* error = PENDING_EXCEPTION->klass()->name();
-  Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
-
-  SystemDictionary::add_resolution_error(cpool, index, error, message);
-  set_indy_resolution_failed();
-  return true;
-}
-
 Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) const {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
     Metadata* f1 = f1_ord();
-    if (f1 != NULL) {
+    if (f1 != nullptr) {
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:
         assert(f1->is_klass(), "");
@@ -494,9 +463,10 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       case Bytecodes::_invokespecial:
         assert(!has_appendix(), "");
       case Bytecodes::_invokehandle:
-      case Bytecodes::_invokedynamic:
         assert(f1->is_method(), "");
         return (Method*)f1;
+      case Bytecodes::_invokedynamic:
+        ShouldNotReachHere();
       default:
         break;
       }
@@ -523,16 +493,15 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       break;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) const {
   if (!has_appendix())
-    return NULL;
+    return nullptr;
   const int ref_index = f2_as_index();
-  objArrayOop resolved_references = cpool->resolved_references();
-  return resolved_references->obj_at(ref_index);
+  return cpool->resolved_reference_at(ref_index);
 }
 
 
@@ -566,7 +535,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
     return;
   }
 
-  assert (_f1 != NULL, "should not call with uninteresting entry");
+  assert (_f1 != nullptr, "should not call with uninteresting entry");
 
   if (!(_f1->is_method())) {
     // _f1 is a Klass* for an interface, _f2 is the method
@@ -584,7 +553,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
   Method* m = get_interesting_method_entry();
   // return false if m refers to a non-deleted old or obsolete method
-  if (m != NULL) {
+  if (m != nullptr) {
     assert(m->is_valid() && m->is_method(), "m is a valid method");
     return !m->is_old() && !m->is_obsolete(); // old is always set for old and obsolete
   } else {
@@ -595,15 +564,15 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
 Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
   if (!is_method_entry()) {
     // not a method entry so not interesting by default
-    return NULL;
+    return nullptr;
   }
-  Method* m = NULL;
+  Method* m = nullptr;
   if (is_vfinal()) {
     // virtual and final so _f2 contains method ptr instead of vtable index
     m = f2_as_vfinal_method();
   } else if (is_f1_null()) {
-    // NULL _f1 means this is a virtual entry so also not interesting
-    return NULL;
+    // null _f1 means this is a virtual entry so also not interesting
+    return nullptr;
   } else {
     if (!(_f1->is_method())) {
       // _f1 is a Klass* for an interface
@@ -612,9 +581,9 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
       m = f1_as_method();
     }
   }
-  assert(m != NULL && m->is_method(), "sanity check");
-  if (m == NULL || !m->is_method()) {
-    return NULL;
+  assert(m != nullptr && m->is_method(), "sanity check");
+  if (m == nullptr || !m->is_method()) {
+    return nullptr;
   }
   return m;
 }
@@ -647,8 +616,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                  type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
                  is_forced_virtual(), is_final(), is_vfinal(),
                  indy_resolution_failed(), parameter_size());
-    if (bytecode_1() == Bytecodes::_invokehandle ||
-        bytecode_1() == Bytecodes::_invokedynamic) {
+    if ((bytecode_1() == Bytecodes::_invokehandle)) {
       oop appendix = appendix_if_resolved(cph);
       if (appendix != nullptr) {
         st->print("  appendix: ");
@@ -673,36 +641,44 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 
 // Implementation of ConstantPoolCache
 
+template <class T>
+static Array<T>* initialize_resolved_entries_array(ClassLoaderData* loader_data, GrowableArray<T> entries, TRAPS) {
+  Array<T>* resolved_entries;
+  if (entries.length() != 0) {
+    resolved_entries = MetadataFactory::new_array<T>(loader_data, entries.length(), CHECK_NULL);
+    for (int i = 0; i < entries.length(); i++) {
+      resolved_entries->at_put(i, entries.at(i));
+    }
+    return resolved_entries;
+  }
+  return nullptr;
+}
+
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
-                                     const intStack& invokedynamic_index_map,
-                                     const intStack& invokedynamic_map, TRAPS) {
+                                     const intStack& invokedynamic_map,
+                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
+                                     const GrowableArray<ResolvedFieldEntry> field_entries,
+                                     TRAPS) {
 
-  const int length = index_map.length() + invokedynamic_index_map.length();
+  const int length = index_map.length();
   int size = ConstantPoolCache::size(length);
 
+  // Initialize resolved entry arrays with available data
+  Array<ResolvedFieldEntry>* resolved_field_entries = initialize_resolved_entries_array(loader_data, field_entries, CHECK_NULL);
+  Array<ResolvedIndyEntry>* resolved_indy_entries = initialize_resolved_entries_array(loader_data, indy_entries, CHECK_NULL);
+
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-    ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map);
+              ConstantPoolCache(length, index_map, invokedynamic_map, resolved_indy_entries, resolved_field_entries);
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
-                                   const intArray& invokedynamic_inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
   for (int i = 0; i < inverse_index_map.length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);
     int original_index = inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
-  }
-
-  // Append invokedynamic entries at the end
-  int invokedynamic_offset = inverse_index_map.length();
-  for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
-    int offset = i + invokedynamic_offset;
-    ConstantPoolCacheEntry* e = entry_at(offset);
-    int original_index = invokedynamic_inverse_index_map.at(i);
-    e->initialize_entry(original_index);
-    assert(entry_at(offset) == e, "sanity");
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
@@ -732,14 +708,25 @@ void ConstantPoolCache::remove_unshareable_info() {
   // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
   // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
   // still pointing to the array allocated inside save_for_archive().
-  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(_initial_entries != nullptr, "archived cpcache must have been initialized");
   assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
     *entry_at(i) = _initial_entries->at(i);
   }
-  _initial_entries = NULL;
+  _initial_entries = nullptr;
+
+  if (_resolved_indy_entries != nullptr) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      resolved_indy_entry_at(i)->remove_unshareable_info();
+    }
+  }
+  if (_resolved_field_entries != nullptr) {
+    for (int i = 0; i < _resolved_field_entries->length(); i++) {
+      resolved_field_entry_at(i)->remove_unshareable_info();
+    }
+  }
 }
 #endif // INCLUDE_CDS
 
@@ -748,12 +735,20 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   data->remove_handle(_resolved_references);
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
-  set_reference_map(NULL);
+  set_reference_map(nullptr);
 #if INCLUDE_CDS
-  if (_initial_entries != NULL) {
+  if (_initial_entries != nullptr) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    _initial_entries = NULL;
+    if (_resolved_indy_entries) {
+      MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
+      _resolved_indy_entries = nullptr;
+    }
+    if (_resolved_field_entries) {
+      MetadataFactory::free_array<ResolvedFieldEntry>(data, _resolved_field_entries);
+      _resolved_field_entries = nullptr;
+    }
+    _initial_entries = nullptr;
   }
 #endif
 }
@@ -761,7 +756,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
-    return NULL;
+    return nullptr;
   }
   return HeapShared::get_root(_archived_references_index);
 }
@@ -773,9 +768,9 @@ void ConstantPoolCache::clear_archived_references() {
   }
 }
 
-void ConstantPoolCache::set_archived_references(oop o) {
+void ConstantPoolCache::set_archived_references(int root_index) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references_index = HeapShared::append_root(o);
+  _archived_references_index = root_index;
 }
 #endif
 
@@ -784,10 +779,21 @@ void ConstantPoolCache::set_archived_references(oop o) {
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
+  if (_resolved_indy_entries != nullptr) {
+    for (int j = 0; j < _resolved_indy_entries->length(); j++) {
+      Method* old_method = resolved_indy_entry_at(j)->method();
+      if (old_method == nullptr || !old_method->is_old()) {
+        continue;
+      }
+      Method* new_method = old_method->get_new_method();
+      resolved_indy_entry_at(j)->adjust_method_entry(new_method);
+      log_adjust("indy", old_method, new_method, trace_name_printed);
+    }
+  }
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
     Method* old_method = entry->get_interesting_method_entry();
-    if (old_method == NULL || !old_method->is_old()) {
+    if (old_method == nullptr || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
     if (old_method->is_deleted()) {
@@ -803,9 +809,21 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
+  if (_resolved_indy_entries) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      Method* m = resolved_indy_entry_at(i)->method();
+      if (m != nullptr && !resolved_indy_entry_at(i)->check_no_old_or_obsolete_entry()) {
+        log_trace(redefine, class, update, constantpool)
+          ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
+           constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
+        return false;
+      }
+    }
+  }
+
   for (int i = 1; i < length(); i++) {
     Method* m = entry_at(i)->get_interesting_method_entry();
-    if (m != NULL && !entry_at(i)->check_no_old_or_obsolete_entries()) {
+    if (m != nullptr && !entry_at(i)->check_no_old_or_obsolete_entries()) {
       log_trace(redefine, class, update, constantpool)
         ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
          constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
@@ -817,7 +835,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry() != NULL) {
+    if (entry_at(i)->get_interesting_method_entry() != nullptr) {
       entry_at(i)->print(tty, i, this);
     }
   }
@@ -828,6 +846,98 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
+  if (_resolved_indy_entries != nullptr) {
+    it->push(&_resolved_indy_entries, MetaspaceClosure::_writable);
+  }
+  if (_resolved_field_entries != nullptr) {
+    it->push(&_resolved_field_entries, MetaspaceClosure::_writable);
+  }
+}
+
+bool ConstantPoolCache::save_and_throw_indy_exc(
+  const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
+
+  assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
+  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
+         "No LinkageError exception");
+
+  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
+
+  // if the indy_info is resolved or the indy_resolution_failed flag is set then another
+  // thread either succeeded in resolving the method or got a LinkageError
+  // exception, before this thread was able to record its failure.  So, clear
+  // this thread's exception and return false so caller can use the earlier
+  // thread's result.
+  if (resolved_indy_entry_at(index)->is_resolved() || resolved_indy_entry_at(index)->resolution_failed()) {
+    CLEAR_PENDING_EXCEPTION;
+    return false;
+  }
+
+  Symbol* error = PENDING_EXCEPTION->klass()->name();
+  Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
+
+  int encoded_index = ResolutionErrorTable::encode_cpcache_index(
+                          ConstantPool::encode_invokedynamic_index(index));
+  SystemDictionary::add_resolution_error(cpool, encoded_index, error, message);
+  resolved_indy_entry_at(index)->set_resolution_failed();
+  return true;
+}
+
+oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
+  ResourceMark rm;
+  MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
+  assert(index >= 0, "Indy index must be positive at this point");
+
+  if (resolved_indy_entry_at(index)->method() != nullptr) {
+    return constant_pool()->resolved_reference_from_indy(index);
+  }
+
+  if (resolved_indy_entry_at(index)->resolution_failed()) {
+    // Before we got here, another thread got a LinkageError exception during
+    // resolution.  Ignore our success and throw their exception.
+    guarantee(index >= 0, "Invalid indy index");
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(
+                          ConstantPool::encode_invokedynamic_index(index));
+    JavaThread* THREAD = JavaThread::current(); // For exception macros.
+    constantPoolHandle cp(THREAD, constant_pool());
+    ConstantPool::throw_resolution_error(cp, encoded_index, THREAD);
+    return nullptr;
+  }
+
+  Method* adapter            = call_info.resolved_method();
+  const Handle appendix      = call_info.resolved_appendix();
+  const bool has_appendix    = appendix.not_null();
+
+  LogStream* log_stream = nullptr;
+  LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
+  if (lsh_indy.is_enabled()) {
+    ResourceMark rm;
+    log_stream = &lsh_indy;
+    log_stream->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method=" PTR_FORMAT " (local signature) ",
+                         0xba,
+                         p2i(appendix()),
+                         (has_appendix ? "" : " (unused)"),
+                         p2i(adapter));
+    adapter->print_on(log_stream);
+    if (has_appendix)  appendix()->print_on(log_stream);
+  }
+
+  if (has_appendix) {
+    const int appendix_index = resolved_indy_entry_at(index)->resolved_references_index();
+    objArrayOop resolved_references = constant_pool()->resolved_references();
+    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
+    assert(resolved_references->obj_at(appendix_index) == nullptr, "init just once");
+    resolved_references->obj_at_put(appendix_index, appendix());
+  }
+
+  // Populate entry with resolved information
+  assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
+  resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+
+  if (log_stream != nullptr) {
+    resolved_indy_entry_at(index)->print_on(log_stream);
+  }
+  return appendix();
 }
 
 // Printing
@@ -836,6 +946,8 @@ void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
+  print_resolved_field_entries(st);
+  print_resolved_indy_entries(st);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {
@@ -845,6 +957,23 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
   constant_pool()->print_value_on(st);
 }
 
+
+void ConstantPoolCache::print_resolved_field_entries(outputStream* st) const {
+  for (int field_index = 0; field_index < resolved_field_entries_length(); field_index++) {
+    resolved_field_entry_at(field_index)->print_on(st);
+  }
+}
+
+void ConstantPoolCache::print_resolved_indy_entries(outputStream* st) const {
+  for (int indy_index = 0; indy_index < resolved_indy_entries_length(); indy_index++) {
+    ResolvedIndyEntry* indy_entry = resolved_indy_entry_at(indy_index);
+    indy_entry->print_on(st);
+    if (indy_entry->has_appendix()) {
+      st->print("  appendix: ");
+      constant_pool()->resolved_reference_from_indy(indy_index)->print_on(st);
+    }
+  }
+}
 
 // Verification
 

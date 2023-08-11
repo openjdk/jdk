@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,11 +220,7 @@ handshake(int fd, jlong timeout) {
     if (strncmp(b, hello, received) != 0) {
         char msg[80+2*16];
         b[received] = '\0';
-        /*
-         * We should really use snprintf here but it's not available on Windows.
-         * We can't use jio_snprintf without linking the transport against the VM.
-         */
-        sprintf(msg, "handshake failed - received >%s< - expected >%s<", b, hello);
+        snprintf(msg, sizeof(msg), "handshake failed - received >%s< - expected >%s<", b, hello);
         setLastError(0, msg);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
@@ -690,7 +686,7 @@ static jdwpTransportError startListening(struct addrinfo *ai, int *socket, char*
         }
 
         portNum = getPort((struct sockaddr *)&addr);
-        sprintf(buf, "%d", portNum);
+        snprintf(buf, sizeof(buf), "%d", portNum);
         *actualAddress = (*callback->alloc)((int)strlen(buf) + 1);
         if (*actualAddress == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
@@ -858,7 +854,7 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
                 int err2 = getnameinfo((struct sockaddr *)&clientAddr, clientAddrLen,
                                        addrStr, sizeof(addrStr), NULL, 0,
                                        NI_NUMERICHOST);
-                sprintf(ebuf, "ERROR: Peer not allowed to connect: %s\n",
+                snprintf(ebuf, sizeof(ebuf), "ERROR: Peer not allowed to connect: %s\n",
                         (err2 != 0) ? "<bad address>" : addrStr);
                 dbgsysSocketClose(socketFD);
                 socketFD = -1;

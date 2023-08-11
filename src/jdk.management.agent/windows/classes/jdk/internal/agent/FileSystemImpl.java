@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,18 @@ import java.io.IOException;
 public class FileSystemImpl extends FileSystem {
 
     public boolean supportsFileSecurity(File f) throws IOException {
+        String path = f.getAbsolutePath();
+        if (path.indexOf(0) >= 0) {
+            throw new IOException("illegal filename");
+        }
         return isSecuritySupported0(f.getAbsolutePath());
     }
 
     public boolean isAccessUserOnly(File f) throws IOException {
         String path = f.getAbsolutePath();
+        if (path.indexOf(0) >= 0) {
+            throw new IOException("illegal filename");
+        }
         if (!isSecuritySupported0(path)) {
             throw new UnsupportedOperationException("File system does not support file security");
         }
