@@ -53,20 +53,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import static jdk.internal.module.ClassFileConstants.DO_NOT_RESOLVE_BY_DEFAULT;
-import static jdk.internal.module.ClassFileConstants.WARN_INCUBATING;
-
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import jdk.internal.classfile.constantpool.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
+import static jdk.internal.module.ClassFileConstants.DO_NOT_RESOLVE_BY_DEFAULT;
+import static jdk.internal.module.ClassFileConstants.WARN_INCUBATING;
 
 public class IncubatingTest extends ModuleTestBase {
 
@@ -265,14 +259,11 @@ public class IncubatingTest extends ModuleTestBase {
 
     private void addModuleResolutionAttribute(Path classfile, int resolution_flags) throws Exception {
         ClassModel cm = Classfile.of().parse(classfile);
-        ModuleResolutionAttribute res = ModuleResolutionAttribute.of(resolution_flags);
-
-        Classfile.of().buildTo(classfile, cm.thisClass().asSymbol(), cb -> {
-            for (ClassElement ce : cm.elementList()) {
-                if (!(ce instanceof ModuleResolutionAttribute))
-                    cb.with(ce);
-            }
-            cb.with(res);
-        });
+        ModuleResolutionAttribute modRAttr = ModuleResolutionAttribute.of(resolution_flags);
+        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
+                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
+        try (OutputStream out = Files.newOutputStream(classfile)) {
+            out.write(newBytes);
+        }
     }
 }
