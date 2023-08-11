@@ -71,7 +71,7 @@ public class THPsInThreadStackPreventionTest {
     //
     // We then observe RSS of that program. We expect it to stay below a reasonable maximum. The unpatched
     // version should show an RSS of ~2 GB (paying for the fully paged in thread stacks). The fixed variant should
-    // cost only ~200-400 MB. The RSS varies depending on the number of available cores.
+    // cost only ~200-400 MB.
 
     static final int numThreads = 1000;
     static final long threadStackSizeMB = 2; // must be 2M
@@ -165,17 +165,14 @@ public class THPsInThreadStackPreventionTest {
             "-Xmx" + heapSizeMB + "m", "-Xms" + heapSizeMB + "m", "-XX:+AlwaysPreTouch", // stabilize RSS
             "-Xss" + threadStackSizeMB + "m",
             "-XX:-CreateCoredumpOnCrash",
+            // Limits the number of JVM-internal threads, which depends on the available cores of the
+            // machine. RSS+Swap could exceed acceptableRSSLimitMB when JVM creates many internal threads.
+            "-XX:ActiveProcessorCount=2",
             // This will delay the child threads before they create guard pages, thereby greatly increasing the
             // chance of large VMA formation + hugepage coalescation; see JDK-8312182
             "-XX:+DelayThreadStartALot"
         };
         ArrayList<String> finalargs = new ArrayList<>(Arrays.asList(defaultArgs));
-
-        // The RSS could exceed acceptableRSSLimitMB on machines with a large number of cores (e.g.
-        // 128 or more cores). Thus we cap ActiveProcessorCount to 64.
-        if (Runtime.getRuntime().availableProcessors() > 64) {
-          finalargs.add("-XX:ActiveProcessorCount=64");
-        }
 
         switch (args[0]) {
             case "PATCH-ENABLED": {
