@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ClassPrinterTest {
 
     ClassModel getClassModel() {
-        return Classfile.parse(Classfile.build(ClassDesc.of("Foo"), clb ->
+        var cc = Classfile.of();
+        return cc.parse(cc.build(ClassDesc.of("Foo"), clb ->
             clb.withVersion(61, 0)
                 .withFlags(Classfile.ACC_PUBLIC)
                 .with(SourceFileAttribute.of("Foo.java"))
@@ -226,12 +227,12 @@ class ClassPrinterTest {
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
                         attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
-                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: 99}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, contant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
+                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: 99}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, constant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
                         visible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: 22.0}}, {name: frfl, value: {float: 11.0}}]}]
                         invisible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: '-22.0'}}, {name: frfl, value: {float: '-11.0'}}]}]
-                        excceptions: [Phoo, Boo, Bee]
+                        exceptions: [Phoo, Boo, Bee]
                         code:
                             max stack: 1
                             max locals: 3
@@ -458,12 +459,12 @@ class ClassPrinterTest {
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
                             "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
-                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "99"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "contant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
+                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "99"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "constant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
                             "visible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "22.0"}}, {"name": "frfl", "value": {"float": "11.0"}}]}]},
                             "invisible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "-22.0"}}, {"name": "frfl", "value": {"float": "-11.0"}}]}]},
-                            "excceptions": ["Phoo", "Boo", "Bee"],
+                            "exceptions": ["Phoo", "Boo", "Bee"],
                             "code": {
                                 "max stack": 1,
                                 "max locals": 3,
@@ -695,12 +696,12 @@ class ClassPrinterTest {
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
                             <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
-                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>99</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><contant_name>BOO</contant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
+                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>99</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><constant_name>BOO</constant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
                             <visible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>22.0</float></value></pair><pair><name>frfl</name><value><float>11.0</float></value></pair></values></anno></parameter_1></visible_parameter_annotations>
                             <invisible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>-22.0</float></value></pair><pair><name>frfl</name><value><float>-11.0</float></value></pair></values></anno></parameter_1></invisible_parameter_annotations>
-                            <excceptions><exc>Phoo</exc><exc>Boo</exc><exc>Bee</exc></excceptions>
+                            <exceptions><exc>Phoo</exc><exc>Boo</exc><exc>Bee</exc></exceptions>
                             <code>
                                 <max_stack>1</max_stack>
                                 <max_locals>3</max_locals>

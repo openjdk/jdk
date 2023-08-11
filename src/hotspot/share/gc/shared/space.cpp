@@ -245,7 +245,7 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 HeapWord* ContiguousSpace::forward(oop q, size_t size,
                                     CompactPoint* cp, HeapWord* compact_top) {
   // q is alive
@@ -290,7 +290,7 @@ HeapWord* ContiguousSpace::forward(oop q, size_t size,
 
 #if INCLUDE_SERIALGC
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void ContiguousSpace::prepare_for_compaction_impl(CompactPoint* cp) {
   // Compute the new addresses for the live objects and store it in the mark
   // Used by universe::mark_sweep_phase2()
@@ -379,7 +379,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void ContiguousSpace::adjust_pointers_impl() {
   // Check first is there is any work to do.
   if (used() == 0) {
@@ -425,7 +425,7 @@ void ContiguousSpace::adjust_pointers() {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void ContiguousSpace::compact_impl() {
   // Copy all live objects to their new location
   // Used by MarkSweep::mark_sweep_phase4()

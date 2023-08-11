@@ -21,17 +21,34 @@
  * questions.
  */
 
-/**
- * @test
- * @summary StressStackOverflow the recovery path for ScopedValue
+/*
+ * @test id=default
+ * @summary Stress ScopedValue stack overflow recovery path
  * @enablePreview
- * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
- * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
  * @run main/othervm/timeout=300 StressStackOverflow
  */
 
+/*
+ * @test id=no-TieredCompilation
+ * @enablePreview
+ * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
+ */
+
+/*
+ * @test id=TieredStopAtLevel1
+ * @enablePreview
+ * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
+ */
+
+/*
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @enablePreview
+ * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
+ */
+
+import java.time.Duration;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.StructuredTaskScope;
@@ -42,7 +59,6 @@ public class StressStackOverflow {
 
     public static final ScopedValue<Integer> inheritedValue = ScopedValue.newInstance();
 
-    final ThreadLocalRandom tlr = ThreadLocalRandom.current();
     static final TestFailureException testFailureException = new TestFailureException("Unexpected value for ScopedValue");
     int ITERS = 1_000_000;
 
@@ -50,13 +66,15 @@ public class StressStackOverflow {
         TestFailureException(String s) { super(s); }
     }
 
+    static final long DURATION_IN_NANOS = Duration.ofMinutes(2).toNanos();
+
     // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.
-    class DeepRecursion implements Callable, Supplier, Runnable {
+    class DeepRecursion implements Callable<Object>, Supplier<Object>, Runnable {
 
-        static enum Behaviour {
+        enum Behaviour {
             CALL, GET, RUN;
-            private static Behaviour[] values = values();
+            private static final Behaviour[] values = values();
             public static Behaviour choose(ThreadLocalRandom tlr) {
                 return values[tlr.nextInt(3)];
             }
@@ -70,38 +88,40 @@ public class StressStackOverflow {
 
         public void run() {
             final var last = el.get();
-            ITERS--;
-            var nextRandomFloat = tlr.nextFloat();
-            try {
-                switch (behaviour) {
-                    case CALL ->
-                        ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
-                    case GET ->
-                        ScopedValue.where(el, el.get() + 1).get(() -> fibonacci_pad(20, this));
-                    case RUN ->
-                        ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+            while (ITERS-- > 0) {
+                if (System.nanoTime() - startTime > DURATION_IN_NANOS) {
+                    return;
                 }
-                if (!last.equals(el.get())) {
-                    throw testFailureException;
-                }
-            } catch (StackOverflowError e) {
-                if (nextRandomFloat <= 0.1) {
-                    ScopedValue.where(el, el.get() + 1).run(this);
-                }
-            } catch (TestFailureException e) {
-                throw e;
-            } catch (Throwable throwable) {
-                // StackOverflowErrors cause many different failures. These include
-                // StructureViolationExceptions and InvocationTargetExceptions. This test
-                // checks that, no matter what the failure mode, scoped values are handled
-                // correctly.
-            } finally {
-                if (!last.equals(el.get())) {
-                    throw testFailureException;
-                }
-            }
 
-            Thread.yield();
+                var nextRandomFloat = ThreadLocalRandom.current().nextFloat();
+                try {
+                    switch (behaviour) {
+                        case CALL -> ScopedValue.where(el, el.get() + 1).call(() -> fibonacci_pad(20, this));
+                        case GET -> ScopedValue.where(el, el.get() + 1).get(() -> fibonacci_pad(20, this));
+                        case RUN -> ScopedValue.where(el, el.get() + 1).run(() -> fibonacci_pad(20, this));
+                    }
+                    if (!last.equals(el.get())) {
+                        throw testFailureException;
+                    }
+                } catch (StackOverflowError e) {
+                    if (nextRandomFloat <= 0.1) {
+                        ScopedValue.where(el, el.get() + 1).run(this);
+                    }
+                } catch (TestFailureException e) {
+                    throw e;
+                } catch (Throwable throwable) {
+                    // StackOverflowErrors cause many different failures. These include
+                    // StructureViolationExceptions and InvocationTargetExceptions. This test
+                    // checks that, no matter what the failure mode, scoped values are handled
+                    // correctly.
+                } finally {
+                    if (!last.equals(el.get())) {
+                        throw testFailureException;
+                    }
+                }
+
+                Thread.yield();
+            }
         }
 
         public Object get() {
@@ -114,13 +134,10 @@ public class StressStackOverflow {
         }
     }
 
-    static final Runnable nop = new Runnable() {
-        public void run() { }
-    };
+    static final Runnable nop = () -> {};
 
     // Consume some stack.
     //
-
     // The double recursion used here prevents an optimizing JIT from
     // inlining all the recursive calls, which would make it
     // ineffective.
@@ -137,7 +154,7 @@ public class StressStackOverflow {
     long fibonacci_pad(int n, Runnable op) {
         final var last = el.get();
         try {
-            return fibonacci_pad1(tlr.nextInt(n), op);
+            return fibonacci_pad1(ThreadLocalRandom.current().nextInt(n), op);
         } catch (StackOverflowError err) {
             if (!inheritedValue.get().equals(I_42)) {
                 throw testFailureException;
@@ -152,14 +169,16 @@ public class StressStackOverflow {
     // Run op in a new thread. Platform or virtual threads are chosen at random.
     void runInNewThread(Runnable op) {
         var threadFactory
-                = (tlr.nextBoolean() ? Thread.ofPlatform() : Thread.ofVirtual()).factory();
-        try (var scope = new StructuredTaskScope<Object>("", threadFactory)) {
+                = (ThreadLocalRandom.current().nextBoolean() ? Thread.ofPlatform() : Thread.ofVirtual()).factory();
+        try (var scope = new StructuredTaskScope<>("", threadFactory)) {
             var handle = scope.fork(() -> {
                 op.run();
                 return null;
             });
             scope.join();
             handle.get();
+        } catch (TestFailureException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -168,12 +187,12 @@ public class StressStackOverflow {
     public void run() {
         try {
             ScopedValue.where(inheritedValue, 42).where(el, 0).run(() -> {
-                try (var scope = new StructuredTaskScope<Object>()) {
+                try (var scope = new StructuredTaskScope<>()) {
                     try {
-                        if (tlr.nextBoolean()) {
+                        if (ThreadLocalRandom.current().nextBoolean()) {
                             // Repeatedly test Scoped Values set by ScopedValue::call(), get(), and run()
                             final var deepRecursion
-                                = new DeepRecursion(DeepRecursion.Behaviour.choose(tlr));
+                                = new DeepRecursion(DeepRecursion.Behaviour.choose(ThreadLocalRandom.current()));
                             deepRecursion.run();
                         } else {
                             // Recursively run ourself until we get a stack overflow
@@ -204,21 +223,39 @@ public class StressStackOverflow {
                     } catch (StructureViolationException structureViolationException) {
                         // Can happen if a stack overflow prevented a StackableScope from
                         // being removed. We can continue.
+                    } catch (TestFailureException e) {
+                        throw e;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
             });
-        } catch (StructureViolationException structureViolationException) {
+        } catch (TestFailureException e) {
+            throw e;
+        } catch (Exception e) {
             // Can happen if a stack overflow prevented a StackableScope from
             // being removed. We can continue.
         }
     }
 
+    static long startTime = System.nanoTime();
+
     public static void main(String[] args) {
         var torture = new StressStackOverflow();
-        while (torture.ITERS > 0) {
-            torture.run();
+        while (torture.ITERS > 0
+                && System.nanoTime() - startTime <= DURATION_IN_NANOS) {
+            try {
+                torture.run();
+                if (inheritedValue.isBound()) {
+                    throw new TestFailureException("Should not be bound here");
+                }
+            } catch (TestFailureException e) {
+                throw e;
+            } catch (Exception e) {
+                // ScopedValueContainer and StructuredTaskScope can
+                // throw many exceptions on stack overflow. Ignore
+                // them all.
+            }
         }
         System.out.println("OK");
     }

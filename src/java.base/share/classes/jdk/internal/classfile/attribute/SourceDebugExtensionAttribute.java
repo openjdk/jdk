@@ -31,7 +31,9 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * SourceDebugExtensionAttribute.
+ * Models the {@code SourceDebugExtension} attribute (@@@ need reference).
+ * Delivered as a {@link jdk.internal.classfile.ClassElement} when traversing the elements of
+ * a {@link jdk.internal.classfile.ClassModel}.
  */
 public sealed interface SourceDebugExtensionAttribute
         extends Attribute<SourceDebugExtensionAttribute>, ClassElement

@@ -36,6 +36,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -692,6 +693,12 @@ void InterpreterMacroAssembler::remove_activation(
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    ldrw(rscratch1, Address(rthread, JavaThread::stack_guard_state_offset()));
+    cmpw(rscratch1, (u1)StackOverflow::stack_guard_enabled);
+    br(Assembler::EQ, no_reserved_zone_enabling);
 
     // look for an overflow into the stack reserved zone, i.e.
     // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
@@ -1875,8 +1882,24 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
   ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  lea(cache, Address(cache, index));
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  // Take shortcut if the size is a power of 2
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    lsl(index, index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
+  } else {
+    mov(cache, sizeof(ResolvedFieldEntry));
+    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+  }
+  // Get address of field entries array
+  ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
+  add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }

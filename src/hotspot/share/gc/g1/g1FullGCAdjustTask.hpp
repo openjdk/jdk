@@ -39,7 +39,7 @@ class G1FullGCAdjustTask : public G1FullGCTask {
   WeakProcessor::Task      _weak_proc_task;
   HeapRegionClaimer        _hrclaimer;
 
-  template<bool ALT_FWD>
+  template <bool ALT_FWD>
   void work_impl(uint worker_id);
 public:
   G1FullGCAdjustTask(G1FullCollector* collector);

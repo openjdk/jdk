@@ -52,7 +52,7 @@ inline void G1MarkAndPushClosure::do_oop(narrowOop* p) {
   do_oop_work(p);
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 template <class T> inline void G1AdjustClosure<ALT_FWD>::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
@@ -76,9 +76,9 @@ template <class T> inline void G1AdjustClosure<ALT_FWD>::adjust_pointer(T* p) {
 
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline void G1AdjustClosure<ALT_FWD>::do_oop(oop* p)       { do_oop_work(p); }
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline void G1AdjustClosure<ALT_FWD>::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {

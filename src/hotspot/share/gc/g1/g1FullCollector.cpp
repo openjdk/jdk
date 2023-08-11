@@ -30,7 +30,6 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
-#include "gc/g1/g1FullGCCompactionPoint.inline.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/g1/g1FullGCMarkTask.hpp"
@@ -400,7 +399,7 @@ uint G1FullCollector::truncate_parallel_cps() {
   return lowest_current;
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullCollector::phase2c_prepare_serial_compaction_impl() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
   // At this point, we know that after parallel compaction there will be regions that
@@ -447,7 +446,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullCollector::phase2d_prepare_humongous_compaction_impl() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare humongous compaction", scope()->timer());
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();

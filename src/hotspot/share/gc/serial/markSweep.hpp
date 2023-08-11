@@ -128,7 +128,7 @@ class MarkSweep : AllStatic {
   static uint total_invocations() { return _total_invocations; }
 
   // Reference Processing
-  static ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
@@ -138,18 +138,18 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  template<bool ALT_FWD>
-  static inline size_t adjust_pointers(oop obj);
+  template <bool ALT_FWD>
+  static size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
 
   template <bool ALT_FWD, class T>
-  static inline void adjust_pointer(T* p);
+  static void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack
   template <class T> static void mark_and_push(T* p);
 
-private:
+ private:
   template <bool ALT_FWD>
   static void adjust_marks_impl();
 
@@ -180,7 +180,7 @@ public:
   }
 };
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 class AdjustPointerClosure: public BasicOopIterateClosure {
  public:
   template <typename T> void do_oop_work(T* p);

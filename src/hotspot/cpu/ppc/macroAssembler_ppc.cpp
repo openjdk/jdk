@@ -32,6 +32,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
+#include "oops/compressedKlass.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"
@@ -1249,8 +1251,8 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                              bool check_exceptions) {
   // R3_ARG1 is reserved for the thread
+  assert_different_registers(arg_2, R4_ARG2);
   mr_if_needed(R4_ARG2, arg_1);
-  assert(arg_2 != R4_ARG2, "smashed argument");
   mr_if_needed(R5_ARG3, arg_2);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -1258,8 +1260,9 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, Register arg_3,
                              bool check_exceptions) {
   // R3_ARG1 is reserved for the thread
+  assert_different_registers(arg_2, R4_ARG2);
+  assert_different_registers(arg_3, R4_ARG2, R5_ARG3);
   mr_if_needed(R4_ARG2, arg_1);
-  assert(arg_2 != R4_ARG2, "smashed argument");
   mr_if_needed(R5_ARG3, arg_2);
   mr_if_needed(R6_ARG4, arg_3);
   call_VM(oop_result, entry_point, check_exceptions);
@@ -1275,17 +1278,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, R3_ARG1);
   mr_if_needed(R3_ARG1, arg_1);
-  assert(arg_2 != R3_ARG1, "smashed argument");
   mr_if_needed(R4_ARG2, arg_2);
   call_VM_leaf(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_2, R3_ARG1);
+  assert_different_registers(arg_3, R3_ARG1, R4_ARG2);
   mr_if_needed(R3_ARG1, arg_1);
-  assert(arg_2 != R3_ARG1, "smashed argument");
   mr_if_needed(R4_ARG2, arg_2);
-  assert(arg_3 != R3_ARG1 && arg_3 != R4_ARG2, "smashed argument");
   mr_if_needed(R5_ARG3, arg_3);
   call_VM_leaf(entry_point);
 }

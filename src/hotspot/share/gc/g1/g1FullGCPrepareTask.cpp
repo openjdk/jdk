@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
-#include "gc/g1/g1FullGCCompactionPoint.inline.hpp"
+#include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
@@ -104,11 +104,11 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
   _cp(cp) { }
 
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 G1FullGCPrepareTask::G1PrepareCompactLiveClosure<ALT_FWD>::G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp) :
     _cp(cp) { }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure<ALT_FWD>::apply(oop object) {
   size_t size = object->size();
   _cp->forward<ALT_FWD>(object, size);

@@ -61,7 +61,7 @@ void PreservedMark::set_mark() const {
   _o->set_mark(_m);
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
   oop obj = elem->get_oop();
   if (obj->is_forwarded()) {

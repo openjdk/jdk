@@ -52,9 +52,7 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
 
 
 # Normalize OPENJDK_TARGET_CPU name to match jdk.internal.util.Architecture enum
-ifneq ($(filter $(OPENJDK_TARGET_CPU), ppc64le), )
-  OPENJDK_TARGET_ARCH_CANONICAL = ppc64
-else ifneq ($(filter $(OPENJDK_TARGET_CPU), s390x), )
+ifneq ($(filter $(OPENJDK_TARGET_CPU), s390x), )
   OPENJDK_TARGET_ARCH_CANONICAL = s390
 else ifneq ($(filter $(OPENJDK_TARGET_CPU), x86_64 amd64), )
   OPENJDK_TARGET_ARCH_CANONICAL = x64
