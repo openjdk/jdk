@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,12 +91,13 @@ public final class IntHashtable {
         rehash();
     }
 
+    @Override
     public boolean equals (Object that) {
-        if (that.getClass() != this.getClass()) return false;
-
-        IntHashtable other = (IntHashtable) that;
+        if (!(that instanceof IntHashtable other)) {
+            return false;
+        }
         if (other.size() != count || other.defaultValue != defaultValue) {
-                return false;
+            return false;
         }
         for (int i = 0; i < keyList.length; ++i) {
             int key = keyList[i];
@@ -106,6 +107,7 @@ public final class IntHashtable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         // NOTE:  This function isn't actually used anywhere in this package, but it's here
         // in case this class is ever used to make sure we uphold the invariants about

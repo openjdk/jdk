@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ constexpr T align_down(T size, A alignment) {
   // Convert mask to T before logical_not.  Otherwise, if alignment is unsigned
   // and smaller than T, the result of the logical_not will be zero-extended
   // by integral promotion, and upper bits of size will be discarded.
-  T result = size & ~T(alignment_mask(alignment));
+  T result = T(size & ~T(alignment_mask(alignment)));
   assert(is_aligned(result, alignment),
          "must be aligned: " UINT64_FORMAT, (uint64_t)result);
   return result;
@@ -71,7 +71,7 @@ constexpr T align_down(T size, A alignment) {
 
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
-  T adjusted = size + alignment_mask(alignment);
+  T adjusted = checked_cast<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
 

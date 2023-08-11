@@ -34,6 +34,7 @@ import java.util.concurrent.CyclicBarrier;
 /*
  * @test
  * @summary Test AlwaysPreTouchThreadStacks
+ * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

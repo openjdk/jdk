@@ -405,19 +405,18 @@ class os: AllStatic {
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
-  static void trace_page_sizes(const char* str, const size_t* page_sizes, int count);
   static void trace_page_sizes(const char* str,
                                const size_t region_min_size,
                                const size_t region_max_size,
-                               const size_t page_size,
                                const char* base,
-                               const size_t size);
+                               const size_t size,
+                               const size_t page_size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 

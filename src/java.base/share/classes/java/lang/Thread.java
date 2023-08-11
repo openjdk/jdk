@@ -1578,7 +1578,7 @@ public class Thread implements Runnable {
      */
     @Hidden
     @ForceInline
-    private void runWith(Object bindings, Runnable op) {
+    final void runWith(Object bindings, Runnable op) {
         ensureMaterializedForStackWalk(bindings);
         op.run();
         Reference.reachabilityFence(bindings);
@@ -1689,7 +1689,7 @@ public class Thread implements Runnable {
      *
      * @implNote In the JDK Reference Implementation, interruption of a thread
      * that is not alive still records that the interrupt request was made and
-     * will report it via {@link #interrupted} and {@link #isInterrupted()}.
+     * will report it via {@link #interrupted()} and {@link #isInterrupted()}.
      *
      * @throws  SecurityException
      *          if the current thread cannot modify this thread

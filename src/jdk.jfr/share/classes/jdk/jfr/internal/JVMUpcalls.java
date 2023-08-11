@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.lang.reflect.Modifier;
 
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.instrument.JDKEvents;
+import jdk.jfr.internal.util.Utils;
 /**
  * All upcalls from the JVM should go through this class.
  *
@@ -59,12 +60,12 @@ final class JVMUpcalls {
     static byte[] onRetransform(long traceId, boolean dummy1, boolean dummy2, Class<?> clazz, byte[] oldBytes) throws Throwable {
         try {
             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
-                if (!Utils.shouldInstrument(clazz.getClassLoader() == null, clazz.getName())) {
+                if (!JVMSupport.shouldInstrument(clazz.getClassLoader() == null, clazz.getName())) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + clazz.getName() + " since container support is missing");
                     return oldBytes;
                 }
                 EventWriterKey.ensureEventWriterFactory();
-                EventConfiguration configuration = Utils.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
+                EventConfiguration configuration = JVMSupport.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
                 if (configuration == null) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "No event configuration found for " + clazz.getName() + ". Ignoring instrumentation request.");
                     // Probably triggered by some other agent
@@ -107,7 +108,7 @@ final class JVMUpcalls {
         try {
             EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
             eventName = ei.getEventName();
-            if (!Utils.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+            if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
                 return oldBytes;
             }

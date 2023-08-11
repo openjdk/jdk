@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,10 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
+    vm.gc.ZGenerational \
+    vm.gc.ZSinglegen \
     vm.jvmci \
+    vm.jvmci.enabled \
     vm.emulatedClient \
     vm.cpu.features \
     vm.pageSize \
@@ -75,6 +78,8 @@ requires.properties= \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
+    jdk.hasLibgraal \
+    vm.libgraal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
@@ -83,7 +88,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=7.2+1
+requiredVersion=7.3+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

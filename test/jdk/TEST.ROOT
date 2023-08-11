@@ -59,6 +59,8 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
+    vm.gc.ZGenerational \
+    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -70,6 +72,7 @@ requires.properties= \
     vm.hasSA \
     vm.hasJFR \
     vm.jvmci \
+    vm.jvmci.enabled \
     vm.jvmti \
     docker.support \
     release.implementor \
@@ -77,7 +80,7 @@ requires.properties= \
     jdk.foreign.linker
 
 # Minimum jtreg version
-requiredVersion=7.2+1
+requiredVersion=7.3+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
