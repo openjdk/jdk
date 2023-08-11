@@ -73,8 +73,8 @@ public class SSLEngineDecodeBadPoint {
         try {
             eng.wrap(emptyBuf, alert);
             throw new RuntimeException("Expected wrap to throw");
-        } catch (Exception e) {
-            System.err.println("Received expected exception:");
+        } catch (SSLException e) {
+            System.err.println("Received expected SSLException:");
             e.printStackTrace();
         }
         if (alert.position() != 0) {
