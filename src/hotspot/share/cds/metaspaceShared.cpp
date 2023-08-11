@@ -1329,7 +1329,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
                                      os::vm_page_size(), (char*) base_address);
     } else {
       // Reserve anywhere, but mapping start address must be directly encodable as encoding base.
-      const bool strict_base = true;
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, true);
     }
 

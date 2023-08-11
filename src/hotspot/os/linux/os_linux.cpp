@@ -4217,15 +4217,14 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 }
 
 char* os::vm_min_address() {
-  // Determined by sysctl vm.mmap_min_addr. The usual value is 64*k. Kernel prevents
-  // mappings below that point. Reason is to improve safety in case of accidental
-  // NULL-pointer derefs.
-  // Note that this value is rarely changed from its default, and in experiments we
-  // found when increasing it (e.g. to 4G to mirror MacOS PAGEZERO protection) that
-  // things break left and right (outside the JDK). So we spare the time and complexity
-  // of retrieving vm.mmap_min_addr and instead return a sensible default that gives us
-  // good protection against NULL references while still leaving enough of the lower
-  // 4G addressable.
+  // Determined by sysctl vm.mmap_min_addr. The usual value is 64 KB. Kernel prevents
+  // mappings below that point. The reason for this forbidden zone is to improve safety
+  // in case of NULL pointer dereferences.
+  // This value is rarely changed from its default, and instead of retrieving the
+  // parameter, we save a syscall and just return a sensible default. That default
+  // is chosen to be somewhat larger than the typical 64 KB for increased protection
+  // against NULL pointer dereferences: 16 MB is comfortably larger than any fixed-sized
+  // structure we use but still affords us most of the valuable low-address space.
   return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
 }
 

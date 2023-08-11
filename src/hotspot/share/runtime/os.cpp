@@ -1903,7 +1903,6 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     DEBUG_ONLY(print_points("after hemi split", random_points, num_attempts);)
 
     // Now reserve
-    const unsigned allowed_deviation = stepsize / 8;
     for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
       const unsigned candidate_offset = random_points[i];
       char* const candidate = lo_att + candidate_offset * alignment_adjusted;

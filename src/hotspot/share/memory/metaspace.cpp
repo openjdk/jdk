@@ -582,18 +582,18 @@ bool Metaspace::class_space_is_initialized() {
   return MetaspaceContext::context_class() != nullptr;
 }
 
-// Reserve a range of memory that is to contain narrow Klass IDs. If "strict_base"
+// Reserve a range of memory that is to contain narrow Klass IDs. If "cds_runtime"
 // is true, the memory must be located at an address that can be directly used as
 // encoding base, otherwise the API has more leeway (e.g. optimizing reservation
 // for zero-based encoding).
-ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool strict_base) {
+ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool cds_runtime) {
 
   char* result = nullptr;
   const bool randomize = RandomizeClassSpaceLocation;
 
   // If strict_base, there is no need bothering with low-address reservation since we cannot set
   // the encoding base to zero.
-  const bool try_in_low_address_ranges = !strict_base;
+  const bool try_in_low_address_ranges = !cds_runtime;
 
   // First try to reserve in low address ranges.
   if (try_in_low_address_ranges) {
@@ -611,14 +611,18 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 
   if (result == nullptr) {
     // Failing zero-based allocation, or in strict_base mode, try to come up with
-    // an optimized start address that:
-    // - only has bits set in the third quadrant, to use a single 16-bit move
-    // - additionally, has the low LogKlassAlignmentInBytes of the third quadrant
-    //   set to 9, to be able to apply the right-shifted base with a single 16-bit
-    //   move.
-    // That leaves 13 bits (32 GB - 256 TB). This gets cut down by many kernels to
-    // 128 TB. Still, it leaves us with a value range of 12 bits for randomness.
-    constexpr int lo_zero_bits = (sizeof(narrowKlass) * 8) + LogKlassAlignmentInBytes;
+    // an optimized start address that is amenable to most JITs.
+    // Architectures have differing opinions of what constitutes a "good" base,
+    // and some (aarch64) have hard limitations. But many of them (aarch64, s390, ppc)
+    // use 16-bit moves, if possible, to load the encoding base as immediates. Those
+    // that don't (riscv, x64) could potentially benefit in the future from that as
+    // well (e.g. by having to encode shorter immediates).
+    // Therefore we try here for an address that, taken as encoding base, when
+    // right-shifted by LogKlassAlignmentInBytes, has only 1s in the third 16-bit quadrant.
+
+    // Number of least significant bits that should be zero
+    constexpr int lo_zero_bits = 32 + LogKlassAlignmentInBytes;
+    // Number of most significant bits that should be zero
     constexpr int hi_zero_bits = 16;
 
     constexpr size_t alignment = nth_bit(lo_zero_bits);
