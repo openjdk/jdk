@@ -912,6 +912,8 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
     jbyte* pHashBuffer = NULL;
     jbyte* pSignedHashBuffer = NULL;
     NCRYPT_KEY_HANDLE hk = NULL;
+    BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
+    BCRYPT_PSS_PADDING_INFO pssInfo;
 
     __try
     {
@@ -943,7 +945,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
             dwFlags = 0;
             break;
         case 1:
-            BCRYPT_PKCS1_PADDING_INFO pkcs1Info;
             if (jHashAlgorithm) {
                 pkcs1Info.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
                 if (pkcs1Info.pszAlgId == NULL) {
@@ -958,7 +959,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signCngHash
             dwFlags = BCRYPT_PAD_PKCS1;
             break;
         case 2:
-            BCRYPT_PSS_PADDING_INFO pssInfo;
             pssInfo.pszAlgId = MapHashIdentifier(env, jHashAlgorithm);
             pssInfo.cbSalt = saltLen;
             if (pssInfo.pszAlgId == NULL) {
@@ -1526,7 +1526,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_storeCertificate
         pszCertAliasName[size] = 0; // append the string terminator
 
         CRYPT_DATA_BLOB friendlyName = {
-            sizeof(WCHAR) * (size + 1),
+            (DWORD)(sizeof(WCHAR) * (size + 1)),
             (BYTE *) pszCertAliasName
         };
 
