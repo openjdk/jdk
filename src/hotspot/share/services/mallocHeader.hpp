@@ -54,7 +54,7 @@ class outputStream;
  * on both 64-bit/32-bit to be enough for that. So the malloc header is 16 bytes long on both
  * 32-bit and 64-bit.
  *
- 
+
  * Layout on 64-bit:
  *
  *           0        1        2        3        4        5        6        7
@@ -77,7 +77,7 @@ class outputStream;
  *  ...  |     canary      |
  *       +--------+--------+
  *
- 
+
  * Layout on 32-bit:
  *
  *           0        1        2        3        4        5        6        7
@@ -100,7 +100,7 @@ class outputStream;
  *  ...  |     canary      |
  *       +--------+--------+
  *
- 
+
  * Notes:
  * - We have a canary in the two bytes directly preceding the user payload. That allows us to
  *   catch negative buffer overflows.
