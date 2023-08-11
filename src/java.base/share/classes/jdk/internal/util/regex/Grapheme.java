@@ -35,9 +35,10 @@ public final class Grapheme {
      * <p>
      * See Unicode Standard Annex #29 Unicode Text Segmentation for the specification
      * for the extended grapheme cluster boundary rules. The following implementation
-     * is based on the annex for Unicode version 15.0.
-     * (http://www.unicode.org/reports/tr29/tr29-40.html)
+     * is based on the annex for Unicode version 15.1.
+     * (http://www.unicode.org/reports/tr29/tr29-42.html)
      *
+     * @spec http://www.unicode.org/reports/tr29/tr29-42.html
      * @param src the {@code CharSequence} to be scanned
      * @param off offset to start looking for the next boundary in the src
      * @param limit limit offset in the src (exclusive)
