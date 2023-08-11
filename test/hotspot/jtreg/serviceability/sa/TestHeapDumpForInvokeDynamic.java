@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,7 @@
  */
 
 import java.io.File;
-import java.io.IOException;
-import java.io.BufferedInputStream;
 import java.util.stream.Collectors;
-import java.io.FileInputStream;
-
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Asserts;
@@ -35,10 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.hprof.parser.HprofReader;
-import jdk.test.lib.hprof.parser.PositionDataInputStream;
 import jdk.test.lib.hprof.HprofParser;
-import jdk.test.lib.hprof.model.Snapshot;
 
 /**
  * @test
