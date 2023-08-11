@@ -71,7 +71,7 @@ public class THPsInThreadStackPreventionTest {
     //
     // We then observe RSS of that program. We expect it to stay below a reasonable maximum. The unpatched
     // version should show an RSS of ~2 GB (paying for the fully paged in thread stacks). The fixed variant should
-    // cost only ~200-400 MB.
+    // cost only ~200-400 MB. The RSS varies depending on the number of available cores.
 
     static final int numThreads = 1000;
     static final long threadStackSizeMB = 2; // must be 2M
@@ -170,6 +170,12 @@ public class THPsInThreadStackPreventionTest {
             "-XX:+DelayThreadStartALot"
         };
         ArrayList<String> finalargs = new ArrayList<>(Arrays.asList(defaultArgs));
+
+        // The RSS could exceed acceptableRSSLimitMB on machines with a large number of cores (e.g.
+        // 128 or more cores). Thus we cap ActiveProcessorCount to 64.
+        if (Runtime.getRuntime().availableProcessors() > 64) {
+          finalargs.add("-XX:ActiveProcessorCount=64");
+        }
 
         switch (args[0]) {
             case "PATCH-ENABLED": {
