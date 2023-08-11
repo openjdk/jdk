@@ -931,9 +931,17 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             cf = sendAsync(req, responseHandler, null, null);
             return cf.get();
         } catch (InterruptedException ie) {
-            if (cf != null )
+            if (cf != null) {
+                // get was interrupted, cancels the exchange if possible
                 cf.cancel(true);
-            throw ie;
+                try {
+                    // calling cf.get() again to wait for
+                    // cleanup dependant actions to execute
+                    // this should throw a CancellationException
+                    cf.get();
+                } catch (Throwable t) { }
+            }
+            throw ie; // re-throw after cancelling
         } catch (ExecutionException e) {
             final Throwable throwable = e.getCause();
             final String msg = throwable.getMessage();
