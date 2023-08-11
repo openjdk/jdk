@@ -988,8 +988,8 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     if (p0 && p1) {
       Node* in1 = in(1)->uncast();
       Node* in2 = in(2)->uncast();
-      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, nullptr);
-      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, nullptr);
+      AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1);
+      AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2);
       if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, nullptr)) {
         return TypeInt::CC_GT;  // different pointers
       }

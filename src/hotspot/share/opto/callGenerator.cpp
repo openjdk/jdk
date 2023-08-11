@@ -706,6 +706,10 @@ void CallGenerator::do_late_inline_helper() {
       result = (result_size == 1) ? kit.pop() : kit.pop_pair();
     }
 
+    if (call->is_CallStaticJava() && call->as_CallStaticJava()->is_boxing_method()) {
+      result = kit.must_be_not_null(result, false);
+    }
+
     if (inline_cg()->is_inline()) {
       C->set_has_loops(C->has_loops() || inline_cg()->method()->has_loops());
       C->env()->notice_inlined_method(inline_cg()->method());

@@ -172,9 +172,9 @@ public:
   static inline bool is_forwarded(oop obj);
   static inline bool is_not_forwarded(oop obj);
 
-  template<bool ALT_FWD>
+  template <bool ALT_FWD>
   static inline void forward_to(oop from, oop to);
-  template<bool ALT_FWD>
+  template <bool ALT_FWD>
   static inline oop forwardee(oop from);
 };
 

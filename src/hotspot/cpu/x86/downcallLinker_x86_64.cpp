@@ -166,7 +166,7 @@ void DowncallStubGenerator::generate() {
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
   // when we don't use a return buffer we need to spill the return value around our slow path calls
-  bool should_save_return_value = !_needs_return_buffer && _needs_transition;
+  bool should_save_return_value = !_needs_return_buffer;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_rsp_offset = -1;
 

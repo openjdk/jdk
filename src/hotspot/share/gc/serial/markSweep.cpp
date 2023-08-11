@@ -193,7 +193,7 @@ void MarkAndPushClosure::do_oop_work(T* p)            { MarkSweep::mark_and_push
 void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
 void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void MarkSweep::adjust_marks_impl() {
   // adjust the oops we saved earlier
   for (size_t i = 0; i < _preserved_count; i++) {

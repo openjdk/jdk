@@ -443,7 +443,7 @@ class PatchingStub: public CodeStub {
     _info = info;
     _obj = obj;
     masm->bind(_patch_site_continuation);
-    _bytes_to_copy = masm->pc() - pc_start();
+    _bytes_to_copy = pointer_delta_as_int(masm->pc(), pc_start());
     if (_id == PatchingStub::access_field_id) {
       // embed a fixed offset to handle long patches which need to be offset by a word.
       // the patching code will just add the field offset field to this offset so

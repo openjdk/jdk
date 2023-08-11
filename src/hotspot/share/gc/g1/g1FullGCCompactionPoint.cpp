@@ -27,6 +27,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -92,6 +93,31 @@ void G1FullGCCompactionPoint::switch_region() {
   initialize_values();
 }
 
+template <bool ALT_FWD>
+void G1FullGCCompactionPoint::forward(oop object, size_t size) {
+  assert(_current_region != nullptr, "Must have been initialized");
+
+  // Ensure the object fit in the current region.
+  while (!object_will_fit(size)) {
+    switch_region();
+  }
+
+  // Store a forwarding pointer if the object should be moved.
+  if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
+    SlidingForwarding::forward_to<ALT_FWD>(object, cast_to_oop(_compaction_top));
+    assert(SlidingForwarding::is_forwarded(object), "must be forwarded");
+  } else {
+    assert(SlidingForwarding::is_not_forwarded(object), "must not be forwarded");
+  }
+
+  // Update compaction values.
+  _compaction_top += size;
+  _current_region->update_bot_for_block(_compaction_top - size, _compaction_top);
+}
+
+template void G1FullGCCompactionPoint::forward<true>(oop object, size_t size);
+template void G1FullGCCompactionPoint::forward<false>(oop object, size_t size);
+
 void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
@@ -123,6 +149,45 @@ void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
                                        _collector->update_from_skip_compacting_to_compacting(r->hrm_index());
                                      });
 }
+
+template <bool ALT_FWD>
+uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
+  assert(hr->is_starts_humongous(), "Sanity!");
+
+  oop obj = cast_to_oop(hr->bottom());
+  size_t obj_size = obj->size();
+  uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
+
+  if (!has_regions()) {
+    return num_regions;
+  }
+
+  // Find contiguous compaction target regions for the humongous object.
+  uint range_begin = find_contiguous_before(hr, num_regions);
+
+  if (range_begin == UINT_MAX) {
+    // No contiguous compaction target regions found, so the object cannot be moved.
+    return num_regions;
+  }
+
+  // Preserve the mark for the humongous object as the region was initially not compacting.
+  _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
+
+  HeapRegion* dest_hr = _compaction_regions->at(range_begin);
+  SlidingForwarding::forward_to<ALT_FWD>(obj, cast_to_oop(dest_hr->bottom()));
+  assert(SlidingForwarding::is_forwarded(obj), "Object must be forwarded!");
+
+  // Add the humongous object regions to the compaction point.
+  add_humongous(hr);
+
+  // Remove covered regions from compaction target candidates.
+  _compaction_regions->remove_range(range_begin, (range_begin + num_regions));
+
+  return num_regions;
+}
+
+template uint G1FullGCCompactionPoint::forward_humongous<true>(HeapRegion* hr);
+template uint G1FullGCCompactionPoint::forward_humongous<false>(HeapRegion* hr);
 
 uint G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
   assert(num_regions > 0, "Sanity!");

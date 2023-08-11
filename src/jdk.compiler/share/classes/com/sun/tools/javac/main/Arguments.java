@@ -458,7 +458,7 @@ public class Arguments {
 
             if (!emptyAllowed) {
                 if (!errors) {
-                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
+                    if (JavaCompiler.explicitAnnotationProcessingRequested(options, fileManager)) {
                         reportDiag(Errors.NoSourceFilesClasses);
                     } else {
                         reportDiag(Errors.NoSourceFiles);

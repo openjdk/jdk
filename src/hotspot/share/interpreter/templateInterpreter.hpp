@@ -76,7 +76,7 @@ class DispatchTable {
   void       set_entry(int i, EntryPoint& entry);     // set    entry point for a given bytecode i
   address*   table_for(TosState state)          { return _table[state]; }
   address*   table_for()                        { return table_for((TosState)0); }
-  int        distance_from(address *table)      { return table - table_for(); }
+  int        distance_from(address *table)      { return (int)(table - table_for()); }
   int        distance_from(TosState state)      { return distance_from(table_for(state)); }
 
   // Comparison
