@@ -29,6 +29,14 @@ import java.util.List;
  * Represents the runtime representation of the constant pool that is used by the compiler when
  * parsing bytecode. Provides methods to look up a constant pool entry without performing
  * resolution. They are used during compilation.
+ *
+ * The following convention is used when accessing the ConstantPool with an index:
+ * <ul>
+ * <li>rawIndex - index in the bytecode stream after the opcode (could be rewritten for some opcodes)</li>
+ * <li>cpi - the constant pool index (as specified in JVM Spec)</li>
+ * </ul>
+ *
+ * Some of the methods are currently not using the convention correctly. That will be addressed in JDK-8314172.
  */
 public interface ConstantPool {
 
@@ -44,7 +52,7 @@ public interface ConstantPool {
      * initialized. This can be used to compile time resolve a type. It works for field, method, or
      * type constant pool entries.
      *
-     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some bytecodes)
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction that references the type
      */
     void loadReferencedType(int rawIndex, int opcode);
@@ -54,7 +62,7 @@ public interface ConstantPool {
      * used to compile time resolve a type. It works for field, method, or type constant pool
      * entries.
      *
-     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some bytecodes)
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction that references the type
      * @param initialize if {@code true}, the referenced type is either guaranteed to be initialized
      *            upon return or an initialization exception is thrown
@@ -70,7 +78,7 @@ public interface ConstantPool {
     /**
      * Looks up the type referenced by the {@code rawIndex}.
      *
-     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some bytecodes)
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction with {@code rawIndex} as an operand
      * @return a reference to the compiler interface type
      */
