@@ -263,7 +263,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
     }
 
     /**
-     * Overriden to return true, JCheckBoxMenuItem supports
+     * Overridden to return true, JCheckBoxMenuItem supports
      * the selected state.
      */
     boolean shouldUpdateSelectedStateFromAction() {

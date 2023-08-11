@@ -229,7 +229,7 @@ public class NMethod extends CompiledMethod {
   }
 
   public NMethod getOSRLink() {
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
+    return VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
   }
 
   // MethodHandle
@@ -463,9 +463,9 @@ public class NMethod extends CompiledMethod {
       if (h.get(meta) != null) continue;
       h.put(meta, meta);
       if (meta instanceof InstanceKlass) {
-        ((InstanceKlass)meta).dumpReplayData(out);
+        meta.dumpReplayData(out);
       } else if (meta instanceof Method) {
-        ((Method)meta).dumpReplayData(out);
+        meta.dumpReplayData(out);
         MethodData mdo = ((Method)meta).getMethodData();
         if (mdo != null) {
           mdo.dumpReplayData(out);
@@ -481,7 +481,7 @@ public class NMethod extends CompiledMethod {
       }
     }
     if (h.get(method.getMethodHolder()) == null) {
-      ((InstanceKlass)method.getMethodHolder()).dumpReplayData(out);
+      method.getMethodHolder().dumpReplayData(out);
     }
     Klass holder = method.getMethodHolder();
     out.println("compile " + holder.getName().asString() + " " +

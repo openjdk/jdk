@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,15 +93,15 @@ public class TCKFormatStyle {
     @DataProvider(name="formatStyle")
     Object[][] data_formatStyle() {
         return new Object[][] {
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.FULL, "Tuesday, October 2, 2001 at 1:02:03 AM Central European Summer Time Europe/Paris"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.LONG, "October 2, 2001 at 1:02:03 AM CEST Europe/Paris"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.MEDIUM, "Oct 2, 2001, 1:02:03 AM Europe/Paris"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.SHORT, "10/2/01, 1:02 AM Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.FULL, "Tuesday, October 2, 2001, 1:02:03\u202fAM Central European Summer Time Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.LONG, "October 2, 2001, 1:02:03\u202fAM CEST Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.MEDIUM, "Oct 2, 2001, 1:02:03\u202fAM Europe/Paris"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), ZONEID_PARIS), FormatStyle.SHORT, "10/2/01, 1:02\u202fAM Europe/Paris"},
 
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.FULL, "Tuesday, October 2, 2001 at 1:02:03 AM +02:00 +02:00"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.LONG, "October 2, 2001 at 1:02:03 AM +02:00 +02:00"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.MEDIUM, "Oct 2, 2001, 1:02:03 AM +02:00"},
-                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.SHORT, "10/2/01, 1:02 AM +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.FULL, "Tuesday, October 2, 2001, 1:02:03\u202fAM +02:00 +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.LONG, "October 2, 2001, 1:02:03\u202fAM +02:00 +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.MEDIUM, "Oct 2, 2001, 1:02:03\u202fAM +02:00"},
+                {ZonedDateTime.of(LocalDateTime.of(2001, 10, 2, 1, 2, 3), OFFSET_PTWO), FormatStyle.SHORT, "10/2/01, 1:02\u202fAM +02:00"},
         };
     }
 

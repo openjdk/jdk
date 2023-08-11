@@ -438,6 +438,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
                 }
                 Insets minOnScreenInsets =
                     UIManager.getInsets("Desktop.minOnScreenInsets");
+                if (minOnScreenInsets == null) {
+                    minOnScreenInsets = new Insets(0, 0, 0, 0);
+                }
                 Dimension size = c.getSize();
                 Dimension minSize = c.getMinimumSize();
                 int dpWidth = dp.getWidth();

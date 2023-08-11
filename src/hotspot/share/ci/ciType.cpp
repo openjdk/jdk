@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ ciType* ciType::make(BasicType t) {
   // Note: Bare T_ADDRESS means a raw pointer type, not a return_address.
   assert((uint)t < T_CONFLICT+1, "range check");
   if (t == T_OBJECT)  return ciEnv::_Object_klass;  // java/lang/Object
-  assert(_basic_types[t] != NULL, "domain check");
+  assert(_basic_types[t] != nullptr, "domain check");
   return _basic_types[t];
 }
 

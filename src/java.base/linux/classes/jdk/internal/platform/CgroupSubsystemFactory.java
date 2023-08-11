@@ -318,30 +318,11 @@ public class CgroupSubsystemFactory {
                         case MEMORY_CTRL: // fall-through
                         case CPU_CTRL:
                         case CPUACCT_CTRL:
+                        case CPUSET_CTRL:
                         case PIDS_CTRL:
                         case BLKIO_CTRL: {
                             CgroupInfo info = infos.get(controllerName);
-                            assert info.getMountPoint() == null;
-                            assert info.getMountRoot() == null;
-                            info.setMountPoint(mountPath);
-                            info.setMountRoot(mountRoot);
-                            cgroupv1ControllerFound = true;
-                            break;
-                        }
-                        case CPUSET_CTRL: {
-                            CgroupInfo info = infos.get(controllerName);
-                            if (info.getMountPoint() != null) {
-                                // On some systems duplicate cpuset controllers get mounted in addition to
-                                // the main cgroup controllers most likely under /sys/fs/cgroup. In that
-                                // case pick the one under /sys/fs/cgroup and discard others.
-                                if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
-                                    info.setMountPoint(mountPath);
-                                    info.setMountRoot(mountRoot);
-                                }
-                            } else {
-                                info.setMountPoint(mountPath);
-                                info.setMountRoot(mountRoot);
-                            }
+                            setMountPoints(info, mountPath, mountRoot);
                             cgroupv1ControllerFound = true;
                             break;
                         }
@@ -355,16 +336,29 @@ public class CgroupSubsystemFactory {
                     // All controllers have the same mount point and root mount
                     // for unified hierarchy.
                     for (CgroupInfo info: infos.values()) {
-                        assert info.getMountPoint() == null;
-                        assert info.getMountRoot() == null;
-                        info.setMountPoint(mountPath);
-                        info.setMountRoot(mountRoot);
+                        setMountPoints(info, mountPath, mountRoot);
                     }
                 }
                 cgroupv2ControllerFound = true;
             }
         }
         return cgroupv1ControllerFound || cgroupv2ControllerFound;
+    }
+
+    private static void setMountPoints(CgroupInfo info, String mountPath, String mountRoot) {
+        if (info.getMountPoint() != null) {
+            // On some systems duplicate controllers get mounted in addition to
+            // the main cgroup controllers (which are under /sys/fs/cgroup). In that
+            // case pick the main one and discard others as the limits
+            // are associated with the ones in /sys/fs/cgroup.
+            if (!info.getMountPoint().startsWith("/sys/fs/cgroup")) {
+                info.setMountPoint(mountPath);
+                info.setMountRoot(mountRoot);
+            }
+        } else {
+            info.setMountPoint(mountPath);
+            info.setMountRoot(mountRoot);
+        }
     }
 
     public static final class CgroupTypeResult {

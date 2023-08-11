@@ -28,7 +28,8 @@ package sun.nio.fs;
 import java.io.IOException;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
-import static sun.nio.fs.BsdNativeDispatcher.setattrlist;
+import static sun.nio.fs.BsdNativeDispatcher.*;
+import static sun.nio.fs.UnixNativeDispatcher.lutimes;
 
 class BsdFileAttributeViews {
     //
@@ -49,28 +50,94 @@ class BsdFileAttributeViews {
         // permission check
         path.checkWrite();
 
-        int commonattr = 0;
-        long modValue = 0L;
-        if (lastModifiedTime != null) {
-            modValue = lastModifiedTime.to(TimeUnit.NANOSECONDS);
-            commonattr |= UnixConstants.ATTR_CMN_MODTIME;
+        boolean useLutimes = false;
+        try {
+            useLutimes = !followLinks &&
+                UnixFileAttributes.get(path, false).isSymbolicLink();
+        } catch (UnixException x) {
+            x.rethrowAsIOException(path);
         }
-        long accValue = 0L;
-        if (lastAccessTime != null) {
-            accValue = lastAccessTime.to(TimeUnit.NANOSECONDS);
-            commonattr |= UnixConstants.ATTR_CMN_ACCTIME;
-        }
-        long createValue = 0L;
-        if (createTime != null) {
-            createValue = createTime.to(TimeUnit.NANOSECONDS);
-            commonattr |= UnixConstants.ATTR_CMN_CRTIME;
+
+        int fd = -1;
+        if (!useLutimes) {
+            try {
+                fd = path.openForAttributeAccess(followLinks);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
         }
 
         try {
-            setattrlist(path, commonattr, modValue, accValue, createValue,
-                        followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(path);
+            // not all volumes support setattrlist(2), so set the last
+            // modified and last access times using futimens(2)/lutimes(3)
+            if (lastModifiedTime != null || lastAccessTime != null) {
+                // if not changing both attributes then need existing attributes
+                if (lastModifiedTime == null || lastAccessTime == null) {
+                    try {
+                        UnixFileAttributes attrs = UnixFileAttributes.get(fd);
+                        if (lastModifiedTime == null)
+                            lastModifiedTime = attrs.lastModifiedTime();
+                        if (lastAccessTime == null)
+                            lastAccessTime = attrs.lastAccessTime();
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+
+                // update times
+                TimeUnit timeUnit = useLutimes ?
+                    TimeUnit.MICROSECONDS : TimeUnit.NANOSECONDS;
+                long modValue = lastModifiedTime.to(timeUnit);
+                long accessValue= lastAccessTime.to(timeUnit);
+
+                boolean retry = false;
+                try {
+                    if (useLutimes)
+                        lutimes(path, accessValue, modValue);
+                    else
+                        futimens(fd, accessValue, modValue);
+                } catch (UnixException x) {
+                    // if futimens fails with EINVAL and one/both of the times is
+                    // negative then we adjust the value to the epoch and retry.
+                    if (x.errno() == UnixConstants.EINVAL &&
+                        (modValue < 0L || accessValue < 0L)) {
+                        retry = true;
+                    } else {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+                if (retry) {
+                    if (modValue < 0L) modValue = 0L;
+                    if (accessValue < 0L) accessValue= 0L;
+                    try {
+                        if (useLutimes)
+                            lutimes(path, accessValue, modValue);
+                        else
+                            futimens(fd, accessValue, modValue);
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(path);
+                    }
+                }
+            }
+
+            // set the creation time using setattrlist
+            if (createTime != null) {
+                long createValue = createTime.to(TimeUnit.NANOSECONDS);
+                int commonattr = UnixConstants.ATTR_CMN_CRTIME;
+                try {
+                    if (useLutimes)
+                        setattrlist(path, commonattr, 0L, 0L, createValue,
+                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                    else
+                        fsetattrlist(fd, commonattr, 0L, 0L, createValue,
+                            followLinks ?  0 : UnixConstants.FSOPT_NOFOLLOW);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(path);
+                }
+            }
+        } finally {
+            if (!useLutimes)
+                close(fd, e -> null);
         }
     }
 

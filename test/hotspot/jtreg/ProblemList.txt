@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,29 +45,31 @@
 
 compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8225370 generic-all
-compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
-compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8262901 macosx-aarch64
-compiler/tiered/LevelTransitionTest.java 8067651 generic-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
+compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
-compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64
-compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64
-compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64
-compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64
-compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64
+compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64,generic-i586
+compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-i586
+compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
+
+compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+
+compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
 #############################################################################
 
@@ -81,16 +83,15 @@ gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
-gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
-gc/metaspace/TestMetaspacePerfCounters.java#Epsilon-64 8293503 generic-all
 
 #############################################################################
 
 # :hotspot_runtime
 
-runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java 8253437 windows-x64
+
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
@@ -98,10 +99,15 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
+runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
+runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
+runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
+runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
+containers/docker/TestMemoryAwareness.java 8303470 linux-x64
 
 #############################################################################
 
@@ -114,13 +120,14 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
-serviceability/sa/ClhsdbCDSCore.java 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
+serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
 #############################################################################
@@ -129,14 +136,14 @@ serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
 #############################################################################
 
+gtest/NMTGtests.java#nmt-detail 8306561 aix-ppc64
+gtest/NMTGtests.java#nmt-summary 8306561 aix-ppc64
 
 #############################################################################
 
 # :vmTestbase_*
 
 #############################################################################
-
-vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 
 vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
@@ -147,8 +154,8 @@ vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 gener
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
-vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8277812 generic-all
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
+vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-x64
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 
@@ -162,3 +169,5 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
+
+vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,41 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @summary converted from VM Testbase nsk/monitoring/ThreadInfo/isSuspended/issuspended001.
+ * VM Testbase keywords: [quick, monitoring]
+ * VM Testbase readme:
+ * DESCRIPTION
+ *     The test checks that
+ *         ThreadInfo.isSuspended()
+ *     returns correct values for a thread in different states.
+ *     The test starts an instance of MyThread and checks that isSuspended()
+ *     returns false for it. Then it suspends the thread and expects the method
+ *     to return true. After that the MyThread is resumed and isSuspended() must
+ *     return false.
+ *     Testing of the method does not depend on the way to access metrics, so
+ *     only one (direct access) is implemented in the test.
+ * COMMENT
+ *     Fixed the bug
+ *     4989235 TEST: The spec is updated accoring to 4982289, 4985742
+ *     Updated according to:
+ *     5024531 Fix MBeans design flaw that restricts to use JMX CompositeData
+ *
+ * @library /vmTestbase
+ *          /test/lib
+ *          /testlibrary
+ * @run main/othervm nsk.monitoring.ThreadInfo.isSuspended.issuspended001
+ */
+
 package nsk.monitoring.ThreadInfo.isSuspended;
 
 import java.lang.management.*;
 import java.io.*;
 import nsk.share.*;
+
+import jvmti.JVMTIUtils;
 
 public class issuspended001 {
     private static Wicket mainEntrance = new Wicket();
@@ -53,7 +83,7 @@ public class issuspended001 {
             testFailed = true;
         }
 
-        thread.suspend();
+        JVMTIUtils.suspendThread(thread);
         info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
         isSuspended = info.isSuspended();
         if (!isSuspended) {
@@ -63,7 +93,7 @@ public class issuspended001 {
             testFailed = true;
         }
 
-        thread.resume();
+        JVMTIUtils.resumeThread(thread);
         info = mbean.getThreadInfo(id, Integer.MAX_VALUE);
         isSuspended = info.isSuspended();
         if (isSuspended) {

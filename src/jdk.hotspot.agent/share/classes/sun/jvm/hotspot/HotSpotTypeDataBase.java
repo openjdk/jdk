@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
             t.nextToken();
             Type fieldType = lookupType(t.sval);
             t.nextToken();
-            boolean isStatic = Boolean.valueOf(t.sval).booleanValue();
+            boolean isStatic = Boolean.parseBoolean(t.sval);
             t.nextToken();
             long offset = Long.parseLong(t.sval);
             t.nextToken();
@@ -321,11 +321,11 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
               superclassName = null;
             }
             t.nextToken();
-            boolean isOop = Boolean.valueOf(t.sval).booleanValue();
+            boolean isOop = Boolean.parseBoolean(t.sval);
             t.nextToken();
-            boolean isInteger = Boolean.valueOf(t.sval).booleanValue();
+            boolean isInteger = Boolean.parseBoolean(t.sval);
             t.nextToken();
-            boolean isUnsigned = Boolean.valueOf(t.sval).booleanValue();
+            boolean isUnsigned = Boolean.parseBoolean(t.sval);
             t.nextToken();
             long size = Long.parseLong(t.sval);
 

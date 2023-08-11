@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@
 #include "runtime/stackWatermark.hpp"
 
 inline StackWatermark* StackWatermarkSet::get(JavaThread* jt, StackWatermarkKind kind) {
-  for (StackWatermark* stack_watermark = head(jt); stack_watermark != NULL; stack_watermark = stack_watermark->next()) {
+  for (StackWatermark* stack_watermark = head(jt); stack_watermark != nullptr; stack_watermark = stack_watermark->next()) {
     if (stack_watermark->kind() == kind) {
       return stack_watermark;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 template <typename T>
@@ -44,7 +44,7 @@ inline T* StackWatermarkSet::get(JavaThread* jt, StackWatermarkKind kind) {
 }
 
 inline bool StackWatermarkSet::has_watermark(JavaThread* jt, StackWatermarkKind kind) {
-  return get(jt, kind) != NULL;
+  return get(jt, kind) != nullptr;
 }
 
 #endif // SHARE_RUNTIME_STACKWATERMARKSET_INLINE_HPP

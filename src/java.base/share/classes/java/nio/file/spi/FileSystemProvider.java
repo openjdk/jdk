@@ -411,13 +411,11 @@ public abstract class FileSystemProvider {
     public InputStream newInputStream(Path path, OpenOption... options)
         throws IOException
     {
-        if (options.length > 0) {
-            for (OpenOption opt: options) {
-                // All OpenOption values except for APPEND and WRITE are allowed
-                if (opt == StandardOpenOption.APPEND ||
-                    opt == StandardOpenOption.WRITE)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
+        for (OpenOption opt : options) {
+            // All OpenOption values except for APPEND and WRITE are allowed
+            if (opt == StandardOpenOption.APPEND ||
+                opt == StandardOpenOption.WRITE)
+                throw new UnsupportedOperationException("'" + opt + "' not allowed");
         }
         ReadableByteChannel rbc = Files.newByteChannel(path, options);
         if (rbc instanceof FileChannelImpl) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,6 +66,15 @@ enum {
 // For debug info: a float value in a register is saved in single precision by runtime stubs.
 enum {
   pd_float_saved_as_double = false
+};
+
+enum {
+  pd_two_operand_lir_form = true
+};
+
+// the number of stack required by ArrayCopyStub
+enum {
+  pd_arraycopystub_reserved_argument_area_size = 2
 };
 
 #endif // CPU_S390_C1_DEFS_S390_HPP

@@ -33,7 +33,7 @@ void VMRegImpl::set_regName() {
   for (i = 0; i < ConcreteRegisterImpl::max_gpr; ) {
     regName[i++] = reg->name();
     regName[i++] = reg->name();
-    if (reg->encoding() < RegisterImpl::number_of_registers-1)
+    if (reg->encoding() < Register::number_of_registers-1)
       reg = reg->successor();
   }
 
@@ -41,7 +41,7 @@ void VMRegImpl::set_regName() {
   for ( ; i < ConcreteRegisterImpl::max_fpr; ) {
     regName[i++] = freg->name();
     regName[i++] = freg->name();
-    if (reg->encoding() < FloatRegisterImpl::number_of_registers-1)
+    if (reg->encoding() < FloatRegister::number_of_registers-1)
       freg = freg->successor();
   }
 

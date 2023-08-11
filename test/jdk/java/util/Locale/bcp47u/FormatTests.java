@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  *
  * @test
- * @bug 8176841 8194148
+ * @bug 8176841 8194148 8284840
  * @summary Tests *Format class deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -98,20 +98,20 @@ public class FormatTests {
 
             // -ca
             {JCAL, "java.util.JapaneseImperialCalendar", null,
-            "Thursday, August 10, 29 Heisei at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 29 Heisei, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             // -tz
             {JPTYO, null, ASIATOKYO,
-            "Friday, August 11, 2017 at 7:15:00 AM Japan Standard Time"
+            "Friday, August 11, 2017, 7:15:00\u202fAM Japan Standard Time"
             },
             {USLAX, null, AMLA,
-            "Thursday, August 10, 2017 at 3:15:00 PM Pacific Daylight Time"
+            "Thursday, August 10, 2017, 3:15:00\u202fPM Pacific Daylight Time"
             },
 
             // -rg
             {RG_GB, null, null,
-            "Thursday, 10 August 2017 at 15:15:00 Pacific Daylight Time"
+            "Thursday, 10 August 2017, 15:15:00 Pacific Daylight Time"
             },
         };
     }

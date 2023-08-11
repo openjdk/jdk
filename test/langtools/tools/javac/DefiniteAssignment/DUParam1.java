@@ -8,7 +8,7 @@
  */
 
 public class DUParam1 {
-    public static void main(final String[] args) {
+    public static void meth(final String[] args) {
         // 8.4.1 makes it illegal to assign to a final parameter.
         if (false) args = null;
     }

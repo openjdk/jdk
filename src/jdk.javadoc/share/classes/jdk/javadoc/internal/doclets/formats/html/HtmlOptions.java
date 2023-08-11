@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -101,6 +102,11 @@ public class HtmlOptions extends BaseOptions {
     private boolean createTree = true;
 
     /**
+     * Arguments for command-line option {@code -tag} and {@code -taglet}.
+     */
+    private final LinkedHashSet<List<String>> customTagStrs = new LinkedHashSet<>();
+
+    /**
      * Arguments for command-line option {@code -Xdoclint} and friends.
      * Collected set of doclint options.
      */
@@ -139,6 +145,13 @@ public class HtmlOptions extends BaseOptions {
     private boolean noDeprecatedList = false;
 
     /**
+     * Argument for command-line option {@code --no-external-spec-page}.
+     * True if command-line option "--no-external-spec-page" is used. Default value is
+     * false.
+     */
+    private boolean noExternalSpecsPage = false;
+
+    /**
      * Argument for command-line option {@code -nohelp}.
      * True if command-line option "-nohelp" is used. Default value is false.
      */
@@ -169,6 +182,12 @@ public class HtmlOptions extends BaseOptions {
     private String packagesHeader = "";
 
     /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    private String snippetPath = null;
+
+    /**
      * Argument for command-line option {@code -splitindex}.
      * True if command-line option "-splitindex" is used. Default value is
      * false.
@@ -176,9 +195,21 @@ public class HtmlOptions extends BaseOptions {
     private boolean splitIndex = false;
 
     /**
+     * Argument for command-line option {@code --show-taglets}.
+     * Show taglets (internal debug switch)
+     */
+    private boolean showTaglets = false;
+
+    /**
      * Argument for command-line option {@code -stylesheetfile}.
      */
     private String stylesheetFile = "";
+
+    /**
+     * Argument for command-line option {@code -tagletpath}.
+     * The path to Taglets
+     */
+    private String tagletPath = null;
 
     /**
      * Argument for command-line option {@code -top}.
@@ -343,6 +374,14 @@ public class HtmlOptions extends BaseOptions {
                     }
                 },
 
+                new Hidden(resources, "--no-external-specs-page") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noExternalSpecsPage = true;
+                        return true;
+                    }
+                },
+
                 new Option(resources, "-notree") {
                     @Override
                     public boolean process(String opt,  List<String> args) {
@@ -387,6 +426,44 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt,  List<String> args) {
                         stylesheetFile = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--snippet-path", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        snippetPath = args.get(0);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "-tag", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        ArrayList<String> list = new ArrayList<>();
+                        list.add(opt);
+                        list.add(args.get(0));
+                        customTagStrs.add(list);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "-taglet", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        ArrayList<String> list = new ArrayList<>();
+                        list.add(opt);
+                        list.add(args.get(0));
+                        customTagStrs.add(list);
+                        return true;
+                    }
+                },
+
+                new Option(resources, "-tagletpath", 1) {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        tagletPath = args.get(0);
                         return true;
                     }
                 },
@@ -458,7 +535,8 @@ public class HtmlOptions extends BaseOptions {
                     public boolean process(String opt, List<String> args) {
                         docrootParent = args.get(0);
                         try {
-                            new URL(docrootParent);
+                            @SuppressWarnings("deprecation")
+                            var _unused = new URL(docrootParent);
                         } catch (MalformedURLException e) {
                             messages.error("doclet.MalformedURL", docrootParent);
                             return false;
@@ -471,6 +549,14 @@ public class HtmlOptions extends BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         messages.warning("doclet.NoFrames_specified");
+                        return true;
+                    }
+                },
+
+                new Hidden(resources, "--show-taglets") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        showTaglets = true;
                         return true;
                     }
                 }
@@ -605,6 +691,13 @@ public class HtmlOptions extends BaseOptions {
     }
 
     /**
+     * Arguments for command-line option {@code -tag} and {@code -taglet}.
+     */
+    LinkedHashSet<List<String>> customTagStrs() {
+        return customTagStrs;
+    }
+
+    /**
      * Arguments for command-line option {@code -Xdoclint} and friends.
      * Collected set of doclint options.
      */
@@ -657,6 +750,15 @@ public class HtmlOptions extends BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --no-external-specs-page}.
+     * True if command-line option "--no-external-specs-page" is used. Default value is
+     * false.
+     */
+    public boolean noExternalSpecsPage() {
+        return noExternalSpecsPage;
+    }
+
+    /**
      * Argument for command-line option {@code -nohelp}.
      * True if command-line option "-nohelp" is used. Default value is false.
      */
@@ -697,6 +799,22 @@ public class HtmlOptions extends BaseOptions {
     }
 
     /**
+     * Argument for command-line option {@code --show-taglets}.
+     * Show taglets (internal debug switch)
+     */
+    public boolean showTaglets() {
+        return showTaglets;
+    }
+
+    /**
+     * Argument for command-line option {@code --snippet-path}.
+     * The path for external snippets.
+     */
+    public String snippetPath() {
+        return snippetPath;
+    }
+
+    /**
      * Argument for command-line option {@code -splitindex}.
      * True if command-line option "-splitindex" is used. Default value is
      * false.
@@ -710,6 +828,14 @@ public class HtmlOptions extends BaseOptions {
      */
     String stylesheetFile() {
         return stylesheetFile;
+    }
+
+    /**
+     * Argument for command-line option {@code -tagletpath}.
+     * The path to Taglets
+     */
+    public String tagletPath() {
+        return tagletPath;
     }
 
     /**

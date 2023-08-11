@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -63,11 +62,9 @@ public class HelpWriter extends HtmlDocletWriter {
     /**
      * Constructor to construct HelpWriter object.
      * @param configuration the configuration
-     * @param filename File to be generated.
      */
-    public HelpWriter(HtmlConfiguration configuration,
-                      DocPath filename) {
-        super(configuration, filename);
+    public HelpWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.HELP_DOC);
 
         // yes, INDEX is correct in the following line
         overviewLink = links.createLink(DocPaths.INDEX, resources.getText("doclet.Overview"));
@@ -79,27 +76,8 @@ public class HelpWriter extends HtmlDocletWriter {
         indexLink = links.createLink(dp, resources.getText("doclet.Index"));
     }
 
-    /**
-     * Construct the HelpWriter object and then use it to generate the help
-     * file. The name of the generated file is "help-doc.html". The help file
-     * will get generated if and only if "-helpfile" and "-nohelp" is not used
-     * on the command line.
-     *
-     * @param configuration the configuration
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.HELP_DOC;
-        HelpWriter helpgen = new HelpWriter(configuration, filename);
-        helpgen.generateHelpFile();
-    }
-
-    /**
-     * Generate the help file contents.
-     *
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    protected void generateHelpFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Help_title");
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder helpFileContent = new ContentBuilder();
@@ -208,7 +186,6 @@ public class HelpWriter extends HtmlDocletWriter {
 
         return content;
     }
-
 
     /**
      * Creates the page-specific help, adding an entry into the main table-of-contents.
@@ -387,6 +364,15 @@ public class HelpWriter extends HtmlDocletWriter {
             Content sysPropsBody = getContent("doclet.help.systemProperties.body",
                     links.createLink(DocPaths.SYSTEM_PROPERTIES, resources.getText("doclet.systemProperties")));
             section.add(HtmlTree.P(sysPropsBody));
+            pageKindsSection.add(section);
+        }
+
+        // External Specification
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.EXTERNAL_SPECS)) {
+            section = newHelpSection(contents.externalSpecifications, PageMode.EXTERNAL_SPECS, subTOC);
+            Content extSpecsBody = getContent("doclet.help.externalSpecifications.body",
+                    links.createLink(DocPaths.EXTERNAL_SPECS, resources.getText("doclet.External_Specifications")));
+            section.add(HtmlTree.P(extSpecsBody));
             pageKindsSection.add(section);
         }
 

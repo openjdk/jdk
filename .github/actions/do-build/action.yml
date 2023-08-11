@@ -61,7 +61,7 @@ runs:
               $build_dir/make-support/failure-summary.log \
               $build_dir/make-support/failure-logs/* \
               failure-logs/ 2> /dev/null || true
-          echo '::set-output name=failure::true'
+          echo 'failure=true' >> $GITHUB_OUTPUT
         fi
       shell: bash
 

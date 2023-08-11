@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ JVMFlag* JVMFlagLookup::find_impl(const char* name, size_t length) const {
     flag_enum = (int)_table[flag_enum];
   }
 
-  return NULL;
+  return nullptr;
 }
 
 JVMFlag* JVMFlagLookup::find(const char* name, size_t length) {

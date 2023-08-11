@@ -35,7 +35,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -77,12 +76,12 @@ public class HtmlIndexBuilder extends IndexBuilder {
      * After the initial work to add the element items, the remaining fields in
      * the items are also initialized.
      */
+    @Override
     public void addElements() {
         super.addElements();
         if (classesOnly) {
             return;
         }
-
 
         Map<String,Integer> duplicateLabelCheck = new HashMap<>();
         for (Character ch : getFirstCharacters()) {
@@ -131,7 +130,7 @@ public class HtmlIndexBuilder extends IndexBuilder {
             case FIELD:
             case ENUM_CONSTANT:
                 TypeElement containingType = item.getContainingTypeElement();
-                item.setContainingPackage(utils.getPackageName(utils.containingPackage(element)));
+                item.setContainingPackage(utils.getPackageName(utils.containingPackage(containingType)));
                 item.setContainingClass(utils.getSimpleName(containingType));
                 if (configuration.showModules && addModuleInfo) {
                     item.setContainingModule(utils.getFullyQualifiedName(utils.containingModule(element)));
@@ -148,7 +147,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
                 throw new Error();
         }
     }
-
 
     /**
      * Generates the set of index files used by interactive search.

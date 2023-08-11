@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,11 @@ class fileStream;
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
           "Enable JVMCI")                                                   \
+                                                                            \
+  product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
+          "Select the Graal JVMCI compiler. This is an alias for: "         \
+          "  -XX:+EnableJVMCIProduct "                                      \
+          "  -Djvmci.Compiler=graal ")                                      \
                                                                             \
   product(bool, EnableJVMCIProduct, false, EXPERIMENTAL,                    \
           "Allow JVMCI to be used in product mode. This alters a subset of "\
@@ -129,10 +134,10 @@ class fileStream;
           "Maximum size of a compiled method.")                             \
           range(0, max_jint)                                                \
                                                                             \
-  product(ccstr, JVMCILibPath, NULL, EXPERIMENTAL,                          \
+  product(ccstr, JVMCILibPath, nullptr, EXPERIMENTAL,                       \
           "LD path for loading the JVMCI shared library")                   \
                                                                             \
-  product(ccstr, JVMCILibDumpJNIConfig, NULL, EXPERIMENTAL,                 \
+  product(ccstr, JVMCILibDumpJNIConfig, nullptr, EXPERIMENTAL,              \
           "Dumps to the given file a description of the classes, fields "   \
           "and methods the JVMCI shared library must provide")              \
                                                                             \
@@ -147,7 +152,7 @@ class fileStream;
           "The remaining compiler threads are used by C1.")                 \
           range(0.0, 1.0)                                                   \
                                                                             \
-  product(ccstr, JVMCINativeLibraryErrorFile, NULL, EXPERIMENTAL,           \
+  product(ccstr, JVMCINativeLibraryErrorFile, nullptr, EXPERIMENTAL,        \
           "If an error in the JVMCI native library occurs, save the "       \
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
@@ -185,7 +190,7 @@ class JVMCIGlobals {
   static bool check_jvmci_flags_are_consistent();
 
   // Convert JVMCI experimental flags to product
-  static bool enable_jvmci_product_mode(JVMFlagOrigin);
+  static bool enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit);
 
   // Returns true iff the GC fully supports JVMCI.
   static bool gc_supports_jvmci();

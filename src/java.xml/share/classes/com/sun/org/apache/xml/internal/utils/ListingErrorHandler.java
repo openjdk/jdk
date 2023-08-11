@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -413,7 +414,7 @@ public class ListingErrorHandler implements ErrorHandler, ErrorListener
         try
         {
             // Try to get a URL from it as-is
-            url = new URL(sourceUrl);
+            url = newURL(sourceUrl);
         }
         catch (java.net.MalformedURLException mue)
         {
@@ -431,7 +432,7 @@ public class ListingErrorHandler implements ErrorHandler, ErrorListener
             else
             {
                 // The url is relative, so attempt to get absolute
-                url = new URL(SystemIDResolver.getAbsoluteURI(sourceUrl));
+                url = newURL(SystemIDResolver.getAbsoluteURI(sourceUrl));
                 // If this fails, allow the exception to propagate
             }
         }
@@ -562,4 +563,8 @@ public class ListingErrorHandler implements ErrorHandler, ErrorListener
     /** If we should throw exception on fatalErrors; default:true.  */
     protected boolean throwOnFatalError = true;
 
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
+    }
 }

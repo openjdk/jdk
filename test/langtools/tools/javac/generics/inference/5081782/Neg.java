@@ -8,7 +8,7 @@
 
 public class Neg {
     static void m() {}
-    public static void main(String... args) {
+    public static void meth() {
         Neg.<Can,I,write,a,little,story,here>m();
     }
 }

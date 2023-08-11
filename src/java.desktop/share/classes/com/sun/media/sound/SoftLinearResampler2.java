@@ -53,7 +53,7 @@ public final class SoftLinearResampler2 extends SoftAbstractResampler {
         if (!(ix < ix_end && ox < ox_end))
             return;
 
-        // 15 bit shift was choosed because
+        // 15 bit shift was chosen because
         // it resulted in no drift between p_ix and ix.
         int p_ix = (int) (ix * (1 << 15));
         int p_ix_end = (int) (ix_end * (1 << 15));

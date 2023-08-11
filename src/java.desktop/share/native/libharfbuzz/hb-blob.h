@@ -63,7 +63,7 @@ HB_BEGIN_DECLS
  *   HarfBuzz and doing that just once (no reuse!),
  *
  * - If the font is mmap()ed, it's okay to use
- *   @HB_MEMORY_READONLY_MAY_MAKE_WRITABLE, however, using that mode
+ *   @HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE, however, using that mode
  *   correctly is very tricky.  Use @HB_MEMORY_MODE_READONLY instead.
  **/
 typedef enum {
@@ -135,7 +135,7 @@ hb_blob_set_user_data (hb_blob_t          *blob,
 
 
 HB_EXTERN void *
-hb_blob_get_user_data (hb_blob_t          *blob,
+hb_blob_get_user_data (const hb_blob_t    *blob,
                        hb_user_data_key_t *key);
 
 

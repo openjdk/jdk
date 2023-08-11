@@ -657,8 +657,8 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
   }
   st->print_cr("POPL   EBP"); st->print("\t");
   if (do_polling() && C->is_method_compilation()) {
-    st->print("CMPL     rsp, poll_offset[thread]  \n\t"
-              "JA       #safepoint_stub\t"
+    st->print("CMPL    rsp, poll_offset[thread]  \n\t"
+              "JA      #safepoint_stub\t"
               "# Safepoint: poll for GC");
   }
 }
@@ -708,7 +708,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, thread, true /* at_return */, true /* in_nmethod */);
@@ -1241,18 +1243,30 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_stack && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(src_first);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), Address(rsp, offset));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    %s, [ESP + %d]", Matcher::regName[dst_first], offset);
+#endif
+    }
     return 0;
   }
 
   if (src_first_rc == rc_kreg && dst_first_rc == rc_stack) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
     int offset = ra_->reg2offset(dst_first);
-    __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(Address(rsp, offset), as_KRegister(Matcher::_regEncode[src_first]));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    [ESP + %d], %s", offset, Matcher::regName[src_first]);
+#endif
+    }
     return 0;
   }
 
@@ -1269,8 +1283,14 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
   if (src_first_rc == rc_kreg && dst_first_rc == rc_kreg) {
     assert((src_first & 1) == 0 && src_first + 1 == src_second, "invalid register pair");
     assert((dst_first & 1) == 0 && dst_first + 1 == dst_second, "invalid register pair");
-    MacroAssembler _masm(cbuf);
-    __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+    if (cbuf != nullptr) {
+      MacroAssembler _masm(cbuf);
+      __ kmov(as_KRegister(Matcher::_regEncode[dst_first]), as_KRegister(Matcher::_regEncode[src_first]));
+#ifndef PRODUCT
+    } else {
+      st->print("KMOV    %s, %s", Matcher::regName[dst_first], Matcher::regName[src_first]);
+#endif
+    }
     return 0;
   }
 
@@ -1387,7 +1407,7 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 //=============================================================================
 
 // Vector calling convention not supported.
-const bool Matcher::supports_vector_calling_convention() {
+bool Matcher::supports_vector_calling_convention() {
   return false;
 }
 
@@ -7137,7 +7157,7 @@ instruct addI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AddI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "ADD    $dst,$src" %}
   opcode(0x03);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -7506,7 +7526,7 @@ instruct subI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (SubI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "SUB    $dst,$src" %}
   opcode(0x2B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8179,7 +8199,7 @@ instruct andI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (AndI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "AND    $dst,$src" %}
   opcode(0x23);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8370,7 +8390,7 @@ instruct orI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (OrI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "OR     $dst,$src" %}
   opcode(0x0B);
   ins_encode( OpcP, RegMem( dst, src) );
@@ -8577,7 +8597,7 @@ instruct xorI_eReg_mem(rRegI dst, memory src, eFlagsReg cr) %{
   match(Set dst (XorI dst (LoadI src)));
   effect(KILL cr);
 
-  ins_cost(125);
+  ins_cost(150);
   format %{ "XOR    $dst,$src" %}
   opcode(0x33);
   ins_encode( OpcP, RegMem(dst, src) );
@@ -12679,35 +12699,6 @@ instruct jmpLoopEnd(cmpOp cop, eFlagsReg cr, label labl) %{
   ins_pipe( pipe_jcc );
 %}
 
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "J$cop,u  $labl\t# Loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
-instruct jmpLoopEndUCF(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(200);
-  format %{ "J$cop,u  $labl\t# Loop end" %}
-  size(6);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jcc((Assembler::Condition)($cop$$cmpcode), *L, false); // Always long jump
-  %}
-  ins_pipe( pipe_jcc );
-%}
-
 // Jump Direct Conditional - using unsigned comparison
 instruct jmpConU(cmpOpU cop, eFlagsRegU cmp, label labl) %{
   match(If cop cmp);
@@ -12862,37 +12853,6 @@ instruct jmpLoopEnd_short(cmpOp cop, eFlagsReg cr, label labl) %{
 
   ins_cost(300);
   format %{ "J$cop,s  $labl\t# Loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe( pipe_jcc );
-  ins_short_branch(1);
-%}
-
-// Jump Direct Conditional - Label defines a relative address from Jcc+1
-instruct jmpLoopEndU_short(cmpOpU cop, eFlagsRegU cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "J$cop,us $labl\t# Loop end" %}
-  size(2);
-  ins_encode %{
-    Label* L = $labl$$label;
-    __ jccb((Assembler::Condition)($cop$$cmpcode), *L);
-  %}
-  ins_pipe( pipe_jcc );
-  ins_short_branch(1);
-%}
-
-instruct jmpLoopEndUCF_short(cmpOpUCF cop, eFlagsRegUCF cmp, label labl) %{
-  match(CountedLoopEnd cop cmp);
-  effect(USE labl);
-
-  ins_cost(300);
-  format %{ "J$cop,us $labl\t# Loop end" %}
   size(2);
   ins_encode %{
     Label* L = $labl$$label;
@@ -13800,15 +13760,16 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
-instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2) %{
+instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2, eRegP thread) %{
   predicate(Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box, TEMP thread);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register, $thread$$Register,
                  _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
@@ -13816,15 +13777,16 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr) %{
+instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr, eRegP thread) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box, TEMP thread);
   ins_cost(300);
   format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
+    __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, $thread$$Register, nullptr, nullptr, nullptr, false, false);
   %}
   ins_pipe(pipe_slow);
 %}

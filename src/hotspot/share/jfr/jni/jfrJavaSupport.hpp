@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ class JfrJavaSupport : public AllStatic {
 
   static void set_field(JfrJavaArguments* args, TRAPS);
   static void get_field(JfrJavaArguments* args, TRAPS);
-  static void get_field(JfrJavaArguments* args, Thread* thread);
   static void new_object(JfrJavaArguments* args, TRAPS);
 
   // global jni handle result
@@ -96,6 +95,7 @@ class JfrJavaSupport : public AllStatic {
   static void throw_class_format_error(const char* message, TRAPS);
   static void throw_runtime_exception(const char* message, TRAPS);
 
+  static void load_jdk_jfr_module(TRAPS);
   static bool is_jdk_jfr_module_available();
   static bool is_jdk_jfr_module_available(outputStream* stream, TRAPS);
 

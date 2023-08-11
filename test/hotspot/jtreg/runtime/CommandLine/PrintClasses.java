@@ -30,6 +30,15 @@
  * @run main/othervm PrintClasses
  */
 
+/*
+ * @test
+ * @bug 8298162
+ * @summary Test jcmd VM.classes with JFR
+ * @requires vm.hasJFR
+ * @library /test/lib
+ * @run main/othervm -XX:StartFlightRecording PrintClasses
+ */
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
 
@@ -47,5 +56,8 @@ public class PrintClasses {
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("instance size");
     output.shouldContain(PrintClasses.class.getSimpleName());
+
+    // Test for previous bug in misc flags printing
+    output.shouldNotContain("##name");
   }
 }

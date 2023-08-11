@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import toolbox.ToolBox;
 
 public class TestRecordLinks  extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestRecordLinks tester = new TestRecordLinks();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestRecordLinks();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();

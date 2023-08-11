@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.Permission;
@@ -1527,6 +1528,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     private static final long RUNSTATE;
     private static final long PARALLELISM;
     private static final long THREADIDS;
+    private static final Object POOLIDS_BASE;
     private static final long POOLIDS;
 
     private boolean compareAndSetCtl(long c, long v) {
@@ -1545,7 +1547,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         return U.getAndAddLong(this, THREADIDS, 1L);
     }
     private static int getAndAddPoolIds(int x) {
-        return U.getAndAddInt(ForkJoinPool.class, POOLIDS, x);
+        return U.getAndAddInt(POOLIDS_BASE, POOLIDS, x);
     }
     private int getAndSetParallelism(int v) {
         return U.getAndSetInt(this, PARALLELISM, v);
@@ -1815,9 +1817,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * returning source id or retry indicator.
      *
      * @param w caller's WorkQueue
-     * @param prevSrc the previous queue stolen from in current phase, or 0
+     * @param prevSrc the two previous queues (if nonzero) stolen from in current phase, packed as int
      * @param r random seed
-     * @return id of queue if taken, negative if none found, prevSrc for retry
+     * @return the next prevSrc value to use, or negative if none found
      */
     private int scan(WorkQueue w, int prevSrc, int r) {
         WorkQueue[] qs = queues;
@@ -1835,10 +1837,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                 else if (t != null && WorkQueue.casSlotToNull(a, k, t)) {
                     q.base = nb;
                     w.source = src;
-                    if (prevSrc == 0 && q.base == nb && a[nk] != null)
-                        signalWork();           // propagate
+                    if (src + (src << SWIDTH) != prevSrc &&
+                        q.base == nb && a[nk] != null)
+                        signalWork();           // propagate at most twice/run
                     w.topLevelExec(t, q);
-                    return src;
+                    return src + (prevSrc << SWIDTH);
                 }
                 else if (q.array != a || a[k] != null || a[nk] != null)
                     return prevSrc;             // revisit
@@ -2711,9 +2714,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         this.saturate = saturate;
         this.config = asyncMode ? FIFO : 0;
         this.keepAlive = Math.max(unit.toMillis(keepAliveTime), TIMEOUT_SLOP);
-        int corep = Math.min(Math.max(corePoolSize, p), MAX_CAP);
-        int maxSpares = Math.max(0, Math.min(maximumPoolSize - p, MAX_CAP));
-        int minAvail = Math.max(0, Math.min(minimumRunnable, MAX_CAP));
+        int corep = Math.clamp(corePoolSize, p, MAX_CAP);
+        int maxSpares = Math.clamp(maximumPoolSize - p, 0, MAX_CAP);
+        int minAvail = Math.clamp(minimumRunnable, 0, MAX_CAP);
         this.bounds = (long)(minAvail & SMASK) | (long)(maxSpares << SWIDTH) |
             ((long)corep << 32);
         int size = 1 << (33 - Integer.numberOfLeadingZeros(p - 1));
@@ -2744,7 +2747,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             String ms = System.getProperty
                 ("java.util.concurrent.ForkJoinPool.common.maximumSpares");
             if (ms != null)
-                maxSpares = Math.max(0, Math.min(MAX_CAP, Integer.parseInt(ms)));
+                maxSpares = Math.clamp(Integer.parseInt(ms), 0, MAX_CAP);
             String sf = System.getProperty
                 ("java.util.concurrent.ForkJoinPool.common.threadFactory");
             String sh = System.getProperty
@@ -2849,6 +2852,10 @@ public class ForkJoinPool extends AbstractExecutorService {
     /**
      * Submits a ForkJoinTask for execution.
      *
+     * @implSpec
+     * This method is equivalent to {@link #externalSubmit(ForkJoinTask)}
+     * when called from a thread that is not in this pool.
+     *
      * @param task the task to submit
      * @param <T> the type of the task's result
      * @return the task
@@ -2896,6 +2903,31 @@ public class ForkJoinPool extends AbstractExecutorService {
     // Added mainly for possible use in Loom
 
     /**
+     * Submits the given task as if submitted from a non-{@code ForkJoinTask}
+     * client. The task is added to a scheduling queue for submissions to the
+     * pool even when called from a thread in the pool.
+     *
+     * @implSpec
+     * This method is equivalent to {@link #submit(ForkJoinTask)} when called
+     * from a thread that is not in this pool.
+     *
+     * @return the task
+     * @param task the task to submit
+     * @param <T> the type of the task's result
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     * @since 20
+     */
+    public <T> ForkJoinTask<T> externalSubmit(ForkJoinTask<T> task) {
+        U.storeStoreFence();  // ensure safely publishable
+        task.markPoolSubmission();
+        WorkQueue q = submissionQueue(true);
+        q.push(task, this, true);
+        return task;
+    }
+
+    /**
      * Submits the given task without guaranteeing that it will
      * eventually execute in the absence of available active threads.
      * In some contexts, this method may reduce contention and
@@ -2906,6 +2938,9 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param task the task
      * @param <T> the type of the task's result
      * @return the task
+     * @throws NullPointerException if the task is null
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
      * @since 19
      */
     public <T> ForkJoinTask<T> lazySubmit(ForkJoinTask<T> task) {
@@ -3264,6 +3299,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * granularities.
      *
      * @return the number of queued tasks
+     * @see ForkJoinWorkerThread#getQueuedTaskCount()
      */
     public long getQueuedTaskCount() {
         WorkQueue[] qs; WorkQueue q;
@@ -3762,7 +3798,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         U = Unsafe.getUnsafe();
         Class<ForkJoinPool> klass = ForkJoinPool.class;
         try {
-            POOLIDS = U.staticFieldOffset(klass.getDeclaredField("poolIds"));
+            Field poolIdsField = klass.getDeclaredField("poolIds");
+            POOLIDS_BASE = U.staticFieldBase(poolIdsField);
+            POOLIDS = U.staticFieldOffset(poolIdsField);
         } catch (NoSuchFieldException e) {
             throw new ExceptionInInitializerError(e);
         }

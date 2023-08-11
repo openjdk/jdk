@@ -23,17 +23,20 @@
 
 /*
  * @test
- * @bug 8284358
+ * @bug 8284358 8296912
  * @summary An unreachable loop is not removed, leading to a broken graph.
  * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=1448005075
- *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined
+ *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined*
  *                   compiler.c2.TestDeadDataLoop
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=1922737097
- *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined
+ *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined*
+ *                   compiler.c2.TestDeadDataLoop
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=2472844645
+ *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined*
  *                   compiler.c2.TestDeadDataLoop
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
- *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined
+ *                   -XX:CompileCommand=compileonly,*TestDeadDataLoop::test* -XX:CompileCommand=dontinline,*TestDeadDataLoop::notInlined*
  *                   compiler.c2.TestDeadDataLoop
  */
 
@@ -216,8 +219,27 @@ public class TestDeadDataLoop {
         }
     }
 
+    static long l;
+
+    static void test11(boolean never) {
+        float f = 1;
+        boolean b;
+        for (int i = 0; i < 5; ++i) {
+            b = (never || l < 0);
+            l = notInlined2();
+            if (!never) {
+                f += i;
+            }
+        }
+        l += f;
+    }
+
     public static boolean notInlined() {
         return false;
+    }
+
+    public static int notInlined2() {
+        return 42;
     }
 
     public static void main(String[] args) {
@@ -234,6 +256,7 @@ public class TestDeadDataLoop {
         test8();
         test9();
         test10();
+        test11(false);
     }
 }
 

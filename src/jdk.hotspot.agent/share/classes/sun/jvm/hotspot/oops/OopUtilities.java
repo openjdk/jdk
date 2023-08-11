@@ -224,7 +224,7 @@ public class OopUtilities {
     // The threadStatus is only present starting in 1.5
     if (threadStatusField != null) {
       Oop holderOop = threadHolderField.getValue(threadOop);
-      return (int) threadStatusField.getValue(holderOop);
+      return threadStatusField.getValue(holderOop);
     } else {
       // All we can easily figure out is if it is alive, but that is
       // enough info for a valid unknown status.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Unit tests for java.lang.ThreadGroup
- * @run testng BasicTests
+ * @run junit BasicTests
  */
 
 import java.lang.ref.WeakReference;
@@ -34,25 +34,25 @@ import java.util.Set;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class BasicTests {
+class BasicTests {
 
     @Test
-    public void testGetName1() {
+    void testGetName1() {
         ThreadGroup group = new ThreadGroup(null);
         assertTrue(group.getName() == null);
     }
 
     @Test
-    public void testGetName2() {
+    void testGetName2() {
         ThreadGroup group = new ThreadGroup("fred");
-        assertEquals(group.getName(), "fred");
+        assertEquals("fred", group.getName());
     }
 
     @Test
-    public void testGetParent() {
+    void testGetParent() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         ThreadGroup group3 = new ThreadGroup(group2, "group3");
@@ -63,7 +63,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testParentOf() {
+    void testParentOf() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         ThreadGroup group3 = new ThreadGroup(group2, "group3");
@@ -85,7 +85,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testActiveCount1() {
+    void testActiveCount1() {
         ThreadGroup group = new ThreadGroup("group");
         assertTrue(group.activeCount() == 0);
         TestThread thread = TestThread.start(group, "foo");
@@ -98,7 +98,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testActiveCount2() {
+    void testActiveCount2() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         assertTrue(group1.activeCount() == 0);
@@ -124,7 +124,7 @@ public class BasicTests {
     }
 
     @Test
-    public void enumerateThreads1() {
+    void enumerateThreads1() {
         ThreadGroup group = new ThreadGroup("group");
         Thread[] threads = new Thread[100];
         assertTrue(group.enumerate(threads) == 0);
@@ -156,7 +156,7 @@ public class BasicTests {
     }
 
     @Test
-    public void enumerateThreads2() {
+    void enumerateThreads2() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
 
@@ -203,12 +203,12 @@ public class BasicTests {
             try {
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group1.enumerate(threads) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread1, thread2));
+                assertEquals(Set.of(thread1, thread2), toSet(threads, 2));
                 assertTrue(threads[2] == null);
 
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group1.enumerate(threads, true) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread1, thread2));
+                assertEquals(Set.of(thread1, thread2), toSet(threads, 2));
                 assertTrue(threads[2] == null);
 
                 Arrays.setAll(threads, i -> null);
@@ -261,7 +261,7 @@ public class BasicTests {
     }
 
     @Test
-    public void enumerateThreads3() {
+    void enumerateThreads3() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         ThreadGroup group3 = new ThreadGroup(group2, "group3");
@@ -304,20 +304,20 @@ public class BasicTests {
             try {
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group1.enumerate(threads) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread2, thread3));
+                assertEquals(Set.of(thread2, thread3), toSet(threads, 2));
 
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group1.enumerate(threads, true) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread2, thread3));
+                assertEquals(Set.of(thread2, thread3), toSet(threads, 2));
                 assertTrue(group1.enumerate(threads, false) == 0);
 
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group2.enumerate(threads) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread2, thread3));
+                assertEquals(Set.of(thread2, thread3), toSet(threads, 2));
 
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group2.enumerate(threads, true) == 2);
-                assertEquals(toSet(threads, 2), Set.of(thread2, thread3));
+                assertEquals(Set.of(thread2, thread3), toSet(threads, 2));
 
                 Arrays.setAll(threads, i -> null);
                 assertTrue(group2.enumerate(threads, false) == 1);
@@ -391,7 +391,7 @@ public class BasicTests {
      * Test enumerate(Thread[]) with an array of insufficient size
      */
     @Test
-    public void enumerateThreads4() {
+    void enumerateThreads4() {
         ThreadGroup group = new ThreadGroup("group");
 
         // array too small
@@ -418,7 +418,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testActiveGroupCount() throws Exception {
+    void testActiveGroupCount() throws Exception {
         ThreadGroup group1 = new ThreadGroup("group1");
         assertTrue(group1.activeGroupCount() == 0);
 
@@ -444,7 +444,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testEnumerateGroups1() throws Exception {
+    void testEnumerateGroups1() throws Exception {
         ThreadGroup[] groups = new ThreadGroup[100];
 
         ThreadGroup group1 = new ThreadGroup("group1");
@@ -477,12 +477,12 @@ public class BasicTests {
 
         Arrays.setAll(groups, i -> null);
         assertTrue(group1.enumerate(groups) == 2);
-        assertEquals(toSet(groups, 2), Set.of(group2, group3));
+        assertEquals(Set.of(group2, group3), toSet(groups, 2));
         assertTrue(groups[2] == null);
 
         Arrays.setAll(groups, i -> null);
         assertTrue(group1.enumerate(groups, true) == 2);
-        assertEquals(toSet(groups, 2), Set.of(group2, group3));
+        assertEquals(Set.of(group2, group3), toSet(groups, 2));
         assertTrue(groups[2] == null);
 
         Arrays.setAll(groups, i -> null);
@@ -546,7 +546,7 @@ public class BasicTests {
      * Test enumerate(ThreadGroup[]) with an array of insufficient size
      */
     @Test
-    public void testEnumerateGroups2() throws Exception {
+    void testEnumerateGroups2() throws Exception {
         ThreadGroup group = new ThreadGroup("group");
         ThreadGroup child1 = new ThreadGroup(group, "child1");
         ThreadGroup child2 = new ThreadGroup(group,"child2");
@@ -568,7 +568,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testMaxPriority1() {
+    void testMaxPriority1() {
         ThreadGroup group = new ThreadGroup("group");
         final int maxPriority = group.getMaxPriority();
         assertTrue(maxPriority == Thread.currentThread().getThreadGroup().getMaxPriority());
@@ -592,7 +592,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testMaxPriority2() {
+    void testMaxPriority2() {
         ThreadGroup group1 = new ThreadGroup("group1");
         int maxPriority = group1.getMaxPriority();
         if (maxPriority > Thread.MIN_PRIORITY) {
@@ -630,7 +630,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testMaxPriority3() {
+    void testMaxPriority3() {
         ThreadGroup group = new ThreadGroup("group");
         if (group.getMaxPriority() > Thread.MIN_PRIORITY) {
             int maxPriority = Thread.MIN_PRIORITY + 1;
@@ -656,7 +656,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testInterrupt1() {
+    void testInterrupt1() {
         ThreadGroup group = new ThreadGroup("group");
         assertTrue(group.activeCount() == 0);
         TestThread thread = TestThread.start(group, "foo");
@@ -669,7 +669,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testInterrupt2() {
+    void testInterrupt2() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         TestThread thread1 = TestThread.start(group1, "foo");
@@ -685,7 +685,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testInterrupt3() {
+    void testInterrupt3() {
         ThreadGroup group1 = new ThreadGroup("group1");
         ThreadGroup group2 = new ThreadGroup(group1, "group2");
         TestThread thread1 = TestThread.start(group1, "foo");
@@ -701,7 +701,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testDestroy() {
+    void testDestroy() {
         ThreadGroup group = new ThreadGroup("group");
         assertFalse(group.isDestroyed());
         group.destroy();  // does nothing
@@ -709,7 +709,7 @@ public class BasicTests {
     }
 
     @Test
-    public void testDaemon() {
+    void testDaemon() {
         boolean d = Thread.currentThread().getThreadGroup().isDaemon();
 
         ThreadGroup group1 = new ThreadGroup("group1");
@@ -727,75 +727,68 @@ public class BasicTests {
     }
 
     @Test
-    public void testList() {
+    void testList() {
         ThreadGroup group = new ThreadGroup("foo");
         group.list();
     }
 
     @Test
-    public void testSuspend() {
+    void testSuspend() {
         ThreadGroup group = new ThreadGroup("foo");
         assertThrows(UnsupportedOperationException.class, () -> group.suspend());
     }
 
     @Test
-    public void testResume() {
+    void testResume() {
         ThreadGroup group = new ThreadGroup("foo");
         assertThrows(UnsupportedOperationException.class, () -> group.resume());
     }
 
     @Test
-    public void testStop() {
+    void testStop() {
         ThreadGroup group = new ThreadGroup("foo");
         assertThrows(UnsupportedOperationException.class, () -> group.stop());
     }
 
     @Test
-    public void testAllowThreadSuspension() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertFalse(group.allowThreadSuspension(false));
-        assertFalse(group.allowThreadSuspension(true));
-    }
-
-    @Test
-    public void testNull1() {
+    void testNull1() {
         assertThrows(NullPointerException.class,
                      () -> new ThreadGroup(null, "group"));
     }
 
     @Test
-    public void testNull2() {
+    void testNull2() {
         ThreadGroup group = new ThreadGroup("group");
         assertThrows(NullPointerException.class,
                      () -> group.enumerate((Thread[]) null));
     }
 
     @Test
-    public void testNull3() {
+    void testNull3() {
         ThreadGroup group = new ThreadGroup("group");
         assertThrows(NullPointerException.class,
                      () -> group.enumerate((Thread[]) null, false));
     }
 
     @Test
-    public void testNull4() {
+    void testNull4() {
         ThreadGroup group = new ThreadGroup("group");
         assertThrows(NullPointerException.class,
                      () -> group.enumerate((ThreadGroup[]) null));
     }
 
     @Test
-    public void testNull5() {
+    void testNull5() {
         ThreadGroup group = new ThreadGroup("group");
         assertThrows(NullPointerException.class,
                      () -> group.enumerate((ThreadGroup[]) null, false));
     }
 
-    private <T> Set<T> toSet(T[] array, int len) {
+    private static <T> Set<T> toSet(T[] array, int len) {
         return Arrays.stream(array, 0, len).collect(Collectors.toSet());
     }
 
-    static class TestThread extends Thread {
+    private static class TestThread extends Thread {
         TestThread(ThreadGroup group, String name) {
             super(group, name);
         }
@@ -809,6 +802,7 @@ public class BasicTests {
         private volatile boolean done;
         private volatile boolean interrupted;
 
+        @Override
         public void run() {
             if (Thread.currentThread() != this)
                 throw new IllegalCallerException();

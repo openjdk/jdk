@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,12 +779,12 @@ final class P11KeyStore extends KeyStoreSpi {
         }
 
         try {
-            if (mapLabels() == true) {
+            if (mapLabels()) {
                 // CKA_LABELs are shared by multiple certs
                 writeDisabled = true;
             }
             if (debug != null) {
-                dumpTokenMap();
+                dumpTokenMap(debug);
                 debug.println("P11KeyStore load. Entry count: " +
                         aliasMap.size());
             }
@@ -861,12 +861,12 @@ final class P11KeyStore extends KeyStoreSpi {
 
         try {
             login(handler);
-            if (mapLabels() == true) {
+            if (mapLabels()) {
                 // CKA_LABELs are shared by multiple certs
                 writeDisabled = true;
             }
             if (debug != null) {
-                dumpTokenMap();
+                dumpTokenMap(debug);
             }
         } catch (LoginException | KeyStoreException | PKCS11Exception e) {
             throw new IOException("load failed", e);
@@ -1030,7 +1030,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
         if (entry instanceof KeyStore.TrustedCertificateEntry) {
 
-            if (useSecmodTrust == false) {
+            if (!useSecmodTrust) {
                 // PKCS #11 does not allow app to modify trusted certs -
                 throw new KeyStoreException(new UnsupportedOperationException
                                     ("trusted certificates may only be set by " +
@@ -1043,10 +1043,9 @@ final class P11KeyStore extends KeyStoreSpi {
                     + "added to the NSS KeyStore module");
             }
             Certificate cert = ((TrustedCertificateEntry)entry).getTrustedCertificate();
-            if (cert instanceof X509Certificate == false) {
+            if (!(cert instanceof X509Certificate xcert)) {
                 throw new KeyStoreException("Certificate must be an X509Certificate");
             }
-            X509Certificate xcert = (X509Certificate)cert;
             AliasInfo info = aliasMap.get(alias);
             if (info != null) {
                 // XXX try to update
@@ -1122,9 +1121,8 @@ final class P11KeyStore extends KeyStoreSpi {
                     throw new KeyStoreException(pe);
                 }
 
-            } else if (entry instanceof KeyStore.SecretKeyEntry) {
+            } else if (entry instanceof SecretKeyEntry ske) {
 
-                KeyStore.SecretKeyEntry ske = (KeyStore.SecretKeyEntry)entry;
                 SecretKey skey = ske.getSecretKey();
 
                 try {
@@ -1154,7 +1152,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
                 mapLabels();
                 if (debug != null) {
-                    dumpTokenMap();
+                    dumpTokenMap(debug);
                 }
             } catch (PKCS11Exception | CertificateException pe) {
                 throw new KeyStoreException(pe);
@@ -1215,7 +1213,7 @@ final class P11KeyStore extends KeyStoreSpi {
             // self signed
             return new X509Certificate[] { endCert };
         } else {
-            lChain = new ArrayList<X509Certificate>();
+            lChain = new ArrayList<>();
             lChain.add(endCert);
         }
 
@@ -1231,7 +1229,7 @@ final class P11KeyStore extends KeyStoreSpi {
                                 next.getIssuerX500Principal().getEncoded()) };
             long[] ch = findObjects(session, attrs);
 
-            if (ch == null || ch.length == 0) {
+            if (ch.length == 0) {
                 // done
                 break;
             } else {
@@ -1332,7 +1330,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 RSAKeyFactory.checkKeyLengths(keyLength, null,
                     -1, Integer.MAX_VALUE);
             } catch (InvalidKeyException e) {
-                throw new KeyStoreException(e.getMessage());
+                throw new KeyStoreException(e.getMessage(), e);
             }
 
             return P11Key.privateKey(session,
@@ -1444,7 +1442,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException
                         ("expected but could not find private key " +
                         "with CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             }
 
             // next find existing end entity cert
@@ -1454,7 +1452,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 throw new KeyStoreException
                         ("expected but could not find certificate " +
                         "with CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             } else {
                 if (replaceCert) {
                     // replacing existing cert and chain
@@ -1509,7 +1507,7 @@ final class P11KeyStore extends KeyStoreSpi {
         long keyID = key.getKeyID();
         try {
             session = token.getOpSession();
-            if (key.tokenObject == true) {
+            if (key.tokenObject) {
                 // token key - set new CKA_ID
 
                 CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
@@ -1549,7 +1547,7 @@ final class P11KeyStore extends KeyStoreSpi {
     private void storeCert(String alias, X509Certificate cert)
                 throws PKCS11Exception, CertificateException {
 
-        ArrayList<CK_ATTRIBUTE> attrList = new ArrayList<CK_ATTRIBUTE>();
+        ArrayList<CK_ATTRIBUTE> attrList = new ArrayList<>();
         attrList.add(ATTR_TOKEN_TRUE);
         attrList.add(ATTR_CLASS_CERT);
         attrList.add(ATTR_X509_CERT_TYPE);
@@ -1673,8 +1671,7 @@ final class P11KeyStore extends KeyStoreSpi {
         // If the key is a token object on this token, update it instead
         // of creating a duplicate key object.
         // Otherwise, treat a P11Key like any other key, if it is extractable.
-        if (key instanceof P11Key) {
-            P11Key p11Key = (P11Key)key;
+        if (key instanceof P11Key p11Key) {
             if (p11Key.tokenObject && (p11Key.token == this.token)) {
                 updateP11Pkey(alias, null, p11Key);
                 storeChain(alias, (X509Certificate[])pke.getCertificateChain());
@@ -1691,9 +1688,7 @@ final class P11KeyStore extends KeyStoreSpi {
             attrs = getRsaPrivKeyAttrs
                 (alias, (RSAPrivateKey)key, cert.getSubjectX500Principal());
 
-        } else if (key instanceof DSAPrivateKey) {
-
-            DSAPrivateKey dsaKey = (DSAPrivateKey)key;
+        } else if (key instanceof DSAPrivateKey dsaKey) {
 
             CK_ATTRIBUTE[] idAttrs = getIdAttributes(key, publicKey, false, useNDB);
             if (idAttrs[0] == null) {
@@ -1722,9 +1717,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 debug.println("storePkey created DSA template");
             }
 
-        } else if (key instanceof DHPrivateKey) {
-
-            DHPrivateKey dhKey = (DHPrivateKey)key;
+        } else if (key instanceof DHPrivateKey dhKey) {
 
             CK_ATTRIBUTE[] idAttrs = getIdAttributes(key, publicKey, false, useNDB);
             if (idAttrs[0] == null) {
@@ -1748,9 +1741,7 @@ final class P11KeyStore extends KeyStoreSpi {
             attrs = token.getAttributes
                 (TemplateManager.O_IMPORT, CKO_PRIVATE_KEY, CKK_DH, attrs);
 
-        } else if (key instanceof ECPrivateKey) {
-
-            ECPrivateKey ecKey = (ECPrivateKey)key;
+        } else if (key instanceof ECPrivateKey ecKey) {
 
             CK_ATTRIBUTE[] idAttrs = getIdAttributes(key, publicKey, false, useNDB);
             if (idAttrs[0] == null) {
@@ -1779,9 +1770,8 @@ final class P11KeyStore extends KeyStoreSpi {
                 debug.println("storePkey created EC template");
             }
 
-        } else if (key instanceof P11Key) {
+        } else if (key instanceof P11Key p11Key) {
             // sensitive/non-extractable P11Key
-            P11Key p11Key = (P11Key)key;
             if (p11Key.token != this.token) {
                 throw new KeyStoreException
                     ("Cannot move sensitive keys across tokens");
@@ -1831,13 +1821,11 @@ final class P11KeyStore extends KeyStoreSpi {
         // subject is currently ignored - could be used to set CKA_SUBJECT
 
         CK_ATTRIBUTE[] attrs = null;
-        if (key instanceof RSAPrivateCrtKey) {
+        if (key instanceof RSAPrivateCrtKey rsaKey) {
 
             if (debug != null) {
                 debug.println("creating RSAPrivateCrtKey attrs");
             }
-
-            RSAPrivateCrtKey rsaKey = (RSAPrivateCrtKey)key;
 
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
@@ -1870,8 +1858,6 @@ final class P11KeyStore extends KeyStoreSpi {
                 debug.println("creating RSAPrivateKey attrs");
             }
 
-            RSAPrivateKey rsaKey = key;
-
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
                 ATTR_CLASS_PKEY,
@@ -1879,9 +1865,9 @@ final class P11KeyStore extends KeyStoreSpi {
                 new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_RSA),
                 new CK_ATTRIBUTE(CKA_ID, alias),
                 new CK_ATTRIBUTE(CKA_MODULUS,
-                                rsaKey.getModulus()),
+                                key.getModulus()),
                 new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT,
-                                rsaKey.getPrivateExponent()) };
+                                key.getPrivateExponent()) };
             attrs = token.getAttributes
                 (TemplateManager.O_IMPORT, CKO_PRIVATE_KEY, CKK_RSA, attrs);
         }
@@ -1905,7 +1891,7 @@ final class P11KeyStore extends KeyStoreSpi {
     private CK_ATTRIBUTE[] getIdAttributes(PrivateKey privateKey,
             PublicKey publicKey, boolean id, boolean netscapeDb) {
         CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[2];
-        if ((id || netscapeDb) == false) {
+        if (!(id || netscapeDb)) {
             return attrs;
         }
         String alg = privateKey.getAlgorithm();
@@ -1964,8 +1950,8 @@ final class P11KeyStore extends KeyStoreSpi {
             token.p11.C_DestroyObject(session.id(), h.handle);
             if (debug != null) {
                 debug.println("destroyCert destroyed cert with CKA_ID [" +
-                                                getID(cka_id) +
-                                                "]");
+                        getIDNullSafe(cka_id) +
+                        "]");
             }
             return true;
         } finally {
@@ -1994,91 +1980,86 @@ final class P11KeyStore extends KeyStoreSpi {
                 return false;
             }
 
-            X509Certificate endCert = loadCert(session, h.handle);
-            token.p11.C_DestroyObject(session.id(), h.handle);
-            if (debug != null) {
-                debug.println("destroyChain destroyed end entity cert " +
-                        "with CKA_ID [" +
-                        getID(cka_id) +
-                        "]");
-            }
+            long currHdl = h.handle;
+            boolean checkPrivKey = false;
+            while (currHdl != 0L) {
+                X509Certificate cert = loadCert(session, currHdl);
+                boolean selfSigned = cert.getSubjectX500Principal().equals
+                        (cert.getIssuerX500Principal());
 
-            // build chain following issuer->subject links
-
-            X509Certificate next = endCert;
-            while (true) {
-
-                if (next.getSubjectX500Principal().equals
-                    (next.getIssuerX500Principal())) {
-                    // self signed - done
-                    break;
-                }
-
+                // only delete if both of the followings are true
+                // 1) no other certs depend on it
+                // 2) not corresponds to any private key
                 CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
-                        ATTR_TOKEN_TRUE,
-                        ATTR_CLASS_CERT,
-                        new CK_ATTRIBUTE(CKA_SUBJECT,
-                                  next.getIssuerX500Principal().getEncoded()) };
-                long[] ch = findObjects(session, attrs);
+                    ATTR_TOKEN_TRUE,
+                    ATTR_CLASS_CERT,
+                    new CK_ATTRIBUTE(CKA_ISSUER,
+                        cert.getSubjectX500Principal().getEncoded())
+                };
+                boolean destroyIt = true;
 
-                if (ch == null || ch.length == 0) {
-                    // done
-                    break;
-                } else {
-                    // if more than one found, use first
-                    if (debug != null && ch.length > 1) {
-                        debug.println("destroyChain found " +
-                                ch.length +
-                                " certificate entries for subject [" +
-                                next.getIssuerX500Principal() +
-                                "] in token - using first entry");
-                    }
+                long[] dependents = findObjects(session, attrs);
+                if (dependents.length > 1 ||
+                        (!selfSigned && dependents.length == 1)) {
+                    destroyIt = false;
+                }
 
-                    next = loadCert(session, ch[0]);
-
-                    // only delete if not part of any other chain
-
+                if (destroyIt && checkPrivKey) {
+                    // proceed with checking if there is a private key
                     attrs = new CK_ATTRIBUTE[] {
-                        ATTR_TOKEN_TRUE,
-                        ATTR_CLASS_CERT,
-                        new CK_ATTRIBUTE(CKA_ISSUER,
-                                next.getSubjectX500Principal().getEncoded()) };
-                    long[] issuers = findObjects(session, attrs);
-
-                    boolean destroyIt = false;
-                    if (issuers == null || issuers.length == 0) {
-                        // no other certs with this issuer -
-                        // destroy it
-                        destroyIt = true;
-                    } else if (issuers.length == 1) {
-                        X509Certificate iCert = loadCert(session, issuers[0]);
-                        if (next.equals(iCert)) {
-                            // only cert with issuer is itself (self-signed) -
-                            // destroy it
-                            destroyIt = true;
-                        }
-                    }
-
-                    if (destroyIt) {
-                        token.p11.C_DestroyObject(session.id(), ch[0]);
-                        if (debug != null) {
-                            debug.println
-                                ("destroyChain destroyed cert in chain " +
-                                "with subject [" +
-                                next.getSubjectX500Principal() + "]");
-                        }
-                    } else {
-                        if (debug != null) {
-                            debug.println("destroyChain did not destroy " +
-                                "shared cert in chain with subject [" +
-                                next.getSubjectX500Principal() + "]");
-                        }
+                        new CK_ATTRIBUTE(CKA_ID),
+                    };
+                    token.p11.C_GetAttributeValue(session.id(), currHdl, attrs);
+                    byte[] currId = attrs[0].getByteArray();
+                    if (currId != null) {
+                        attrs = new CK_ATTRIBUTE[] {
+                            ATTR_TOKEN_TRUE,
+                            ATTR_CLASS_PKEY,
+                            new CK_ATTRIBUTE(CKA_ID, currId)
+                        };
+                        long[] privKeys = findObjects(session, attrs);
+                        destroyIt = privKeys.length == 0;
                     }
                 }
+                if (destroyIt) {
+                    token.p11.C_DestroyObject(session.id(), currHdl);
+                    if (debug != null) {
+                        debug.println("destroyChain destroyed cert in chain " +
+                            "with subject [" +
+                            cert.getSubjectX500Principal() + "]");
+                    }
+                } else {
+                    if (debug != null) {
+                        debug.println("destroyChain did not destroy " +
+                            "shared cert in chain with subject [" +
+                            cert.getSubjectX500Principal() + "]");
+                    }
+                }
+                if (selfSigned) {
+                    break; // done
+                }
+                attrs = new CK_ATTRIBUTE[] {
+                    ATTR_TOKEN_TRUE,
+                    ATTR_CLASS_CERT,
+                    new CK_ATTRIBUTE(CKA_SUBJECT,
+                        cert.getIssuerX500Principal().getEncoded())
+                };
+                long[] ch = findObjects(session, attrs);
+                if (ch.length == 0) {
+                    break;
+                }
+                // if more than one found, use first
+                if (debug != null && ch.length > 1) {
+                    debug.println("destroyChain found " +
+                        ch.length +
+                        " certificate entries for subject [" +
+                        cert.getIssuerX500Principal() +
+                        "] in token - using first entry");
+                }
+                currHdl = ch[0];
+                checkPrivKey = true;
             }
-
             return true;
-
         } finally {
             token.releaseSession(session);
         }
@@ -2124,7 +2105,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     debug.println
                         ("destroyPkey did not find private key with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 }
                 return false;
@@ -2170,6 +2151,13 @@ final class P11KeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Null safe version of getID.
+     */
+    private static String getIDNullSafe(byte[] bytes) {
+        return (bytes != null) ? getID(bytes) : "null";
+    }
+
+    /**
      * find an object on the token
      *
      * @param type either ATTR_CLASS_CERT, ATTR_CLASS_PKEY, or ATTR_CLASS_SKEY
@@ -2205,12 +2193,12 @@ final class P11KeyStore extends KeyStoreSpi {
                 } else if (type == ATTR_CLASS_CERT) {
                     debug.println
                         ("getTokenObject did not find cert with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 } else {
                     debug.println("getTokenObject did not find private key " +
                         "with CKA_ID [" +
-                        getID(cka_id) +
+                        getIDNullSafe(cka_id) +
                         "]");
                 }
             }
@@ -2226,7 +2214,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
             if (type == ATTR_CLASS_SKEY) {
 
-                ArrayList<THandle> list = new ArrayList<THandle>(h.length);
+                ArrayList<THandle> list = new ArrayList<>(h.length);
                 for (int i = 0; i < h.length; i++) {
 
                     CK_ATTRIBUTE[] label = new CK_ATTRIBUTE[]
@@ -2253,13 +2241,13 @@ final class P11KeyStore extends KeyStoreSpi {
                         "found " +
                         h.length +
                         " certificates sharing CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             } else {
                 throw new KeyStoreException("invalid KeyStore state: " +
                         "found " +
                         h.length +
                         " private keys sharing CKA_ID " +
-                        getID(cka_id));
+                        getIDNullSafe(cka_id));
             }
         }
         return new THandle(NO_HANDLE, null);
@@ -2292,7 +2280,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
             // get all private key CKA_IDs
 
-            ArrayList<byte[]> pkeyIDs = new ArrayList<byte[]>();
+            ArrayList<byte[]> pkeyIDs = new ArrayList<>();
             CK_ATTRIBUTE[] attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
                 ATTR_CLASS_PKEY,
@@ -2319,7 +2307,7 @@ final class P11KeyStore extends KeyStoreSpi {
             // (multiple certs may be mapped to a single CKA_LABEL)
 
             HashMap<String, HashSet<AliasInfo>> certMap =
-                                new HashMap<String, HashSet<AliasInfo>>();
+                                new HashMap<>();
 
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_TOKEN_TRUE,
@@ -2392,11 +2380,7 @@ final class P11KeyStore extends KeyStoreSpi {
                     }
                 }
 
-                HashSet<AliasInfo> infoSet = certMap.get(cka_label);
-                if (infoSet == null) {
-                    infoSet = new HashSet<AliasInfo>(2);
-                    certMap.put(cka_label, infoSet);
-                }
+                HashSet<AliasInfo> infoSet = certMap.computeIfAbsent(cka_label, k -> new HashSet<>(2));
 
                 // initially create private key entry AliasInfo entries -
                 // these entries will get resolved into their true
@@ -2414,7 +2398,7 @@ final class P11KeyStore extends KeyStoreSpi {
             // or between a secret key and another object),
             // throw an exception
             HashMap<String, AliasInfo> sKeyMap =
-                    new HashMap<String, AliasInfo>();
+                    new HashMap<>();
 
             attrs = new CK_ATTRIBUTE[] {
                 ATTR_SKEY_TOKEN_TRUE,
@@ -2470,10 +2454,10 @@ final class P11KeyStore extends KeyStoreSpi {
                 throws PKCS11Exception, CertificateException {
 
         // reset global alias map
-        aliasMap = new HashMap<String, AliasInfo>();
+        aliasMap = new HashMap<>();
 
         // list of matched certs that we will return
-        ArrayList<AliasInfo> matchedCerts = new ArrayList<AliasInfo>();
+        ArrayList<AliasInfo> matchedCerts = new ArrayList<>();
 
         for (byte[] pkeyID : pkeyIDs) {
 
@@ -2515,7 +2499,7 @@ final class P11KeyStore extends KeyStoreSpi {
                 if (debug != null) {
                     debug.println
                         ("did not find match for private key with CKA_ID [" +
-                        getID(pkeyID) +
+                        getIDNullSafe(pkeyID) +
                         "] (ignoring entry)");
                 }
             }
@@ -2559,7 +2543,7 @@ final class P11KeyStore extends KeyStoreSpi {
             HashSet<AliasInfo> infoSet = certMap.get(certLabel);
             for (AliasInfo aliasInfo : infoSet) {
 
-                if (aliasInfo.matched == true) {
+                if (aliasInfo.matched) {
                     // already found a private key match for this cert -
                     // just continue
                     aliasInfo.trusted = false;
@@ -2657,14 +2641,14 @@ final class P11KeyStore extends KeyStoreSpi {
         aliasMap.putAll(sKeyMap);
     }
 
-    private void dumpTokenMap() {
+    private void dumpTokenMap(Debug debug) {
         Set<String> aliases = aliasMap.keySet();
-        System.out.println("Token Alias Map:");
+        debug.println("Token Alias Map:");
         if (aliases.isEmpty()) {
-            System.out.println("  [empty]");
+            debug.println("  [empty]");
         } else {
             for (String s : aliases) {
-                System.out.println("  " + s + aliasMap.get(s));
+                debug.println("  " + s + aliasMap.get(s));
             }
         }
     }
@@ -2678,6 +2662,7 @@ final class P11KeyStore extends KeyStoreSpi {
 
     private static final long[] LONG0 = new long[0];
 
+    // return an empty array if no match
     private static long[] findObjects(Session session, CK_ATTRIBUTE[] attrs)
             throws PKCS11Exception {
         Token token = session.token;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,15 @@ public abstract class MessageDigestSpi {
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {
-            return super.clone();
+            MessageDigestSpi o = (MessageDigestSpi)super.clone();
+            if (o.tempArray != null) {
+                // New byte arrays are allocated when the ByteBuffer argument
+                // to engineUpdate is not backed by a byte array.
+                // Here, the newly allocated byte array must also be cloned
+                // to prevent threads from sharing the same memory.
+                o.tempArray = tempArray.clone();
+            }
+            return o;
         } else {
             throw new CloneNotSupportedException();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class PSGenerationCounters: public GenerationCounters {
                        size_t min_capacity, size_t max_capacity, PSVirtualSpace* v);
 
   void update_all() {
-    assert(_virtual_space == NULL, "Only one should be in use");
+    assert(_virtual_space == nullptr, "Only one should be in use");
     _current_size->set_value(_ps_virtual_space->committed_size());
   }
 };

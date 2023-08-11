@@ -39,7 +39,7 @@ import javadoc.tester.JavadocTester;
 public class TestModules extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestModules tester = new TestModules();
+        var tester = new TestModules();
         tester.runTests();
     }
 
@@ -629,7 +629,7 @@ public class TestModules extends JavadocTester {
                 """
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="see-list">
+                    <ul class="tag-list">
                     <li>"Test see tag"</li>
                     <li><a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
                     gs"><code>TestClassInModuleTags</code></a></li>
@@ -1110,9 +1110,9 @@ public class TestModules extends JavadocTester {
                     </div>""");
         checkOutput("deprecated-list.html", found,
                 """
-                    <ul>
-                    <li><a href="#for-removal">Terminally Deprecated</a></li>
-                    <li><a href="#module">Modules</a></li>
+                    <ul class="contents-list">
+                    <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                    <li id="contents-module"><a href="#module">Modules</a></li>
                     </ul>""",
                 """
                     <div class="col-summary-item-name even-row-color"><a href="moduleA/module-summary.html">moduleA</a></div>

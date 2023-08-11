@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,33 @@
  */
 
 /*
- * see ./DKSTest.sh
+ * @test
+ * @bug 8007755
+ * @library /test/lib
+ * @summary Support the logical grouping of keystores
  */
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.KeyStore;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.util.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 // Load and store entries in domain keystores
 
 public class DKSTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
-    private static final String USER_DIR = System.getProperty("user.dir");
-    private static final String CERT = TEST_SRC + "/../../pkcs12/trusted.pem";
-    private static final String CONFIG = "file://" + TEST_SRC + "/domains.cfg";
+    private static final String USER_DIR = System.getProperty("user.dir", ".");
+    private static final String CERT = Paths.get(
+            TEST_SRC, "..", "..", "pkcs12", "trusted.pem").toAbsolutePath().toString();
+    private static final String CONFIG = Paths.get(
+            TEST_SRC, "domains.cfg").toUri().toString();
     private static final Map<String, KeyStore.ProtectionParameter> PASSWORDS =
         new HashMap<String, KeyStore.ProtectionParameter>() {{
             put("keystore",
@@ -70,6 +78,18 @@ public class DKSTest {
         }};
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            // Environment variable and system properties referred in domains.cfg used by this Test.
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of(
+                    "-Dtest.src=" + TEST_SRC , "-Duser.dir=" + USER_DIR, "DKSTest", "run"));
+            pb.environment().putAll(System.getenv());
+            pb.environment().put("KEYSTORE_PWD", "test12");
+            pb.environment().put("TRUSTSTORE_PWD", "changeit");
+            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+            output.shouldHaveExitValue(0);
+            output.outputTo(System.out);
+            return;
+        }
         /*
          * domain keystore: keystores with wrong passwords
          */

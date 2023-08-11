@@ -16,7 +16,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * JDK-6770436: Entity callback order differs between Java1.5 and Java1.6
- * https://bugs.openjdk.java.net/browse/JDK-6770436
+ * https://bugs.openjdk.org/browse/JDK-6770436
  *
  */
 

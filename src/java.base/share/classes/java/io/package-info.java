@@ -48,6 +48,7 @@
  *   <li>{@extLink serialver_tool_reference The serialver tool}</li>
  * </ul>
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @since 1.0
  */
 package java.io;

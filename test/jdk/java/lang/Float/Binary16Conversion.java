@@ -28,6 +28,8 @@
  * @library ../Math
  * @build FloatConsts
  * @run main Binary16Conversion
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ * -XX:DisableIntrinsic=_float16ToFloat,_floatToFloat16 Binary16Conversion
  */
 
 public class Binary16Conversion {

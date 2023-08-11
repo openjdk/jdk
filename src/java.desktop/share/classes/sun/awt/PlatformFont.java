@@ -261,7 +261,7 @@ public abstract class PlatformFont implements FontPeer {
             return null;
         }
 
-        // coversion loop
+        // conversion loop
         while(stringIndex < end)
         {
             currentDefaultChar = data[stringIndex];

@@ -425,7 +425,7 @@ public final class X11FontManager extends FcFontManager {
          * can be reset to their initial state afterwards.
          * Since preferLocaleFonts() and preferProportionalFonts() will
          * trigger a partial repopulating from the FontConfiguration
-         * it has to be the inital (empty) state for the latter two, not
+         * it has to be the initial (empty) state for the latter two, not
          * simply nulling out.
          * xFontDirsMap is a special case in that the implementation
          * will typically not ever need to initialise it so it can be null.

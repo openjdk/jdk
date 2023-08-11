@@ -84,7 +84,7 @@ class PatternEntry {
      */
     public String toString() {
         StringBuilder result = new StringBuilder();
-        addToBuffer(result, true, false, null);
+        addToBuilder(result, true, false, null);
         return result.toString();
     }
 
@@ -111,10 +111,10 @@ class PatternEntry {
 
     // ===== privates =====
 
-    void addToBuffer(StringBuilder toAddTo,
-                     boolean showExtension,
-                     boolean showWhiteSpace,
-                     PatternEntry lastEntry)
+    void addToBuilder(StringBuilder toAddTo,
+                      boolean showExtension,
+                      boolean showWhiteSpace,
+                      PatternEntry lastEntry)
     {
         if (showWhiteSpace && toAddTo.length() > 0)
             if (strength == Collator.PRIMARY || lastEntry != null)
@@ -190,8 +190,8 @@ class PatternEntry {
     //========================================================================
 
     PatternEntry(int strength,
-                 StringBuffer chars,
-                 StringBuffer extension)
+                 StringBuilder chars,
+                 StringBuilder extension)
     {
         this.strength = strength;
         this.chars = chars.toString();
@@ -287,8 +287,8 @@ class PatternEntry {
         }
 
         // We re-use these objects in order to improve performance
-        private StringBuffer newChars = new StringBuffer();
-        private StringBuffer newExtension = new StringBuffer();
+        private StringBuilder newChars = new StringBuilder();
+        private StringBuilder newExtension = new StringBuilder();
 
     }
 

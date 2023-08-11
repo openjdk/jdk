@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,24 @@ class WorkerTask;
 class PreservedMarksSet;
 class WorkerThreads;
 
+class PreservedMark {
+ private:
+  oop _o;
+  markWord _m;
+
+ public:
+  PreservedMark(oop obj, markWord m) : _o(obj), _m(m) { }
+
+  oop get_oop() { return _o; }
+  inline void set_mark() const;
+  void set_oop(oop obj) { _o = obj; }
+};
+
 class PreservedMarks {
 private:
-  class OopAndMarkWord {
-  private:
-    oop _o;
-    markWord _m;
+  typedef Stack<PreservedMark, mtGC> PreservedMarkStack;
 
-  public:
-    OopAndMarkWord(oop obj, markWord m) : _o(obj), _m(m) { }
-
-    oop get_oop() { return _o; }
-    inline void set_mark() const;
-    void set_oop(oop obj) { _o = obj; }
-  };
-  typedef Stack<OopAndMarkWord, mtGC> OopAndMarkWordStack;
-
-  OopAndMarkWordStack _stack;
+  PreservedMarkStack _stack;
 
   inline bool should_preserve_mark(oop obj, markWord m) const;
 
@@ -61,6 +62,11 @@ public:
   // Iterate over the stack, restore all preserved marks, and
   // reclaim the memory taken up by the stack segments.
   void restore();
+
+  // Adjust the preserved mark according to its
+  // forwarding location stored in the mark.
+  static void adjust_preserved_mark(PreservedMark* elem);
+
   // Iterate over the stack, adjust all preserved marks according
   // to their forwarding location stored in the mark.
   void adjust_during_full_gc();
@@ -86,8 +92,8 @@ private:
   uint _num;
 
   // Stack array (typically, one stack per GC worker) of length _num.
-  // This should be != NULL if the stacks have been initialized,
-  // or == NULL if they have not.
+  // This should be != null if the stacks have been initialized,
+  // or == null if they have not.
   Padded<PreservedMarks>* _stacks;
 
 public:
@@ -95,7 +101,7 @@ public:
 
   // Return the i'th stack.
   PreservedMarks* get(uint i = 0) const {
-    assert(_num > 0 && _stacks != NULL, "stacks should have been initialized");
+    assert(_num > 0 && _stacks != nullptr, "stacks should have been initialized");
     assert(i < _num, "pre-condition");
     return (_stacks + i);
   }
@@ -105,7 +111,7 @@ public:
 
   // Iterate over all stacks, restore all preserved marks, and reclaim
   // the memory taken up by the stack segments using the given WorkerThreads. If the WorkerThreads
-  // is NULL, perform the work serially in the current thread.
+  // is null, perform the work serially in the current thread.
   void restore(WorkerThreads* workers);
 
   WorkerTask* create_task();
@@ -117,10 +123,10 @@ public:
   void assert_empty() PRODUCT_RETURN;
 
   PreservedMarksSet(bool in_c_heap)
-      : _in_c_heap(in_c_heap), _num(0), _stacks(NULL) { }
+      : _in_c_heap(in_c_heap), _num(0), _stacks(nullptr) { }
 
   ~PreservedMarksSet() {
-    assert(_stacks == NULL && _num == 0, "stacks should have been reclaimed");
+    assert(_stacks == nullptr && _num == 0, "stacks should have been reclaimed");
   }
 };
 

@@ -330,7 +330,7 @@ public abstract class View implements SwingConstants {
      *          being removed from a parent
      */
     public void setParent(View parent) {
-        // if the parent is null then propogate down the view tree
+        // if the parent is null then propagate down the view tree
         if (parent == null) {
             for (int i = 0; i < getViewCount(); i++) {
                 if (getView(i).getParent() == this) {
@@ -349,7 +349,6 @@ public abstract class View implements SwingConstants {
      * returns 0.
      *
      * @return the number of views &gt;= 0
-     * @see View#getViewCount
      */
     public int getViewCount() {
         return 0;
@@ -698,7 +697,8 @@ public abstract class View implements SwingConstants {
      * @param e the change information from the associated document
      * @param a the current allocation of the view
      * @param f the factory to use to rebuild if the view has children
-     * @see View#insertUpdate
+     * @see View#removeUpdate
+     * @see View#changedUpdate
      */
     public void insertUpdate(DocumentEvent e, Shape a, ViewFactory f) {
         if (getViewCount() > 0) {
@@ -739,7 +739,8 @@ public abstract class View implements SwingConstants {
      * @param e the change information from the associated document
      * @param a the current allocation of the view
      * @param f the factory to use to rebuild if the view has children
-     * @see View#removeUpdate
+     * @see View#insertUpdate
+     * @see View#changedUpdate
      */
     public void removeUpdate(DocumentEvent e, Shape a, ViewFactory f) {
         if (getViewCount() > 0) {
@@ -780,7 +781,8 @@ public abstract class View implements SwingConstants {
      * @param e the change information from the associated document
      * @param a the current allocation of the view
      * @param f the factory to use to rebuild if the view has children
-     * @see View#changedUpdate
+     * @see View#insertUpdate
+     * @see View#removeUpdate
      */
     public void changedUpdate(DocumentEvent e, Shape a, ViewFactory f) {
         if (getViewCount() > 0) {
@@ -802,7 +804,6 @@ public abstract class View implements SwingConstants {
      * Fetches the model associated with the view.
      *
      * @return the view model, <code>null</code> if none
-     * @see View#getDocument
      */
     public Document getDocument() {
         return elem.getDocument();
@@ -813,7 +814,7 @@ public abstract class View implements SwingConstants {
      * responsible.
      *
      * @return the starting offset into the model &gt;= 0
-     * @see View#getStartOffset
+     * @see View#getEndOffset
      */
     public int getStartOffset() {
         return elem.getStartOffset();
@@ -824,7 +825,7 @@ public abstract class View implements SwingConstants {
      * responsible.
      *
      * @return the ending offset into the model &gt;= 0
-     * @see View#getEndOffset
+     * @see View#getStartOffset
      */
     public int getEndOffset() {
         return elem.getEndOffset();
@@ -836,7 +837,6 @@ public abstract class View implements SwingConstants {
      * entire portion of the element.
      *
      * @return the subject
-     * @see View#getElement
      */
     public Element getElement() {
         return elem;
@@ -1339,7 +1339,7 @@ public abstract class View implements SwingConstants {
      * @return the bounding box of the given position is returned
      * @throws BadLocationException  if the given position does
      *   not represent a valid location in the associated document
-     * @see View#modelToView
+     * @see View#viewToModel
      * @deprecated
      */
     @Deprecated
@@ -1357,7 +1357,7 @@ public abstract class View implements SwingConstants {
      * @param a the allocated region in which to render
      * @return the location within the model that best represents the
      *  given point in the view &gt;= 0
-     * @see View#viewToModel
+     * @see View#modelToView
      * @deprecated
      */
     @Deprecated
@@ -1383,4 +1383,4 @@ public abstract class View implements SwingConstants {
      */
     int lastUpdateIndex;
 
-};
+}

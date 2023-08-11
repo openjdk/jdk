@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.spec.DHParameterSpec;
+import sun.security.util.SafeDHParameterSpec;
 
 /**
  * Predefined default DH ephemeral parameters.
@@ -216,11 +217,11 @@ final class PredefinedDHParameterSpecs {
     private static final Pattern spacesPattern = Pattern.compile("\\s+");
 
     private static final Pattern syntaxPattern = Pattern.compile(
-            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})" +
-            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})*");
+            "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})" +
+            "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+})*");
 
     private static final Pattern paramsPattern = Pattern.compile(
-            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)\\}");
+            "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)}");
 
     // cache of predefined default DH ephemeral parameters
     static final Map<Integer, DHParameterSpec> definedParams;
@@ -280,8 +281,8 @@ final class PredefinedDHParameterSpecs {
                     String baseGenerator = paramsFinder.group(2);
                     BigInteger g = new BigInteger(baseGenerator, 16);
 
-                    DHParameterSpec spec = new DHParameterSpec(p, g);
                     int primeLen = p.bitLength();
+                    DHParameterSpec spec = new DHParameterSpec(p, g);
                     defaultParams.put(primeLen, spec);
                 }
             } else if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
@@ -293,7 +294,7 @@ final class PredefinedDHParameterSpecs {
         Map<Integer,DHParameterSpec> tempFFDHEs = new HashMap<>();
         for (BigInteger p : ffdhePrimes) {
             int primeLen = p.bitLength();
-            DHParameterSpec dhps = new DHParameterSpec(p, BigInteger.TWO);
+            DHParameterSpec dhps = new SafeDHParameterSpec(p, BigInteger.TWO);
             tempFFDHEs.put(primeLen, dhps);
             defaultParams.putIfAbsent(primeLen, dhps);
         }
@@ -301,14 +302,14 @@ final class PredefinedDHParameterSpecs {
         for (BigInteger p : supportedPrimes) {
             int primeLen = p.bitLength();
             if (defaultParams.get(primeLen) == null) {
-                defaultParams.put(primeLen,
-                    new DHParameterSpec(p, BigInteger.TWO));
+                defaultParams.put(primeLen, new SafeDHParameterSpec(p,
+                        BigInteger.TWO));
             }
         }
 
         ffdheParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(tempFFDHEs);
+            Collections.unmodifiableMap(tempFFDHEs);
         definedParams =
-            Collections.<Integer,DHParameterSpec>unmodifiableMap(defaultParams);
+            Collections.unmodifiableMap(defaultParams);
     }
 }

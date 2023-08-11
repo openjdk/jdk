@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -545,7 +545,7 @@ class Parser implements DTDConstants {
         /* We ignore all elements that are not valid in the context of
            a table except <td>, <th> (these we handle in
            legalElementContext()) and #pcdata.  We also ignore the
-           <font> tag in the context of <ul> and <ol> We additonally
+           <font> tag in the context of <ul> and <ol> We additionally
            ignore the <meta> and the <style> tag if the body tag has
            been seen. **/
         if ((elemName.equals("html") && seenHtml) ||
@@ -687,7 +687,7 @@ class Parser implements DTDConstants {
 
         // They try to find a legal context by checking if the current
         // tag is valid in an enclosing context.  If so
-        // close out the tags by outputing end tags and then
+        // close out the tags by outputting end tags and then
         // insert the current tag.  If the tags that are
         // being closed out do not have an optional end tag
         // specification in the DTD then an html error is
@@ -703,6 +703,13 @@ class Parser implements DTDConstants {
                 }
                 if (!s.terminate() || (strict && !s.elem.omitEnd())) {
                     break;
+                } else if (s.terminate() && !s.elem.omitEnd()) {
+                    // Since the current tag is not valid in current context
+                    // as otherwise s.advance(elem) would have returned true
+                    // so check if the stack is to be terminated
+                    // in which case return false
+                    // but not if the closing tag is optional like tr,th,td
+                    return false;
                 }
             }
         }
@@ -804,7 +811,7 @@ class Parser implements DTDConstants {
             return;
         }
 
-        // Avoid putting something wierd in the head of the document.
+        // Avoid putting something weird in the head of the document.
         for (TagStack s = stack ; s != null ; s = s.next) {
             if (s.tag.getElement() == dtd.head) {
                 while (stack != s) {
@@ -1633,7 +1640,7 @@ class Parser implements DTDConstants {
      * Parse an invalid tag.
      */
     void parseInvalidTag() throws IOException {
-        // ignore all data upto the close bracket '>'
+        // ignore all data up to the close bracket '>'
         while (true) {
             skipSpace();
             switch (ch) {
@@ -1907,7 +1914,7 @@ class Parser implements DTDConstants {
                 (elemName.equals("font") ||
                  elemName.equals("center"))) {
 
-                // Since closing out a center tag can have real wierd
+                // Since closing out a center tag can have real weird
                 // effects on the formatting,  make sure that tags
                 // for which omitting an end tag is legimitate
                 // get closed out.
@@ -2386,11 +2393,6 @@ class Parser implements DTDConstants {
             errorContext();
             error("exception", e.getClass().getName(), e.getMessage());
             e.printStackTrace();
-        } catch (ThreadDeath e) {
-            errorContext();
-            error("terminated");
-            e.printStackTrace();
-            throw e;
         } finally {
             for (; stack != null ; stack = stack.next) {
                 handleEndTag(stack.tag);

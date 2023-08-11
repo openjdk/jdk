@@ -48,7 +48,7 @@ import javax.management.remote.JMXConnectorServer;
  *
  * @library /test/lib
  *
- * @run main/timeout=300 RmiSslNoKeyStoreTest .*_ssltest.*.in
+ * @run main/othervm/timeout=300 RmiSslNoKeyStoreTest .*_ssltest.*.in
  * */
 
 /**

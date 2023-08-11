@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.enum.label.must.be.unqualified.enum
+// options: --release 20
 
 
 class EnumLabelUnqualified {

@@ -66,6 +66,7 @@ import sun.awt.InputMethodSupport;
  * @author      Sami Shaio
  * @author      Arthur van Hoff
  * @since       1.0
+ * @sealedGraph
  */
 public sealed class TextComponent extends Component implements Accessible
      permits TextArea,

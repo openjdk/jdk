@@ -66,7 +66,7 @@ import org.netbeans.jemmy.util.EmptyVisualizer;
  * <BR><BR>Timeouts used: <BR>
  * JTreeOperator.WaitNodeExpandedTimeout - time to wait node expanded <BR>
  * JTreeOperator.WaitNodeCollapsedTimeout - time to wait node collapsed <BR>
- * JTreeOperator.WaitAfterNodeExpandedTimeout - time to to sleep after node
+ * JTreeOperator.WaitAfterNodeExpandedTimeout - time to sleep after node
  * expanded <BR>
  * JTreeOperator.WaitNextNodeTimeout - time to wait next node displayed <BR>
  * JTreeOperator.WaitNodeVisibleTimeout - time to wait node visible <BR>

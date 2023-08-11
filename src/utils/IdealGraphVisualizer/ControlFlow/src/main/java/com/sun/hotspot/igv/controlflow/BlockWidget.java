@@ -27,11 +27,7 @@ import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.LabelWidget;
@@ -43,11 +39,10 @@ import org.netbeans.api.visual.widget.LabelWidget;
 public class BlockWidget extends LabelWidget implements Vertex {
 
     public static final Dimension MIN_SIZE = new Dimension(20, 20);
-    private InputBlock block;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final InputBlock block;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private Cluster cluster;
-    private boolean root;
     private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
     private static final Font boldFont = font.deriveFont(Font.BOLD);
     public static final Color NORMAL_FOREGROUND_COLOR = Color.BLACK;
@@ -123,15 +118,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
     }
 
     public boolean isRoot() {
-        return root;
-    }
-
-    public void setCluster(Cluster c) {
-        cluster = c;
-    }
-
-    public void setRoot(boolean b) {
-        root = b;
+        return false;
     }
 
     public int compareTo(Vertex o) {

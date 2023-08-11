@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,13 +127,11 @@ public abstract class GenCollectedHeap extends CollectedHeap {
     }
 
     if (level == 0) {
-      return (GenerationSpec)
-              VMObjectFactory.newObject(GenerationSpec.class,
-                      youngGenSpecField.getAddress());
+      return VMObjectFactory.newObject(GenerationSpec.class,
+              youngGenSpecField.getAddress());
     } else {
-      return (GenerationSpec)
-              VMObjectFactory.newObject(GenerationSpec.class,
-                      oldGenSpecField.getAddress());
+      return VMObjectFactory.newObject(GenerationSpec.class,
+              oldGenSpecField.getAddress());
     }
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,9 +155,8 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
         // This unappealing hack is not required but makes the
         // representation of EventHandlers much more concise.
         java.lang.reflect.InvocationHandler ih = java.lang.reflect.Proxy.getInvocationHandler(p);
-        if (ih instanceof EventHandler) {
-            EventHandler eh = (EventHandler)ih;
-            Vector<Object> args = new Vector<>();
+        if (ih instanceof EventHandler eh) {
+            ArrayList<Object> args = new ArrayList<>();
             args.add(type.getInterfaces()[0]);
             args.add(eh.getTarget());
             args.add(eh.getAction());
@@ -165,7 +164,9 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
                 args.add(eh.getEventPropertyName());
             }
             if (eh.getListenerMethodName() != null) {
-                args.setSize(4);
+                if (args.size() == 3) {
+                    args.add(null);
+                }
                 args.add(eh.getListenerMethodName());
             }
             return new Expression(oldInstance,
@@ -336,7 +337,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
 /*
 The Hashtable and AbstractMap classes have no common ancestor yet may
 be handled with a single persistence delegate: one which uses the methods
-of the Map insterface exclusively. Attatching the persistence delegates
+of the Map interface exclusively. Attaching the persistence delegates
 to the interfaces themselves is fraught however since, in the case of
 the Map, both the AbstractMap and HashMap classes are declared to
 implement the Map interface, leaving the obvious implementation prone
@@ -1149,7 +1150,7 @@ static final class javax_swing_border_MatteBorder_PersistenceDelegate extends Pe
     }
 }
 
-/* XXX - doens't seem to work. Debug later.
+/* XXX - doesn't seem to work. Debug later.
 static final class javax_swing_JMenu_PersistenceDelegate extends DefaultPersistenceDelegate {
     protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         super.initialize(type, oldInstance, newInstance, out);

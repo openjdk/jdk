@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         JNU_ThrowNullPointerException(env, "host argument is null");
         return NULL;
     }
-    hostname = JNU_GetStringPlatformChars(env, host, NULL);
+    hostname = JNU_GetStringPlatformCharsStrict(env, host, NULL);
     CHECK_NULL_RETURN(hostname, NULL);
 
     // try once, with our static buffer
@@ -279,7 +279,7 @@ tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
     SET_NONBLOCKING(fd);
 
     sa->sa4.sin_port = htons(7); // echo port
-    connect_rv = NET_Connect(fd, &sa->sa, sizeof(struct sockaddr_in));
+    connect_rv = connect(fd, &sa->sa, sizeof(struct sockaddr_in));
 
     // connection established or refused immediately, either way it means
     // we were able to reach the host!
@@ -346,8 +346,8 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct ip *ip;
     struct sockaddr_in sa_recv;
     jchar pid;
-    struct timeval tv;
-    size_t plen = ICMP_ADVLENMIN + sizeof(tv);
+    struct timeval tv = { 0, 0 };
+    const size_t plen = ICMP_MINLEN + sizeof(tv);
 
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
 
@@ -419,7 +419,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 ip = (struct ip *)recvbuf;
                 hlen = ((jint)(unsigned int)(ip->ip_hl)) << 2;
                 // check if we received enough data
-                if (n < (jint)(hlen + sizeof(struct icmp))) {
+                if (n < (jint)(hlen + plen)) {
                     continue;
                 }
                 icmp = (struct icmp *)(recvbuf + hlen);

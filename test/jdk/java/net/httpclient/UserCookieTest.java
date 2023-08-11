@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,8 @@
  * @bug 8276774
  * @summary Test that user-supplied cookies are appended to
  *          server-cookies for HTTP/2 vs HTTP/1.1
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
@@ -72,6 +65,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
@@ -83,6 +78,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -116,14 +113,14 @@ public class UserCookieTest implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
-                { httpURI, HttpClient.Version.HTTP_1_1  },
-                { httpsURI, HttpClient.Version.HTTP_1_1  },
-                { httpDummy, HttpClient.Version.HTTP_1_1 },
-                { httpsDummy, HttpClient.Version.HTTP_1_1 },
-                { httpURI, HttpClient.Version.HTTP_2  },
-                { httpsURI, HttpClient.Version.HTTP_2  },
-                { httpDummy, HttpClient.Version.HTTP_2 },
-                { httpsDummy, HttpClient.Version.HTTP_2 },
+                { httpURI, HTTP_1_1  },
+                { httpsURI, HTTP_1_1  },
+                { httpDummy, HTTP_1_1 },
+                { httpsDummy, HTTP_1_1 },
+                { httpURI, HTTP_2  },
+                { httpsURI, HTTP_2  },
+                { httpDummy, HTTP_2 },
+                { httpsDummy, HTTP_2 },
                 { http2URI, null  },
                 { https2URI, null },
         };
@@ -197,25 +194,21 @@ public class UserCookieTest implements HttpServerAdapters {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(new CookieValidationHandler(), "/http1/cookie/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/cookie/retry";
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(new CookieValidationHandler(),"/https1/cookie/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/cookie/retry";
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(new CookieValidationHandler(), "/http2/cookie/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/cookie/retry";
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(new CookieValidationHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/retry";
 
-
+        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         // DummyServer
         httpDummyServer = DummyServer.create(sa);
         httpsDummyServer = DummyServer.create(sa, sslContext);
@@ -284,7 +277,7 @@ public class UserCookieTest implements HttpServerAdapters {
             String uuid = uuids.get(0);
             // retrying
             if (closedRequests.putIfAbsent(uuid, t.getRequestURI().toString()) == null) {
-                if (t.getExchangeVersion() == HttpClient.Version.HTTP_1_1) {
+                if (t.getExchangeVersion() == HTTP_1_1) {
                     // Throwing an exception here only causes a retry
                     // with HTTP_1_1 - where it forces the server to close
                     // the connection.
@@ -304,7 +297,7 @@ public class UserCookieTest implements HttpServerAdapters {
             HttpClient.Version version = t.getExchangeVersion();
             List<String> upgrade = t.getRequestHeaders().get("Upgrade");
             if (upgrade == null) upgrade = List.of();
-            boolean upgraded = version == HttpClient.Version.HTTP_2
+            boolean upgraded = version == HTTP_2
                     && upgrade.stream().anyMatch("h2c"::equalsIgnoreCase);
 
             // not retrying
@@ -312,7 +305,7 @@ public class UserCookieTest implements HttpServerAdapters {
             try (OutputStream os = t.getResponseBody()) {
                 List<String> cookie = t.getRequestHeaders().get("Cookie");
                 if (cookie != null) {
-                    if (version == HttpClient.Version.HTTP_1_1 || upgraded) {
+                    if (version == HTTP_1_1 || upgraded) {
                         if (cookie.size() == 1) {
                             cookie = List.of(cookie.get(0).split("; "));
                         } else if (cookie.size() > 1) {

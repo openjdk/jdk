@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -252,7 +252,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
         if (rv == CKR_ATTRIBUTE_SENSITIVE || rv == CKR_ATTRIBUTE_TYPE_INVALID) {
             msg = malloc(80); // should be more than sufficient
             if (msg == NULL) {
-                throwOutOfMemoryError(env, 0);
+                p11ThrowOutOfMemoryError(env, 0);
                 free(ckpAttributes);
                 return;
             }
@@ -282,7 +282,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetAttributeVa
         ckpAttributes[i].pValue = (void *) malloc(ckBufferLength);
         if (ckpAttributes[i].pValue == NULL) {
             freeCKAttributeArray(ckpAttributes, i);
-            throwOutOfMemoryError(env, 0);
+            p11ThrowOutOfMemoryError(env, 0);
             return;
         }
         ckpAttributes[i].ulValueLen = ckBufferLength;
@@ -415,7 +415,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1FindObje
     ckMaxObjectLength = jLongToCKULong(jMaxObjectCount);
     ckpObjectHandleArray = (CK_OBJECT_HANDLE_PTR) malloc(sizeof(CK_OBJECT_HANDLE) * ckMaxObjectLength);
     if (ckpObjectHandleArray == NULL) {
-        throwOutOfMemoryError(env, 0);
+        p11ThrowOutOfMemoryError(env, 0);
         return NULL;
     }
 

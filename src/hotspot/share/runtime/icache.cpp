@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,14 @@
 #include "utilities/align.hpp"
 
 // The flush stub function address
-AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = NULL;
+AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = nullptr;
 
 void AbstractICache::initialize() {
   // Making this stub must be FIRST use of assembler
   ResourceMark rm;
 
   BufferBlob* b = BufferBlob::create("flush_icache_stub", ICache::stub_size);
-  if (b == NULL) {
+  if (b == nullptr) {
     vm_exit_out_of_memory(ICache::stub_size, OOM_MALLOC_ERROR, "CodeCache: no space for flush_icache_stub");
   }
   CodeBuffer c(b);
@@ -96,7 +96,7 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
   }
   // Align start address to an icache line boundary and transform
   // nbytes to an icache line count.
-  const uint line_offset = mask_address_bits(start, ICache::line_size-1);
+  const uint line_offset = uintptr_t(start) & (ICache::line_size-1);
   if (line_offset != 0) {
     start -= line_offset;
     nbytes += line_offset;

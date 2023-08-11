@@ -12,5 +12,5 @@
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">Desktopverknüpfung(en) erstellen</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">Startmenüverknüpfung(en) erstellen</String>
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName]-Setup</String>
-  <String Id="ContextMenuCommandLabel">Open with [ProductName]</String>
+  <String Id="ContextMenuCommandLabel">Mit [ProductName] öffnen</String>
 </WixLocalization>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,20 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/bitMap.inline.hpp"
 
 bool G1EvacFailureRegions::record(uint region_idx) {
-  assert(region_idx < _max_regions, "must be");
   bool success = _regions_failed_evacuation.par_set_bit(region_idx,
                                                         memory_order_relaxed);
   if (success) {
-    size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
+    size_t offset = Atomic::fetch_then_add(&_evac_failure_regions_cur_length, 1u);
     _evac_failure_regions[offset] = region_idx;
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* hr = g1h->region_at(region_idx);
+    hr->note_evacuation_failure();
   }
   return success;
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -278,16 +278,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
       $(SYMBOLS_EXCLUDE_PATTERN), \
       $(ALL_JRE_FILES))
 
-  # On Macosx release builds, when there is a code signing certificate available,
-  # the final bundle layout can be signed.
-  SIGN_BUNDLE := false
-  ifeq ($(call isTargetOs, macosx)+$(DEBUG_LEVEL), true+release)
-    ifneq ($(CODESIGN), )
-      SIGN_BUNDLE := true
-    endif
-  endif
-
-  ifeq ($(SIGN_BUNDLE), true)
+  ifeq ($(MACOSX_CODESIGN_MODE), hardened)
     # Macosx release build and code signing available.
 
     ################################################################################
@@ -458,7 +449,7 @@ ifneq ($(filter jcov-bundles, $(MAKECMDGOALS)), )
       BUNDLE_NAME := $(JCOV_BUNDLE_NAME), \
       FILES := $(JCOV_BUNDLE_FILES), \
       BASE_DIRS := $(JCOV_IMAGE_DIR), \
-      SUBDIR := $(JDK_BUNDLE_SUBDIR), \
+      SUBDIR := jdk-$(VERSION_NUMBER), \
   ))
 
   JCOV_TARGETS += $(BUILD_JCOV_BUNDLE)

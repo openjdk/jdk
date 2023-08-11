@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,16 @@ public class TestVectorizeTypeConversion {
     private static float[] floatb = new float[SIZE];
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:+SuperWordRTDepCheck");
     }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, ">0",
                   IRNode.VECTOR_CAST_I2X, ">0",
-                  IRNode.STORE_VECTOR, ">0"})
+                  IRNode.STORE_VECTOR, ">0"},
+        // The vectorization of some conversions may fail when `+AlignVector`.
+        // We can remove the condition after JDK-8303827.
+        applyIf = {"AlignVector", "false"})
     private static void testConvI2D(double[] d, int[] a) {
         for(int i = 0; i < d.length; i++) {
             d[i] = (double) (a[i]);

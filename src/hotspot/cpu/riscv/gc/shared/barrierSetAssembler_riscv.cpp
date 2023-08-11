@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
   // RA is live. It must be saved around calls.
 
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -119,11 +119,62 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 }
 
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst,
+                                       Address src,
+                                       Register tmp) {
+  if (bytes == 1) {
+    __ lbu(dst, src);
+  } else if (bytes == 2) {
+    __ lhu(dst, src);
+  } else if (bytes == 4) {
+    __ lwu(dst, src);
+  } else if (bytes == 8) {
+    __ ld(dst, src);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        Register tmp3) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src);
+  }
+
+  if (bytes == 1) {
+    __ sb(src, dst);
+  } else if (bytes == 2) {
+    __ sh(src, dst);
+  } else if (bytes == 4) {
+    __ sw(src, dst);
+  } else if (bytes == 8) {
+    __ sd(src, dst);
+  } else {
+    // Not the right size
+    ShouldNotReachHere();
+  }
+}
+
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
 
@@ -189,14 +240,16 @@ void BarrierSetAssembler::clear_patching_epoch() {
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (bs_nm == NULL) {
+  if (bs_nm == nullptr) {
     return;
   }
+
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
 
   Label local_guard;
   NMethodPatchingType patching_type = nmethod_patching_type();
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     guard = &local_guard;
 
     // RISCV atomic operations require that the memory address be naturally aligned.
@@ -218,7 +271,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
         // instruction patching is synchronized with global icache_flush() by
         // the write hart on riscv. So here we can do a plain conditional
         // branch with no fencing.
-        Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+        Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
         __ lwu(t1, thread_disarmed_addr);
         break;
       }
@@ -243,7 +296,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
         __ slli(t1, t1, 32);
         __ orr(t0, t0, t1);
         // Compare the global values with the thread-local values
-        Address thread_disarmed_and_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+        Address thread_disarmed_and_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
         __ ld(t1, thread_disarmed_and_epoch_addr);
         break;
       }
@@ -251,18 +304,18 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       ShouldNotReachHere();
   }
 
-  if (slow_path == NULL) {
+  if (slow_path == nullptr) {
     Label skip_barrier;
     __ beq(t0, t1, skip_barrier);
 
     int32_t offset = 0;
-    __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
     __ jalr(ra, t0, offset);
     __ j(skip_barrier);
 
     __ bind(local_guard);
 
-    assert(__ offset() % 4 == 0, "bad alignment");
+    MacroAssembler::assert_alignment(__ pc());
     __ emit_int32(0); // nmethod guard value. Skipped over in common case.
     __ bind(skip_barrier);
   } else {
@@ -274,7 +327,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   BarrierSetNMethod* bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs == NULL) {
+  if (bs == nullptr) {
     return;
   }
 
@@ -290,15 +343,14 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?
-  __ push_reg(RegSet::of(x28, x29), sp);
+  __ push_reg(RegSet::of(x28), sp);
 
   __ ld(x28, Address(t0, ClassLoaderData::holder_offset()));
 
-  // Uses x28 & x29, so we must pass new temporaries.
-  __ resolve_weak_handle(x28, x29);
+  __ resolve_weak_handle(x28, t0, t1);
   __ mv(t0, x28);
 
-  __ pop_reg(RegSet::of(x28, x29), sp);
+  __ pop_reg(RegSet::of(x28), sp);
 
   __ bnez(t0, method_live);
 
@@ -306,4 +358,18 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
   __ bind(method_live);
+}
+
+void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if the oop is in the right area of memory
+  __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
+  __ andr(tmp1, obj, tmp2);
+  __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+
+  // Compare tmp1 and tmp2.
+  __ bne(tmp1, tmp2, error);
+
+  // Make sure klass is 'reasonable', which is not zero.
+  __ load_klass(obj, obj, tmp1); // get klass
+  __ beqz(obj, error);           // if klass is null it is broken
 }

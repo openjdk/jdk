@@ -139,6 +139,17 @@ public class ForkJoinWorkerThread extends Thread {
     }
 
     /**
+     * {@return a (non-negative) estimate of the number of tasks in the
+     * thread's queue}
+     *
+     * @since 20
+     * @see ForkJoinPool#getQueuedTaskCount()
+     */
+    public int getQueuedTaskCount() {
+        return workQueue.queueSize();
+    }
+
+    /**
      * Initializes internal state after construction but before
      * processing any tasks. If you override this method, you must
      * invoke {@code super.onStart()} at the beginning of the method.

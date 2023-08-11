@@ -218,7 +218,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * generating multiple copies themselves, but uncollated is more
      * universal than collated copies.
      * When they do, they read the initial values from the PRINTDLG structure
-     * and set them into the driver's DEVMODE structure and intialise
+     * and set them into the driver's DEVMODE structure and initialise
      * the printer DC based on that, so that when printed those settings
      * will be used.
      * For drivers supporting both these capabilities via DEVMODE, then on
@@ -386,8 +386,8 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Implement DisposerTarget. Weak references to an Object can delay
-     * its storage reclaimation marginally.
-     * It won't make the native resources be release any more quickly, but
+     * its storage reclamation marginally.
+     * It won't make the native resources be released any more quickly, but
      * by pointing the reference held by Disposer at an object which becomes
      * no longer strongly reachable when this WPrinterJob is no longer
      * strongly reachable, we allow the WPrinterJob to be freed more promptly
@@ -1407,7 +1407,7 @@ public final class WPrinterJob extends RasterPrinterJob
      */
     private native boolean jobSetup(Pageable doc, boolean allowPrintToFile);
 
-    /* Make sure printer DC is intialised and that info about the printer
+    /* Make sure printer DC is initialised and that info about the printer
      * is reflected back up to Java code
      */
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -58,13 +58,11 @@ private:
                            ciMethodData *md, ciProfileData *data,
                            Register recv, Label* update_done);
 
-  void add_debug_info_for_branch(address adr, CodeEmitInfo* info);
-
   void casw(Register addr, Register newval, Register cmpval);
   void caswu(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = NULL);
+  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = nullptr);
 
   void deoptimize_trap(CodeEmitInfo *info);
 

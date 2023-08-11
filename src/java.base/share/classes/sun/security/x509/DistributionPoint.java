@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.*;
 
 import sun.security.util.BitArray;
+import sun.security.util.DerEncoder;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 
@@ -93,7 +94,7 @@ import sun.security.util.DerValue;
  * @since 1.4.2
  * @see CRLDistributionPointsExtension
  */
-public class DistributionPoint {
+public class DistributionPoint implements DerEncoder {
 
     // reason flag bits
     // NOTE that these are NOT quite the same as the CRL reason code extension
@@ -275,9 +276,9 @@ public class DistributionPoint {
      * Write the DistributionPoint value to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on error.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tagged = new DerOutputStream();
 
         // NOTE: only one of pointNames and pointRDN can be set
@@ -324,42 +325,29 @@ public class DistributionPoint {
      * @param obj Object to be compared to this
      * @return true if objects match; false otherwise
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof DistributionPoint == false) {
+        if (!(obj instanceof DistributionPoint other)) {
             return false;
         }
-        DistributionPoint other = (DistributionPoint)obj;
 
-        boolean equal = Objects.equals(this.fullName, other.fullName)
+        return Objects.equals(this.fullName, other.fullName)
                      && Objects.equals(this.relativeName, other.relativeName)
                      && Objects.equals(this.crlIssuer, other.crlIssuer)
                      && Arrays.equals(this.reasonFlags, other.reasonFlags);
-        return equal;
     }
 
+    @Override
     public int hashCode() {
         int hash = hashCode;
         if (hash == 0) {
-            hash = 1;
-            if (fullName != null) {
-                hash += fullName.hashCode();
-            }
-            if (relativeName != null) {
-                hash += relativeName.hashCode();
-            }
-            if (crlIssuer != null) {
-                hash += crlIssuer.hashCode();
-            }
-            if (reasonFlags != null) {
-                for (int i = 0; i < reasonFlags.length; i++) {
-                    if (reasonFlags[i]) {
-                        hash += i;
-                    }
-                }
-            }
+            hash = 1 + Objects.hashCode(fullName)
+                    + Objects.hashCode(relativeName)
+                    + Objects.hash(crlIssuer)
+                    + Arrays.hashCode(reasonFlags);
             hashCode = hash;
         }
         return hash;

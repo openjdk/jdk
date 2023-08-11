@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "code/relocInfo.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -73,7 +74,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     if (verify_only) {
       guarantee(*(int32_t*) disp == (x - next_ip), "instructions must match");
     } else {
-      *(int32_t*) disp = x - next_ip;
+      *(int32_t*) disp = checked_cast<int32_t>(x - next_ip);
     }
   }
 #else
@@ -88,7 +89,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   intptr_t adj = 0;
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     // We just moved this call instruction from orig_addr to addr().
     // This means its target will appear to have grown by addr() - orig_addr.
     adj = -( addr() - orig_addr );
@@ -104,7 +105,7 @@ address Relocation::pd_call_destination(address orig_addr) {
     return (address) ((NativeMovConstReg*)ni)->data();
   } else {
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -130,7 +131,7 @@ void Relocation::pd_set_call_destination(address x) {
     // %%%% kludge this, for now, until we get a jump_destination method
     address old_dest = nativeGeneralJump_at(addr())->jump_destination();
     address disp = Assembler::locate_operand(addr(), Assembler::call32_operand);
-    *(jint*)disp += (x - old_dest);
+    *(jint*)disp += checked_cast<jint>(x - old_dest);
   } else if (ni->is_mov_literal64()) {
     ((NativeMovConstReg*)ni)->set_data((intptr_t)x);
   } else {

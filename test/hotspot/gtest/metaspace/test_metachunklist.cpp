@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,10 +150,6 @@ TEST_VM(metaspace, freechunklist) {
 // Test, for a list populated with a mixture of fully/partially/uncommitted chunks,
 // the retrieval-by-minimally-committed-words function.
 TEST_VM(metaspace, freechunklist_retrieval) {
-
-  if (Settings::new_chunks_are_fully_committed()) {
-    return;
-  }
 
   ChunkGtestContext context;
   FreeChunkList fcl;

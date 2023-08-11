@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,13 @@
  * @summary Tests that the HttpClient can correctly receive a Push Promise
  *          Frame with the END_HEADERS flag unset followed by one or more
  *          Continuation Frames.
- * @library /test/lib server
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.BodyOutputStream
+ *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
  * @run testng/othervm PushPromiseContinuation
  */
 
-
-import jdk.internal.net.http.common.HttpHeadersBuilder;
-import jdk.internal.net.http.frame.ContinuationFrame;
-import jdk.internal.net.http.frame.HeaderFrame;
-import org.testng.TestException;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayInputStream;
@@ -66,8 +55,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiPredicate;
 
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+
+import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.frame.ContinuationFrame;
+import jdk.internal.net.http.frame.HeaderFrame;
+
+import org.testng.TestException;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
+
 
 public class PushPromiseContinuation {
 
@@ -235,7 +243,7 @@ public class PushPromiseContinuation {
             // Indicates to the client that a continuation should be expected
             pp.setFlag(0x0);
             try {
-                conn.outputQ.put(pp);
+                conn.addToOutputQ(pp);
                 // writeLoop will spin up thread to read the InputStream
             } catch (IOException ex) {
                 System.err.println("TestServer: pushPromise exception: " + ex);
@@ -312,7 +320,7 @@ public class PushPromiseContinuation {
 
             try {
                 // Schedule push promise and continuation for sending
-                conn.outputQ.put(pp);
+                conn.addToOutputQ(pp);
                 System.err.println("Server: Scheduled a Push Promise to Send");
             } catch (IOException ex) {
                 System.err.println("Server: pushPromise exception: " + ex);

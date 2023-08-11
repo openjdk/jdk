@@ -113,7 +113,7 @@ class KeyChecker extends PKIXCertPathChecker {
         // if final certificate, check that target constraints are satisfied
         if (remainingCerts == 0) {
             if (targetConstraints != null &&
-                targetConstraints.match(currCert) == false) {
+                !targetConstraints.match(currCert)) {
                 throw new CertPathValidatorException("target certificate " +
                     "constraints check failed");
             }

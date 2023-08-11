@@ -37,9 +37,9 @@ public class AnnoProc extends AbstractProcessor {
             Messager messager = processingEnv.getMessager();
             try {
                 JavaFileObject fo = filer.createSourceFile("Gen");
-                Writer out = fo.openWriter();
-                out.write("class Gen { }");
-                out.close();
+                try (Writer out = fo.openWriter()) {
+                    out.write("class Gen { }");
+                }
             } catch (IOException e) {
                 messager.printError(e.toString());
             }

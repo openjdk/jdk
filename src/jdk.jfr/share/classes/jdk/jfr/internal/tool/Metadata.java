@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.consumer.JdkJfrConsumer;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -178,7 +180,7 @@ final class Metadata extends Command {
                 foundEventFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--events", filterStr);
-                filters.add(Filters.createEventTypeFilter(filterStr));
+                filters.add(Filters.createEventTypeFilter(filterStr, List.of()));
             }
             if (acceptFilterOption(options, "--categories")) {
                 if (foundCategoryFilter) {
@@ -187,7 +189,7 @@ final class Metadata extends Command {
                 foundCategoryFilter = true;
                 String filterStr = options.remove();
                 warnForWildcardExpansion("--categories", filterStr);
-                filters.add(Filters.createCategoryFilter(filterStr));
+                filters.add(Filters.createCategoryFilter(filterStr, List.of()));
             }
             if (optionCount == options.size()) {
                 // No progress made

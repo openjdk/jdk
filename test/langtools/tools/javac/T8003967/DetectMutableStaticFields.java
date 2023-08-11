@@ -32,6 +32,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -178,7 +179,11 @@ public class DetectMutableStaticFields {
             int index = className.lastIndexOf('.');
             String pckName = index == -1 ? "" : className.substring(0, index);
             if (shouldAnalyzePackage(pckName)) {
-                analyzeClassFile(ClassFile.read(file.openInputStream()));
+                ClassFile classFile;
+                try (InputStream input = file.openInputStream()) {
+                    classFile = ClassFile.read(input);
+                }
+                analyzeClassFile(classFile);
             }
         }
     }

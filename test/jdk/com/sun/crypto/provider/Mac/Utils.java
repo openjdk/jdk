@@ -31,8 +31,10 @@ class Utils {
 
     static final int KEY_SIZE = 70;
 
-    static final String[] MAC_ALGOS = {"HmacMD5", "HmacSHA1", "HmacSHA224",
-        "HmacSHA256", "HmacSHA384", "HmacSHA512"};
+    static final String[] MAC_ALGOS = {
+            "HmacMD5", "HmacSHA1", "HmacSHA224", "HmacSHA256", "HmacSHA384",
+            "HmacSHA512", "HmacSHA512/224", "HmacSHA512/256",
+    };
 
     /**
      * Get SecretKeySpec.

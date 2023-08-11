@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -172,22 +171,25 @@ static OopBlock* active_head(const OopStorage& storage) {
 }
 
 class OopStorageTest : public ::testing::Test {
+  OopStorage* _storage;
+
 public:
   OopStorageTest();
   ~OopStorageTest();
 
-  OopStorage _storage;
+  OopStorage& storage() const { return *_storage; }
 
   class CountingIterateClosure;
   template<bool is_const> class VM_CountAtSafepoint;
 };
 
 OopStorageTest::OopStorageTest() :
-  _storage("Test Storage", mtGC)
+  _storage(OopStorage::create("Test Storage", mtGC))
 { }
 
 OopStorageTest::~OopStorageTest() {
-  clear_list(TestAccess::allocation_list(_storage));
+  clear_list(TestAccess::allocation_list(storage()));
+  delete _storage;
 }
 
 class OopStorageTestWithAllocation : public OopStorageTest {
@@ -200,9 +202,9 @@ public:
 
 OopStorageTestWithAllocation::OopStorageTestWithAllocation() {
   for (size_t i = 0; i < _max_entries; ++i) {
-    _entries[i] = _storage.allocate();
+    _entries[i] = storage().allocate();
     EXPECT_TRUE(_entries[i] != NULL);
-    EXPECT_EQ(i + 1, _storage.allocation_count());
+    EXPECT_EQ(i + 1, storage().allocation_count());
   }
 };
 
@@ -233,38 +235,38 @@ static size_t total_allocation_count(const OopStorage& storage) {
 }
 
 TEST_VM_F(OopStorageTest, allocate_one) {
-  EXPECT_EQ(0u, active_count(_storage));
-  EXPECT_TRUE(is_list_empty(TestAccess::allocation_list(_storage)));
+  EXPECT_EQ(0u, active_count(storage()));
+  EXPECT_TRUE(is_list_empty(TestAccess::allocation_list(storage())));
 
-  oop* ptr = _storage.allocate();
+  oop* ptr = storage().allocate();
   EXPECT_TRUE(ptr != NULL);
-  EXPECT_EQ(1u, _storage.allocation_count());
+  EXPECT_EQ(1u, storage().allocation_count());
 
-  EXPECT_EQ(1u, active_count(_storage));
-  EXPECT_EQ(1u, _storage.block_count());
-  EXPECT_EQ(1u, list_length(TestAccess::allocation_list(_storage)));
+  EXPECT_EQ(1u, active_count(storage()));
+  EXPECT_EQ(1u, storage().block_count());
+  EXPECT_EQ(1u, list_length(TestAccess::allocation_list(storage())));
 
-  EXPECT_EQ(0u, empty_block_count(_storage));
+  EXPECT_EQ(0u, empty_block_count(storage()));
 
-  const OopBlock* block = TestAccess::allocation_list(_storage).chead();
+  const OopBlock* block = TestAccess::allocation_list(storage()).chead();
   EXPECT_NE(block, (OopBlock*)NULL);
-  EXPECT_EQ(block, active_head(_storage));
+  EXPECT_EQ(block, active_head(storage()));
   EXPECT_FALSE(TestAccess::block_is_empty(*block));
   EXPECT_FALSE(TestAccess::block_is_full(*block));
   EXPECT_EQ(1u, TestAccess::block_allocation_count(*block));
 
-  release_entry(_storage, ptr);
-  EXPECT_EQ(0u, _storage.allocation_count());
+  release_entry(storage(), ptr);
+  EXPECT_EQ(0u, storage().allocation_count());
 
-  EXPECT_EQ(1u, active_count(_storage));
-  EXPECT_EQ(1u, _storage.block_count());
-  EXPECT_EQ(1u, list_length(TestAccess::allocation_list(_storage)));
+  EXPECT_EQ(1u, active_count(storage()));
+  EXPECT_EQ(1u, storage().block_count());
+  EXPECT_EQ(1u, list_length(TestAccess::allocation_list(storage())));
 
-  EXPECT_EQ(1u, empty_block_count(_storage));
+  EXPECT_EQ(1u, empty_block_count(storage()));
 
-  const OopBlock* new_block = TestAccess::allocation_list(_storage).chead();
+  const OopBlock* new_block = TestAccess::allocation_list(storage()).chead();
   EXPECT_EQ(block, new_block);
-  EXPECT_EQ(block, active_head(_storage));
+  EXPECT_EQ(block, active_head(storage()));
   EXPECT_TRUE(TestAccess::block_is_empty(*block));
   EXPECT_FALSE(TestAccess::block_is_full(*block));
   EXPECT_EQ(0u, TestAccess::block_allocation_count(*block));
@@ -274,19 +276,19 @@ TEST_VM_F(OopStorageTest, allocation_count) {
   static const size_t max_entries = 1000;
   oop* entries[max_entries];
 
-  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+  AllocationList& allocation_list = TestAccess::allocation_list(storage());
 
-  EXPECT_EQ(0u, active_count(_storage));
-  EXPECT_EQ(0u, _storage.block_count());
+  EXPECT_EQ(0u, active_count(storage()));
+  EXPECT_EQ(0u, storage().block_count());
   EXPECT_TRUE(is_list_empty(allocation_list));
 
   size_t allocated = 0;
   for ( ; allocated < max_entries; ++allocated) {
-    EXPECT_EQ(allocated, _storage.allocation_count());
-    if (active_count(_storage) != 0) {
-      EXPECT_EQ(1u, active_count(_storage));
-      EXPECT_EQ(1u, _storage.block_count());
-      const OopBlock& block = *TestAccess::active_array(_storage).at(0);
+    EXPECT_EQ(allocated, storage().allocation_count());
+    if (active_count(storage()) != 0) {
+      EXPECT_EQ(1u, active_count(storage()));
+      EXPECT_EQ(1u, storage().block_count());
+      const OopBlock& block = *TestAccess::active_array(storage()).at(0);
       EXPECT_EQ(allocated, TestAccess::block_allocation_count(block));
       if (TestAccess::block_is_full(block)) {
         break;
@@ -295,22 +297,22 @@ TEST_VM_F(OopStorageTest, allocation_count) {
         EXPECT_EQ(&block, allocation_list.chead());
       }
     }
-    entries[allocated] = _storage.allocate();
+    entries[allocated] = storage().allocate();
   }
 
-  EXPECT_EQ(allocated, _storage.allocation_count());
-  EXPECT_EQ(1u, active_count(_storage));
-  EXPECT_EQ(1u, _storage.block_count());
+  EXPECT_EQ(allocated, storage().allocation_count());
+  EXPECT_EQ(1u, active_count(storage()));
+  EXPECT_EQ(1u, storage().block_count());
   EXPECT_TRUE(is_list_empty(allocation_list));
-  const OopBlock& block = *TestAccess::active_array(_storage).at(0);
+  const OopBlock& block = *TestAccess::active_array(storage()).at(0);
   EXPECT_TRUE(TestAccess::block_is_full(block));
   EXPECT_EQ(allocated, TestAccess::block_allocation_count(block));
 
   for (size_t i = 0; i < allocated; ++i) {
-    release_entry(_storage, entries[i]);
+    release_entry(storage(), entries[i]);
     size_t remaining = allocated - (i + 1);
     EXPECT_EQ(remaining, TestAccess::block_allocation_count(block));
-    EXPECT_EQ(remaining, _storage.allocation_count());
+    EXPECT_EQ(remaining, storage().allocation_count());
     EXPECT_FALSE(is_list_empty(allocation_list));
   }
 }
@@ -319,40 +321,40 @@ TEST_VM_F(OopStorageTest, allocate_many) {
   static const size_t max_entries = 1000;
   oop* entries[max_entries];
 
-  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+  AllocationList& allocation_list = TestAccess::allocation_list(storage());
 
-  EXPECT_EQ(0u, empty_block_count(_storage));
+  EXPECT_EQ(0u, empty_block_count(storage()));
 
-  entries[0] = _storage.allocate();
+  entries[0] = storage().allocate();
   ASSERT_TRUE(entries[0] != NULL);
-  EXPECT_EQ(1u, active_count(_storage));
-  EXPECT_EQ(1u, _storage.block_count());
+  EXPECT_EQ(1u, active_count(storage()));
+  EXPECT_EQ(1u, storage().block_count());
   EXPECT_EQ(1u, list_length(allocation_list));
-  EXPECT_EQ(0u, empty_block_count(_storage));
+  EXPECT_EQ(0u, empty_block_count(storage()));
 
-  const OopBlock* block = TestAccess::active_array(_storage).at(0);
+  const OopBlock* block = TestAccess::active_array(storage()).at(0);
   EXPECT_EQ(1u, TestAccess::block_allocation_count(*block));
   EXPECT_EQ(block, allocation_list.chead());
 
   for (size_t i = 1; i < max_entries; ++i) {
-    entries[i] = _storage.allocate();
-    EXPECT_EQ(i + 1, _storage.allocation_count());
+    entries[i] = storage().allocate();
+    EXPECT_EQ(i + 1, storage().allocation_count());
     ASSERT_TRUE(entries[i] != NULL);
-    EXPECT_EQ(0u, empty_block_count(_storage));
+    EXPECT_EQ(0u, empty_block_count(storage()));
 
     if (block == NULL) {
       ASSERT_FALSE(is_list_empty(allocation_list));
       EXPECT_EQ(1u, list_length(allocation_list));
       block = allocation_list.chead();
       EXPECT_EQ(1u, TestAccess::block_allocation_count(*block));
-      EXPECT_EQ(block, active_head(_storage));
+      EXPECT_EQ(block, active_head(storage()));
     } else if (TestAccess::block_is_full(*block)) {
       EXPECT_TRUE(is_list_empty(allocation_list));
       block = NULL;
     } else {
       EXPECT_FALSE(is_list_empty(allocation_list));
       EXPECT_EQ(block, allocation_list.chead());
-      EXPECT_EQ(block, active_head(_storage));
+      EXPECT_EQ(block, active_head(storage()));
     }
   }
 
@@ -360,18 +362,18 @@ TEST_VM_F(OopStorageTest, allocate_many) {
     EXPECT_NE(0u, TestAccess::block_allocation_count(*block));
     EXPECT_FALSE(is_list_empty(allocation_list));
     EXPECT_EQ(block, allocation_list.chead());
-    EXPECT_EQ(block, active_head(_storage));
+    EXPECT_EQ(block, active_head(storage()));
   }
 
   for (size_t i = 0; i < max_entries; ++i) {
-    release_entry(_storage, entries[i]);
-    EXPECT_TRUE(is_allocation_list_sorted(_storage));
-    EXPECT_EQ(max_entries - (i + 1), total_allocation_count(_storage));
+    release_entry(storage(), entries[i]);
+    EXPECT_TRUE(is_allocation_list_sorted(storage()));
+    EXPECT_EQ(max_entries - (i + 1), total_allocation_count(storage()));
   }
 
-  EXPECT_EQ(active_count(_storage), list_length(allocation_list));
-  EXPECT_EQ(active_count(_storage), _storage.block_count());
-  EXPECT_EQ(active_count(_storage), empty_block_count(_storage));
+  EXPECT_EQ(active_count(storage()), list_length(allocation_list));
+  EXPECT_EQ(active_count(storage()), storage().block_count());
+  EXPECT_EQ(active_count(storage()), empty_block_count(storage()));
   for (const OopBlock* block = allocation_list.chead();
        block != NULL;
        block = allocation_list.next(*block)) {
@@ -383,29 +385,29 @@ TEST_VM_F(OopStorageTestWithAllocation, random_release) {
   static const size_t step = 11;
   ASSERT_NE(0u, _max_entries % step); // max_entries and step are mutually prime
 
-  EXPECT_EQ(0u, empty_block_count(_storage));
+  EXPECT_EQ(0u, empty_block_count(storage()));
 
-  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+  AllocationList& allocation_list = TestAccess::allocation_list(storage());
 
-  EXPECT_EQ(_max_entries, total_allocation_count(_storage));
+  EXPECT_EQ(_max_entries, total_allocation_count(storage()));
   EXPECT_GE(1u, list_length(allocation_list));
 
   // Release all entries in "random" order.
   size_t released = 0;
   for (size_t i = 0; released < _max_entries; i = (i + step) % _max_entries) {
     if (_entries[i] != NULL) {
-      release_entry(_storage, _entries[i]);
+      release_entry(storage(), _entries[i]);
       _entries[i] = NULL;
       ++released;
-      EXPECT_EQ(_max_entries - released, total_allocation_count(_storage));
-      EXPECT_TRUE(is_allocation_list_sorted(_storage));
+      EXPECT_EQ(_max_entries - released, total_allocation_count(storage()));
+      EXPECT_TRUE(is_allocation_list_sorted(storage()));
     }
   }
 
-  EXPECT_EQ(active_count(_storage), list_length(allocation_list));
-  EXPECT_EQ(active_count(_storage), _storage.block_count());
-  EXPECT_EQ(0u, total_allocation_count(_storage));
-  EXPECT_EQ(list_length(allocation_list), empty_block_count(_storage));
+  EXPECT_EQ(active_count(storage()), list_length(allocation_list));
+  EXPECT_EQ(active_count(storage()), storage().block_count());
+  EXPECT_EQ(0u, total_allocation_count(storage()));
+  EXPECT_EQ(list_length(allocation_list), empty_block_count(storage()));
 }
 
 TEST_VM_F(OopStorageTestWithAllocation, random_allocate_release) {
@@ -413,11 +415,11 @@ TEST_VM_F(OopStorageTestWithAllocation, random_allocate_release) {
   static const size_t allocate_step = 5;
   ASSERT_NE(0u, _max_entries % release_step); // max_entries and step are mutually prime
 
-  EXPECT_EQ(0u, empty_block_count(_storage));
+  EXPECT_EQ(0u, empty_block_count(storage()));
 
-  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+  AllocationList& allocation_list = TestAccess::allocation_list(storage());
 
-  EXPECT_EQ(_max_entries, total_allocation_count(_storage));
+  EXPECT_EQ(_max_entries, total_allocation_count(storage()));
   EXPECT_GE(1u, list_length(allocation_list));
 
   // Release all entries in "random" order, "randomly" interspersed
@@ -426,25 +428,25 @@ TEST_VM_F(OopStorageTestWithAllocation, random_allocate_release) {
   size_t total_released = 0;
   for (size_t i = 0; released < _max_entries; i = (i + release_step) % _max_entries) {
     if (_entries[i] != NULL) {
-      release_entry(_storage, _entries[i]);
+      release_entry(storage(), _entries[i]);
       _entries[i] = NULL;
       ++released;
       ++total_released;
-      EXPECT_EQ(_max_entries - released, total_allocation_count(_storage));
-      EXPECT_TRUE(is_allocation_list_sorted(_storage));
+      EXPECT_EQ(_max_entries - released, total_allocation_count(storage()));
+      EXPECT_TRUE(is_allocation_list_sorted(storage()));
       if (total_released % allocate_step == 0) {
-        _entries[i] = _storage.allocate();
+        _entries[i] = storage().allocate();
         --released;
-        EXPECT_EQ(_max_entries - released, total_allocation_count(_storage));
-        EXPECT_TRUE(is_allocation_list_sorted(_storage));
+        EXPECT_EQ(_max_entries - released, total_allocation_count(storage()));
+        EXPECT_TRUE(is_allocation_list_sorted(storage()));
       }
     }
   }
 
-  EXPECT_EQ(active_count(_storage), list_length(allocation_list));
-  EXPECT_EQ(active_count(_storage), _storage.block_count());
-  EXPECT_EQ(0u, total_allocation_count(_storage));
-  EXPECT_EQ(list_length(allocation_list), empty_block_count(_storage));
+  EXPECT_EQ(active_count(storage()), list_length(allocation_list));
+  EXPECT_EQ(active_count(storage()), storage().block_count());
+  EXPECT_EQ(0u, total_allocation_count(storage()));
+  EXPECT_EQ(list_length(allocation_list), empty_block_count(storage()));
 }
 
 template<bool sorted>
@@ -462,16 +464,16 @@ public:
       QuickSort::sort(to_release, nrelease, PointerCompare(), false);
     }
 
-    _storage.release(to_release, nrelease);
-    EXPECT_EQ(_max_entries - nrelease, _storage.allocation_count());
+    storage().release(to_release, nrelease);
+    EXPECT_EQ(_max_entries - nrelease, storage().allocation_count());
 
     for (size_t i = 0; i < nrelease; ++i) {
-      release_entry(_storage, _entries[2 * i + 1], false);
-      EXPECT_EQ(_max_entries - nrelease - (i + 1), _storage.allocation_count());
+      release_entry(storage(), _entries[2 * i + 1], false);
+      EXPECT_EQ(_max_entries - nrelease - (i + 1), storage().allocation_count());
     }
-    EXPECT_TRUE(process_deferred_updates(_storage));
+    EXPECT_TRUE(process_deferred_updates(storage()));
 
-    EXPECT_EQ(_storage.block_count(), empty_block_count(_storage));
+    EXPECT_EQ(storage().block_count(), empty_block_count(storage()));
 
     FREE_C_HEAP_ARRAY(oop*, to_release);
   }
@@ -494,25 +496,25 @@ TEST_VM_F(OopStorageTest, bulk_allocation) {
   static const size_t zero = 0;
   oop* entries[max_entries] = {};
 
-  AllocationList& allocation_list = TestAccess::allocation_list(_storage);
+  AllocationList& allocation_list = TestAccess::allocation_list(storage());
 
-  EXPECT_EQ(0u, empty_block_count(_storage));
-  size_t allocated = _storage.allocate(entries, max_entries);
+  EXPECT_EQ(0u, empty_block_count(storage()));
+  size_t allocated = storage().allocate(entries, max_entries);
   ASSERT_NE(allocated, zero);
   // ASSERT_LE would ODR-use the OopStorage constant.
   size_t bulk_allocate_limit = OopStorage::bulk_allocate_limit;
   ASSERT_LE(allocated, bulk_allocate_limit);
   ASSERT_LE(allocated, max_entries);
   for (size_t i = 0; i < allocated; ++i) {
-    EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(entries[i]));
+    EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, storage().allocation_status(entries[i]));
   }
   for (size_t i = allocated; i < max_entries; ++i) {
     EXPECT_EQ(NULL, entries[i]);
   }
-  _storage.release(entries, allocated);
-  EXPECT_EQ(0u, _storage.allocation_count());
+  storage().release(entries, allocated);
+  EXPECT_EQ(0u, storage().allocation_count());
   for (size_t i = 0; i < allocated; ++i) {
-    EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(entries[i]));
+    EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, storage().allocation_status(entries[i]));
   }
 }
 
@@ -522,7 +524,7 @@ TEST_VM_F(OopStorageTest, invalid_pointer) {
     char* mem = NEW_C_HEAP_ARRAY(char, 1000, mtInternal);
     oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
     // Predicate returns false for some malloc'ed block.
-    EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(ptr));
+    EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
     FREE_C_HEAP_ARRAY(char, mem);
   }
 
@@ -530,7 +532,7 @@ TEST_VM_F(OopStorageTest, invalid_pointer) {
     oop obj;
     oop* ptr = &obj;
     // Predicate returns false for some "random" location.
-    EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(ptr));
+    EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
   }
 }
 #endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
@@ -567,9 +569,7 @@ public:
 template<bool is_const>
 class OopStorageTest::VM_CountAtSafepoint : public VM_GTestExecuteAtSafepoint {
 public:
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
   VM_CountAtSafepoint(Storage* storage, CountingIterateClosure* cl) :
     _storage(storage), _cl(cl)
@@ -594,7 +594,7 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
   size_t entries_with_values = 0;
   for (size_t i = 0; i < max_entries; i += 10) {
     for ( ; allocated < i; ++allocated) {
-      entries[allocated] = _storage.allocate();
+      entries[allocated] = storage().allocate();
       ASSERT_TRUE(entries[allocated] != NULL);
       if ((allocated % 3) != 0) {
         *entries[allocated] = dummy_oop;
@@ -604,7 +604,7 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
 
     {
       CountingIterateClosure cl;
-      VM_CountAtSafepoint<false> op(&_storage, &cl);
+      VM_CountAtSafepoint<false> op(&storage(), &cl);
       {
         ThreadInVMfromNative invm(JavaThread::current());
         VMThread::execute(&op);
@@ -617,7 +617,7 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
 
     {
       CountingIterateClosure cl;
-      VM_CountAtSafepoint<true> op(&_storage, &cl);
+      VM_CountAtSafepoint<true> op(&storage(), &cl);
       {
         ThreadInVMfromNative invm(JavaThread::current());
         VMThread::execute(&op);
@@ -630,9 +630,9 @@ TEST_VM_F(OopStorageTest, simple_iterate) {
   }
 
   while (allocated > 0) {
-    release_entry(_storage, entries[--allocated], false);
+    release_entry(storage(), entries[--allocated], false);
   }
-  process_deferred_updates(_storage);
+  process_deferred_updates(storage());
 }
 
 class OopStorageTestIteration : public OopStorageTestWithAllocation {
@@ -651,17 +651,17 @@ public:
     memset(_states, 0, sizeof(_states));
 
     size_t initial_release = 0;
-    for ( ; empty_block_count(_storage) < 2; ++initial_release) {
+    for ( ; empty_block_count(storage()) < 2; ++initial_release) {
       ASSERT_GT(_max_entries, initial_release);
-      release_entry(_storage, _entries[initial_release]);
+      release_entry(storage(), _entries[initial_release]);
       _states[0][initial_release] = mark_released;
     }
 
     for (size_t i = initial_release; i < _max_entries; i += 3) {
-      release_entry(_storage, _entries[i], false);
+      release_entry(storage(), _entries[i], false);
       _states[0][i] = mark_released;
     }
-    process_deferred_updates(_storage);
+    process_deferred_updates(storage());
   }
 
   class VerifyState;
@@ -792,9 +792,7 @@ const size_t OopStorageTestIteration::_max_workers;
 template<bool is_const>
 class OopStorageTestIteration::VM_Verify : public VM_GTestExecuteAtSafepoint {
 public:
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
   VM_Verify(Storage* storage, VerifyState* vstate) :
     _storage(storage), _vstate(vstate), _result(false)
@@ -831,7 +829,7 @@ private:
 
 TEST_VM_F(OopStorageTestIteration, iterate_safepoint) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  VM_Verify<false> op(&_storage, &vstate);
+  VM_Verify<false> op(&storage(), &vstate);
   {
     ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
@@ -842,7 +840,7 @@ TEST_VM_F(OopStorageTestIteration, iterate_safepoint) {
 
 TEST_VM_F(OopStorageTestIteration, const_iterate_safepoint) {
   VerifyState vstate(mark_const, _entries, _states);
-  VM_Verify<true> op(&_storage, &vstate);
+  VM_Verify<true> op(&storage(), &vstate);
   {
     ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
@@ -853,7 +851,7 @@ TEST_VM_F(OopStorageTestIteration, const_iterate_safepoint) {
 
 TEST_VM_F(OopStorageTestIteration, oops_do) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  VM_VerifyUsingOopsDo op(&_storage, &vstate);
+  VM_VerifyUsingOopsDo op(&storage(), &vstate);
   {
     ThreadInVMfromNative invm(JavaThread::current());
     VMThread::execute(&op);
@@ -889,9 +887,7 @@ template<bool concurrent, bool is_const>
 class OopStorageTestParIteration::Task : public WorkerTask {
   typedef OopStorage::ParState<concurrent, is_const> StateType;
 
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
 public:
   Task(const char* name, Storage* storage, VerifyState* vstate) :
@@ -946,7 +942,7 @@ private:
 
 TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_iterate) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  Task<false, false> task("test", &_storage, &vstate);
+  Task<false, false> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
     ThreadInVMfromNative invm(JavaThread::current());
@@ -957,7 +953,7 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_iterate) {
 
 TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_iterate) {
   VerifyState vstate(mark_const, _entries, _states);
-  Task<false, true> task("test", &_storage, &vstate);
+  Task<false, true> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
     ThreadInVMfromNative invm(JavaThread::current());
@@ -968,7 +964,7 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_iterate) {
 
 TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_oops_do) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  TaskUsingOopsDo<false, false> task("test", &_storage, &vstate);
+  TaskUsingOopsDo<false, false> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
     ThreadInVMfromNative invm(JavaThread::current());
@@ -979,7 +975,7 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_oops_do) {
 
 TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_oops_do) {
   VerifyState vstate(mark_const, _entries, _states);
-  TaskUsingOopsDo<false, true> task("test", &_storage, &vstate);
+  TaskUsingOopsDo<false, true> task("test", &storage(), &vstate);
   VM_ParStateVerify op(workers(), &task);
   {
     ThreadInVMfromNative invm(JavaThread::current());
@@ -990,78 +986,78 @@ TEST_VM_F(OopStorageTestParIteration, par_state_safepoint_const_oops_do) {
 
 TEST_VM_F(OopStorageTestParIteration, par_state_concurrent_iterate) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  Task<true, false> task("test", &_storage, &vstate);
+  Task<true, false> task("test", &storage(), &vstate);
   workers()->run_task(&task);
   vstate.check();
 }
 
 TEST_VM_F(OopStorageTestParIteration, par_state_concurrent_const_iterate) {
   VerifyState vstate(mark_const, _entries, _states);
-  Task<true, true> task("test", &_storage, &vstate);
+  Task<true, true> task("test", &storage(), &vstate);
   workers()->run_task(&task);
   vstate.check();
 }
 
 TEST_VM_F(OopStorageTestParIteration, par_state_concurrent_oops_do) {
   VerifyState vstate(mark_non_const, _entries, _states);
-  TaskUsingOopsDo<true, false> task("test", &_storage, &vstate);
+  TaskUsingOopsDo<true, false> task("test", &storage(), &vstate);
   workers()->run_task(&task);
   vstate.check();
 }
 
 TEST_VM_F(OopStorageTestParIteration, par_state_concurrent_const_oops_do) {
   VerifyState vstate(mark_const, _entries, _states);
-  TaskUsingOopsDo<true, true> task("test", &_storage, &vstate);
+  TaskUsingOopsDo<true, true> task("test", &storage(), &vstate);
   workers()->run_task(&task);
   vstate.check();
 }
 
 TEST_VM_F(OopStorageTestWithAllocation, delete_empty_blocks) {
-  size_t initial_active_size = active_count(_storage);
-  EXPECT_EQ(initial_active_size, _storage.block_count());
+  size_t initial_active_size = active_count(storage());
+  EXPECT_EQ(initial_active_size, storage().block_count());
   ASSERT_LE(3u, initial_active_size); // Need at least 3 blocks for test
 
-  for (size_t i = 0; empty_block_count(_storage) < 3; ++i) {
+  for (size_t i = 0; empty_block_count(storage()) < 3; ++i) {
     ASSERT_GT(_max_entries, i);
-    release_entry(_storage, _entries[i]);
+    release_entry(storage(), _entries[i]);
   }
 
-  EXPECT_EQ(initial_active_size, active_count(_storage));
-  EXPECT_EQ(initial_active_size, _storage.block_count());
-  EXPECT_EQ(3u, empty_block_count(_storage));
+  EXPECT_EQ(initial_active_size, active_count(storage()));
+  EXPECT_EQ(initial_active_size, storage().block_count());
+  EXPECT_EQ(3u, empty_block_count(storage()));
   {
     ThreadInVMfromNative invm(JavaThread::current());
-    while (_storage.delete_empty_blocks()) {}
+    while (storage().delete_empty_blocks()) {}
   }
-  EXPECT_EQ(0u, empty_block_count(_storage));
-  EXPECT_EQ(initial_active_size - 3, active_count(_storage));
-  EXPECT_EQ(initial_active_size - 3, _storage.block_count());
+  EXPECT_EQ(0u, empty_block_count(storage()));
+  EXPECT_EQ(initial_active_size - 3, active_count(storage()));
+  EXPECT_EQ(initial_active_size - 3, storage().block_count());
 }
 
 TEST_VM_F(OopStorageTestWithAllocation, allocation_status) {
   oop* retained = _entries[200];
   oop* released = _entries[300];
   oop* garbage = reinterpret_cast<oop*>(1024 * 1024);
-  release_entry(_storage, released);
+  release_entry(storage(), released);
 
-  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
-  EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, _storage.allocation_status(released));
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
+  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, storage().allocation_status(retained));
+  EXPECT_EQ(OopStorage::UNALLOCATED_ENTRY, storage().allocation_status(released));
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(garbage));
 
   for (size_t i = 0; i < _max_entries; ++i) {
     if ((_entries[i] != retained) && (_entries[i] != released)) {
       // Leave deferred release updates to block deletion.
-      release_entry(_storage, _entries[i], false);
+      release_entry(storage(), _entries[i], false);
     }
   }
 
   {
     ThreadInVMfromNative invm(JavaThread::current());
-    while (_storage.delete_empty_blocks()) {}
+    while (storage().delete_empty_blocks()) {}
   }
-  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, _storage.allocation_status(retained));
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(released));
-  EXPECT_EQ(OopStorage::INVALID_ENTRY, _storage.allocation_status(garbage));
+  EXPECT_EQ(OopStorage::ALLOCATED_ENTRY, storage().allocation_status(retained));
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(released));
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(garbage));
 }
 
 TEST_VM_F(OopStorageTest, usage_info) {
@@ -1069,24 +1065,24 @@ TEST_VM_F(OopStorageTest, usage_info) {
   oop* entries[1000];
   size_t allocated = 0;
 
-  EXPECT_EQ(0u, _storage.block_count());
+  EXPECT_EQ(0u, storage().block_count());
   // There is non-block overhead, so always some usage.
-  EXPECT_LT(0u, _storage.total_memory_usage());
+  EXPECT_LT(0u, storage().total_memory_usage());
 
-  while (_storage.block_count() < goal_blocks) {
-    size_t this_count = _storage.block_count();
-    while (_storage.block_count() == this_count) {
+  while (storage().block_count() < goal_blocks) {
+    size_t this_count = storage().block_count();
+    while (storage().block_count() == this_count) {
       ASSERT_GT(ARRAY_SIZE(entries), allocated);
-      entries[allocated] = _storage.allocate();
+      entries[allocated] = storage().allocate();
       ASSERT_TRUE(entries[allocated] != NULL);
       ++allocated;
     }
-    EXPECT_NE(0u, _storage.block_count());
-    EXPECT_NE(0u, _storage.total_memory_usage());
+    EXPECT_NE(0u, storage().block_count());
+    EXPECT_NE(0u, storage().total_memory_usage());
   }
 
-  EXPECT_LT(TestAccess::memory_per_block() * _storage.block_count(),
-            _storage.total_memory_usage());
+  EXPECT_LT(TestAccess::memory_per_block() * storage().block_count(),
+            storage().total_memory_usage());
 }
 
 #ifndef PRODUCT
@@ -1095,22 +1091,22 @@ TEST_VM_F(OopStorageTestWithAllocation, print_storage) {
   // Release the first 1/2
   for (size_t i = 0; i < (_max_entries / 2); ++i) {
     // Deferred updates don't affect print output.
-    release_entry(_storage, _entries[i], false);
+    release_entry(storage(), _entries[i], false);
     _entries[i] = NULL;
   }
   // Release every other remaining
   for (size_t i = _max_entries / 2; i < _max_entries; i += 2) {
     // Deferred updates don't affect print output.
-    release_entry(_storage, _entries[i], false);
+    release_entry(storage(), _entries[i], false);
     _entries[i] = NULL;
   }
 
   size_t expected_entries = _max_entries / 4;
-  EXPECT_EQ(expected_entries, _storage.allocation_count());
+  EXPECT_EQ(expected_entries, storage().allocation_count());
 
   size_t entries_per_block = BitsPerWord;
   size_t expected_blocks = (_max_entries + entries_per_block - 1) / entries_per_block;
-  EXPECT_EQ(expected_blocks, _storage.block_count());
+  EXPECT_EQ(expected_blocks, storage().block_count());
 
   double expected_usage = (100.0 * expected_entries) / (expected_blocks * entries_per_block);
 
@@ -1123,9 +1119,9 @@ TEST_VM_F(OopStorageTestWithAllocation, print_storage) {
                       expected_entries,
                       expected_blocks,
                       expected_usage,
-                      _storage.total_memory_usage());
+                      storage().total_memory_usage());
     stringStream st;
-    _storage.print_on(&st);
+    storage().print_on(&st);
     EXPECT_STREQ(expected_st.as_string(), st.as_string());
   }
 }

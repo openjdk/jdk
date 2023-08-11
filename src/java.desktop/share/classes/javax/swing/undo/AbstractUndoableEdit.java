@@ -211,7 +211,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
     }
 
     /**
-     * Retreives the value from the defaults table with key
+     * Retrieves the value from the defaults table with key
      * <code>AbstractUndoableEdit.undoText</code> and returns
      * that value followed by a space, followed by
      * <code>getPresentationName</code>.
@@ -238,7 +238,7 @@ public class AbstractUndoableEdit implements UndoableEdit, Serializable {
     }
 
     /**
-     * Retreives the value from the defaults table with key
+     * Retrieves the value from the defaults table with key
      * <code>AbstractUndoableEdit.redoText</code> and returns
      * that value followed by a space, followed by
      * <code>getPresentationName</code>.

@@ -52,9 +52,6 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
  public:
   // Creation
   SignatureHandlerGenerator(const methodHandle& method, CodeBuffer* buffer);
-  virtual ~SignatureHandlerGenerator() {
-    _masm = NULL;
-  }
 
   // Code generation
   void generate(uint64_t fingerprint);

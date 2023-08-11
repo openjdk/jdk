@@ -214,20 +214,6 @@ void StackOverflow::disable_stack_yellow_reserved_zone() {
   }
 }
 
-void StackOverflow::enable_stack_red_zone() {
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  address base = stack_red_zone_base() - stack_red_zone_size();
-
-  guarantee(base < stack_base(), "Error calculating stack red zone");
-  guarantee(base < os::current_stack_pointer(), "Error calculating stack red zone");
-
-  if (!os::guard_memory((char *) base, stack_red_zone_size())) {
-    warning("Attempt to guard stack red zone failed.");
-  }
-}
-
 void StackOverflow::disable_stack_red_zone() {
   // The base notation is from the stacks point of view, growing downward.
   // We need to adjust it to work correctly with guard_memory()

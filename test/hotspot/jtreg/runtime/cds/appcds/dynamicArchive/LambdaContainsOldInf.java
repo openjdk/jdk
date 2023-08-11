@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 "-cp", appJar, mainClass, mainArg)
                 .assertNormalExit(output -> {
                     output.shouldContain("Skipping OldProvider: Old class has been linked")
-                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked")
+                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked")
                           .shouldHaveExitValue(0);
             });
 
@@ -78,7 +78,7 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 .assertNormalExit(output -> {
                     output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
                           .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
-                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*LambdaContainsOldInf")
+                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf")
                           .shouldHaveExitValue(0);
             });
         }

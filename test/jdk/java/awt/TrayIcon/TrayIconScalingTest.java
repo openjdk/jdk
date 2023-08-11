@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,9 @@ public class TrayIconScalingTest {
     private static TrayIcon icon;
 
     private static final String INSTRUCTIONS =
-            "This test checks if the tray icon gets updated when DPI / Scale" +
-            " is changed on the fly.\n\n" +
+            "This test checks if the tray icon gets updated correctly under 2 scenarios:\n\n" +
+            "Case 1: Single Screen - when DPI / Scale is changed on the fly.\n" +
+            "Case 2: Multi Screen - when both screens are set to different scales.\n\n" +
             "STEPS: \n\n" +
             "1. Check the system tray / notification area on Windows" +
             " taskbar, you should see a white icon which displays a" +
@@ -61,11 +62,17 @@ public class TrayIconScalingTest {
             "2. Navigate to Settings > System > Display and change the" +
             " display scale by selecting any value from" +
             " Scale & Layout dropdown.\n\n"+
-            "3. When the scale changes, check the white tray icon," +
+            "3. For Case 1, when the scale changes, check the white tray icon," +
             " there should be no distortion, it should be displayed sharp,\n" +
             " and the displayed number should correspond to the current"+
-            " scale:\n" +
-            " 100% - 16, 125% - 20, 150% - 24, 175% - 28, 200% - 32.\n\n"+
+            " scale.\n\n" +
+            "4. For Case 2, a dual monitor setup is required with 'Multiple Display'" +
+            " option under Display settings set to 'Extend the display'.\n\n" +
+            "5. Have the monitors set to different scales and toggle the" +
+            " 'Make this my main display' option under Display settings.\n\n" +
+            " In both cases, the tray icon should be displayed as a clear image" +
+            " without any distortion with the display number corresponding to the scale.\n" +
+            " 100% - 16, 125% - 20, 150% - 24, 175% - 28, 200% - 32.\n\n" +
             " If the icon is displayed sharp and without any distortion," +
             " press PASS, otherwise press FAIL.\n";
 
@@ -79,7 +86,7 @@ public class TrayIconScalingTest {
             return;
         }
         PassFailJFrame passFailJFrame = new PassFailJFrame("TrayIcon " +
-                "Test Instructions", INSTRUCTIONS, 8, 18, 85);
+                "Test Instructions", INSTRUCTIONS, 8, 25, 85);
         createAndShowGUI();
         // does not have a test window,
         // hence only the instruction frame is positioned

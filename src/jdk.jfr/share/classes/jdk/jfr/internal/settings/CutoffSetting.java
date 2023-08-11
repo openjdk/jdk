@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.jfr.Name;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueParser;
 
 @MetadataDefinition
 @Label("Cutoff")
@@ -43,7 +43,6 @@ import jdk.jfr.internal.Utils;
 @Name(Type.SETTINGS_PREFIX + "Cutoff")
 @Timespan
 public final class CutoffSetting extends JDKSettingControl {
-    private static final long typeId = Type.getTypeId(CutoffSetting.class);
 
     private String value = "0 ns";
     private final PlatformEventType eventType;
@@ -57,7 +56,7 @@ public final class CutoffSetting extends JDKSettingControl {
         long max = 0;
         String text = "0 ns";
         for (String value : values) {
-            long l =  Utils.parseTimespanWithInfinity(value);
+            long l =  ValueParser.parseTimespanWithInfinity(value);
             if (l > max) {
                 text = value;
                 max = l;
@@ -68,7 +67,7 @@ public final class CutoffSetting extends JDKSettingControl {
 
     @Override
     public void setValue(String value) {
-        long l =  Utils.parseTimespanWithInfinity(value);
+        long l =  ValueParser.parseTimespanWithInfinity(value);
         this.value = value;
         eventType.setCutoff(l);
     }
@@ -83,7 +82,7 @@ public final class CutoffSetting extends JDKSettingControl {
             return 0L;
         }
         try {
-            return Utils.parseTimespanWithInfinity(value);
+            return ValueParser.parseTimespanWithInfinity(value);
         } catch (NumberFormatException nfe) {
             return 0L;
         }

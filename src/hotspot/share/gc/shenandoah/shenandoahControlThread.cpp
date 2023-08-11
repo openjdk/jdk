@@ -48,8 +48,8 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::safepoint-1, "ShenandoahAllocFailureGC_lock", true),
-  _gc_waiters_lock(Mutex::safepoint-1, "ShenandoahRequestedGC_lock", true),
+  _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
+  _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
@@ -482,10 +482,11 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
          cause == GCCause::_codecache_GC_aggressive ||
          cause == GCCause::_codecache_GC_threshold ||
          cause == GCCause::_full_gc_alot ||
+         cause == GCCause::_wb_young_gc ||
          cause == GCCause::_wb_full_gc ||
          cause == GCCause::_wb_breakpoint ||
          cause == GCCause::_scavenge_alot,
-         "only requested GCs here");
+         "only requested GCs here: %s", GCCause::to_string(cause));
 
   if (is_explicit_gc(cause)) {
     if (!DisableExplicitGC) {

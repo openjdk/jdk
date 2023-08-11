@@ -110,7 +110,7 @@ public class ByteCodeLoader extends SecureClassLoader {
      * @param className The name of the class
      * @param byteCode The byte code for the class
      * @throws ClassNotFoundException if the class can't be loaded
-     * @return A {@see Class} object representing the class
+     * @return A {@code Class} object representing the class
      */
     public static Class<?> load(String className, byte[] byteCode) throws ClassNotFoundException {
         return new ByteCodeLoader(className, byteCode).loadClass(className);

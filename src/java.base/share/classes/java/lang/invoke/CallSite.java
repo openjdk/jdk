@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
 }</pre></blockquote>
  * @author John Rose, JSR 292 EG
  * @since 1.7
+ * @sealedGraph
  */
 public
 abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, VolatileCallSite {
@@ -314,8 +315,8 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         try {
             Object binding = BootstrapMethodInvoker.invoke(
                     CallSite.class, bootstrapMethod, name, type, info, callerClass);
-            if (binding instanceof CallSite) {
-                site = (CallSite) binding;
+            if (binding instanceof CallSite cs) {
+                site = cs;
             } else {
                 // See the "Linking Exceptions" section for the invokedynamic
                 // instruction in JVMS 6.5.
@@ -335,7 +336,7 @@ abstract sealed class CallSite permits ConstantCallSite, MutableCallSite, Volati
         } catch (Error e) {
             // Pass through an Error, including BootstrapMethodError, any other
             // form of linkage error, such as IllegalAccessError if the bootstrap
-            // method is inaccessible, or say ThreadDeath/OutOfMemoryError
+            // method is inaccessible, or say OutOfMemoryError
             // See the "Linking Exceptions" section for the invokedynamic
             // instruction in JVMS 6.5.
             throw e;

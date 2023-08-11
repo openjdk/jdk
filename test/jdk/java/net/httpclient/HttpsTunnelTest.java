@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 
 /**
  * @test
@@ -50,15 +54,9 @@ import static java.lang.System.out;
  *          a new h2 connection to the new host. It also verifies that
  *          the stack sends the appropriate "host" header to the proxy.
  * @bug 8196967 8222527
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpsTunnelTest
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer HttpsTunnelTest
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=true HttpsTunnelTest
@@ -106,15 +104,11 @@ public class HttpsTunnelTest implements HttpServerAdapters {
     }
 
     public static void main(String[] args) throws Exception {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        HttpsServer server1 = HttpsServer.create(sa, 0);
-        server1.setHttpsConfigurator(new HttpsConfigurator(context));
         HttpTestServer http1Server =
-                HttpTestServer.of(server1);
+                HttpTestServer.create(HTTP_1_1, context);
         http1Server.addHandler(new HttpTestEchoHandler(), "/");
         http1Server.start();
-        HttpTestServer http2Server = HttpTestServer.of(
-                new Http2TestServer("localhost", true, 0));
+        HttpTestServer http2Server = HttpTestServer.create(HTTP_2, SSLContext.getDefault());
         http2Server.addHandler(new HttpTestEchoHandler(), "/");
         http2Server.start();
 
@@ -158,7 +152,7 @@ public class HttpsTunnelTest implements HttpServerAdapters {
             if (response.statusCode() != 200) {
                 throw new RuntimeException("Unexpected status code: " + response);
             }
-            if (response.version() != Version.HTTP_1_1) {
+            if (response.version() != HTTP_1_1) {
                 throw new RuntimeException("Unexpected protocol version: "
                         + response.version());
             }

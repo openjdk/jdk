@@ -37,7 +37,7 @@
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ShenandoahReentrantLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
-  assert(lock != NULL, "Must be");
+  assert(lock != nullptr, "Must be");
   ShenandoahReentrantLocker locker(lock);
 
   if (!is_armed(nm)) {

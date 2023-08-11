@@ -1,0 +1,2 @@
+LambdaMutateFinalVar.java:10:29: compiler.err.var.might.already.be.assigned: x
+1 error

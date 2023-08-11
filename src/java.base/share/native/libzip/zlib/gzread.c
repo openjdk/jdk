@@ -23,7 +23,7 @@
  */
 
 /* gzread.c -- zlib functions for reading gzip files
- * Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013, 2016 Mark Adler
+ * Copyright (C) 2004-2017 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -181,11 +181,9 @@ local int gz_look(state)
        the output buffer is larger than the input buffer, which also assures
        space for gzungetc() */
     state->x.next = state->out;
-    if (strm->avail_in) {
-        memcpy(state->x.next, strm->next_in, strm->avail_in);
-        state->x.have = strm->avail_in;
-        strm->avail_in = 0;
-    }
+    memcpy(state->x.next, strm->next_in, strm->avail_in);
+    state->x.have = strm->avail_in;
+    strm->avail_in = 0;
     state->how = COPY;
     state->direct = 1;
     return 0;
@@ -338,7 +336,7 @@ local z_size_t gz_read(state, buf, len)
     got = 0;
     do {
         /* set n to the maximum amount of len that fits in an unsigned int */
-        n = -1;
+        n = (unsigned)-1;
         if (n > len)
             n = (unsigned)len;
 
@@ -471,7 +469,6 @@ z_size_t ZEXPORT gzfread(buf, size, nitems, file)
 int ZEXPORT gzgetc(file)
     gzFile file;
 {
-    int ret;
     unsigned char buf[1];
     gz_statep state;
 
@@ -493,8 +490,7 @@ int ZEXPORT gzgetc(file)
     }
 
     /* nothing there -- try gz_read() */
-    ret = (int)gz_read(state, buf, 1);
-    return ret < 1 ? -1 : buf[0];
+    return gz_read(state, buf, 1) < 1 ? -1 : buf[0];
 }
 
 int ZEXPORT gzgetc_(file)

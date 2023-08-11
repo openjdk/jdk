@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,16 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/align.hpp"
 #include "unittest.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/threads.hpp"
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
@@ -144,10 +144,10 @@ TEST(os, test_random) {
 
   ASSERT_EQ(num, 1043618065) << "bad seed";
   // tty->print_cr("mean of the 1st 10000 numbers: %f", mean);
-  int intmean = mean*100;
+  int intmean = (int)(mean*100);
   ASSERT_EQ(intmean, 50);
   // tty->print_cr("variance of the 1st 10000 numbers: %f", variance);
-  int intvariance = variance*100;
+  int intvariance = (int)(variance*100);
   ASSERT_EQ(intvariance, 33);
   const double eps = 0.0001;
   t = fabsd(mean - 0.5018);
@@ -169,31 +169,31 @@ static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
-//  tty->print_cr("expected: %s", expected);
-//  tty->print_cr("result: %s", buf);
-  ASSERT_NE(strstr(buf, expected), (char*)NULL);
+  // tty->print_cr("expected: %s", expected);
+  // tty->print_cr("result: %s", buf);
+  EXPECT_THAT(buf, testing::HasSubstr(expected));
 }
 
 TEST_VM(os, test_print_hex_dump) {
   const char* pattern [4] = {
 #ifdef VM_LITTLE_ENDIAN
-    "00 01 02 03 04 05 06 07",
-    "0100 0302 0504 0706",
-    "03020100 07060504",
-    "0706050403020100"
+    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
+    "0100 0302 0504 0706 0908 0b0a 0d0c 0f0e",
+    "03020100 07060504 0b0a0908 0f0e0d0c",
+    "0706050403020100 0f0e0d0c0b0a0908"
 #else
-    "00 01 02 03 04 05 06 07",
-    "0001 0203 0405 0607",
-    "00010203 04050607",
-    "0001020304050607"
+    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
+    "0001 0203 0405 0607 0809 0a0b 0c0d 0e0f",
+    "00010203 04050607 08090a0b 0c0d0e0f",
+    "0001020304050607 08090a0b0c0d0e0f"
 #endif
   };
 
   const char* pattern_not_readable [4] = {
-    "?? ?? ?? ?? ?? ?? ?? ??",
-    "???? ???? ???? ????",
-    "???????? ????????",
-    "????????????????"
+    "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??",
+    "???? ???? ???? ???? ???? ???? ???? ????",
+    "???????? ???????? ???????? ????????",
+    "???????????????? ????????????????"
   };
 
   // On AIX, zero page is readable.
@@ -223,7 +223,7 @@ TEST_VM(os, test_print_hex_dump) {
 
   // Test dumping readable memory
   address arr = (address)os::malloc(100, mtInternal);
-  for (int c = 0; c < 100; c++) {
+  for (u1 c = 0; c < 100; c++) {
     arr[c] = c;
   }
 
@@ -698,16 +698,16 @@ TEST_VM(os, find_mapping_3) {
 
 TEST_VM(os, os_pagesizes) {
   ASSERT_EQ(os::min_page_size(), 4 * K);
-  ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
+  ASSERT_LE(os::min_page_size(), os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
   // (contract says "default" page size but a lot of code actually assumes
   //  this to be the smallest page size; notable, deliberate exception is
   //  AIX which can have smaller page sizes but those are not part of the
   //  page_sizes() set).
-  ASSERT_EQ(os::page_sizes().smallest(), (size_t)os::vm_page_size());
+  ASSERT_EQ(os::page_sizes().smallest(), os::vm_page_size());
   // The large page size, if it exists, shall be part of the set
   if (UseLargePages) {
-    ASSERT_GT(os::large_page_size(), (size_t)os::vm_page_size());
+    ASSERT_GT(os::large_page_size(), os::vm_page_size());
     ASSERT_TRUE(os::page_sizes().contains(os::large_page_size()));
   }
   os::page_sizes().print_on(tty);
@@ -882,11 +882,45 @@ TEST_VM(os, iso8601_time) {
 }
 
 TEST_VM(os, is_first_C_frame) {
-#if !defined(_WIN32) && !defined(ZERO)
+#if !defined(_WIN32) && !defined(ZERO) && !defined(__thumb__)
   frame invalid_frame;
   EXPECT_TRUE(os::is_first_C_frame(&invalid_frame)); // the frame has zeroes for all values
 
   frame cur_frame = os::current_frame(); // this frame has to have a sender
   EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
 #endif // _WIN32
+}
+
+#ifdef __GLIBC__
+TEST_VM(os, trim_native_heap) {
+  EXPECT_TRUE(os::can_trim_native_heap());
+  os::size_change_t sc;
+  sc.before = sc.after = (size_t)-1;
+  EXPECT_TRUE(os::trim_native_heap(&sc));
+  tty->print_cr(SIZE_FORMAT "->" SIZE_FORMAT, sc.before, sc.after);
+  // Regardless of whether we freed memory, both before and after
+  // should be somewhat believable numbers (RSS).
+  const size_t min = 5 * M;
+  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+  ASSERT_LE(min, sc.before);
+  ASSERT_GT(max, sc.before);
+  ASSERT_LE(min, sc.after);
+  ASSERT_GT(max, sc.after);
+  // Should also work
+  EXPECT_TRUE(os::trim_native_heap());
+}
+#else
+TEST_VM(os, trim_native_heap) {
+  EXPECT_FALSE(os::can_trim_native_heap());
+}
+#endif // __GLIBC__
+
+TEST_VM(os, open_O_CLOEXEC) {
+#if !defined(_WIN32)
+  int fd = os::open("test_file.txt", O_RDWR | O_CREAT | O_TRUNC, 0666); // open will use O_CLOEXEC
+  EXPECT_TRUE(fd > 0);
+  int flags = ::fcntl(fd, F_GETFD);
+  EXPECT_TRUE((flags & FD_CLOEXEC) != 0); // if O_CLOEXEC worked, then FD_CLOEXEC should be ON
+  ::close(fd);
+#endif
 }

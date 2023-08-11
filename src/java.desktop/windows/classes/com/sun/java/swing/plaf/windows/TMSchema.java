@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,13 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import java.awt.*;
-import java.util.*;
-
-import javax.swing.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Point;
+import java.util.EnumMap;
+import javax.swing.JComponent;
 
 import sun.awt.windows.ThemeReader;
 
@@ -55,7 +58,7 @@ import sun.awt.windows.ThemeReader;
  *
  * @author Leif Samuelsson
  */
-class TMSchema {
+public final class TMSchema {
 
     /**
      * An enumeration of the various Windows controls (also known as
@@ -82,7 +85,7 @@ class TMSchema {
 
 
     /**
-     * An enumeration of the Windows compoent parts
+     * An enumeration of the Windows component parts
      */
     public static enum Part {
         MENU (Control.MENU, 0), // Special case, not in native

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -127,6 +128,7 @@ import javax.swing.text.View;
  * unless noted, so that
  * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
  *
+ * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
@@ -211,7 +213,7 @@ public class CSS implements Serializable {
          * CSS attribute "background-position".
          */
         public static final Attribute BACKGROUND_POSITION =
-            new Attribute("background-position", null, false);
+            new Attribute("background-position", "0% 0%", false);
 
         /**
          * CSS attribute "background-repeat".
@@ -1063,7 +1065,7 @@ public class CSS implements Serializable {
     private static final Hashtable<String, Value> valueMap = new Hashtable<String, Value>();
 
     /**
-     * The hashtable and the static initalization block below,
+     * The hashtable and the static initialization block below,
      * set up a mapping from well-known HTML attributes to
      * CSS attributes.  For the most part, there is a 1-1 mapping
      * between the two.  However in the case of certain HTML
@@ -1294,6 +1296,7 @@ public class CSS implements Serializable {
         }
         // Absolute first
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL(cssString);
             if (url != null) {
                 return url;
@@ -1304,6 +1307,7 @@ public class CSS implements Serializable {
         if (base != null) {
             // Relative URL, try from base
             try {
+                @SuppressWarnings("deprecation")
                 URL url = new URL(base, cssString);
                 return url;
             }
@@ -1373,8 +1377,10 @@ public class CSS implements Serializable {
         int dv;
         int value = 0;
         for (byte i : iseq) {
-            if ((dv = -i) != 15 && (dv = Character.digit(digits.charAt(i), 16)) < 0) {
-                // Rejects string argument with not a valid digit in the radix-16.
+            // Index -15 means, use the default value 15 othervise get the digit value.
+            dv = i == -15 ? 15 : Character.digit(digits.charAt(i), 16);
+            if (dv < 0) {
+                // Rejects string argument with at least a non digit Character.
                 return null;
             }
             value = dv | value << 4;
@@ -1783,13 +1789,13 @@ public class CSS implements Serializable {
 
     /**
      * Base class to CSS values in the attribute sets.  This
-     * is intended to act as a convertor to/from other attribute
+     * is intended to act as a converter to/from other attribute
      * formats.
      * <p>
      * The CSS parser uses the parseCssValue method to convert
-     * a string to whatever format is appropriate a given key
-     * (i.e. these convertors are stored in a map using the
-     * CSS.Attribute as a key and the CssValue as the value).
+     * a string to whatever format is appropriate for a given key
+     * (i.e. these converters are stored in a map using the
+     * CSS.Attribute as the key and the CssValue as the value).
      * <p>
      * The HTML to CSS conversion process first converts the
      * HTML.Attribute to a CSS.Attribute, and then calls
@@ -2032,6 +2038,18 @@ public class CSS implements Serializable {
         boolean isSup() {
             return (svalue.contains("sup"));
         }
+
+        @Override
+        public int hashCode() {
+            return (this.svalue != null) ? this.svalue.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.StringValue strVal
+                   && Objects.equals(this.svalue, strVal.svalue);
+        }
+
     }
 
     /**
@@ -2209,6 +2227,21 @@ public class CSS implements Serializable {
             return Integer.valueOf(getValue(null, null));
         }
 
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value)
+                   | Boolean.hashCode(index)
+                   | Objects.hashCode(lu);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontSize size
+                   && value == size.value
+                   && index == size.index
+                   && Objects.equals(lu, size.lu);
+        }
+
         float value;
         boolean index;
         LengthUnit lu;
@@ -2309,6 +2342,17 @@ public class CSS implements Serializable {
             return family;
         }
 
+        @Override
+        public int hashCode() {
+            return (family != null) ? family.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontFamily font
+                   && Objects.equals(family, font.family);
+        }
+
         String family;
     }
 
@@ -2372,6 +2416,17 @@ public class CSS implements Serializable {
             return (weight > 500);
         }
 
+        @Override
+        public int hashCode() {
+            return Integer.hashCode(weight);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontWeight fontWeight
+                   && weight == fontWeight.weight;
+        }
+
         int weight;
     }
 
@@ -2432,6 +2487,16 @@ public class CSS implements Serializable {
             return c;
         }
 
+        @Override
+        public int hashCode() {
+            return (c != null) ? c.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.ColorValue color && c.equals(color.c);
+        }
+
         Color c;
     }
 
@@ -2484,6 +2549,16 @@ public class CSS implements Serializable {
             if (value != null) {
                 style = CSS.getValue((String)value);
             }
+        }
+
+        @Override
+        public int hashCode() {
+            return (style != null) ? style.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BorderStyle border && style.equals(border.style);
         }
 
         // CSS.Values are static, don't archive it.
@@ -2613,9 +2688,25 @@ public class CSS implements Serializable {
             return Float.valueOf(getValue(false));
         }
 
+        @Override
+        public int hashCode() {
+            return Float.hashCode(span)
+                   | Boolean.hashCode(percentage)
+                   | Objects.hashCode(units);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.LengthValue lu
+                   && percentage == lu.percentage
+                   && span == lu.span
+                   && Objects.equals(units, lu.units);
+        }
+
         /** If true, span is a percentage value, and that to determine
          * the length another value needs to be passed in. */
         boolean percentage;
+
         /** Either the absolute value (percentage == false) or
          * a percentage value. */
         float span;
@@ -2832,6 +2923,21 @@ public class CSS implements Serializable {
         float getVerticalPosition() {
             return verticalPosition;
         }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(horizontalPosition)
+                   | Float.hashCode(verticalPosition)
+                   | Short.hashCode(relative);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BackgroundPosition bp
+                    && horizontalPosition == bp.horizontalPosition
+                    && verticalPosition == bp.verticalPosition
+                    && relative == bp.relative;
+        }
     }
 
 
@@ -2989,6 +3095,21 @@ public class CSS implements Serializable {
 
         public String toString() {
             return type + " " + value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value)
+                   | Short.hashCode(type)
+                   | Objects.hashCode(units);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LengthUnit lu
+                   && type == lu.type
+                   && value == lu.value
+                   && Objects.equals(units, lu.units);
         }
 
         // 0 - value indicates real value
@@ -3262,7 +3383,7 @@ public class CSS implements Serializable {
         /**
          * Parses the shorthand margin/padding/border string
          * <code>value</code>, placing the result in <code>attr</code>.
-         * <code>names</code> give the 4 instrinsic property names.
+         * <code>names</code> give the 4 intrinsic property names.
          */
         static void parseShorthandMargin(CSS css, String value,
                                          MutableAttributeSet attr,
@@ -3633,7 +3754,7 @@ public class CSS implements Serializable {
 
 
     /*
-     * we need StyleSheet for resolving lenght units. (see
+     * we need StyleSheet for resolving length units. (see
      * isW3CLengthUnits)
      * we can not pass stylesheet for handling relative sizes. (do not
      * think changing public API is necessary)

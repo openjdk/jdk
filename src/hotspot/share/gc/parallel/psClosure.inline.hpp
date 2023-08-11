@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ private:
   // pointing to the young generation after being scanned.
   ClassLoaderData*    _scanned_cld;
 public:
-  PSScavengeFromCLDClosure(PSPromotionManager* pm) : _pm(pm), _scanned_cld(NULL) { }
+  PSScavengeFromCLDClosure(PSPromotionManager* pm) : _pm(pm), _scanned_cld(nullptr) { }
   void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   void do_oop(oop* p)       {
     ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
@@ -104,13 +104,13 @@ public:
   }
 
   void set_scanned_cld(ClassLoaderData* cld) {
-    assert(_scanned_cld == NULL || cld == NULL, "Should always only handling one cld at a time");
+    assert(_scanned_cld == nullptr || cld == nullptr, "Should always only handling one cld at a time");
     _scanned_cld = cld;
   }
 
 private:
   void do_cld_barrier() {
-    assert(_scanned_cld != NULL, "Should not be called without having a scanned cld");
+    assert(_scanned_cld != nullptr, "Should not be called without having a scanned cld");
     _scanned_cld->record_modified_oops();
   }
 };
@@ -131,9 +131,9 @@ public:
       _oop_closure.set_scanned_cld(cld);
 
       // Clean the cld since we're going to scavenge all the metadata.
-      cld->oops_do(&_oop_closure, false, /*clear_modified_oops*/true);
+      cld->oops_do(&_oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
 
-      _oop_closure.set_scanned_cld(NULL);
+      _oop_closure.set_scanned_cld(nullptr);
     }
   }
 };

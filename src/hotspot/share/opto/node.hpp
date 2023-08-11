@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ class CmpNode;
 class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
+class ConINode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -138,6 +139,7 @@ class Node_List;
 class Node_Stack;
 class OopMap;
 class ParmNode;
+class ParsePredicateNode;
 class PCTableNode;
 class PhaseCCP;
 class PhaseGVN;
@@ -150,11 +152,13 @@ class Pipeline;
 class PopulateIndexNode;
 class ProjNode;
 class RangeCheckNode;
+class ReductionNode;
 class RegMask;
 class RegionNode;
 class RootNode;
 class SafePointNode;
 class SafePointScalarObjectNode;
+class SafePointScalarMergeNode;
 class StartNode;
 class State;
 class StoreNode;
@@ -163,6 +167,7 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
+class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -253,7 +258,7 @@ public:
 
   // Create a new Node with given input edges.
   // This version requires use of the "edge-count" new.
-  // E.g.  new (C,3) FooNode( C, NULL, left, right );
+  // E.g.  new (C,3) FooNode( C, nullptr, left, right );
   Node( Node *n0 );
   Node( Node *n0, Node *n1 );
   Node( Node *n0, Node *n1, Node *n2 );
@@ -269,10 +274,10 @@ public:
   // Clone a Node, immediately supplying one or two new edges.
   // The first and second arguments, if non-null, replace in(1) and in(2),
   // respectively.
-  Node* clone_with_data_edge(Node* in1, Node* in2 = NULL) const {
+  Node* clone_with_data_edge(Node* in1, Node* in2 = nullptr) const {
     Node* nn = clone();
-    if (in1 != NULL)  nn->set_req(1, in1);
-    if (in2 != NULL)  nn->set_req(2, in2);
+    if (in1 != nullptr)  nn->set_req(1, in1);
+    if (in2 != nullptr)  nn->set_req(2, in2);
     return nn;
   }
 
@@ -291,10 +296,10 @@ protected:
   Node **_out;                  // Array of def-use references to Nodes
 
   // Input edges are split into two categories.  Required edges are required
-  // for semantic correctness; order is important and NULLs are allowed.
+  // for semantic correctness; order is important and nulls are allowed.
   // Precedence edges are used to help determine execution order and are
   // added, e.g., for scheduling purposes.  They are unordered and not
-  // duplicated; they have no embedded NULLs.  Edges from 0 to _cnt-1
+  // duplicated; they have no embedded nulls.  Edges from 0 to _cnt-1
   // are required, from _cnt to _max-1 are precedence edges.
   node_idx_t _cnt;              // Total number of required Node inputs.
 
@@ -389,8 +394,8 @@ protected:
 
   // Reference to the i'th input Node.  Error if out of bounds.
   Node* in(uint i) const { assert(i < _max, "oob: i=%d, _max=%d", i, _max); return _in[i]; }
-  // Reference to the i'th input Node.  NULL if out of bounds.
-  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : NULL); }
+  // Reference to the i'th input Node.  null if out of bounds.
+  Node* lookup(uint i) const { return ((i < _max) ? _in[i] : nullptr); }
   // Reference to the i'th output Node.  Error if out of bounds.
   // Use this accessor sparingly.  We are going trying to use iterators instead.
   Node* raw_out(uint i) const { assert(i < _outcnt,"oob"); return _out[i]; }
@@ -411,7 +416,7 @@ protected:
 
 #ifdef ASSERT
   bool is_dead() const;
-#define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
+  static bool is_not_dead(const Node* n);
   bool is_reachable_from_root() const;
 #endif
   // Check whether node has become unreachable
@@ -433,9 +438,9 @@ protected:
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
     Node** p = &_in[i];    // cache this._in, across the del_out call
-    if (*p != NULL)  (*p)->del_out((Node *)this);
+    if (*p != nullptr)  (*p)->del_out((Node *)this);
     (*p) = n;
-    if (n != NULL)      n->add_out((Node *)this);
+    if (n != nullptr)      n->add_out((Node *)this);
     Compile::current()->record_modified_node(this);
   }
   // Light version of set_req() to init inputs after node creation.
@@ -445,9 +450,9 @@ protected:
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,
             "remove node from hash table before modifying it");
-    assert( _in[i] == NULL, "sanity");
+    assert( _in[i] == nullptr, "sanity");
     _in[i] = n;
-    if (n != NULL)      n->add_out((Node *)this);
+    if (n != nullptr)      n->add_out((Node *)this);
     Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
@@ -455,22 +460,22 @@ protected:
   int find_prec_edge(Node* n) {
     for (uint i = req(); i < len(); i++) {
       if (_in[i] == n) return i;
-      if (_in[i] == NULL) {
-        DEBUG_ONLY( while ((++i) < len()) assert(_in[i] == NULL, "Gap in prec edges!"); )
+      if (_in[i] == nullptr) {
+        DEBUG_ONLY( while ((++i) < len()) assert(_in[i] == nullptr, "Gap in prec edges!"); )
         break;
       }
     }
     return -1;
   }
-  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = NULL);
+  int replace_edge(Node* old, Node* neww, PhaseGVN* gvn = nullptr);
   int replace_edges_in_range(Node* old, Node* neww, int start, int end, PhaseGVN* gvn);
-  // NULL out all inputs to eliminate incoming Def-Use edges.
+  // null out all inputs to eliminate incoming Def-Use edges.
   void disconnect_inputs(Compile* C);
 
   // Quickly, return true if and only if I am Compile::current()->top().
   bool is_top() const {
-    assert((this == (Node*) Compile::current()->top()) == (_out == NULL), "");
-    return (_out == NULL);
+    assert((this == (Node*) Compile::current()->top()) == (_out == nullptr), "");
+    return (_out == nullptr);
   }
   // Reaffirm invariants for is_top.  (Only from Compile::set_cached_top_node.)
   void setup_is_top();
@@ -518,14 +523,14 @@ private:
   void close_prec_gap_at(uint gap) {
     assert(_cnt <= gap && gap < _max, "no valid prec edge");
     uint i = gap;
-    Node *last = NULL;
+    Node *last = nullptr;
     for (; i < _max-1; ++i) {
       Node *next = _in[i+1];
-      if (next == NULL) break;
+      if (next == nullptr) break;
       last = next;
     }
-    _in[gap] = last; // Move last slot to empty one.
-    _in[i] = NULL;   // NULL out last slot.
+    _in[gap] = last;  // Move last slot to empty one.
+    _in[i] = nullptr; // null out last slot.
   }
 
 public:
@@ -552,13 +557,14 @@ public:
     assert(i >= _cnt, "not a precedence edge");
     // Avoid spec violation: duplicated prec edge.
     if (_in[i] == n) return;
-    if (n == NULL || find_prec_edge(n) != -1) {
+    if (n == nullptr || find_prec_edge(n) != -1) {
       rm_prec(i);
       return;
     }
-    if (_in[i] != NULL) _in[i]->del_out((Node *)this);
+    if (_in[i] != nullptr) _in[i]->del_out((Node *)this);
     _in[i] = n;
     n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
 
   // Set this node's index, used by cisc_version to replace current node
@@ -576,11 +582,17 @@ public:
     _in[i2] = n1;
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "edge swap must preserve hash code");
+    // Flip swapped edges flag.
+    if (has_swapped_edges()) {
+      remove_flag(Node::Flag_has_swapped_edges);
+    } else {
+      add_flag(Node::Flag_has_swapped_edges);
+    }
   }
 
   // Iterators over input Nodes for a Node X are written as:
   // for( i = 0; i < X.req(); i++ ) ... X[i] ...
-  // NOTE: Required edges can contain embedded NULL pointers.
+  // NOTE: Required edges can contain embedded null pointers.
 
 //----------------- Other Node Properties
 
@@ -658,6 +670,7 @@ public:
             DEFINE_CLASS_ID(LongCountedLoopEnd,   BaseCountedLoopEnd, 1)
           DEFINE_CLASS_ID(RangeCheck,             If, 1)
           DEFINE_CLASS_ID(OuterStripMinedLoopEnd, If, 2)
+          DEFINE_CLASS_ID(ParsePredicate,         If, 3)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
@@ -710,6 +723,12 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+        DEFINE_CLASS_ID(Reduction, Vector, 7)
+          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
+      DEFINE_CLASS_ID(Con, Type, 8)
+          DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
+
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -762,7 +781,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
 
-    _max_classes  = ClassMask_Move
+    _max_classes  = ClassMask_LShift
   };
   #undef DEFINE_CLASS_ID
 
@@ -779,7 +798,7 @@ public:
     Flag_avoid_back_to_back_before   = 1 << 8,
     Flag_avoid_back_to_back_after    = 1 << 9,
     Flag_has_call                    = 1 << 10,
-    Flag_is_reduction                = 1 << 11,
+    Flag_has_swapped_edges           = 1 << 11,
     Flag_is_scheduled                = 1 << 12,
     Flag_is_expensive                = 1 << 13,
     Flag_is_predicated_vector        = 1 << 14,
@@ -812,9 +831,9 @@ protected:
   }
 
 public:
-  const juint class_id() const { return _class_id; }
+  juint class_id() const { return _class_id; }
 
-  const juint flags() const { return _flags; }
+  juint flags() const { return _flags; }
 
   void add_flag(juint fl) { init_flags(fl); }
 
@@ -832,11 +851,11 @@ public:
     return ((_class_id & ClassMask_##type) == Class_##type); \
   }                                                          \
   type##Node *as_##type() const {                            \
-    assert(is_##type(), "invalid node class: %s", Name()); \
+    assert(is_##type(), "invalid node class: %s", Name());   \
     return (type##Node*)this;                                \
   }                                                          \
   type##Node* isa_##type() const {                           \
-    return (is_##type()) ? as_##type() : NULL;               \
+    return (is_##type()) ? as_##type() : nullptr;            \
   }
 
   DEFINE_CLASS_QUERY(AbstractLock)
@@ -861,6 +880,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -921,22 +941,27 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)
+  DEFINE_CLASS_QUERY(ParsePredicate)
   DEFINE_CLASS_QUERY(PCTable)
   DEFINE_CLASS_QUERY(Phi)
   DEFINE_CLASS_QUERY(Proj)
+  DEFINE_CLASS_QUERY(Reduction)
   DEFINE_CLASS_QUERY(Region)
   DEFINE_CLASS_QUERY(Root)
   DEFINE_CLASS_QUERY(SafePoint)
   DEFINE_CLASS_QUERY(SafePointScalarObject)
+  DEFINE_CLASS_QUERY(SafePointScalarMerge)
   DEFINE_CLASS_QUERY(Start)
   DEFINE_CLASS_QUERY(Store)
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
+  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -993,11 +1018,9 @@ public:
   // The node is a "macro" node which needs to be expanded before matching
   bool is_macro() const { return (_flags & Flag_is_macro) != 0; }
   // The node is expensive: the best control is set during loop opts
-  bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != NULL; }
-
-  // An arithmetic node which accumulates a data in a loop.
-  // It must have the loop's phi as input and provide a def to the phi.
-  bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+  bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != nullptr; }
+  // The node's original edge position is swapped.
+  bool has_swapped_edges() const { return (_flags & Flag_has_swapped_edges) != 0; }
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
@@ -1007,6 +1030,11 @@ public:
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }
 
   bool for_post_loop_opts_igvn() const { return (_flags & Flag_for_post_loop_opts_igvn) != 0; }
+
+  // Is 'n' possibly a loop entry (i.e. a Parse Predicate projection)?
+  static bool may_be_loop_entry(Node* n) {
+    return n != nullptr && n->is_IfProj() && n->in(0)->is_ParsePredicate();
+  }
 
 //----------------- Optimization
 
@@ -1019,10 +1047,10 @@ public:
   void raise_bottom_type(const Type* new_type);
 
   // Get the address type with which this node uses and/or defs memory,
-  // or NULL if none.  The address type is conservatively wide.
+  // or null if none.  The address type is conservatively wide.
   // Returns non-null for calls, membars, loads, stores, etc.
   // Returns TypePtr::BOTTOM if the node touches memory "broadly".
-  virtual const class TypePtr *adr_type() const { return NULL; }
+  virtual const class TypePtr *adr_type() const { return nullptr; }
 
   // Return an existing node which computes the same function as this node.
   // The optimistic combined algorithm requires this to return a Node which
@@ -1035,7 +1063,7 @@ public:
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
   // treatise in node.cpp above the default implementation AND TEST WITH
-  // +VerifyIterativeGVN!
+  // -XX:VerifyIterativeGVN=1
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Some nodes have specific Ideal subgraph transformations only if they are
@@ -1080,7 +1108,7 @@ public:
   bool is_cloop_ind_var() const;
 
   // Return a node with opcode "opc" and same inputs as "this" if one can
-  // be found; Otherwise return NULL;
+  // be found; Otherwise return null;
   Node* find_similar(int opc);
 
   // Return the unique control out if only one. Null if none or more than one.
@@ -1110,7 +1138,7 @@ public:
   // Should we clone rather than spill this instruction?
   bool rematerialize() const;
 
-  // Return JVM State Object if this Node carries debug info, or NULL otherwise
+  // Return JVM State Object if this Node carries debug info, or null otherwise
   virtual JVMState* jvms() const;
 
   // Print as assembly
@@ -1126,12 +1154,12 @@ public:
   // return value_if_unknown.
   jint find_int_con(jint value_if_unknown) const {
     const TypeInt* t = find_int_type();
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
   // Return the constant, knowing it is an integer constant already
   jint get_int() const {
     const TypeInt* t = find_int_type();
-    guarantee(t != NULL, "must be con");
+    guarantee(t != nullptr, "must be con");
     return t->get_con();
   }
   // Here's where the work is done.  Can produce non-constant int types too.
@@ -1141,23 +1169,23 @@ public:
   // Same thing for long (and intptr_t, via type.hpp):
   jlong get_long() const {
     const TypeLong* t = find_long_type();
-    guarantee(t != NULL, "must be con");
+    guarantee(t != nullptr, "must be con");
     return t->get_con();
   }
   jlong find_long_con(jint value_if_unknown) const {
     const TypeLong* t = find_long_type();
-    return (t != NULL && t->is_con()) ? t->get_con() : value_if_unknown;
+    return (t != nullptr && t->is_con()) ? t->get_con() : value_if_unknown;
   }
   const TypeLong* find_long_type() const;
 
   jlong get_integer_as_long(BasicType bt) const {
     const TypeInteger* t = find_integer_type(bt);
-    guarantee(t != NULL && t->is_con(), "must be con");
+    guarantee(t != nullptr && t->is_con(), "must be con");
     return t->get_con_as_long(bt);
   }
   jlong find_integer_as_long(BasicType bt, jlong value_if_unknown) const {
     const TypeInteger* t = find_integer_type(bt);
-    if (t == NULL || !t->is_con())  return value_if_unknown;
+    if (t == nullptr || !t->is_con())  return value_if_unknown;
     return t->get_con_as_long(bt);
   }
   const TypePtr* get_ptr_type() const;
@@ -1190,7 +1218,8 @@ public:
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:
@@ -1216,7 +1245,6 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
@@ -1234,9 +1262,9 @@ public:
   void   set_debug_orig(Node* orig);   // _debug_orig = orig
   void   dump_orig(outputStream *st, bool print_key = true) const;
 
-  int  _debug_idx;                     // Unique value assigned to every node.
-  int   debug_idx() const              { return _debug_idx; }
-  void  set_debug_idx( int debug_idx ) { _debug_idx = debug_idx; }
+  uint64_t _debug_idx;                 // Unique value assigned to every node.
+  uint64_t debug_idx() const           { return _debug_idx; }
+  void set_debug_idx(uint64_t debug_idx) { _debug_idx = debug_idx; }
 
   int        _hash_lock;               // Barrier to modifications of nodes in the hash table
   void  enter_hash_lock() { ++_hash_lock; assert(_hash_lock < 99, "in too many hash tables?"); }
@@ -1252,7 +1280,7 @@ public:
 };
 
 inline bool not_a_node(const Node* n) {
-  if (n == NULL)                   return true;
+  if (n == nullptr)                return true;
   if (((intptr_t)n & 1) != 0)      return true;  // uninitialized, etc.
   if (*(address*)n == badAddress)  return true;  // kill by Node::destruct
   return false;
@@ -1512,10 +1540,10 @@ class SimpleDUIterator : public StackObj {
 
 //-----------------------------------------------------------------------------
 // Map dense integer indices to Nodes.  Uses classic doubling-array trick.
-// Abstractly provides an infinite array of Node*'s, initialized to NULL.
+// Abstractly provides an infinite array of Node*'s, initialized to null.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Node_Array : public ResourceObj {
+class Node_Array : public AnyObj {
   friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in
@@ -1527,22 +1555,27 @@ public:
     _nodes = NEW_ARENA_ARRAY(a, Node*, max);
     clear();
   }
+  Node_Array() : Node_Array(Thread::current()->resource_area()) {}
 
-  Node_Array(Node_Array* na) : _a(na->_a), _max(na->_max), _nodes(na->_nodes) {}
-  Node *operator[] ( uint i ) const // Lookup, or NULL for not mapped
-  { return (i<_max) ? _nodes[i] : (Node*)NULL; }
+  NONCOPYABLE(Node_Array);
+  Node_Array& operator=(Node_Array&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_Array(Node_Array&&) = default;
+
+  Node *operator[] ( uint i ) const // Lookup, or null for not mapped
+  { return (i<_max) ? _nodes[i] : (Node*)nullptr; }
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
   void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
-  // Clear all entries in _nodes to NULL but keep storage
+  // Clear all entries in _nodes to null but keep storage
   void clear() {
     Copy::zero_to_bytes(_nodes, _max * sizeof(Node*));
   }
 
-  uint Size() const { return _max; }
+  uint max() const { return _max; }
   void dump() const;
 };
 
@@ -1552,6 +1585,12 @@ class Node_List : public Node_Array {
 public:
   Node_List(uint max = OptoNodeListSize) : Node_Array(Thread::current()->resource_area(), max), _cnt(0) {}
   Node_List(Arena *a, uint max = OptoNodeListSize) : Node_Array(a, max), _cnt(0) {}
+
+  NONCOPYABLE(Node_List);
+  Node_List& operator=(Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Node_List(Node_List&&) = default;
+
   bool contains(const Node* n) const {
     for (uint e = 0; e < size(); e++) {
       if (at(e) == n) return true;
@@ -1586,6 +1625,11 @@ public:
   Unique_Node_List() : Node_List(), _clock_index(0) {}
   Unique_Node_List(Arena *a) : Node_List(a), _in_worklist(a), _clock_index(0) {}
 
+  NONCOPYABLE(Unique_Node_List);
+  Unique_Node_List& operator=(Unique_Node_List&&) = delete;
+  // Allow move constructor for && (eg. capture return of function)
+  Unique_Node_List(Unique_Node_List&&) = default;
+
   void remove( Node *n );
   bool member( Node *n ) { return _in_worklist.test(n->_idx) != 0; }
   VectorSet& member_set(){ return _in_worklist; }
@@ -1617,9 +1661,34 @@ public:
     Node_List::clear();
     _clock_index = 0;
   }
+  void ensure_empty() {
+    assert(size() == 0, "must be empty");
+    clear(); // just in case
+  }
 
   // Used after parsing to remove useless nodes before Iterative GVN
   void remove_useless_nodes(VectorSet& useful);
+
+  // If the idx of the Nodes change, we must recompute the VectorSet
+  void recompute_idx_set() {
+    _in_worklist.clear();
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      _in_worklist.set(n->_idx);
+    }
+  }
+
+#ifdef ASSERT
+  bool is_subset_of(Unique_Node_List& other) {
+    for (uint i = 0; i < size(); i++) {
+      Node* n = at(i);
+      if (!other.member(n)) {
+        return false;
+      }
+    }
+    return true;
+  }
+#endif
 
   bool contains(const Node* n) const {
     fatal("use faster member() instead");
@@ -1640,7 +1709,7 @@ public:
 
   void add(Node* node) {
     if (not_a_node(node)) {
-      return; // Gracefully handle NULL, -1, 0xabababab, etc.
+      return; // Gracefully handle null, -1, 0xabababab, etc.
     }
     if (_visited_set[node] == nullptr) {
       _visited_set.Insert(node, node);
@@ -1663,7 +1732,12 @@ private:
 
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
-  _for_igvn->push(n);
+  _igvn_worklist->push(n);
+}
+
+// Inline definition of Compile::remove_for_igvn must be deferred to this point.
+inline void Compile::remove_for_igvn(Node* n) {
+  _igvn_worklist->remove(n);
 }
 
 //------------------------------Node_Stack-------------------------------------
@@ -1734,6 +1808,8 @@ public:
 
   // Node_Stack is used to map nodes.
   Node* find(uint idx) const;
+
+  NONCOPYABLE(Node_Stack);
 };
 
 
@@ -1745,7 +1821,7 @@ class Node_Notes {
   JVMState* _jvms;
 
 public:
-  Node_Notes(JVMState* jvms = NULL) {
+  Node_Notes(JVMState* jvms = nullptr) {
     _jvms = jvms;
   }
 
@@ -1754,12 +1830,12 @@ public:
 
   // True if there is nothing here.
   bool is_clear() {
-    return (_jvms == NULL);
+    return (_jvms == nullptr);
   }
 
   // Make there be nothing here.
   void clear() {
-    _jvms = NULL;
+    _jvms = nullptr;
   }
 
   // Make a new, clean node notes.
@@ -1778,8 +1854,8 @@ public:
   // Absorb any information from source.
   bool update_from(Node_Notes* source) {
     bool changed = false;
-    if (source != NULL) {
-      if (source->jvms() != NULL) {
+    if (source != nullptr) {
+      if (source->jvms() != nullptr) {
         set_jvms(source->jvms());
         changed = true;
       }
@@ -1794,22 +1870,22 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
                            int idx, bool can_grow) {
   assert(idx >= 0, "oob");
   int block_idx = (idx >> _log2_node_notes_block_size);
-  int grow_by = (block_idx - (arr == NULL? 0: arr->length()));
+  int grow_by = (block_idx - (arr == nullptr? 0: arr->length()));
   if (grow_by >= 0) {
-    if (!can_grow) return NULL;
+    if (!can_grow) return nullptr;
     grow_node_notes(arr, grow_by + 1);
   }
-  if (arr == NULL) return NULL;
+  if (arr == nullptr) return nullptr;
   // (Every element of arr is a sub-array of length _node_notes_block_size.)
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }
 
 inline bool
 Compile::set_node_notes_at(int idx, Node_Notes* value) {
-  if (value == NULL || value->is_clear())
+  if (value == nullptr || value->is_clear())
     return false;  // nothing to write => write nothing
   Node_Notes* loc = locate_node_notes(_node_note_array, idx, true);
-  assert(loc != NULL, "");
+  assert(loc != nullptr, "");
   return loc->update_from(value);
 }
 
@@ -1824,13 +1900,13 @@ protected:
   const Type* const _type;
 public:
   void set_type(const Type* t) {
-    assert(t != NULL, "sanity");
+    assert(t != nullptr, "sanity");
     debug_only(uint check_hash = (VerifyHashTableKeys && _hash_lock) ? hash() : NO_HASH);
     *(const Type**)&_type = t;   // cast away const-ness
     // If this node is in the hash table, make sure it doesn't need a rehash.
     assert(check_hash == NO_HASH || check_hash == hash(), "type change must preserve hash code");
   }
-  const Type* type() const { assert(_type != NULL, "sanity"); return _type; };
+  const Type* type() const { assert(_type != nullptr, "sanity"); return _type; };
   TypeNode( const Type *t, uint required ) : Node(required), _type(t) {
     init_class_id(Class_Type);
   }

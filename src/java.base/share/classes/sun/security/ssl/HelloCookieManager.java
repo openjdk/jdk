@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ abstract class HelloCookieManager {
 
         @Override
         byte[] createCookie(ServerHandshakeContext context,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             int version;
             byte[] secret;
 
@@ -178,7 +178,7 @@ abstract class HelloCookieManager {
 
         @Override
         boolean isCookieValid(ServerHandshakeContext context,
-            ClientHelloMessage clientHello, byte[] cookie) throws IOException {
+            ClientHelloMessage clientHello, byte[] cookie) {
             // no cookie exchange or not a valid cookie length
             if ((cookie == null) || (cookie.length != 32)) {
                 return false;
@@ -219,13 +219,13 @@ abstract class HelloCookieManager {
 
         @Override
         byte[] createCookie(ServerHandshakeContext context,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         boolean isCookieValid(ServerHandshakeContext context,
-            ClientHelloMessage clientHello, byte[] cookie) throws IOException {
+            ClientHelloMessage clientHello, byte[] cookie) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -252,7 +252,7 @@ abstract class HelloCookieManager {
 
         @Override
         byte[] createCookie(ServerHandshakeContext context,
-                ClientHelloMessage clientHello) throws IOException {
+                ClientHelloMessage clientHello) {
             int version;
             byte[] secret;
 
@@ -365,7 +365,7 @@ abstract class HelloCookieManager {
                 return false;
             }
 
-            // Use the ClientHello hash in the cookie for transtript
+            // Use the ClientHello hash in the cookie for transcript
             // hash calculation for stateless HelloRetryRequest.
             //
             // Transcript-Hash(ClientHello1, HelloRetryRequest, ... Mn) =

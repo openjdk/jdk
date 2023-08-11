@@ -32,7 +32,7 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public class DoubleClickAction extends WidgetAction.Adapter {
 
-    private DoubleClickHandler handler;
+    private final DoubleClickHandler handler;
 
     public DoubleClickAction(DoubleClickHandler handler) {
         this.handler = handler;

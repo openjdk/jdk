@@ -25,10 +25,7 @@
 /**
  * @test
  * @bug 8221530 8221642
- * @summary Test uses custom launcher that starts VM using JNI that verifies
- *          reflection API with null caller class
  * @library /test/lib
- * @requires os.family != "aix"
  * @run main/native CallerAccessTest
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat Inc.
+ * Copyright (c) 2020, 2022, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,14 +52,22 @@ public class MetricsTester {
         }
     }
 
-    public void testAll(Metrics m) throws Exception {
+    private void testAll(Metrics m, boolean inContainer) throws Exception {
         CgroupMetricsTester tester =  createInstance(m);
         tester.testCpuAccounting();
         tester.testCpuConsumption();
         tester.testCpuSchedulingMetrics();
         tester.testCpuSets();
-        tester.testMemorySubsystem();
-        tester.testMemoryUsage();
+        if (!inContainer) {
+          // If not running in a container, these test cases query the memory usage.
+          // of all processes in the entire system (or those belonging to the current
+          // Linux user). They cannot produce predictable results due to interference
+          // from unrelated processes.
+          System.out.println("testMemorySubsystem and testMemoryUsage skipped");
+        } else {
+          tester.testMemorySubsystem();
+          tester.testMemoryUsage();
+        }
         tester.testMisc();
     }
 
@@ -71,8 +79,14 @@ public class MetricsTester {
             return;
         }
 
+        boolean inContainer = false;
+        if (args.length > 0 && "-incontainer".equals(args[0])) {
+          inContainer = true;
+        }
+        System.out.println("inContainer = " + inContainer);
+
         MetricsTester metricsTester = new MetricsTester();
-        metricsTester.testAll(m);
+        metricsTester.testAll(m, inContainer);
         System.out.println("TEST PASSED!!!");
     }
 }

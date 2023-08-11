@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.channels.FileChannel;
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
+import jdk.internal.util.ByteArray;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -61,9 +62,15 @@ import sun.nio.ch.FileChannelImpl;
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
-    private FileDescriptor fd;
-    private volatile FileChannel channel;
-    private boolean rw;
+    private static final int O_RDONLY = 1;
+    private static final int O_RDWR =   2;
+    private static final int O_SYNC =   4;
+    private static final int O_DSYNC =  8;
+    private static final int O_TEMPORARY =  16;
+
+    private final FileDescriptor fd;
+
+    private final boolean rw;
 
     /**
      * The path of the referenced file
@@ -73,13 +80,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     private final Object closeLock = new Object();
 
-    private volatile boolean closed;
+    /**
+     * A local buffer that allows reading and writing of
+     * longer primitive parameters (e.g. long) to be performed
+     * using bulk operations rather than on a per-byte basis.
+     */
+    private final byte[] buffer = new byte[Long.BYTES];
 
-    private static final int O_RDONLY = 1;
-    private static final int O_RDWR =   2;
-    private static final int O_SYNC =   4;
-    private static final int O_DSYNC =  8;
-    private static final int O_TEMPORARY =  16;
+    private volatile FileChannel channel;
+    private volatile boolean closed;
 
     /**
      * Creates a random access file stream to read from, and optionally
@@ -113,7 +122,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             existing, writable regular file and a new regular file of
      *             that name cannot be created, or if some other error occurs
      *             while opening or creating the file
-     * @throws      SecurityException   if a security manager exists and its
+     * @throws     SecurityException   if a security manager exists and its
      *             {@code checkRead} method denies read access to the file
      *             or the mode is {@code "rw"} and the security manager's
      *             {@code checkWrite} method denies write access to the file
@@ -219,6 +228,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     {
         String name = (file != null ? file.getPath() : null);
         int imode = -1;
+
+        boolean rw = false;
         if (mode.equals("r"))
             imode = O_RDONLY;
         else if (mode.startsWith("rw")) {
@@ -233,6 +244,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                     imode = -1;
             }
         }
+        this.rw = rw;
+
         if (openAndDelete)
             imode |= O_TEMPORARY;
         if (imode < 0)
@@ -270,10 +283,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.io.FileDescriptor
      */
     public final FileDescriptor getFD() throws IOException {
-        if (fd != null) {
-            return fd;
-        }
-        throw new IOException();
+        return fd;
     }
 
     /**
@@ -687,6 +697,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * <p> If this file has an associated channel then the channel is closed
      * as well.
      *
+     * @apiNote
+     * If this stream has an associated channel then this method will close the
+     * channel, which in turn will close this stream. Subclasses that override
+     * this method should be prepared to handle possible reentrant invocation.
+     *
      * @throws     IOException  if an I/O error occurs.
      *
      * @revised 1.4
@@ -734,10 +749,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final boolean readBoolean() throws IOException {
-        int ch = this.read();
-        if (ch < 0)
-            throw new EOFException();
-        return (ch != 0);
+        return readUnsignedByte() != 0;
     }
 
     /**
@@ -746,9 +758,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * If the byte read is {@code b}, where
      * {@code 0 <= b <= 255},
      * then the result is:
-     * <blockquote><pre>
+     * {@snippet lang=java :
      *     (byte)(b)
-     * </pre></blockquote>
+     * }
      * <p>
      * This method blocks until the byte is read, the end of the stream
      * is detected, or an exception is thrown.
@@ -759,10 +771,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final byte readByte() throws IOException {
-        int ch = this.read();
-        if (ch < 0)
-            throw new EOFException();
-        return (byte)(ch);
+        return (byte) readUnsignedByte();
     }
 
     /**
@@ -792,9 +801,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where each of the two values is
      * between {@code 0} and {@code 255}, inclusive, then the
      * result is equal to:
-     * <blockquote><pre>
-     *     (short)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (short)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -806,11 +815,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final short readShort() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (short)((ch1 << 8) + (ch2 << 0));
+        return (short) readUnsignedShort();
     }
 
     /**
@@ -820,9 +825,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 8) | b2
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 8) | b2
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -834,11 +839,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readUnsignedShort() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (ch1 << 8) + (ch2 << 0);
+        readFully(buffer, 0, Short.BYTES);
+        return  ((buffer[1] & 0xff)      ) +
+                ((buffer[0] & 0xff) <<  8);
     }
 
     /**
@@ -848,9 +851,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1} and {@code b2}, where
      * {@code 0 <= b1, b2 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (char)((b1 &lt;&lt; 8) | b2)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (char)((b1 << 8) | b2)
+     * }
      * <p>
      * This method blocks until the two bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -862,11 +865,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final char readChar() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (char)((ch1 << 8) + (ch2 << 0));
+        return (char) readUnsignedShort();
     }
 
     /**
@@ -876,9 +875,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b2}, {@code b3}, and {@code b4}, where
      * {@code 0 <= b1, b2, b3, b4 <= 255},
      * then the result is equal to:
-     * <blockquote><pre>
-     *     (b1 &lt;&lt; 24) | (b2 &lt;&lt; 16) + (b3 &lt;&lt; 8) + b4
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     (b1 << 24) | (b2 << 16) + (b3 << 8) + b4
+     * }
      * <p>
      * This method blocks until the four bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -890,13 +889,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final int readInt() throws IOException {
-        int ch1 = this.read();
-        int ch2 = this.read();
-        int ch3 = this.read();
-        int ch4 = this.read();
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        readFully(buffer, 0, Integer.BYTES);
+        return ByteArray.getInt(buffer, 0);
     }
 
     /**
@@ -906,17 +900,17 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * {@code b1}, {@code b2}, {@code b3},
      * {@code b4}, {@code b5}, {@code b6},
      * {@code b7}, and {@code b8,} where:
-     * <blockquote><pre>
-     *     0 &lt;= b1, b2, b3, b4, b5, b6, b7, b8 &lt;=255,
-     * </pre></blockquote>
+     * {@snippet :
+     *     0 <= b1, b2, b3, b4, b5, b6, b7, b8 <= 255
+     * }
      * <p>
      * then the result is equal to:
-     * <blockquote><pre>
-     *     ((long)b1 &lt;&lt; 56) + ((long)b2 &lt;&lt; 48)
-     *     + ((long)b3 &lt;&lt; 40) + ((long)b4 &lt;&lt; 32)
-     *     + ((long)b5 &lt;&lt; 24) + ((long)b6 &lt;&lt; 16)
-     *     + ((long)b7 &lt;&lt; 8) + b8
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     ((long)b1 << 56) + ((long)b2 << 48)
+     *         + ((long)b3 << 40) + ((long)b4 << 32)
+     *         + ((long)b5 << 24) + ((long)b6 << 16)
+     *         + ((long)b7 << 8) + b8
+     * }
      * <p>
      * This method blocks until the eight bytes are read, the end of the
      * stream is detected, or an exception is thrown.
@@ -928,7 +922,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException   if an I/O error occurs.
      */
     public final long readLong() throws IOException {
-        return ((long)(readInt()) << 32) + (readInt() & 0xFFFFFFFFL);
+        readFully(buffer, 0, Long.BYTES);
+        return ByteArray.getLong(buffer, 0);
     }
 
     /**
@@ -951,7 +946,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#intBitsToFloat(int)
      */
     public final float readFloat() throws IOException {
-        return Float.intBitsToFloat(readInt());
+        readFully(buffer, 0, Float.BYTES);
+        return ByteArray.getFloat(buffer, 0);
     }
 
     /**
@@ -974,7 +970,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#longBitsToDouble(long)
      */
     public final double readDouble() throws IOException {
-        return Double.longBitsToDouble(readLong());
+        readFully(buffer, 0, Double.BYTES);
+        return ByteArray.getDouble(buffer, 0);
     }
 
     /**
@@ -1008,20 +1005,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
         while (!eol) {
             switch (c = read()) {
-            case -1:
-            case '\n':
-                eol = true;
-                break;
-            case '\r':
-                eol = true;
-                long cur = getFilePointer();
-                if ((read()) != '\n') {
-                    seek(cur);
+                case -1, '\n' -> eol = true;
+                case '\r'     -> {
+                    eol = true;
+                    long cur = getFilePointer();
+                    if ((read()) != '\n') {
+                        seek(cur);
+                    }
                 }
-                break;
-            default:
-                input.append((char)c);
-                break;
+                default -> input.append((char) c);
             }
         }
 
@@ -1072,7 +1064,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void writeBoolean(boolean v) throws IOException {
         write(v ? 1 : 0);
-        //written++;
     }
 
     /**
@@ -1084,7 +1075,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final void writeByte(int v) throws IOException {
         write(v);
-        //written++;
     }
 
     /**
@@ -1095,9 +1085,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeShort(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
-        //written += 2;
+        buffer[1] = (byte)(v       );
+        buffer[0] = (byte)(v >>>  8);
+        write(buffer, 0, Short.BYTES);
     }
 
     /**
@@ -1109,9 +1099,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeChar(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
-        //written += 2;
+        writeShort(v);
     }
 
     /**
@@ -1122,10 +1110,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-        write((v >>> 24) & 0xFF);
-        write((v >>> 16) & 0xFF);
-        write((v >>>  8) & 0xFF);
-        write((v >>>  0) & 0xFF);
+        ByteArray.setInt(buffer, 0, v);
+        write(buffer, 0, Integer.BYTES);
         //written += 4;
     }
 
@@ -1137,15 +1123,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-        write((int)(v >>> 56) & 0xFF);
-        write((int)(v >>> 48) & 0xFF);
-        write((int)(v >>> 40) & 0xFF);
-        write((int)(v >>> 32) & 0xFF);
-        write((int)(v >>> 24) & 0xFF);
-        write((int)(v >>> 16) & 0xFF);
-        write((int)(v >>>  8) & 0xFF);
-        write((int)(v >>>  0) & 0xFF);
-        //written += 8;
+        ByteArray.setLong(buffer, 0, v);
+        write(buffer, 0, Long.BYTES);
     }
 
     /**
@@ -1160,7 +1139,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        writeInt(Float.floatToIntBits(v));
+        ByteArray.setFloat(buffer, 0, v);
+        write(buffer, 0, Float.BYTES);
     }
 
     /**
@@ -1175,7 +1155,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        writeLong(Double.doubleToLongBits(v));
+        ByteArray.setDouble(buffer, 0, v);
+        write(buffer, 0, Double.BYTES);
     }
 
     /**
@@ -1245,7 +1226,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         SharedSecrets.setJavaIORandomAccessFileAccess(new JavaIORandomAccessFileAccess()
         {
             // This is for j.u.z.ZipFile.OPEN_DELETE. The O_TEMPORARY flag
-            // is only implemented/supported on windows.
+            // is only implemented/supported on Windows.
             public RandomAccessFile openAndDelete(File file, String mode)
                 throws IOException
             {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,18 +30,18 @@
 
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _index(0),
-  _capacity_in_bytes(index_to_byte_index(qset->buffer_size())),
-  _buf(NULL)
+  _capacity_in_bytes(index_to_byte_index(qset->buffer_capacity())),
+  _buf(nullptr)
 {}
 
 PtrQueue::~PtrQueue() {
-  assert(_buf == NULL, "queue must be flushed before delete");
+  assert(_buf == nullptr, "queue must be flushed before delete");
 }
 
-BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_size(size) {}
+BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_capacity(size) {}
 
 void* BufferNode::AllocatorConfig::allocate() {
-  size_t byte_size = _buffer_size * sizeof(void*);
+  size_t byte_size = _buffer_capacity * sizeof(void*);
   return NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
 }
 
@@ -50,8 +50,8 @@ void BufferNode::AllocatorConfig::deallocate(void* node) {
   FREE_C_HEAP_ARRAY(char, node);
 }
 
-BufferNode::Allocator::Allocator(const char* name, size_t buffer_size) :
-  _config(buffer_size),
+BufferNode::Allocator::Allocator(const char* name, size_t buffer_capacity) :
+  _config(buffer_capacity),
   _free_list(name, &_config)
 {
 
@@ -66,8 +66,8 @@ BufferNode* BufferNode::Allocator::allocate() {
 }
 
 void BufferNode::Allocator::release(BufferNode* node) {
-  assert(node != NULL, "precondition");
-  assert(node->next() == NULL, "precondition");
+  assert(node != nullptr, "precondition");
+  assert(node->next() == nullptr, "precondition");
   node->~BufferNode();
   _free_list.release(node);
 }
@@ -80,7 +80,7 @@ PtrQueueSet::~PtrQueueSet() {}
 
 void PtrQueueSet::reset_queue(PtrQueue& queue) {
   if (queue.buffer() != nullptr) {
-    queue.set_index(buffer_size());
+    queue.set_index(buffer_capacity());
   }
 }
 
@@ -91,7 +91,7 @@ void PtrQueueSet::flush_queue(PtrQueue& queue) {
     queue.set_buffer(nullptr);
     queue.set_index(0);
     BufferNode* node = BufferNode::make_node_from_buffer(buffer, index);
-    if (index == buffer_size()) {
+    if (index == buffer_capacity()) {
       deallocate_buffer(node);
     } else {
       enqueue_completed_buffer(node);
@@ -129,7 +129,7 @@ BufferNode* PtrQueueSet::exchange_buffer_with_new(PtrQueue& queue) {
 
 void PtrQueueSet::install_new_buffer(PtrQueue& queue) {
   queue.set_buffer(allocate_buffer());
-  queue.set_index(buffer_size());
+  queue.set_index(buffer_capacity());
 }
 
 void** PtrQueueSet::allocate_buffer() {

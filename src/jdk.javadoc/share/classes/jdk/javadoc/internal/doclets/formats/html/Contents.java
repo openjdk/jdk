@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -95,6 +94,7 @@ public class Contents {
     public final Content exceptionClass;
     public final Content exceptionClasses;
     public final Content exportedTo;
+    public final Content externalSpecifications;
     public final Content fieldLabel;
     public final Content fieldDetailsLabel;
     public final Content fieldSummaryLabel;
@@ -169,6 +169,7 @@ public class Contents {
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
+    public final Content specificationLabel;
     public final Content specifiedByLabel;
     public final Content subclassesLabel;
     public final Content subinterfacesLabel;
@@ -239,6 +240,7 @@ public class Contents {
         exceptionClass = getContent("doclet.ExceptionClass");
         exceptionClasses = getContent("doclet.ExceptionClasses");
         exportedTo = getContent("doclet.ExportedTo");
+        externalSpecifications = getContent("doclet.External_Specifications");
         fieldDetailsLabel = getContent("doclet.Field_Detail");
         fieldSummaryLabel = getContent("doclet.Field_Summary");
         fieldLabel = getContent("doclet.Field");
@@ -313,6 +315,7 @@ public class Contents {
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");
+        specificationLabel = getContent("doclet.Specification");
         specifiedByLabel = getContent("doclet.Specified_By");
         subclassesLabel = getContent("doclet.Subclasses");
         subinterfacesLabel = getContent("doclet.Subinterfaces");
@@ -389,7 +392,7 @@ public class Contents {
      */
     public Content getContent(String key, Object o0, Object o1, Object o2) {
         Content c = new ContentBuilder();
-        Pattern p = Pattern.compile("\\{([012])\\}");
+        Pattern p = Pattern.compile("\\{([012])}");
         String text = resources.getText(key); // TODO: cache
         Matcher m = p.matcher(text);
         int start = 0;

@@ -121,7 +121,7 @@ public class MapTest extends JSR166TestCase {
 
     /**
      * Tests and extends the scenario reported in
-     * https://bugs.openjdk.java.net/browse/JDK-8186171
+     * https://bugs.openjdk.org/browse/JDK-8186171
      * HashMap: Entry.setValue may not work after Iterator.remove() called for previous entries
      * ant -Djsr166.tckTestClass=HashMapTest -Djsr166.methodFilter=testBug8186171 -Djsr166.runsPerTest=1000 tck
      */

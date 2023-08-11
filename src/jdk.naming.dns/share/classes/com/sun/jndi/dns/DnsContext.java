@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1049,11 +1049,6 @@ final class BindingEnumeration extends BaseNameClassPairEnumeration<Binding>
     BindingEnumeration(DnsContext ctx, Hashtable<String,NameNode> nodes) {
         super(ctx, nodes);
     }
-
-    // Finalizer not needed since it's safe to leave ctx unclosed.
-//  protected void finalize() {
-//      close();
-//  }
 
     @Override
     public Binding next() throws NamingException {

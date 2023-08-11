@@ -28,18 +28,18 @@
  */
 /*
  * @test
- * @bug 8266310 8289919
+ * @bug 8266310 8289919 8293282
  * @summary Checks that JNI_OnLoad is invoked only once when multiple threads
  *          call System.loadLibrary concurrently, and JNI_OnUnload is invoked
  *          when the native library is loaded from a custom class loader.
  * @library /test/lib
  * @build LoadLibraryUnload p.Class1
- * @run main/othervm/native -Xcheck:jni LoadLibraryUnloadTest
+ * @run main/othervm/native LoadLibraryUnloadTest
  */
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.process.*;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import java.lang.ProcessBuilder;
 import java.lang.Process;
@@ -50,7 +50,6 @@ public class LoadLibraryUnloadTest {
 
     private static String testClassPath = System.getProperty("test.classes");
     private static String testLibraryPath = System.getProperty("test.nativepath");
-    private static String classPathSeparator = System.getProperty("path.separator");
 
     private static Process runJavaCommand(String... command) throws Throwable {
         String java = JDKToolFinder.getJDKTool("java");

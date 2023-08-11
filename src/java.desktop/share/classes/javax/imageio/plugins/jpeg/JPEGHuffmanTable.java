@@ -40,7 +40,7 @@ import java.util.Arrays;
 
 public class JPEGHuffmanTable {
 
-    /* The data for the publically defined tables, as specified in ITU T.81
+    /* The data for the publicly defined tables, as specified in ITU T.81
      * JPEG specification section K3.3 and used in the IJG library.
      */
     private static final short[] StdDCLuminanceLengths = {

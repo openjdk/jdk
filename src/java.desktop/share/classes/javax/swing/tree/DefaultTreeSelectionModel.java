@@ -911,7 +911,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
                         else {
                             TreePath[] newSel = new TreePath[counter - min];
                             int[] selectionIndex = rowMapper.getRowsForPaths(selection);
-                            // find the actual selection pathes corresponded to the
+                            // find the actual selection paths corresponded to the
                             // rows of the new selection
                             for (int i = 0; i < selectionIndex.length; i++) {
                                 if (selectionIndex[i]<counter) {

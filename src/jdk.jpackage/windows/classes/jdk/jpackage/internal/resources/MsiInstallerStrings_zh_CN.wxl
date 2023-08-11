@@ -12,5 +12,5 @@
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">创建桌面快捷方式</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">创建开始菜单快捷方式</String>
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName] 安装程序</String>
-  <String Id="ContextMenuCommandLabel">Open with [ProductName]</String>
+  <String Id="ContextMenuCommandLabel">使用 [ProductName] 打开</String>
 </WixLocalization>

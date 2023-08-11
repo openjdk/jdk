@@ -1,13 +1,2 @@
 // Hide uncommon trap blocks.
-
-var f = new RemoveBlockFilter("Hide uncommon trap blocks");
-f.addRule(
-  new RemoveBlockFilter.RemoveBlockRule(
-    new AnySelector(
-      new MatcherSelector(
-        new Properties.RegexpPropertyMatcher("dump_spec", ".*uncommon_trap.*")
-      )
-    )
-  )
-);
-f.apply(graph);
+removeBlock(hasAnyNode(matches("dump_spec", ".*uncommon_trap.*")));

@@ -54,7 +54,7 @@ public interface MachineDescription extends Serializable {
   public boolean isBigEndian();
 
   /** Indicates whether the underlying machine supports the LP64 data
-      model (currently only SPARC/64). */
+      model. */
   public boolean isLP64();
 
   /** Indicates whether the underlying machine supports 64-bit types

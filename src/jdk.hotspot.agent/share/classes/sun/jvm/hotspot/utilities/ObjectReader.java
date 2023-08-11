@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class ObjectReader {
       try {
          key = readObject(keyField.getValue(oop));
          value = readObject(valueField.getValue(oop));
-         next =  (Oop)nextField.getValue(oop);
+         next = nextField.getValue(oop);
          // For Properties, should use setProperty(k, v). Since it only runs in SA
          // using put(k, v) should be OK.
          p.put(key, value);
@@ -343,7 +343,7 @@ public class ObjectReader {
       if (result == null) {
          int length = (int) array.getLength();
          TypeArrayKlass klass = (TypeArrayKlass) array.getKlass();
-         int type = (int) klass.getElementType();
+         int type = klass.getElementType();
          switch (type) {
             case TypeArrayKlass.T_BOOLEAN: {
                final boolean[] arrayObj = new boolean[length];
@@ -677,10 +677,10 @@ public class ObjectReader {
 
    public java.lang.reflect.Field readField(sun.jvm.hotspot.oops.Field f)
             throws NoSuchFieldException, ClassNotFoundException {
-      java.lang.reflect.Field result = (java.lang.reflect.Field) fieldMap.get(f);
+      java.lang.reflect.Field result = fieldMap.get(f);
       if (result == null) {
          FieldIdentifier fieldId = f.getID();
-         Class clz = readClass((InstanceKlass) f.getFieldHolder());
+         Class clz = readClass(f.getFieldHolder());
          String name = fieldId.getName();
          try {
             result = clz.getField(name);

@@ -31,7 +31,7 @@ import java.net.SocketAddress;
  * Notification emitted when a send failed notification has been received.
  *
  * <P> A send failed notification indicates that a message cannot be delivered.
- * Typically this is because the association has been shutdown with unsent data
+ * Typically, this is because the association has been shutdown with unsent data
  * in the socket output buffer, or in the case of a {@link SctpMultiChannel}
  * the association failed to setup.
  *
@@ -81,7 +81,7 @@ public abstract class SendFailedNotification implements Notification {
     public abstract int errorCode();
 
     /**
-     * Returns the stream number that the messge was to be sent on.
+     * Returns the stream number that the message was to be sent on.
      *
      * @return  The stream number
      */

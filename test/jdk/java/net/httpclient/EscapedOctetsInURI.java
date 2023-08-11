@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,14 @@
  * @test
  * @summary Preserve URI component escaped octets when converting to HTTP headers
  * @bug 8198716
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=reqeusts,headers
  *       EscapedOctetsInURI
  */
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,33 +41,42 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.lang.System.err;
 import static java.lang.System.out;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
 
-public class EscapedOctetsInURI {
+public class EscapedOctetsInURI implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpServer httpTestServer;         // HTTP/1.1    [ 4 servers ]
-    HttpsServer httpsTestServer;       // HTTPS/1.1
-    Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    HttpTestServer httpTestServer;    // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpsTestServer;   // HTTPS/1.1
+    HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+
+    private volatile HttpClient sharedClient;
 
     static final String[][] pathsAndQueryStrings = new String[][] {
         // partial-path       URI query
@@ -114,6 +112,52 @@ public class EscapedOctetsInURI {
 
     static final int ITERATION_COUNT = 3; // checks upgrade and re-use
 
+    static final long start = System.nanoTime();
+    public static String now() {
+        long now = System.nanoTime() - start;
+        long secs = now / 1000_000_000;
+        long mill = (now % 1000_000_000) / 1000_000;
+        long nan = now % 1000_000;
+        return String.format("[%d s, %d ms, %d ns] ", secs, mill, nan);
+    }
+
+    static Version version(String uri) {
+        if (uri.contains("/http1/") || uri.contains("/https1/"))
+            return HTTP_1_1;
+        if (uri.contains("/http2/") || uri.contains("/https2/"))
+            return HTTP_2;
+        return null;
+    }
+
+
+    private HttpClient makeNewClient() {
+        return HttpClient.newBuilder()
+                .proxy(NO_PROXY)
+                .sslContext(sslContext)
+                .build();
+    }
+
+    HttpClient newHttpClient(boolean share) {
+        if (!share) return makeNewClient();
+        HttpClient shared = sharedClient;
+        if (shared != null) return shared;
+        synchronized (this) {
+            shared = sharedClient;
+            if (shared == null) {
+                shared = sharedClient = makeNewClient();
+            }
+            return shared;
+        }
+    }
+
+    record CloseableClient(HttpClient client, boolean shared)
+            implements Closeable {
+        public void close() {
+            if (shared) return;
+            client.close();
+        }
+    }
+
     @Test(dataProvider = "variants")
     void test(String uriString, boolean sameClient) throws Exception {
         System.out.println("\n--- Starting ");
@@ -125,122 +169,114 @@ public class EscapedOctetsInURI {
 
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = HttpClient.newBuilder()
-                        .proxy(NO_PROXY)
-                        .sslContext(sslContext)
-                        .build();
+            if (!sameClient || client == null) {
+                client = newHttpClient(sameClient);
+            }
 
-            HttpRequest request = HttpRequest.newBuilder(uri).build();
-            HttpResponse<String> resp = client.send(request, BodyHandlers.ofString());
+            try (var cl = new CloseableClient(client, sameClient)) {
+                HttpRequest request = HttpRequest.newBuilder(uri).build();
+                HttpResponse<String> resp = client.send(request, BodyHandlers.ofString());
 
-            out.println("Got response: " + resp);
-            out.println("Got body: " + resp.body());
-            assertEquals(resp.statusCode(), 200,
-                    "Expected 200, got:" + resp.statusCode());
+                out.println("Got response: " + resp);
+                out.println("Got body: " + resp.body());
+                assertEquals(resp.statusCode(), 200,
+                        "Expected 200, got:" + resp.statusCode());
 
-            // the response body should contain the exact escaped request URI
-            URI retrievedURI = URI.create(resp.body());
-            assertEquals(retrievedURI.getRawPath(),  uri.getRawPath());
-            assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery());
+                // the response body should contain the exact escaped request URI
+                URI retrievedURI = URI.create(resp.body());
+                assertEquals(retrievedURI.getRawPath(), uri.getRawPath());
+                assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery());
+                assertEquals(resp.version(), version(uriString));
+            }
         }
     }
 
     @Test(dataProvider = "variants")
-    void testAsync(String uriString, boolean sameClient) {
+    void testAsync(String uriString, boolean sameClient) throws Exception {
         System.out.println("\n--- Starting ");
         URI uri = URI.create(uriString);
 
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = HttpClient.newBuilder()
-                        .proxy(NO_PROXY)
-                        .sslContext(sslContext)
-                        .build();
+            if (!sameClient || client == null) {
+                client = newHttpClient(sameClient);
+            }
 
-            HttpRequest request = HttpRequest.newBuilder(uri).build();
-
-            client.sendAsync(request, BodyHandlers.ofString())
-                  .thenApply(response -> {
-                      out.println("Got response: " + response);
-                      out.println("Got body: " + response.body());
-                      assertEquals(response.statusCode(), 200);
-                      return response.body(); })
-                  .thenApply(body -> URI.create(body))
-                  .thenAccept(retrievedURI -> {
-                      // the body should contain the exact escaped request URI
-                      assertEquals(retrievedURI.getRawPath(), uri.getRawPath());
-                      assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery()); })
-                  .join();
+            try (var cl = new CloseableClient(client, sameClient)) {
+                HttpRequest request = HttpRequest.newBuilder(uri).build();
+                client.sendAsync(request, BodyHandlers.ofString())
+                        .thenApply(response -> {
+                            out.println("Got response: " + response);
+                            out.println("Got body: " + response.body());
+                            assertEquals(response.statusCode(), 200);
+                            assertEquals(response.version(), version(uriString));
+                            return response.body();
+                        })
+                        .thenApply(body -> URI.create(body))
+                        .thenAccept(retrievedURI -> {
+                            // the body should contain the exact escaped request URI
+                            assertEquals(retrievedURI.getRawPath(), uri.getRawPath());
+                            assertEquals(retrievedURI.getRawQuery(), uri.getRawQuery());
+                        }).join();
+            }
         }
-    }
-
-    static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
     }
 
     @BeforeTest
     public void setup() throws Exception {
+        out.println(now() + "begin setup");
+
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServer.create(sa, 0);
-        httpTestServer.createContext("/http1", new Http1ASCIIUriStringHandler());
-        httpURI = "http://" + serverAuthority(httpTestServer) + "/http1";
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
+        httpTestServer.addHandler(new HttpASCIIUriStringHandler(), "/http1/get");
+        httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/get";
 
-        httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer.createContext("/https1", new Http1ASCIIUriStringHandler());
-        httpsURI = "https://" + serverAuthority(httpsTestServer) + "/https1";
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
+        httpsTestServer.addHandler(new HttpASCIIUriStringHandler(), "/https1/get");
+        httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/get";
 
-        http2TestServer = new Http2TestServer("localhost", false, 0);
-        http2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/http2");
-        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
+        http2TestServer = HttpTestServer.create(HTTP_2);
+        http2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/http2/get");
+        http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/get";
 
-        https2TestServer = new Http2TestServer("localhost", true, sslContext);
-        https2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/https2");
-        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
+        https2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/https2/get");
+        https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/get";
 
+        err.println(now() + "Starting servers");
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+
+        out.println("HTTP/1.1 server (http) listening at: " + httpTestServer.serverAuthority());
+        out.println("HTTP/1.1 server (TLS)  listening at: " + httpsTestServer.serverAuthority());
+        out.println("HTTP/2   server (h2c)  listening at: " + http2TestServer.serverAuthority());
+        out.println("HTTP/2   server (h2)   listening at: " + https2TestServer.serverAuthority());
+
+        out.println(now() + "setup done");
+        err.println(now() + "setup done");
     }
 
     @AfterTest
     public void teardown() throws Exception {
-        httpTestServer.stop(0);
-        httpsTestServer.stop(0);
+        sharedClient.close();
+        httpTestServer.stop();
+        httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
     }
 
     /** A handler that returns as its body the exact escaped request URI. */
-    static class Http1ASCIIUriStringHandler implements HttpHandler {
+    static class HttpASCIIUriStringHandler implements HttpTestHandler {
         @Override
-        public void handle(HttpExchange t) throws IOException {
+        public void handle(HttpTestExchange t) throws IOException {
             String asciiUriString = t.getRequestURI().toASCIIString();
-            out.println("Http1ASCIIUriString received, asciiUriString: " + asciiUriString);
-            try (InputStream is = t.getRequestBody();
-                 OutputStream os = t.getResponseBody()) {
-                is.readAllBytes();
-                byte[] bytes = asciiUriString.getBytes(US_ASCII);
-                t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
-            }
-        }
-    }
-
-    /** A handler that returns as its body the exact escaped request URI. */
-    static class HttpASCIIUriStringHandler implements Http2Handler {
-        @Override
-        public void handle(Http2TestExchange t) throws IOException {
-            String asciiUriString = t.getRequestURI().toASCIIString();
-            out.println("Http2ASCIIUriString received, asciiUriString: " + asciiUriString);
+            out.println("HttpASCIIUriString received, asciiUriString: " + asciiUriString);
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 is.readAllBytes();

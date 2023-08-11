@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +51,7 @@ class MetaspaceGCThresholdUpdater : public AllStatic {
         return "expand_and_allocate";
       default:
         assert(false, "Got bad updater: %d", (int) updater);
-        return NULL;
+        return nullptr;
     };
   }
 };
@@ -74,9 +74,9 @@ class MetaspaceGC : public AllStatic {
 
   static size_t capacity_until_GC();
   static bool inc_capacity_until_GC(size_t v,
-                                    size_t* new_cap_until_GC = NULL,
-                                    size_t* old_cap_until_GC = NULL,
-                                    bool* can_retry = NULL);
+                                    size_t* new_cap_until_GC = nullptr,
+                                    size_t* old_cap_until_GC = nullptr,
+                                    bool* can_retry = nullptr);
   static size_t dec_capacity_until_GC(size_t v);
 
   // The amount to increase the high-water-mark (_capacity_until_GC)

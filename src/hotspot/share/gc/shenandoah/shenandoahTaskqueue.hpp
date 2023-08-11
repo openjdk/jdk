@@ -204,7 +204,7 @@ private:
   }
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool weak = false) {
+  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false) {
     uintptr_t enc = encode_oop(o, skip_live, weak);
     assert(decode_oop(enc) == o,     "oop encoding should work: " PTR_FORMAT, p2i(o));
     assert(decode_cnt_live(enc) == !skip_live, "skip_live encoding should work");
@@ -265,7 +265,7 @@ private:
   int _pow;
 
 public:
-  ShenandoahMarkTask(oop o = NULL, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
+  ShenandoahMarkTask(oop o = nullptr, bool skip_live = false, bool weak = false, int chunk = 0, int pow = 0):
     _obj(o), _skip_live(skip_live), _weak(weak), _chunk(chunk), _pow(pow) {
     assert(0 <= chunk && chunk <= chunk_max, "chunk is in range: %d", chunk);
     assert(0 <= pow && pow <= pow_max, "pow is in range: %d", pow);
@@ -334,7 +334,7 @@ T* ParallelClaimableQueueSet<T, F>::claim_next() {
   jint size = (jint)GenericTaskQueueSet<T, F>::size();
 
   if (_claimed_index >= size) {
-    return NULL;
+    return nullptr;
   }
 
   jint index = Atomic::add(&_claimed_index, 1, memory_order_relaxed);
@@ -342,7 +342,7 @@ T* ParallelClaimableQueueSet<T, F>::claim_next() {
   if (index <= size) {
     return GenericTaskQueueSet<T, F>::queue((uint)index - 1);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

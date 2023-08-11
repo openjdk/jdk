@@ -1025,7 +1025,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
         boolean hasTab = false;
         BitSet spaceMap = new BitSet(endOffset - startOffset + 1);
 
-        //we parse conent to the right of the rightmost TAB only.
+        //we parse content to the right of the rightmost TAB only.
         //we are looking for the trailing and leading spaces.
         //position after the leading spaces (startContentPosition)
         //position before the trailing spaces (endContentPosition)

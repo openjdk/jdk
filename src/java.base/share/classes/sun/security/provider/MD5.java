@@ -25,21 +25,17 @@
 
 package sun.security.provider;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.Objects;
-
-import static sun.security.provider.ByteArrayAccess.*;
 
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import static sun.security.provider.ByteArrayAccess.*;
+
 /**
  * The MD5 class is used to compute an MD5 message digest over a given
  * buffer of bytes. It is an implementation of the RSA Data Security Inc
- * MD5 algorithim as described in internet RFC 1321.
+ * MD5 algorithm as described in internet RFC 1321.
  *
  * @author      Chuck McManis
  * @author      Benjamin Renaud

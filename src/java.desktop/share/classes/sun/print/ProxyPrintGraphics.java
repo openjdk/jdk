@@ -31,7 +31,7 @@ import java.awt.PrintJob;
 
 /**
  * A subclass of Graphics that can be printed to. The
- * graphics calls are forwared to another Graphics instance
+ * graphics calls are forwarded to another Graphics instance
  * that does the actual rendering.
  */
 

@@ -773,7 +773,9 @@ public final class LoaderHandler {
         StringTokenizer st = new StringTokenizer(path); // divide by spaces
         URL[] urls = new URL[st.countTokens()];
         for (int i = 0; st.hasMoreTokens(); i++) {
-            urls[i] = new URL(st.nextToken());
+            @SuppressWarnings("deprecation")
+            var url = new URL(st.nextToken());
+            urls[i] = url;
         }
         synchronized (pathToURLsCache) {
             pathToURLsCache.put(path,

@@ -52,7 +52,7 @@ class ObjectBitSet : public CHeapObj<F> {
     return hash ^ (hash >> 3);
   }
 
-  typedef ResizeableResourceHashtable<uintptr_t, CHeapBitMap*, ResourceObj::C_HEAP, F,
+  typedef ResizeableResourceHashtable<uintptr_t, CHeapBitMap*, AnyObj::C_HEAP, F,
                                       hash_segment> BitMapFragmentTable;
 
   CHeapBitMap* get_fragment_bits(uintptr_t addr);

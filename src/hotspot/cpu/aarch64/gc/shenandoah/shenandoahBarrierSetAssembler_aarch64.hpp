@@ -43,7 +43,8 @@ private:
                               Register obj,
                               Register pre_val,
                               Register thread,
-                              Register tmp,
+                              Register tmp1,
+                              Register tmp2,
                               bool tosca_live,
                               bool expand_call);
   void shenandoah_write_barrier_pre(MacroAssembler* masm,
@@ -74,7 +75,7 @@ public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register src, Register dst, Register count, RegSet saved_regs);
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       Register dst, Address src, Register tmp1, Register tmp_thread);
+                       Register dst, Address src, Register tmp1, Register tmp2);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
