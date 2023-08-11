@@ -22,18 +22,11 @@
  */
 
 /**
- * @test id=default
+ * @test
  * @bug 8314120
  * @summary Sanity test for FileDescriptor.sync
  * @library /test/lib
  * @run main Sync
- */
-
-/**
- * @test id=no-vmcontinuations
- * @requires vm.continuations
- * @library /test/lib
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations Sync
  */
 
 import java.io.File;
@@ -73,13 +66,30 @@ public class Sync {
         System.out.println("Complete");
     }
 
-    public static void run() throws Exception {
-        File testDirFile = new File(TEST_DIR, "FileDescriptorSync1");
-        testDirFile.createNewFile();
-        testDirFile.deleteOnExit();
-        testWith(testDirFile);
+    private static class AutoDelete implements AutoCloseable {
+        private final File file;
 
-        File tmpFile = File.createTempFile("FileDescriptorSync2", "tmp");
-        testWith(tmpFile);
+        public AutoDelete(File file) {
+            this.file = file;
+        }
+
+        public File file() {
+            return file;
+        }
+
+        @Override
+        public void close() throws Exception {
+            file.delete();
+        }
+    }
+
+    public static void run() throws Exception {
+        try (var w = new AutoDelete(new File(TEST_DIR, "FileDescriptorSync1"))) {
+            testWith(w.file());
+        }
+
+        try (var w = new AutoDelete(File.createTempFile("FileDescriptorSync2", "tmp"))) {
+            testWith(w.file());
+        }
     }
 }
