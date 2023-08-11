@@ -1721,8 +1721,11 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
 
   if (VM_Version::use_rop_protection()) {
-    st->print("ldr zr, [lr]\n\t");
-    st->print("paciaz\n\t");
+    st->print("ldr  zr, [lr]\n\t");
+    st->print("ldr  rscratch1, [rthread, #%d]\n\t", in_bytes(JavaThread::cont_entry_offset()));
+    st->print("sub  rscratch1, sp, rscratch1\n\t");
+    st->print("sub  rscratch1, rscratch1, 2 * wordSize\n\t");
+    st->print("pacia  lr, rscratch1\n\t");
   }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
@@ -1851,8 +1854,11 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
   }
   if (VM_Version::use_rop_protection()) {
-    st->print("autiaz\n\t");
-    st->print("ldr zr, [lr]\n\t");
+    st->print("ldr  rscratch1, [rthread, #%d]\n\t", in_bytes(JavaThread::cont_entry_offset()));
+    st->print("sub  rscratch1, sp, rscratch1\n\t");
+    st->print("sub  rscratch1, rscratch1, 2 * wordSize\n\t");
+    st->print("autia  lr, rscratch1\n\t");
+    st->print("ldr  zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {

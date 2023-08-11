@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2019, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   MacroAssembler* _masm = new MacroAssembler(&buffer);
   address start = __ pc();
-  __ enter(); // set up frame
+  __ enter(false /* strip_ret_addr */, noreg /* thread */); // set up frame
   assert((abi._stack_alignment_bytes % 16) == 0, "must be 16 byte aligned");
   // allocate frame (frame_size is also aligned, so stack is still aligned)
   __ sub(sp, sp, frame_size);
@@ -301,7 +301,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   result_spiller.generate_fill(_masm, res_save_area_offset);
 
-  __ leave();
+  __ leave(noreg /* thread */);
   __ ret(lr);
 
   //////////////////////////////////////////////////////////////////////////////

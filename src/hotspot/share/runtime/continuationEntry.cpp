@@ -135,7 +135,8 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
 
   assert(sp != nullptr, "");
   assert(sp <= entry->entry_sp(), "");
-  address pc = ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset(),
+                                                     false /* on_heap */);
 
   if (pc != StubRoutines::cont_returnBarrier()) {
     CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;

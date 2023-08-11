@@ -229,7 +229,7 @@ class StubGenerator: public StubCodeGenerator {
     address aarch64_entry = __ pc();
 
     // set up frame and move sp to end of save area
-    __ enter();
+    __ enter(false /* strip_ret_addr */, c_rarg7 /* thread */);
     __ sub(sp, rfp, -sp_after_call_off * wordSize);
 
     // save register parameters and Java scratch/global registers
@@ -372,7 +372,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(c_rarg6, c_rarg7,  parameter_size);
 
     // leave frame and return to caller
-    __ leave();
+    __ leave(c_rarg7 /* thread */);
     __ ret(lr);
 
     // handle return types different from T_INT
@@ -2643,11 +2643,13 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", nullptr,
                                                                         /*dest_uninitialized*/true);
 
+/*
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
                                                               entry_jbyte_arraycopy,
                                                               entry_jshort_arraycopy,
                                                               entry_jint_arraycopy,
                                                               entry_jlong_arraycopy);
+*/
 
     StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy",
                                                                entry_jbyte_arraycopy,
@@ -7008,9 +7010,9 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier_exception) {
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
-      __ authenticate_return_address(c_rarg1);
+      __ authenticate_return_address(c_rarg1, rscratch1, rfp);
       __ verify_oop(r0);
-      __ mov(r19, r0); // save return value containing the exception oop in callee-saved R19
+      __ mov(r19, r0); // save return value contaning the exception oop in callee-saved R19
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
@@ -7020,7 +7022,7 @@ class StubGenerator: public StubCodeGenerator {
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
       __ mov(r1, r0); // the exception handler
-      __ mov(r0, r19); // restore return value containing the exception oop
+      __ mov(r0, r19); // restore return value contaning the exception oop
       __ verify_oop(r0);
 
       __ leave();

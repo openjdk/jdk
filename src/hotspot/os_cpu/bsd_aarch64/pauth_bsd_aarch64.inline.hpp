@@ -33,12 +33,16 @@ inline address pauth_strip_pointer(address ptr) {
   return ptr;
 }
 
-inline address pauth_sign_return_address(address ret_addr) {
+inline address pauth_sign_return_address(address ret_addr,
+                                         intptr_t* signing_sp,
+                                         JavaThread* thread) {
   // No PAC support in BSD as of yet.
   return ret_addr;
 }
 
-inline address pauth_authenticate_return_address(address ret_addr) {
+inline address pauth_authenticate_return_address(address ret_addr,
+                                                 intptr_t* signing_sp,
+                                                 JavaThread* thread) {
   // No PAC support in BSD as of yet.
   return ret_addr;
 }

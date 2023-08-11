@@ -445,7 +445,7 @@ void VM_Version::initialize() {
              strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = false;
     // Enable ROP-protection if
-    // 1) this code has been built with branch-protection,
+    // 1) this code has been built with branch-protection and
     // 2) the CPU/OS supports it
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {

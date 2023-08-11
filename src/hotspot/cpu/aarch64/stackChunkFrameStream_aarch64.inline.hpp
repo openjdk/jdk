@@ -53,6 +53,7 @@ inline frame StackChunkFrameStream<frame_kind>::to_frame() const {
 template <ChunkFrames frame_kind>
 inline address StackChunkFrameStream<frame_kind>::get_pc() const {
   assert(!is_done(), "");
+  // Just strip it for frames on the heap.
   return pauth_strip_pointer(*(address*)(_sp - 1));
 }
 

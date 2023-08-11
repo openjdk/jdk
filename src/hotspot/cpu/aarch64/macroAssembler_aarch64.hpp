@@ -712,16 +712,16 @@ public:
   void post_call_nop();
 
   // Stack frame creation/removal
-  void enter(bool strip_ret_addr = false);
-  void leave();
+  void enter(bool strip_ret_addr = false, Register thread = rthread);
+  void leave(Register thread = rthread);
 
   // ROP Protection
-  void protect_return_address();
-  void protect_return_address(Register return_reg);
-  void authenticate_return_address();
-  void authenticate_return_address(Register return_reg);
+  void protect_return_address(Register thread = rthread);
+  void protect_return_address(Register return_reg, Register tmp, Register base, int offset = 0);
+  void authenticate_return_address(Register thread = rthread);
+  void authenticate_return_address(Register return_reg, Register tmp, Register base, int offset = 0);
   void strip_return_address();
-  void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
+  void check_return_address(Register return_reg = lr) PRODUCT_RETURN;
 
   // Support for getting the JavaThread pointer (i.e.; a reference to thread-local information)
   // The pointer will be loaded into the thread register.

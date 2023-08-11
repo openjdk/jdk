@@ -853,7 +853,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, rmethod, Address(sp, 6 * wordSize));         // save Method* (no mdp)
   }
 
-  __ protect_return_address();
+  __ protect_return_address(lr, rscratch1, sp, 10 * wordSize);
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
@@ -1824,7 +1824,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label caller_not_deoptimized;
     __ ldr(c_rarg1, Address(rfp, frame::return_addr_offset * wordSize));
     // This is a return address, so requires authenticating for PAC.
-    __ authenticate_return_address(c_rarg1);
+    __ authenticate_return_address(c_rarg1, rscratch1, rfp);
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                InterpreterRuntime::interpreter_contains), c_rarg1);
     __ cbnz(r0, caller_not_deoptimized);

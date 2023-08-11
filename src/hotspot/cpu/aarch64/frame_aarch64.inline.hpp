@@ -152,7 +152,10 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
 }
 
 inline frame::frame(intptr_t* sp)
-  : frame(sp, sp, *(intptr_t**)(sp - frame::sender_sp_offset), pauth_strip_verifiable(*(address*)(sp - 1))) {}
+  : frame(sp,
+          sp,
+          *(intptr_t**)(sp - frame::sender_sp_offset),
+          pauth_strip_verifiable(*(address*)(sp - 1), sp - 2, JavaThread::current())) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp) {
   intptr_t a = intptr_t(sp);
@@ -418,7 +421,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
   // the return_address is always the word on the stack
   // For ROP protection, C1/C2 will have signed the sender_pc, but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1));
+  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1), l_sender_sp - 2, map->thread());
 
   intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
 

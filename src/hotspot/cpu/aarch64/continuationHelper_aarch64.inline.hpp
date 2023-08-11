@@ -68,12 +68,16 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
-inline address ContinuationHelper::return_address_at(intptr_t* sp) {
-  return pauth_strip_pointer(*(address*)sp);
+inline address ContinuationHelper::return_address_at(intptr_t* sp, bool on_heap) {
+  // Skip PAC authentication for return address at frames on the heap.
+  return on_heap ? pauth_strip_pointer(*(address*)sp)
+                 : pauth_strip_verifiable(*(address*)sp, sp - 1, JavaThread::current());
 }
 
-inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
-  *(address*)sp = pauth_sign_return_address(pc);
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc, bool on_heap) {
+  // Skip PAC signing for return address at frames on the heap.
+  *(address*)sp = on_heap ? pc
+                          : pauth_sign_return_address(pc, sp - 1, JavaThread::current());
 }
 
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
@@ -88,7 +92,7 @@ inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t*
 
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
-  address pc = ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(sp - frame::sender_sp_ret_address_offset(), f.is_heap_frame());
   intptr_t* fp = *(intptr_t**)(sp - frame::sender_sp_offset);
   assert(f.raw_pc() == pc, "f.ra_pc: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.raw_pc()), p2i(pc));
   assert(f.fp() == fp, "f.fp: " INTPTR_FORMAT " actual: " INTPTR_FORMAT, p2i(f.fp()), p2i(fp));
@@ -116,13 +120,16 @@ inline void ContinuationHelper::InterpretedFrame::patch_sender_sp(frame& f, cons
 }
 
 inline address ContinuationHelper::Frame::real_pc(const frame& f) {
+  // Always used in assertions. Just strip it.
   address* pc_addr = &(((address*) f.sp())[-1]);
   return pauth_strip_pointer(*pc_addr);
 }
 
 inline void ContinuationHelper::Frame::patch_pc(const frame& f, address pc) {
   address* pc_addr = &(((address*) f.sp())[-1]);
-  *pc_addr = pauth_sign_return_address(pc);
+  // Skip PAC signing for frames on the heap.
+  *pc_addr = f.is_heap_frame() ? pc
+                               : pauth_sign_return_address(pc, f.sp() - 2, JavaThread::current());
 }
 
 inline intptr_t* ContinuationHelper::InterpretedFrame::frame_top(const frame& f, InterpreterOopMap* mask) { // inclusive; this will be copied with the frame

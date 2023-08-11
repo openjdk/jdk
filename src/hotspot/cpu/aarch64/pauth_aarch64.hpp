@@ -25,6 +25,7 @@
 #ifndef CPU_AARCH64_PAUTH_AARCH64_HPP
 #define CPU_AARCH64_PAUTH_AARCH64_HPP
 
+#include "runtime/continuation.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -77,9 +78,11 @@ inline bool pauth_ptr_is_raw(address ptr) {
 // Strip a return value (same as pauth_strip_pointer). When debug is enabled then authenticate
 // instead.
 //
-inline address pauth_strip_verifiable(address ret_addr) {
+inline address pauth_strip_verifiable(address ret_addr,
+                                      intptr_t* signing_sp,
+                                      JavaThread* thread) {
   if (VM_Version::use_rop_protection()) {
-    DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr);)
+    DEBUG_ONLY(ret_addr = pauth_authenticate_return_address(ret_addr, signing_sp, thread);)
     NOT_DEBUG(ret_addr = pauth_strip_pointer(ret_addr));
   }
   return ret_addr;

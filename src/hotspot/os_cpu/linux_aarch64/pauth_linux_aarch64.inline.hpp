@@ -46,26 +46,38 @@ inline address pauth_strip_pointer(address ptr) {
   return result;
 }
 
-// Sign a return value, using value zero as the modifier.
+// Sign a return value, using relative SP as the modifier.
 //
-inline address pauth_sign_return_address(address ret_addr) {
+inline address pauth_sign_return_address(address ret_addr,
+                                         intptr_t* signing_sp,
+                                         JavaThread* thread) {
   if (VM_Version::use_rop_protection()) {
     // A pointer cannot be double signed.
     guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
+    intptr_t* initial_sp = (intptr_t*) Continuation::get_continuation_entry_for_sp(thread, signing_sp);
+    uint64_t modifier = initial_sp == nullptr
+                        ? (uint64_t) signing_sp
+                        : (uint64_t) signing_sp - (uint64_t) initial_sp;
     register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = 0;
+    register uint64_t r16 __asm("r16") = modifier;
     asm (PACIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
   }
   return ret_addr;
 }
 
-// Authenticate a return value, using value zero as the modifier.
+// Authenticate a return value, using relative SP as the modifier.
 //
-inline address pauth_authenticate_return_address(address ret_addr) {
+inline address pauth_authenticate_return_address(address ret_addr,
+                                                 intptr_t* signing_sp,
+                                                 JavaThread* thread) {
   if (VM_Version::use_rop_protection()) {
+    intptr_t* initial_sp = (intptr_t*) Continuation::get_continuation_entry_for_sp(thread, signing_sp);
+    uint64_t modifier = initial_sp == nullptr
+                        ? (uint64_t) signing_sp
+                        : (uint64_t) signing_sp - (uint64_t) initial_sp;
     register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = 0;
+    register uint64_t r16 __asm("r16") = modifier;
     asm (AUTIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
     // Ensure that the pointer authenticated.
