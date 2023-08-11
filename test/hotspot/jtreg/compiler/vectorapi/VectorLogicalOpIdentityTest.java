@@ -242,8 +242,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b), b) ==> AndV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, ">=1"})
-    @IR(counts = {IRNode.AND_VI, "<=1"})
+    @IR(counts = {IRNode.AND_VI, "1"})
     public static void testAndSameValue1() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -258,8 +257,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b), a) ==> AndV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VL, ">=1"})
-    @IR(counts = {IRNode.AND_VL, "<=1"})
+    @IR(counts = {IRNode.AND_VL, "1"})
     public static void testAndSameValue2() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -274,8 +272,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(b, AndV(a, b)) ==> AndV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, ">=1"})
-    @IR(counts = {IRNode.AND_VI, "<=1"})
+    @IR(counts = {IRNode.AND_VI, "1"})
     public static void testAndSameValue3() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -290,8 +287,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(a, AndV(a, b)) ==> AndV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VL, ">=1"})
-    @IR(counts = {IRNode.AND_VL, "<=1"})
+    @IR(counts = {IRNode.AND_VL, "1"})
     public static void testAndSameValue4() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -306,8 +302,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b, m), b, m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.AND_VI, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testAndMaskSameValue1() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -328,8 +323,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b, m), a, m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VL, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.AND_VL, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testAndMaskSameValue2() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -350,8 +344,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(a, AndV(a, b, m), m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.AND_VI, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testAndMaskSameValue3() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -513,8 +506,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b), b) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, ">=1"})
-    @IR(counts = {IRNode.OR_VI, "<=1"})
+    @IR(counts = {IRNode.OR_VI, "1"})
     public static void testOrSameValue1() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -529,8 +521,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b), a) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VL, ">=1"})
-    @IR(counts = {IRNode.OR_VL, "<=1"})
+    @IR(counts = {IRNode.OR_VL, "1"})
     public static void testOrSameValue2() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -545,8 +536,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(b, OrV(a, b)) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, ">=1"})
-    @IR(counts = {IRNode.OR_VI, "<=1"})
+    @IR(counts = {IRNode.OR_VI, "1"})
     public static void testOrSameValue3() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -561,8 +551,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(a, OrV(a, b)) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VL, ">=1"})
-    @IR(counts = {IRNode.OR_VL, "<=1"})
+    @IR(counts = {IRNode.OR_VL, "1"})
     public static void testOrSameValue4() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -577,8 +566,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), b, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.OR_VI, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue1() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -599,8 +587,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), a, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VL, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.OR_VL, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue2() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -621,8 +608,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(a, OrV(a, b, m), m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, ">=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
-    @IR(counts = {IRNode.OR_VI, "<=1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue3() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);

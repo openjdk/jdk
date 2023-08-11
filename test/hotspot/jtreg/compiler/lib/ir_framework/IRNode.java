@@ -105,8 +105,6 @@ public class IRNode {
     private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
 
-    public static final String IMPOSSIBLE_NODE_REGEX = "impossible_node_regex";
-
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
     public static final String VECTOR_SIZE = "_@";
@@ -2326,15 +2324,13 @@ public class IRNode {
      * Return maximal number of elements that can fit in a vector of the specified type.
      */
     public static long getMaxElementsForType(String typeString, VMInfo vmInfo) {
-        long maxBytes = 64;
-
-        if (Platform.isX64() || Platform.isX86()) {
-            maxBytes = getMaxElementsForTypeOnX86(typeString, vmInfo);
-        }
-
         long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
         TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
-        maxBytes = Math.min(maxBytes, maxVectorSize);
+        long maxBytes = maxVectorSize;
+
+        if (Platform.isX64() || Platform.isX86()) {
+            maxBytes = Math.min(maxBytes, getMaxElementsForTypeOnX86(typeString, vmInfo));
+        }
 
         // compute elements per vector: vector bytes divided by bytes per element
         int bytes = getTypeSizeInBytes(typeString);
@@ -2345,7 +2341,7 @@ public class IRNode {
      * Return maximal number of elements that can fit in a vector of the specified type, on x86 / x64.
      */
     public static long getMaxElementsForTypeOnX86(String typeString, VMInfo vmInfo) {
-        // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes:
+        // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes in x86.ad:
         boolean avx1 = vmInfo.hasCPUFeature("avx");
         boolean avx2 = vmInfo.hasCPUFeature("avx2");
         boolean avx512 = vmInfo.hasCPUFeature("avx512f");

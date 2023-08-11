@@ -2084,7 +2084,8 @@ bool VM_Version::is_default_intel_cascade_lake() {
 #endif
 
 bool VM_Version::is_intel_cascade_lake() {
-  return is_intel_skylake() && _stepping >= 5;
+  return true; // TODO
+  // return is_intel_skylake() && _stepping >= 5;
 }
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used

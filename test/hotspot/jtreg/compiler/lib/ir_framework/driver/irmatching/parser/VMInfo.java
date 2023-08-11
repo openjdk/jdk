@@ -49,15 +49,22 @@ public class VMInfo {
 
         TestFramework.check(isKey("cpuFeatures"),   "VMInfo does not contain cpuFeatures");
         TestFramework.check(isKey("MaxVectorSize"), "VMInfo does not contain MaxVectorSize");
+        TestFramework.check(isKey("MaxVectorSizeIsDefault"), "VMInfo does not contain MaxVectorSizeIsDefault");
         TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
+        TestFramework.check(isKey("UseAVX"), "VMInfo does not contain UseAVX");
+        TestFramework.check(isKey("UseAVXIsDefault"), "VMInfo does not contain UseAVXIsDefault");
         System.err.println("--- VMInfo from Test VM ---");
         System.err.println("cpuFeatures:   " + getStringValue("cpuFeatures"));
-        if (!canTrustVectorSize()) {
-            System.err.println(" -> \"canTrustVectorSize == false\". Some vector node checks are weaker on this platform.");
-            System.err.println("   -> isCascadeLake: " + isCascadeLake());
-        }
         System.err.println("MaxVectorSize: " + getLongValue("MaxVectorSize"));
+        System.err.println("MaxVectorSizeIsDefault: " + getLongValue("MaxVectorSizeIsDefault"));
         System.err.println("LoopMaxUnroll: " + getLongValue("LoopMaxUnroll"));
+        System.err.println("UseAVX: " + getLongValue("UseAVX"));
+        System.err.println("UseAVXIsDefault: " + getLongValue("UseAVXIsDefault"));
+        if (isDefaultCascadeLake()) {
+            System.err.println(" -> You are on default Cascade Lake");
+            System.err.println("   -> SuperWord expected to run with 32 byte, not 64 byte, VectorAPI expected to use 64 byte");
+            System.err.println("   -> \"canTrustVectorSize == false\", some vector node IR rules are made weaker.");
+        }
     }
 
     public String getStringValue(String key) {
@@ -79,23 +86,32 @@ public class VMInfo {
     }
 
     public boolean isCascadeLake() {
-        Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
-        if (!matcher.find()) {
-            return false; // skylake pattern not found
-        }
-        String stepping = matcher.group(1).trim();
-        return Long.parseLong(stepping) >= 5; // this makes it cascade lake
+        return true; // TODO
+        // Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
+        // if (!matcher.find()) {
+        //     return false; // skylake pattern not found
+        // }
+        // String stepping = matcher.group(1).trim();
+        // return Long.parseLong(stepping) >= 5; // this makes it cascade lake
+    }
+
+    public boolean isDefaultCascadeLake() {
+        // See VM_Version::is_default_intel_cascade_lake
+        return isCascadeLake() &&
+               getLongValue("MaxVectorSizeIsDefault") == 1 &&
+               getLongValue("UseAVXIsDefault") == 1 &&
+               getLongValue("UseAVX") > 2;
     }
 
     /**
      * Some platforms do not behave as expected, and one cannot trust that the vectors
      * make use of the full MaxVectorSize. For Cascade Lake we by default only use
-     * 32 bytes even though MaxVectorSize is 64. But if the flag is explicitly set to
-     * 64 then we use 64 bytes. Thus MaxVectorSize is not a reliable indicator for the
-     * expected maximal vector size on that platform.
+     * 32 bytes for SuperWord even though MaxVectorSize is 64. But the VectorAPI still
+     * uses 64 bytes. Thus MaxVectorSize is not a reliable indicator for the expected
+     * maximal vector size on that platform.
      */
     public boolean canTrustVectorSize() {
-        return !isCascadeLake();
+        return !isDefaultCascadeLake();
     }
 
     public boolean isKey(String key) {
