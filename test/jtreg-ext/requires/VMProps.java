@@ -605,7 +605,7 @@ public class VMProps implements Callable<Map<String, String>> {
         log("checkContainerSupport(): entering");
 
         // Consult CONTAINER_REQUIRES_COMMAND first.
-        // See open/test/lib/jdk/test/lib/Container.java
+        // See test/lib/jdk/test/lib/Container.java
         log("checkContainerSupport(): CONTAINER_REQUIRES_COMMAND = "
             + Container.CONTAINER_REQUIRES_COMMAND);
         // If not defined or empty no check is needed; OK to run container tests.
@@ -613,13 +613,14 @@ public class VMProps implements Callable<Map<String, String>> {
             return true;
         }
         String unescaped = Container.CONTAINER_REQUIRES_COMMAND.replace("\\u0020", " ");
-        log("checkContainerSupport(): unescaped = " + unescaped);
+        log("checkContainerSupport(): unescaped = <" + unescaped + ">");
 
         List<String> args = Arrays.asList(unescaped.split(" "));
         ProcessBuilder pb = new ProcessBuilder(args);
         Map<String, String> logFileNames = redirectOutputToLogFile("checkContainerSupport(): <container command> ",
                                                       pb, "container-command");
         Process p = pb.start();
+        log("checkContainerSupport(): started: " + p.info().commandLine());
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 

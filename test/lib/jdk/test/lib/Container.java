@@ -35,6 +35,7 @@ public class Container {
     // Use this property to specify command used to detect the ability to run
     // container testing on a given system. The command will be used by jtreg
     // "at requires" extention.
+    // Use unicode "\\u0020" to escape spaces between parameters.
     // If not specified or empty then container testing will proceed w/o any checks.
     // Default value is "<ENGINE_COMMAND> ps" as in "docker ps".
     public static final String CONTAINER_REQUIRES_COMMAND =
