@@ -86,13 +86,12 @@ public class VMInfo {
     }
 
     public boolean isCascadeLake() {
-        return true; // TODO
-        // Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
-        // if (!matcher.find()) {
-        //     return false; // skylake pattern not found
-        // }
-        // String stepping = matcher.group(1).trim();
-        // return Long.parseLong(stepping) >= 5; // this makes it cascade lake
+        Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
+        if (!matcher.find()) {
+            return false; // skylake pattern not found
+        }
+        String stepping = matcher.group(1).trim();
+        return Long.parseLong(stepping) >= 5; // this makes it cascade lake
     }
 
     public boolean isDefaultCascadeLake() {
