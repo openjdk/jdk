@@ -89,7 +89,7 @@
 
 static jlong initial_time_count = 0;
 
-static int64_t clock_tics_per_sec = 100;
+static int clock_tics_per_sec = 100;
 
 // Platform minimum stack allowed
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
@@ -445,7 +445,7 @@ void os::Posix::print_load_average(outputStream* st) {
 // for reboot at least on my test machines
 void os::Posix::print_uptime_info(outputStream* st) {
   int bootsec = -1;
-  int64_t currsec = time(nullptr);
+  time_t currsec = time(nullptr);
   struct utmpx* ent;
   setutxent();
   while ((ent = getutxent())) {
@@ -800,11 +800,11 @@ int os::socket_close(int fd) {
 }
 
 ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+  RESTARTABLE_RETURN_SSIZE_T(::recv(fd, buf, nBytes, flags));
 }
 
 ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+  RESTARTABLE_RETURN_SSIZE_T(::send(fd, buf, nBytes, flags));
 }
 
 ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
@@ -812,7 +812,7 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
 }
 
 ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
-  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+  RESTARTABLE_RETURN_SSIZE_T(::connect(fd, him, len));
 }
 
 void os::exit(int num) {
@@ -1208,7 +1208,7 @@ void os::Posix::init(void) {
 #if defined(_ALLBSD_SOURCE)
   clock_tics_per_sec = CLK_TCK;
 #else
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+  clock_tics_per_sec = checked_cast<int>(sysconf(_SC_CLK_TCK));
 #endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
@@ -1332,7 +1332,7 @@ static jlong millis_to_nanos_bounded(jlong millis) {
 
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
-  DEBUG_ONLY(int64_t max_secs = MAX_SECS;)
+  DEBUG_ONLY(time_t max_secs = MAX_SECS;)
 
   if (timeout < 0) {
     timeout = 0;

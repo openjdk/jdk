@@ -289,7 +289,7 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
   size_t left = max_len;
 
   do {
-    int n;
+    ssize_t n;
     // Don't block on interrupts because this will
     // hang in the clean-up when shutting down.
     n = read(s, buf+off, left);

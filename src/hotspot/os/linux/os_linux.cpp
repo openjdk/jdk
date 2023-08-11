@@ -742,7 +742,7 @@ static void *thread_native_entry(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  osthread->set_thread_id(checked_cast<int>(os::current_thread_id()));
+  osthread->set_thread_id(checked_cast<OSThread::thread_id_t>(os::current_thread_id()));
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -1265,11 +1265,11 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // by email from Hans Boehm. /proc/self/stat begins with current pid,
     // followed by command name surrounded by parentheses, state, etc.
     char stat[2048];
-    int statlen;
+    size_t statlen;
 
     fp = os::fopen("/proc/self/stat", "r");
     if (fp) {
-      statlen = checked_cast<int>(fread(stat, 1, 2047, fp));
+      statlen = fread(stat, 1, 2047, fp);
       stat[statlen] = '\0';
       fclose(fp);
 
@@ -1601,7 +1601,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Elf32_Ehdr elf_head;
-  int diag_msg_max_length=ebuflen-checked_cast<int>(strlen(ebuf));
+  int diag_msg_max_length = ebuflen - checked_cast<int>(strlen(ebuf));
   if (diag_msg_max_length <= 0) {
     // No more space in ebuf for additional diagnostics message
     return nullptr;
@@ -2666,7 +2666,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
-        len = (int)strlen(buf);
+        len = checked_cast<int>(strlen(buf));
         assert(len < buflen, "Ran out of buffer room");
         jrelib_p = buf + len;
         snprintf(jrelib_p, buflen-len, "/jre/lib");
@@ -2988,7 +2988,7 @@ int os::Linux::sched_getcpu_syscall(void) {
   retval = vgetcpu(&cpu, nullptr, nullptr);
 #endif
 
-  return (retval == -1) ? checked_cast<int>(retval) : cpu;
+  return (retval == -1) ? -1 : cpu;
 }
 
 void os::Linux::sched_getcpu_init() {
@@ -5160,7 +5160,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
-  int statlen;
+  size_t statlen;
   char proc_name[64];
   int count;
   long sys_time, user_time;
@@ -5172,7 +5172,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
   fp = os::fopen(proc_name, "r");
   if (fp == nullptr) return -1;
-  statlen = checked_cast<int>(fread(stat, 1, 2047, fp));
+  statlen = fread(stat, 1, 2047, fp);
   stat[statlen] = '\0';
   fclose(fp);
 
