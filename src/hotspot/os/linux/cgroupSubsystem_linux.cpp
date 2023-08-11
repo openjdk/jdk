@@ -494,7 +494,7 @@ int CgroupSubsystem::active_processor_count() {
   int period = cpu_period();
 
   if (quota > -1 && period > 0) {
-    quota_count = (int)ceilf((float)quota / (float)period);
+    quota_count = ceilf((float)quota / (float)period);
     log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
   }
 
