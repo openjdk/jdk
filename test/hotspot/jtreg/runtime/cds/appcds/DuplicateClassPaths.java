@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @summary run CTW for all classes from jdk.crypto.ec module
- *
- * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.jimage
- *          java.base/jdk.internal.misc
- *          java.base/jdk.internal.reflect
- * @modules jdk.crypto.ec
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.crypto.ec
+ * @summary duplicate class paths test
+ * @requires vm.cds
+ * @library /test/lib
+ * @compile test-classes/Hello.java
+ * @run driver DuplicateClassPaths
  */
+
+import java.io.File;
+
+public class DuplicateClassPaths {
+    public static void main(String[] args) throws Exception {
+        String appJar = JarBuilder.getOrCreateHelloJar();
+        String jars = appJar + File.pathSeparator + appJar;
+        TestCommon.test(jars, TestCommon.list("Hello"), "Hello");
+    }
+}
