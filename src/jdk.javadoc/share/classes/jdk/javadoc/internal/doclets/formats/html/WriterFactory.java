@@ -26,108 +26,205 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 
+import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
+import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
- * The factory that returns HTML writers.
+ * The factory that returns HTML writers, to be used to generate pages in the overall API documentation.
  */
-// TODO: be more consistent about using this factory
 public class WriterFactory {
 
     private final HtmlConfiguration configuration;
+
     public WriterFactory(HtmlConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    public ConstantsSummaryWriter getConstantsSummaryWriter() {
-        return new ConstantsSummaryWriter(configuration);
-    }
-
-    public PackageWriter getPackageSummaryWriter(PackageElement packageElement) {
-        return new PackageWriter(configuration, packageElement);
-    }
-
-    public ModuleWriter getModuleSummaryWriter(ModuleElement mdle) {
+    /**
+     * {@return a new writer for the page for a module}
+     */
+    public HtmlDocletWriter newModuleWriter(ModuleElement mdle) {
         return new ModuleWriter(configuration, mdle);
     }
 
-    public ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree) {
+    /**
+     * {@return a new writer for the "module index" page}
+     */
+    public HtmlDocletWriter newModuleIndexWriter() {
+        return new ModuleIndexWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page for a package}
+     */
+    public HtmlDocletWriter newPackageWriter(PackageElement packageElement) {
+        return new PackageWriter(configuration, packageElement);
+    }
+
+    /**
+     * {@return a new writer for the "package index" page}
+     */
+    public HtmlDocletWriter newPackageIndexWriter() {
+        return new PackageIndexWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "package use" page for a package}
+     */
+    public HtmlDocletWriter newPackageUseWriter(PackageElement packageElement, ClassUseMapper mapper) {
+        return new PackageUseWriter(configuration, mapper, packageElement);
+    }
+
+    /**
+     * {@return a new writer for the page for a class or other type element}
+     */
+    public HtmlDocletWriter newClassWriter(TypeElement typeElement, ClassTree classTree) {
         return new ClassWriter(configuration, typeElement, classTree);
     }
 
-    public AnnotationTypeMemberWriter getAnnotationTypeMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.ANY);
+    /**
+     * {@return a new writer for the "class use" page for a class or other type element}
+     */
+    public HtmlDocletWriter newClassUseWriter(TypeElement typeElement, ClassUseMapper mapper) {
+        return new ClassUseWriter(configuration, mapper, typeElement);
     }
 
-    public AnnotationTypeMemberWriter getAnnotationTypeOptionalMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.OPTIONAL);
+    /**
+     * {@return a new writer for the list of "all classes"}
+     */
+    public HtmlDocletWriter newAllClassesIndexWriter(IndexBuilder indexBuilder) {
+        return new AllClassesIndexWriter(configuration, indexBuilder);
     }
 
-    public AnnotationTypeMemberWriter getAnnotationTypeRequiredMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.REQUIRED);
+    /**
+     * {@return a new writer for the list of "all packages"}
+     */
+    public HtmlDocletWriter newAllPackagesIndexWriter() {
+        return new AllPackagesIndexWriter(configuration);
     }
 
-    public EnumConstantWriter getEnumConstantWriter(ClassWriter classWriter) {
-        return new EnumConstantWriter(classWriter);
+    /**
+     * {@return a new writer for the "constants summary" page}
+     */
+    public HtmlDocletWriter newConstantsSummaryWriter() {
+        return new ConstantsSummaryWriter(configuration);
     }
 
-    public FieldWriter getFieldWriter(ClassWriter classWriter) {
-        return new FieldWriter(classWriter);
+    /**
+     * {@return a new writer for the page giving the API that has been deprecated in recent releases}
+     */
+    public HtmlDocletWriter newDeprecatedListWriter() {
+        return new DeprecatedListWriter(configuration);
     }
 
-    public PropertyWriter getPropertyWriter(ClassWriter classWriter) {
-        return new PropertyWriter(classWriter);
+    /**
+     * {@return a new writer for a "doc-file" page}
+     */
+    public HtmlDocletWriter newDocFileWriter(DocPath path, DocFileElement dfElement) {
+        return new DocFilesHandler.DocFileWriter(configuration, path, dfElement);
     }
 
-    public MethodWriter getMethodWriter(ClassWriter classWriter) {
-        return new MethodWriter(classWriter);
+    /**
+     * {@return a new writer for the page listing external specifications referenced in the API}
+     */
+    public HtmlDocletWriter newExternalSpecsWriter() {
+        return new ExternalSpecsWriter(configuration);
     }
 
-    public ConstructorWriter getConstructorWriter(ClassWriter classWriter) {
-        return new ConstructorWriter(classWriter);
+    /**
+     * {@return a new writer for the "help" page}
+     */
+    public HtmlDocletWriter newHelpWriter() {
+        return new HelpWriter(configuration);
     }
 
-    public AbstractMemberWriter getMemberSummaryWriter(ClassWriter classWriter,
-                                                       VisibleMemberTable.Kind memberType) {
-        switch (memberType) {
-            case CONSTRUCTORS:
-                return getConstructorWriter(classWriter);
-            case ENUM_CONSTANTS:
-                return getEnumConstantWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                return getAnnotationTypeOptionalMemberWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                return getAnnotationTypeRequiredMemberWriter(classWriter);
-            case FIELDS:
-                return getFieldWriter(classWriter);
-            case PROPERTIES:
-                return getPropertyWriter(classWriter);
-            case NESTED_CLASSES:
-                return new NestedClassWriter(classWriter, classWriter.getTypeElement());
-            case METHODS:
-                return getMethodWriter(classWriter);
-            default:
-                return null;
-        }
+    /**
+     * {@return a new writer for an "index" page}
+     */
+    public HtmlDocletWriter newIndexWriter(DocPath path, List<Character> allFirstCharacters, List<Character> displayFirstCharacters) {
+        return new IndexWriter(configuration, path, allFirstCharacters, displayFirstCharacters);
     }
 
-    public SerializedFormWriter getSerializedFormWriter() {
+    /**
+     * {@return a new writer for the list of new API in recent releases}
+     */
+    public HtmlDocletWriter newNewAPIListWriter() {
+        return new NewAPIListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the list of preview API in this release}
+     */
+    public HtmlDocletWriter newPreviewListWriter() {
+        return new PreviewListWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the "search" page}
+     */
+    public HtmlDocletWriter newSearchWriter() {
+        return new SearchWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page giving the serialized forms of classes and other type elements}
+     */
+    public HtmlDocletWriter newSerializedFormWriter() {
         return new SerializedFormWriter(configuration);
     }
 
-    public DocFilesHandler getDocFilesHandler(Element element) {
+    /**
+     * {@return a new writer for the page listing system properties referenced in the API}
+     */
+    public HtmlDocletWriter newSystemPropertiesWriter() {
+        return new SystemPropertiesWriter(configuration);
+    }
+
+    /**
+     * {@return a new writer for the page showing the hierarchy of classes and their superclasses}
+     */
+    public HtmlDocletWriter newTreeWriter(ClassTree classTree) {
+        return new TreeWriter(configuration, classTree);
+    }
+
+    /**
+     * Returns a new member writer for the members of a given class and given kind.
+     *
+     * @param classWriter the writer for the enclosing class
+     * @param kind the kind
+     *
+     * @return the writer
+     */
+    public AbstractMemberWriter newMemberWriter(ClassWriter classWriter,
+                                                VisibleMemberTable.Kind kind) {
+        return switch (kind) {
+            case ANNOTATION_TYPE_MEMBER,
+                    ANNOTATION_TYPE_MEMBER_OPTIONAL,
+                    ANNOTATION_TYPE_MEMBER_REQUIRED -> new AnnotationTypeMemberWriter(classWriter, kind);
+            case CONSTRUCTORS -> new ConstructorWriter(classWriter);
+            case ENUM_CONSTANTS -> new EnumConstantWriter(classWriter);
+            case FIELDS -> new FieldWriter(classWriter);
+            case NESTED_CLASSES -> new NestedClassWriter(classWriter);
+            case METHODS -> new MethodWriter(classWriter);
+            case PROPERTIES -> new PropertyWriter(classWriter);
+        };
+    }
+
+    /**
+     * {@return a new {@link DocFilesHandler}}
+     */
+    public DocFilesHandler newDocFilesHandler(Element element) {
         return new DocFilesHandler(configuration, element);
     }
 }

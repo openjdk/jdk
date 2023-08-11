@@ -236,6 +236,8 @@ class frame {
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
+  Method* safe_interpreter_frame_method() const;
+
   // All frames:
 
   // A low-level interface for vframes:

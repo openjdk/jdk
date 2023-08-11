@@ -240,20 +240,52 @@ final class CompilerToVM {
      * Converts a name to a type.
      *
      * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
-     * @param accessingClass the context of resolution. A value of {@code null} implies that the
-     *            class should be resolved with the {@linkplain ClassLoader#getSystemClassLoader()
-     *            system class loader}.
+     * @param accessingClass the class loader of this class is used for resolution. Must not be null.
      * @param resolve force resolution to a {@link ResolvedJavaType}. If true, this method will
      *            either return a {@link ResolvedJavaType} or throw an exception
      * @return the type for {@code name} or 0 if resolution failed and {@code resolve == false}
-     * @throws ClassNotFoundException if {@code resolve == true} and the resolution failed
+     * @throws NoClassDefFoundError if {@code resolve == true} and the resolution failed
      */
-    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws ClassNotFoundException {
-        return lookupType(name, accessingClass, accessingClass != null ? accessingClass.getKlassPointer() : 0L, resolve);
+    HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws NoClassDefFoundError {
+        return lookupType(name, accessingClass, accessingClass.getKlassPointer(), -1, resolve);
     }
 
-    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long klassPointer, boolean resolve) throws ClassNotFoundException;
+    /**
+     * Converts a name to a type.
+     *
+     * @param classLoader the class loader to use for resolution. Must not be {@code null},
+     *           {@link ClassLoader#getPlatformClassLoader} or {@link ClassLoader#getSystemClassLoader}
+     * @param name a well formed Java type in {@linkplain JavaType#getName() internal} format
+     * @return the type for {@code name}
+     * @throws NoClassDefFoundError if resolution failed
+     */
+    HotSpotResolvedJavaType lookupType(ClassLoader classLoader, String name) throws NoClassDefFoundError {
+        int accessingClassLoader;
+        if (classLoader == null) {
+            accessingClassLoader = 0;
+        } else if (classLoader == ClassLoader.getPlatformClassLoader()) {
+            accessingClassLoader = 1;
+        } else if (classLoader == ClassLoader.getSystemClassLoader()) {
+            accessingClassLoader = 2;
+        } else {
+            throw new IllegalArgumentException("Unsupported class loader for lookup: " + classLoader);
+        }
+        return lookupType(name, null, 0L, accessingClassLoader, true);
+    }
 
+    /**
+     * @param accessingClassLoader ignored if {@code accessingKlassPointer != 0L}. Otherwise, the supported values are:
+     *            0 - boot class loader
+     *            1 - {@linkplain ClassLoader#getPlatformClassLoader() platform class loader}
+     *            2 - {@linkplain ClassLoader#getSystemClassLoader() system class loader}
+     */
+    private native HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, long accessingKlassPointer, int accessingClassLoader, boolean resolve) throws NoClassDefFoundError;
+
+    /**
+     * Converts {@code javaClass} to a HotSpotResolvedJavaType.
+     *
+     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code true}.
+     */
     native HotSpotResolvedJavaType lookupClass(Class<?> javaClass);
 
     native HotSpotResolvedJavaType lookupJClass(long jclass);
@@ -271,19 +303,22 @@ final class CompilerToVM {
     private native JavaConstant getUncachedStringInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
-     * Resolves the entry at index {@code cpi} in {@code constantPool} to an object, looking in the
+     * Gets the entry at index {@code cpi} in {@code constantPool}, looking in the
      * constant pool cache first.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote one of the following
      * entry types: {@code JVM_CONSTANT_Dynamic}, {@code JVM_CONSTANT_String},
      * {@code JVM_CONSTANT_MethodHandle}, {@code JVM_CONSTANT_MethodHandleInError},
      * {@code JVM_CONSTANT_MethodType} and {@code JVM_CONSTANT_MethodTypeInError}.
+     *
+     * @param resolve specifies if a resolved entry is expected. If {@code false},
+     *                {@code null} is returned for an unresolved entry.
      */
-    JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, int cpi) {
-        return resolvePossiblyCachedConstantInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    JavaConstant lookupConstantInPool(HotSpotConstantPool constantPool, int cpi, boolean resolve) {
+        return lookupConstantInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, resolve);
     }
 
-    private native JavaConstant resolvePossiblyCachedConstantInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native JavaConstant lookupConstantInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, boolean resolve);
 
     /**
      * Gets the {@code JVM_CONSTANT_NameAndType} index referenced by the {@code rawIndex}.
@@ -387,17 +422,18 @@ final class CompilerToVM {
                     long callerMethodPointer);
 
     /**
-     * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
-     * index {@code cpi} in {@code constantPool} is loaded and initialized.
+     * Converts the encoded indy index operand of an invokedynamic instruction
+     * to an index directly into {@code constantPool}.
      *
-     * @throws IllegalArgumentException if {@code cpi} is not an invokedynamic index
-     * @return the invokedynamic index
+     * @param resolve if {@true}, then resolve the entry (which may call a bootstrap method)
+     * @throws IllegalArgumentException if {@code encoded_indy_index} is not an encoded indy index
+     * @return {@code JVM_CONSTANT_InvokeDynamic} constant pool entry index for the invokedynamic
      */
-    int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
-        return resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, int encoded_indy_index, boolean resolve) {
+        return decodeIndyIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), encoded_indy_index, resolve);
     }
 
-    private native int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int encoded_indy_index, boolean resolve);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -440,7 +476,7 @@ final class CompilerToVM {
 
     /**
      * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
-     * {@link #resolveInvokeDynamicInPool} and {@link #resolveInvokeHandleInPool}), return the
+     * {@link #decodeIndyIndexToCPIndex} and {@link #resolveInvokeHandleInPool}), return the
      * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
      * {@code invokevirtual}), or {@code -1} otherwise.
      */
