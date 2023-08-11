@@ -38,19 +38,19 @@ import java.util.HexFormat;
 public class SSLEngineDecodeBadPoint {
     static final byte[] clientHello = HexFormat.of().parseHex(
             "160303013a0100013603031570" +
-                    "151d6066940aa5dfcecc99f470bfdc175eec2c6f3273b079b2f80b49" +
-                    "75c820efe3d307201492a49fcee79fac5b2f05dca26c572b65b0d90d" +
-                    "81f51fd26b49b700021302010000eb000500050100000000000a0016" +
-                    "0014001d001700180019001e01000101010201030104000d00220020" +
-                    "040305030603080708080804080508060809080a080b040105010601" +
-                    "02030201002b0003020304002d000201010032002200200403050306" +
-                    "03080708080804080508060809080a080b0401050106010203020100" +
-                    "33006b0069001d00209a4d13131f83cc4c5be46520f0b4d7a6f1d3f6" +
-                    "ca7118e6dd115125090da6e044" +
-                    // ECDHE key share, 5th byte changed from 04 to (invalid) 05
-                    "0017004105d8c3734b9c729f6a9851" +
-                    "5049543ec5a9bb6c19b8c02ca0bdc3b20a77c44acdab226b6329b7c5" +
-                    "db9204421932c6fa1abe614c6892f5289edf9ff43cac534cad9e");
+            "151d6066940aa5dfcecc99f470bfdc175eec2c6f3273b079b2f80b49" +
+            "75c820efe3d307201492a49fcee79fac5b2f05dca26c572b65b0d90d" +
+            "81f51fd26b49b700021302010000eb000500050100000000000a0016" +
+            "0014001d001700180019001e01000101010201030104000d00220020" +
+            "040305030603080708080804080508060809080a080b040105010601" +
+            "02030201002b0003020304002d000201010032002200200403050306" +
+            "03080708080804080508060809080a080b0401050106010203020100" +
+            "33006b0069001d00209a4d13131f83cc4c5be46520f0b4d7a6f1d3f6" +
+            "ca7118e6dd115125090da6e044" +
+            // ECDHE key share, 5th byte changed from 04 to (invalid) 05
+            "0017004105d8c3734b9c729f6a9851" +
+            "5049543ec5a9bb6c19b8c02ca0bdc3b20a77c44acdab226b6329b7c5" +
+            "db9204421932c6fa1abe614c6892f5289edf9ff43cac534cad9e");
 
     public static void main(String[] args) throws NoSuchAlgorithmException, SSLException {
         SSLContext ctx = SSLContext.getDefault();
