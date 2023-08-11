@@ -68,7 +68,7 @@ public class TestAbortVMOnSafepointTimeout {
                 "-XX:+SafepointTimeout",
                 "-XX:+SafepointALot",
                 "-XX:+AbortVMOnSafepointTimeout",
-                "-XX:AbortVMOnSafepointTimeoutDelay=1500",
+                "-XX:AbortVMOnSafepointTimeoutDelay=2500",
                 "-XX:SafepointTimeoutDelay=50",
                 "-XX:GuaranteedSafepointInterval=1",
                 "-XX:-CreateCoredumpOnCrash",
