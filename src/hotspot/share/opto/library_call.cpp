@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -2810,6 +2811,13 @@ bool LibraryCallKit::inline_unsafe_writebackSync0(bool is_pre) {
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
+
+#if INCLUDE_JVMTI
+  if (too_many_traps(Deoptimization::Reason_intrinsic)) {
+    return false;
+  }
+#endif //INCLUDE_JVMTI
+
   if (callee()->is_static())  return false;  // caller must have the capability!
 
   null_check_receiver();  // null-check, then ignore
@@ -2819,6 +2827,24 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   Node* kls = load_klass_from_mirror(cls, false, nullptr, 0);
   kls = null_check(kls);
   if (stopped())  return true;  // argument was like int.class
+
+#if INCLUDE_JVMTI
+    // Don't try to access new allocated obj in the intrinsic.
+    // It causes perfomance issues even when jvmti event VmObjectAlloc is disabled.
+    // Deoptimize and allocate in interpreter instead.
+    Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
+    Node* should_post_vm_object_alloc = make_load(this->control(), addr, TypeInt::INT, T_INT, MemNode::unordered);
+    Node* chk = _gvn.transform(new CmpINode(should_post_vm_object_alloc, intcon(0)));
+    Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::eq));
+    {
+      BuildCutout unless(this, tst, PROB_MAX);
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+    }
+    if (stopped()) {
+      return true;
+    }
+#endif //INCLUDE_JVMTI
 
   Node* test = nullptr;
   if (LibraryCallKit::klass_needs_init_guard(kls)) {
