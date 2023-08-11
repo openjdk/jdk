@@ -217,6 +217,10 @@ public class Launcher extends DebugeeBinder {
                     }
                 }
                 String cmdline = classToExecute + " " + ArgumentHandler.joinArguments(argumentHandler.getArguments(), " ");
+                cmdline += " -waittime " + argumentHandler.getWaitTime();
+                if (argumentHandler.verbose()) {
+                    cmdline += " -verbose";
+                }
                 connect.append(",main=" + cmdline.trim());
 
             }
