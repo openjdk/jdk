@@ -30,6 +30,8 @@ import java.io.*;
 import java.text.MessageFormat;
 import java.util.*;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.security.auth.*;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -72,6 +74,9 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  *
  * <p> This {@code LoginModule} recognizes the {@code doNotPrompt}
  * option. If set to true the user will not be prompted for the password.
+ *
+ * <p> This {@code LoginModule} recognizes the {@code doNotLogin}
+ * option. If set to true the user will not try to login.
  *
  * <p> The user can  specify the location of the ticket cache by using
  * the option {@code ticketCache} in the configuration entry.
@@ -132,6 +137,8 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
  * or through shared state.(Default is false)
  * If set to true, credential must be obtained through cache, keytab,
  * or shared state. Otherwise, authentication will fail.</dd>
+ * <dt>{@code doNotLogin}:</dt>
+ * <dd>Set this to true if you do not want to login.(Default is false)</dd>
  * <dt>{@code useKeyTab}:</dt>
  * <dd>Set this to true if you
  * want the module to get the principal's key from the
@@ -368,6 +375,12 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
 
 public class Krb5LoginModule implements LoginModule {
 
+    // system property for default login behavior
+    @SuppressWarnings("removal")
+    private static final boolean skipLogin = AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>)
+                () -> Boolean.getBoolean("sun.security.auth.skipLogin"));
+
     // initial state
     private Subject subject;
     private CallbackHandler callbackHandler;
@@ -378,6 +391,7 @@ public class Krb5LoginModule implements LoginModule {
     private boolean debug = false;
     private boolean storeKey = false;
     private boolean doNotPrompt = false;
+    private boolean doNotLogin = skipLogin;
     private boolean useTicketCache = false;
     private boolean useKeyTab = false;
     private String ticketCacheName = null;
@@ -455,6 +469,12 @@ public class Krb5LoginModule implements LoginModule {
         this.options = options;
 
         // initialize any configured options
+        String doNotLoginOpt = (String)options.get("doNotLogin");
+        if (doNotLoginOpt == null) {
+            // use default, if value not set
+        } else {
+            doNotLogin = "true".equalsIgnoreCase(doNotLoginOpt);
+        }
 
         debug = "true".equalsIgnoreCase((String)options.get("debug"));
         storeKey = "true".equalsIgnoreCase((String)options.get("storeKey"));
@@ -495,6 +515,7 @@ public class Krb5LoginModule implements LoginModule {
             "true".equalsIgnoreCase((String)options.get("clearPass"));
         if (debug) {
             System.out.print("Debug is  " + debug
+                             + " doNotLogin " + doNotLogin
                              + " storeKey " + storeKey
                              + " useTicketCache " + useTicketCache
                              + " useKeyTab " + useKeyTab
@@ -524,6 +545,10 @@ public class Krb5LoginModule implements LoginModule {
      *          is unable to perform the authentication.
      */
     public boolean login() throws LoginException {
+
+        if (doNotLogin) {
+            return true;
+        }
 
         if (refreshKrb5Config) {
             try {
@@ -1041,6 +1066,10 @@ public class Krb5LoginModule implements LoginModule {
 
     public boolean commit() throws LoginException {
 
+        if (doNotLogin) {
+            return true;
+        }
+
         /*
          * Let us add the Krb5 Creds to the Subject's
          * private credentials. The credentials are of type
@@ -1165,6 +1194,11 @@ public class Krb5LoginModule implements LoginModule {
      */
 
     public boolean abort() throws LoginException {
+
+        if (doNotLogin) {
+            return true;
+        }
+
         if (succeeded == false) {
             return false;
         } else if (succeeded == true && commitSucceeded == false) {
@@ -1191,6 +1225,10 @@ public class Krb5LoginModule implements LoginModule {
      *          should not be ignored.
      */
     public boolean logout() throws LoginException {
+
+        if (doNotLogin) {
+            return true;
+        }
 
         if (debug) {
             System.out.println("\t\t[Krb5LoginModule]: " +
