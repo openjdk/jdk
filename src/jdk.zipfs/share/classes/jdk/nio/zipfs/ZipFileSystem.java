@@ -3085,9 +3085,10 @@ class ZipFileSystem extends FileSystem {
                 int sz = SH(extra, pos + 2);
                 pos += 4;
                 if (pos + sz > elen) {        // invalid data
-                    // There are some extra headers with an invalid data size, if
-                    // found, we need to just ignore them
-                    break;
+                    new ZipException(String.format(
+                            "Invalid CEN header (invalid extra data field size for " +
+                                    "tag: 0x%04x size: %d)",
+                            tag, sz));
                 }
                 switch (tag) {
                 case EXTID_ZIP64 :

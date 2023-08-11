@@ -253,6 +253,17 @@ public class CorruptedZipFiles {
         assertZipException(".*bad header size.*");
     }
 
+    /*
+     * A ZipException is thrown if a CEN header has an
+     * extra field length which makes the CEN header overflow into the
+     * End of central directory record.
+     */
+    @Test
+    public void excessiveExtraFieldLength() throws IOException {
+        buffer.put(cenpos+CENEXT, (byte) 0xff);
+        buffer.put(cenpos+CENEXT+1, (byte) 0xff);
+        assertZipException(".*extra data field size too long.*");
+    }
 
     /*
      * A ZipException is thrown if a CEN header has an

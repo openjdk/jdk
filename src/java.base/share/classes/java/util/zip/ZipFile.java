@@ -1277,9 +1277,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 //  The ending offset for this tag block should not go past the
                 //  offset for the end of the extra field
                 if (tagBlockEndingOffset > extraEndOffset) {
-                    // There are some extra headers with an invalid data size, if
-                    // found, we need to just ignore them
-                    break;
+                    zerror(String.format(
+                            "Invalid CEN header (invalid extra data field size for " +
+                                    "tag: 0x%04x at %d)",
+                            tag, cenPos));
                 }
 
                 if (tag == ZIP64_EXTID) {
