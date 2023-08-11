@@ -780,7 +780,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaField lookupField(int rawIndex, ResolvedJavaMethod method, int opcode) {
-        final int cpi = compilerToVM().decodeFieldIndexToCPIndex(this, rawIndex); // rawIndex is the index stored in the rewritten bytecode stream
+        final int cpi = compilerToVM().decodeFieldIndexToCPIndex(this, rawIndex);
         final int nameAndTypeIndex = getNameAndTypeRefIndexAt(rawIndex, opcode);
         final int typeIndex = getSignatureRefIndexAt(nameAndTypeIndex);
         String typeName = lookupUtf8(typeIndex);
