@@ -616,7 +616,7 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
     found = id->find_local_field(fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the object.
-    int offset = checked_cast<int>(jfieldIDWorkaround::from_instance_jfieldID(k, field));
+    int offset = jfieldIDWorkaround::from_instance_jfieldID(k, field);
     found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, fd);
   }
   return found;

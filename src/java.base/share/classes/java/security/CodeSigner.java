@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.security;
 
 import java.io.*;
 import java.security.cert.CertPath;
+import java.util.Objects;
 
 /**
  * This class encapsulates information about a code signer.
@@ -98,19 +99,14 @@ public final class CodeSigner implements Serializable {
     }
 
     /**
-     * Returns the hash code value for this code signer.
+     * {@return the hash code value for this code signer}
      * The hash code is generated using the signer's certificate path and the
      * timestamp, if present.
-     *
-     * @return a hash code value for this code signer.
      */
+    @Override
     public int hashCode() {
         if (myhash == -1) {
-            if (timestamp == null) {
-                myhash = signerCertPath.hashCode();
-            } else {
-                myhash = signerCertPath.hashCode() + timestamp.hashCode();
-            }
+            myhash = signerCertPath.hashCode() + Objects.hashCode(timestamp);
         }
         return myhash;
     }
@@ -126,25 +122,15 @@ public final class CodeSigner implements Serializable {
      * @return {@code true} if the objects are considered equal,
      * {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
-        if ((!(obj instanceof CodeSigner that))) {
-            return false;
-        }
-
-        if (this == that) {
+        if (this == obj) {
             return true;
         }
-        Timestamp thatTimestamp = that.getTimestamp();
-        if (timestamp == null) {
-            if (thatTimestamp != null) {
-                return false;
-            }
-        } else {
-            if ((!timestamp.equals(thatTimestamp))) {
-                return false;
-            }
-        }
-        return signerCertPath.equals(that.getSignerCertPath());
+
+        return obj instanceof CodeSigner other
+                && Objects.equals(timestamp, other.getTimestamp())
+                && signerCertPath.equals(other.getSignerCertPath());
     }
 
     /**

@@ -67,14 +67,12 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     protected void buildEnumConstant(Content target) {
         var enumConstants = getVisibleMembers(VisibleMemberTable.Kind.ENUM_CONSTANTS);
         if (!enumConstants.isEmpty()) {
-            Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(typeElement,
-                    target);
+            Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(target);
             Content memberList = getMemberList();
 
             for (Element enumConstant : enumConstants) {
                 currentElement = (VariableElement)enumConstant;
-                Content enumConstantContent = getEnumConstantsHeader(currentElement,
-                        memberList);
+                Content enumConstantContent = getEnumConstantsHeader(currentElement);
 
                 buildSignature(enumConstantContent);
                 buildDeprecationInfo(enumConstantContent);
@@ -90,29 +88,17 @@ public class EnumConstantWriter extends AbstractMemberWriter {
         }
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param target the content to which the documentation will be added
-     */
+    @Override
     protected void buildSignature(Content target) {
         target.add(getSignature(currentElement));
     }
 
-    /**
-     * Build the deprecation information.
-     *
-     * @param target the content to which the documentation will be added
-     */
+    @Override
     protected void buildDeprecationInfo(Content target) {
         addDeprecated(currentElement, target);
     }
 
-    /**
-     * Build the preview information.
-     *
-     * @param target the content to which the documentation will be added
-     */
+    @Override
     protected void buildPreviewInfo(Content target) {
         addPreview(currentElement, target);
     }
@@ -139,8 +125,7 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content content) {
+    public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_ENUM_CONSTANT_SUMMARY);
         Content memberContent = new ContentBuilder();
         writer.addSummaryHeader(this, memberContent);
@@ -153,8 +138,7 @@ public class EnumConstantWriter extends AbstractMemberWriter {
                 HtmlIds.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
 
-    protected Content getEnumConstantsDetailsHeader(TypeElement typeElement,
-                                                 Content memberDetails) {
+    protected Content getEnumConstantsDetailsHeader(Content memberDetails) {
         memberDetails.add(MarkerComments.START_OF_ENUM_CONSTANT_DETAILS);
         var enumConstantsDetailsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
@@ -163,8 +147,7 @@ public class EnumConstantWriter extends AbstractMemberWriter {
         return enumConstantsDetailsContent;
     }
 
-    protected Content getEnumConstantsHeader(VariableElement enumConstant,
-                                          Content enumConstantsDetails) {
+    protected Content getEnumConstantsHeader(VariableElement enumConstant) {
         Content enumConstantsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(enumConstant)));
@@ -251,9 +234,5 @@ public class EnumConstantWriter extends AbstractMemberWriter {
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
         return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
-    }
-
-    protected Content getMemberHeader(){
-        return writer.getMemberHeader();
     }
 }

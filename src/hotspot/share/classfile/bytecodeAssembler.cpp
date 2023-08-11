@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,22 @@
 #include "precompiled.hpp"
 
 #include "classfile/bytecodeAssembler.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/bytes.hpp"
 
-u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe) {
+u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 
-  u2 index = _entries.length();
+  // Check for overflow
+  int new_size = _orig->length() + _entries.length();
+  if (new_size > USHRT_MAX) {
+    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
+  }
+
+  u2 index = checked_cast<u2>(_entries.length());
   bool created = false;
   u2* probe = _indices.put_if_absent(bcpe, index, &created);
   if (created) {
@@ -41,7 +48,7 @@ u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe) {
   } else {
     index = *probe;
   }
-  return index + _orig->length();
+  return checked_cast<u2>(index + _orig->length());
 }
 
 ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
@@ -49,9 +56,10 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
     return _orig;
   }
 
+  int new_size = _orig->length() + _entries.length();
   ConstantPool* cp = ConstantPool::allocate(
       _orig->pool_holder()->class_loader_data(),
-      _orig->length() + _entries.length(), CHECK_NULL);
+      new_size, CHECK_NULL);
 
   cp->set_pool_holder(_orig->pool_holder());
   constantPoolHandle cp_h(THREAD, cp);
@@ -114,29 +122,20 @@ void BytecodeAssembler::append(u4 imm_u4) {
   Bytes::put_Java_u4(_code->adr_at(_code->length() - 4), imm_u4);
 }
 
-void BytecodeAssembler::xload(u4 index, u1 onebyteop, u1 twobyteop) {
-  if (index < 4) {
-    _code->append(onebyteop + index);
-  } else {
-    _code->append(twobyteop);
-    _code->append((u2)index);
-  }
-}
-
 void BytecodeAssembler::dup() {
   _code->append(Bytecodes::_dup);
 }
 
-void BytecodeAssembler::_new(Symbol* sym) {
-  u2 cpool_index = _cp->klass(sym);
+void BytecodeAssembler::_new(Symbol* sym, TRAPS) {
+  u2 cpool_index = _cp->klass(sym, CHECK);
   _code->append(Bytecodes::_new);
   append(cpool_index);
 }
 
-void BytecodeAssembler::load_string(Symbol* sym) {
-  u2 cpool_index = _cp->string(sym);
+void BytecodeAssembler::load_string(Symbol* sym, TRAPS) {
+  u2 cpool_index = _cp->string(sym, CHECK);
   if (cpool_index < 0x100) {
-    ldc(cpool_index);
+    ldc((u1)cpool_index);
   } else {
     ldc_w(cpool_index);
   }
@@ -156,111 +155,27 @@ void BytecodeAssembler::athrow() {
   _code->append(Bytecodes::_athrow);
 }
 
-void BytecodeAssembler::iload(u4 index) {
-  xload(index, Bytecodes::_iload_0, Bytecodes::_iload);
-}
-
-void BytecodeAssembler::lload(u4 index) {
-  xload(index, Bytecodes::_lload_0, Bytecodes::_lload);
-}
-
-void BytecodeAssembler::fload(u4 index) {
-  xload(index, Bytecodes::_fload_0, Bytecodes::_fload);
-}
-
-void BytecodeAssembler::dload(u4 index) {
-  xload(index, Bytecodes::_dload_0, Bytecodes::_dload);
-}
-
-void BytecodeAssembler::aload(u4 index) {
-  xload(index, Bytecodes::_aload_0, Bytecodes::_aload);
-}
-
-void BytecodeAssembler::load(BasicType bt, u4 index) {
-  switch (bt) {
-    case T_BOOLEAN:
-    case T_CHAR:
-    case T_BYTE:
-    case T_SHORT:
-    case T_INT:     iload(index); break;
-    case T_FLOAT:   fload(index); break;
-    case T_DOUBLE:  dload(index); break;
-    case T_LONG:    lload(index); break;
-    default:
-      if (is_reference_type(bt)) {
-                    aload(index);
-                    break;
-      }
-      ShouldNotReachHere();
-  }
-}
-
-void BytecodeAssembler::checkcast(Symbol* sym) {
-  u2 cpool_index = _cp->klass(sym);
-  _code->append(Bytecodes::_checkcast);
-  append(cpool_index);
-}
-
-void BytecodeAssembler::invokespecial(Method* method) {
-  invokespecial(method->klass_name(), method->name(), method->signature());
-}
-
-void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig) {
-  u2 methodref_index = _cp->methodref(klss, name, sig);
+void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig, TRAPS) {
+  u2 methodref_index = _cp->methodref(klss, name, sig, CHECK);
   _code->append(Bytecodes::_invokespecial);
   append(methodref_index);
 }
 
-void BytecodeAssembler::invokevirtual(Method* method) {
-  invokevirtual(method->klass_name(), method->name(), method->signature());
-}
+int BytecodeAssembler::assemble_method_error(BytecodeConstantPool* cp,
+                                             BytecodeBuffer* buffer,
+                                             Symbol* errorName,
+                                             Symbol* message, TRAPS) {
 
-void BytecodeAssembler::invokevirtual(Symbol* klss, Symbol* name, Symbol* sig) {
-  u2 methodref_index = _cp->methodref(klss, name, sig);
-  _code->append(Bytecodes::_invokevirtual);
-  append(methodref_index);
-}
+  Symbol* init = vmSymbols::object_initializer_name();
+  Symbol* sig = vmSymbols::string_void_signature();
 
-void BytecodeAssembler::ireturn() {
-  _code->append(Bytecodes::_ireturn);
-}
+  BytecodeAssembler assem(buffer, cp);
 
-void BytecodeAssembler::lreturn() {
-  _code->append(Bytecodes::_lreturn);
-}
+  assem._new(errorName, CHECK_0);
+  assem.dup();
+  assem.load_string(message, CHECK_0);
+  assem.invokespecial(errorName, init, sig, CHECK_0);
+  assem.athrow();
 
-void BytecodeAssembler::freturn() {
-  _code->append(Bytecodes::_freturn);
-}
-
-void BytecodeAssembler::dreturn() {
-  _code->append(Bytecodes::_dreturn);
-}
-
-void BytecodeAssembler::areturn() {
-  _code->append(Bytecodes::_areturn);
-}
-
-void BytecodeAssembler::_return() {
-  _code->append(Bytecodes::_return);
-}
-
-void BytecodeAssembler::_return(BasicType bt) {
-  switch (bt) {
-    case T_BOOLEAN:
-    case T_CHAR:
-    case T_BYTE:
-    case T_SHORT:
-    case T_INT:     ireturn(); break;
-    case T_FLOAT:   freturn(); break;
-    case T_DOUBLE:  dreturn(); break;
-    case T_LONG:    lreturn(); break;
-    case T_VOID:    _return(); break;
-    default:
-      if (is_reference_type(bt)) {
-                    areturn();
-                    break;
-      }
-      ShouldNotReachHere();
-  }
+  return 3; // max stack size: [ exception, exception, string ]
 }
