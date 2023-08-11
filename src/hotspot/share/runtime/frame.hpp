@@ -523,8 +523,7 @@ class FrameValues {
     return a->location - b->location;
   }
 
-  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,
-                bool on_heap = false);
+  void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1);
 
  public:
   // Used by frame functions to describe locations.
