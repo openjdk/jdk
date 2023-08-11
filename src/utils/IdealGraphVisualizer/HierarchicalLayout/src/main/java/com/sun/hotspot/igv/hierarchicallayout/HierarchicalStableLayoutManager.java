@@ -498,7 +498,10 @@ public class HierarchicalStableLayoutManager {
 
             findInitialReversedLinks();
 
-            new ApplyActionUpdates().run();
+            // Only apply updates if there are any
+            if (linkActions.size() > 0 || vertexActions.size() > 0) {
+                new ApplyActionUpdates().run();
+            }
 
             new AssignYCoordinates().run();
 
@@ -559,16 +562,12 @@ public class HierarchicalStableLayoutManager {
                     for (Vertex vertex : currentVertices) {
                         if (vertex.equals(node.vertex)) {
                             Dimension size = vertex.getSize();
-                            if (node.width != (int) size.getWidth()) {
-                                node.width = (int) size.getWidth();
+                            if (node.width < (int) size.getWidth()) {
                                 layersToUpdate.add(node.layer);
                             }
+                            node.width = (int) size.getWidth();
                             node.height = (int) size.getHeight();
                             node.vertex = vertex;
-                            node.yOffset = 0;
-                            node.bottomYOffset = 0;
-                            node.inOffsets.clear();
-                            node.outOffsets.clear();
                         }
                     }
                     vertexToLayoutNode.put(node.vertex, node);
