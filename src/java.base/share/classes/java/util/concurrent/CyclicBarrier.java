@@ -162,7 +162,8 @@ public class CyclicBarrier {
     /** The number of parties */
     private final int parties;
     /** The command to run when tripped */
-    private final Runnable barrierCommand;
+    //remove final，let the barrierCommand could be  set  a new Runnable
+    private Runnable barrierCommand;
     /** The current generation */
     private Generation generation = new Generation();
 
@@ -454,7 +455,53 @@ public class CyclicBarrier {
             lock.unlock();
         }
     }
-
+    /**
+     * Set new barrierCommand under a new generation.
+     *
+     * <p>Only if there are no threads have reached the common barrier
+     * point can we set a new barrierCommand.
+     * eg:5 individuals in the first round of written exams,
+     * ending with a ranking based on everyone's score points;
+     * and a second round of interviews, with a ranking based on
+     * the average of the three interviewers' scores;The two rounds of
+     * ranking methods are the barrierCommand, and they are different
+     *
+     * @param newBarrierCommand new barrierCommand
+     *
+     * @return {@code true} if there are no threads have reached the
+     *          common barrier point,this time the count==parties.
+     *         The count has been modified {@code false} otherwise.
+     * @throws InterruptedException if the current thread was interrupted
+     *         while waiting* @throws TimeoutException if the specified timeout elapses.
+     *         In this case the barrier will be broken.
+     * @throws BrokenBarrierException if <em>another</em> thread was
+     *         interrupted or timed out while the current thread was
+     *         waiting, or the barrier was reset, or the barrier was broken
+     *         when {@code await} was called, or the barrier action (if
+     *         present) failed due to an exception
+     */
+    public boolean setBarrierCommand (Runnable newBarrierCommand) throws BrokenBarrierException,InterruptedException {
+        final ReentrantLock lock = this.lock;
+        lock.lock();
+        try {
+            if (Thread.interrupted()) {
+                breakBarrier();
+                throw new InterruptedException();
+            }
+            if(generation.broken)
+                throw new BrokenBarrierException();
+            //Only if there are no threads have reached the common barrier point
+            //can we set a new barrierCommand.
+            if(parties == count){
+                this.barrierCommand = newBarrierCommand;
+                return true;
+            }else{
+                return false;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
     /**
      * Resets the barrier to its initial state.  If any parties are
      * currently waiting at the barrier, they will return with a
