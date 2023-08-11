@@ -679,9 +679,9 @@ static void UserHandler(int sig, siginfo_t* siginfo, void* context) {
   os::signal_notify(sig);
 }
 
-static void print_signal_handler_name(outputStream* os, address handler, char* buf, int buflen) {
+static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
   // We demangle, but omit arguments - signal handlers should have always the same prototype.
-  os::print_function_and_library_name(os, handler, buf, buflen,
+  os::print_function_and_library_name(os, handler, buf, checked_cast<int>(buflen),
                                        true, // shorten_path
                                        true, // demangle
                                        true  // omit arguments
@@ -1404,7 +1404,7 @@ static void print_signal_set_short(outputStream* st, const sigset_t* set) {
 
 static void print_single_signal_handler(outputStream* st,
                                         const struct sigaction* act,
-                                        char* buf, int buflen) {
+                                        char* buf, size_t buflen) {
 
   address handler = get_signal_handler(act);
   if (HANDLER_IS_DFL(handler)) {
@@ -1429,7 +1429,7 @@ static void print_single_signal_handler(outputStream* st,
 // - otherwise, if this signal handler was installed by us and replaced another handler to which we
 //    are not chained (e.g. if chaining is off), print that one too.
 void PosixSignals::print_signal_handler(outputStream* st, int sig,
-                                        char* buf, int buflen) {
+                                        char* buf, size_t buflen) {
 
   st->print("%10s: ", os::exception_name(sig, buf, buflen));
 
@@ -1469,7 +1469,7 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   }
 }
 
-void os::print_signal_handlers(outputStream* st, char* buf, int buflen) {
+void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   st->print_cr("Signal Handlers:");
   PosixSignals::print_signal_handler(st, SIGSEGV, buf, buflen);
   PosixSignals::print_signal_handler(st, SIGBUS , buf, buflen);
