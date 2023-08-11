@@ -1784,6 +1784,30 @@ static void print_points(const char* s, unsigned* points, unsigned num) {
 }
 #endif
 
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, shuffle them (Fisher-Yates)
+template <typename T>
+static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
+  for (unsigned i = num - 1; i >= 1; i--) {
+    unsigned j = frand.next() % i;
+    swap(arr[i], arr[j]);
+  }
+}
+
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, do a hemisphere split such that the resulting
+// order is: [first, last, first + 1, last - 1, ...]
+template <typename T>
+static void hemi_split(T* arr, unsigned num) {
+  T tmp[num];
+  for (unsigned i = 0; i < num; i++) {
+    tmp[i] = arr[i];
+  }
+  for (unsigned i = 0; i < num; i++) {
+    arr[i] = is_even(i) ? tmp[i / 2] : tmp[num - (i / 2) - 1];
+  }
+}
+
 // Given an address range [min, max), attempts to reserve memory within this area, with the given alignmend.
 // If randomize is true, the location will be randomized.
 char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
@@ -1878,10 +1902,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // point 2 to be enough to provide randomization. In that case, shuffle
       // all attach points at the cost of possible fragmentation (e.g. if we
       // end up mapping into the middle of the range).
-      for (unsigned i = num_attempts - 1; i >= 1; i--) {
-        unsigned j = frand.next() % i;
-        swap(random_points[i], random_points[j]);
-      }
+      shuffle_fisher_yates(random_points, num_attempts, frand);
     } else {
       // 4
       // We have a large enough number of attach points to satisfy the randomness
@@ -1890,14 +1911,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // the middle. That reduces address space fragmentation. We also alternate
       // hemispheres, which increases the chance of successfull mappings if the
       // previous mapping had been blocked by large maps.
-      unsigned tmp[max_attempts];
-      for (unsigned i = 0; i < num_attempts; i++) {
-        tmp[i] = random_points[i];
-      }
-      for (unsigned i = 0; i < num_attempts; i++) {
-        random_points[i] =
-            is_even(i) ? tmp[i / 2] : tmp[num_attempts - (i / 2) - 1];
-      }
+      hemi_split(random_points, num_attempts);
     }
 
     DEBUG_ONLY(print_points("after hemi split", random_points, num_attempts);)
