@@ -112,12 +112,21 @@ final class DigitList implements Cloneable {
      * Return true if the represented number is zero.
      */
     boolean isZero() {
-        for (int i=0; i < count; ++i) {
+        return !non0AfterIndex(0);
+    }
+
+
+    /**
+     * Return true if there exists a non-zero digit in the digit list
+     * from the given index until the end.
+     */
+    private boolean non0AfterIndex(int index) {
+        for (int i=index; i < count; ++i) {
             if (digits[i] != '0') {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**
@@ -190,9 +199,7 @@ final class DigitList implements Cloneable {
 
         StringBuilder temp = getStringBuilder();
         temp.append(digits, 0, count);
-        for (int i = count; i < decimalAt; ++i) {
-            temp.append('0');
-        }
+        temp.append("0".repeat(Math.max(0, decimalAt - count)));
         return Long.parseLong(temp.toString());
     }
 
@@ -394,6 +401,19 @@ final class DigitList implements Cloneable {
 
     /**
      * Round the representation to the given number of digits.
+     * This method is reserved for Long and BigInteger representations.
+     * @param maximumDigits The maximum number of digits to be shown.
+     *
+     * Upon return, count will be less than or equal to maximumDigits.
+     */
+    private void round(int maximumDigits) {
+        // Integers do not need to worry about double rounding
+        round(maximumDigits, false, true);
+    }
+
+    /**
+     * Round the representation to the given number of digits.
+     * This method is reserved for Double and BigDecimal representations.
      * @param maximumDigits The maximum number of digits to be shown.
      * @param alreadyRounded whether or not rounding up has already happened.
      * @param valueExactAsDecimal whether or not collected digits provide
@@ -408,25 +428,8 @@ final class DigitList implements Cloneable {
         // Round up if appropriate.
         if (maximumDigits >= 0 && maximumDigits < count) {
             if (shouldRoundUp(maximumDigits, alreadyRounded, valueExactAsDecimal)) {
-                // Rounding up involved incrementing digits from LSD to MSD.
-                // In most cases this is simple, but in a worst case situation
-                // (9999..99) we have to adjust the decimalAt value.
-                for (;;) {
-                    --maximumDigits;
-                    if (maximumDigits < 0) {
-                        // We have all 9's, so we increment to a single digit
-                        // of one and adjust the exponent.
-                        digits[0] = '1';
-                        ++decimalAt;
-                        maximumDigits = 0; // Adjust the count
-                        break;
-                    }
-
-                    ++digits[maximumDigits];
-                    if (digits[maximumDigits] <= '9') break;
-                    // digits[maximumDigits] = '0'; // Unnecessary since we'll truncate this
-                }
-                ++maximumDigits; // Increment for use as count
+                // Rounding can adjust the max digits
+                maximumDigits = roundUp(maximumDigits);
             }
             count = maximumDigits;
 
@@ -508,94 +511,50 @@ final class DigitList implements Cloneable {
 
             switch(roundingMode) {
             case UP:
-                for (int i=maximumDigits; i<count; ++i) {
-                    if (digits[i] != '0') {
-                        return true;
-                    }
-                }
-                break;
+                return non0AfterIndex(maximumDigits);
             case DOWN:
                 break;
             case CEILING:
-                for (int i=maximumDigits; i<count; ++i) {
-                    if (digits[i] != '0') {
-                        return !isNegative;
-                    }
-                }
-                break;
             case FLOOR:
-                for (int i=maximumDigits; i<count; ++i) {
-                    if (digits[i] != '0') {
-                        return isNegative;
-                    }
+                if (non0AfterIndex(maximumDigits)) {
+                    return (isNegative && roundingMode == RoundingMode.FLOOR)
+                            || (!isNegative && roundingMode == RoundingMode.CEILING);
                 }
                 break;
             case HALF_UP:
             case HALF_DOWN:
-                if (digits[maximumDigits] > '5') {
-                    // Value is above tie ==> must round up
-                    return true;
-                } else if (digits[maximumDigits] == '5') {
-                    // Digit at rounding position is a '5'. Tie cases.
-                    if (maximumDigits != (count - 1)) {
-                        // There are remaining digits. Above tie => must round up
+                case HALF_EVEN:
+                    // Above tie, round up for all cases
+                    if (digits[maximumDigits] > '5') {
                         return true;
-                    } else {
-                        // Digit at rounding position is the last one !
-                        if (valueExactAsDecimal) {
-                            // Exact binary representation. On the tie.
-                            // Apply rounding given by roundingMode.
-                            return roundingMode == RoundingMode.HALF_UP;
-                        } else {
-                            // Not an exact binary representation.
-                            // Digit sequence either rounded up or truncated.
-                            // Round up only if it was truncated.
-                            return !alreadyRounded;
-                        }
-                    }
-                }
-                // Digit at rounding position is < '5' ==> no round up.
-                // Just let do the default, which is no round up (thus break).
-                break;
-            case HALF_EVEN:
-                // Implement IEEE half-even rounding
-                if (digits[maximumDigits] > '5') {
-                    return true;
-                } else if (digits[maximumDigits] == '5' ) {
-                    if (maximumDigits == (count - 1)) {
-                        // the rounding position is exactly the last index :
-                        if (alreadyRounded)
-                            // If FloatingDecimal rounded up (value was below tie),
-                            // then we should not round up again.
-                            return false;
-
-                        if (!valueExactAsDecimal)
-                            // Otherwise if the digits don't represent exact value,
-                            // value was above tie and FloatingDecimal truncated
-                            // digits to tie. We must round up.
-                            return true;
-                        else {
-                            // This is an exact tie value, and FloatingDecimal
-                            // provided all of the exact digits. We thus apply
-                            // HALF_EVEN rounding rule.
-                            return ((maximumDigits > 0) &&
-                                    (digits[maximumDigits-1] % 2 != 0));
-                        }
-                    } else {
-                        // Rounds up if it gives a non null digit after '5'
-                        for (int i=maximumDigits+1; i<count; ++i) {
-                            if (digits[i] != '0')
+                        // At tie, consider UP, DOWN, and EVEN logic
+                    } else if (digits[maximumDigits] == '5' ) {
+                        // Rounding position is the last index, there are 3 Cases.
+                        if (maximumDigits == (count - 1)) {
+                            // Do not round twice
+                            if (alreadyRounded) {
+                                return false;
+                                // When exact, consider specific contract logic
+                            } else if (valueExactAsDecimal) {
+                                return (roundingMode == RoundingMode.HALF_UP) ||
+                                        (roundingMode == RoundingMode.HALF_EVEN
+                                                && (maximumDigits > 0) && (digits[maximumDigits - 1] % 2 != 0));
+                                // Not already rounded, and not exact, round up
+                            } else {
                                 return true;
+                            }
+                            // Rounding position is not the last index
+                            // If any further digits have a non-zero value, round up
+                        } else {
+                            return non0AfterIndex(maximumDigits+1);
                         }
                     }
-                }
-                break;
-            case UNNECESSARY:
-                for (int i=maximumDigits; i<count; ++i) {
-                    if (digits[i] != '0') {
-                        throw new ArithmeticException(
+                    // Below tie, do not round up for all cases
+                    break;
+                case UNNECESSARY:
+                if (non0AfterIndex(maximumDigits)) {
+                    throw new ArithmeticException(
                             "Rounding needed with the rounding mode being set to RoundingMode.UNNECESSARY");
-                    }
                 }
                 break;
             default:
@@ -603,6 +562,33 @@ final class DigitList implements Cloneable {
             }
         }
         return false;
+    }
+
+    /**
+     * Round the digit list up numerically.
+     * This involves incrementing digits from the LSD to the MSD.
+     * @param maximumDigits The maximum number of digits to be shown.
+     * @return The new maximum digits after rounding.
+     */
+    private int roundUp(int maximumDigits) {
+        do {
+            --maximumDigits;
+            /*
+             * We have exhausted the max digits while attempting to round up
+             * from the LSD to the MSD. This implies a value of all 9's. As such,
+             * adjust representation to a single digit of one and increment the exponent.
+             */
+            if (maximumDigits < 0) {
+                digits[0] = '1';
+                ++decimalAt;
+                maximumDigits = 0; // Adjust the count
+                break;
+            }
+            ++digits[maximumDigits];
+        }
+        while (digits[maximumDigits] > '9');
+
+        return ++maximumDigits; // Increment for use as count
     }
 
     /**
@@ -649,12 +635,16 @@ final class DigitList implements Cloneable {
             decimalAt = MAX_COUNT - left;
             // Don't copy trailing zeros.  We are guaranteed that there is at
             // least one non-zero digit, so we don't have to check lower bounds.
-            for (right = MAX_COUNT - 1; digits[right] == '0'; --right)
-                ;
+            right = MAX_COUNT - 1;
+            while (digits[right] == '0') {
+                --right;
+            }
             count = right - left + 1;
             System.arraycopy(digits, left, digits, 0, count);
         }
-        if (maximumDigits > 0) round(maximumDigits, false, true);
+        if (maximumDigits > 0) {
+            round(maximumDigits);
+        }
     }
 
     /**
@@ -692,13 +682,14 @@ final class DigitList implements Cloneable {
         s.getChars(0, len, digits, 0);
 
         decimalAt = len;
-        int right;
-        for (right = len - 1; right >= 0 && digits[right] == '0'; --right)
-            ;
+        int right = len - 1;
+        while (right >= 0 && digits[right] == '0') {
+            --right;
+        }
         count = right + 1;
 
         if (maximumDigits > 0) {
-            round(maximumDigits, false, true);
+            round(maximumDigits);
         }
     }
 
