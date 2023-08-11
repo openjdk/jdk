@@ -29,13 +29,10 @@ package jdk.internal.foreign;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
-import java.util.function.Function;
-
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
