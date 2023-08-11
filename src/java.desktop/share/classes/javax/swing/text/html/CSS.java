@@ -1377,7 +1377,6 @@ public class CSS implements Serializable {
         int dv;
         int value = 0;
         for (byte i : iseq) {
-            // Index -15 means, use the default value 15 othervise get the digit value.
             dv = i == -15 ? 15 : Character.digit(digits.charAt(i), 16);
             if (dv < 0) {
                 // Rejects string argument with at least a non digit Character.
