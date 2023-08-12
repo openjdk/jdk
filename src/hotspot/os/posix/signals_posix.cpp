@@ -44,6 +44,7 @@
 #include "suspendResume_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/vmError.hpp"
 
 #include <signal.h>
@@ -1726,12 +1727,13 @@ int SR_initialize() {
   char *s;
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
-    int64_t sig = ::strtol(s, 0, 10);
-    if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
+    int sig;
+    bool result = parse_integer(s, &sig);
+    if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
-      PosixSignals::SR_signum = checked_cast<int>(sig);
+      PosixSignals::SR_signum = sig;
     } else {
-      warning("You set _JAVA_SR_SIGNUM=" INT64_FORMAT ". It must be in range [%d, %d]. Using %d instead.",
+      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
               sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }

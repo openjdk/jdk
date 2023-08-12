@@ -423,7 +423,7 @@ static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "environment on Linux when /proc filesystem is not mounted.";
 
 void os::Linux::initialize_system_info() {
-  set_processor_count(checked_cast<int>(sysconf(_SC_NPROCESSORS_CONF)));
+  set_processor_count((int)sysconf(_SC_NPROCESSORS_CONF));
   if (processor_count() == 1) {
     pid_t pid = os::Linux::gettid();
     char fname[32];
@@ -3335,7 +3335,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   vec[stripe] = 'X';
 
   const size_t page_sz = os::vm_page_size();
-  size_t pages = size / page_sz;
+  intx pages = size / page_sz;
 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
@@ -3349,7 +3349,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   for (int index = 0; index < loops && !found_range; index ++) {
     assert(pages > 0, "Nothing to do");
-    size_t pages_to_query = (pages >= stripe) ? stripe : pages;
+    intx pages_to_query = (pages >= stripe) ? stripe : pages;
     pages -= pages_to_query;
 
     // Get stable read
@@ -3365,7 +3365,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
-    for (size_t vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+    for (intx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
         if (committed_start != nullptr) {
