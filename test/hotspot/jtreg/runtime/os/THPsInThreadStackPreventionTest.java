@@ -165,6 +165,9 @@ public class THPsInThreadStackPreventionTest {
             "-Xmx" + heapSizeMB + "m", "-Xms" + heapSizeMB + "m", "-XX:+AlwaysPreTouch", // stabilize RSS
             "-Xss" + threadStackSizeMB + "m",
             "-XX:-CreateCoredumpOnCrash",
+            // Limits the number of JVM-internal threads, which depends on the available cores of the
+            // machine. RSS+Swap could exceed acceptableRSSLimitMB when JVM creates many internal threads.
+            "-XX:ActiveProcessorCount=2",
             // This will delay the child threads before they create guard pages, thereby greatly increasing the
             // chance of large VMA formation + hugepage coalescation; see JDK-8312182
             "-XX:+DelayThreadStartALot"
