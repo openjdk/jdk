@@ -169,7 +169,7 @@ public final class doubleLong extends Number
 
     private static String toStringUTF16(long i, int radix) {
         byte[] buf = new byte[65 * 2];
-        int charPos = 64;
+        int charPos = 128;
         boolean negative = (i < 0);
         if (!negative) {
             i = -i;
@@ -1696,7 +1696,7 @@ public final class doubleLong extends Number
      *
      * @since 1.5
      */
-    @Native public static final int SIZE = 64;
+    @Native public static final int SIZE = 128;
 
     /**
      * The number of bytes used to represent a {@code long} value in two's
