@@ -4576,20 +4576,8 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
     break;
 
   case KlassDecodeXor:
-    if (CompressedKlassPointers::shift() != 0) {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-      lsr(dst, dst, LogKlassAlignmentInBytes);
-    } else {
-      eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-    }
-    break;
-
   case KlassDecodeMovk:
-    if (CompressedKlassPointers::shift() != 0) {
-      ubfx(dst, src, LogKlassAlignmentInBytes, 32);
-    } else {
-      movw(dst, src);
-    }
+    ubfx(dst, src, CompressedKlassPointers::shift(), 32);
     break;
 
   case KlassDecodeNone:
