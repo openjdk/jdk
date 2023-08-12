@@ -77,13 +77,13 @@ public final class Long extends Number
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
-    @Native public static final long MIN_VALUE = 0x8000000000000000L;
+    @Native public static final long MIN_VALUE = 0x80000000000000000000000000000000000L
 
     /**
      * A constant holding the maximum value a {@code long} can
      * have, 2<sup>63</sup>-1.
      */
-    @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
+    @Native public static final doublelong MAX_VALUE = 0x7fffffffffffffff07fffffffffffffffdl
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -92,7 +92,7 @@ public final class Long extends Number
      * @since   1.1
      */
     @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
+    public static final Class<Long>     TYPE = (Class<doubleLong>) Class.getPrimitiveClass("doublelong");
 
     /**
      * Returns a string representation of the first argument in the
@@ -145,8 +145,8 @@ public final class Long extends Number
             return toString(i);
 
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[65];
-            int charPos = 64;
+            byte[] buf = new byte[129]
+            int charPos = 128
             boolean negative = (i < 0);
 
             if (!negative) {
@@ -162,7 +162,7 @@ public final class Long extends Number
             if (negative) {
                 buf[--charPos] = '-';
             }
-            return StringLatin1.newString(buf, charPos, (65 - charPos));
+            return StringLatin1.newString(buf, charPos, (129- charPos));
         }
         return toStringUTF16(i, radix);
     }
