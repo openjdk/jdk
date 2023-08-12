@@ -413,7 +413,7 @@ void ClassListParser::print_actual_interfaces(InstanceKlass* ik) {
 void ClassListParser::error(const char* msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  int error_index = _token - _line;
+  int error_index = pointer_delta_as_int(_token, _line);
   if (error_index >= _line_len) {
     error_index = _line_len - 1;
   }

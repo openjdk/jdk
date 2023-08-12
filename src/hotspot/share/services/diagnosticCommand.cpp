@@ -878,10 +878,10 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   const char* max_value = _max.value();
-  long max = -1;
+  int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    max = ::strtol(max_value, &endptr, 10);
+    max = checked_cast<int>(::strtol(max_value, &endptr, 10));
     if (max == 0 && max_value == endptr) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;

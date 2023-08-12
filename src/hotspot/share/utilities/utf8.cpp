@@ -51,7 +51,7 @@ template<typename T> char* UTF8::next(const char* str, T* value) {
     if (((ch2 = ptr[1]) & 0xC0) == 0x80) {
       unsigned char high_five = ch & 0x1F;
       unsigned char low_six = ch2 & 0x3F;
-      result = (high_five << 6) + low_six;
+      result = checked_cast<jchar>((high_five << 6) + low_six);
       length = 2;
       break;
     }
@@ -64,7 +64,7 @@ template<typename T> char* UTF8::next(const char* str, T* value) {
         unsigned char high_four = ch & 0x0f;
         unsigned char mid_six = ch2 & 0x3f;
         unsigned char low_six = ch3 & 0x3f;
-        result = (((high_four << 6) + mid_six) << 6) + low_six;
+        result = checked_cast<jchar>((((high_four << 6) + mid_six) << 6) + low_six);
         length = 3;
       }
     }
@@ -154,19 +154,19 @@ static u_char* utf8_write(u_char* base, jchar ch) {
 
   if (ch <= 0x7FF) {
     /* 11 bits or less. */
-    unsigned char high_five = ch >> 6;
+    unsigned char high_five = checked_cast<u_char>(ch >> 6);
     unsigned char low_six = ch & 0x3F;
     base[0] = high_five | 0xC0; /* 110xxxxx */
     base[1] = low_six | 0x80;   /* 10xxxxxx */
     return base + 2;
   }
   /* possibly full 16 bits. */
-  char high_four = ch >> 12;
+  char high_four = checked_cast<char>(ch >> 12);
   char mid_six = (ch >> 6) & 0x3F;
   char low_six = ch & 0x3f;
-  base[0] = high_four | 0xE0; /* 1110xxxx */
-  base[1] = mid_six | 0x80;   /* 10xxxxxx */
-  base[2] = low_six | 0x80;   /* 10xxxxxx */
+  base[0] = checked_cast<u_char>(high_four | 0xE0); /* 1110xxxx */
+  base[1] = checked_cast<u_char>(mid_six | 0x80);   /* 10xxxxxx */
+  base[2] = checked_cast<u_char>(low_six | 0x80);   /* 10xxxxxx */
   return base + 3;
 }
 
@@ -247,7 +247,7 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
     return quoted_ascii_str;
   }
   // everything up to this point was ok.
-  int length = ptr - quoted_ascii_str;
+  int length = checked_cast<int>(ptr - quoted_ascii_str);
   char* buffer = nullptr;
   for (int round = 0; round < 2; round++) {
     while (*ptr != '\0') {
@@ -266,15 +266,15 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
               switch (c) {
                 case '0': case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
-                  value = (value << 4) + c - '0';
+                  value = checked_cast<jchar>((value << 4) + c - '0');
                   break;
                 case 'a': case 'b': case 'c':
                 case 'd': case 'e': case 'f':
-                  value = (value << 4) + 10 + c - 'a';
+                  value = checked_cast<jchar>((value << 4) + 10 + c - 'a');
                   break;
                 case 'A': case 'B': case 'C':
                 case 'D': case 'E': case 'F':
-                  value = (value << 4) + 10 + c - 'A';
+                  value = checked_cast<jchar>((value << 4) + 10 + c - 'A');
                   break;
                 default:
                   ShouldNotReachHere();
@@ -283,10 +283,10 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
             if (buffer == nullptr) {
               char utf8_buffer[4];
               char* next = (char*)utf8_write((u_char*)utf8_buffer, value);
-              length += next - utf8_buffer;
+              length += checked_cast<int>(next - utf8_buffer);
             } else {
               char* next = (char*)utf8_write((u_char*)&buffer[length], value);
-              length += next - &buffer[length];
+              length += checked_cast<int>(next - &buffer[length]);
             }
             break;
           }
@@ -341,15 +341,15 @@ bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
     // For an unsigned char v,
     // (v | v - 1) is < 128 (highest bit 0) for 0 < v < 128;
     // (v | v - 1) is >= 128 (highest bit 1) for v == 0 or v >= 128.
-    unsigned char res = b0 | b0 - 1 |
-                        b1 | b1 - 1 |
-                        b2 | b2 - 1 |
-                        b3 | b3 - 1;
+    unsigned int res = b0 | b0 - 1 |
+                       b1 | b1 - 1 |
+                       b2 | b2 - 1 |
+                       b3 | b3 - 1;
     if (res >= 128) break;
     i += 4;
   }
   for(; i < length; i++) {
-    unsigned short c;
+    int c;
     // no embedded zeros
     if (buffer[i] == 0) return false;
     if(buffer[i] < 128) {
@@ -380,7 +380,7 @@ bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
         c = (buffer[i] & 0xF) << 12;
         i += 2;
         if ((i < length) && ((buffer[i-1] & 0xC0) == 0x80) && ((buffer[i] & 0xC0) == 0x80)) {
-          c += ((buffer[i-1] & 0x3F) << 6) + (buffer[i] & 0x3F);
+          c += (buffer[i-1] & 0x3F) << 6 + (buffer[i] & 0x3F);
           if (version_leq_47 || c >= 0x800) {
             break;
           }

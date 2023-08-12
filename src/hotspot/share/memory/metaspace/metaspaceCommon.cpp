@@ -103,7 +103,7 @@ void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale,
       st->print(SIZE_FORMAT " words", byte_size / BytesPerWord);
     } else {
       const char* display_unit = display_unit_for_scale(scale);
-      float display_value = (float) byte_size / scale;
+      float display_value = (float) byte_size / (float)scale;
       // Prevent very small but non-null values showing up as 0.00.
       if (byte_size > 0 && display_value < 0.01f) {
         st->print("<0.01 %s", display_unit);
@@ -118,7 +118,7 @@ void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale,
       st->print("%*" PRIuPTR " words", width, byte_size / BytesPerWord);
     } else {
       const char* display_unit = display_unit_for_scale(scale);
-      float display_value = (float) byte_size / scale;
+      float display_value = (float) byte_size / (float)scale;
       // Since we use width to display a number with two trailing digits, increase it a bit.
       width += 3;
       // Prevent very small but non-null values showing up as 0.00.
@@ -142,7 +142,7 @@ void print_percentage(outputStream* st, size_t total, size_t part) {
     st->print("100%%");
   } else {
     // Note: clearly print very-small-but-not-0% and very-large-but-not-100% percentages.
-    float p = ((float)part / total) * 100.0f;
+    float p = ((float)part / (float)total) * 100.0f;
     if (p < 1.0f) {
       st->print(" <1%%");
     } else if (p > 99.0f){
