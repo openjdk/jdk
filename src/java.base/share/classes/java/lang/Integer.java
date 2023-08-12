@@ -357,6 +357,20 @@ public final class Integer extends Number
     }
 
     /**
+     * Converts the given integer to a binary string representation of a specified length.
+     *
+     * @param num The integer value to be converted to binary representation.
+     * @param len The desired length of the binary string. If the binary representation is shorter,
+     *            it will be padded with leading zeros to match the specified length.
+     * @return A binary string representation of the input integer with the desired length.
+     */
+    public static String toBinaryStringOfLength(int num, int len) {
+        String res = Integer.toBinaryString(num);
+        for(int i=res.length(); i<len; i++) res = "0" + res;
+        return res;
+    }
+            
+    /**
      * Convert the integer to an unsigned number.
      */
     private static String toUnsignedString0(int val, int shift) {
