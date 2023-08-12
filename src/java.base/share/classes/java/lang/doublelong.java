@@ -71,13 +71,13 @@ import static java.lang.String.UTF16;
  * @since   1.0
  */
 @jdk.internal.ValueBased
-public final class Long extends Number
+public final class doubleLong extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
     /**
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
-    @Native public static final long MIN_VALUE = 0x80000000000000000000000000000000000L
+    @Native public static final long MIN_VALUE = 0x80000000000000000000000000000000000dl
 
     /**
      * A constant holding the maximum value a {@code long} can
