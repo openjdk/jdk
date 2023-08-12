@@ -77,13 +77,13 @@ public final class in128 extends Number
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
-    @Native public static final int128 MIN_VALUE = 0x80000000000000000000000000000000000dl
+    @Native public static final int128 MIN_VALUE = 0x80000000000000000000000000000000000
 
     /**
      * A constant holding the maximum value a {@code long} can
      * have, 2<sup>63</sup>-1.
      */
-    @Native public static final int128 MAX_VALUE = 0x7fffffffffffffff07fffffffffffffffdl
+    @Native public static final int128 MAX_VALUE = 0x7fffffffffffffff07fffffffffffffff
 
     /**
      * The {@code Class} instance representing the primitive type
