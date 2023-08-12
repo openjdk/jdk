@@ -30,6 +30,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
+
+#define LOG_PLEASE
 #include "testutils.hpp"
 #include "unittest.hpp"
 
@@ -155,8 +157,8 @@ public:
     if (_p1 == nullptr || _p2 == nullptr) {
       return false;
     }
-    log_trace(os, map)("SpaceWithHole: [" PTR_FORMAT " ... [" PTR_FORMAT " ... " PTR_FORMAT ") ... " PTR_FORMAT ")",
-                       p2i(base()), p2i(hole()), p2i(hole_end()), p2i(end()));
+    LOG_HERE("SpaceWithHole: [" PTR_FORMAT " ... [" PTR_FORMAT " ... " PTR_FORMAT ") ... " PTR_FORMAT ")",
+             p2i(base()), p2i(hole()), p2i(hole_end()), p2i(end()));
     return true;
   }
 
