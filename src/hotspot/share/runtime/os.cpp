@@ -1799,7 +1799,7 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
 // order is: [first, last, first + 1, last - 1, ...]
 template <typename T>
 static void hemi_split(T* arr, unsigned num) {
-  T tmp[num];
+  T* tmp = (T*)::alloca(sizeof(T) * num);
   for (unsigned i = 0; i < num; i++) {
     tmp[i] = arr[i];
   }
