@@ -1870,6 +1870,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
          "Too many possible attach points - range too large or alignment too small (" ARGSFMT ")", ARGSFMTARGS);
 
   const unsigned num_attempts = MIN2((unsigned)num_attach_points, max_attempts);
+  unsigned points[max_attempts];
 
   if (randomize) {
     FastRandom frand;
@@ -1886,14 +1887,13 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     // 3 Should that not be enough to get effective randomization, shuffle all
     //   attach points
     // 4 Otherwise, re-order them to get an optimized probing sequence.
-    unsigned random_points[max_attempts];
     const unsigned stepsize = (unsigned)num_attach_points / num_attempts;
     const unsigned half = num_attempts / 2;
 
     // 1+2: pre-calc points
     for (unsigned i = 0; i < num_attempts; i++) {
       const unsigned deviation = stepsize > 1 ? (frand.next() % stepsize) : 0;
-      random_points[i] = (i * stepsize) + deviation;
+      points[i] = (i * stepsize) + deviation;
     }
 
     if (num_attach_points < total_shuffle_threshold) {
@@ -1902,7 +1902,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // point 2 to be enough to provide randomization. In that case, shuffle
       // all attach points at the cost of possible fragmentation (e.g. if we
       // end up mapping into the middle of the range).
-      shuffle_fisher_yates(random_points, num_attempts, frand);
+      shuffle_fisher_yates(points, num_attempts, frand);
     } else {
       // 4
       // We have a large enough number of attach points to satisfy the randomness
@@ -1911,49 +1911,31 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // the middle. That reduces address space fragmentation. We also alternate
       // hemispheres, which increases the chance of successfull mappings if the
       // previous mapping had been blocked by large maps.
-      hemi_split(random_points, num_attempts);
-    }
-
-    DEBUG_ONLY(print_points("after hemi split", random_points, num_attempts);)
-
-    // Now reserve
-    for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
-      const unsigned candidate_offset = random_points[i];
-      char* const candidate = lo_att + candidate_offset * alignment_adjusted;
-      assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
-      result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
-      if (!result) {
-        log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
-      }
+      hemi_split(points, num_attempts);
     }
   } // end: randomized
-
   else
-
   {
     // Non-randomized. We just attempt to reserve by probing sequentially. We
     // alternate between hemispheres, working ourselves up to the middle.
     const int stepsize = (unsigned)num_attach_points / num_attempts;
-    const size_t stepsize_bytes = stepsize * alignment_adjusted;
-    char* candidate_lo = lo_att;
-    char* candidate_hi = hi_att;
-    bool lo = true;
-    while (result == nullptr && candidate_lo <= candidate_hi) {
-      char* candidate = lo ? candidate_lo : candidate_hi;
-      result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
-      if (result == nullptr) {
-        log_trace(os, map)("Nope: " PTR_FORMAT, p2i(candidate));
-      }
-      if (lo) {
-        candidate_lo += stepsize_bytes;
-      } else {
-        candidate_hi -= stepsize_bytes;
-      }
-      lo = !lo;
+    for (unsigned i = 0; i < num_attempts; i++) {
+      points[i] = (i * stepsize);
     }
+    hemi_split(points, num_attempts);
+  }
 
-    int which = 0;
+  DEBUG_ONLY(print_points("before reserve", points, num_attempts);)
 
+  // Now reserve
+  for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
+    const unsigned candidate_offset = points[i];
+    char* const candidate = lo_att + candidate_offset * alignment_adjusted;
+    assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
+    result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    if (!result) {
+      log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
+    }
   }
 
   // Sanity checks, logging, NMT stuff:
