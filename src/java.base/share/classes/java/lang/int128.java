@@ -71,19 +71,19 @@ import static java.lang.String.UTF16;
  * @since   1.0
  */
 @jdk.internal.ValueBased
-public final class doubleLong extends Number
+public final class in128 extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
     /**
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
      */
-    @Native public static final long MIN_VALUE = 0x80000000000000000000000000000000000dl
+    @Native public static final int128 MIN_VALUE = 0x80000000000000000000000000000000000dl
 
     /**
      * A constant holding the maximum value a {@code long} can
      * have, 2<sup>63</sup>-1.
      */
-    @Native public static final doublelong MAX_VALUE = 0x7fffffffffffffff07fffffffffffffffdl
+    @Native public static final int128 MAX_VALUE = 0x7fffffffffffffff07fffffffffffffffdl
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -92,7 +92,7 @@ public final class doubleLong extends Number
      * @since   1.1
      */
     @SuppressWarnings("unchecked")
-    public static final Class<Long>     TYPE = (Class<doubleLong>) Class.getPrimitiveClass("doublelong");
+    public static final Class<int128>     TYPE = (Class<int128>) Class.getPrimitiveClass("int128");
 
     /**
      * Returns a string representation of the first argument in the
