@@ -4522,18 +4522,30 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
+  if (_klass_decode_mode == KlassDecodeNone) {
+    init_klass_decode_mode();
+    const char* s = "none";
+    switch (_klass_decode_mode) {
+      case KlassDecodeXor: s = "xor"; break;
+      case KlassDecodeMovk: s = "movk"; break;
+      case KlassDecodeZero: s = "zero"; break;
+      default: s = "unknown";
+    }
+    log_debug(metaspace)("Aarch64 Klass decode mode: %s", s);
+  }
+  return _klass_decode_mode;
+}
+
+void MacroAssembler::init_klass_decode_mode() {
+  assert(_klass_decode_mode == KlassDecodeNone, "just once");
   assert(UseCompressedClassPointers, "not using compressed class pointers");
   assert(Metaspace::initialized(), "metaspace not initialized yet");
-
-  if (_klass_decode_mode != KlassDecodeNone) {
-    return _klass_decode_mode;
-  }
-
   assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift()
          || 0 == CompressedKlassPointers::shift(), "decode alg wrong");
 
   if (CompressedKlassPointers::base() == nullptr) {
-    return (_klass_decode_mode = KlassDecodeZero);
+    _klass_decode_mode = KlassDecodeZero;
+    return;
   }
 
   if (operand_valid_for_logical_immediate(
@@ -4541,7 +4553,8 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
     const uint64_t range_mask =
       (1ULL << log2i(CompressedKlassPointers::range())) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
-      return (_klass_decode_mode = KlassDecodeXor);
+      _klass_decode_mode = KlassDecodeXor;
+      return;
     }
   }
 
@@ -4549,8 +4562,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
     (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
   guarantee((shifted_base & 0xffff0000ffffffff) == 0,
             "compressed class base bad alignment");
-
-  return (_klass_decode_mode = KlassDecodeMovk);
+  _klass_decode_mode = KlassDecodeMovk;
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {

@@ -98,6 +98,7 @@ class MacroAssembler: public Assembler {
 
  private:
   static KlassDecodeMode _klass_decode_mode;
+  static void init_klass_decode_mode();
 
  public:
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
