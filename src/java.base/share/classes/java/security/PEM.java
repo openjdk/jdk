@@ -161,12 +161,24 @@ public class PEM {
             }
             return sb.toString();
         }
+
+
+        /**
+         * Encrypt encoder.
+         *
+         * @param password the password
+         * @return the encoder
+         * @throws IOException if error occurs during Encoder construction
+         */
+        public Encoder withEncryption(char[] password) throws IOException {
+            throw new IOException("Encryption not supported");
+        }
     }
 
     /**
      * The type Pem encoder.
      */
-    public static class PEMEncoder extends Encoder {
+    static class PEMEncoder extends Encoder {
         PEMEncoder() {}
 
         /**
@@ -308,7 +320,7 @@ public class PEM {
          * @return the encoder
          * @throws IOException the io exception
          */
-        public Encoder withPassword(char[] password) throws IOException {
+        public Encoder withEncryption(char[] password) throws IOException {
             if (cipher != null) {
                 throw new IOException("Encryption cannot be used more than once");
             }
@@ -415,7 +427,7 @@ public class PEM {
     /**
      * The type Open ssl encoder.
      */
-    public static class OpenSSLEncoder extends Encoder {
+    static class OpenSSLEncoder extends Encoder {
         /**
          * Instantiates a new Open ssl encoder.
          */
@@ -644,12 +656,36 @@ public class PEM {
         public <T> T decode(Reader reader, Class <T> tClass) throws IOException {
             return tClass.cast(decode(reader));
         }
+
+
+        /**
+         * Creates a Decoder that only uses a Key, Certificate, or CRL factory from the given Provider.
+         *
+         * @param provider the Factory provider this decoder will only use.
+         * @return the decoder
+         * @throws IOException on error of Decoder creation
+         */
+        public Decoder withFactory(Provider provider) throws IOException {
+            return null;
+        }
+
+        /**
+         * With password decoder.
+         *
+         * @param password the password
+         * @return the decoder
+         * @throws IOException on error of Decoder creation
+         */
+        public Decoder withDecryption(char[] password) throws IOException {
+            return null;
+        }
+
     }
 
     /**
      * The type Open ssl decoder.
      */
-    public static class OpenSSLDecoder extends Decoder {
+    static class OpenSSLDecoder extends Decoder {
         private OpenSSLDecoder() {super();}
 
         @Override
@@ -674,7 +710,7 @@ public class PEM {
     /**
      * The type Pem decoder.
      */
-    public static final class PEMDecoder extends Decoder {
+    static final class PEMDecoder extends Decoder {
 
         final Provider factory;
         final char[] password;
@@ -746,7 +782,7 @@ public class PEM {
                         var cf = CertificateFactory.getInstance("X509");
                         return cf.generateCertificate(new ByteArrayInputStream((header + "\n" + data + footer + "\n").getBytes()));
                     } catch (CertificateException e) {
-                            throw new IOException(e);
+                        throw new IOException(e);
                     }
                 }
                 case CRL -> {
@@ -762,11 +798,25 @@ public class PEM {
             }
         }
 
-        public Decoder withFactory(Provider p) {
-            return new PEMDecoder(p, password);
+        /**
+         * Creates a Decoder that only uses a Key, Certificate, or CRL factory from the given Provider.
+         *
+         * @param provider the Factory provider this decoder will only use.
+         * @return the decoder
+         */
+        @Override
+        public Decoder withFactoryFrom(Provider provider) throws IOException {
+            return new PEMDecoder(provider, password);
         }
 
-        public Decoder withDecryption(char[] password) {
+        /**
+         * With password decoder.
+         *
+         * @param password the password
+         * @return the decoder
+         */
+        @Override
+        public Decoder withDecryption(char[] password) throws IOException{
             return new PEMDecoder(factory, password);
         }
     }

@@ -101,7 +101,6 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         return Optional.of(getK());
     }
 
-    @Override
     public PublicKey calculatePublicKey() {
         XECParameters params = paramSpec.getName().equals("X25519")
                 ? XECParameters.X25519

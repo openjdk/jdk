@@ -29,6 +29,7 @@ import jdk.internal.access.SharedSecrets;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
+import sun.security.util.InternalPrivateKey;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 

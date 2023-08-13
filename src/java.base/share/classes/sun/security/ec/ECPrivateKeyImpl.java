@@ -33,6 +33,8 @@ import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
+import sun.security.ec.point.AffinePoint;
+import sun.security.ec.point.MutablePoint;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.pkcs.PKCS8Key;
@@ -197,10 +199,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC private key", e);
         }
-        */
     }
 
-    @Override
     public PublicKey calculatePublicKey() {
         ECParameterSpec ecParams = getParams();
         ECOperations ops = ECOperations.forParameters(ecParams)
