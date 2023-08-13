@@ -675,7 +675,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   Node* payload_size = size;
   Node* offset = kit->MakeConX(base_off);
   payload_size = kit->gvn().transform(new SubXNode(payload_size, offset));
-  if (is_array && UseNewCode) {
+  if (is_array) {
     // Ensure the array payload size is rounded up to the next BytesPerLong
     // multiple when converting to double-words. This is necessary because array
     // size does not include object alignment padding, so it might not be a

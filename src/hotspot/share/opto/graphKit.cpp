@@ -3848,18 +3848,21 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   }
 #endif
 
-  // Combine header size and body size, then align (if necessary).
-  // This computation cannot overflow, because it is used only in two
-  // places, one where the length is sharply limited, and the other
-  // after a successful allocation.
+  // Combine header size and body size for the array copy part, then align (if
+  // necessary) for the allocation part. This computation cannot overflow,
+  // because it is used only in two places, one where the length is sharply
+  // limited, and the other after a successful allocation.
   Node* abody = lengthx;
   if (elem_shift != nullptr) {
     abody = _gvn.transform(new LShiftXNode(lengthx, elem_shift));
   }
   Node* non_rounded_size = _gvn.transform(new AddXNode(headerx, abody));
 
-  // To compute the total object size, align if necessary to
-  // MinObjAlignmentInBytes.
+  if (return_size_val != nullptr) {
+    // This is the size
+    (*return_size_val) = non_rounded_size;
+  }
+
   Node* size = non_rounded_size;
   if (round_mask != 0) {
     Node* mask1 = MakeConX(round_mask);
@@ -3868,11 +3871,6 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     size = _gvn.transform(new AndXNode(size, mask2));
   }
   // else if round_mask == 0, the size computation is self-rounding
-
-  if (return_size_val != nullptr) {
-    // This is the size
-    (*return_size_val) = UseNewCode ? non_rounded_size : size;
-  }
 
   // Now generate allocation code
 
