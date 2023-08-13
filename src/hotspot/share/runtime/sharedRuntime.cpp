@@ -2945,7 +2945,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                   _adapter_handler_table->number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(entry->get_c2i_entry()));
-    if (false && (Verbose || PrintStubCode)) {
+    if (Verbose || PrintStubCode) {
       address first_pc = entry->base_address();
       if (first_pc != nullptr) {
         Disassembler::decode(first_pc, first_pc + insts_size, tty
