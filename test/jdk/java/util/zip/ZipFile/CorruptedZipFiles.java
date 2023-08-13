@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4770745 6218846 6218848 6237956
+ * @bug 4770745 6218846 6218848 6237956 8313765
  * @summary test for correct detection and reporting of corrupted zip files
  * @author Martin Buchholz
  * @run junit CorruptedZipFiles

@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 /* @test
- * @bug 8302483
+ * @bug 8313765
  * @summary Validate that a Zip File with an Extra Header with a data size
  *  of 0 can be read.
  * @run junit ReadNonStandardExtraHeadersTest
@@ -63,7 +63,7 @@ public class ReadNonStandardExtraHeadersTest {
      *   0x67c: Uncompressed Size:      0x624
      *   0x680: Name Length      :       0x1b
      *   0x682: Extra Length     :        0x7
-     *              ->[tag=cafe, size=0]
+     *          ->[tag=cafe, size=0]
      *   0x684: Comment Length   :        0x0
      *   0x686: Disk Start       :        0x0
      *   0x688: Attrs            :        0x0
@@ -82,7 +82,7 @@ public class ReadNonStandardExtraHeadersTest {
      *    0x16: Size        :        0x624
      *    0x1a: Name Length :         0x1b    [res/drawable/size_48x48.jpg]
      *    0x1c: ExtraLength :          0x7
-     *              ->[tag=cafe, size=0]
+     *          ->[tag=cafe, size=0]
      *    0x1e: File Name  : [res/drawable/size_48x48.jpg]
      *  [End Central Directory Header]
      *    Signature   :   0x06054b50
@@ -332,10 +332,10 @@ public class ReadNonStandardExtraHeadersTest {
      *            0x543: Uncompressed Size:        0x0
      *            0x547: Name Length      :        0x9
      *            0x549: Extra Length     :        0x8
-     *    		  [tag=0x0001, sz=0, data= ]
-     *               ->ZIP64:
+     *            [tag=0x0001, sz=0, data= ]
+     *                ->ZIP64:
      *            [tag=0xcafe, sz=0, data= ]
-     *               ->[tag=cafe, size=0]
+     *                 ->[tag=cafe, size=0]
      *            0x54b: Comment Length   :        0x0
      *            0x54d: Disk Start       :        0x0
      *            0x54f: Attrs            :        0x0
