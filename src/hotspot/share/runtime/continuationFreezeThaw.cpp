@@ -404,7 +404,7 @@ protected:
   // slow path
   virtual stackChunkOop allocate_chunk_slow(size_t stack_size) = 0;
 
-  int cont_size() { return _cont_stack_bottom - _cont_stack_top; }
+  int cont_size() { return pointer_delta_as_int(_cont_stack_bottom, _cont_stack_top); }
 
 private:
   // slow path
@@ -1064,7 +1064,7 @@ NOINLINE freeze_result FreezeBase::recurse_freeze_interpreted_frame(frame& f, fr
   // The frame's top never includes the stack arguments to the callee
   intptr_t* const stack_frame_top = ContinuationHelper::InterpretedFrame::frame_top(f, callee_argsize, callee_interpreted);
   intptr_t* const stack_frame_bottom = ContinuationHelper::InterpretedFrame::frame_bottom(f);
-  const int fsize = stack_frame_bottom - stack_frame_top;
+  const int fsize = pointer_delta_as_int(stack_frame_bottom, stack_frame_top);
 
   DEBUG_ONLY(verify_frame_top(f, stack_frame_top));
 
@@ -1123,7 +1123,7 @@ freeze_result FreezeBase::recurse_freeze_compiled_frame(frame& f, frame& caller,
   intptr_t* const stack_frame_bottom = ContinuationHelper::CompiledFrame::frame_bottom(f);
   // including metadata between f and its stackargs
   const int argsize = ContinuationHelper::CompiledFrame::stack_argsize(f) + frame::metadata_words_at_top;
-  const int fsize = stack_frame_bottom + argsize - stack_frame_top;
+  const int fsize = pointer_delta_as_int(stack_frame_bottom + argsize, stack_frame_top);
 
   log_develop_trace(continuations)("recurse_freeze_compiled_frame %s _size: %d fsize: %d argsize: %d",
                              ContinuationHelper::Frame::frame_method(f) != nullptr ?
@@ -1627,7 +1627,7 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      int monitor_count = entry->parent_held_monitor_count();
+      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
@@ -2068,7 +2068,7 @@ void ThawBase::finalize_thaw(frame& entry, int argsize) {
   }
   assert(_stream.is_done() == chunk->is_empty(), "");
 
-  int total_thawed = _stream.unextended_sp() - _top_unextended_sp_before_thaw;
+  int total_thawed = pointer_delta_as_int(_stream.unextended_sp(), _top_unextended_sp_before_thaw);
   chunk->set_max_thawing_size(chunk->max_thawing_size() - total_thawed);
 
   _cont.set_argsize(argsize);
@@ -2154,7 +2154,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   assert(hf.is_heap_frame(), "should be");
   assert(!f.is_heap_frame(), "should not be");
 
-  const int fsize = heap_frame_bottom - heap_frame_top;
+  const int fsize = pointer_delta_as_int(heap_frame_bottom, heap_frame_top);
   assert((stack_frame_bottom == stack_frame_top + fsize), "");
 
   // Some architectures (like AArch64/PPC64/RISC-V) add padding between the locals and the fixed_frame to keep the fp 16-byte-aligned.

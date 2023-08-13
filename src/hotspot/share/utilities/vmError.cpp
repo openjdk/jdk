@@ -1841,6 +1841,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
           int e = errno;
           out.print_raw("#\n# Can't open file to dump replay data. Error: ");
           out.print_raw_cr(os::strerror(e));
+          close(fd);
         }
       }
     }

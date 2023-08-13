@@ -433,8 +433,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
-  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
-    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+  bool handle_pending_exception(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (HAS_PENDING_EXCEPTION) {
       Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
       Symbol *ex_name = throwable->klass()->name();
@@ -451,6 +450,14 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
         JVMCI_event_1("error translating exception: %s", char_buffer);
         decode(THREAD, _encode_fail, buffer);
       }
+      return true;
+    }
+    return false;
+  }
+
+  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
       return 0;
     }
     JavaCallArguments jargs;
@@ -462,6 +469,9 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
                             vmSupport,
                             vmSymbols::encodeThrowable_name(),
                             vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
+      return 0;
+    }
     return result.get_jint();
   }
 
@@ -864,7 +874,7 @@ DO_THROW(InvalidInstalledCodeException)
 DO_THROW(UnsatisfiedLinkError)
 DO_THROW(UnsupportedOperationException)
 DO_THROW(OutOfMemoryError)
-DO_THROW(ClassNotFoundException)
+DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
