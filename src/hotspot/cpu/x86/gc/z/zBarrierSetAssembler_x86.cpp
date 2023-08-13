@@ -615,7 +615,6 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
     return;
   }
 
-  BLOCK_COMMENT("  ZBarrierSetAssembler::copy_load_at (scalar) {");
   Label load_done;
 
   // Load oop at address
@@ -647,7 +646,6 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
     __ shrq(dst);
     __ movptr(rcx, tmp);
   }
-  BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_load_at (scalar)");
 }
 
 void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
@@ -662,7 +660,6 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
     return;
   }
 
-  BLOCK_COMMENT("  ZBarrierSetAssembler::copy_store_at (scalar) {");
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   if (!dest_uninitialized) {
@@ -700,7 +697,6 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
 
   // Store value
   __ movptr(dst, src);
-  BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_store_at (scalar)");
 }
 
 void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
@@ -726,7 +722,6 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
   // xmm4: store_good_mask
 
   if (bytes == 16) {
-    BLOCK_COMMENT("  ZBarrierSetAssembler::copy_load_at (16 bytes) {");
     Label done;
     Label fallback;
 
@@ -756,9 +751,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
     __ addptr(rsp, wordSize * 2);
 
     __ bind(done);
-    BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_load_at (16 bytes)");
   } else if (bytes == 32) {
-    BLOCK_COMMENT("  ZBarrierSetAssembler::copy_load_at (32 bytes) {");
     Label done;
     Label fallback;
     assert(UseAVX >= 2, "Assume that UseAVX >= 2");
@@ -793,7 +786,6 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
     __ addptr(rsp, wordSize * 4);
 
     __ bind(done);
-    BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_load_at (32 bytes)");
   }
 }
 
@@ -823,7 +815,6 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
   // xmm4: store_good_mask
 
   if (bytes == 16) {
-    BLOCK_COMMENT("  ZBarrierSetAssembler::copy_store_at (16 bytes) {");
     Label done;
     Label fallback;
 
@@ -856,9 +847,7 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
     __ addptr(rsp, wordSize * 2);
 
     __ bind(done);
-    BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_store_at (16 bytes)");
   } else if (bytes == 32) {
-    BLOCK_COMMENT("  ZBarrierSetAssembler::copy_store_at (32 bytes) {");
     Label done;
     Label fallback;
     assert(UseAVX >= 2, "Assume UseAVX >= 2");
@@ -895,7 +884,6 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
     __ addptr(rsp, wordSize * 4);
 
     __ bind(done);
-    BLOCK_COMMENT("  } ZBarrierSetAssembler::copy_store_at (32 bytes)");
   }
 }
 
