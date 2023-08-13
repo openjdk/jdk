@@ -248,7 +248,6 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
     Label L_end;
     __ BIND(L_loop);
     if (UseAVX >= 2) {
-      BLOCK_COMMENT("StubGenerator::copy_bytes_forward (main) {");
       bs->copy_load_at(_masm, decorators, type, 32,
                        xmm0, Address(end_from, qword_count, Address::times_8, -56),
                        tmp1, xmm1);
@@ -262,7 +261,6 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
       bs->copy_store_at(_masm, decorators, type, 32,
                         Address(end_to, qword_count, Address::times_8, -24), xmm0,
                         tmp1, tmp2, xmm1);
-      BLOCK_COMMENT("} StubGenerator::copy_bytes_forward (main)");
     } else {
       bs->copy_load_at(_masm, decorators, type, 16,
                        xmm0, Address(end_from, qword_count, Address::times_8, -56),
@@ -297,14 +295,12 @@ void StubGenerator::copy_bytes_forward(Register end_from, Register end_to,
     __ jcc(Assembler::greater, L_end);
     // Copy trailing 32 bytes
     if (UseAVX >= 2) {
-      BLOCK_COMMENT("StubGenerator::copy_bytes_forward (trailing 32 bytes) {");
       bs->copy_load_at(_masm, decorators, type, 32,
                        xmm0, Address(end_from, qword_count, Address::times_8, -24),
                        tmp1, xmm1);
       bs->copy_store_at(_masm, decorators, type, 32,
                         Address(end_to, qword_count, Address::times_8, -24), xmm0,
                         tmp1, tmp2, xmm1);
-      BLOCK_COMMENT("} StubGenerator::copy_bytes_forward (trailing 32 bytes)");
     } else {
       bs->copy_load_at(_masm, decorators, type, 16,
                        xmm0, Address(end_from, qword_count, Address::times_8, -24),
@@ -1886,7 +1882,6 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
 
     // Copy trailing qwords
   __ BIND(L_copy_8_bytes);
-    BLOCK_COMMENT("StubGenerator::generate_disjoint_long_oop_copy (copy trailing words) {");
     bs->copy_load_at(_masm, decorators, type, 8,
                      rax, Address(end_from, qword_count, Address::times_8, 8),
                      r10);
@@ -1895,7 +1890,6 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
                       r10);
     __ increment(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
-    BLOCK_COMMENT("} StubGenerator::generate_disjoint_long_oop_copy (copy trailing words)");
   }
   if (is_oop) {
     __ jmp(L_exit);
