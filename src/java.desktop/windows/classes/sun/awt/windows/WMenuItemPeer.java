@@ -75,9 +75,9 @@ class WMenuItemPeer extends WObjectPeer implements MenuItemPeer {
     public void setLabel(String label) {
         //Fix for 6288578: PIT. Windows: Shortcuts displayed for the menuitems in a popup menu
         readShortcutLabel();
-        _setLabel(label);
+        _setLabel();
     }
-    public native void _setLabel(String label);
+    public native void _setLabel();
 
     // Toolkit & peer internals
 

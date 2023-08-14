@@ -48,7 +48,6 @@
 // struct for _SetLabel() method
 struct SetLabelStruct {
     jobject menuitem;
-    jstring label;
 };
 // struct for _SetEnable() method
 struct SetEnableStruct {
@@ -685,7 +684,7 @@ void AwtMenuItem::DoCommand()
     }
 }
 
-void AwtMenuItem::SetLabel(LPCTSTR sb)
+void AwtMenuItem::SetLabel()
 {
     AwtMenu* menu = GetMenuContainer();
     /* Fix for bug 4257944 by ssi@sparc.spb.su
@@ -709,7 +708,6 @@ void AwtMenuItem::SetLabel(LPCTSTR sb)
     ::GetMenuItemInfo(hMenu, GetID(), FALSE, &mii);
 
     mii.fType = MFT_OWNERDRAW;
-    mii.dwTypeData = (LPTSTR)(*sb);
 
     // find index by menu item id
     int nMenuItemCount = ::GetMenuItemCount(hMenu);
@@ -784,7 +782,6 @@ void AwtMenuItem::_SetLabel(void *param) {
 
         SetLabelStruct *sls = (SetLabelStruct *)param;
         jobject self = sls->menuitem;
-        jstring label = sls->label;
 
         int badAlloc = 0;
         AwtMenuItem *m = NULL;
@@ -792,62 +789,14 @@ void AwtMenuItem::_SetLabel(void *param) {
         PDATA pData;
         JNI_CHECK_PEER_GOTO(self, ret);
         m = (AwtMenuItem *)pData;
-//    if (::IsWindow(m->GetOwnerHWnd()))
-        {
-            // fix for bug 4251036 MenuItem setLabel(null/"") behaves differently
-            // under Win32 and Solaris
-            jstring empty = NULL;
-            if (JNU_IsNull(env, label))
-            {
-                empty = JNU_NewStringPlatform(env, TEXT(""));
-            }
-            if (env->ExceptionCheck()) {
-                badAlloc = 1;
-                goto ret;
-            }
-            LPCTSTR labelPtr;
-            if (empty != NULL)
-            {
-                labelPtr = JNU_GetStringPlatformChars(env, empty, 0);
-            }
-            else
-            {
-                labelPtr = JNU_GetStringPlatformChars(env, label, 0);
-            }
-            if (labelPtr == NULL)
-            {
-                badAlloc = 1;
-            }
-            else
-            {
-                DASSERT(!IsBadStringPtr(labelPtr, 20));
-                m->SetLabel(labelPtr);
-                if (empty != NULL)
-                {
-                    JNU_ReleaseStringPlatformChars(env, empty, labelPtr);
-                }
-                else
-                {
-                    JNU_ReleaseStringPlatformChars(env, label, labelPtr);
-                }
-            }
-            if (empty != NULL)
-            {
-                env->DeleteLocalRef(empty);
-            }
-        }
+        m->SetLabel();
 
 ret:
         env->DeleteGlobalRef(self);
-        if (label != NULL)
-        {
-            env->DeleteGlobalRef(label);
-        }
 
         delete sls;
 
-        if (badAlloc)
-        {
+        if (badAlloc) {
             throw std::bad_alloc();
         }
     } else {
@@ -1034,14 +983,12 @@ Java_sun_awt_windows_WMenuItemPeer_initIDs(JNIEnv *env, jclass cls)
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WMenuItemPeer__1setLabel(JNIEnv *env, jobject self,
-                                              jstring label)
+Java_sun_awt_windows_WMenuItemPeer__1setLabel(JNIEnv *env, jobject self)
 {
     TRY;
 
     SetLabelStruct *sls = new SetLabelStruct;
     sls->menuitem = env->NewGlobalRef(self);
-    sls->label = (label == NULL) ? NULL : (jstring)env->NewGlobalRef(label);
 
     AwtToolkit::GetInstance().SyncCall(AwtMenuItem::_SetLabel, sls);
     // global refs and sls are deleted in _SetLabel

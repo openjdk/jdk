@@ -133,7 +133,7 @@ public:
     virtual BOOL IsTopMenu();
     void DrawCheck(HDC hDC, RECT rect);
 
-    void SetLabel(LPCTSTR sb);
+    void SetLabel();
     virtual void Enable(BOOL isEnabled);
     virtual void UpdateContainerLayout();
     virtual void RedrawMenuBar();
