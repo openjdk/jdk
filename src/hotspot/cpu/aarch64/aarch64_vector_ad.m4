@@ -1180,6 +1180,7 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
   format %{ "vfmla $dst_src1, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       __ fmla($dst_src1$$FloatRegister, get_arrangement(this),
@@ -1203,6 +1204,7 @@ instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fmad($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                 $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
@@ -1269,6 +1271,7 @@ instruct vfmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 (NegVD src3))));
   format %{ "vfmls $dst_src1, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {
       __ fmls($dst_src1$$FloatRegister, get_arrangement(this),
@@ -1292,6 +1295,7 @@ instruct vfmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary src3 pg)));
   format %{ "vfmsb_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fmsb($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                 $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
@@ -1309,6 +1313,7 @@ instruct vfnmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 (NegVD src3))));
   format %{ "vfnmla $dst_src1, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmla($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                  ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
@@ -1325,6 +1330,7 @@ instruct vfnmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary (NegVD src3) pg)));
   format %{ "vfnmad_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmad($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                  $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);
@@ -1341,6 +1347,7 @@ instruct vfnmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 src3)));
   format %{ "vfnmls $dst_src1, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmls($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                  ptrue, $src2$$FloatRegister, $src3$$FloatRegister);
@@ -1357,6 +1364,7 @@ instruct vfnmsb_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary (NegVD src3) pg)));
   format %{ "vfnmsb_masked $dst_src1, $pg, $src2, $src3" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_fnmsb($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                  $pg$$PRegister, $src2$$FloatRegister, $src3$$FloatRegister);

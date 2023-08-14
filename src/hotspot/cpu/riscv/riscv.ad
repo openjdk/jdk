@@ -7282,6 +7282,7 @@ instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   format %{ "fmadd.s  $dst, $src1, $src2, $src3\t#@maddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7299,6 +7300,7 @@ instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   format %{ "fmadd.d  $dst, $src1, $src2, $src3\t#@maddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7316,6 +7318,7 @@ instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   format %{ "fmsub.s  $dst, $src1, $src2, $src3\t#@msubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7333,6 +7336,7 @@ instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   format %{ "fmsub.d  $dst, $src1, $src2, $src3\t#@msubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7351,6 +7355,7 @@ instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   format %{ "fnmsub.s  $dst, $src1, $src2, $src3\t#@nmsubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7369,6 +7374,7 @@ instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   format %{ "fnmsub.d  $dst, $src1, $src2, $src3\t#@nmsubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7387,6 +7393,7 @@ instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   format %{ "fnmadd.s  $dst, $src1, $src2, $src3\t#@nmaddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7405,6 +7412,7 @@ instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   format %{ "fnmadd.d  $dst, $src1, $src2, $src3\t#@nmaddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),

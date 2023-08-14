@@ -1878,8 +1878,12 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
-  // except vectorapi masked nodes, since the inactive lanes should
-  // save the first input of the masked node.
+  // This reduces the number of rules in the matcher, as we only need to check
+  // for negations on the second argument, and not the symmetric case where
+  // the first argument is negated.
+  // We cannot do this if the FmaV is masked, since the inactive lanes have to return
+  // the first input (i.e. "-a"). If we were to swap the inputs, the inactive lanes would
+  // incorrectly return "b".
   if (!is_predicated_vector() && in(1)->is_NegV() && !in(2)->is_NegV()) {
     swap_edges(1, 2);
     return this;
