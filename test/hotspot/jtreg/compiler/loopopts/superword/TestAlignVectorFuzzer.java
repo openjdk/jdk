@@ -348,7 +348,7 @@ public class TestAlignVectorFuzzer {
         // We want to create random constants for a loop, but they should never go out of bounds.
         // We constrain i to be in the range [init..limit], with init < limit. For simplicity, we
         // always generate:
-        // 
+        //
         //   1 <= scale  <= 64
         //   1 <= stride <= 64
         //
