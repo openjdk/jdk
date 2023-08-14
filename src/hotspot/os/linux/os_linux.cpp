@@ -1601,14 +1601,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Elf32_Ehdr elf_head;
-  size_t ebuf_len = strlen(ebuf);
-  if (ebuflen <= ebuf_len) {
+  ssize_t diag_msg_max_length = ebuflen - strlen(ebuf);
+  if (diag_msg_max_length <= 0) {
     // No more space in ebuf for additional diagnostics message
     return nullptr;
   }
-  size_t diag_msg_max_length = ebuflen - ebuf_len;
 
-  char* diag_msg_buf=ebuf+ebuf_len;
+  char* diag_msg_buf = ebuf + strlen(ebuf);
 
   int file_descriptor= ::open(filename, O_RDONLY | O_NONBLOCK);
 
