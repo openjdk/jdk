@@ -107,7 +107,7 @@ public class RawIRNode {
                         TestFormat.checkNoReport(!vmInfo.canTrustVectorSize(), "sanity");
                         // If we have a size specified but cannot trust the size, and must check an upper
                         // bound, this can be impossible to count correctly - if we have an incorrect size
-                        // we may count either too many nodes. We just create a impossible regex which will
+                        // we may count either too many nodes. We just create an impossible regex which will
                         // always have count zero and make the upper bound rule pass.
                         System.out.println("WARNING: you are on a system with \"canTrustVectorSize == false\" (default Cascade Lake).");
                         System.out.println("         The upper bound rule for \"" + node + "\" cannot be checked.");

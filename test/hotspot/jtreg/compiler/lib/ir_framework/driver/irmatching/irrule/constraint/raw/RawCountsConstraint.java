@@ -74,8 +74,8 @@ public class RawCountsConstraint implements RawConstraint {
                 return Comparison.Bound.UPPER;
             }
             case "=" -> {
-                // "=0" is same as setting upper bound - just like for failOn. But i we compare equals a
-                // strictly positive number it is like setting both and upper and lower bound (equal).
+                // "=0" is same as setting upper bound - just like for failOn. But if we compare equals a
+                // strictly positive number it is like setting both upper and lower bound (equal).
                 return comparison.getGivenValue() > 0 ? Comparison.Bound.EQUAL : Comparison.Bound.UPPER;
             }
             case ">" -> {

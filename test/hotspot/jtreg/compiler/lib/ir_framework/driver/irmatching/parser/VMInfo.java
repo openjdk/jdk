@@ -91,7 +91,7 @@ public class VMInfo {
             return false; // skylake pattern not found
         }
         String stepping = matcher.group(1).trim();
-        return Long.parseLong(stepping) >= 5; // this makes it cascade lake
+        return Long.parseLong(stepping) >= 5; // this makes it Cascade Lake
     }
 
     public boolean isDefaultCascadeLake() {
