@@ -126,6 +126,7 @@ static void doCleanup() {
     if (screenSpace.screens) {
         free(screenSpace.screens);
         screenSpace.screens = NULL;
+        screenSpace.screenCount = 0;
     }
 
     gtk->g_string_set_size(activeSessionToken, 0);
