@@ -379,7 +379,7 @@ public class TestAlignVectorFuzzer {
         //
         //     offset >= error - init * scale
         //     limit < (range - error - offset) / scale
-        //     
+        //
         // (3) Fix limit:
         //
         //     offset < range - error - limit * scale
@@ -475,8 +475,8 @@ public class TestAlignVectorFuzzer {
         double[] aD = new double[RANGE_CON];
         double[] bD = new double[RANGE_CON];
         double[] cD = new double[RANGE_CON];
- 
-	for (int i = 1; i <= ITERATIONS; i++) {
+
+        for (int i = 1; i <= ITERATIONS; i++) {
             System.out.println("ITERATION " + i + " of " + ITERATIONS);
             setRandomConstants();
             // Have enough iterations to deoptimize and re-compile
@@ -538,7 +538,7 @@ public class TestAlignVectorFuzzer {
         int stride = stride_con();
         int scale  = scale_con();
         int x = opposite_direction_offset1_con_or_var();
- 
+
         for (int i = init; i < limit; i += stride) {
            a[x - i * scale]++;
         }
