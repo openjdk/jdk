@@ -685,7 +685,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
 #if INCLUDE_JVMCI
   if (cm->is_compiled_by_jvmci()) {
     // lookup exception handler for this pc
-    int catch_pco = ret_pc - cm->code_begin();
+    int catch_pco = pointer_delta_as_int(ret_pc, cm->code_begin());
     ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != nullptr) {
@@ -744,7 +744,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
   }
 
   // found handling method => lookup exception handler
-  int catch_pco = ret_pc - nm->code_begin();
+  int catch_pco = pointer_delta_as_int(ret_pc, nm->code_begin());
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
@@ -2309,7 +2309,7 @@ void SharedRuntime::print_statistics() {
 }
 
 inline double percent(int64_t x, int64_t y) {
-  return 100.0 * x / MAX2(y, (int64_t)1);
+  return 100.0 * (double)x / (double)MAX2(y, (int64_t)1);
 }
 
 class MethodArityHistogram {
@@ -2345,13 +2345,13 @@ class MethodArityHistogram {
     const int N = MIN2(9, n);
     double sum = 0;
     double weighted_sum = 0;
-    for (int i = 0; i <= n; i++) { sum += histo[i]; weighted_sum += i*histo[i]; }
-    if (sum >= 1.0) { // prevent divide by zero or divide overflow
+    for (int i = 0; i <= n; i++) { sum += (double)histo[i]; weighted_sum += (double)(i*histo[i]); }
+    if (sum >= 1) { // prevent divide by zero or divide overflow
       double rest = sum;
       double percent = sum / 100;
       for (int i = 0; i <= N; i++) {
-        rest -= histo[i];
-        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], histo[i] / percent);
+        rest -= (double)histo[i];
+        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], (double)histo[i] / percent);
       }
       tty->print_cr("rest: " INT64_FORMAT_W(12) " (%5.1f%%)", (int64_t)rest, rest / percent);
       tty->print_cr("(avg. %s = %3.1f, max = %d)", name, weighted_sum / sum, n);

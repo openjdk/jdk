@@ -734,7 +734,6 @@ sun/tools/jstat/jstatLineCounts3.sh                             8268211 linux-aa
 sun/tools/jstat/jstatLineCounts4.sh                             8268211 linux-aarch64
 
 sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aarch64
-sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java              8313798 generic-aarch64
 
 ############################################################################
 
@@ -769,6 +768,9 @@ java/foreign/TestByteBuffer.java 8309475 aix-ppc64
 
 ############################################################################
 # Client manual tests
+
+javax/swing/JFileChooser/FileSystemView/SystemIconTest.java 8313902 windows-all
+sanity/client/SwingSet/src/FileChooserDemoTest.java 8313903 windows-all
 
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all

@@ -312,7 +312,7 @@ static const size_t payload_offset = types_offset + sizeof(uint32_t);
 
 template <typename Return>
 static Return read_data(const u1* data) {
-  return JfrBigEndian::read<Return>(data);
+  return JfrBigEndian::read<Return, Return>(data);
 }
 
 static size_t total_size(const u1* data) {
