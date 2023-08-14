@@ -361,15 +361,6 @@ class MacroAssembler: public Assembler {
                                        uint32_t& predecessor, uint32_t& successor) {
     predecessor = (order_constraint >> 2) & 0x3;
     successor = order_constraint & 0x3;
-
-    // extend rw -> iorw:
-    // 01(w) -> 0101(ow)
-    // 10(r) -> 1010(ir)
-    // 11(rw)-> 1111(iorw)
-    if (UseConservativeFence) {
-      predecessor |= predecessor << 2;
-      successor |= successor << 2;
-    }
   }
 
   static int pred_succ_to_membar_mask(uint32_t predecessor, uint32_t successor) {
@@ -378,6 +369,24 @@ class MacroAssembler: public Assembler {
 
   void pause() {
     fence(w, 0);
+  }
+
+  void fence(uint32_t predecessor, uint32_t successor) {
+    if (UseZtso) {
+      // do not emit fence if it's not at least a StoreLoad fence
+      if (!((predecessor & w) && (successor & r))) {
+        return;
+      }
+    }
+    if (UseConservativeFence) {
+      // extend rw -> iorw:
+      // 01(w) -> 0101(ow)
+      // 10(r) -> 1010(ir)
+      // 11(rw)-> 1111(iorw)
+      predecessor |= (predecessor & 0b11) << 2;
+      successor |= (successor & 0b11) << 2;
+    }
+    Assembler::fence(predecessor, successor);
   }
 
   // prints msg, dumps registers and stops execution
@@ -1321,6 +1330,14 @@ public:
     vmfle_vv(vd, vs1, vs2, vm);
   }
 
+  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+    vmsleu_vi(Vd, Vs2, imm-1, vm);
+  }
+
+  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+    vmsgtu_vi(Vd, Vs2, imm-1, vm);
+  }
+
   // Copy mask register
   inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
     vmand_mm(vd, vs, vs);
@@ -1334,6 +1351,10 @@ public:
   // Set mask register
   inline void vmset_m(VectorRegister vd) {
     vmxnor_mm(vd, vd, vd);
+  }
+
+  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
   }
 
   static const int zero_words_block_size;

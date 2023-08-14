@@ -1,0 +1,628 @@
+
+include:
+  - project: 'rv/it/int/rivos-sdk'
+    ref: rivos/main
+    file: '/packager/gitlab-ci-packaging-helper.yml'
+
+variables:
+  CACHE_VERSION: "v6"
+  BUILD_JDK_VERSION: "20"
+  BINUTILS_VERSION: "2.38"
+  GTEST_TAG: v1.13.0
+  JTREG_VERSION: 7.2+1
+
+prepare-version:
+  after_script:
+    - |
+      source make/conf/version-numbers.conf
+      if test -n "${CI_COMMIT_TAG}" && test "${CI_COMMIT_TAG}" =~ '^jdk\-\(.*\)-rivos$'; then
+        echo "JDK_VERSION_PKG=$(echo "${CI_COMMIT_TAG}" | sed 's/^jdk-\(.*\)-rivos$/\1/')" >> gitvars.env
+        echo "JDK_VERSION_TAG=${JDK_VERSION_PKG}" >> gitvars.env
+        echo "JDK_VERSION_PRE=ea" >> gitvars.env
+        echo "JDK_VERSION_OPT=" >> gitvars.env
+      else
+        echo "JDK_VERSION_PKG=${DEFAULT_VERSION_FEATURE}" >> gitvars.env
+        echo "JDK_VERSION_TAG=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
+        echo "JDK_VERSION_PRE=internal" >> gitvars.env
+        echo "JDK_VERSION_OPT=${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}" >> gitvars.env
+      fi
+    # Debugging helper
+    - cat gitvars.env
+
+download-tools:
+  stage: prebuild
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        curl                                                                   \
+        zip
+    - |
+      curl -L https://builds.shipilev.net/jtreg/jtreg-${JTREG_VERSION}.zip > jtreg.zip
+      unzip jtreg.zip
+      rm -f jtreg.zip
+  artifacts:
+    when: on_success
+    paths:
+      - jtreg
+
+.build-linux:
+  stage: build
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
+  variables:
+    CONF_NAME: linux-${PKG_ARCH}-${DEBUG_LEVEL}
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        autoconf                                                               \
+        build-essential                                                        \
+        curl                                                                   \
+        file                                                                   \
+        g++                                                                    \
+        gcc                                                                    \
+        git                                                                    \
+        $(test "${PKG_ARCH}" = "riscv64" && echo "g++-riscv64-linux-gnu" || true) \
+        $(test "${PKG_ARCH}" = "riscv64" && echo "gcc-riscv64-linux-gnu" || true) \
+        unzip                                                                  \
+        zip                                                                    \
+        zlib1g-dev
+    - |
+      mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
+      curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
+        | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
+    - |
+      mkdir binutils
+      curl -L https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.gz \
+        | tar -xzf - -C binutils --strip-components 1
+    - git clone https://github.com/google/googletest.git -b ${GTEST_TAG} googletest
+    - |
+      bash configure                                                           \
+        --with-debug-level=${DEBUG_LEVEL}                                      \
+        --openjdk-target=${PKG_ARCH}-linux-gnu                                 \
+        --with-conf-name=${CONF_NAME}                                          \
+        --with-vendor-name="Rivos Inc"                                         \
+        --with-version-pre="${JDK_VERSION_PRE}"                                \
+        --with-version-opt="${JDK_VERSION_OPT}"                                \
+        $(test "${PKG_ARCH}" = "riscv64" && echo "--with-sysroot=/rivos/sysroot/riscv" || true) \
+        --with-boot-jdk=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION}              \
+        --disable-precompiled-headers                                          \
+        --with-zlib=system                                                     \
+        --with-gtest=$(pwd)/googletest                                         \
+        --with-jtreg=$(pwd)/jtreg                                              \
+        --with-hsdis=binutils                                                  \
+        --with-binutils-src=binutils                                           \
+        --enable-hsdis-bundling
+    - make jdk-image test-image LOG_LEVEL=info
+  artifacts:
+    when: always
+    paths:
+      - config.log  # in case of error during configure
+      - build/${CONF_NAME}/*.log
+      - build/${CONF_NAME}/Makefile
+      - build/${CONF_NAME}/make-support
+      - build/${CONF_NAME}/*.gmk
+      - build/${CONF_NAME}/images/jdk
+      - build/${CONF_NAME}/images/test
+
+.build-dependencies-amd64:
+  dependencies:
+    - prepare-version
+    - download-tools
+
+.build-dependencies-riscv64:
+  dependencies:
+    - prepare-version
+    - download-tools
+
+build-linux-amd64-fastdebug:
+  extends: .build-linux
+  dependencies: !reference [.build-dependencies-amd64, dependencies]
+  needs: !reference [.build-dependencies-amd64, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+
+build-linux-riscv64-fastdebug:
+  extends: .build-linux
+  dependencies: !reference [.build-dependencies-riscv64, dependencies]
+  needs: !reference [.build-dependencies-riscv64, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+
+build-linux-amd64-release:
+  extends: .build-linux
+  dependencies: !reference [.build-dependencies-amd64, dependencies]
+  needs: !reference [.build-dependencies-amd64, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+
+build-linux-riscv64-release:
+  extends: .build-linux
+  dependencies: !reference [.build-dependencies-riscv64, dependencies]
+  needs: !reference [.build-dependencies-riscv64, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+
+.run-gtests:
+  stage: test
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
+  variables:
+    CONF: linux-${PKG_ARCH}-${DEBUG_LEVEL}
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        build-essential                                                        \
+        curl
+    - |
+      mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
+      curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
+        | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
+    - if [[ "${PKG_ARCH}" = "riscv64" ]]; then export QEMU_LD_PREFIX=/rivos/sysroot/riscv; fi
+    - make test-prebuilt-with-exit-code \
+        BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
+        JDK_IMAGE_DIR=$(pwd)/build/${CONF}/images/jdk \
+        TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test \
+        JT_HOME=$(pwd)/jtreg \
+        TEST="gtest:all"
+
+# The gtest and jtreg job dependencies, so we don't duplicate them in each job.
+# We add the amd64-release build to use as the -compiledjdk for all jtreg jobs
+# (we could skip it from the gtest jobs if we wanted...).
+
+.test-dependencies-amd64-fastdebug:
+  dependencies:
+    - prepare-version
+    - download-tools
+    - build-linux-amd64-release
+    - build-linux-amd64-fastdebug
+
+.test-dependencies-riscv64-fastdebug:
+  dependencies:
+    - prepare-version
+    - download-tools
+    - build-linux-amd64-release
+    - build-linux-riscv64-fastdebug
+
+.test-dependencies-amd64-release:
+  dependencies:
+    - prepare-version
+    - download-tools
+    - build-linux-amd64-release
+
+.test-dependencies-riscv64-release:
+  dependencies:
+    - prepare-version
+    - download-tools
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
+
+# gtest
+
+run-gtests-amd64-fastdebug:
+  extends: .run-gtests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+
+run-gtests-riscv64-fastdebug:
+  extends: .run-gtests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+
+run-gtests-amd64-release:
+  extends: .run-gtests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+
+run-gtests-riscv64-release:
+  extends: .run-gtests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+
+.run-jtreg-tests:
+  stage: test
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
+  variables:
+    CONF: linux-${PKG_ARCH}-${DEBUG_LEVEL}
+  script:
+    - apt-get update
+    - |
+      apt-get install -y                                                       \
+        build-essential                                                        \
+        curl
+    - |
+      mkdir -p /usr/lib/jvm/temurin-${BUILD_JDK_VERSION}
+      curl -L https://api.adoptium.net/v3/binary/latest/${BUILD_JDK_VERSION}/ea/linux/x64/jdk/hotspot/normal/eclipse\?project\=jdk \
+        | tar -xzf - -C /usr/lib/jvm/temurin-${BUILD_JDK_VERSION} --strip-components 1
+    # Some of the variables and args (e.g., QEMU_LD_PREFIX, -compilejdk) are not really needed for amd64.
+    # However, we just added them to keep the script simpler.
+    - if [[ "${PKG_ARCH}" = "riscv64" ]]; then export QEMU_LD_PREFIX=/rivos/sysroot/riscv; fi
+    - make test-prebuilt-with-exit-code \
+        BOOT_JDK=/usr/lib/jvm/temurin-${BUILD_JDK_VERSION} \
+        JDK_IMAGE_DIR=$(pwd)/build/${CONF}/images/jdk \
+        TEST_IMAGE_DIR=$(pwd)/build/${CONF}/images/test \
+        JT_HOME=$(pwd)/jtreg \
+        JTREG="OPTIONS=-compilejdk:$(pwd)/build/linux-amd64-release/images/jdk -e:QEMU_LD_PREFIX=${QEMU_LD_PREFIX}"
+  timeout: 2h
+
+# jtreg hotspot tier1 compiler
+
+run-jtreg-hotspot-tier1-compiler-tests-amd64-fastdebug:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_compiler
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-compiler-tests-riscv64-fastdebug:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_compiler
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-compiler-tests-amd64-release:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+    TEST: tier1_compiler
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-compiler-tests-riscv64-release:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+    TEST: tier1_compiler
+  allow_failure: true
+
+# jtreg hotspot tier1 gc
+
+run-jtreg-hotspot-tier1-gc-tests-amd64-fastdebug:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_gc
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-gc-tests-riscv64-fastdebug:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_gc
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-gc-tests-amd64-release:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+    TEST: tier1_gc
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-gc-tests-riscv64-release:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+    TEST: tier1_gc
+  allow_failure: true
+
+# jtreg hotspot tier1 runtime
+
+run-jtreg-hotspot-tier1-runtime-tests-amd64-fastdebug:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_runtime
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-runtime-tests-riscv64-fastdebug:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_runtime
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-runtime-tests-amd64-release:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+    TEST: tier1_runtime
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-runtime-tests-riscv64-release:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+    TEST: tier1_runtime
+  allow_failure: true
+
+# jtreg hotspot tier1 common
+
+run-jtreg-hotspot-tier1-common-tests-amd64-fastdebug:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_common
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-common-tests-riscv64-fastdebug:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_common
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-common-tests-amd64-release:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+    TEST: tier1_common
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-common-tests-riscv64-release:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+    TEST: tier1_common
+  allow_failure: true
+
+# jtreg hotspot tier1 serviceability
+
+run-jtreg-hotspot-tier1-serviceability-tests-amd64-fastdebug:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-amd64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_serviceability
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-serviceability-tests-riscv64-fastdebug:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  needs: !reference [.test-dependencies-riscv64-fastdebug, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: fastdebug
+    TEST: tier1_serviceability
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-serviceability-tests-amd64-release:
+  extends: .run-jtreg-tests
+  dependencies: !reference [.test-dependencies-amd64-release, dependencies]
+  needs: !reference [.test-dependencies-amd64-release, dependencies]
+  variables:
+    PKG_ARCH: amd64
+    DEBUG_LEVEL: release
+    TEST: tier1_serviceability
+  allow_failure: true
+
+run-jtreg-hotspot-tier1-serviceability-tests-riscv64-release:
+  extends: .run-jtreg-tests
+  tags: ["22.04"]
+  dependencies: !reference [.test-dependencies-riscv64-release, dependencies]
+  needs: !reference [.test-dependencies-riscv64-release, dependencies]
+  variables:
+    PKG_ARCH: riscv64
+    DEBUG_LEVEL: release
+    TEST: tier1_serviceability
+  allow_failure: true
+
+package-tar:
+  stage: deploy
+  image: gitlab.ba.rivosinc.com:5050/rv/it/int/rivos-sdk:latest
+  dependencies:
+    - prepare-version
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-amd64-release
+    - build-linux-riscv64-release
+  script:
+    - apt-get update
+    - apt-get install -y curl
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz -C build/linux-amd64-release/images jdk
+    - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-amd64.tar.gz"'
+    - tar -czf jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz -C build/linux-riscv64-release/images jdk
+    - 'curl -i --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/jdk/${JDK_VERSION_TAG}/jdk-${JDK_VERSION_TAG}-linux-riscv64.tar.gz"'
+
+.package-deb:
+  extends: .deploy-deb
+  variables:
+    PKG_LICENSE: "GPL-2.0 license"
+    PKG_UPSTREAM_VERSION: "${JDK_VERSION_PKG}"
+    PKG_DIRECTORIES: "${PKG_DIRECTORY}"
+    BUILD_ARCH: "$PKG_ARCH"
+  before_script:
+    # PKG_DIRECTORIES must be set
+    - test -n "${PKG_DIRECTORIES}" || exit 1
+    # PKG_ARCH must be set
+    - test -n "${PKG_ARCH}" || exit 1
+    # clean up pre-built binaries from the rivos-sdk
+    - rm -rf "${PKG_DIRECTORY}"
+    - mkdir -p "${PKG_DIRECTORY}"
+    # move the previous temporary install
+    - |
+      cp -av build/linux-${BUILD_ARCH}-release/images/jdk/* "${PKG_DIRECTORY}"
+    - |
+      if [ "${PKG_DBG}" = "true" ]; then
+        find "${PKG_DIRECTORY}" \( -xtype f -or -xtype l \) -not -name '*.debuginfo' -exec rm -f {} \; -print
+        find "${PKG_DIRECTORY}" -type d -print | sort -r | xargs -I{} bash -c "rmdir {} || true"
+      else
+        # remove *.debuginfo files, they take a lot of space
+        find "${PKG_DIRECTORY}" -type f -name '*.debuginfo' -exec rm -f {} \; -print
+      fi
+
+package-deb-amd64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-amd64-release
+  needs:
+    - prepare-version
+    - build-linux-amd64-release
+  variables:
+    PKG_DIRECTORY: "/rivos/jdk"
+    PKG_ARCH: "amd64"
+
+package-deb-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_DIRECTORY: "/rivos/jdk"
+    PKG_ARCH: "riscv64"
+
+package-deb-cross-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-cross-riscv64"
+    PKG_DIRECTORY: "/rivos/sysroot/riscv/rivos/jdk"
+    PKG_ARCH: "amd64"
+    BUILD_ARCH: "riscv64"
+
+package-deb-dbg-amd64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-amd64-release
+  needs:
+    - prepare-version
+    - build-linux-amd64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-dbg"
+    PKG_DIRECTORY: "/rivos/jdk"
+    PKG_ARCH: "amd64"
+    PKG_DBG: "true"
+
+package-deb-dbg-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-dbg"
+    PKG_DIRECTORY: "/rivos/jdk"
+    PKG_ARCH: "riscv64"
+    PKG_DBG: "true"
+
+package-deb-dbg-cross-riscv64:
+  extends: .package-deb
+  dependencies:
+    - prepare-version
+    - build-linux-riscv64-release
+  needs:
+    - prepare-version
+    - build-linux-riscv64-release
+  variables:
+    PKG_NAME: "${PROJECT_NAME}-cross-riscv64-dbg"
+    PKG_DIRECTORY: "/rivos/sysroot/riscv/rivos/jdk"
+    PKG_ARCH: "amd64"
+    BUILD_ARCH: "riscv64"
+    PKG_DBG: "true"
+
+# deploy-module-ubuntu:
+#   extends: .deploy-module
+#   dependencies:
+#     - prepare-version
+#     - build-linux-amd64
+#   needs:
+#     - prepare-version
+#     - build-linux-amd64
+#   variables:
+#     CONTENT_PATH: "build/linux-amd64/images/jdk"
+#     UBUNTU2204_INSTALL_PATH: "${SDK_MODULES_ROOT}/ubuntu.22.04/x86_64/${CI_PROJECT_NAME}/${VERSION_TAG}"
+
+# Rebuild the rivos-sdk where we are exporting the artifacts built here.
+update-sdk:
+  extends: .update-sdk
