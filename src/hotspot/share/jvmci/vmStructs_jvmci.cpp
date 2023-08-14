@@ -215,7 +215,7 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
                                                                                                                                      \
@@ -530,9 +530,11 @@
   declare_constant(CodeInstaller::REGISTER_PRIMITIVE)                     \
   declare_constant(CodeInstaller::REGISTER_OOP)                           \
   declare_constant(CodeInstaller::REGISTER_NARROW_OOP)                    \
+  declare_constant(CodeInstaller::REGISTER_VECTOR)                        \
   declare_constant(CodeInstaller::STACK_SLOT_PRIMITIVE)                   \
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
+  declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \
