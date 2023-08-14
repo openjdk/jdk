@@ -60,7 +60,7 @@ public class ScreencastHelper {
 
     private static volatile TimerTask timerTask = null;
     private static final Timer timerCloseSession
-            = new Timer("auto-close screencast session");
+            = new Timer("auto-close screencast session", true);
 
 
     private ScreencastHelper() {
