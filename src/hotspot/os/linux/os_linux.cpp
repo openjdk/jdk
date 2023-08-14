@@ -1601,11 +1601,12 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Elf32_Ehdr elf_head;
-  int diag_msg_max_length = ebuflen - checked_cast<int>(strlen(ebuf));
-  if (diag_msg_max_length <= 0) {
+  size_t ebuf_len = strlen(ebuf);
+  if (ebuflen <= ebuf_len) {
     // No more space in ebuf for additional diagnostics message
     return nullptr;
   }
+  size_t diag_msg_max_length = ebuflen - ebuf_len;
 
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
