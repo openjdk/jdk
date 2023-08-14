@@ -77,27 +77,25 @@ public class SetLabelTest implements ActionListener {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(300);
-            captureScreen("Img_1");
             robot.mouseMove(frameLoc.x + 35, frameLoc.y + 90);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
-            captureScreen("Img_2");
+            captureScreen("Img_1");
 
             //Second Menu
             robot.mouseMove(frameLoc.x + 130, frameLoc.y + 35);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(300);
-            captureScreen("Img_3");
             robot.mouseMove(frameLoc.x + 130, frameLoc.y + 90);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.delay(500);
-            captureScreen("Img_3");
+            captureScreen("Img_2");
 
             if(!checkLabels()) {
-                captureScreen("Fail_Image");
+                captureScreen("Img_Failed");
                 throw new RuntimeException("Test Failed! setLabel does not work");
             }
         } finally {
