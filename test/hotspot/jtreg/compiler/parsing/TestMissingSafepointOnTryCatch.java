@@ -27,8 +27,11 @@
  * @summary  assert(false) failed: malformed control flow to missing safepoint on backedge of a try-catch
  * @library /test/lib
  * @compile MissingSafepointOnTryCatch.jasm
- * @run main/othervm -Xcomp  -XX:CompileCommand=compileonly,MissingSafepointOnTryCatch::test* -XX:CompileCommand=dontinline,MissingSafepointOnTryCatch::m
- * -XX:-TieredCompilation -XX:CompileOnly=MissingSafepointOnTryCatch::test* TestMissingSafepointOnTryCatch
+ * @run main/othervm -XX:CompileCommand=quiet
+ *      -XX:CompileCommand=compileonly,MissingSafepointOnTryCatch::test*
+ *      -XX:CompileCommand=dontinline,MissingSafepointOnTryCatch::m
+ *      -XX:CompileCommand=inline,MissingSafepointOnTryCatch::th
+ *      -XX:-TieredCompilation -Xcomp TestMissingSafepointOnTryCatch
  */
 
 import jdk.test.lib.Utils;
@@ -49,15 +52,15 @@ public class TestMissingSafepointOnTryCatch {
     }
 
     public static void main(String[] args) {
-        //MissingSafepointOnTryCatch.test1(); //  assert(false) failed: malformed control flow
-
-        //MissingSafepointOnTryCatch.test2(); //  assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2) failed: bad if #1
-
-        //MissingSafepointOnTryCatch.test3(); //  assert(false) failed: malformed control flow VS assert(_ltree_root->_child == nullptr || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge()) failed: parsing found no loops but there are some
-
-        MissingSafepointOnTryCatch.test4(); //  assert(false) failed: malformed control flow
-
-        //infiniteLoop();
+        try {
+            // to make sure java/lang/Exception class is resolved
+            MissingSafepointOnTryCatch.th();
+        } catch (Exception e) {}
+        MissingSafepointOnTryCatch.test1();
+        MissingSafepointOnTryCatch.test2();
+        MissingSafepointOnTryCatch.test3();
+        MissingSafepointOnTryCatch.test4();
+        infiniteLoop();
     }
 
 
