@@ -860,7 +860,7 @@ public class ReadNonStandardExtraHeadersTest {
         Files.write(VALID_APK, VALID_APK_FILE);
         Files.write(VALID_APACHE_COMPRESS_JAR, COMMONS_COMPRESS_JAR);
         Files.write(VALID_ANT_JAR, ANT_ZIP64_UNICODE_EXTRA_JAR);
-        Files.write(VALID_ANT_JAR, ANT_ZIP64_UNICODE_EXTRA_ZIP);
+        Files.write(VALID_ANT_ZIP, ANT_ZIP64_UNICODE_EXTRA_ZIP);
 
     }
 
@@ -868,7 +868,7 @@ public class ReadNonStandardExtraHeadersTest {
      * Zip and Jars files to validate we can open
      */
     private static Stream<Path> zipFilesToTest() {
-        return Stream.of(VALID_APK, VALID_APACHE_COMPRESS_JAR, VALID_ANT_JAR);
+        return Stream.of(VALID_APK, VALID_APACHE_COMPRESS_JAR, VALID_ANT_JAR, VALID_ANT_ZIP);
     }
 
     /**
