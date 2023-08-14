@@ -53,18 +53,6 @@ public class VMInfo {
         TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
         TestFramework.check(isKey("UseAVX"), "VMInfo does not contain UseAVX");
         TestFramework.check(isKey("UseAVXIsDefault"), "VMInfo does not contain UseAVXIsDefault");
-        System.err.println("--- VMInfo from Test VM ---");
-        System.err.println("cpuFeatures:   " + getStringValue("cpuFeatures"));
-        System.err.println("MaxVectorSize: " + getLongValue("MaxVectorSize"));
-        System.err.println("MaxVectorSizeIsDefault: " + getLongValue("MaxVectorSizeIsDefault"));
-        System.err.println("LoopMaxUnroll: " + getLongValue("LoopMaxUnroll"));
-        System.err.println("UseAVX: " + getLongValue("UseAVX"));
-        System.err.println("UseAVXIsDefault: " + getLongValue("UseAVXIsDefault"));
-        if (isDefaultCascadeLake()) {
-            System.err.println(" -> You are on default Cascade Lake");
-            System.err.println("   -> SuperWord expected to run with 32 byte, not 64 byte, VectorAPI expected to use 64 byte");
-            System.err.println("   -> \"canTrustVectorSize == false\", some vector node IR rules are made weaker.");
-        }
     }
 
     public String getStringValue(String key) {
@@ -104,8 +92,8 @@ public class VMInfo {
 
     /**
      * Some platforms do not behave as expected, and one cannot trust that the vectors
-     * make use of the full MaxVectorSize. For Cascade Lake we by default only use
-     * 32 bytes for SuperWord even though MaxVectorSize is 64. But the VectorAPI still
+     * make use of the full MaxVectorSize. For Cascade Lake, we only use 32 bytes for
+     * SuperWord by default even though MaxVectorSize is 64. But the VectorAPI still
      * uses 64 bytes. Thus MaxVectorSize is not a reliable indicator for the expected
      * maximal vector size on that platform.
      */
