@@ -72,7 +72,7 @@ public final class SystemLookup implements SymbolLookup {
             System.err.printf("""
                         WARNING: One of the libraries the system lookup depends on cannot be loaded: %s
                         WARNING: Check the %s settings (e.g. consider adding grant ' permission java.lang.RuntimePermission "loadLibrary.syslookup" ')
-                        %n""", ex.getCause(), SecurityManager.class.getSimpleName());
+                        %n""", ex.getMessage(), SecurityManager.class.getSimpleName());
             return FALLBACK_LOOKUP;
         }
     }

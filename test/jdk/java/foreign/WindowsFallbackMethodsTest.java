@@ -26,6 +26,7 @@
  * @enablePreview
  * @requires (os.family == "windows")
  * @run testng WindowsFallbackMethodsTest
+ * @run testng/othervm/java.security.policy=test.policy -Djava.security.manager -Djdk.console=jdk.internal.le WindowsFallbackMethodsTest
  */
 
 import java.lang.foreign.FunctionDescriptor;
