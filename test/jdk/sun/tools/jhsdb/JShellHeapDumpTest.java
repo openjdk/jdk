@@ -158,6 +158,9 @@ public class JShellHeapDumpTest {
                 launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:\\+UseSerialGC"));
             }
             ProcessBuilder pb = new ProcessBuilder(launcher.getCommand());
+            // Needed so we can properly parse the "Welcome to JShell" output.
+            pb.command().add("-J-Duser.language=en");
+            pb.command().add("-J-Duser.country=US");
             jShellProcess = ProcessTools.startProcess("JShell", pb,
                                                       s -> {  // warm-up predicate
                                                           return s.contains("Welcome to JShell");
