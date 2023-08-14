@@ -1730,7 +1730,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   assert(is_power_of_2(abs(main_stride)), "main_stride is power of 2");
 
   // Out of simplicity: non power-of-2 scale not supported.
-  if (abs(scale) == 0 || !is_power_of_2(scale)) {
+  if (abs(scale) == 0 || !is_power_of_2(abs(scale))) {
     return AlignmentSolution("non power-of-2 scale not supported");
   }
 
