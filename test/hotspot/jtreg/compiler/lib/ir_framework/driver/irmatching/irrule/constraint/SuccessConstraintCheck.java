@@ -23,9 +23,7 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule.constraint;
 
-import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.shared.Comparison;
 
 import java.util.List;
 
@@ -35,7 +33,6 @@ import java.util.List;
  * @see Constraint
  */
 class SuccessConstraintCheck implements ConstraintCheck {
-    public SuccessConstraintCheck() {}
 
     @Override
     public MatchResult check(List<String> matchedNodes) {

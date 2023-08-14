@@ -110,8 +110,8 @@ public class IRNode {
     public static final String VECTOR_SIZE = "_@";
     public static final String VECTOR_SIZE_TAG_ANY = "any";
     public static final String VECTOR_SIZE_TAG_MAX = "max_for_type";
-    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + VECTOR_SIZE_TAG_ANY; // default for count "=0" and failOn
-    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + VECTOR_SIZE_TAG_MAX; // default in count
+    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + VECTOR_SIZE_TAG_ANY; // default for counts "=0" and failOn
+    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + VECTOR_SIZE_TAG_MAX; // default in counts
     public static final String VECTOR_SIZE_2   = VECTOR_SIZE + "2";
     public static final String VECTOR_SIZE_4   = VECTOR_SIZE + "4";
     public static final String VECTOR_SIZE_8   = VECTOR_SIZE + "8";
