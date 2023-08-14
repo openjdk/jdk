@@ -176,8 +176,21 @@ public class TestAlignVector {
 	tests.put("test13bIS",   () -> { return test13bIS(aI.clone(), aS.clone()); });
 	tests.put("test13bBSIL", () -> { return test13bBSIL(aB.clone(), aS.clone(), aI.clone(), aL.clone()); });
 
+	tests.put("test14aB",    () -> { return test14aB(aB.clone()); });
+	tests.put("test14bB",    () -> { return test14bB(aB.clone()); });
+	tests.put("test14cB",    () -> { return test14cB(aB.clone()); });
 
-        // TODO add the other tests, and make sure the IR rules are right
+	tests.put("test15aB",    () -> { return test15aB(aB.clone()); });
+	tests.put("test15bB",    () -> { return test15bB(aB.clone()); });
+	tests.put("test15cB",    () -> { return test15cB(aB.clone()); });
+
+	//tests.put("test16a",     () -> { return test16a(aB.clone(), aS.clone()); });
+	//tests.put("test16b",     () -> { return test16b(aB.clone()); });
+
+	tests.put("test17a",     () -> { return test17a(aL.clone()); });
+	tests.put("test17b",     () -> { return test17b(aL.clone()); });
+	tests.put("test17c",     () -> { return test17c(aL.clone()); });
+	tests.put("test17d",     () -> { return test17d(aL.clone()); });
 
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -716,10 +729,16 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.AND_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.AND_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test11cB(byte[] a, byte[] b, byte mask) {
         for (int i = 1; i < RANGE-1; i++) {
-            // always alignable
+            // 1 byte offset -> not alignable with AlignVector
             b[i+0] = (byte)(a[i+1] & mask);
         }
         return new Object[]{ a, b };
@@ -729,10 +748,16 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.AND_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.AND_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test11cS(short[] a, short[] b, short mask) {
         for (int i = 1; i < RANGE-1; i++) {
-            // always alignable
+            // 2 byte offset -> not alignable with AlignVector
             b[i+0] = (short)(a[i+1] & mask);
         }
         return new Object[]{ a, b };
@@ -742,10 +767,16 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
                   IRNode.AND_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.AND_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test11cI(int[] a, int[] b, int mask) {
         for (int i = 1; i < RANGE-1; i++) {
-            // always alignable
+            // 4 byte offset -> not alignable with AlignVector
             b[i+0] = (int)(a[i+1] & mask);
         }
         return new Object[]{ a, b };
@@ -758,7 +789,7 @@ public class TestAlignVector {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11cL(long[] a, long[] b, long mask) {
         for (int i = 1; i < RANGE-1; i++) {
-            // always alignable
+            // always alignable (8 byte offset)
             b[i+0] = (long)(a[i+1] & mask);
         }
         return new Object[]{ a, b };
@@ -858,7 +889,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIL(int[] a, long[] b) {
@@ -871,7 +902,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIB(int[] a, byte[] b) {
@@ -884,7 +915,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIS(int[] a, short[] b) {
@@ -897,7 +928,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aBSIL(byte[] a, short[] b, int[] c, long[] d) {
@@ -912,7 +943,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIL(int[] a, long[] b) {
@@ -925,7 +956,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIB(int[] a, byte[] b) {
@@ -938,7 +969,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIS(int[] a, short[] b) {
@@ -951,7 +982,7 @@ public class TestAlignVector {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+                  IRNode.ADD_V, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bBSIL(byte[] a, short[] b, int[] c, long[] d) {
@@ -965,6 +996,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test14aB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=9) {
@@ -989,6 +1030,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test14bB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=3) {
@@ -1013,6 +1064,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test14cB(byte[] a) {
         // non-power-of-2 stride
         for (int i = 0; i < RANGE-20; i+=5) {
@@ -1037,6 +1098,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test15aB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1061,6 +1132,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test15bB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1085,6 +1166,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test15cB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1162,6 +1253,10 @@ public class TestAlignVector {
 //    }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test17a(long[] a) {
         // Unsafe: vectorizes with profiling (not xcomp)
         for (int i = 0; i < RANGE; i++) {
@@ -1173,6 +1268,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test17b(long[] a) {
         // Not alignable
         for (int i = 0; i < RANGE-1; i++) {
@@ -1184,6 +1289,10 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test17c(long[] a) {
         // Unsafe: aligned vectorizes
         for (int i = 0; i < RANGE-1; i+=4) {
@@ -1197,6 +1306,16 @@ public class TestAlignVector {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.ADD_V, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"})
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
+                  IRNode.ADD_V, "= 0",
+                  IRNode.STORE_VECTOR, "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "true"})
     static Object[] test17d(long[] a) {
         // Not alignable
         for (int i = 0; i < RANGE-1; i+=4) {
