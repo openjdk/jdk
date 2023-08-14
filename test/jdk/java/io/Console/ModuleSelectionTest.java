@@ -27,11 +27,14 @@
  * @summary Tests System.console() returns correct Console (or null) from the expected
  *          module.
  * @modules java.base/java.io:+open
+ * @modules java.base/jdk.internal.natives.java.io
  * @run main/othervm ModuleSelectionTest jdk.internal.le
  * @run main/othervm -Djdk.console=jdk.internal.le ModuleSelectionTest jdk.internal.le
  * @run main/othervm -Djdk.console=java.base ModuleSelectionTest java.base
  * @run main/othervm --limit-modules java.base ModuleSelectionTest java.base
  */
+
+import jdk.internal.natives.java.io.NativeConsole;
 
 import java.io.Console;
 import java.lang.invoke.MethodHandles;
@@ -42,7 +45,7 @@ public class ModuleSelectionTest {
         var con = System.console();
         var pc = Class.forName("java.io.ProxyingConsole");
         var jdkc = Class.forName("jdk.internal.io.JdkConsole");
-        var istty = con.isTerminal();
+        var istty = NativeConsole.istty();
         var impl = con != null ? MethodHandles.privateLookupIn(pc, MethodHandles.lookup())
                 .findGetter(pc, "delegate", jdkc)
                 .invoke(con) : null;

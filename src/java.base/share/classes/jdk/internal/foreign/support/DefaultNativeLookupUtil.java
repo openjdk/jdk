@@ -48,7 +48,7 @@ public final class DefaultNativeLookupUtil {
         try {
             return Linker.nativeLinker()
                     .defaultLookup()
-                    .or(SymbolLookup.loaderLookup())
+                    //.or(SymbolLookup.loaderLookup())
                     .find(name)
                     .orElseThrow();
         } catch (NoSuchElementException e) {

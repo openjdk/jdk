@@ -32,6 +32,8 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+
+import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import sun.security.action.GetPropertyAction;
@@ -67,6 +69,10 @@ public final class SystemLookup implements SymbolLookup {
             // This can happen in the event of a library loading failure - e.g. if one of the libraries the
             // system lookup depends on cannot be loaded for some reason. In such extreme cases, rather than
             // fail, return a dummy lookup.
+            System.err.printf("""
+                        WARNING: One of the libraries the system lookup depends on cannot be loaded: %s
+                        WARNING: Check the %s settings (e.g. consider adding grant ' permission java.lang.RuntimePermission "loadLibrary.syslookup" ')
+                        %n""", ex.getCause(), SecurityManager.class.getSimpleName());
             return FALLBACK_LOOKUP;
         }
     }
@@ -196,7 +202,16 @@ public final class SystemLookup implements SymbolLookup {
         wscanf_s,
 
         // time
-        gmtime;
+        gmtime,
+
+        // consoleapi.h
+        GetConsoleCP,
+
+        // fileapi.h
+        GetFileType,
+
+        // processenv.h
+        GetStdHandle;
 
         static WindowsFallbackSymbols valueOfOrNull(String name) {
             try {
