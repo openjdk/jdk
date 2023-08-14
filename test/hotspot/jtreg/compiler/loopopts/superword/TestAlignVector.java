@@ -111,7 +111,9 @@ public class TestAlignVector {
                  "test17a",
                  "test17b",
                  "test17c",
-                 "test17d"})
+                 "test17d",
+                 "test18a",
+                 "test18b"})
     public void runTests() {
         byte[] aB = generateB();
         byte[] bB = generateB();
@@ -191,6 +193,9 @@ public class TestAlignVector {
 	tests.put("test17b",     () -> { return test17b(aL.clone()); });
 	tests.put("test17c",     () -> { return test17c(aL.clone()); });
 	tests.put("test17d",     () -> { return test17d(aL.clone()); });
+
+	tests.put("test18a",     () -> { return test18a(aB.clone(), aI.clone()); });
+	tests.put("test18b",     () -> { return test18b(aB.clone(), aI.clone()); });
 
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -1326,5 +1331,29 @@ public class TestAlignVector {
             UNSAFE.putLongUnaligned(a, adr + 8, v1 + 1);
         }
         return new Object[]{ a };
+    }
+
+    @Test
+    // TODO good IR rules
+    static Object[] test18a(byte[] a, int[] b) {
+        // scale = 0  -->  no iv
+        for (int i = 0; i < RANGE; i++) {
+            a[0] = 1;
+            b[i] = 2;
+            a[1] = 1;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    // TODO good IR rules
+    static Object[] test18b(byte[] a, int[] b) {
+        // scale = 0  -->  no iv
+        for (int i = 0; i < RANGE; i++) {
+            a[1] = 1;
+            b[i] = 2;
+            a[2] = 1;
+        }
+        return new Object[]{ a, b };
     }
 }

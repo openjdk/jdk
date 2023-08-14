@@ -1755,7 +1755,6 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
   assert(pre_stride * unroll == main_stride, "unrolled stride must be consistent");
 
   SWPointer mem_ref_p(mem_ref, this, nullptr, false);
-  assert(mem_ref_p.has_iv(), "pack must have iv dependency");
   int scale        = mem_ref_p.scale_in_bytes();
   int offset       = mem_ref_p.offset_in_bytes();
   Node* base       = mem_ref_p.base();
