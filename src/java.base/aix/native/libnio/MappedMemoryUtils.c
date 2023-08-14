@@ -137,7 +137,7 @@ static void check_proc_map_array(JNIEnv* env, FILE* proc_file, prmap_t* map_entr
                         "msync with parameter MS_SYNC failed (could not read /proc/<pid>/map)");
             return;
         } else if (map_entry->pr_vaddr <= end_address &&
-                   end_address <= (uint64_t)map_entry->pr_vaddr + map_entry->pr_size) {
+                   (uint64_t)end_address <= (uint64_t)map_entry->pr_vaddr + map_entry->pr_size) {
             set_error_if_shared(env, map_entry);
             return;
         }
