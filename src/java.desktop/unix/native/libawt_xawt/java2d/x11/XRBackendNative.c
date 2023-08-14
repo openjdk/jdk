@@ -61,6 +61,10 @@ typedef struct _XRadialGradient {
 
 #include <dlfcn.h>
 
+/* for dlopen */
+#include <macro_helper.h>
+
+
 #define BUILD_TRANSFORM_MATRIX(TRANSFORM, M00, M01, M02, M10, M11, M12)                        \
     {                                                                                          \
       TRANSFORM.matrix[0][0] = M00;                                                            \

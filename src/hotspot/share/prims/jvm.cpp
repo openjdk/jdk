@@ -111,6 +111,14 @@
 #include "services/finalizerService.hpp"
 #endif
 
+#ifdef WIN32
+#include "symbolengine.hpp"
+#endif
+
+#ifdef _AIX
+#include "loadlib_aix.hpp"
+#endif
+
 #include <errno.h>
 
 /*
@@ -2892,6 +2900,80 @@ JNIEXPORT int jio_printf(const char *fmt, ...) {
   va_end(args);
   return len;
 }
+
+
+#ifdef _WIN32
+JNIEXPORT HMODULE JNICALL LoadLibrary_ext(LPCSTR lpLibFileName) {
+  log_info(os)("attempting shared library load of %s", lpLibFileName);
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(lpLibFileName);
+#endif
+  void* result = LoadLibrary(lpLibFileName);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", lpLibFileName);
+    // Recalculate pdb search path if a DLL was loaded successfully.
+    SymbolEngine::recalc_search_path();
+    log_info(os)("shared library load of %s was successful", lpLibFileName);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
+  } else {
+    DWORD errc = GetLastError();
+    char ebuf[300];
+    os::lasterror(ebuf, sizeof(ebuf));
+    ebuf[299] = '\0';
+    Events::log_dll_message(nullptr, "Loading shared library %s failed, error code %lu", lpLibFileName, errc);
+    log_info(os)("shared library load of %s failed, error code %lu", lpLibFileName, errc);
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(ebuf);
+    event.commit();
+#endif
+  }
+  return (HMODULE) result;
+}
+#else
+JNIEXPORT void*
+dlopen_ext(const char *filename, int flags) {
+  log_info(os)("attempting shared library load of %s", filename);
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+  void* hdl = ::dlopen(filename, flags);
+  if (hdl != nullptr) {
+#ifdef _AIX
+    LoadedLibraries::reload();
+#endif
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
+    log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
+  } else {
+    Events::log_dll_message(nullptr, "Loading shared library %s failed", filename);
+    log_info(os)("shared library load of %s was not successful", filename);
+    char ebuf[300];
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
+    }
+    ::strncpy(ebuf, error_report, sizeof(ebuf) -1);
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(ebuf);
+    event.commit();
+#endif
+  }
+  return hdl;
+}
+#endif
+
 
 // HotSpot specific jio method
 void jio_print(const char* s, size_t len) {

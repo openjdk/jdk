@@ -37,6 +37,9 @@
 
 #include "sun_net_spi_DefaultProxySelector.h"
 
+/* for dlopen */
+#include <macro_helper.h>
+
 
 /**
  * These functions are used by the sun.net.spi.DefaultProxySelector class

@@ -48,6 +48,9 @@
 #define AWT_UNLOCK()
 #endif /* !HEADLESS */
 
+/* for dlopen */
+#include <macro_helper.h>
+
 #ifndef HEADLESS
 extern Display *awt_display;
 #endif /* !HEADLESS */

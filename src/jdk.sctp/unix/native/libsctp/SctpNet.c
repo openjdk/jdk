@@ -36,6 +36,9 @@
 #include "sun_nio_ch_sctp_SctpNet.h"
 #include "sun_nio_ch_sctp_SctpStdSocketOption.h"
 
+/* for dlopen */
+#include <macro_helper.h>
+
 static jclass isaCls = 0;
 static jmethodID isaCtrID = 0;
 
