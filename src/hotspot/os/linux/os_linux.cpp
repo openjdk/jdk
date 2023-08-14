@@ -1608,7 +1608,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   size_t diag_msg_max_length = ebuflen - ebuf_len;
 
-  char* diag_msg_buf=ebuf+strlen(ebuf);
+  char* diag_msg_buf=ebuf+ebuf_len;
 
   int file_descriptor= ::open(filename, O_RDONLY | O_NONBLOCK);
 
