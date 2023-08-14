@@ -145,6 +145,7 @@ public class SetLabelTest implements ActionListener {
             MenuItem mItem1 = m1.getItem(0);
             mItem1.setLabel(labels[1]);
     }
+
     private static boolean checkLabels() {
         for (int i = 0; i < 2; i++) {
             Menu m1 = mb.getMenu(i);
