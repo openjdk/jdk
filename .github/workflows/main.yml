@@ -36,6 +36,12 @@ on:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
         default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
+      configure-arguments:
+        description: 'Additional configure arguments'
+        required: false
+      make-arguments:
+        description: 'Additional make arguments'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,7 +55,7 @@ jobs:
 
   select:
     name: 'Select platforms'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86: ${{ steps.include.outputs.linux-x86 }}
@@ -121,7 +127,10 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
     if: needs.select.outputs.linux-x64 == 'true' || needs.select.outputs.linux-cross-compile == 'true'
 
@@ -131,12 +140,16 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x86
-      apt-gcc-version: '10-multilib'
+      gcc-major-version: '10'
+      gcc-package-suffix: '-multilib'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
       apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386'
       extra-conf-options: '--with-target-bits=32'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x86 == 'true'
 
   build-linux-x64-hs-nopch:
@@ -147,8 +160,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-zero:
@@ -159,8 +175,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-minimal:
@@ -171,8 +190,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-optimized:
@@ -184,8 +206,11 @@ jobs:
       make-target: 'hotspot'
       # Technically this is not the "debug" level, but we can't inject a new matrix state for just this job
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
       extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-cross-compile:
@@ -194,6 +219,12 @@ jobs:
       - select
       - build-linux-x64
     uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      gcc-major-version: '10'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
 
   build-macos-x64:
@@ -203,6 +234,8 @@ jobs:
     with:
       platform: macos-x64
       xcode-toolset-version: '12.5.1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-x64 == 'true'
 
   build-macos-aarch64:
@@ -213,6 +246,8 @@ jobs:
       platform: macos-aarch64
       xcode-toolset-version: '12.5.1'
       extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-aarch64 == 'true'
 
   build-windows-x64:
@@ -223,6 +258,8 @@ jobs:
       platform: windows-x64
       msvc-toolset-version: '14.29'
       msvc-toolset-architecture: 'x86.x64'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-x64 == 'true'
 
   build-windows-aarch64:
@@ -235,6 +272,8 @@ jobs:
       msvc-toolset-architecture: 'arm64'
       make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-aarch64 == 'true'
 
   ###
@@ -249,7 +288,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
 
   test-linux-x86:
     name: linux-x86
@@ -259,7 +298,7 @@ jobs:
     with:
       platform: linux-x86
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
 
   test-macos-x64:
     name: macos-x64
@@ -284,7 +323,7 @@ jobs:
   # Remove bundles so they are not misconstrued as binary distributions from the JDK project
   remove-bundles:
     name: 'Remove bundle artifacts'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: always()
     needs:
       - build-linux-x64
