@@ -2017,17 +2017,17 @@ void SuperWord::filter_packs_for_alignment() {
 
 #ifndef PRODUCT
         if (is_trace_align_vector()) {
-	  tty->print("  solution for pack:         ");
+          tty->print("  solution for pack:         ");
           s.print();
-	  tty->print("  intersection with current: ");
+          tty->print("  intersection with current: ");
           intersect.print();
         }
 #endif
 
-	if (intersect.is_valid()) {
+        if (intersect.is_valid()) {
           // Solution is compatible.
           current = intersect;
-	} else {
+        } else {
           // Solution failed or is not compatible, remove pack i.
           _packset.at_put(i, nullptr);
           mem_ops_rejected++;

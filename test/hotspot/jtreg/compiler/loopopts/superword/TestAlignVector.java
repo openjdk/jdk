@@ -91,7 +91,7 @@ public class TestAlignVector {
                  "test11dS",
                  "test11dI",
                  "test11dL",
-		 "test12",
+                 "test12",
                  "test13aIL",
                  "test13aIB",
                  "test13aIS",
@@ -100,7 +100,7 @@ public class TestAlignVector {
                  "test13bIB",
                  "test13bIS",
                  "test13bBSIL",
-		 "test14aB",
+                 "test14aB",
                  "test14bB",
                  "test14cB",
                  "test15aB",
@@ -141,61 +141,61 @@ public class TestAlignVector {
         tests.put("test8",       () -> { return test8(aB.clone(), bB.clone(), mB, 1); });
         tests.put("test9",       () -> { return test9(aB.clone(), bB.clone(), mB); });
 
-	tests.put("test10a",     () -> { return test10a(aB.clone(), bB.clone(), mB); });
-	tests.put("test10b",     () -> { return test10b(aB.clone(), bB.clone(), mB); });
-	tests.put("test10c",     () -> { return test10c(aS.clone(), bS.clone(), mS); });
-	tests.put("test10d",     () -> { return test10d(aS.clone(), bS.clone(), mS); });
+        tests.put("test10a",     () -> { return test10a(aB.clone(), bB.clone(), mB); });
+        tests.put("test10b",     () -> { return test10b(aB.clone(), bB.clone(), mB); });
+        tests.put("test10c",     () -> { return test10c(aS.clone(), bS.clone(), mS); });
+        tests.put("test10d",     () -> { return test10d(aS.clone(), bS.clone(), mS); });
 
-	tests.put("test11aB",    () -> { return test11aB(aB.clone(), bB.clone(), mB); });
-	tests.put("test11aS",    () -> { return test11aS(aS.clone(), bS.clone(), mS); });
-	tests.put("test11aI",    () -> { return test11aI(aI.clone(), bI.clone(), mI); });
-	tests.put("test11aL",    () -> { return test11aL(aL.clone(), bL.clone(), mL); });
+        tests.put("test11aB",    () -> { return test11aB(aB.clone(), bB.clone(), mB); });
+        tests.put("test11aS",    () -> { return test11aS(aS.clone(), bS.clone(), mS); });
+        tests.put("test11aI",    () -> { return test11aI(aI.clone(), bI.clone(), mI); });
+        tests.put("test11aL",    () -> { return test11aL(aL.clone(), bL.clone(), mL); });
 
-	tests.put("test11bB",    () -> { return test11bB(aB.clone(), bB.clone(), mB); });
-	tests.put("test11bS",    () -> { return test11bS(aS.clone(), bS.clone(), mS); });
-	tests.put("test11bI",    () -> { return test11bI(aI.clone(), bI.clone(), mI); });
-	tests.put("test11bL",    () -> { return test11bL(aL.clone(), bL.clone(), mL); });
+        tests.put("test11bB",    () -> { return test11bB(aB.clone(), bB.clone(), mB); });
+        tests.put("test11bS",    () -> { return test11bS(aS.clone(), bS.clone(), mS); });
+        tests.put("test11bI",    () -> { return test11bI(aI.clone(), bI.clone(), mI); });
+        tests.put("test11bL",    () -> { return test11bL(aL.clone(), bL.clone(), mL); });
 
-	tests.put("test11cB",    () -> { return test11cB(aB.clone(), bB.clone(), mB); });
-	tests.put("test11cS",    () -> { return test11cS(aS.clone(), bS.clone(), mS); });
-	tests.put("test11cI",    () -> { return test11cI(aI.clone(), bI.clone(), mI); });
-	tests.put("test11cL",    () -> { return test11cL(aL.clone(), bL.clone(), mL); });
+        tests.put("test11cB",    () -> { return test11cB(aB.clone(), bB.clone(), mB); });
+        tests.put("test11cS",    () -> { return test11cS(aS.clone(), bS.clone(), mS); });
+        tests.put("test11cI",    () -> { return test11cI(aI.clone(), bI.clone(), mI); });
+        tests.put("test11cL",    () -> { return test11cL(aL.clone(), bL.clone(), mL); });
 
-	tests.put("test11dB",    () -> { return test11dB(aB.clone(), bB.clone(), mB, 0); });
-	tests.put("test11dS",    () -> { return test11dS(aS.clone(), bS.clone(), mS, 0); });
-	tests.put("test11dI",    () -> { return test11dI(aI.clone(), bI.clone(), mI, 0); });
-	tests.put("test11dL",    () -> { return test11dL(aL.clone(), bL.clone(), mL, 0); });
+        tests.put("test11dB",    () -> { return test11dB(aB.clone(), bB.clone(), mB, 0); });
+        tests.put("test11dS",    () -> { return test11dS(aS.clone(), bS.clone(), mS, 0); });
+        tests.put("test11dI",    () -> { return test11dI(aI.clone(), bI.clone(), mI, 0); });
+        tests.put("test11dL",    () -> { return test11dL(aL.clone(), bL.clone(), mL, 0); });
 
-	tests.put("test12",      () -> { return test12(aB.clone(), bB.clone(), mB); });
+        tests.put("test12",      () -> { return test12(aB.clone(), bB.clone(), mB); });
 
-	tests.put("test13aIL",   () -> { return test13aIL(aI.clone(), aL.clone()); });
-	tests.put("test13aIB",   () -> { return test13aIB(aI.clone(), aB.clone()); });
-	tests.put("test13aIS",   () -> { return test13aIS(aI.clone(), aS.clone()); });
-	tests.put("test13aBSIL", () -> { return test13aBSIL(aB.clone(), aS.clone(), aI.clone(), aL.clone()); });
+        tests.put("test13aIL",   () -> { return test13aIL(aI.clone(), aL.clone()); });
+        tests.put("test13aIB",   () -> { return test13aIB(aI.clone(), aB.clone()); });
+        tests.put("test13aIS",   () -> { return test13aIS(aI.clone(), aS.clone()); });
+        tests.put("test13aBSIL", () -> { return test13aBSIL(aB.clone(), aS.clone(), aI.clone(), aL.clone()); });
 
-	tests.put("test13bIL",   () -> { return test13bIL(aI.clone(), aL.clone()); });
-	tests.put("test13bIB",   () -> { return test13bIB(aI.clone(), aB.clone()); });
-	tests.put("test13bIS",   () -> { return test13bIS(aI.clone(), aS.clone()); });
-	tests.put("test13bBSIL", () -> { return test13bBSIL(aB.clone(), aS.clone(), aI.clone(), aL.clone()); });
+        tests.put("test13bIL",   () -> { return test13bIL(aI.clone(), aL.clone()); });
+        tests.put("test13bIB",   () -> { return test13bIB(aI.clone(), aB.clone()); });
+        tests.put("test13bIS",   () -> { return test13bIS(aI.clone(), aS.clone()); });
+        tests.put("test13bBSIL", () -> { return test13bBSIL(aB.clone(), aS.clone(), aI.clone(), aL.clone()); });
 
-	tests.put("test14aB",    () -> { return test14aB(aB.clone()); });
-	tests.put("test14bB",    () -> { return test14bB(aB.clone()); });
-	tests.put("test14cB",    () -> { return test14cB(aB.clone()); });
+        tests.put("test14aB",    () -> { return test14aB(aB.clone()); });
+        tests.put("test14bB",    () -> { return test14bB(aB.clone()); });
+        tests.put("test14cB",    () -> { return test14cB(aB.clone()); });
 
-	tests.put("test15aB",    () -> { return test15aB(aB.clone()); });
-	tests.put("test15bB",    () -> { return test15bB(aB.clone()); });
-	tests.put("test15cB",    () -> { return test15cB(aB.clone()); });
+        tests.put("test15aB",    () -> { return test15aB(aB.clone()); });
+        tests.put("test15bB",    () -> { return test15bB(aB.clone()); });
+        tests.put("test15cB",    () -> { return test15cB(aB.clone()); });
 
-	//tests.put("test16a",     () -> { return test16a(aB.clone(), aS.clone()); });
-	//tests.put("test16b",     () -> { return test16b(aB.clone()); });
+        //tests.put("test16a",     () -> { return test16a(aB.clone(), aS.clone()); });
+        //tests.put("test16b",     () -> { return test16b(aB.clone()); });
 
-	tests.put("test17a",     () -> { return test17a(aL.clone()); });
-	tests.put("test17b",     () -> { return test17b(aL.clone()); });
-	tests.put("test17c",     () -> { return test17c(aL.clone()); });
-	tests.put("test17d",     () -> { return test17d(aL.clone()); });
+        tests.put("test17a",     () -> { return test17a(aL.clone()); });
+        tests.put("test17b",     () -> { return test17b(aL.clone()); });
+        tests.put("test17c",     () -> { return test17c(aL.clone()); });
+        tests.put("test17d",     () -> { return test17d(aL.clone()); });
 
-	tests.put("test18a",     () -> { return test18a(aB.clone(), aI.clone()); });
-	tests.put("test18b",     () -> { return test18b(aB.clone(), aI.clone()); });
+        tests.put("test18a",     () -> { return test18a(aB.clone(), aI.clone()); });
+        tests.put("test18b",     () -> { return test18b(aB.clone(), aI.clone()); });
 
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -262,14 +262,14 @@ public class TestAlignVector {
                                            " gold[" + i + "].length = " + Array.getLength(g) +
                                            " result[" + i + "].length = " + Array.getLength(r));
             }
-	    Class c = g.getClass().getComponentType();
+            Class c = g.getClass().getComponentType();
             if (c == byte.class) {
                 verifyB(name, i, (byte[])g, (byte[])r);
-	    } else if (c == short.class) {
+            } else if (c == short.class) {
                 verifyS(name, i, (short[])g, (short[])r);
-	    } else if (c == int.class) {
+            } else if (c == int.class) {
                 verifyI(name, i, (int[])g, (int[])r);
-	    } else if (c == long.class) {
+            } else if (c == long.class) {
                 verifyL(name, i, (long[])g, (long[])r);
             } else {
                 throw new RuntimeException("verify " + name + ": array type not supported for verify:" +
@@ -1132,7 +1132,7 @@ public class TestAlignVector {
             a[53*i+13]++;
             a[53*i+14]++;
             a[53*i+15]++;
-	}
+        }
         return new Object[]{ a };
     }
 
@@ -1166,7 +1166,7 @@ public class TestAlignVector {
             a[25*i+13]++;
             a[25*i+14]++;
             a[25*i+15]++;
-	}
+        }
         return new Object[]{ a };
     }
 
@@ -1200,7 +1200,7 @@ public class TestAlignVector {
             a[11*i+13]++;
             a[11*i+14]++;
             a[11*i+15]++;
-	}
+        }
         return new Object[]{ a };
     }
 
