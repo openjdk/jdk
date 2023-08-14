@@ -483,7 +483,7 @@ class DwarfFile : public ElfFile {
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    uint32_t _section_start_address;
+    uint64_t _section_start_address;
 
     // a calculated end position
     long _entry_end;
@@ -787,7 +787,7 @@ class DwarfFile : public ElfFile {
       // architectures, this register will always be 0.
       // The address and op_index registers, taken together, form an operation pointer that can reference any
       // individual operation with the instruction stream. This field was introduced with DWARF 4.
-      uint32_t _op_index;
+      uint64_t _op_index;
 
       // The identity of the source file corresponding to a machine instruction.
       uint32_t _file;
@@ -848,8 +848,8 @@ class DwarfFile : public ElfFile {
 
       void reset_fields();
       // Defined in section 6.2.5.1 of the DWARF spec 4. add_to_address_register() must always be executed before set_index_register.
-      void add_to_address_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
-      void set_index_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
+      void add_to_address_register(uint64_t operation_advance, const LineNumberProgramHeader& header);
+      void set_index_register(uint64_t operation_advance, const LineNumberProgramHeader& header);
     };
 
     DwarfFile* _dwarf_file;

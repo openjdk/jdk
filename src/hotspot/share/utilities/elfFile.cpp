@@ -789,7 +789,7 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
 
   // We must align to twice the address size.
   uint8_t alignment = DwarfFile::ADDRESS_SIZE * 2;
-  uint8_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
+  uint64_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
   return _reader.move_position(padding);
 }
 
@@ -1423,7 +1423,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
         // Must be an unsigned integer as specified in section 6.2.2 of the DWARF 4 spec for the discriminator register.
         return false;
       }
-      _state->_discriminator = discriminator;
+      _state->_discriminator = static_cast<uint32_t>(discriminator);
       break;
     default:
       assert(false, "Unknown extended opcode");
@@ -1464,7 +1464,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // line register is 4 bytes wide.
         return false;
       }
-      _state->_line += line;
+      _state->_line += static_cast<uint32_t>(line);
       DWARF_LOG_TRACE("    DW_LNS_advance_line (%d)", _state->_line);
       break;
     case DW_LNS_set_file: // 1 operand
@@ -1473,7 +1473,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // file register is 4 bytes wide.
         return false;
       }
-      _state->_file = file;
+      _state->_file = static_cast<uint32_t>(file);
       DWARF_LOG_TRACE("    DW_LNS_set_file (%u)", _state->_file);
       break;
     case DW_LNS_set_column: // 1 operand
@@ -1482,7 +1482,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // column register is 4 bytes wide.
         return false;
       }
-      _state->_column = column;
+      _state->_column = static_cast<uint32_t>(column);
       DWARF_LOG_TRACE("    DW_LNS_set_column (%u)", _state->_column);
       break;
     case DW_LNS_negate_stmt: // No operands
@@ -1528,7 +1528,7 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // isa register is 4 bytes wide.
         return false;
       }
-      _state->_isa = isa;
+      _state->_isa = static_cast<uint32_t>(isa);  // only save 4 bytes
       DWARF_LOG_TRACE("    DW_LNS_set_isa (%u)", _state->_isa);
       break;
     default:
@@ -1707,7 +1707,7 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint32_t operation_advance,
+void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint64_t operation_advance,
                                                                                    const LineNumberProgramHeader& header) {
   if (_dwarf_version == 2 || _dwarf_version == 3) {
     _address += (uintptr_t)(operation_advance * header._minimum_instruction_length);
@@ -1718,7 +1718,7 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_regist
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(const uint32_t operation_advance,
+void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(const uint64_t operation_advance,
                                                                               const LineNumberProgramHeader& header) {
   _op_index = (_op_index + operation_advance) % header._maximum_operations_per_instruction;
 }
