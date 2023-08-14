@@ -112,7 +112,7 @@ final class DigitList implements Cloneable {
      * Return true if the represented number is zero.
      */
     boolean isZero() {
-        return !non0AfterIndex(0);
+        return !nonZeroAfterIndex(0);
     }
 
 
@@ -120,7 +120,7 @@ final class DigitList implements Cloneable {
      * Return true if there exists a non-zero digit in the digit list
      * from the given index until the end.
      */
-    private boolean non0AfterIndex(int index) {
+    private boolean nonZeroAfterIndex(int index) {
         for (int i=index; i < count; ++i) {
             if (digits[i] != '0') {
                 return true;
@@ -401,19 +401,17 @@ final class DigitList implements Cloneable {
 
     /**
      * Round the representation to the given number of digits.
-     * This method is reserved for Long and BigInteger representations.
      * @param maximumDigits The maximum number of digits to be shown.
      *
      * Upon return, count will be less than or equal to maximumDigits.
      */
-    private void round(int maximumDigits) {
+    private void roundInt(int maximumDigits) {
         // Integers do not need to worry about double rounding
         round(maximumDigits, false, true);
     }
 
     /**
      * Round the representation to the given number of digits.
-     * This method is reserved for Double and BigDecimal representations.
      * @param maximumDigits The maximum number of digits to be shown.
      * @param alreadyRounded whether or not rounding up has already happened.
      * @param valueExactAsDecimal whether or not collected digits provide
@@ -511,48 +509,48 @@ final class DigitList implements Cloneable {
 
             switch(roundingMode) {
             case UP:
-                return non0AfterIndex(maximumDigits);
+                return nonZeroAfterIndex(maximumDigits);
             case DOWN:
                 break;
             case CEILING:
             case FLOOR:
-                if (non0AfterIndex(maximumDigits)) {
-                    return (isNegative && roundingMode == RoundingMode.FLOOR)
-                            || (!isNegative && roundingMode == RoundingMode.CEILING);
+                if (nonZeroAfterIndex(maximumDigits)) {
+                    if (roundingMode == RoundingMode.FLOOR) {
+                        return isNegative;
+                    } else {
+                        return !isNegative;
+                    }
                 }
                 break;
             case HALF_UP:
             case HALF_DOWN:
-                case HALF_EVEN:
-                    // Above tie, round up for all cases
-                    if (digits[maximumDigits] > '5') {
-                        return true;
-                        // At tie, consider UP, DOWN, and EVEN logic
-                    } else if (digits[maximumDigits] == '5' ) {
-                        // Rounding position is the last index, there are 3 Cases.
-                        if (maximumDigits == (count - 1)) {
-                            // Do not round twice
-                            if (alreadyRounded) {
-                                return false;
-                                // When exact, consider specific contract logic
-                            } else if (valueExactAsDecimal) {
-                                return (roundingMode == RoundingMode.HALF_UP) ||
-                                        (roundingMode == RoundingMode.HALF_EVEN
-                                                && (maximumDigits > 0) && (digits[maximumDigits - 1] % 2 != 0));
-                                // Not already rounded, and not exact, round up
-                            } else {
-                                return true;
-                            }
-                            // Rounding position is not the last index
-                            // If any further digits have a non-zero value, round up
+            case HALF_EVEN:
+                // Above tie, round up for all cases
+                if (digits[maximumDigits] > '5') {
+                    return true;
+                    // At tie, consider UP, DOWN, and EVEN logic
+                } else if (digits[maximumDigits] == '5' ) {
+                    // Rounding position is the last index, there are 3 Cases.
+                    if (maximumDigits == (count - 1)) {
+                        // When exact, consider specific contract logic
+                        if (valueExactAsDecimal) {
+                            return (roundingMode == RoundingMode.HALF_UP) ||
+                                    (roundingMode == RoundingMode.HALF_EVEN
+                                            && (maximumDigits > 0) && (digits[maximumDigits - 1] % 2 != 0));
+                        // If already rounded, do not round again, otherwise round up
                         } else {
-                            return non0AfterIndex(maximumDigits+1);
+                            return !alreadyRounded;
                         }
+                    // Rounding position is not the last index
+                    // If any further digits have a non-zero value, round up
+                    } else {
+                        return nonZeroAfterIndex(maximumDigits+1);
                     }
-                    // Below tie, do not round up for all cases
-                    break;
-                case UNNECESSARY:
-                if (non0AfterIndex(maximumDigits)) {
+                }
+                // Below tie, do not round up for all cases
+                break;
+            case UNNECESSARY:
+                if (nonZeroAfterIndex(maximumDigits)) {
                     throw new ArithmeticException(
                             "Rounding needed with the rounding mode being set to RoundingMode.UNNECESSARY");
                 }
@@ -643,7 +641,7 @@ final class DigitList implements Cloneable {
             System.arraycopy(digits, left, digits, 0, count);
         }
         if (maximumDigits > 0) {
-            round(maximumDigits);
+            roundInt(maximumDigits);
         }
     }
 
@@ -689,7 +687,7 @@ final class DigitList implements Cloneable {
         count = right + 1;
 
         if (maximumDigits > 0) {
-            round(maximumDigits);
+            roundInt(maximumDigits);
         }
     }
 
