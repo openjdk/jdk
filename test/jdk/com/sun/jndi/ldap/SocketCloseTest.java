@@ -113,11 +113,9 @@ public class SocketCloseTest {
     }
 
     private static class LdapInputStream extends InputStream {
-        private LdapOutputStream los;
         private ByteArrayInputStream bos;
 
-        public LdapInputStream(LdapOutputStream los) {
-            this.los = los;
+        public LdapInputStream() {
         }
 
         @Override
@@ -144,7 +142,7 @@ public class SocketCloseTest {
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
         private LdapOutputStream output = new LdapOutputStream();
-        private LdapInputStream input = new LdapInputStream(output);
+        private LdapInputStream input = new LdapInputStream();
 
         public void connect(SocketAddress address, int timeout) {
         }
