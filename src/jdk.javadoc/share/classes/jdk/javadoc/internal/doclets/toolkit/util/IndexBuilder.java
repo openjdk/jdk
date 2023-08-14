@@ -315,7 +315,7 @@ public class IndexBuilder {
      * @return a comparator for class element items
      */
     private Comparator<IndexItem> makeClassComparator() {
-        return Comparator.comparing(IndexItem::getElement, utils.comparators.makeAllClassesComparator());
+        return Comparator.comparing(IndexItem::getElement, utils.comparators.allClassesComparator());
     }
 
     /**
@@ -331,7 +331,7 @@ public class IndexBuilder {
         // In order to produce consistent results, it is important that the base comparator
         // uses the same primary sort keys as both the element and search tag comparators
         // (see JDK-8311264).
-        Comparator<Element> elementComparator = utils.comparators.makeIndexElementComparator();
+        Comparator<Element> elementComparator = utils.comparators.indexElementComparator();
         Comparator<IndexItem> baseComparator =
                 (ii1, ii2) -> utils.compareStrings(getIndexItemKey(ii1), getIndexItemKey(ii2));
         Comparator<IndexItem> searchTagComparator =
@@ -374,7 +374,7 @@ public class IndexBuilder {
         // For element items return the key used by the element comparator;
         // for search tag items return the item's label.
         return ii.isElementItem()
-                ? utils.comparators.getIndexElementKey(ii.getElement())
+                ? utils.comparators.indexElementKey(ii.getElement())
                 : ii.getLabel();
     }
 

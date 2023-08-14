@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 
 #define RUNTIME_CONSTRAINTS(f)                        \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
-  f(intx,   ContendedPaddingWidthConstraintFunc)      \
+  f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(intx,   PerfDataSamplingIntervalFunc)             \
   f(uintx,  VMPageSizeConstraintFunc)                 \
   f(size_t, NUMAInterleaveGranularityConstraintFunc)

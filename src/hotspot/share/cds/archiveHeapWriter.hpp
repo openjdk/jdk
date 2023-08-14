@@ -188,7 +188,7 @@ private:
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
   static size_t filler_array_byte_size(int length);
   static int filler_array_length(size_t fill_bytes);
-  static void init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
+  static HeapWord* init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
   static void set_requested_address(ArchiveHeapInfo* info);
   static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveHeapInfo* info);
@@ -225,8 +225,10 @@ public:
   static size_t heap_roots_word_size() {
     return _heap_roots_word_size;
   }
+  static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
+  static bool is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset);
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);

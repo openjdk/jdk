@@ -726,10 +726,10 @@ const int ObjectAlignmentInBytes = 8;
   /* because of overflow issue                                   */         \
   product(intx, MonitorDeflationMax, 1000000, DIAGNOSTIC,                   \
           "The maximum number of monitors to deflate, unlink and delete "   \
-          "at one time (minimum is 1024).")                      \
+          "at one time (minimum is 1024).")                                 \
           range(1024, max_jint)                                             \
                                                                             \
-  product(intx, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,              \
+  product(int, MonitorUsedDeflationThreshold, 90, DIAGNOSTIC,               \
           "Percentage of used monitors before triggering deflation (0 is "  \
           "off). The check is performed on GuaranteedSafepointInterval, "   \
           "AsyncDeflationInterval or GuaranteedAsyncDeflationInterval, "    \
@@ -802,7 +802,7 @@ const int ObjectAlignmentInBytes = 8;
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
   /* aggressive prefetching, while still leaving the room for segregating */\
   /* among the distinct pages.                                            */\
-  product(intx, ContendedPaddingWidth, 128,                                 \
+  product(int, ContendedPaddingWidth, 128,                                  \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
           constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
@@ -1985,6 +1985,13 @@ const int ObjectAlignmentInBytes = 8;
           "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
+                                                                            \
+  product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \
+          "Interval, in ms, at which the JVM will trim the native heap if " \
+          "the platform supports that. Lower values will reclaim memory "   \
+          "more eagerly at the cost of higher overhead. A value of 0 "      \
+          "(default) disables native heap trimming.")                       \
+          range(0, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 
