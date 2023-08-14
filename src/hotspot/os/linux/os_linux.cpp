@@ -401,7 +401,7 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 // Returns the kernel thread id of the currently running thread. Kernel
 // thread id is used to access /proc.
 pid_t os::Linux::gettid() {
-  int64_t rslt = syscall(SYS_gettid);
+  long rslt = syscall(SYS_gettid);
   assert(rslt != -1, "must be."); // old linuxthreads implementation?
   return (pid_t)rslt;
 }
@@ -3148,7 +3148,7 @@ void os::Linux::rebuild_cpu_to_node_map() {
                            // is a subject to change (in libnuma version 2 the requirements
                            // are more reasonable) we'll just hardcode the number they use
                            // in the library.
-  const int BitsPerCLong = (int)sizeof(long) * CHAR_BIT;
+  constexpr int BitsPerCLong = (int)sizeof(long) * CHAR_BIT;
 
   int cpu_num = processor_count();
   int cpu_map_size = NCPUS / BitsPerCLong;
@@ -3335,7 +3335,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   vec[stripe] = 'X';
 
   const size_t page_sz = os::vm_page_size();
-  intx pages = size / page_sz;
+  uintx pages = size / page_sz;
 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
@@ -3349,7 +3349,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
 
   for (int index = 0; index < loops && !found_range; index ++) {
     assert(pages > 0, "Nothing to do");
-    intx pages_to_query = (pages >= stripe) ? stripe : pages;
+    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
     pages -= pages_to_query;
 
     // Get stable read
@@ -3365,7 +3365,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
-    for (intx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
         if (committed_start != nullptr) {
