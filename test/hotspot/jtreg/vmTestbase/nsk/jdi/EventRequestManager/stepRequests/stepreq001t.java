@@ -23,7 +23,6 @@
 
 package nsk.jdi.EventRequestManager.stepRequests;
 
-import java.lang.reflect.Method;
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
