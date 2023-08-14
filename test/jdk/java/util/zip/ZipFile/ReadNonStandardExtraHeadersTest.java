@@ -774,12 +774,77 @@ public class ReadNonStandardExtraHeadersTest {
             (byte) 0x0, (byte) 0x0, (byte) 0x3, (byte) 0x0, (byte) 0x3, (byte) 0x0, (byte) 0x57, (byte) 0x1,
             (byte) 0x0, (byte) 0x0, (byte) 0x37, (byte) 0x4, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
     };
+
+    /*
+     * ----------------#1--------------------
+     * [Central Directory Header]
+     * 0x47: Signature        : 0x02014b50
+     * 0x4b: Created Zip Spec :       0x2d [4.5]
+     * 0x4c: Created OS       :        0x3 [UNIX]
+     * 0x4d: VerMadeby        :      0x32d [3, 4.5]
+     * 0x4e: VerExtract       :       0x2d [4.5]
+     * 0x4f: Flag             :      0x800
+     * 0x51: Method           :        0x8 [DEFLATED]
+     * 0x53: Last Mod Time    : 0x570375bc [Thu Aug 03 14:45:56 EDT 2023]
+     * 0x57: CRC              :        0x0
+     * 0x5b: Compressed Size  :        0x2
+     * 0x5f: Uncompressed Size:        0x0
+     * * 0x63: Name Length      :        0x5
+     * 0x65: Extra Length     :       0x12
+     *       Extra data:[01, 00, 00, 00, 75, 70, 0a, 00, 01, ba, f7, eb, c1, 61, 2e, 74, 78, 74]
+     *       [tag=0x0001, sz=0]
+     *           ->ZIP64:
+     *       [tag=0x7075, sz=10]
+     *           ->[Unknown tag]
+     *       [data= 01 ba f7 eb c1 61 2e 74 78 74 ]
+     * 0x67: Comment Length   :        0x0
+     * 0x69: Disk Start       :        0x0
+     * 0x6b: Attrs            :        0x0
+     * 0x6d: AttrsEx          : 0x81a40000
+     * 0x71: Loc Header Offset:        0x0
+     * 0x75: File Name        : a.txt
+     */
+    public static byte[] ANT_ZIP64_UNICODE_EXTRA_ZIP= {
+            (byte) 0x50, (byte) 0x4b, (byte) 0x3, (byte) 0x4, (byte) 0x2d, (byte) 0x0, (byte) 0x0, (byte) 0x8,
+            (byte) 0x8, (byte) 0x0, (byte) 0xbc, (byte) 0x75, (byte) 0x3, (byte) 0x57, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff,
+            (byte) 0xff, (byte) 0xff, (byte) 0x5, (byte) 0x0, (byte) 0x22, (byte) 0x0, (byte) 0x61, (byte) 0x2e,
+            (byte) 0x74, (byte) 0x78, (byte) 0x74, (byte) 0x1, (byte) 0x0, (byte) 0x10, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x2,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x75,
+            (byte) 0x70, (byte) 0xa, (byte) 0x0, (byte) 0x1, (byte) 0xba, (byte) 0xf7, (byte) 0xeb, (byte) 0xc1,
+            (byte) 0x61, (byte) 0x2e, (byte) 0x74, (byte) 0x78, (byte) 0x74, (byte) 0x3, (byte) 0x0, (byte) 0x50,
+            (byte) 0x4b, (byte) 0x1, (byte) 0x2, (byte) 0x2d, (byte) 0x3, (byte) 0x2d, (byte) 0x0, (byte) 0x0,
+            (byte) 0x8, (byte) 0x8, (byte) 0x0, (byte) 0xbc, (byte) 0x75, (byte) 0x3, (byte) 0x57, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x2, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x5, (byte) 0x0, (byte) 0x12, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0xa4,
+            (byte) 0x81, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x61, (byte) 0x2e, (byte) 0x74,
+            (byte) 0x78, (byte) 0x74, (byte) 0x1, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x75, (byte) 0x70,
+            (byte) 0xa, (byte) 0x0, (byte) 0x1, (byte) 0xba, (byte) 0xf7, (byte) 0xeb, (byte) 0xc1, (byte) 0x61,
+            (byte) 0x2e, (byte) 0x74, (byte) 0x78, (byte) 0x74, (byte) 0x50, (byte) 0x4b, (byte) 0x6, (byte) 0x6,
+            (byte) 0x2c, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x2d, (byte) 0x0, (byte) 0x2d, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x1, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x1, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x45, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x47, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x50, (byte) 0x4b, (byte) 0x6, (byte) 0x7,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x8c, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x1, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x50, (byte) 0x4b, (byte) 0x5, (byte) 0x6, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x1, (byte) 0x0, (byte) 0x1, (byte) 0x0, (byte) 0x45, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+            (byte) 0x47, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0,
+    };
+
     // Name of Zip file and Jar File used by the test
     public static final Path VALID_APK = Path.of("working-apk.zip");
     public static final Path VALID_APACHE_COMPRESS_JAR =
             Path.of("valid-apache-compress.jar");
     public static final Path VALID_ANT_JAR =
             Path.of("valid-ant-zip64-unicode-extrafields.jar");
+    public static final Path VALID_ANT_ZIP =
+            Path.of("valid-ant-zip64-unicode-extrafields.zip");
     /**
      * Setup method used to create the Zip and Jar files used by the test
      * @throws IOException if an error occurs
@@ -789,11 +854,14 @@ public class ReadNonStandardExtraHeadersTest {
         Files.deleteIfExists(VALID_APK);
         Files.deleteIfExists(VALID_APACHE_COMPRESS_JAR);
         Files.deleteIfExists(VALID_ANT_JAR);
+        Files.deleteIfExists(VALID_ANT_ZIP);
 
         // Create the Zip file to read
         Files.write(VALID_APK, VALID_APK_FILE);
         Files.write(VALID_APACHE_COMPRESS_JAR, COMMONS_COMPRESS_JAR);
         Files.write(VALID_ANT_JAR, ANT_ZIP64_UNICODE_EXTRA_JAR);
+        Files.write(VALID_ANT_JAR, ANT_ZIP64_UNICODE_EXTRA_ZIP);
+
     }
 
     /**
