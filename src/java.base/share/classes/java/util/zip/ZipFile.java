@@ -124,7 +124,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     /**
      * Flag to specify whether the Extra ZIP64 validation should be
-     * enabled.
+     * disabled.
      */
     private static final boolean DISABLE_ZIP64_EXTRA_VALIDATION =
             GetPropertyAction.privilegedGetProperty(
@@ -1317,7 +1317,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (!isZip64ExtBlockSizeValid(blockSize)) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
-            // if ZIP64_EXTID blocksize == 0 validate csize and size
+            // if ZIP64_EXTID blocksize == 0, validate csize and size
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
                 if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {

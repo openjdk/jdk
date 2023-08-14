@@ -3096,7 +3096,7 @@ class ZipFileSystem extends FileSystem {
                     if (!isZip64ExtBlockSizeValid(sz)) {
                         throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
                     }
-                    // if ZIP64_EXTID blocksize == 0 validate csize, size and
+                    // if ZIP64_EXTID blocksize == 0, validate csize, size and
                     // locoff to make sure they do not == ZIP64_MINVAL
                     if (sz == 0) {
                         if ( csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
