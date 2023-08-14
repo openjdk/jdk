@@ -2643,13 +2643,11 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", nullptr,
                                                                         /*dest_uninitialized*/true);
 
-/*
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
                                                               entry_jbyte_arraycopy,
                                                               entry_jshort_arraycopy,
                                                               entry_jint_arraycopy,
                                                               entry_jlong_arraycopy);
-*/
 
     StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy",
                                                                entry_jbyte_arraycopy,
