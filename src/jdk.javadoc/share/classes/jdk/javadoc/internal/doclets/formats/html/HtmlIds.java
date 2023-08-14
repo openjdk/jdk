@@ -106,8 +106,6 @@ public class HtmlIds {
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
-
-    private static final String ENUM_CONSTANTS_INHERITANCE = "enum-constants-inherited-from-class-";
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
@@ -324,17 +322,6 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for the list of enum constants inherited from a class or interface.
-     *
-     * @param element the class or interface
-     *
-     * @return the id
-     */
-    HtmlId forInheritedEnumConstants(TypeElement element) {
-        return forInherited(ENUM_CONSTANTS_INHERITANCE, element);
-    }
-
-    /**
      * Returns an id for the list of methods inherited from a class or interface.
      *
      * @param element the class or interface
@@ -486,7 +473,6 @@ public class HtmlIds {
     public static HtmlId forTabPanel(HtmlId tableId) {
         return HtmlId.of(tableId.name() + ".tabpanel");
     }
-
 
     /**
      * Returns an id for the "preview" section for an element.

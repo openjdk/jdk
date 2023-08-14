@@ -109,7 +109,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool do_iterative_escape_analysis = DoEscapeAnalysis;
-  bool do_reduce_allocation_merges = ReduceAllocationMerges;
+  bool do_reduce_allocation_merges = ReduceAllocationMerges && EliminateAllocations;
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
 
@@ -190,6 +190,10 @@ void C2Compiler::print_timers() {
 
 bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
+  return C2Compiler::is_intrinsic_supported(id);
+}
+
+bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
   if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
@@ -224,6 +228,21 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
     break;
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
+    break;
+  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    if (StubRoutines::electronicCodeBook_decryptAESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_galoisCounterMode_AESCrypt:
+    if (StubRoutines::galoisCounterMode_AESCrypt() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerRightShiftWorker:
+    if (StubRoutines::bigIntegerRightShift() == nullptr) return false;
+    break;
+  case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    if (StubRoutines::bigIntegerLeftShift() == nullptr) return false;
     break;
   case vmIntrinsics::_encodeAsciiArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray) || !Matcher::supports_encode_ascii_array) return false;
@@ -716,10 +735,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_aescrypt_decryptBlock:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
-  case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
-  case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
   case vmIntrinsics::_counterMode_AESCrypt:
-  case vmIntrinsics::_galoisCounterMode_AESCrypt:
   case vmIntrinsics::_md5_implCompress:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
@@ -731,8 +747,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
-  case vmIntrinsics::_bigIntegerRightShiftWorker:
-  case vmIntrinsics::_bigIntegerLeftShiftWorker:
   case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_chacha20Block:
@@ -752,7 +766,6 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:
     break;
-
   case vmIntrinsics::_VectorCompressExpand:
   case vmIntrinsics::_VectorUnaryOp:
   case vmIntrinsics::_VectorBinaryOp:
