@@ -577,6 +577,8 @@ bool SuperWord::SLP_extract() {
 
   combine_packs();
 
+  filter_packs_for_alignment();
+
   construct_my_pack_map();
 
   filter_packs();
