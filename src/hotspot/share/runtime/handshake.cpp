@@ -497,7 +497,7 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
 }
 
 bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exception) {
-  // We musn't block here as that could lead to deadlocks if we already hold an
+  // We must not block here as that could lead to deadlocks if we already hold an
   // "external" mutex. If the try_lock fails then we assume that there is an operation
   // and force the caller to check more carefully in a safer context. If we can't get
   // the lock it means another thread is trying to handshake with us, so it can't
