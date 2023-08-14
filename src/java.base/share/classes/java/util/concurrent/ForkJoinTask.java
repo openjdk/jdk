@@ -1461,7 +1461,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @param <T> the type of the result
      * @return the task
      *
-     * @since 21
+     * @since 22
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Runnable runnable, T result) {
         return new AdaptedInterruptibleRunnable<T>(runnable, result);
@@ -1479,7 +1479,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @param runnable the runnable action
      * @return the task
      *
-     * @since 21
+     * @since 22
      */
     public static ForkJoinTask<?> adaptInterruptible(Runnable runnable) {
         return new AdaptedInterruptibleRunnable<Void>(runnable, null);

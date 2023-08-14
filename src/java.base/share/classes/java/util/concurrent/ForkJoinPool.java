@@ -3308,7 +3308,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @throws NullPointerException if tasks or any of its elements are {@code null}
      * @throws RejectedExecutionException if any task cannot be
      *         scheduled for execution
-     * @since 21
+     * @since 22
      */
     public <T> List<Future<T>> invokeAllUninterruptibly(Collection<? extends Callable<T>> tasks) {
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
