@@ -2073,7 +2073,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(const Predi
                                                                      Node* stride, IdealLoopTree* outer_loop,
                                                                      const uint idx_before_clone,
                                                                      const Node_List &old_new) {
-  if (!predicate_block->has_runtime_predicates()) {
+  if (!predicate_block->has_parse_predicate()) {
     return;
   }
   Node* control = outer_loop_head->in(LoopNode::EntryControl);

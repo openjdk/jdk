@@ -35,7 +35,7 @@ inline G1CardSetInlinePtr::ContainerPtr G1CardSetInlinePtr::merge(ContainerPtr o
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
   assert(card_in_region < ((uint)1 << bits_per_card), "Card %u too large to fit into card value field", card_in_region);
 
-  uint8_t card_pos = card_pos_for(idx, bits_per_card);
+  uint card_pos = card_pos_for(idx, bits_per_card);
   assert(card_pos + bits_per_card < BitsInValue, "Putting card at pos %u with %u bits would extend beyond pointer", card_pos, bits_per_card);
 
   // Check that we do not touch any fields we do not own.
