@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,14 @@ import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.util.Pair;
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.AfterSuite;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Base class for template-driven TestNG javac tests that support on-the-fly
@@ -70,8 +71,7 @@ import static org.testng.Assert.fail;
  *
  * @author Brian Goetz
  */
-@Test
-public abstract class JavacTemplateTestBase {
+public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExecutionCallback {
     private static final Set<String> suiteErrors = Collections.synchronizedSet(new HashSet<>());
     private static final AtomicInteger counter = new AtomicInteger();
     private static final File root = new File("gen");
@@ -130,7 +130,7 @@ public abstract class JavacTemplateTestBase {
     protected void resetClassPaths() { classpaths.clear(); }
 
     // Before each test method, reset everything
-    @BeforeMethod
+    @BeforeEach
     public void reset() {
         resetCompileOptions();
         resetDiagnostics();
@@ -140,25 +140,22 @@ public abstract class JavacTemplateTestBase {
     }
 
     // After each test method, if the test failed, capture source files and diagnostics and put them in the log
-    @AfterMethod
-    public void copyErrors(ITestResult result) {
-        if (!result.isSuccess()) {
-            suiteErrors.addAll(diags.errorKeys());
-
-            List<Object> list = new ArrayList<>();
-            Collections.addAll(list, result.getParameters());
-            list.add("Test case: " + getTestCaseDescription());
-            for (Pair<String, String> e : sourceFiles)
-                list.add("Source file " + e.fst + ": " + e.snd);
-            if (diags.errorsFound())
-                list.add("Compile diagnostics: " + diags.toString());
-            result.setParameters(list.toArray(new Object[list.size()]));
-        }
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+        System.err.printf("ExtensionContext avacTemplateTestBase!!!!!");
+        suiteErrors.addAll(diags.errorKeys());
+        List<Object> list = new ArrayList<>();
+        list.add("Test case: " + getTestCaseDescription());
+        for (Pair<String, String> e : sourceFiles)
+            list.add("Source file " + e.fst + ": " + e.snd);
+        if (diags.errorsFound())
+            list.add("Compile diagnostics: " + diags.toString());
+        System.err.printf("JavacTemplateTestBase!!!!!!!" + Arrays.toString(list.toArray(new Object[0])));
     }
 
-    @AfterSuite
+    @Override
     // After the suite is done, dump any errors to output
-    public void dumpErrors() {
+    public void afterTestExecution(ExtensionContext context) {
         if (!suiteErrors.isEmpty())
             System.err.println("Errors found in test suite: " + suiteErrors);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,22 @@
 
 package tools.javac.combo;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.testng.Assert.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * TemplateTest
  */
-@Test
-public class TemplateTest {
-    Map<String, Template> vars = new HashMap<>();
+class TemplateTest {
+    static Map<String, Template> vars = new HashMap<>();
 
-    @BeforeTest
-    void before() { vars.clear(); }
+    @BeforeAll
+    static void before() { vars.clear(); }
 
     private void assertTemplate(String expected, String template) {
         String result = Template.expandTemplate(template, vars);
@@ -50,7 +49,8 @@ public class TemplateTest {
         return s == null || s.isEmpty() ? "" : "." + s;
     }
 
-    public void testTemplateExpansion() {
+    @Test
+    void testTemplateExpansion() {
         vars.put("A", s -> "a" + dotIf(s));
         vars.put("B", s -> "b" + dotIf(s));
         vars.put("C", s -> "#{A}#{B}");
@@ -72,7 +72,8 @@ public class TemplateTest {
         assertTemplate("#{A", "#{A");
     }
 
-    public void testIndexedTemplate() {
+    @Test
+    void testIndexedTemplate() {
         vars.put("A[0]", s -> "a" );
         vars.put("A[1]", s -> "b" );
         vars.put("A[2]", s -> "c" );
@@ -82,13 +83,14 @@ public class TemplateTest {
         assertTemplate("c", "#{A[2]}");
     }
 
-    public void testAngleBrackets() {
+    @Test
+    void testAngleBrackets() {
         vars.put("X", s -> "xyz");
         assertTemplate("List<String> ls = xyz;", "List<String> ls = #{X};");
     }
 
-    @Test(expectedExceptions = IllegalStateException.class )
-    public void testUnknownKey() {
-        assertTemplate("#{Q}", "#{Q}");
+    @Test
+    void testUnknownKey() {
+        assertThrows(IllegalStateException.class, () -> assertTemplate("#{Q}", "#{Q}"));
     }
 }
