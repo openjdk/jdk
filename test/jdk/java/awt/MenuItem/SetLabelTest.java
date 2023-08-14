@@ -21,7 +21,6 @@
  * questions.
  */
 
-import javax.imageio.ImageIO;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -38,6 +37,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /*
  * @test
