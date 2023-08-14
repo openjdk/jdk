@@ -39,7 +39,7 @@ import java.util.zip.ZipFile;
 /* @test
  * @bug 8313765
  * @summary Validate that a Zip File with an Extra Header with a data size
- *  of 0 can be read.
+ * of 0 can be read.
  * @run junit ReadNonStandardExtraHeadersTest
  */
 public class ReadNonStandardExtraHeadersTest {
