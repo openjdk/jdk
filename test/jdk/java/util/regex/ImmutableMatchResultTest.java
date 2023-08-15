@@ -23,8 +23,12 @@
 
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.MatchResult;
@@ -33,10 +37,11 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /*
  * @test
- * @bug 8132995
+ * @bug 8132995 8312976
  * @key randomness
  *
  * @summary Tests to exercise the optimization described in the bug report.
@@ -177,6 +182,52 @@ public class ImmutableMatchResultTest {
     @Test
     void testResultsStreamCharBuffer() {
         testResultsStream(CharBuffer.wrap(inResults));
+    }
+
+    static Arguments[] testGroupsOutsideMatch() {
+        return new Arguments[]{
+                arguments("(?<=(\\d{3}))\\D*(?=(\\d{4}))", "-1234abcxyz5678-"),
+                arguments("(?<=(\\d{3}))\\D*(?=(\\1))", "-1234abcxyz2348-"),
+                arguments("(?<!(\\d{4}))\\D+(?=(\\d{4}))", "123abcxyz5678-"),
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testGroupsOutsideMatch(String pattern, String text) {
+        char[] data = text.toCharArray();
+        Matcher m = Pattern.compile(pattern)
+                .matcher(CharBuffer.wrap(data));
+
+        assertEquals(2, m.groupCount());
+        assertTrue(m.find());
+
+        int start = m.start();
+        int end = m.end();
+        String group = m.group();
+
+        int prefixStart = m.start(1);
+        int prefixEnd = m.end(1);
+        String prefixGroup = m.group(1);
+
+        int suffixStart = m.start(2);
+        int suffixEnd = m.end(2);
+        String suffixGroup = m.group(2);
+
+        MatchResult mr = m.toMatchResult();
+        Arrays.fill(data, '*');  // spoil original input
+
+        assertEquals(start, mr.start());
+        assertEquals(end, mr.end());
+        assertEquals(group, mr.group());
+
+        assertEquals(prefixStart, mr.start(1));
+        assertEquals(prefixEnd, mr.end(1));
+        assertEquals(prefixGroup, mr.group(1));
+
+        assertEquals(suffixStart, mr.start(2));
+        assertEquals(suffixEnd, mr.end(2));
+        assertEquals(suffixGroup, mr.group(2));
     }
 
 }

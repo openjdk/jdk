@@ -28,6 +28,7 @@
 #include "oops/constantPool.hpp"
 
 #include "oops/cpCache.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "runtime/atomic.hpp"
 
@@ -40,6 +41,14 @@ inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Com
 
   Klass** adr = resolved_klasses()->adr_at(kslot.resolved_klass_index());
   return Atomic::load_acquire(adr);
+}
+
+inline ResolvedFieldEntry* ConstantPool::resolved_field_entry_at(int field_index) {
+    return cache()->resolved_field_entry_at(field_index);
+}
+
+inline int ConstantPool::resolved_field_entries_length() const {
+    return cache()->resolved_field_entries_length();
 }
 
 inline u2 ConstantPool::invokedynamic_bootstrap_ref_index_at(int indy_index) const {

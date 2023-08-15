@@ -66,7 +66,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VL, ">0"})
     public long[] vectorNeg() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -77,7 +77,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512vl", "true"},
-        counts = {IRNode.ABS_V, ">0"})
+        counts = {IRNode.ABS_VL, ">0"})
     public long[] vectorAbs() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,7 +88,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VL, ">0"})
     public long[] vectorAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,7 +99,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VL, ">0"})
     public long[] vectorSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -110,7 +110,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx512dq", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0"})
     public long[] vectorMul() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -121,9 +121,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.ADD_V, ">0"})
+        counts = {IRNode.ADD_VL, ">0"})
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,7 +134,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0", IRNode.SUB_VL, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -146,7 +146,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VL, ">0"})
     public long[] vectorNot() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -157,7 +157,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.AND_V, ">0"})
+        counts = {IRNode.AND_VL, ">0"})
     public long[] vectorAnd() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -168,7 +168,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VL, ">0"})
     public long[] vectorOr() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -179,7 +179,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VL, ">0"})
     public long[] vectorXor() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -191,7 +191,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     // ---------------- Shift ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VL, ">0"})
     public long[] vectorShiftLeft() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -202,7 +202,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VL, ">0"})
     public long[] vectorSignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -213,7 +213,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_V, ">0"})
+        counts = {IRNode.URSHIFT_VL, ">0"})
     public long[] vectorUnsignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

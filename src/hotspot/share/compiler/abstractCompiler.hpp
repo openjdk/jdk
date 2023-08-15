@@ -150,6 +150,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   bool is_c2() const                     { return _type == compiler_c2; }
   bool is_jvmci() const                  { return _type == compiler_jvmci; }
   CompilerType type() const              { return _type; }
+  virtual bool is_hidden_from_external_view() const { return false; }
 
   // Customization
   virtual void initialize () = 0;
