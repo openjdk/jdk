@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,11 @@ public class JLinkDedupTestBatchSizeOne {
 
     public static void main(String[] args) throws Throwable {
         compileAll();
-        Path src = Paths.get("bug8311591");
+        Path image = Paths.get("bug8311591");
 
         JImageGenerator.getJLinkTask()
                 .modulePath(MODULE_PATH)
-                .output(src.resolve("out-jlink-dedup"))
+                .output(image.resolve("out-jlink-dedup"))
                 .addMods("m1")
                 .addMods("m2")
                 .addMods("m2")
@@ -98,7 +98,7 @@ public class JLinkDedupTestBatchSizeOne {
                 .call()
                 .assertSuccess();
 
-        Path binDir = src.resolve("out-jlink-dedup").resolve("bin").toAbsolutePath();
+        Path binDir = image.resolve("out-jlink-dedup").resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
@@ -112,8 +112,8 @@ public class JLinkDedupTestBatchSizeOne {
         if (exitCode != 0)
             throw new AssertionError("JLinkDedupTest100Modules failed to launch");
 
-        extractJImage(src);
-        decompileWitJavap(src);
+        extractJImage(image);
+        decompileWitJavap(image);
     }
 
     static void extractJImage(Path src) {
