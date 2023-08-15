@@ -3793,15 +3793,17 @@ void os::large_page_init() {
     return;
   }
 
-  // 2) check if large pages are configured
-  if ( ( UseTransparentHugePages && HugePages::supports_thp() == false) ||
-       (!UseTransparentHugePages && HugePages::supports_static_hugepages() == false) ) {
-    // No large pages configured, return.
+  // 2) check if the OS supports THPs resp. static hugepages.
+  if (UseTransparentHugePages && !HugePages::supports_thp()) {
+    if (!FLAG_IS_DEFAULT(UseTransparentHugePages)) {
+      log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
+    }
+    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
+    return;
+  }
+  if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
     warn_no_large_pages_configured();
-    UseLargePages = false;
-    UseTransparentHugePages = false;
-    UseHugeTLBFS = false;
-    UseSHM = false;
+    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
     return;
   }
 
