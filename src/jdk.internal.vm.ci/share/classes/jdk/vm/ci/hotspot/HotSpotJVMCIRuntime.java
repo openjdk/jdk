@@ -627,11 +627,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             return HotSpotResolvedPrimitiveType.forKind(JavaKind.fromJavaClass(javaClass));
         }
         if (IS_IN_NATIVE_IMAGE) {
-            try {
-                return compilerToVm.lookupType(javaClass.getName().replace('.', '/'), null, true);
-            } catch (ClassNotFoundException e) {
-                throw new JVMCIError(e);
-            }
+            return compilerToVm.lookupType(javaClass.getClassLoader(), javaClass.getName().replace('.', '/'));
         }
         return compilerToVm.lookupClass(javaClass);
     }
@@ -869,17 +865,13 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
         // Resolve non-primitive types in the VM.
         HotSpotResolvedObjectTypeImpl hsAccessingType = (HotSpotResolvedObjectTypeImpl) accessingType;
-        try {
-            final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
+        final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
 
-            if (klass == null) {
-                assert resolve == false : name;
-                return UnresolvedJavaType.create(name);
-            }
-            return klass;
-        } catch (ClassNotFoundException e) {
-            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
+        if (klass == null) {
+            assert resolve == false : name;
+            return UnresolvedJavaType.create(name);
         }
+        return klass;
     }
 
     /**

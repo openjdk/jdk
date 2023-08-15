@@ -886,10 +886,10 @@ class os: AllStatic {
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static int recv(int fd, char* buf, size_t nBytes, uint flags);
-  static int send(int fd, char* buf, size_t nBytes, uint flags);
-  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
   // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
