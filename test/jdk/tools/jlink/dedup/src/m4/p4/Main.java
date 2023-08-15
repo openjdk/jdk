@@ -40,7 +40,9 @@ public class Main {
             System.out.println("Service string " + service.getString());
         }
         var moduleClass = Class.forName("jdk.internal.module.SystemModules$all");
-        long subMethodCount = Arrays.stream(moduleClass.getDeclaredMethods()).filter(method -> method.getName().startsWith("sub")).count();
+        long subMethodCount = Arrays.stream(moduleClass.getDeclaredMethods())
+                                    .filter(method -> method.getName().startsWith("sub"))
+                                    .count();
 
         // one subX method per each module is generated as the image is linked with
         // --system-modules=batchSize=1
