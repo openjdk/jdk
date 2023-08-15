@@ -524,9 +524,12 @@ void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
     if (ik->is_subclass_of(env->Throwable_klass())) {
       return;
     }
-    // Opt out of all subclasses that non-partial escape analysis opts out of.
+    // Opt out of all subclasses that non-partial escape analysis opts out of. Opt out of StringBuffer/Builder and
+    // defer those objects to StringOpts.
     if (ik->is_subclass_of(env->Thread_klass()) ||
         ik->is_subclass_of(env->Reference_klass()) ||
+        ik->is_subclass_of(env->StringBuffer_klass()) ||
+        ik->is_subclass_of(env->StringBuilder_klass()) ||
         !ik->can_be_instantiated() || ik->has_finalizer()) {
       return;
     }
