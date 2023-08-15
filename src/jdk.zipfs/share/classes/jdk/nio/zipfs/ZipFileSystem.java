@@ -3094,7 +3094,7 @@ class ZipFileSystem extends FileSystem {
                 case EXTID_ZIP64 :
                     // if ZIP64_EXTID blocksize == 0 which may occur with some older
                     // versions of Apache Ant and Commons Compress, validate csize
-                    // size, and locoff to make sure neither field == ZIP64_MAGICVAL
+                    // size, and locoff to make sure the fields != ZIP64_MAGICVAL
                     if (sz == 0) {
                         if ( csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
                                 locoff == ZIP64_MINVAL) {

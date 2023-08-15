@@ -127,9 +127,7 @@ public class ZipFile implements ZipConstants, Closeable {
      * disabled.
      */
     private static final boolean DISABLE_ZIP64_EXTRA_VALIDATION =
-            GetPropertyAction.privilegedGetProperty(
-                    "jdk.util.zip.disableZip64ExtraFieldValidation", "false")
-                    .equalsIgnoreCase("true");
+            getDisableZip64ExtraFieldValidation();
 
     /**
      * Opens a zip file for reading.
@@ -1093,6 +1091,22 @@ public class ZipFile implements ZipConstants, Closeable {
             ensureOpen();
             return res.zsrc.metaVersions;
         }
+    }
+
+    /**
+     * Returns the value of the System property which indicates whether the
+     * Extra ZIP64 validation should be disabled.
+     */
+    static boolean getDisableZip64ExtraFieldValidation() {
+        boolean result;
+        String value = GetPropertyAction.privilegedGetProperty(
+                "jdk.util.zip.disableZip64ExtraFieldValidation");
+        if (value == null) {
+            result = false;
+        } else {
+            result = value.isEmpty() || value.equalsIgnoreCase("true");
+        }
+        return result;
     }
 
     static {
