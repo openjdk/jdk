@@ -1276,12 +1276,10 @@ void  os::dll_unload(void *lib) {
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
 #if INCLUDE_JFR
     event.set_success(false);
-    if (tl != 0) {
-      event.set_errorMessage(buf);
-    } else {
+    if (tl == 0) {
       os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
-      event.set_errorMessage(buf);
     }
+    event.set_errorMessage(buf);
     event.commit();
 #endif
   }
