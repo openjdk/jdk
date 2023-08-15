@@ -409,6 +409,9 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
+#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
+
 // Memory size transition formatting.
 
 #define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
@@ -1329,6 +1332,10 @@ template<typename K> unsigned primitive_hash(const K& k) {
 
 template<typename K> bool primitive_equals(const K& k0, const K& k1) {
   return k0 == k1;
+}
+
+template<typename K> int primitive_compare(const K& k0, const K& k1) {
+  return ((k0 < k1) ? -1 : (k0 == k1) ? 0 : 1);
 }
 
 //----------------------------------------------------------------------------------------------------

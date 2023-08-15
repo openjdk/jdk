@@ -616,7 +616,7 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
     found = id->find_local_field(fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the object.
-    int offset = checked_cast<int>(jfieldIDWorkaround::from_instance_jfieldID(k, field));
+    int offset = jfieldIDWorkaround::from_instance_jfieldID(k, field);
     found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, fd);
   }
   return found;
@@ -799,12 +799,14 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     int vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
-  if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
-    state &= ~java_lang_VirtualThread::RUNNING;
-    state |= JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE | JVMTI_THREAD_STATE_SUSPENDED;
-  }
-  if (interrupted) {
-    state |= JVMTI_THREAD_STATE_INTERRUPTED;
+  // Ensure the thread has not exited after retrieving suspended/interrupted values.
+  if ((state & JVMTI_THREAD_STATE_ALIVE) != 0) {
+    if (ext_suspended) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    if (interrupted) {
+      state |= JVMTI_THREAD_STATE_INTERRUPTED;
+    }
   }
   return state;
 }

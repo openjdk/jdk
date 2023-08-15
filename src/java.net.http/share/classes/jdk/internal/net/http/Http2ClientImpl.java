@@ -28,8 +28,6 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetSocketAddress;
-import java.net.URI;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
@@ -71,7 +69,8 @@ class Http2ClientImpl {
     // only accessed from within lock protected blocks
     private final Set<String> failures = new HashSet<>();
 
-    private final ReentrantLock lock = new ReentrantLock();
+    // used when dealing with connections in the pool
+    private final ReentrantLock connectionPoolLock = new ReentrantLock();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -100,15 +99,16 @@ class Http2ClientImpl {
                                                         Exchange<?> exchange) {
         String key = Http2Connection.keyFor(req);
 
-        lock.lock();
+        connectionPoolLock.lock();
         try {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
                 try {
-                    if (!connection.isOpen() || !connection.reserveStream(true)) {
+                    if (!connection.tryReserveForPoolCheckout() || !connection.reserveStream(true)) {
                         if (debug.on())
-                            debug.log("removing found closed or closing connection: %s", connection);
-                        deleteConnection(connection);
+                            debug.log("removing connection from pool since it couldn't be" +
+                                    " reserved for use: %s", connection);
+                        removeFromPool(connection);
                     } else {
                         // fast path if connection already exists
                         if (debug.on())
@@ -128,12 +128,12 @@ class Http2ClientImpl {
                 return MinimalFuture.completedFuture(null);
             }
         } finally {
-            lock.unlock();
+            connectionPoolLock.unlock();
         }
         return Http2Connection
                 .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
-                    lock.lock();
+                    connectionPoolLock.lock();
                     try {
                         if (conn != null) {
                             try {
@@ -148,7 +148,7 @@ class Http2ClientImpl {
                                 failures.add(key);
                         }
                     } finally {
-                        lock.unlock();
+                        connectionPoolLock.unlock();
                     }
                 });
     }
@@ -169,7 +169,7 @@ class Http2ClientImpl {
         }
 
         String key = c.key();
-        lock.lock();
+        connectionPoolLock.lock();
         try {
             if (stopping) {
                 if (debug.on()) debug.log("stopping - closing connection: %s", c);
@@ -192,21 +192,27 @@ class Http2ClientImpl {
                 debug.log("put in the connection pool: %s", c);
             return true;
         } finally {
-            lock.unlock();
+            connectionPoolLock.unlock();
         }
     }
 
-    void deleteConnection(Http2Connection c) {
+    /**
+     * Removes the connection from the pool (if it was in the pool).
+     * This method doesn't close the connection.
+     *
+     * @param c the connection to remove from the pool
+     */
+    void removeFromPool(Http2Connection c) {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
-        lock.lock();
+        connectionPoolLock.lock();
         try {
             if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
         } finally {
-            lock.unlock();
+            connectionPoolLock.unlock();
         }
     }
 
@@ -215,11 +221,11 @@ class Http2ClientImpl {
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        lock.lock();
+        connectionPoolLock.lock();
         try {
             stopping = true;
         } finally {
-            lock.unlock();
+            connectionPoolLock.unlock();
         }
         do {
             connections.values().forEach(this::close);

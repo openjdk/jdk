@@ -690,7 +690,12 @@ public sealed interface Classfile
     int JAVA_21_VERSION = 65;
     int JAVA_22_VERSION = 66;
 
-    int PREVIEW_MINOR_VERSION = -1;
+    /**
+     * A minor version number indicating a class uses preview features
+     * of a Java SE version since 12, for major versions {@value
+     * #JAVA_12_VERSION} and above.
+     */
+    int PREVIEW_MINOR_VERSION = 65535;
 
     static int latestMajorVersion() {
         return JAVA_22_VERSION;

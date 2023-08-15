@@ -79,6 +79,9 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here (sorted alphabetically)
 #ifdef AIX_XLC_GE_17
@@ -1098,8 +1101,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-// Loads .dll/.so and in case of error it checks if .dll/.so was built
-// for the same architecture as Hotspot is running on.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
@@ -1114,13 +1115,34 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
-  // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
-  void * result= ::dlopen(filename, RTLD_LAZY);
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
+  // RTLD_LAZY has currently the same behavior as RTLD_NOW
+  // The dl is loaded immediately with all its dependants.
+  int dflags = RTLD_LAZY;
+  // check for filename ending with ')', it indicates we want to load
+  // a MEMBER module that is a member of an archive.
+  int flen = strlen(filename);
+  if (flen > 0 && filename[flen - 1] == ')') {
+    dflags |= RTLD_MEMBER;
+  }
+
+  void * result= ::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
+
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
+
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1134,6 +1156,12 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
+
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   }
   return nullptr;
 }
@@ -2957,7 +2985,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   jio_snprintf(buffer, bufferSize, "%s/core or core.%d",
                                                p, current_process_id());
 
-  return strlen(buffer);
+  return checked_cast<int>(strlen(buffer));
 }
 
 bool os::start_debugging(char *buf, int buflen) {
@@ -2995,7 +3023,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 bool os::supports_map_sync() {

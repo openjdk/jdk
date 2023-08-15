@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,10 @@ public class TestX509ValidationLog {
         l.addExpected("FINE: ValidationChain: " +
                 TestCertificate.ROOT_CA.certId + ", " +
                 TestCertificate.ROOT_CA.certId);
+        int hashCode = TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode();
         l.addExpected("FINE: ValidationChain: " +
-                TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode() +
-                ", " + TestCertificate.ROOT_CA.certId);
+                Integer.toUnsignedLong(hashCode) + ", " +
+                TestCertificate.ROOT_CA.certId);
         l.testExpected();
     }
 

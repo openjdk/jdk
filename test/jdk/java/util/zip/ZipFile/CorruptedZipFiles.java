@@ -260,7 +260,7 @@ public class CorruptedZipFiles {
     public void excessiveExtraFieldLength() throws IOException {
         short existingExtraLength = buffer.getShort(cenpos + CENEXT);
         buffer.putShort(cenpos+CENEXT, (short) (existingExtraLength + 1));
-        assertZipException(".*bad header size.*");
+        assertZipException(".*invalid zip64 extra data field size.*");
     }
 
     /*
@@ -271,7 +271,7 @@ public class CorruptedZipFiles {
     @Test
     public void excessiveExtraFieldLength2() throws IOException {
         buffer.putShort(cenpos+CENEXT, (short) 0xfdfd);
-        assertZipException(".*bad header size.*");
+        assertZipException(".*extra data field size too long.*");
     }
 
     /*
