@@ -25,6 +25,7 @@
 
 package jdk.jshell.execution;
 
+import java.util.HashMap;
 import java.util.Map;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
@@ -37,6 +38,18 @@ import jdk.jshell.spi.ExecutionEnv;
  * @since 9
  */
 public class LocalExecutionControlProvider implements ExecutionControlProvider{
+
+    /**
+     * Controls the default {@link LoaderDelegate}'s internal {@link ClassLoader}'s parent loader.
+     *
+     * <p>
+     * This parameter takes a boolean value. When false (the default), the {@link LoaderDelegate}'s internal
+     * {@link ClassLoader} is configured with the {@linkplain ClassLoader#getSystemClassLoader system loader}
+     * as its parent loader. When true, the current thread's {@linkplain Thread#getContextClassLoader context loader}
+     * is used instead; this makes more application classes visible to the {@link ExecutionControl}
+     * in certain class loading scenarios, e.g., servlet containers.
+     */
+    public static final String PARAM_CONTEXT_LOADER_PARENT = "contextLoaderParent";
 
     /**
      * Create an instance.  An instance can be used to
@@ -59,13 +72,14 @@ public class LocalExecutionControlProvider implements ExecutionControlProvider{
     /**
      * Create and return the default parameter map for
      * {@code LocalExecutionControlProvider}.
-     * {@code LocalExecutionControlProvider} has no parameters.
      *
-     * @return an empty parameter map
+     * @return the default parameter map
      */
     @Override
-    public Map<String,String> defaultParameters() {
-        return ExecutionControlProvider.super.defaultParameters();
+    public Map<String, String> defaultParameters() {
+        final HashMap<String, String> map = new HashMap<>(1);
+        map.put(PARAM_CONTEXT_LOADER_PARENT, String.valueOf(false));
+        return map;
     }
 
     /**
@@ -78,7 +92,35 @@ public class LocalExecutionControlProvider implements ExecutionControlProvider{
      */
     @Override
     public ExecutionControl generate(ExecutionEnv env, Map<String, String> parameters) {
-        return new LocalExecutionControl();
+
+        // Create LoaderDelegate
+        LoaderDelegate loaderDelegate = createLoaderDelegate(env, parameters);
+
+        // Create ExecutionControl
+        return createExecutionControl(env, parameters, loaderDelegate);
     }
 
+    /**
+     * Create the {@link LoaderDelegate} to be used.
+     */
+    LoaderDelegate createLoaderDelegate(ExecutionEnv env, Map<String, String> parameters) {
+
+        // Get parameters
+        boolean contextLoaderParent = Boolean.valueOf(parameters.get(PARAM_CONTEXT_LOADER_PARENT));
+
+        // Get the context loader (note, it can be null)
+        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+
+        // Create LoaderDelegate
+        return contextLoaderParent && contextLoader != null ?
+          new DefaultLoaderDelegate(contextLoader) :
+          new DefaultLoaderDelegate();
+    }
+
+    /**
+     * Create the {@link ExecutionControl} using the specified delegate.
+     */
+    ExecutionControl createExecutionControl(ExecutionEnv env, Map<String, String> parameters, LoaderDelegate delegate) {
+        return new LocalExecutionControl(delegate);
+    }
 }
