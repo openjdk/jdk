@@ -351,7 +351,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /* The headers actually set by the user are recorded here also
      */
-    private MessageHeader userHeaders;
+    private final MessageHeader userHeaders;
 
     /* Headers and request method cannot be changed
      * once this flag is set in :-
