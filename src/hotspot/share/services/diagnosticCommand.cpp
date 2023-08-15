@@ -63,6 +63,7 @@
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #ifdef LINUX
 #include "trimCHeapDCmd.hpp"
 #include "mallocInfoDcmd.hpp"
@@ -881,8 +882,8 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    max = checked_cast<int>(::strtol(max_value, &endptr, 10));
-    if (max == 0 && max_value == endptr) {
+    int max;
+    if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
     }
