@@ -64,14 +64,6 @@ public final class NativeConsole {
 
     // Native methods
 
-/*    static {
-        try {
-            System.loadLibrary("Kernel32");
-        } catch (Throwable t) {
-            System.load("some path");
-        }
-    }*/
-
     // https://learn.microsoft.com/en-us/windows/console/getconsolecp
     private static final MethodHandle GET_CONSOLE_CP = downcall("GetConsoleCP", UINT);
 

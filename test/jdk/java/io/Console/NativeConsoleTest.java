@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @requires (os.family == "linux") | (os.family == "mac")
  * @run junit/othervm NativeConsoleTest
  */
 
@@ -38,8 +37,7 @@ class NativeConsoleTest {
     @Test
     void console() {
         // Make sure the console can be loaded
-        Console console = System.console();
-
+        System.console();
     }
 
 }

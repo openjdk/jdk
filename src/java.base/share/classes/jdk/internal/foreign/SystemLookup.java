@@ -75,9 +75,6 @@ public final class SystemLookup implements SymbolLookup {
                         WARNING: Unable to load one of the system libraries: %s
                         %n""", ex.getMessage());
             return FALLBACK_LOOKUP;
-
-            // Todo: remove    WARNING: Check the SecurityManager settings (e.g. consider adding grant ' permission java.lang.RuntimePermission "loadLibrary.syslookup" ')
-
         }
     }
 
@@ -137,21 +134,6 @@ public final class SystemLookup implements SymbolLookup {
             } catch (NoSuchMethodException e) {
                 return Optional.empty();
             }
-
-/*            @SuppressWarnings("removal")
-            long addr = AccessController.doPrivileged(new PrivilegedAction<Long>() {
-                @Override
-                public Long run() {
-                    try {
-                        return lib.lookup(name);
-                    } catch (NoSuchMethodException e) {
-                        return 0L;
-                    }
-                }
-            });
-            return addr == 0 ?
-                    Optional.empty() :
-                    Optional.of(MemorySegment.ofAddress(addr));*/
         };
     }
 
