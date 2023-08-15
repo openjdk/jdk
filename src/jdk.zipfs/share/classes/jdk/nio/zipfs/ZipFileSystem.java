@@ -3092,12 +3092,11 @@ class ZipFileSystem extends FileSystem {
                 }
                 switch (tag) {
                 case EXTID_ZIP64 :
-                    // if ZIP64_EXTID blocksize == 0 which may occur with some older
+                    // if ZIP64_EXTID blocksize == 0, which may occur with some older
                     // versions of Apache Ant and Commons Compress, validate csize
                     // size, and locoff to make sure the fields != ZIP64_MAGICVAL
                     if (sz == 0) {
-                        if ( csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
-                                locoff == ZIP64_MINVAL) {
+                        if (csize == ZIP64_MINVAL || size == ZIP64_MINVAL || locoff == ZIP64_MINVAL) {
                             throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
                         }
                         break;

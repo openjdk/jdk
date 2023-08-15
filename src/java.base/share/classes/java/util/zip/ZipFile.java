@@ -1326,11 +1326,11 @@ public class ZipFile implements ZipConstants, Closeable {
                                                 long size)
                 throws ZipException {
             byte[] cen = this.cen;
-            // if ZIP64_EXTID blocksize == 0 which may occur with some older
+            // if ZIP64_EXTID blocksize == 0, which may occur with some older
             // versions of Apache Ant and Commons Compress, validate csize and size
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
-                if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
+                if (csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
                     zerror("Invalid CEN header (invalid zip64 extra data field size)");
                 }
                 // Only validate the ZIP64_EXTID data if the block size > 0
