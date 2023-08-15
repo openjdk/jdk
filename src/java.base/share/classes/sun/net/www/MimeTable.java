@@ -52,7 +52,7 @@ public class MimeTable implements FileNameMap {
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
-    private static final String tempFileTemplate =
+    private static String tempFileTemplate =
         java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedAction<String>() {
                     public String run() {
