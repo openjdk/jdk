@@ -164,8 +164,25 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     type = Type::get_const_basic_type(bt);
   }
 
-  Node* ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
+  Node* ld = nullptr;
 
+  if (DoPartialEscapeAnalysis && is_field) { // non-static field a global
+    PEAState& as = jvms()->alloc_state();
+    VirtualState* vs = as.as_virtual(PEA(), obj);
+    if (vs != nullptr) { // obj is a virtual object
+      Node* val = vs->get_field(field);
+      // val is nullptr because the field is not explicitly initialized. It is 'null'.
+      // We only replace an instance pointer here. for array pointer, we need to cast 'val' from oop-ptr to aryptr.
+      if (is_obj && val != nullptr && type->isa_instptr()) {
+        ld = val;
+      }
+      // theoretically, we can replace ld with val if val is scalar or even nullptr.
+      // Graal has a feature called 'ReadElimination to do so.
+    }
+  }
+  if (ld == nullptr) {
+    ld = access_load_at(obj, adr, adr_type, type, bt, decorators);
+  }
   // Adjust Java stack
   if (type2size[bt] == 1)
     push(ld);

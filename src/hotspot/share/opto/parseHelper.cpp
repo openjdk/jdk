@@ -401,6 +401,18 @@ void VirtualState::set_field(ciField* field, Node* val) {
   ShouldNotReachHere();
 }
 
+Node* VirtualState::get_field(ciField* field) const {
+  ciInstanceKlass* holder = _oop_type->is_instptr()->instance_klass();
+
+  for (int i = 0; i < holder->nof_nonstatic_fields(); ++i) {
+    if (field->offset_in_bytes() == holder->nonstatic_field_at(i)->offset_in_bytes()) {
+      return _entries[i];
+    }
+  }
+
+  ShouldNotReachHere();
+}
+
 static void ensure_phi(PhiNode* phi, uint pnum) {
     while (phi->req() <= pnum) {
       phi->add_req(nullptr);

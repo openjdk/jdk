@@ -80,6 +80,7 @@ class VirtualState: public ObjectState {
 
   int nfields() const;
   void set_field(ciField* field, Node* val);
+  Node* get_field(ciField* field) const;
   Node* get_field(int idx) const {
     assert(idx >= 0 && idx < nfields(), "sanity check");
     return _entries[idx];
