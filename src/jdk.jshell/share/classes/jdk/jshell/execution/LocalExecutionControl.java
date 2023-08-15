@@ -60,9 +60,16 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     /**
-     * Create an instance using the default class loading.
+     * Create an instance using the default class loading, which delegates to the system class loader.
      */
     public LocalExecutionControl() {
+    }
+
+    /**
+     * Create an instance using the default class loading, but delegating to the specified parent class loader.
+     */
+    public LocalExecutionControl(ClassLoader parent) {
+        super(new DefaultLoaderDelegate(parent));
     }
 
     @Override
