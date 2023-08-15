@@ -27,13 +27,19 @@
  * @bug 8241312 8246774
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main ApplicableAnnotationsOnRecords
  */
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 import com.sun.tools.javac.util.Assert;
 import java.lang.annotation.*;
 import java.io.InputStream;
+import java.util.Objects;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
@@ -54,30 +60,30 @@ public record ApplicableAnnotationsOnRecords(@FieldAnnotation @MethodAnnotation 
 
     public static void main(String... args) throws Exception {
         try ( InputStream in = ApplicableAnnotationsOnRecords.class.getResourceAsStream("ApplicableAnnotationsOnRecords.class")) {
-            ClassFile cf = ClassFile.read(in);
-            Assert.check(cf.methods.length > 5);
-            for (Method m : cf.methods) {
-                String methodName = m.getName(cf.constant_pool);
+            ClassModel cm = Classfile.of().parse(Objects.requireNonNull(in).readAllBytes());
+            Assert.check(cm.methods().size() > 5);
+            for (MethodModel mm : cm.methods()) {
+                String methodName = mm.methodName().stringValue();
                 if (methodName.equals("toString") || methodName.equals("hashCode") || methodName.equals("equals") || methodName.equals("main")) {
                     // ignore
                 } else if (methodName.equals("<init>")) {
-                    var paAnnos = ((RuntimeVisibleParameterAnnotations_attribute) m.attributes.get(Attribute.RuntimeVisibleParameterAnnotations)).parameter_annotations;
-                    Assert.check(paAnnos.length > 0);
+                    var paAnnos = mm.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElseThrow().parameterAnnotations();
+                    Assert.check(paAnnos.size() > 0);
                     for (var pa : paAnnos) {
-                        Assert.check(pa.length == 1);
-                        Assert.check(cf.constant_pool.getUTF8Value(pa[0].type_index).equals("LParameterAnnotation;"));
+                        Assert.check(pa.size() == 1);
+                        Assert.check(Objects.equals(pa.get(0).classSymbol().descriptorString(), "LParameterAnnotation;"));
                     }
                 } else {
-                    var annos = ((RuntimeAnnotations_attribute) m.attributes.get(Attribute.RuntimeVisibleAnnotations)).annotations;
-                    Assert.check(annos.length == 1);
-                    Assert.check(cf.constant_pool.getUTF8Value(annos[0].type_index).equals("LMethodAnnotation;"));
+                    var annos = mm.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations();
+                    Assert.check(annos.size() == 1);
+                    Assert.check(Objects.equals(annos.get(0).classSymbol().descriptorString(), "LMethodAnnotation;"));
                 }
             }
-            Assert.check(cf.fields.length > 0);
-            for (Field field : cf.fields) {
-                var annos = ((RuntimeAnnotations_attribute) field.attributes.get(Attribute.RuntimeVisibleAnnotations)).annotations;
-                Assert.check(annos.length == 1);
-                Assert.check(cf.constant_pool.getUTF8Value(annos[0].type_index).equals("LFieldAnnotation;"));
+            Assert.check(cm.fields().size() > 0);
+            for (FieldModel fm : cm.fields()) {
+                var annos = fm.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).orElseThrow().annotations();
+                Assert.check(annos.size() == 1);
+                Assert.check(Objects.equals(annos.getFirst().classSymbol().descriptorString(), "LFieldAnnotation;"));
             }
         }
     }
