@@ -197,7 +197,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_VD, ">0"})
+        counts = {IRNode.FMA_VD, ">0", IRNode.VFMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulAdd() {
@@ -210,7 +210,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_VD, ">0"})
+        counts = {IRNode.FMA_VD, ">0", IRNode.VFMLS, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulSub1() {
@@ -223,7 +223,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        counts = {IRNode.FMA_VD, ">0"})
+        counts = {IRNode.FMA_VD, ">0", IRNode.VFMLS, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorMulSub2() {
@@ -237,6 +237,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
         counts = {IRNode.FMA_VD, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        counts = {IRNode.VFNMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorNegateMulAdd1() {
@@ -250,6 +252,8 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
         counts = {IRNode.FMA_VD, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        counts = {IRNode.VFNMLA, ">0"})
     @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_VD, ">0"})
     public double[] vectorNegateMulAdd2() {

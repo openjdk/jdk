@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,12 @@ package jdk.vm.ci.runtime.test;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 import jdk.vm.ci.runtime.JVMCI;
 
 public class ConstantPoolTest {
@@ -81,6 +83,7 @@ public class ConstantPoolTest {
     }
 
     public static final int ALOAD_0 = 42; // 0x2A
+    public static final int GETSTATIC = 178; // 0xB2
     public static final int INVOKEVIRTUAL = 182; // 0xB6
 
     public static int beU2(byte[] data, int bci) {
@@ -107,5 +110,32 @@ public class ConstantPoolTest {
                 Assert.assertTrue(callee instanceof ResolvedJavaMethod, callee.toString());
             }
         }
+    }
+
+    static int someStaticField = 1;
+    static int getStaticField() {
+        return someStaticField;
+    }
+
+    @Test
+    public void lookupFieldTest() throws Exception {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
+
+        String methodName = "getStaticField";
+        Signature methodSig = metaAccess.parseMethodDescriptor("()I");
+        ResolvedJavaMethod m = type.findMethod(methodName, methodSig);
+        Assert.assertNotNull(m);
+
+        // Expected:
+        // 0: getstatic "someStaticField":"I";
+        // 3: ireturn;
+        byte[] bytecode = m.getCode();
+        Assert.assertNotNull(bytecode);
+        Assert.assertEquals(4, bytecode.length);
+        Assert.assertEquals(GETSTATIC, beU1(bytecode, 0));
+        int rawIndex = beU2(bytecode, 1);
+        JavaField field =  m.getConstantPool().lookupField(rawIndex, m, GETSTATIC);
+        Assert.assertEquals("someStaticField", field.getName(), "Wrong field name; rawIndex = " + rawIndex + ";");
     }
 }

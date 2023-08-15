@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,26 +21,17 @@
  * questions.
  */
 
-package sun.nio.ch;
-
-/**
- * Represents the level/name of a socket option
+/*
+ * @test
+ * @summary Test running with log:jit*=debug enabled.
+ * @run main/othervm -Xlog:jit*=debug compiler.arguments.TestTraceTypeProfile
  */
 
-class OptionKey {
-    private final int level;
-    private final int name;
+package compiler.arguments;
 
-    OptionKey(int level, int name) {
-        this.level = level;
-        this.name = name;
-    }
+public class TestLogJIT {
 
-    int level() {
-        return level;
-    }
-
-    int name() {
-        return name;
+    static public void main(String[] args) {
+        System.out.println("Passed");
     }
 }

@@ -436,6 +436,19 @@ final class CompilerToVM {
     private native int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int encoded_indy_index, boolean resolve);
 
     /**
+     * Converts the {@code rawIndex} operand of a rewritten getfield/putfield/getstatic/putstatic instruction
+     * to an index directly into {@code constantPool}.
+     *
+     * @throws IllegalArgumentException if {@code rawIndex} is out of range.
+     * @return {@code JVM_CONSTANT_FieldRef} constant pool entry index for the invokedynamic
+     */
+    int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
+        return decodeFieldIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
+    }
+
+    private native int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
+
+    /**
      * Resolves the details for invoking the bootstrap method associated with the
      * {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry at {@code cpi} in
      * {@code constant pool}.
@@ -507,8 +520,8 @@ final class CompilerToVM {
     private native HotSpotResolvedObjectTypeImpl resolveTypeInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi) throws LinkageError;
 
     /**
-     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry for at index
-     * {@code cpi} in {@code constantPool}. For some opcodes, checks are performed that require the
+     * Looks up and attempts to resolve the {@code JVM_CONSTANT_Field} entry denoted by
+     * {@code rawIndex}. For some opcodes, checks are performed that require the
      * {@code method} that contains {@code opcode} to be specified. The values returned in
      * {@code info} are:
      *
@@ -520,19 +533,18 @@ final class CompilerToVM {
      *     ]
      * </pre>
      *
-     * The behavior of this method is undefined if {@code cpi} does not denote a
-     * {@code JVM_CONSTANT_Field} entry.
+     * The behavior of this method is undefined if {@code rawIndex} is invalid.
      *
      * @param info an array in which the details of the field are returned
      * @return the type defining the field if resolution is successful, null otherwise
      */
-    HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int cpi, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info) {
+    HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, int rawIndex, HotSpotResolvedJavaMethodImpl method, byte opcode, int[] info) {
         long methodPointer = method != null ? method.getMethodPointer() : 0L;
-        return resolveFieldInPool(constantPool, constantPool.getConstantPoolPointer(), cpi, method, methodPointer, opcode, info);
+        return resolveFieldInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, method, methodPointer, opcode, info);
     }
 
     private native HotSpotResolvedObjectTypeImpl resolveFieldInPool(HotSpotConstantPool constantPool, long constantPoolPointer,
-                    int cpi, HotSpotResolvedJavaMethodImpl method, long methodPointer, byte opcode, int[] info);
+                    int rawIndex, HotSpotResolvedJavaMethodImpl method, long methodPointer, byte opcode, int[] info);
 
     /**
      * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index
