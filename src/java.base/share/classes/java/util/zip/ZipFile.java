@@ -1312,12 +1312,8 @@ public class ZipFile implements ZipConstants, Closeable {
                                                 long size)
                 throws ZipException {
             byte[] cen = this.cen;
-            // Validate the Zip64 Extended Information Extra Field (0x0001)
-            // length.
-            if (!isZip64ExtBlockSizeValid(blockSize)) {
-                zerror("Invalid CEN header (invalid zip64 extra data field size)");
-            }
-            // if ZIP64_EXTID blocksize == 0, validate csize and size
+            // if ZIP64_EXTID blocksize == 0 which may occur with some older
+            // versions of Apache Ant and Commons Compress, validate csize and size
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
                 if ( csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
@@ -1325,6 +1321,11 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // Only validate the ZIP64_EXTID data if the block size > 0
                 return;
+            }
+            // Validate the Zip64 Extended Information Extra Field (0x0001)
+            // length.
+            if (!isZip64ExtBlockSizeValid(blockSize)) {
+                zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
             // Check the uncompressed size is not negative
             // Note we do not need to check blockSize is >= 8 as
@@ -1361,7 +1362,6 @@ public class ZipFile implements ZipConstants, Closeable {
             /*
              * As the fields must appear in order, the block size indicates which
              * fields to expect:
-             *  0 - May be written out by Ant and Apache Commons Compress Library
              *  8 - uncompressed size
              * 16 - uncompressed size, compressed size
              * 24 - uncompressed size, compressed sise, LOC Header offset
@@ -1369,7 +1369,7 @@ public class ZipFile implements ZipConstants, Closeable {
              * and Disk start number
              */
             return switch(blockSize) {
-                case 0, 8, 16, 24, 28 -> true;
+                case 8, 16, 24, 28 -> true;
                 default -> false;
             };
         }

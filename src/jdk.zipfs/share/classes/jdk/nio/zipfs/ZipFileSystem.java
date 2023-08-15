@@ -3092,18 +3092,19 @@ class ZipFileSystem extends FileSystem {
                 }
                 switch (tag) {
                 case EXTID_ZIP64 :
-                    // Check to see if we have a valid block size
-                    if (!isZip64ExtBlockSizeValid(sz)) {
-                        throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
-                    }
-                    // if ZIP64_EXTID blocksize == 0, validate csize, size and
-                    // locoff to make sure they do not == ZIP64_MINVAL
+                    // if ZIP64_EXTID blocksize == 0 which may occur with some older
+                    // versions of Apache Ant and Commons Compress, validate csize
+                    // size, and locoff to make sure neither field == ZIP64_MAGICVAL
                     if (sz == 0) {
                         if ( csize == ZIP64_MINVAL || size == ZIP64_MINVAL ||
                                 locoff == ZIP64_MINVAL) {
                             throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
                         }
                         break;
+                    }
+                    // Check to see if we have a valid block size
+                    if (!isZip64ExtBlockSizeValid(sz)) {
+                        throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
                     }
                     if (size == ZIP64_MINVAL) {
                         if (pos + 8 > elen)  // invalid zip64 extra
@@ -3205,7 +3206,6 @@ class ZipFileSystem extends FileSystem {
             /*
              * As the fields must appear in order, the block size indicates which
              * fields to expect:
-             *  0 - May be written out by Ant and Apache Commons Compress Library
              *  8 - uncompressed size
              * 16 - uncompressed size, compressed size
              * 24 - uncompressed size, compressed sise, LOC Header offset
@@ -3213,7 +3213,7 @@ class ZipFileSystem extends FileSystem {
              * and Disk start number
              */
             return switch(blockSize) {
-                case 0, 8, 16, 24, 28 -> true;
+                case 8, 16, 24, 28 -> true;
                 default -> false;
             };
         }
