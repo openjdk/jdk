@@ -46,21 +46,6 @@ class arrayOopDesc : public oopDesc {
 
   // Interpreter/Compiler offsets
 
-public:
-  // Header size computation.
-  // The header is considered the oop part of this type plus the length.
-  // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
-  static int header_size_in_bytes() {
-    size_t hs = length_offset_in_bytes() + sizeof(int);
-#ifdef ASSERT
-    // make sure it isn't called before UseCompressedOops is initialized.
-    static size_t arrayoopdesc_hs = 0;
-    if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
-    assert(arrayoopdesc_hs == hs, "header size can't change");
-#endif // ASSERT
-    return (int)hs;
-  }
-
 private:
   // Returns the address of the length "field".  See length_offset_in_bytes().
   static int* length_addr_impl(void* obj_ptr) {
@@ -81,6 +66,20 @@ private:
   }
 
  public:
+  // Header size computation.
+  // The header is considered the oop part of this type plus the length.
+  // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
+  static int header_size_in_bytes() {
+    size_t hs = length_offset_in_bytes() + sizeof(int);
+#ifdef ASSERT
+    // make sure it isn't called before UseCompressedOops is initialized.
+    static size_t arrayoopdesc_hs = 0;
+    if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
+    assert(arrayoopdesc_hs == hs, "header size can't change");
+#endif // ASSERT
+    return (int)hs;
+  }
+
   // The _length field is not declared in C++.  It is allocated after the
   // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
   // it occupies the second half of the _klass field in oopDesc.
