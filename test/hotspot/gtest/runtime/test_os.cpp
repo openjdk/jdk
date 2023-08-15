@@ -165,7 +165,7 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
 #endif
 
 static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const char* expected) {
-  alignas(sizeof(intptr_t)) char buf[256];
+  char buf[256];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
