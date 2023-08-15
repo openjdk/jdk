@@ -62,14 +62,14 @@ import java.util.Set;
 public class TestHugePageDecisionsAtVMStartup {
 
     // End user warnings, printing with Xlog:pagesize at warning level, should be unconditional
-    static final String warningNoTHP = "[warning][pagesize] TransparentHugePages is not supported by the operating system.";
+    static final String warningNoTHP = "[warning][pagesize] UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.";
     static final String warningNoLP = "[warning][pagesize] UseLargePages disabled, no large pages configured and available on the system.";
 
     static final String buildSizeString(long l) {
-        String units[] = { "G", "M", "K" };
+        String units[] = { "K", "M", "G" };
         long factor = 1024 * 1024 * 1024;
         for (int i = 2; i >= 0; i--) {
-            if (l > factor) {
+            if (l >= factor) {
                 return Long.toString(l / factor) + units[i];
             }
             factor /= 1024;
