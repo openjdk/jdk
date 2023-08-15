@@ -31,7 +31,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8289422 8306088
+ * @bug 8289422 8306088 8313720
  * @key randomness
  * @summary Auto-vectorization enhancement to support vector conditional move.
  * @library /test/lib /

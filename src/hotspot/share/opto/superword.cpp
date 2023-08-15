@@ -2657,7 +2657,7 @@ bool SuperWord::output() {
         Node_List* p_bol = my_pack(bol);
         assert(p_bol != nullptr, "CMove must have matching Bool pack");
 
-#ifndef PRODUCT
+#ifdef ASSERT
         for (uint j = 0; j < p_bol->size(); j++) {
           Node* m = p_bol->at(j);
           assert(m->as_Bool()->_test._test == bol_test,
