@@ -28,7 +28,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SymLinkShortNameTest
  */
