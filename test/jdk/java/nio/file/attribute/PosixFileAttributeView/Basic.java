@@ -186,9 +186,8 @@ public class Basic {
                 Files.delete(link);
             }
 
-            // test that setting permissions on a link-free path with
-            // the NOFOLLOW_LINKS option succeeds when the path does
-            // not have read permission but fails on a path with links
+            // test that setting permissions on paths with and without
+            // links succeeds when the NOFOLLOW_LINKS option is set
 
             // ensure there are no links in the path to test
             Path realDir = dir.toRealPath();
@@ -225,12 +224,7 @@ public class Basic {
                                            PosixFileAttributeView.class,
                                            LinkOption.NOFOLLOW_LINKS);
             withView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
-            try {
-                withView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
-                throw new RuntimeException("AccessDeniedException not thrown");
-            } catch (AccessDeniedException expected) {
-                System.err.println("Ignored expected AccessDeniedException");
-            }
+            withView.setPermissions(Set.of(PosixFilePermission.OWNER_WRITE));
         }
 
         System.out.println("OKAY");

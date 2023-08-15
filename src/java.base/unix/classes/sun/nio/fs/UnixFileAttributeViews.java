@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
+import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 
 class UnixFileAttributeViews {
@@ -262,43 +263,43 @@ class UnixFileAttributeViews {
         // chmod
         final void setMode(int mode) throws IOException {
             checkWriteExtended();
-            try {
-                if (followLinks) {
+
+            if (followLinks) {
+                try {
                     chmod(file, mode);
+                } catch (UnixException e) {
+                    e.rethrowAsIOException(file);
+                }
+                return;
+            }
+
+            if (O_NOFOLLOW == 0) {
+                throw new IOException("NOFOLLOW_LINKS is not supported on this platform");
+            }
+
+            int fd = -1;
+            try {
+                fd = open(file, O_RDONLY, O_NOFOLLOW);
+            } catch (UnixException e1) {
+                if (e1.errno() == EACCES) {
+                    try {
+                        fd = open(file, O_WRONLY, O_NOFOLLOW);
+                    } catch (UnixException e2) {
+                        e2.rethrowAsIOException(file);
+                    }
                 } else {
-                    int fd = file.openForAttributeAccess(false);
-                    try {
-                        fchmod(fd, mode);
-                    } finally {
-                        close(fd);
-                    }
+                    e1.rethrowAsIOException(file);
                 }
-            } catch (UnixException x) {
-                if (!followLinks && x.errno() == UnixConstants.EACCES) {
-                    //
-                    // check whether file's path contains any symlinks, and if
-                    // not, retry setting the mode as if followLinks were true
-                    //
-                    UnixPath p = file;
-                    try {
-                        boolean containsLink =
-                            UnixFileAttributes.get(p, false).isSymbolicLink();
-                        while (!containsLink) {
-                            p = p.getParent();
-                            if (p == null)
-                                break;
-                            containsLink =
-                                UnixFileAttributes.get(p, false).isSymbolicLink();
-                        }
-                        if (!containsLink) {
-                            chmod(file, mode);
-                            return;
-                        }
-                    } catch (UnixException y) {
-                        x.addSuppressed(y);
-                    }
+            }
+
+            try {
+                try {
+                    fchmod(fd, mode);
+                } finally {
+                    close(fd);
                 }
-                x.rethrowAsIOException(file);
+            } catch (UnixException e) {
+                e.rethrowAsIOException(file);
             }
         }
 
