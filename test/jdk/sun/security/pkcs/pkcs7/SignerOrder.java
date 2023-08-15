@@ -102,10 +102,10 @@ public class SignerOrder {
         printSignerInfos(pkcs72.getSignerInfos());
 
         System.out.println("Verified signers of original:");
-        SignerInfo[] verifs1 = pkcs71.verify();
+        SignerInfo[] verifs1 = pkcs71.verify(null);
 
         System.out.println("Verified signers of after read-in:");
-        SignerInfo[] verifs2 = pkcs72.verify();
+        SignerInfo[] verifs2 = pkcs72.verify(null);
 
         if (verifs1.length != verifs2.length) {
             throw new RuntimeException("Length or Original vs read-in "
