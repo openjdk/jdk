@@ -44,6 +44,7 @@ import javax.naming.ldap.Control;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.net.SocketTimeoutException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
@@ -278,52 +279,52 @@ public final class Connection implements Runnable {
      * is created.
      */
     private Socket createSocket(String host, int port, String socketFactory,
-            int connectTimeout) throws Exception {
+                                int connectTimeout) throws Exception {
 
         Socket socket = null;
+        try {
+            if (socketFactory != null) {
 
-        if (socketFactory != null) {
+                // create the factory
 
-            // create the factory
+                @SuppressWarnings("unchecked")
+                Class<? extends SocketFactory> socketFactoryClass =
+                        (Class<? extends SocketFactory>) Obj.helper.loadClass(socketFactory);
+                Method getDefault =
+                        socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
+                SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
 
-            @SuppressWarnings("unchecked")
-            Class<? extends SocketFactory> socketFactoryClass =
-                (Class<? extends SocketFactory>)Obj.helper.loadClass(socketFactory);
-            Method getDefault =
-                socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
-            SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+                // create the socket
 
-            // create the socket
+                if (connectTimeout > 0) {
 
-            if (connectTimeout > 0) {
+                    InetSocketAddress endpoint =
+                            createInetSocketAddress(host, port);
 
-                InetSocketAddress endpoint =
-                        createInetSocketAddress(host, port);
+                    // unconnected socket
+                    socket = factory.createSocket();
 
-                // unconnected socket
-                socket = factory.createSocket();
+                    if (debug) {
+                        System.err.println("Connection: creating socket with " +
+                                "a timeout using supplied socket factory");
+                    }
 
-                if (debug) {
-                    System.err.println("Connection: creating socket with " +
-                            "a timeout using supplied socket factory");
+                    // connected socket
+                    socket.connect(endpoint, connectTimeout);
                 }
 
-                // connected socket
-                socket.connect(endpoint, connectTimeout);
-            }
-
-            // continue (but ignore connectTimeout)
-            if (socket == null) {
-                if (debug) {
-                    System.err.println("Connection: creating socket using " +
-                        "supplied socket factory");
+                // continue (but ignore connectTimeout)
+                if (socket == null) {
+                    if (debug) {
+                        System.err.println("Connection: creating socket using " +
+                                "supplied socket factory");
+                    }
+                    // connected socket
+                    socket = factory.createSocket(host, port);
                 }
-                // connected socket
-                socket = factory.createSocket(host, port);
-            }
-        } else {
+            } else {
 
-            if (connectTimeout > 0) {
+                if (connectTimeout > 0) {
 
                     InetSocketAddress endpoint = createInetSocketAddress(host, port);
 
@@ -331,40 +332,47 @@ public final class Connection implements Runnable {
 
                     if (debug) {
                         System.err.println("Connection: creating socket with " +
-                            "a timeout");
+                                "a timeout");
                     }
                     socket.connect(endpoint, connectTimeout);
-            }
-
-            // continue (but ignore connectTimeout)
-
-            if (socket == null) {
-                if (debug) {
-                    System.err.println("Connection: creating socket");
                 }
-                // connected socket
-                socket = new Socket(host, port);
-            }
-        }
 
-        // For LDAP connect timeouts on LDAP over SSL connections must treat
-        // the SSL handshake following socket connection as part of the timeout.
-        // So explicitly set a socket read timeout, trigger the SSL handshake,
-        // then reset the timeout.
-        if (socket instanceof SSLSocket) {
-            SSLSocket sslSocket = (SSLSocket) socket;
-            if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
-                SSLParameters param = sslSocket.getSSLParameters();
-                param.setEndpointIdentificationAlgorithm("LDAPS");
-                sslSocket.setSSLParameters(param);
+                // continue (but ignore connectTimeout)
+
+                if (socket == null) {
+                    if (debug) {
+                        System.err.println("Connection: creating socket");
+                    }
+                    // connected socket
+                    socket = new Socket(host, port);
+                }
             }
-            setHandshakeCompletedListener(sslSocket);
-            if (connectTimeout > 0) {
-                int socketTimeout = sslSocket.getSoTimeout();
-                sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
-                sslSocket.startHandshake();
-                sslSocket.setSoTimeout(socketTimeout);
+
+            // For LDAP connect timeouts on LDAP over SSL connections must treat
+            // the SSL handshake following socket connection as part of the timeout.
+            // So explicitly set a socket read timeout, trigger the SSL handshake,
+            // then reset the timeout.
+            if (socket instanceof SSLSocket) {
+                SSLSocket sslSocket = (SSLSocket) socket;
+                if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
+                    SSLParameters param = sslSocket.getSSLParameters();
+                    param.setEndpointIdentificationAlgorithm("LDAPS");
+                    sslSocket.setSSLParameters(param);
+                }
+                setHandshakeCompletedListener(sslSocket);
+                if (connectTimeout > 0) {
+                    int socketTimeout = sslSocket.getSoTimeout();
+                    sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+                    sslSocket.startHandshake();
+                    sslSocket.setSoTimeout(socketTimeout);
+                }
             }
+        } catch (Exception e) {
+            // 8314063 the socket is not closed after the failure of handshake
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+            throw e;
         }
         return socket;
     }
