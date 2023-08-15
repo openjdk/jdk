@@ -564,7 +564,7 @@ final class CompilerToVM {
      *
      * @param which if negative, is treated as an encoded indy index for INVONEDYNAMIC;
      *              Otherwise, it's treated as a constant pool cache index (returned by HotSpotConstantPool::rawIndexToConstantPoolCacheIndex)
-     *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, 
+     *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
     HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which) {
         return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which);
