@@ -26,6 +26,7 @@
 package jdk.jshell.execution;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControlProvider;
@@ -95,6 +96,17 @@ public class LocalExecutionControlProvider implements ExecutionControlProvider{
 
         // Create LoaderDelegate
         LoaderDelegate loaderDelegate = createLoaderDelegate(env, parameters);
+
+        // Apply any configured class path
+        List<String> remoteOptions = env.extraRemoteVMOptions();
+        int classPathIndex = remoteOptions.indexOf("--class-path") + 1;
+        if (classPathIndex > 0 && classPathIndex < remoteOptions.size()) {
+            try {
+                loaderDelegate.addToClasspath(remoteOptions.get(classPathIndex));
+            } catch (ExecutionControl.ExecutionControlException e) {
+                throw new RuntimeException("error configuring class path", e);
+            }
+        }
 
         // Create ExecutionControl
         return createExecutionControl(env, parameters, loaderDelegate);
