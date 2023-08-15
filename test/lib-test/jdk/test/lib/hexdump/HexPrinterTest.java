@@ -81,7 +81,7 @@ class HexPrinterTest {
                 Arguments.of("minimal", "", "%02x", 16, "", 64, HexPrinter.Formatters.NONE, ""),
                 Arguments.of("canonical", "%08x  ", "%02x ", 16, "|", 31, HexPrinter.Formatters.PRINTABLE, "|" + System.lineSeparator()),
                 Arguments.of("simple", "%04x: ", "%02x ", 16, " // ", 64, HexPrinter.Formatters.ASCII, System.lineSeparator()),
-                Arguments.of("source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE,  System.lineSeparator())
+                Arguments.of("source", "    ", "(byte)%3d, ", 8, " // ", 64, HexPrinter.Formatters.PRINTABLE, System.lineSeparator())
         );
     }
 
