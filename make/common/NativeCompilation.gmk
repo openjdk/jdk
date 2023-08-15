@@ -48,12 +48,12 @@ define GetSymbols
         $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
         $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
         $$(@D)/$$(basename $$(@F)).symbols || true; \
-    $(NM) $$($1_TARGET) | $(GREP)  " T " | \
+    $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
         $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
         $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
   else \
     $(ECHO) "Getting symbols from nm"; \
-    $(NM) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+    $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
         $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
         $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
   fi

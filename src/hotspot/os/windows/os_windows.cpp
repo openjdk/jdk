@@ -718,6 +718,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
+    default:  // presume the unknown thread type is an internal VM one
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
       break;
     }
@@ -1761,7 +1762,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -5607,19 +5608,19 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   return ::recv(fd, buf, (int)nBytes, flags);
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 

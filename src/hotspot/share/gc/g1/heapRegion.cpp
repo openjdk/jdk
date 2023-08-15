@@ -44,6 +44,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -100,14 +101,14 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   }
 }
 
-void HeapRegion::handle_evacuation_failure() {
+void HeapRegion::handle_evacuation_failure(bool retain) {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */);
+  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -263,23 +264,12 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
- void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure() {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
-
-  if (during_concurrent_start) {
-    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
-    // below it.
-    set_top_at_mark_start(top());
-  } else {
-    // Outside of the mixed phase all regions that had an evacuation failure must
-    // be young regions, and their TAMS is always bottom. Similarly, before the
-    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
-    assert(top_at_mark_start() == bottom(), "must be");
-  }
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
