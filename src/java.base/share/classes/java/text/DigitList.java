@@ -513,15 +513,9 @@ final class DigitList implements Cloneable {
             case DOWN:
                 break;
             case CEILING:
+                return nonZeroAfterIndex(maximumDigits) && !isNegative;
             case FLOOR:
-                if (nonZeroAfterIndex(maximumDigits)) {
-                    if (roundingMode == RoundingMode.FLOOR) {
-                        return isNegative;
-                    } else {
-                        return !isNegative;
-                    }
-                }
-                break;
+                return nonZeroAfterIndex(maximumDigits) && isNegative;
             case HALF_UP:
             case HALF_DOWN:
             case HALF_EVEN:
