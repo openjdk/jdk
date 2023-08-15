@@ -367,7 +367,6 @@ public sealed class Console implements Flushable permits ProxyingConsole {
                 "Console class itself does not provide implementation");
     }
 
-    // private static native String encoding();
     private static final boolean ISTTY = NativeConsole.istty();
     private static final Charset CHARSET;
     private static final Console CONSOLE;
