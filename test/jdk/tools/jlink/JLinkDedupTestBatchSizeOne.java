@@ -35,7 +35,8 @@ import java.nio.file.Paths;
 
 /*
  * @test
- * @summary Make sure that modules can be linked using jlink and deduplication works correctly when creating sub methods
+ * @summary Make sure that modules can be linked using jlink
+ * and deduplication works correctly when creating sub methods
  * @bug 8311591
  * @library /test/lib
  *          ../lib
@@ -90,7 +91,6 @@ public class JLinkDedupTestBatchSizeOne {
                 .modulePath(MODULE_PATH)
                 .output(image.resolve("out-jlink-dedup"))
                 .addMods("m1")
-                .addMods("m2")
                 .addMods("m2")
                 .addMods("m3")
                 .addMods("m4")
