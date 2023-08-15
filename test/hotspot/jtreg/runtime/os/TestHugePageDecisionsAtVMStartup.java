@@ -114,9 +114,7 @@ public class TestHugePageDecisionsAtVMStartup {
 
         if (!useLP) {
             out.shouldContain("[info][pagesize] Large page support disabled");
-        }
-
-        else if (useLP && !useTHP &&
+        } else if (useLP && !useTHP &&
                  (!configuration.supportsStaticHugePages() || !haveUsableStaticHugePages)) {
             out.shouldContain(warningNoLP);
         }
