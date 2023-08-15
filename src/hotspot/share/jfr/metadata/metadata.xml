@@ -740,7 +740,7 @@
     <Field type="Tickspan" name="objectAge" label="Object Age" />
     <Field type="ulong" contentType="bytes" name="lastKnownHeapUsage" label="Last Known Heap Usage" />
     <Field type="OldObject" name="object" label="Object" />
-    <Field type="int" name="arrayElements" label="Array Elements" description="If the object is an array, the number of elements, or -1 if it is not an array" />
+    <Field type="int" name="arrayElements" label="Array Elements" description="If the object is an array, the number of elements, or minimum value for the type int if it is not an array" />
     <Field type="OldObjectGcRoot" name="root" label="GC Root" />
   </Event>
 
@@ -937,6 +937,13 @@
     <Field type="string" name="name" label="Name" />
     <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Starting address of the module" />
     <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
+  </Event>
+
+  <Event name="NativeLibraryLoad" category="Java Virtual Machine, Runtime" label="Native Library Load" thread="false" stackTrace="true" startTime="true"
+    description="Information about a dynamic library or other native image load operation">
+    <Field type="string" name="name" label="Name" />
+    <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
+    <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
   </Event>
 
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"

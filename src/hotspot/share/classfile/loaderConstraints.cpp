@@ -495,7 +495,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);
-      sum += sizeof(*probe) + (probe->num_loaders() * sizeof(ClassLoaderData*));
+      sum += (int)(sizeof(*probe) + (probe->num_loaders() * sizeof(ClassLoaderData*)));
     }
     return sum;
   };

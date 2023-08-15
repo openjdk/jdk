@@ -32,6 +32,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -49,9 +50,13 @@ void Rewriter::compute_index_maps() {
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
     switch (tag) {
-      case JVM_CONSTANT_InterfaceMethodref:
-      case JVM_CONSTANT_Fieldref          : // fall through
-      case JVM_CONSTANT_Methodref         : // fall through
+      case JVM_CONSTANT_Fieldref          :
+        _cp_map.at_put(i, _field_entry_index);
+        _field_entry_index++;
+        _initialized_field_entries.push(ResolvedFieldEntry((u2)i));
+        break;
+      case JVM_CONSTANT_InterfaceMethodref: // fall through
+      case JVM_CONSTANT_Methodref         :
         add_cp_cache_entry(i);
         break;
       case JVM_CONSTANT_Dynamic:
@@ -100,7 +105,7 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   ClassLoaderData* loader_data = _pool->pool_holder()->class_loader_data();
   ConstantPoolCache* cache =
       ConstantPoolCache::allocate(loader_data, _cp_cache_map,
-                                  _invokedynamic_references_map, _initialized_indy_entries, CHECK);
+                                  _invokedynamic_references_map, _initialized_indy_entries, _initialized_field_entries, CHECK);
 
   // initialize object cache in constant pool
   _pool->set_cache(cache);
@@ -174,6 +179,19 @@ void Rewriter::rewrite_Object_init(const methodHandle& method, TRAPS) {
   }
 }
 
+
+void Rewriter::rewrite_field_reference(address bcp, int offset, bool reverse) {
+  address p = bcp + offset;
+  if (!reverse) {
+    int cp_index = Bytes::get_Java_u2(p);
+    int field_entry_index = _cp_map.at(cp_index);
+    Bytes::put_native_u2(p, checked_cast<u2>(field_entry_index));
+  } else {
+    int field_entry_index = Bytes::get_native_u2(p);
+    int pool_index = _initialized_field_entries.at(field_entry_index).constant_pool_index();
+    Bytes::put_Java_u2(p, checked_cast<u2>(pool_index));
+  }
+}
 
 // Rewrite a classfile-order CP index into a native-order CPC index.
 void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
@@ -446,6 +464,8 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
       // fall through
       case Bytecodes::_getstatic      : // fall through
       case Bytecodes::_getfield       : // fall through
+        rewrite_field_reference(bcp, prefix_length+1, reverse);
+        break;
       case Bytecodes::_invokevirtual  : // fall through
       case Bytecodes::_invokestatic   :
       case Bytecodes::_invokeinterface:
@@ -561,7 +581,8 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _resolved_references_map(cpool->length() / 2),
     _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
-    _invokedynamic_index(0)
+    _invokedynamic_index(0),
+    _field_entry_index(0)
 {
 
   // Rewrite bytecodes - exception here exits.

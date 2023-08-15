@@ -25,14 +25,18 @@
  * @test
  * @bug 8272564
  * @summary Correct resolution of toString() (and other similar calls) on interfaces
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @compile NoObjectToString.java
  * @run main NoObjectToString
  */
 
 import java.io.*;
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Methodref_info;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.*;
 
 public class NoObjectToString {
     public static void main(String... args) throws Exception {
@@ -42,23 +46,19 @@ public class NoObjectToString {
 
     void run(String... args) throws Exception {
          //Verify there are no references to Object.toString() in a Test:
-        InputStream in = NoObjectToString.class.getResourceAsStream("NoObjectToString$Test.class");
-        try {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Methodref) {
-                    CONSTANT_Methodref_info ref = (CONSTANT_Methodref_info) cpinfo;
-                    String methodDesc = ref.getClassInfo().getName() + "." + ref.getNameAndTypeInfo().getName() + ":" + ref.getNameAndTypeInfo().getType();
+        try (InputStream in = NoObjectToString.class.getResourceAsStream("NoObjectToString$Test.class")) {
+            assert in != null;
+            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            for (int i = 1; i < cm.constantPool().entryCount(); ++i) {
+                PoolEntry pe = cm.constantPool().entryByIndex(i);
+                if (pe instanceof MethodRefEntry ref) {
+                    String methodDesc = ref.owner().name() + "." + ref.nameAndType().name() + ":" + ref.nameAndType().type();
 
                     if ("java/lang/Object.toString:()Ljava/lang/String;".equals(methodDesc)) {
                         throw new AssertionError("Found call to j.l.Object.toString");
                     }
                 }
             }
-        } catch (ConstantPoolException ignore) {
-            throw new AssertionError(ignore);
-        } finally {
-            in.close();
         }
     }
 
