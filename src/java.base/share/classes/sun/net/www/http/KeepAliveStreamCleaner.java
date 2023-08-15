@@ -68,7 +68,7 @@ class KeepAliveStreamCleaner
         int maxData = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {
-                    return NetProperties.getInteger(maxDataKey, MAX_DATA_REMAINING);
+                    return NetProperties.getInteger(maxDataKey, 512);
                 }}).intValue() * 1024;
         MAX_DATA_REMAINING = maxData;
 
@@ -77,7 +77,7 @@ class KeepAliveStreamCleaner
         int maxCapacity = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {
-                    return NetProperties.getInteger(maxCapacityKey, MAX_CAPACITY);
+                    return NetProperties.getInteger(maxCapacityKey, 10);
                 }}).intValue();
         MAX_CAPACITY = maxCapacity;
 
