@@ -3070,6 +3070,11 @@ class ZipFileSystem extends FileSystem {
             if (extra == null)
                 return;
             int elen = extra.length;
+            // Extra field Length cannot exceed 65,535 bytes per the PKWare
+            // APP.note 4.4.11
+            if (elen > 0xFFFF) {
+                throw new ZipException("invalid extra field length");
+            }
             int off = 0;
             int newOff = 0;
             boolean hasZip64LocOffset = false;
@@ -3079,26 +3084,40 @@ class ZipFileSystem extends FileSystem {
                 int tag = SH(extra, pos);
                 int sz = SH(extra, pos + 2);
                 pos += 4;
-                if (pos + sz > elen)         // invalid data
-                    break;
+                if (pos + sz > elen) {        // invalid data
+                    throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
+                }
                 switch (tag) {
                 case EXTID_ZIP64 :
+                    // Check to see if we have a valid block size
+                    if (!isZip64ExtBlockSizeValid(sz)) {
+                        throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
+                    }
                     if (size == ZIP64_MINVAL) {
                         if (pos + 8 > elen)  // invalid zip64 extra
                             break;           // fields, just skip
                         size = LL(extra, pos);
+                        if (size < 0) {
+                            throw new ZipException("Invalid zip64 extra block size value");
+                        }
                         pos += 8;
                     }
                     if (csize == ZIP64_MINVAL) {
                         if (pos + 8 > elen)
                             break;
                         csize = LL(extra, pos);
+                        if (csize < 0) {
+                            throw new ZipException("Invalid zip64 extra block compressed size value");
+                        }
                         pos += 8;
                     }
                     if (locoff == ZIP64_MINVAL) {
                         if (pos + 8 > elen)
                             break;
                         locoff = LL(extra, pos);
+                        if (locoff < 0) {
+                            throw new ZipException("Invalid zip64 extra block LOC offset value");
+                        }
                     }
                     break;
                 case EXTID_NTFS:
@@ -3154,6 +3173,36 @@ class ZipFileSystem extends FileSystem {
                 extra = Arrays.copyOf(extra, newOff);
             else
                 extra = null;
+        }
+
+        /**
+         * Validate the size and contents of a Zip64 extended information field
+         * The order of the Zip64 fields is fixed, but the fields MUST
+         * only appear if the corresponding LOC or CEN field is set to 0xFFFF:
+         * or 0xFFFFFFFF:
+         * Uncompressed Size - 8 bytes
+         * Compressed Size   - 8 bytes
+         * LOC Header offset - 8 bytes
+         * Disk Start Number - 4 bytes
+         * See PKWare APP.Note Section 4.5.3 for more details
+         *
+         * @param blockSize the Zip64 Extended Information Extra Field size
+         * @return true if the extra block size is valid; false otherwise
+         */
+        private static boolean isZip64ExtBlockSizeValid(int blockSize) {
+            /*
+             * As the fields must appear in order, the block size indicates which
+             * fields to expect:
+             *  8 - uncompressed size
+             * 16 - uncompressed size, compressed size
+             * 24 - uncompressed size, compressed sise, LOC Header offset
+             * 28 - uncompressed size, compressed sise, LOC Header offset,
+             * and Disk start number
+             */
+            return switch(blockSize) {
+                case 8, 16, 24, 28 -> true;
+                default -> false;
+            };
         }
 
         /**

@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -4575,7 +4576,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   if (!IS_A_TEMP(rdi)) { push(rdi); pushed_rdi = true; }
 
 #ifndef PRODUCT
-  int* pst_counter = &SharedRuntime::_partial_subtype_ctr;
+  uint* pst_counter = &SharedRuntime::_partial_subtype_ctr;
   ExternalAddress pst_counter_addr((address) pst_counter);
   NOT_LP64(  incrementl(pst_counter_addr) );
   LP64_ONLY( lea(rcx, pst_counter_addr) );

@@ -57,12 +57,12 @@ class JfrThreadLocal {
   mutable traceid _thread_id_alias;
   u8 _data_lost;
   traceid _stack_trace_id;
+  traceid _stack_trace_hash;
   traceid _parent_trace_id;
   int64_t _last_allocated_bytes;
   jlong _user_time;
   jlong _cpu_time;
   jlong _wallclock_time;
-  unsigned int _stack_trace_hash;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
   mutable volatile int _critical_section;
@@ -70,6 +70,7 @@ class JfrThreadLocal {
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   bool _vthread;
+  bool _notified;
   bool _dead;
 
   JfrBuffer* install_native_buffer() const;
@@ -186,7 +187,7 @@ class JfrThreadLocal {
     return _parent_trace_id;
   }
 
-  void set_cached_stack_trace_id(traceid id, unsigned int hash = 0) {
+  void set_cached_stack_trace_id(traceid id, traceid hash = 0) {
     _stack_trace_id = id;
     _stack_trace_hash = hash;
   }
@@ -204,7 +205,7 @@ class JfrThreadLocal {
     return _stack_trace_id;
   }
 
-  unsigned int cached_stack_trace_hash() const {
+  traceid cached_stack_trace_hash() const {
     return _stack_trace_hash;
   }
 
@@ -250,6 +251,18 @@ class JfrThreadLocal {
     _wallclock_time = wallclock_time;
   }
 
+  bool is_notified() {
+    return _notified;
+  }
+
+  void notify() {
+    _notified = true;
+  }
+
+  void clear_notification() {
+    _notified = false;
+  }
+
   bool is_dead() const {
     return _dead;
   }
@@ -273,10 +286,12 @@ class JfrThreadLocal {
 
   // Code generation
   static ByteSize java_event_writer_offset();
+  static ByteSize java_buffer_offset();
   static ByteSize vthread_id_offset();
   static ByteSize vthread_offset();
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
+  static ByteSize notified_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;

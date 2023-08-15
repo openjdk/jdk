@@ -171,9 +171,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
   if (UseRVV) {
@@ -202,6 +201,13 @@ void VM_Version::initialize() {
     } else {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
     }
+  }
+
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() == MISALIGNED_FAST);
   }
 
   if (UseZbb) {

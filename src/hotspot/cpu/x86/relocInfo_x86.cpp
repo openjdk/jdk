@@ -27,6 +27,7 @@
 #include "code/relocInfo.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"

@@ -520,12 +520,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception();
 
 #if INCLUDE_JFR
-
+  void generate_jfr_stubs();
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   RuntimeStub* generate_jfr_write_checkpoint();
-
+  // For c2: call to runtime to return a buffer lease.
+  RuntimeStub* generate_jfr_return_lease();
 #endif // INCLUDE_JFR
 
   // Continuation point for throwing of implicit exceptions that are

@@ -334,7 +334,7 @@ inline int SignatureStream::scan_type(BasicType type) {
   switch (type) {
   case T_OBJECT:
     tem = (const u1*) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-    return (tem == nullptr ? limit : tem + 1 - base);
+    return (tem == nullptr ? limit : pointer_delta_as_int(tem + 1, base));
 
   case T_ARRAY:
     while ((end < limit) && ((char)base[end] == JVM_SIGNATURE_ARRAY)) { end++; }
@@ -346,7 +346,7 @@ inline int SignatureStream::scan_type(BasicType type) {
     _array_prefix = end - _end;  // number of '[' chars just skipped
     if (Signature::has_envelope(base[end])) {
       tem = (const u1 *) memchr(&base[end], JVM_SIGNATURE_ENDCLASS, limit - end);
-      return (tem == nullptr ? limit : tem + 1 - base);
+      return (tem == nullptr ? limit : pointer_delta_as_int(tem + 1, base));
     }
     // Skipping over a single character for a primitive type.
     assert(is_java_primitive(decode_signature_char(base[end])), "only primitives expected");

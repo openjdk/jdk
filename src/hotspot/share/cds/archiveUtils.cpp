@@ -277,21 +277,6 @@ void WriteClosure::do_ptr(void** p) {
   _dump_region->append_intptr_t((intptr_t)ptr, true);
 }
 
-void WriteClosure::do_oop(oop* o) {
-  if (*o == nullptr) {
-    _dump_region->append_intptr_t(0);
-  } else {
-    assert(HeapShared::can_write(), "sanity");
-    intptr_t p;
-    if (UseCompressedOops) {
-      p = (intptr_t)CompressedOops::encode_not_null(*o);
-    } else {
-      p = cast_from_oop<intptr_t>(HeapShared::to_requested_address(*o));
-    }
-    _dump_region->append_intptr_t(p);
-  }
-}
-
 void WriteClosure::do_region(u_char* start, size_t size) {
   assert((intptr_t)start % sizeof(intptr_t) == 0, "bad alignment");
   assert(size % sizeof(intptr_t) == 0, "bad size");
@@ -332,28 +317,6 @@ void ReadClosure::do_tag(int tag) {
   // do_int(&old_tag);
   assert(tag == old_tag, "old tag doesn't match");
   FileMapInfo::assert_mark(tag == old_tag);
-}
-
-void ReadClosure::do_oop(oop *p) {
-  if (UseCompressedOops) {
-    narrowOop o = CompressedOops::narrow_oop_cast(nextPtr());
-    if (CompressedOops::is_null(o) || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(ArchiveHeapLoader::can_use(), "sanity");
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      *p = ArchiveHeapLoader::decode_from_archive(o);
-    }
-  } else {
-    intptr_t dumptime_oop = nextPtr();
-    if (dumptime_oop == 0 || !ArchiveHeapLoader::is_in_use()) {
-      *p = nullptr;
-    } else {
-      assert(!ArchiveHeapLoader::is_loaded(), "ArchiveHeapLoader::can_load() is not supported for uncompessed oops");
-      intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
-      *p = cast_to_oop(runtime_oop);
-    }
-  }
 }
 
 void ReadClosure::do_region(u_char* start, size_t size) {

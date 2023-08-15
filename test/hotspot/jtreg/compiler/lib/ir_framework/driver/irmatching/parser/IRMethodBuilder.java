@@ -51,18 +51,18 @@ class IRMethodBuilder {
      * Create IR methods for all test methods identified by {@link IREncodingParser} by combining them with the parsed
      * compilation output from {@link HotSpotPidFileParser}.
      */
-    public SortedSet<IRMethodMatchable> build() {
+    public SortedSet<IRMethodMatchable> build(VMInfo vmInfo) {
         SortedSet<IRMethodMatchable> irMethods = new TreeSet<>();
         testMethods.testMethods().forEach(
-                (methodName, testMethod) -> irMethods.add(createIRMethod(methodName, testMethod)));
+                (methodName, testMethod) -> irMethods.add(createIRMethod(methodName, testMethod, vmInfo)));
         return irMethods;
     }
 
-    private IRMethodMatchable createIRMethod(String methodName, TestMethod testMethod) {
+    private IRMethodMatchable createIRMethod(String methodName, TestMethod testMethod, VMInfo vmInfo) {
         LoggedMethod loggedMethod = loggedMethods.get(methodName);
         if (loggedMethod != null) {
             return new IRMethod(testMethod.method(), testMethod.irRuleIds(), testMethod.irAnnos(),
-                                new Compilation(loggedMethod.compilationOutput()));
+                                new Compilation(loggedMethod.compilationOutput()), vmInfo);
         } else {
             return new NotCompiledIRMethod(testMethod.method(), testMethod.irRuleIds().length);
         }

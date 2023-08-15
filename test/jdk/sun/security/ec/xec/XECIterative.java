@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary XEC curve operations iterative test vectors
  * @library /test/lib
  * @build jdk.test.lib.Convert
- * @modules jdk.crypto.ec/sun.security.ec
+ * @modules java.base/sun.security.ec
  * @run main XECIterative 0 10000
  * @run main XECIterative 10000 20000
  * @run main XECIterative 20000 30000

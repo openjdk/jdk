@@ -73,6 +73,7 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -874,10 +875,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // Since above code may not release JNI monitors and if someone forgot to do an
   // JNI monitorexit, held count should be equal jni count.
   // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
-  assert(this->held_monitor_count() == this->jni_monitor_count(),
-         "held monitor count should be equal to jni: " INT64_FORMAT " != " INT64_FORMAT,
-         (int64_t)this->held_monitor_count(), (int64_t)this->jni_monitor_count());
-  if (CheckJNICalls && this->jni_monitor_count() > 0) {
+  assert(held_monitor_count() == jni_monitor_count(),
+         "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+         held_monitor_count(), jni_monitor_count());
+  if (CheckJNICalls && jni_monitor_count() > 0) {
     // We would like a fatal here, but due to we never checked this before there
     // is a lot of tests which breaks, even with an error log.
     log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
@@ -1710,9 +1711,15 @@ void JavaThread::print_jni_stack() {
       tty->print_cr("Unable to print native stack - out of memory");
       return;
     }
-    frame f = os::current_frame();
-    VMError::print_native_stack(tty, f, this, true /*print_source_info */,
-                                -1 /* max stack */, buf, O_BUFLEN);
+    address lastpc = nullptr;
+    if (os::platform_print_native_stack(tty, nullptr, buf, O_BUFLEN, lastpc)) {
+      // We have printed the native stack in platform-specific code,
+      // so nothing else to do in this case.
+    } else {
+      frame f = os::current_frame();
+      VMError::print_native_stack(tty, f, this, true /*print_source_info */,
+                                  -1 /* max stack */, buf, O_BUFLEN);
+    }
   } else {
     print_active_stack_on(tty);
   }
@@ -1933,24 +1940,24 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
-void JavaThread::inc_held_monitor_count(int i, bool jni) {
+void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
   _held_monitor_count += i;
   if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
     _jni_monitor_count += i;
   }
 #endif
 }
 
-void JavaThread::dec_held_monitor_count(int i, bool jni) {
+void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
   if (jni) {
     _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
   }
 #endif
 }
