@@ -227,10 +227,10 @@ public class ConstantPoolTest {
         Assert.assertEquals(ICONST_0, beU1(bytecode, 1));
         Assert.assertEquals(INVOKEVIRTUAL, beU1(bytecode, 2));
 
-        //int rawIndex = beU2(bytecode, 3);
-        System.out.println("rawIndex = " + rawIndex);
-        //JavaConstant constant = m.getConstantPool().lookupAppendix(rawIndex, INVOKEVIRTUAL);
-        System.out.println("constant = " + constant);
+        int rawIndex = beU2(bytecode, 3);
+        //System.out.println("rawIndex = " + rawIndex);
+        JavaConstant constant = m.getConstantPool().lookupAppendix(rawIndex, INVOKEVIRTUAL);
+        //System.out.println("constant = " + constant);
         Assert.assertTrue(constant.toString().startsWith("Object["), "wrong appendix: " + constant);
     }
 }
