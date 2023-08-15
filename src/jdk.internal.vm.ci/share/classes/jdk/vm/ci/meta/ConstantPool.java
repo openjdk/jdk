@@ -244,7 +244,7 @@ public interface ConstantPool {
     /**
      * Looks up the appendix at the specified index.
      *
-     * @param rawIndex the constant pool index
+     * @param rawIndex index in the bytecode stream after the {@code opcode} (could be rewritten for some opcodes)
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return the appendix if it exists and is resolved or {@code null}
      */
