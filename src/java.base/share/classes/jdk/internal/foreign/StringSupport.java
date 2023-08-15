@@ -286,12 +286,19 @@ public class StringSupport {
         }
 
         public static CharsetKind of(Charset charset) {
-            if (charset == StandardCharsets.UTF_8 || charset == StandardCharsets.ISO_8859_1 || charset == StandardCharsets.US_ASCII) {
-                return CharsetKind.SINGLE_BYTE;
-            } else if (charset == StandardCharsets.UTF_16LE || charset == StandardCharsets.UTF_16BE || charset == StandardCharsets.UTF_16) {
-                return CharsetKind.DOUBLE_BYTE;
-            } else if (charset == StandardCharsets.UTF_32LE || charset == StandardCharsets.UTF_32BE || charset == StandardCharsets.UTF_32) {
-                return CharsetKind.QUAD_BYTE;
+            // Comparing the charset to specific internal implementations avoids loading the class `StandardCharsets`
+            if        (charset == sun.nio.cs.UTF_8.INSTANCE ||
+                       charset == sun.nio.cs.ISO_8859_1.INSTANCE ||
+                       charset == sun.nio.cs.US_ASCII.INSTANCE) {
+                return SINGLE_BYTE;
+            } else if (charset instanceof sun.nio.cs.UTF_16LE ||
+                       charset instanceof sun.nio.cs.UTF_16BE ||
+                       charset instanceof sun.nio.cs.UTF_16) {
+                return DOUBLE_BYTE;
+            } else if (charset instanceof sun.nio.cs.UTF_32LE ||
+                       charset instanceof sun.nio.cs.UTF_32BE ||
+                       charset instanceof sun.nio.cs.UTF_32) {
+                return QUAD_BYTE;
             } else {
                 throw new IllegalArgumentException("Unsupported charset: " + charset);
             }

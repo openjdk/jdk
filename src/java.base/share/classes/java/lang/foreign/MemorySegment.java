@@ -1076,7 +1076,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * such that {@code isAccessibleBy(T) == false}.
      */
     default String getString(long offset) {
-        return getString(offset, StandardCharsets.UTF_8);
+        return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
     }
 
     /**
@@ -1132,7 +1132,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     default void setString(long offset, String str) {
         Objects.requireNonNull(str);
-        setString(offset, str, StandardCharsets.UTF_8);
+        setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
     }
 
     /**
