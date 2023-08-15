@@ -27,13 +27,15 @@ package jdk.internal.foreign;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandles;
+import java.nio.file.AccessMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.RawNativeLibraries;
 import sun.security.action.GetPropertyAction;
@@ -70,15 +72,25 @@ public final class SystemLookup implements SymbolLookup {
             // system lookup depends on cannot be loaded for some reason. In such extreme cases, rather than
             // fail, return a dummy lookup.
             System.err.printf("""
-                        WARNING: One of the libraries the system lookup depends on cannot be loaded: %s
-                        WARNING: Check the %s settings (e.g. consider adding grant ' permission java.lang.RuntimePermission "loadLibrary.syslookup" ')
-                        %n""", ex.getMessage(), SecurityManager.class.getSimpleName());
+                        WARNING: Unable to load one of the system libraries: %s
+                        %n""", ex.getMessage());
             return FALLBACK_LOOKUP;
+
+            // Todo: remove    WARNING: Check the SecurityManager settings (e.g. consider adding grant ' permission java.lang.RuntimePermission "loadLibrary.syslookup" ')
+
         }
     }
 
     private static SymbolLookup makeWindowsLookup() {
-        Path system32 = Path.of(System.getenv("SystemRoot"), "System32");
+        @SuppressWarnings("removal")
+        String systemRoot = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                return System.getenv("SystemRoot");
+            }
+        });
+
+        Path system32 = Path.of(systemRoot, "System32");
         Path ucrtbase = system32.resolve("ucrtbase.dll");
         Path msvcrt = system32.resolve("msvcrt.dll");
 
@@ -113,7 +125,10 @@ public final class SystemLookup implements SymbolLookup {
         NativeLibrary lib = loader.apply(RawNativeLibraries.newInstance(MethodHandles.lookup()));
         return name -> {
             Objects.requireNonNull(name);
-            if (Utils.containsNullChars(name)) return Optional.empty();
+            if (Utils.containsNullChars(name)) {
+                return Optional.empty();
+            }
+
             try {
                 long addr = lib.lookup(name);
                 return addr == 0 ?
@@ -122,6 +137,21 @@ public final class SystemLookup implements SymbolLookup {
             } catch (NoSuchMethodException e) {
                 return Optional.empty();
             }
+
+/*            @SuppressWarnings("removal")
+            long addr = AccessController.doPrivileged(new PrivilegedAction<Long>() {
+                @Override
+                public Long run() {
+                    try {
+                        return lib.lookup(name);
+                    } catch (NoSuchMethodException e) {
+                        return 0L;
+                    }
+                }
+            });
+            return addr == 0 ?
+                    Optional.empty() :
+                    Optional.of(MemorySegment.ofAddress(addr));*/
         };
     }
 
