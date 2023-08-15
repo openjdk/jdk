@@ -42,8 +42,12 @@ public class Main {
         var moduleClass = Class.forName("jdk.internal.module.SystemModules$all");
         long subMethodCount = Arrays.stream(moduleClass.getDeclaredMethods()).filter(method -> method.getName().startsWith("sub")).count();
 
-        if (subMethodCount != MODULE_SUB_METHOD_COUNT) {
-            throw new AssertionError("Difference in generated sub module methods count! Expected: " + MODULE_SUB_METHOD_COUNT + " but was " + subMethodCount);
+        // one subX method per each module is generated as the image is linked with
+        // --system-modules=batchSize=1
+        var moduleCount = ModuleFinder.ofSystem().findAll().stream().count();
+        if (subMethodCount != moduleCount) {
+            throw new AssertionError("Difference in generated sub module methods count! Expected: " +
+                    moduleCount + " but was " + subMethodCount);
         }
     }
 
