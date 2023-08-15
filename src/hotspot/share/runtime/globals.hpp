@@ -831,6 +831,11 @@ const int ObjectAlignmentInBytes = 8;
           "JVM aborts, producing an error log and core/mini dump, on the "  \
           "first occurrence of an out-of-memory error thrown from JVM")     \
                                                                             \
+  product(intx, WaitUserThreadAtExitTimeout, 300,                           \
+          "Maximum delay in milliseconds at exit waiting for user threads " \
+          "in native")                                                      \
+          range(0, max_intx)                                                \
+                                                                            \
   /* tracing */                                                             \
                                                                             \
   develop(bool, StressRewriter, false,                                      \
