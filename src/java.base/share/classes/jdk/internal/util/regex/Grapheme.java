@@ -57,6 +57,15 @@ public final class Grapheme {
             int ch1 = Character.codePointAt(src, ret);
             int t1 = getType(ch1);
 
+            // GB9c
+            if (IndicConjunctBreak.isConsonant(ch0)) {
+                var advance = checkIndicConjunctBreak(src, ret, limit);
+                if (advance >= 0) {
+                    ret += advance;
+                    continue;
+                }
+            }
+
             if (gb11 && t0 == ZWJ && t1 == EXTENDED_PICTOGRAPHIC) {
                 // continue for gb11
             } else if (riCount % 2 == 1 && t0 == RI && t1 == RI) {
@@ -71,6 +80,7 @@ public final class Grapheme {
             }
 
             riCount += (t1 == RI) ? 1 : 0;
+            ch0 = ch1;
             t0 = t1;
 
             ret += Character.charCount(ch1);
@@ -283,5 +293,41 @@ public final class Grapheme {
             }
         }
         return OTHER;
+    }
+
+    /**
+     * Checks for a possible GB9c Indic Conjunct Break sequence. If it is
+     * repetitive, e.g., Consonant1/Linker1/Consonant2/Linker2/Consonant3, only
+     * the first part of the sequence (Consonant1/Linker1/Consonant2) is
+     * recognized. The rest is analyzed in the next iteration of the grapheme
+     * cluster boundary search.
+     *
+     * @param src the source char sequence
+     * @param index the index that points to the starting Linking Consonant
+     * @param limit limit to the char sequence
+     * @return the advance in index if the indic conjunct break sequence
+     *      is found, it will be negative if the sequence is not found
+     */
+    private static int checkIndicConjunctBreak(CharSequence src, int index, int limit) {
+        boolean linkerFound = false;
+        int advance = 0;
+
+        while (index + advance < limit) {
+            int ch1 = Character.codePointAt(src, index + advance);
+            advance += Character.charCount(ch1);
+
+            if (IndicConjunctBreak.isLinker(ch1)) {
+                linkerFound = true;
+            } else if (IndicConjunctBreak.isConsonant(ch1)) {
+                if (linkerFound) {
+                    return advance;
+                } else {
+                    break;
+                }
+            } else if (!IndicConjunctBreak.isExtend(ch1)) {
+                break;
+            }
+        }
+        return -1;
     }
 }

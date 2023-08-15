@@ -3990,8 +3990,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x2B740,  // 2B740..2B81F; CJK Unified Ideographs Extension D
             0x2B820,  // 2B820..2CEAF; CJK Unified Ideographs Extension E
             0x2CEB0,  // 2CEB0..2EBEF; CJK Unified Ideographs Extension F
-            0x2EBF0,  // 2EBF0..2EE4F; CJK Unified Ideographs Extension I
-            0x2EE50,  //               unassigned
+            0x2EBF0,  // 2EBF0..2EE5F; CJK Unified Ideographs Extension I
+            0x2EE60,  //               unassigned
             0x2F800,  // 2F800..2FA1F; CJK Compatibility Ideographs Supplement
             0x2FA20,  //               unassigned
             0x30000,  // 30000..3134F; CJK Unified Ideographs Extension G
@@ -7042,8 +7042,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             0x2CEA2,  // 2CEA2..2CEAF; UNKNOWN
             0x2CEB0,  // 2CEB0..2EBE0; HAN
             0x2EBE1,  // 2EBE1..2EBEF; UNKNOWN
-            0x2EBF0,  // 2EBF0..2EE4A; HAN
-            0x2EE4B,  // 2EE4B..2F7FF; UNKNOWN
+            0x2EBF0,  // 2EBF0..2EE5D; HAN
+            0x2EE5E,  // 2EE5E..2F7FF; UNKNOWN
             0x2F800,  // 2F800..2FA1D; HAN
             0x2FA1E,  // 2FA1E..2FFFF; UNKNOWN
             0x30000,  // 30000..3134A; HAN
@@ -8703,8 +8703,8 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             UNKNOWN,                  // 2CEA2..2CEAF
             HAN,                      // 2CEB0..2EBE0
             UNKNOWN,                  // 2EBE1..2EBEF
-            HAN,                      // 2EBF0..2EE4A
-            UNKNOWN,                  // 2EE4B..2F7FF
+            HAN,                      // 2EBF0..2EE5D
+            UNKNOWN,                  // 2EE5E..2F7FF
             HAN,                      // 2F800..2FA1D
             UNKNOWN,                  // 2FA1E..2FFFF
             HAN,                      // 30000..3134A

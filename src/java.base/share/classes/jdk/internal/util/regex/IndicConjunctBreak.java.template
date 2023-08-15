@@ -25,48 +25,33 @@
 
 package jdk.internal.util.regex;
 
-import static java.lang.Character.UnicodeScript;
-
 /**
  * Helper class for supporting the GB9c rule in Unicode Text Segmentation TR29
  *
- * Macros:
- * ConjunctLinkingScripts	=[\p{sc=Gujr}\p{sc=Telu}\p{sc=Mlym}\p{sc=Orya}\p{sc=Beng}\p{sc=Deva}]
- * ConjunctLinker	=[ConjunctLinkingScripts&\p{Indic_Syllabic_Category=Virama}]
- * LinkingConsonant	=[ConjunctLinkingScripts&\p{Indic_Syllabic_Category=Consonant}]
- * ExtCccZwj	=[[\p{gcb=Extend}-\p{ccc=0}]\p{gcb=ZWJ}]
+ * <blockquote>
+ * GB9c Do not break within certain combinations with Indic_Conjunct_Break (InCB)=Linker.
  *
- * The rule: Do not break within certain combinations with ConjunctLinker.
- * GB9c	LinkingConsonant ExtCccZwj* ConjunctLinker ExtCccZwj*	x	LinkingConsonant
- *
+ * \p{InCB=Consonant} [ \p{InCB=Extend} \p{InCB=Linker} ]* \p{InCB=Linker} [ \p{InCB=Extend} \p{InCB=Linker} ]* x \p{InCB=Consonant}*
+ * </blockquote>
  */
-final class ConjunctLinker {
+final class IndicConjunctBreak {
+    static boolean isLinker(int cp) {
+        return
+%%%InCB=Linker%%%
+    }
 
-    static boolean ofConjunctLinkingScripts(int cp) {
-        // fast path (below Devanagari script)
-        if (cp < '\u0900') {
+    static boolean isExtend(int cp) {
+        return
+%%%InCB=Extend%%%
+    }
+
+    static boolean isConsonant(int cp) {
+        // fast check - Devanagari to Malayalam
+        if (cp < 0x0900 || cp > 0x0D7F) {
             return false;
-        } else {
-            return switch (UnicodeScript.of(cp)) {
-                case GUJARATI, TELUGU, MALAYALAM, ORIYA, BENGALI, DEVANAGARI -> true;
-                default -> false;
-            };
         }
-    }
 
-    static boolean isConjunctLinker(int cp) {
-        if (ofConjunctLinkingScripts(cp)) {
-            return
-%%%Virama%%%
-        }
-        return false;
-    }
-
-    static boolean isLinkingConsonant(int cp) {
-        if (ofConjunctLinkingScripts(cp)) {
-            return
-%%%Consonant%%%
-        }
-        return false;
+        return
+%%%InCB=Consonant%%%
     }
 }

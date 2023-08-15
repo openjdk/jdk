@@ -28,18 +28,19 @@
 # $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/
 #
 
-GENSRC_CONJUNCTLINKER := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/ConjunctLinker.java
+GENSRC_INDICCONJUNCTBREAK := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/util/regex/IndicConjunctBreak.java
 
-CONJUNCTLINKERTEMP = $(MODULE_SRC)/share/classes/jdk/internal/util/regex/ConjunctLinker.java.template
-CONJUNCTLINKERPROPS = $(MODULE_SRC)/share/data/unicodedata/IndicSyllabicCategory.txt
+INDICCONJUNCTBREAKTEMP = $(MODULE_SRC)/share/classes/jdk/internal/util/regex/IndicConjunctBreak.java.template
+INDICCONJUNCTBREAKPROPS = $(MODULE_SRC)/share/data/unicodedata/DerivedCoreProperties.txt
+INDICCONJUNCTBREAKPARAMS = InCB\=Linker InCB\=Extend InCB\=Consonant
 
-$(GENSRC_CONJUNCTLINKER): $(BUILD_TOOLS_JDK) $(CONJUNCTLINKERTEMP) $(CONJUNCTLINKERPROPS)
+$(GENSRC_INDICCONJUNCTBREAK): $(BUILD_TOOLS_JDK) $(INDICCONJUNCTBREAKTEMP) $(INDICCONJUNCTBREAKPROPS)
 	$(call LogInfo, Generating $@)
 	$(call MakeTargetDir)
 	$(TOOL_GENERATEEXTRAPROPERTIES) \
-		$(CONJUNCTLINKERTEMP) \
-		$(CONJUNCTLINKERPROPS) \
-		$(GENSRC_CONJUNCTLINKER) \
-		Virama Consonant
+		$(INDICCONJUNCTBREAKTEMP) \
+		$(INDICCONJUNCTBREAKPROPS) \
+		$(GENSRC_INDICCONJUNCTBREAK) \
+		$(INDICCONJUNCTBREAKPARAMS)
 
-TARGETS += $(GENSRC_CONJUNCTLINKER)
+TARGETS += $(GENSRC_INDICCONJUNCTBREAK)

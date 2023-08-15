@@ -1,5 +1,5 @@
 # PropertyValueAliases-15.1.0.txt
-# Date: 2023-05-10, 16:59:10 GMT
+# Date: 2023-08-07, 15:21:34 GMT
 # Copyright (c) 2023 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use, see https://www.unicode.org/terms_of_use.html
@@ -852,6 +852,13 @@ IDS; Y                                ; Yes                              ; T    
 
 Ideo; N                               ; No                               ; F                                ; False
 Ideo; Y                               ; Yes                              ; T                                ; True
+
+# Indic_Conjunct_Break (InCB)
+
+InCB; Consonant                       ; Consonant
+InCB; Extend                          ; Extend
+InCB; Linker                          ; Linker
+InCB; None                            ; None
 
 # Indic_Positional_Category (InPC)
 

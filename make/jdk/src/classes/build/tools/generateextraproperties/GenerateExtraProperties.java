@@ -41,13 +41,13 @@ import java.util.stream.Stream;
  * the given template source file with the generated conditions, then emit
  * the produced .java files. For example, if the properties file has:
  * <blockquote>
- *     0009..000D   ; White_Space
- *     0020         ; White_Space
- *     2000..200A   ; White_Space
+ *     0009..000D   ; Type (; Value)
+ *     0020         ; Type (; Value)
+ *     2000..200A   ; Type (; Value)
  * </blockquote>
  * and the template file contains
  * <blockquote>
- *     %%%White_Space%%%
+ *     %%%Type(=Value)%%%
  * </blockquote>
  * then the generated .java file would have the following in place:
  * <blockquote>
@@ -72,9 +72,11 @@ public class  GenerateExtraProperties {
 
         try {
             for (var propertyName: propertyNames) {
+                var pn = "; " + propertyName.replaceFirst("=", "; ");
+
                 List<Range> ranges = Files.lines(propertiesFile)
                         .filter(Predicate.not(l -> l.startsWith("#") || l.isBlank()))
-                        .filter(l -> l.contains("; " + propertyName))
+                        .filter(l -> l.contains(pn))
                         .map(l -> new Range(l.replaceFirst(" .*", "")))
                         .sorted()
                         .collect(ArrayList<Range>::new,
@@ -96,7 +98,7 @@ public class  GenerateExtraProperties {
                 replacementMap.put("%%%" + propertyName + "%%%",
                         ranges.stream()
                                 .map(GenerateExtraProperties::rangeToString)
-                                .collect(Collectors.joining(" ||\n", "", ";\n")));
+                                .collect(Collectors.joining(" ||\n", "", ";")));
             }
 
             // Generate .java file
@@ -112,12 +114,12 @@ public class  GenerateExtraProperties {
 
     static String rangeToString(Range r) {
         if (r.start == r.last) {
-            return (" ".repeat(16) + "cp == 0x" + toHexString(r.start));
+            return (" ".repeat(12) + "cp == 0x" + toHexString(r.start));
         } else  if (r.start == r.last - 1) {
-            return " ".repeat(16) + "cp == 0x" + toHexString(r.start) + " ||\n" +
-                    " ".repeat(16) + "cp == 0x" + toHexString(r.last);
+            return " ".repeat(12) + "cp == 0x" + toHexString(r.start) + " ||\n" +
+                    " ".repeat(12) + "cp == 0x" + toHexString(r.last);
         } else {
-            return " ".repeat(15) + "(cp >= 0x" + toHexString(r.start) +
+            return " ".repeat(11) + "(cp >= 0x" + toHexString(r.start) +
                     " && cp <= 0x" + toHexString(r.last) + ")";
         }
     }
