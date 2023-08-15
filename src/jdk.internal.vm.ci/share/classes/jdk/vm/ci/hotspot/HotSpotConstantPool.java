@@ -47,6 +47,18 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Implementation of {@link ConstantPool} for HotSpot.
+ *
+ * The following convention is used in the jdk.vm.ci.hotspot package when accessing the ConstantPool with an index:
+ * <ul>
+ * <li>rawIndex - Index in the bytecode stream after the opcode (could be rewritten for some opcodes)</li>
+ * <li>cpi -      The constant pool index (as specified in JVM Spec)</li>
+ * <li>cpci -     The constant pool cache index, used only by the four bytecodes INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
+ *                It's the same as {@code rawIndex + HotSpotVMConfig::constantPoolCpCacheIndexTag}. </li>
+ * <li>which -    May be either a {@code rawIndex} or a {@code cpci}.</li>
+ * </ul>
+ *
+ * Note that {@code cpci} and {@code which} are used only in the HotSpot-specific implementation. They are not used by the public iterface in jdk.vm.ci.meta.*.
+ * After JDK-8301993, all uses of {@code cpci} and {@code which} will be replaced with {@code rawIndex}.
  */
 public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleObject {
 
