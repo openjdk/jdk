@@ -111,35 +111,5 @@ public class JLinkDedupTestBatchSizeOne {
         int exitCode = process.waitFor();
         if (exitCode != 0)
             throw new AssertionError("JLinkDedupTest100Modules failed to launch");
-
-        extractJImage(image);
-        decompileWitJavap(image);
-    }
-
-    static void extractJImage(Path src) {
-        Path binDir = src.resolve("out-jlink-dedup").toAbsolutePath();
-        Path outputDir = src.resolve("dir");
-        Path jimageDir = binDir.resolve("lib", "modules");
-
-        Result result = JImageGenerator.getJImageTask()
-                .dir(outputDir)
-                .image(jimageDir)
-                .extract();
-
-        System.out.println("jimage extracted dir " + result.getFile());
-        result.assertSuccess();
-    }
-
-    static void decompileWitJavap(Path srcDir) throws Exception {
-        Path systemModuleClass = srcDir.resolve("dir", "java.base", "jdk", "internal", "module", "SystemModules$all.class");
-        JDKToolLauncher javap = JDKToolLauncher.create("javap")
-                .addToolArg("-verbose")
-                .addToolArg("-p")       // Shows all classes and members.
-                .addToolArg("-c")       // Prints out disassembled code
-                .addToolArg(systemModuleClass.toString());
-        ProcessBuilder pb = new ProcessBuilder(javap.getCommand());
-        pb.inheritIO();
-        OutputAnalyzer out = ProcessTools.executeProcess(pb);
-        out.shouldHaveExitValue(0);
     }
 }
