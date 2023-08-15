@@ -294,7 +294,7 @@ public final class System {
      *
      * @since   1.6
      */
-    public static Console console() {
+     public static Console console() {
          Console c;
          if ((c = cons) == null) {
              synchronized (System.class) {
