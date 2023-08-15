@@ -64,7 +64,7 @@ class HugePageConfiguration {
     Set<StaticHugePageConfig> _staticHugePageConfigurations;
     long _staticDefaultHugePageSize = -1;
 
-    enum THPMode {always, never, madvise, unknown}
+    enum THPMode {always, never, madvise}
     THPMode _thpMode;
     long _thpPageSize;
 
@@ -166,7 +166,7 @@ class HugePageConfiguration {
     }
 
     private static THPMode readTHPModeFromOS() {
-        THPMode mode = THPMode.unknown;
+        THPMode mode = THPMode.never;
         String file = "/sys/kernel/mm/transparent_hugepage/enabled";
         try (FileReader fr = new FileReader(file);
              BufferedReader reader = new BufferedReader(fr)) {
@@ -182,7 +182,8 @@ class HugePageConfiguration {
             }
         } catch (IOException e) {
             System.out.println("Failed to read " + file);
-            mode = THPMode.unknown;
+            // Happens when the kernel is not built to support THPs.
+            mode = THPMode.never;
         }
         return mode;
     }
