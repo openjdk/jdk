@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,9 @@ public class TestHotSpotVMConfig extends HotSpotVMConfigAccess {
 
     public final int maxOopMapStackOffset = getFieldValue("CompilerToVM::Data::_max_oop_map_stack_offset", Integer.class, "int");
     public final int heapWordSize = getConstant("HeapWordSize", Integer.class);
+
+    // Check field with intx declaration is the same as int64_t.
+    public final int heldMonitorCountOffset = getFieldOffset("JavaThread::_held_monitor_count", Integer.class, "int64_t");
 
     public final boolean ropProtection;
 }

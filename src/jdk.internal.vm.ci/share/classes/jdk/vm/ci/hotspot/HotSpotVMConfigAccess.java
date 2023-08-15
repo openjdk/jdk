@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,13 @@ public class HotSpotVMConfigAccess {
         return type.cast(convertValue(name, type, entry.value, inCppType));
     }
 
+    private boolean typeEquals(String t1, String t2) {
+        if (t1.equals("int64_t") && t2.equals("intx")) {
+            return true;
+        }
+        return t1.equals(t2);
+    }
+
     /**
      * Gets a C++ field.
      *
@@ -315,7 +322,7 @@ public class HotSpotVMConfigAccess {
         }
 
         // Make sure the native type is still the type we expect.
-        if (cppType != null && !cppType.equals(entry.type)) {
+        if (cppType != null && !typeEquals(cppType, entry.type)) {
             throw new JVMCIError("expected type " + cppType + " but VM field " + name + " is of type " + entry.type);
         }
         return entry;
