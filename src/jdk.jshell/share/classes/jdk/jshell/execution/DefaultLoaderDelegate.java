@@ -73,6 +73,10 @@ class DefaultLoaderDelegate implements LoaderDelegate {
             super(new URL[0]);
         }
 
+        RemoteClassLoader(ClassLoader parent) {
+            super(new URL[0], parent);
+        }
+
         private class ResourceURLStreamHandler extends URLStreamHandler {
 
             private final String name;
@@ -216,8 +220,28 @@ class DefaultLoaderDelegate implements LoaderDelegate {
         }
     }
 
+    /**
+     * Default constructor.
+     *
+     * <p>
+     * The internal class loader will use the
+     * {@linkplain ClassLoader#getSystemClassLoader system class loader} as its parent loader.
+     */
     public DefaultLoaderDelegate() {
         this.loader = new RemoteClassLoader();
+        Thread.currentThread().setContextClassLoader(loader);
+    }
+
+    /**
+     * Creates an instance with the given parent class loader.
+     *
+     * <p>
+     * The internal class loader will use the given parent class loader.
+     *
+     * @param parent parent class loader
+     */
+    public DefaultLoaderDelegate(ClassLoader parent) {
+        this.loader = new RemoteClassLoader(parent);
         Thread.currentThread().setContextClassLoader(loader);
     }
 
