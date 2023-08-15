@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
@@ -57,22 +58,15 @@ public class UpcallTestHelper extends NativeTestHelper {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
-            Paths.get(Utils.TEST_JDK)
-                    .resolve("bin")
-                    .resolve("java")
-                    .toAbsolutePath()
-                    .toString(),
             "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
             "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,
-            "-cp", Utils.TEST_CLASS_PATH,
             target.getName()
         ));
         command.addAll(Arrays.asList(programArgs));
-        Process process = new ProcessBuilder()
-            .command(command)
-            .start();
+
+        Process process = ProcessTools.createTestJvm(command).start();
 
         int result = process.waitFor();
         assertNotEquals(result, 0);
