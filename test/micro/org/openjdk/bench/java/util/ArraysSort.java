@@ -145,7 +145,7 @@ public class ArraysSort {
         }
     }
 
-    @Warmup(iterations = 3, time=20)
+    @Warmup(iterations = 3, time=40)
     @Measurement(iterations = 3, time=30)
     public static class Large extends ArraysSort {
         @Param({"50000", "100000"})

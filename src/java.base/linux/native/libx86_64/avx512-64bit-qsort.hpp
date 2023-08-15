@@ -763,11 +763,11 @@ void avx512_qsort<int64_t>(int64_t *arr, int64_t arrsize) {
 
 template <>
 void avx512_qsort<double>(double *arr, int64_t arrsize) {
+    int64_t idx_last_elem_not_nan = move_nans_to_end_of_array(arr, arrsize);
+    arrsize = idx_last_elem_not_nan + 1;
     if (arrsize > 1) {
-        int64_t nan_count = replace_nan_with_inf(arr, arrsize);
-        qsort_64bit_<zmm_vector<double>, double>(arr, 0, arrsize - 1,
+        qsort_64bit_<zmm_vector<double>, double>(arr, 0, idx_last_elem_not_nan,
                                                  2 * (int64_t)log2(arrsize));
-        replace_inf_with_nan(arr, arrsize, nan_count);
     }
 }
 #endif  // AVX512_QSORT_64BIT

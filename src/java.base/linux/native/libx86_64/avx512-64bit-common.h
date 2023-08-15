@@ -182,31 +182,7 @@ struct zmm_vector<double> {
     }
     static void storeu(void *mem, zmm_t x) { _mm512_storeu_pd(mem, x); }
 };
-X86_SIMD_SORT_INLINE int64_t replace_nan_with_inf(double *arr,
-                                                  int64_t arrsize) {
-    int64_t nan_count = 0;
-    __mmask8 loadmask = 0xFF;
-    while (arrsize > 0) {
-        if (arrsize < 8) {
-            loadmask = (0x01 << arrsize) - 0x01;
-        }
-        __m512d in_zmm = _mm512_maskz_loadu_pd(loadmask, arr);
-        __mmask8 nanmask = _mm512_cmp_pd_mask(in_zmm, in_zmm, _CMP_NEQ_UQ);
-        nan_count += _mm_popcnt_u32((int32_t)nanmask);
-        _mm512_mask_storeu_pd(arr, nanmask, ZMM_MAX_DOUBLE);
-        arr += 8;
-        arrsize -= 8;
-    }
-    return nan_count;
-}
 
-X86_SIMD_SORT_INLINE void replace_inf_with_nan(double *arr, int64_t arrsize,
-                                               int64_t nan_count) {
-    for (int64_t ii = arrsize - 1; nan_count > 0; --ii) {
-        arr[ii] = std::nan("1");
-        nan_count -= 1;
-    }
-}
 /*
  * Assumes zmm is random and performs a full sorting network defined in
  * https://en.wikipedia.org/wiki/Bitonic_sorter#/media/File:BitonicSort.svg

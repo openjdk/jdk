@@ -438,34 +438,6 @@ static void qsort_32bit_(type_t *arr, int64_t left, int64_t right,
         qsort_32bit_<vtype>(arr, pivot_index, right, max_iters - 1);
 }
 
-
-
-X86_SIMD_SORT_INLINE int64_t replace_nan_with_inf(float *arr, int64_t arrsize) {
-    int64_t nan_count = 0;
-    __mmask16 loadmask = 0xFFFF;
-    while (arrsize > 0) {
-        if (arrsize < 16) {
-            loadmask = (0x0001 << arrsize) - 0x0001;
-        }
-        __m512 in_zmm = _mm512_maskz_loadu_ps(loadmask, arr);
-        __mmask16 nanmask = _mm512_cmp_ps_mask(in_zmm, in_zmm, _CMP_NEQ_UQ);
-        nan_count += _mm_popcnt_u32((int32_t)nanmask);
-        _mm512_mask_storeu_ps(arr, nanmask, ZMM_MAX_FLOAT);
-        arr += 16;
-        arrsize -= 16;
-    }
-    return nan_count;
-}
-
-X86_SIMD_SORT_INLINE void replace_inf_with_nan(float *arr, int64_t arrsize,
-                                               int64_t nan_count) {
-    for (int64_t ii = arrsize - 1; nan_count > 0; --ii) {
-        arr[ii] = std::nanf("1");
-        nan_count -= 1;
-    }
-}
-
-
 template <>
 void avx512_qsort<int32_t>(int32_t *arr, int64_t arrsize) {
     if (arrsize > 1) {
@@ -476,11 +448,11 @@ void avx512_qsort<int32_t>(int32_t *arr, int64_t arrsize) {
 
 template <>
 void avx512_qsort<float>(float *arr, int64_t arrsize) {
+    int64_t idx_last_elem_not_nan = move_nans_to_end_of_array(arr, arrsize);
+    arrsize = idx_last_elem_not_nan + 1;
     if (arrsize > 1) {
-        int64_t nan_count = replace_nan_with_inf(arr, arrsize);
-        qsort_32bit_<zmm_vector<float>, float>(arr, 0, arrsize - 1,
+        qsort_32bit_<zmm_vector<float>, float>(arr, 0, idx_last_elem_not_nan,
                                                2 * (int64_t)log2(arrsize));
-        replace_inf_with_nan(arr, arrsize, nan_count);
     }
 }
 
