@@ -964,8 +964,8 @@ static void print_hex_location(outputStream* st, address p, int unitsize) {
   if (read_safely_from((intptr_t*)pa, &i)) {
     // bytes:   CA FE BA BE DE AD C0 DE
     // bytoff:   0  1  2  3  4  5  6  7
-    // LE bits  0  8  16 24 32 40 48 56
-    // BE bits  56 48 40 32 24 16  8  0
+    // LE bits:  0  8 16 24 32 40 48 56
+    // BE bits: 56 48 40 32 24 16  8  0
     const int offset = (int)(p - (address)pa);
     const int bitoffset =
       LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
