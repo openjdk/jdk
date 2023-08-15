@@ -154,7 +154,7 @@ jobs:
           rm -rf sysroot/{dev,proc,run,sys,var}
           rm -rf sysroot/usr/{sbin,bin,share}
           rm -rf sysroot/usr/lib/{apt,gcc,udev,systemd}
-          rm -rf sysroot/usr/libexec/{gcc}
+          rm -rf sysroot/usr/libexec/gcc
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Configure'
