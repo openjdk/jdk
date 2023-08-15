@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 public class Main {
-    private final static int MODULE_SUB_METHOD_COUNT = 9;
 
     public static void main(String[] args) throws Exception {
         List<ServiceInterface> services = getServices();
@@ -47,7 +46,7 @@ public class Main {
 
         // one subX method per each module is generated as the image is linked with
         // --system-modules=batchSize=1
-        var moduleCount = ModuleFinder.ofSystem().findAll().stream().count();
+        var moduleCount = (long) ModuleFinder.ofSystem().findAll().size();
         if (subMethodCount != moduleCount) {
             throw new AssertionError("Difference in generated sub module methods count! Expected: " +
                     moduleCount + " but was " + subMethodCount);
