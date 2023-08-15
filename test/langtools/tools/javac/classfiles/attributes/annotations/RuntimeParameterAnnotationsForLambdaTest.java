@@ -25,7 +25,12 @@
  * @test
  * @bug 8044411 8079060 8138612
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
@@ -35,10 +40,15 @@
  * @run main RuntimeParameterAnnotationsForLambdaTest
  */
 
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.sun.tools.classfile.*;
 
 /**
  * RuntimeParameterAnnotationsForLambdaTest is a test which checks that RuntimeVisibleParameterAnnotationsAttribute
@@ -55,9 +65,9 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
     private static final String CLASS_NAME = "Test";
     private static final String SOURCE_TEMPLATE =
             "public class " + CLASS_NAME + " {\n" +
-            "   interface I { void method(int a, double b, String c); }\n" +
-            "   %SOURCE%\n" +
-            "}";
+                    "   interface I { void method(int a, double b, String c); }\n" +
+                    "   %SOURCE%\n" +
+                    "}";
 
     public static void main(String[] args) throws TestFailedException {
         new RuntimeParameterAnnotationsForLambdaTest().test();
@@ -77,12 +87,12 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
                     String source = SOURCE_TEMPLATE.replace("%SOURCE%", generateLambdaSource(testMethodInfo));
                     addTestCase(source);
                     echo("Testing:\n" + source);
-                    ClassFile classFile = readClassFile(compile(source).getClasses().get(CLASS_NAME));
+                    ClassModel classFile = readClassFile(compile(source).getClasses().get(CLASS_NAME));
                     boolean isFoundLambda = false;
-                    for (Method method : classFile.methods) {
-                        if (method.getName(classFile.constant_pool).startsWith("lambda$")) {
+                    for (MethodModel method : classFile.methods()) {
+                        if (method.methodName().stringValue().startsWith("lambda$")) {
                             isFoundLambda = true;
-                            testAttributes(testMethodInfo, classFile, method);
+                            testAttributes(testMethodInfo, method);
                         }
                     }
                     checkTrue(isFoundLambda, "The tested lambda method was not found.");
@@ -97,13 +107,11 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
 
     protected void testAttributes(
             TestCase.TestMethodInfo testMethod,
-            ClassFile classFile,
-            Method method) throws ConstantPoolException {
-        Attributes attributes = method.attributes;
-        RuntimeParameterAnnotations_attribute attr = (RuntimeParameterAnnotations_attribute) attributes.get(Attribute.RuntimeInvisibleParameterAnnotations);
-        checkNull(attr, String.format("%s should be null", Attribute.RuntimeInvisibleParameterAnnotations));
-        attr = (RuntimeParameterAnnotations_attribute) attributes.get(Attribute.RuntimeVisibleParameterAnnotations);
-        checkNull(attr, String.format("%s should be null", Attribute.RuntimeVisibleParameterAnnotations));
+            MethodModel method) {
+        RuntimeInvisibleParameterAnnotationsAttribute invAttr = method.findAttribute(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
+        checkNull(invAttr, String.format("%s should be null", Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS));
+        RuntimeVisibleParameterAnnotationsAttribute vAttr = method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS).orElse(null);
+        checkNull(vAttr, String.format("%s should be null", Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS));
     }
 
     public String generateLambdaSource(TestCase.TestMethodInfo method) {
