@@ -30,6 +30,10 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logLevel.hpp"
+#include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
@@ -46,7 +50,15 @@
 #include "jfr/jfr.hpp"
 #endif
 
-void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
+void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count) {
+  CompileTask::print_inline_indent(depth, out);
+  out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
+  prof_klass->name()->print_symbol_on(out);
+  out->cr();
+}
+
+void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMethod* prof_method,
+                        ciKlass* prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
     outputStream* out = tty;
     if (!C->print_inlining()) {
@@ -58,12 +70,13 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     } else {
       out = C->print_inlining_stream();
     }
-    CompileTask::print_inline_indent(depth, out);
-    out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
-    stringStream ss;
-    prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.freeze());
-    out->cr();
+    print_trace_type_profile(out, depth, prof_klass, site_count, receiver_count);
+  }
+
+  LogTarget(Debug, jit, inlining) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count);
   }
 }
 
