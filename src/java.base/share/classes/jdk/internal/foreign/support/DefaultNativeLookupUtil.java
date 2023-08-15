@@ -12,6 +12,8 @@ import java.util.NoSuchElementException;
 
 public final class DefaultNativeLookupUtil {
 
+    private DefaultNativeLookupUtil() {}
+
     private static final MethodHandle INT_IS_ONE;
 
     static {
@@ -21,8 +23,6 @@ public final class DefaultNativeLookupUtil {
             throw new ExceptionInInitializerError(e);
         }
     }
-
-    private DefaultNativeLookupUtil() {}
 
     public static MethodHandle downcallOfVoid(String name, MemoryLayout... types) {
         return Linker.nativeLinker().downcallHandle(
