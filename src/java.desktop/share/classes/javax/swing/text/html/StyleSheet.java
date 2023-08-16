@@ -1634,7 +1634,7 @@ public class StyleSheet extends StyleContext {
                                                 (poundIndex + 1, dotIndex));
                         }
                     }
-                    else if(poundIndex < spaceIndex) {
+                    else if (poundIndex < spaceIndex) {
                         // .#
                         if (lastIndex == dotIndex) {
                             elements.addElement("");
@@ -1784,7 +1784,7 @@ public class StyleSheet extends StyleContext {
         static SearchBuffer obtainSearchBuffer() {
             SearchBuffer sb;
             try {
-                if(!searchBuffers.empty()) {
+                if (!searchBuffers.empty()) {
                    sb = searchBuffers.pop();
                 } else {
                    sb = new SearchBuffer();
