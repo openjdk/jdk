@@ -1837,7 +1837,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
 
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
-  char* const absolute_min = os::vm_min_address();
+  char* const absolute_min = (char*) os::vm_min_address();
 
   const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
 
@@ -1944,7 +1944,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
 #define ERRFMTARGS p2i(result), ARGSFMTARGS
     assert(result >= min, "OOB min (" ERRFMT ")", ERRFMTARGS);
     assert((result + bytes) <= max, "OOB max (" ERRFMT ")", ERRFMTARGS);
-    assert(result >= os::vm_min_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
+    assert(result >= (char*)os::vm_min_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
     assert((result + bytes) <= absolute_max, "OOB vm.map max (" ERRFMT ")", ERRFMTARGS);
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);

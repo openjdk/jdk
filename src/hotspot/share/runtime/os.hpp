@@ -190,6 +190,11 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
+
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -420,7 +425,8 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
-  static char* vm_min_address();
+  // Returns the lowest address the process is allowed to map against.
+  static size_t vm_min_address();
 
   inline static size_t cds_core_region_alignment();
 

@@ -591,8 +591,9 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   char* result = nullptr;
   const bool randomize = RandomizeClassSpaceLocation;
 
-  // If strict_base, there is no need bothering with low-address reservation since we cannot set
-  // the encoding base to zero.
+  // At CDS runtime, there is no need bothering with low-address reservation since we cannot set
+  // the encoding base to zero anyway: the encoding base has to be the base of the mapped archive
+  // (ultimately, the start address of the region we are reserving here).
   const bool try_in_low_address_ranges = !cds_runtime;
 
   // First try to reserve in low address ranges.

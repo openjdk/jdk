@@ -4216,16 +4216,21 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-char* os::vm_min_address() {
-  // Determined by sysctl vm.mmap_min_addr. The usual value is 64 KB. Kernel prevents
-  // mappings below that point. The reason for this forbidden zone is to improve safety
-  // in case of NULL pointer dereferences.
-  // This value is rarely changed from its default, and instead of retrieving the
-  // parameter, we save a syscall and just return a sensible default. That default
-  // is chosen to be somewhat larger than the typical 64 KB for increased protection
-  // against NULL pointer dereferences: 16 MB is comfortably larger than any fixed-sized
-  // structure we use but still affords us most of the valuable low-address space.
-  return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
+size_t os::vm_min_address() {
+  // Determined by sysctl vm.mmap_min_addr. It exists as a safety zone to prevent
+  // NULL pointer dereferences.
+  // Most distros set this value to 64 KB. It *can* be zero, but rarely is. Here,
+  // we impose a minimum value if vm.mmap_min_addr is too low, for increased protection.
+  static size_t value = 0;
+  if (value == 0) {
+    assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+    FILE* f = fopen("/proc/sys/vm/mmap_min_addr", "r");
+    if (fscanf(f, "%zu", &value) != 1) {
+      value = _vm_min_address_default;
+    }
+    value = MAX2(_vm_min_address_default, value);
+  }
+  return value;
 }
 
 // Used to convert frequent JVM_Yield() to nops

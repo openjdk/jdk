@@ -62,7 +62,7 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t by
     EXPECT_LE(addr, max - bytes) << ERRINFO;
     EXPECT_LE(addr, (char*)ARMB_constants::absolute_max - bytes) << ERRINFO;
     EXPECT_GE(addr, min) << ERRINFO;
-    EXPECT_GE(addr, os::vm_min_address()) << ERRINFO;
+    EXPECT_GE(addr, (char*)os::vm_min_address()) << ERRINFO;
   }
   return addr;
 }

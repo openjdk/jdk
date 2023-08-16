@@ -1822,13 +1822,14 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-char* os::vm_min_address() {
+size_t os::vm_min_address() {
 #ifdef __APPLE__
   // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
   // -pagezero_size linker option).
-  return (char*)((size_t)4 * G);
+  return 4 * G;
 #else
-  return (char*)(MAX2(os::vm_allocation_granularity(), 16 * M));
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 #endif
 }
 
