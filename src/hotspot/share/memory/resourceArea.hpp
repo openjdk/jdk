@@ -112,7 +112,7 @@ public:
              "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
-      state._chunk->next_chop();
+      Chunk::next_chop(state._chunk);
       assert(_hwm != state._hwm, "Sanity check: HWM moves when we have later chunks");
     } else {
       assert(size_in_bytes() == state._size_in_bytes, "Sanity check");
