@@ -38,7 +38,7 @@ JVMCI_ONLY(class JVMCICompileState;)
 class Inlining {
 public:
   enum Kind { SUCCESS, FAILURE };
-  static Inlining::Kind kind(bool success) {
+  static Inlining::Kind kind_of(bool success) {
     return success ? SUCCESS : FAILURE;
   }
 };

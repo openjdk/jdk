@@ -545,10 +545,10 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
     }
   }
   CompileTask::print_inlining_ul(callee_method, inline_level(),
-                                               caller_bci, Inlining::kind(success), inline_msg);
+                                               caller_bci, Inlining::kind_of(success), inline_msg);
   if (C->print_inlining()) {
 
-    C->print_inlining(callee_method, inline_level(), caller_bci, Inlining::kind(success), inline_msg);
+    C->print_inlining(callee_method, inline_level(), caller_bci, Inlining::kind_of(success), inline_msg);
     guarantee(callee_method != nullptr, "would crash in CompilerEvent::InlineEvent::post");
     if (Verbose) {
       const InlineTree *top = this;
