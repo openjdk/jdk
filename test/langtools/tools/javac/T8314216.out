@@ -1,0 +1,6 @@
+T8314216.java:13:23: compiler.err.invalid.case.label.combination
+T8314216.java:14:28: compiler.err.invalid.case.label.combination
+T8314216.java:20:13: compiler.err.cant.resolve.location: kindname.class, Test, , , (compiler.misc.location: kindname.class, T8314216, null)
+- compiler.note.preview.filename: T8314216.java, DEFAULT
+- compiler.note.preview.recompile
+3 errors
