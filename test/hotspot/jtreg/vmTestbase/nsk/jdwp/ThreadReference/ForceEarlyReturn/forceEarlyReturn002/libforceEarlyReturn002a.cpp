@@ -29,9 +29,11 @@
 #include <unistd.h>
 #endif
 
+#include <atomic>
+
 extern "C" {
 
-static volatile bool wait_in_native = true;
+static std::atomic<bool> wait_in_native(true);
 
 static void delay(int seconds) {
 #if defined(_WIN32)
