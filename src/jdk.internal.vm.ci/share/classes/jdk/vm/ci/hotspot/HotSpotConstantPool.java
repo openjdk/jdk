@@ -949,26 +949,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return false;
     }
 
-    /**
-     * Check for a resolved dynamic adapter method at the specified index, resulting from either a
-     * resolved invokedynamic or invokevirtual on a signature polymorphic MethodHandle method
-     * (HotSpot invokehandle).
-     *
-     * @param cpi the constant pool index
-     * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return {@code true} if a signature polymorphic method reference was found, otherwise
-     *         {@code false}
-     */
-    public boolean isResolvedDynamicInvoke(int cpi, int opcode) {
-        if (Bytecodes.isInvokeHandleAlias(opcode)) {
-            final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
-            checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), constants.jvmMethodref);
-            int op = compilerToVM().isResolvedInvokeHandleInPool(this, methodRefCacheIndex);
-            return op == opcode;
-        }
-        return false;
-    }
-
     public String getSourceFileName() {
         final int sourceFileNameIndex = UNSAFE.getChar(getConstantPoolPointer() + config().constantPoolSourceFileNameIndexOffset);
         if (sourceFileNameIndex == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
+import static sun.nio.fs.UnixConstants.*;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 
 class UnixFileAttributeViews {
@@ -262,19 +263,44 @@ class UnixFileAttributeViews {
         // chmod
         final void setMode(int mode) throws IOException {
             checkWriteExtended();
-            try {
-                if (followLinks) {
+
+            if (followLinks) {
+                try {
                     chmod(file, mode);
-                } else {
-                    int fd = file.openForAttributeAccess(false);
-                    try {
-                        fchmod(fd, mode);
-                    } finally {
-                        close(fd);
-                    }
+                } catch (UnixException e) {
+                    e.rethrowAsIOException(file);
                 }
-            } catch (UnixException x) {
-                x.rethrowAsIOException(file);
+                return;
+            }
+
+            if (O_NOFOLLOW == 0) {
+                throw new IOException("NOFOLLOW_LINKS is not supported on this platform");
+            }
+
+            int fd = -1;
+            try {
+                fd = open(file, O_RDONLY, O_NOFOLLOW);
+            } catch (UnixException e1) {
+                if (e1.errno() == EACCES) {
+                    // retry with write access if there is no read permission
+                    try {
+                        fd = open(file, O_WRONLY, O_NOFOLLOW);
+                    } catch (UnixException e2) {
+                        e2.rethrowAsIOException(file);
+                    }
+                } else {
+                    e1.rethrowAsIOException(file);
+                }
+            }
+
+            try {
+                try {
+                    fchmod(fd, mode);
+                } finally {
+                    close(fd);
+                }
+            } catch (UnixException e) {
+                e.rethrowAsIOException(file);
             }
         }
 

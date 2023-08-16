@@ -364,7 +364,8 @@ class StubGenerator: public StubCodeGenerator {
 
   // Utility routine for increase 128bit counter (iv in CTR mode)
   void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block);
-
+  void ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                 int vector_len, KRegister ktmp, Register rscratch = noreg);
   void generate_aes_stubs();
 
 
