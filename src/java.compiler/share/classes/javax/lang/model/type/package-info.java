@@ -34,7 +34,7 @@
  * a {@code NullPointerException} if given a {@code null} argument.
  *
  * @see javax.lang.model.util.Types
- * @see javax.lang.model##elementsAndTypes Element and Types
+ * @see javax.lang.model##elementsAndTypes Elements and Types
  * @see <a href="https://jcp.org/en/jsr/detail?id=269">
  * JSR 269: Pluggable Annotation Processing API</a>
  * @jls 4.1 The Kinds of Types and Values

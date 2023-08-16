@@ -25,7 +25,7 @@
 
 /**
  * Types and hierarchies of packages comprising a {@index "Java language
- * model"}, a model of the declarations and types of the Java
+ * model"}, a reflective API that models the declarations and types of the Java
  * programming language.
  *
  * The members of this package and its subpackages are for use in
@@ -46,7 +46,7 @@
  * language constructs, like the {@linkplain javax.lang.model.element
  * element} representing {@code java.util.Set}, and the family of
  * {@linkplain javax.lang.model.type types} that may be associated
- * with an element, like the raw type {@code java.util.Set},{@code
+ * with an element, like the raw type {@code java.util.Set}, {@code
  * java.util.Set<String>}, and {@code java.util.Set<T>}.
  *
  * <p>Unless otherwise specified, methods in this package will throw
@@ -117,7 +117,7 @@
  * prototypical type.
  * (If a class or interface is generic, its prototypical type mirror
  * is parameterized with type arguments matching the type variables of
- * the declaration. Otherwise, for a non-generic class or interface,
+ * the declaration, all unannotated. Otherwise, for a non-generic class or interface,
  * the prototypical type mirror corresponds to an unannotated use of
  * the type.)
  * Conversely, in general, many types can map to
