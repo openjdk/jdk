@@ -79,12 +79,11 @@ public class bug4529206 {
         try {
             SwingUtilities.invokeAndWait(() -> test());
             Robot robot = new Robot();
-            robot.waitForIdle();
+            robot.setAutoWaitForIdle(true);
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> makeToolbarFloat());
-            robot.waitForIdle();
-            robot.delay(500);
+            robot.delay(300);
 
             SwingUtilities.invokeAndWait(() -> {
                 if (frame.isFocused()) {
