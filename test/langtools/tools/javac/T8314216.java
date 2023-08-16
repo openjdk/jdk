@@ -15,8 +15,4 @@ public class T8314216 {
             default -> System.out.println("other");
         }
     }
-
-    public static void main(String[] args) {
-        new Test().test("ddd");
-    }
 }
