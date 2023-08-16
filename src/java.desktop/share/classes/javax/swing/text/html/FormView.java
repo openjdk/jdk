@@ -25,6 +25,7 @@
 package javax.swing.text.html;
 
 import java.awt.Component;
+import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -273,13 +274,14 @@ public class FormView extends ComponentView implements ActionListener {
             maxIsPreferred = 3;
         } else if (type.equals("image")) {
             String srcAtt = (String) attr.getAttribute(HTML.Attribute.SRC);
+            String altAtt = (String) attr.getAttribute(HTML.Attribute.ALT);
             JButton button;
             try {
                 URL base = ((HTMLDocument)getElement().getDocument()).getBase();
                 @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
-                Icon icon = new ImageIcon(srcURL);
-                button  = new JButton(icon);
+                ImageIcon icon = new ImageIcon(srcURL);
+                button  = icon.getImageLoadStatus() == MediaTracker.COMPLETE ? new JButton(icon) : new JButton(altAtt);
             } catch (MalformedURLException e) {
                 button = new JButton(srcAtt);
             }
