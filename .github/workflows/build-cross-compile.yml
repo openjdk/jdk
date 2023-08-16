@@ -149,7 +149,9 @@ jobs:
           # Prepare sysroot and remove unused files to minimize cache
           sudo chroot sysroot symlinks -cr .
           sudo chown ${USER} -R sysroot
-          rm -rf sysroot/{dev,proc,run,sys}
+          rm -rf sysroot/{dev,proc,run,sys,var}
+          rm -rf sysroot/usr/{sbin,bin,share}
+          rm -rf sysroot/usr/lib/{apt,udev,systemd}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Configure'
