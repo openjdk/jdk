@@ -167,14 +167,14 @@ public class TestSegmentAllocators {
         SegmentAllocator allocator = new SegmentAllocator() {
             @Override
             public MemorySegment allocate(long bytesSize, long byteAlignment) {
-                return null;
+                return MemorySegment.NULL;
             }
 
             @Override
-            public MemorySegment allocate(MemoryLayout elementLayout, long count) {
+            public MemorySegment allocateFrom(ValueLayout elementLayout, MemorySegment source, ValueLayout sourceElementLayout, long sourceOffset, long elementCount) {
                 calls.incrementAndGet();
-                return null;
-            };
+                return MemorySegment.NULL;
+            }
         };
         allocator.allocateFrom(ValueLayout.JAVA_BYTE);
         allocator.allocateFrom(ValueLayout.JAVA_SHORT);
@@ -191,7 +191,6 @@ public class TestSegmentAllocators {
         AtomicInteger calls = new AtomicInteger();
         SegmentAllocator allocator = new SegmentAllocator() {
             @Override
-
             public MemorySegment allocate(long byteSize, long byteAlignment) {
                 return Arena.ofAuto().allocate(byteSize, byteAlignment);
             }

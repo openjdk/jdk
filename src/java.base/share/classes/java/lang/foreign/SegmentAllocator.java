@@ -25,13 +25,13 @@
 
 package java.lang.foreign;
 
-import java.lang.reflect.Array;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.function.Function;
+
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.vm.annotation.ForceInline;
@@ -126,8 +126,11 @@ public interface SegmentAllocator {
         Objects.requireNonNull(str);
         int termCharSize = StringSupport.CharsetKind.of(charset).terminatorCharSize();
         byte[] bytes = str.getBytes(charset);
-        MemorySegment segment = allocate(bytes.length + termCharSize);
+        MemorySegment segment = allocateNoInit(bytes.length + termCharSize);
         MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, 0, bytes.length);
+        for (int i = 0 ; i < termCharSize ; i++) {
+            segment.set(ValueLayout.JAVA_BYTE, bytes.length + i, (byte)0);
+        }
         return segment;
     }
 
@@ -147,7 +150,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -168,7 +171,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -189,7 +192,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -210,7 +213,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -231,7 +234,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -252,7 +255,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -273,7 +276,7 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateFrom(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
+        MemorySegment seg = allocateNoInit(layout);
         seg.set(layout, 0, value);
         return seg;
     }
@@ -298,9 +301,44 @@ public interface SegmentAllocator {
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
-        MemorySegment seg = allocate(layout);
-        seg.set(layout, 0, value);
-        return seg;
+        MemorySegment segment = allocateNoInit(layout);
+        segment.set(layout, 0, value);
+        return segment;
+    }
+
+    /**
+     * {@return a new memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code elementCount*elementLayout.byteSize()} initialized with the contents of the provided {@code source} segment
+     * as specified by the provided {@code elementLayout} (i.e. byte ordering, alignment and size)}
+     *
+     * @implSpec the default implementation for this method calls {@code this.allocate(elementLayout, elementCount)}.
+     * @param elementLayout the element layout of the allocated array.
+     * @param source the source segment.
+     * @param sourceElementLayout the element layout of the source segment.
+     * @param sourceOffset the starting offset, in bytes, of the source segment.
+     * @param elementCount the number of elements in the source segment to be copied.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() != sourceElementLayout.byteSize()}.
+     * @throws IllegalArgumentException if the source segment/offset are <a href="MemorySegment.html#segment-alignment">incompatible with the alignment constraint</a>
+     * in the source element layout.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
+     * @throws IllegalArgumentException if {@code sourceElementLayout.byteAlignment() > sourceElementLayout.byteSize()}.
+     * @throws IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated with {@code source} is not
+     * {@linkplain MemorySegment.Scope#isAlive() alive}.
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     * such that {@code source.isAccessibleBy(T) == false}.
+     * @throws IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows.
+     * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}.
+     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}.
+     */
+    @ForceInline
+    default MemorySegment allocateFrom(ValueLayout elementLayout, MemorySegment source,
+                                       ValueLayout sourceElementLayout, long sourceOffset, long elementCount) {
+        Objects.requireNonNull(source);
+        Objects.requireNonNull(sourceElementLayout);
+        Objects.requireNonNull(elementLayout);
+        MemorySegment dest = allocateNoInit(elementLayout, elementCount);
+        MemorySegment.copy(source, sourceElementLayout, sourceOffset, dest, elementLayout, 0, elementCount);
+        return dest;
     }
 
     /**
@@ -308,19 +346,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code byte} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_BYTE, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements      the byte elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfByte elementLayout, byte... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_BYTE, 0, elements.length);
     }
 
     /**
@@ -328,19 +366,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code short} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_SHORT, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
      * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfShort elementLayout, short... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_SHORT, 0, elements.length);
     }
 
     /**
@@ -348,19 +386,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code char} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_CHAR, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements      the char elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfChar elementLayout, char... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_CHAR, 0, elements.length);
     }
 
     /**
@@ -368,19 +406,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code int} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_INT, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements      the int elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfInt elementLayout, int... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_INT, 0, elements.length);
     }
 
     /**
@@ -388,19 +426,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code float} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_FLOAT, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements the float elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfFloat elementLayout, float... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_FLOAT, 0, elements.length);
     }
 
     /**
@@ -408,19 +446,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code long} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_LONG, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements the long elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfLong elementLayout, long... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_LONG, 0, elements.length);
     }
 
     /**
@@ -428,30 +466,19 @@ public interface SegmentAllocator {
      * {@code E*layout.byteSize()} initialized with the provided {@code E} {@code double} {@code elements} as
      * specified by the provided {@code layout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec The default implementation is equivalent to:
-     * {@snippet lang=java :
-     *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-     *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
-     *  return seg;
-     * }
-     *
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * this.allocateFrom(layout, MemorySegment.ofArray(array),
+     *                   ValueLayout.JAVA_DOUBLE, 0, array.length)
+     *}
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements      the short elements to be copied to the newly allocated memory block.
+     * @param elements      the double elements to be copied to the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}.
      */
+    @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfDouble elementLayout, double... elements) {
-        return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
-    }
-
-    private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
-                                                        Function<Z, MemorySegment> heapSegmentFactory) {
-        int size = Array.getLength(Objects.requireNonNull(array));
-        MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
-        if (size > 0) {
-            MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
-                    seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
-        }
-        return seg;
+        return allocateFrom(elementLayout, MemorySegment.ofArray(elements),
+                ValueLayout.JAVA_DOUBLE, 0, elements.length);
     }
 
     /**
@@ -550,5 +577,26 @@ public interface SegmentAllocator {
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
         return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+    }
+
+    @ForceInline
+    private MemorySegment allocateNoInit(long byteSize) {
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(byteSize, 1) :
+                allocate(byteSize);
+    }
+
+    @ForceInline
+    private MemorySegment allocateNoInit(MemoryLayout layout) {
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize(), layout.byteAlignment()) :
+                allocate(layout);
+    }
+
+    @ForceInline
+    private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
+        return this instanceof ArenaImpl arenaImpl ?
+                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+                allocate(layout, size);
     }
 }

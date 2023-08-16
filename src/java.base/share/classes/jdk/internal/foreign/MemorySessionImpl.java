@@ -77,23 +77,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     public Arena asArena() {
-        return new Arena() {
-            @Override
-            public Scope scope() {
-                return MemorySessionImpl.this;
-            }
-
-            @Override
-            public void close() {
-                MemorySessionImpl.this.close();
-            }
-
-            @Override
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
-                Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
-                return NativeMemorySegmentImpl.makeNativeSegment(byteSize, byteAlignment, MemorySessionImpl.this);
-            }
-        };
+        return new ArenaImpl(this);
     }
 
     @ForceInline
