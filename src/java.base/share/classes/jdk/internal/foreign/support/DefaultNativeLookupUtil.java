@@ -45,16 +45,15 @@ public final class DefaultNativeLookupUtil {
     }
 
     private static MemorySegment lookup(String name) {
-        try {
-            return Linker.nativeLinker()
-                    .defaultLookup()
-                    //.or(SymbolLookup.loaderLookup())
-                    .find(name)
-                    .orElseThrow();
-        } catch (NoSuchElementException e) {
-            // Avoid creating a new lambda for each call using `Optional::orElseThrow`
-            throw new NoSuchElementException("Unable to find " + name, e);
+        var address = Linker.nativeLinker()
+                .defaultLookup()
+                .find(name);
+
+        // Avoid using a capturing lambda
+        if (address.isPresent()) {
+            return address.get();
         }
+        throw new NoSuchElementException("Unable to find a native symbol named '" + name + "'");
     }
 
 }
