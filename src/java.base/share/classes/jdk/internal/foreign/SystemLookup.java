@@ -72,7 +72,7 @@ public final class SystemLookup implements SymbolLookup {
             // system lookup depends on cannot be loaded for some reason. In such extreme cases, rather than
             // fail, return a dummy lookup.
             System.err.printf("""
-                        WARNING: Unable to load one of the system libraries: %s
+                        WARNING: Unable to load system libraries: %s
                         %n""", ex.getMessage());
             return FALLBACK_LOOKUP;
         }
