@@ -58,6 +58,8 @@ import javax.security.auth.Subject;
 
 import com.sun.security.auth.module.*;
 import com.sun.security.auth.callback.*;
+import jtreg.SkippedException;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -113,7 +115,11 @@ public class Basic extends PKCS11Test {
     @Test
     public void testBasic() throws Exception {
         String[] args = {"sm", "Basic.policy"};
-        main(new Basic(), args);
+        try {
+            main(new Basic(), args);
+        } catch (SkippedException se) {
+            throw new SkipException("One or more tests are skipped");
+        }
     }
 
     private static class FooEntry implements KeyStore.Entry { }

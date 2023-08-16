@@ -84,14 +84,16 @@ class jfieldIDWorkaround: AllStatic {
     uintptr_t as_uint = (uintptr_t) id;
     return ((as_uint & checked_mask_in_place) != 0);
   }
-  static intptr_t raw_instance_offset(jfieldID id) {
+  static int raw_instance_offset(jfieldID id) {
     uintptr_t result = (uintptr_t) id >> address_shift;
     if (VerifyJNIFields && is_checked_jfieldID(id)) {
       result &= small_offset_mask;  // cut off the hash bits
     }
-    return result;
+    // This gets back the InstanceKlass field offset that
+    // the jfieldID is created with.
+    return checked_cast<int>(result);
   }
-  static intptr_t encode_klass_hash(Klass* k, intptr_t offset);
+  static intptr_t encode_klass_hash(Klass* k, int offset);
   static bool             klass_hash_ok(Klass* k, jfieldID id);
   static void  verify_instance_jfieldID(Klass* k, jfieldID id);
 
@@ -124,7 +126,7 @@ class jfieldIDWorkaround: AllStatic {
     return result;
   }
 
-  static intptr_t from_instance_jfieldID(Klass* k, jfieldID id) {
+  static int from_instance_jfieldID(Klass* k, jfieldID id) {
 #ifndef ASSERT
     // always verify in debug mode; switchable in anything else
     if (VerifyJNIFields)

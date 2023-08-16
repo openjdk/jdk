@@ -45,4 +45,3 @@ vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-
 
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
 vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64
-serviceability/jvmti/vthread/FollowReferences/VThreadStackRefTest.java#default 8309663 linux-x64
