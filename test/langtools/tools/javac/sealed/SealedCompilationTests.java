@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import com.sun.tools.javac.util.Assert;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tools.javac.combo.CompilationTestCase;
+import tools.javac.combo.*;
 
 import toolbox.ToolBox;
 import toolbox.JavacTask;
@@ -71,7 +71,7 @@ import toolbox.Task.OutputKind;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@ExtendWith(CompilationTestCase.class)
+@ExtendWith(CompilationDiagnosticPrinter.class)
 class SealedCompilationTests extends CompilationTestCase {
 
     ToolBox tb = new ToolBox();

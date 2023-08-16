@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Brian Goetz
  */
 public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExecutionCallback {
-    private static final Set<String> suiteErrors = Collections.synchronizedSet(new HashSet<>());
-    private static final AtomicInteger counter = new AtomicInteger();
-    private static final File root = new File("gen");
-    private static final File nullDir = new File("empty");
+    protected static final Set<String> suiteErrors = Collections.synchronizedSet(new HashSet<>());
+    protected static final AtomicInteger counter = new AtomicInteger();
+    protected static final File root = new File("gen");
+    protected static final File nullDir = new File("empty");
 
     protected final Map<String, Template> templates = new HashMap<>();
     protected final Diagnostics diags = new Diagnostics();
@@ -142,22 +142,11 @@ public abstract class JavacTemplateTestBase implements TestWatcher, AfterTestExe
     // After each test method, if the test failed, capture source files and diagnostics and put them in the log
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
-        System.err.printf("ExtensionContext avacTemplateTestBase!!!!!");
-        suiteErrors.addAll(diags.errorKeys());
-        List<Object> list = new ArrayList<>();
-        list.add("Test case: " + getTestCaseDescription());
-        for (Pair<String, String> e : sourceFiles)
-            list.add("Source file " + e.fst + ": " + e.snd);
-        if (diags.errorsFound())
-            list.add("Compile diagnostics: " + diags.toString());
-        System.err.printf("JavacTemplateTestBase!!!!!!!" + Arrays.toString(list.toArray(new Object[0])));
     }
 
-    @Override
     // After the suite is done, dump any errors to output
+    @Override
     public void afterTestExecution(ExtensionContext context) {
-        if (!suiteErrors.isEmpty())
-            System.err.println("Errors found in test suite: " + suiteErrors);
     }
 
     /**

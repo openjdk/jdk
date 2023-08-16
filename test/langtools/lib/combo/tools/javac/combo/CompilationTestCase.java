@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,13 +44,6 @@ public class CompilationTestCase extends JavacTemplateTestBase {
     private String[] compileOptions = new String[] { };
     private String defaultFileName = "Source.java";
     private String programShell = "#";
-
-    @Override
-    public void testFailed(ExtensionContext context, Throwable cause) {
-        // Make sure offending template ends up in log file on failure
-        System.err.printf("Diagnostics: %s%nTemplate: %s%n", diags.errorKeys(),
-                sourceFiles.stream().map(p -> p.snd).collect(toList()));
-    }
 
     protected void setProgramShell(String shell) {
         programShell = shell;

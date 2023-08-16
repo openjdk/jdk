@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import tools.javac.combo.*;
 
 import static java.util.stream.Collectors.toList;
 
-@ExtendWith(CompilationTestCase.class)
-public class ScopeTest extends JavacTemplateTestBase {
+@ExtendWith(CompilationDiagnosticPrinter.class)
+class ScopeTest extends JavacTemplateTestBase {
 
     private static String st_block(String... statements) {
         return Arrays.stream(statements).collect(Collectors.joining("", "{", "}"));

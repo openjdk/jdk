@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  *
  * @author Brian Goetz
  */
-@ExtendWith(CompilationTestCase.class)
+@ExtendWith(CompilationDiagnosticPrinter.class)
 class BridgeMethodsTemplateTest extends BridgeMethodTestCase {
 
     /*

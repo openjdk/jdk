@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tools.javac.combo.CompilationTestCase;
-import tools.javac.combo.JavacTemplateTestBase;
+import tools.javac.combo.*;
 
 import static java.util.stream.Collectors.toList;
 
-@ExtendWith(CompilationTestCase.class)
+@ExtendWith(CompilationDiagnosticPrinter.class)
 class ExpSwitchNestingTest extends CompilationTestCase {
     private static final String RUNNABLE = "Runnable r = () -> { # };";
     private static final String INT_FN = "java.util.function.IntSupplier r = () -> { # };";

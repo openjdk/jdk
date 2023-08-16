@@ -43,8 +43,9 @@ import com.sun.tools.javac.util.JCDiagnostic;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tools.javac.combo.CompilationTestCase;
+import tools.javac.combo.CompilationDiagnosticPrinter;
 
-@ExtendWith(CompilationTestCase.class)
+@ExtendWith(CompilationDiagnosticPrinter.class)
 class BoundUnboundSearchTest extends CompilationTestCase {
     static final String TEMPLATE =
             """
