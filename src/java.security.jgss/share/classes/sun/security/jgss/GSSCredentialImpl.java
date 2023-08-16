@@ -476,6 +476,7 @@ public class GSSCredentialImpl implements GSSCredential {
         }
     }
 
+    @Override
     public boolean equals(Object another) {
 
         if (destroyed) {
@@ -512,10 +513,9 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     /**
-     * Returns a hashcode value for this GSSCredential.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSCredential}
      */
+    @Override
     public int hashCode() {
 
         if (destroyed) {
