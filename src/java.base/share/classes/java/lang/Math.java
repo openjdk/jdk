@@ -3346,12 +3346,12 @@ public final class Math {
         if(scaleFactor < 0) {
             scaleFactor = Math.max(scaleFactor, -MAX_SCALE);
             scale_increment = -512;
-            exp_delta = twoToTheDoubleScaleDown;
+            exp_delta = 0x1p-512;
         }
         else {
             scaleFactor = Math.min(scaleFactor, MAX_SCALE);
             scale_increment = 512;
-            exp_delta = twoToTheDoubleScaleUp;
+            exp_delta = 0x1p512;
         }
 
         // Calculate (scaleFactor % +/-512), 512 = 2^9, using
@@ -3419,10 +3419,6 @@ public final class Math {
          */
         return (float)((double)f*powerOfTwoD(scaleFactor));
     }
-
-    // Constants used in scalb
-    static double twoToTheDoubleScaleUp = powerOfTwoD(512);
-    static double twoToTheDoubleScaleDown = powerOfTwoD(-512);
 
     /**
      * Returns a floating-point power of two in the normal range.

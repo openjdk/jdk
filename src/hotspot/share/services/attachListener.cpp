@@ -244,15 +244,12 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
-    // Parallel thread number for heap dump, initialize based on active processor count.
-    // Note the real number of threads used is also determined by active workers and compression
-    // backend thread number. See heapDumper.cpp.
-    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
+
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, (int)level, false, (uint)parallel_thread_num);
+    dumper.dump(path, out, (int)level, false, HeapDumper::default_num_of_dump_threads());
   }
   return JNI_OK;
 }
@@ -375,7 +372,7 @@ static AttachOperationFunctionInfo funcs[] = {
 // from the queue, examines the operation name (command), and dispatches
 // to the corresponding function to perform the operation.
 
-static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
+void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
   os::set_priority(thread, NearMaxPriority);
 
   assert(thread == Thread::current(), "Must be");
@@ -460,7 +457,7 @@ void AttachListener::init() {
     return;
   }
 
-  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread* thread = new AttachListenerThread();
   JavaThread::vm_exit_on_osthread_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);

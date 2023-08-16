@@ -32,6 +32,7 @@
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/predicates.hpp"
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
@@ -1991,6 +1992,13 @@ ParsePredicateNode::ParsePredicateNode(Node* control, Node* bol, Deoptimization:
 #endif // ASSERT
 }
 
+Node* ParsePredicateNode::uncommon_trap() const {
+  ParsePredicateUncommonProj* uncommon_proj = proj_out(0)->as_IfFalse();
+  Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
+  assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
+  return uct_region_or_call;
+}
+
 #ifndef PRODUCT
 void ParsePredicateNode::dump_spec(outputStream* st) const {
   st->print(" #");
@@ -2008,4 +2016,5 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       fatal("unknown kind");
   }
 }
+
 #endif // NOT PRODUCT

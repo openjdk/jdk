@@ -230,8 +230,8 @@ jobs:
     with:
       platform: linux-aarch64
       gcc-major-version: '10'
-      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
-      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
@@ -245,8 +245,8 @@ jobs:
     with:
       platform: linux-arm
       gcc-major-version: '10'
-      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
-      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
@@ -260,8 +260,8 @@ jobs:
     with:
       platform: linux-ppc64le
       gcc-major-version: '10'
-      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
-      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
     if: needs.select.outputs.linux-cross-compile == 'true'
 
   build-linux-riscv64:
@@ -273,8 +273,8 @@ jobs:
     with:
       platform: linux-riscv64
       gcc-major-version: '10'
-      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
-      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      apt-gcc-version: '10.5.0-1ubuntu1~22.04'
+      apt-gcc-cross-version: '10.5.0-1ubuntu1~22.04cross1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'

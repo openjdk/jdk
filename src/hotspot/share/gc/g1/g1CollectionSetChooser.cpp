@@ -31,13 +31,12 @@
 #include "runtime/atomic.hpp"
 #include "utilities/quickSort.hpp"
 
-// Determine collection set candidates: For all regions determine whether they
-// should be a collection set candidates, calculate their efficiency, sort and
-// return them as G1CollectionSetCandidates instance.
+// Determine collection set candidates (from marking): For all regions determine
+// whether they should be a collection set candidate, calculate their efficiency,
+// sort and put them into the candidates.
 // Threads calculate the GC efficiency of the regions they get to process, and
-// put them into some work area unsorted. At the end the array is sorted and
-// copied into the G1CollectionSetCandidates instance; the caller will be the new
-// owner of this object.
+// put them into some work area without sorting. At the end that array is sorted and
+// moved to the destination.
 class G1BuildCandidateRegionsTask : public WorkerTask {
 
   using CandidateInfo = G1CollectionCandidateList::CandidateInfo;
@@ -152,12 +151,14 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       // alloc region (we should not consider those for collection
       // before we fill them up).
       if (should_add(r) && !G1CollectedHeap::heap()->is_old_gc_alloc_region(r)) {
+        assert(r->rem_set()->is_complete(), "must be %u", r->hrm_index());
         add_region(r);
-      } else if (r->is_old()) {
-        // Keep remembered sets for humongous regions, otherwise clean them out.
+      } else if (r->is_old() && !r->is_collection_set_candidate()) {
+        // Keep remembered sets for humongous regions and collection set candidates,
+        // otherwise clean them out.
         r->rem_set()->clear(true /* only_cardset */);
       } else {
-        assert(!r->is_old() || !r->rem_set()->is_tracked(),
+        assert(r->is_collection_set_candidate() || !r->is_old() || !r->rem_set()->is_tracked(),
                "Missed to clear unused remembered set of region %u (%s) that is %s",
                r->hrm_index(), r->get_type_str(), r->rem_set()->get_state_str());
       }
@@ -254,6 +255,10 @@ uint G1CollectionSetChooser::calculate_work_chunk_size(uint num_workers, uint nu
 bool G1CollectionSetChooser::should_add(HeapRegion* hr) {
   return !hr->is_young() &&
          !hr->is_humongous() &&
+         // A region might have been retained (after evacuation failure) and already put
+         // into the candidates list during concurrent marking. These should keep being
+         // considered as retained regions.
+         !hr->is_collection_set_candidate() &&
          region_occupancy_low_enough_for_evac(hr->live_bytes()) &&
          hr->rem_set()->is_complete();
 }

@@ -226,25 +226,16 @@ public final class ResponderId {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
         if (this == obj) {
             return true;
         }
 
-        if (obj instanceof ResponderId respObj) {
-            return Arrays.equals(encodedRid, respObj.getEncoded());
-        }
-
-        return false;
+        return obj instanceof ResponderId respObj
+                && Arrays.equals(encodedRid, respObj.getEncoded());
     }
 
     /**
-     * Returns the hash code value for this {@code ResponderId}
-     *
-     * @return the hash code value for this {@code ResponderId}
+     * {@return the hash code value for this {@code ResponderId}}
      */
     @Override
     public int hashCode() {

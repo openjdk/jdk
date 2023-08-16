@@ -84,8 +84,7 @@ runs:
           echo "target-cpu=riscv64" >> $GITHUB_OUTPUT
           echo "gnu-arch=riscv64" >> $GITHUB_OUTPUT
           echo "debian-arch=riscv64" >> $GITHUB_OUTPUT
-          echo "debian-repository=https://deb.debian.org/debian-ports" >> $GITHUB_OUTPUT
-          echo "debian-keyring=/usr/share/keyrings/debian-ports-archive-keyring.gpg" >> $GITHUB_OUTPUT
+          echo "debian-repository=https://httpredir.debian.org/debian/" >> $GITHUB_OUTPUT
           echo "debian-version=sid" >> $GITHUB_OUTPUT
         else
           echo "Unknown platform ${{ inputs.platform }}"

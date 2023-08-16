@@ -4867,7 +4867,7 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = rtmp1 + x + ac
     reg_cache.get_u32(rtmp2, k, rmask32);
     __ addw(rtmp1, rtmp1, rtmp2);
-    __ li(rtmp2, t);
+    __ mv(rtmp2, t);
     __ addw(rtmp1, rtmp1, rtmp2);
 
     // a += rtmp1 + x + ac
@@ -4888,8 +4888,7 @@ class StubGenerator: public StubCodeGenerator {
     __ andr(rtmp1, b, c);
 
     // rtmp2 = (~b) & d
-    __ notr(rtmp2, b);
-    __ andr(rtmp2, rtmp2, d);
+    __ andn(rtmp2, d, b);
 
     // rtmp1 = (b & c) | ((~b) & d)
     __ orr(rtmp1, rtmp1, rtmp2);
@@ -4907,9 +4906,8 @@ class StubGenerator: public StubCodeGenerator {
     // rtmp1 = b & d
     __ andr(rtmp1, b, d);
 
-    // rtmp2 = (c & (~d))
-    __ notr(rtmp2, d);
-    __ andr(rtmp2, rtmp2, c);
+    // rtmp2 = c & (~d)
+    __ andn(rtmp2, c, d);
 
     // rtmp1 = (b & d) | (c & (~d))
     __ orr(rtmp1, rtmp1, rtmp2);
@@ -4939,8 +4937,7 @@ class StubGenerator: public StubCodeGenerator {
               int k, int s, int t,
               Register rtmp1, Register rtmp2, Register rmask32) {
     // rtmp1 = c ^ (b | (~d))
-    __ notr(rtmp2, d);
-    __ orr(rtmp1, b, rtmp2);
+    __ orn(rtmp1, b, d);
     __ xorr(rtmp1, c, rtmp1);
 
     m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
@@ -5063,7 +5060,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(ofs, ofs_arg);
       __ mv(limit, limit_arg);
     }
-    __ li(rmask32, MASK_32);
+    __ mv(rmask32, MASK_32);
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
