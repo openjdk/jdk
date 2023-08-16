@@ -1167,7 +1167,7 @@ var getJibProfilesDependencies = function (input, common) {
         jmh: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.28+1.0"
+            revision: "1.35+1.0"
         },
 
         jcov: {
