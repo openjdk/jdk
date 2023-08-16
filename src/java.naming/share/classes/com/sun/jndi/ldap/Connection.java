@@ -282,96 +282,119 @@ public final class Connection implements Runnable {
 
         Socket socket = null;
         try {
+            // create the socket with factory
             if (socketFactory != null) {
-
-                // create the factory
-
-                @SuppressWarnings("unchecked")
-                Class<? extends SocketFactory> socketFactoryClass =
-                        (Class<? extends SocketFactory>) Obj.helper.loadClass(socketFactory);
-                Method getDefault =
-                        socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
-                SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
-
-                // create the socket
-
-                if (connectTimeout > 0) {
-
-                    InetSocketAddress endpoint =
-                            createInetSocketAddress(host, port);
-
-                    // unconnected socket
-                    socket = factory.createSocket();
-
-                    if (debug) {
-                        System.err.println("Connection: creating socket with " +
-                                "a timeout using supplied socket factory");
-                    }
-
-                    // connected socket
-                    socket.connect(endpoint, connectTimeout);
-                }
-
-                // continue (but ignore connectTimeout)
-                if (socket == null) {
-                    if (debug) {
-                        System.err.println("Connection: creating socket using " +
-                                "supplied socket factory");
-                    }
-                    // connected socket
-                    socket = factory.createSocket(host, port);
-                }
+                socket = createSocketWithFactory (host, port, socketFactory, connectTimeout) ;
             } else {
-
-                if (connectTimeout > 0) {
-
-                    InetSocketAddress endpoint = createInetSocketAddress(host, port);
-
-                    socket = new Socket();
-
-                    if (debug) {
-                        System.err.println("Connection: creating socket with " +
-                                "a timeout");
-                    }
-                    socket.connect(endpoint, connectTimeout);
-                }
-
-                // continue (but ignore connectTimeout)
-
-                if (socket == null) {
-                    if (debug) {
-                        System.err.println("Connection: creating socket");
-                    }
-                    // connected socket
-                    socket = new Socket(host, port);
-                }
+                // create the socket without factory
+                socket = createSocketWithoutFactory(host, port, connectTimeout);
             }
-
-            // For LDAP connect timeouts on LDAP over SSL connections must treat
-            // the SSL handshake following socket connection as part of the timeout.
-            // So explicitly set a socket read timeout, trigger the SSL handshake,
-            // then reset the timeout.
-            if (socket instanceof SSLSocket) {
-                SSLSocket sslSocket = (SSLSocket) socket;
-                if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
-                    SSLParameters param = sslSocket.getSSLParameters();
-                    param.setEndpointIdentificationAlgorithm("LDAPS");
-                    sslSocket.setSSLParameters(param);
-                }
-                setHandshakeCompletedListener(sslSocket);
-                if (connectTimeout > 0) {
-                    int socketTimeout = sslSocket.getSoTimeout();
-                    sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
-                    sslSocket.startHandshake();
-                    sslSocket.setSoTimeout(socketTimeout);
-                }
-            }
+            //the handshake with server and reset timeout for the socket
+            initialSSLHandshake (socket, connectTimeout);
         } catch (Exception e) {
             // 8314063 the socket is not closed after the failure of handshake
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
+            // close the socket while the error happened
+            closeSocket (socket);
             throw e;
+        }
+        return socket;
+    }
+
+    // close the socket when the error happens
+    private void closeSocket (Socket socket) {
+        if (socket != null && !socket.isClosed()) {
+            try {
+                socket.close();
+            } catch (IOException ioe) {
+                if (debug) {
+                    System.err.println("Connection: createSocket failed with " + ioe);
+                }
+            }
+        }
+    }
+
+    // For LDAP connect timeouts on LDAP over SSL connections must treat
+    // the SSL handshake following socket connection as part of the timeout.
+    // So explicitly set a socket read timeout, trigger the SSL handshake,
+    // then reset the timeout.
+    private void initialSSLHandshake(Socket socket , int connectTimeout) throws Exception {
+
+        if (socket instanceof SSLSocket) {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
+                SSLParameters param = sslSocket.getSSLParameters();
+                param.setEndpointIdentificationAlgorithm("LDAPS");
+                sslSocket.setSSLParameters(param);
+            }
+            setHandshakeCompletedListener(sslSocket);
+            if (connectTimeout > 0) {
+                int socketTimeout = sslSocket.getSoTimeout();
+                sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+                sslSocket.startHandshake();
+                sslSocket.setSoTimeout(socketTimeout);
+            }
+        }
+    }
+
+    // create the socket without the factory
+    private Socket createSocketWithoutFactory (String host, int port, int connectTimeout) throws Exception {
+        Socket socket = null;
+
+        if (connectTimeout > 0) {
+            InetSocketAddress endpoint = createInetSocketAddress(host, port);
+            socket = new Socket();
+            if (debug) {
+                System.err.println("Connection: creating socket with " +
+                        "a timeout");
+            }
+            socket.connect(endpoint, connectTimeout);
+        }
+
+        // continue (but ignore connectTimeout)
+        if (socket == null) {
+            if (debug) {
+                System.err.println("Connection: creating socket");
+            }
+            // connected socket
+            socket = new Socket(host, port);
+        }
+        return socket;
+    }
+
+    // create the socket with the provided factory
+    private Socket createSocketWithFactory(String host, int port, String socketFactory,
+                                           int connectTimeout) throws Exception {
+        Socket socket = null;
+        @SuppressWarnings("unchecked")
+        Class<? extends SocketFactory> socketFactoryClass = (Class<? extends SocketFactory>)
+                Obj.helper.loadClass(socketFactory);
+        Method getDefault =
+                socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
+        SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+
+        // create the socket
+        if (connectTimeout > 0) {
+
+            InetSocketAddress endpoint =
+                    createInetSocketAddress(host, port);
+            // unconnected socket
+            socket = factory.createSocket();
+            if (debug) {
+                System.err.println("Connection: creating socket with " +
+                        "a timeout using supplied socket factory");
+            }
+            // connected socket
+            socket.connect(endpoint, connectTimeout);
+        }
+
+        // continue (but ignore connectTimeout)
+        if (socket == null) {
+            if (debug) {
+                System.err.println("Connection: creating socket using " +
+                        "supplied socket factory");
+            }
+            // connected socket
+            socket = factory.createSocket(host, port);
         }
         return socket;
     }

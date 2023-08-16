@@ -29,12 +29,13 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.Context;
 import java.util.Hashtable;
+
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
@@ -53,7 +54,6 @@ import java.util.Hashtable;
  */
 
 public class LdapSSLHandshakeFailureTest {
-    private static String url;
     private static String SOCKET_CLOSED_MSG = "The socket has been closed.";
     private static String SOCKET_NOT_CLOSED_MSG = "The socket was not closed.";
 
@@ -63,19 +63,22 @@ public class LdapSSLHandshakeFailureTest {
         // start the test server first.
         TestServer server = new TestServer();
         server.start();
-        url = "ldaps://localhost:" + server.getPortNumber();
         Hashtable<String, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, url);
+        env.put(Context.PROVIDER_URL, URIBuilder.newBuilder()
+                .scheme("ldaps")
+                .loopback()
+                .port(server.getPortNumber())
+                .buildUnchecked().toString());
         env.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
         env.put("java.naming.ldap.version", "3");
         env.put("com.sun.jndi.ldap.connect.timeout", "1000");
         env.put(Context.SECURITY_AUTHENTICATION, "Simple");
         env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
         env.put(Context.SECURITY_CREDENTIALS, "justpassword");
+        LdapContext ctx = null;
         try {
-            LdapContext ctx = new InitialLdapContext(env, null);
-            ctx.close();
+            ctx  = new InitialLdapContext(env, null);
         } catch (Exception e) {
             if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0) {
                 System.out.println(SOCKET_CLOSED_MSG);
@@ -83,6 +86,9 @@ public class LdapSSLHandshakeFailureTest {
                 System.out.println(SOCKET_NOT_CLOSED_MSG);
                 throw e;
             }
+        } finally {
+            if(ctx != null)
+                ctx.close();
         }
     }
     public static class CustomSocketFactory extends SocketFactory {
@@ -146,12 +152,11 @@ public class LdapSSLHandshakeFailureTest {
 
         private final ServerSocket serverSocket;
         private final int PORT;
-        private volatile boolean exceptionThrown;
 
-        TestServer() throws IOException {
+        TestServer() {
             try {
                 SSLServerSocketFactory socketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                serverSocket = socketFactory.createServerSocket(0);
+                serverSocket = socketFactory.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
                 PORT = serverSocket.getLocalPort();
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -163,35 +168,28 @@ public class LdapSSLHandshakeFailureTest {
             return PORT;
         }
 
-        public boolean isExceptionThrown() {
-            return exceptionThrown;
-        }
-
         @Override
         public void run() {
-            try (Socket socket = serverSocket.accept()) {
-                Thread.sleep(10000);
-                try (InputStream in = socket.getInputStream()) {
-                    try (OutputStream out = socket.getOutputStream()) {
+            try (Socket socket = serverSocket.accept();
+                 InputStream in = socket.getInputStream();
+                 OutputStream out = socket.getOutputStream()) {
 
-                        byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
-                        // read the bindRequest
-                        while (in.read() != -1) {
-                            in.skip(in.available());
-                            break;
-                        }
-                        out.write(bindResponse);
-                        out.flush();
-                        // ignore the further requests
-                        while (in.read() != -1) {
-                            in.skip(in.available());
-                        }
-                    }
+                Thread.sleep(10000);
+                byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A, 0x01, 0x00,
+                        0x04, 0x00, 0x04, 0x00};
+                // read the bindRequest
+                while (in.read() != -1) {
+                    in.skip(in.available());
+                    break;
                 }
-            } catch (Exception expectedException) {
-                if (expectedException instanceof SSLHandshakeException) {
-                    exceptionThrown = Boolean.TRUE;
+                out.write(bindResponse);
+                out.flush();
+                // ignore the further requests
+                while (in.read() != -1) {
+                    in.skip(in.available());
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
