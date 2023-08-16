@@ -352,11 +352,11 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     return DirectCallGenerator::generate(jvms);
   }
 
-  virtual void print_inlining_late(Inlining::Kind success, const char* msg) {
+  virtual void print_inlining_late(InliningKind kind, const char* msg) {
     CallNode* call = call_node();
     Compile* C = Compile::current();
     C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), success, msg);
+    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), kind, msg);
     C->print_inlining_move_to(this);
     C->print_inlining_update_delayed(this);
   }
@@ -494,11 +494,11 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
     return new_jvms;
   }
 
-  virtual void print_inlining_late(Inlining::Kind success, const char* msg) {
+  virtual void print_inlining_late(InliningKind kind, const char* msg) {
     CallNode* call = call_node();
     Compile* C = Compile::current();
     C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), success, msg);
+    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), kind, msg);
     C->print_inlining_move_to(this);
     C->print_inlining_update_delayed(this);
   }
@@ -527,7 +527,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   const Type* recv_type = C->initial_gvn()->type(receiver);
   if (recv_type->maybe_null()) {
     if (C->print_inlining() || C->print_intrinsics()) {
-      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), Inlining::FAILURE,
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), InliningKind::FAILURE,
                         "late call devirtualization failed (receiver may be null)");
     }
     return false;
@@ -537,7 +537,7 @@ bool LateInlineVirtualCallGenerator::do_late_inline_check(Compile* C, JVMState* 
   if (!allow_inline && _callee->holder()->is_interface()) {
     // Don't convert the interface call to a direct call guarded by an interface subtype check.
     if (C->print_inlining() || C->print_intrinsics()) {
-      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), Inlining::FAILURE,
+      C->print_inlining(method(), jvms->depth()-1, call_node()->jvms()->bci(), InliningKind::FAILURE,
                         "late call devirtualization failed (interface call)");
     }
     return false;

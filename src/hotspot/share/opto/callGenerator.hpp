@@ -171,14 +171,14 @@ class CallGenerator : public ArenaObj {
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
-  virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
+  virtual void print_inlining_late(InliningKind kind, const char* msg) { ShouldNotReachHere(); }
 
   static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, Inlining::SUCCESS, msg);
+    print_inlining_impl(C, callee, inline_level, bci, InliningKind::SUCCESS, msg);
   }
 
   static void print_inlining_failure(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining_impl(C, callee, inline_level, bci, Inlining::FAILURE, msg);
+    print_inlining_impl(C, callee, inline_level, bci, InliningKind::FAILURE, msg);
     C->log_inline_failure(msg);
   }
 
@@ -188,9 +188,9 @@ class CallGenerator : public ArenaObj {
 
 private:
   static void print_inlining_impl(Compile* C, ciMethod* callee, int inline_level, int bci,
-                                  Inlining::Kind success, const char* msg) {
+                                  InliningKind kind, const char* msg) {
     if (C->print_inlining()) {
-      C->print_inlining(callee, inline_level, bci, success, msg);
+      C->print_inlining(callee, inline_level, bci, kind, msg);
     }
   }
 };
