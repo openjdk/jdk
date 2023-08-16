@@ -191,10 +191,19 @@ class MallocMemorySnapshot : public ResourceObj {
     // copy is going on, because their size is adjusted using this
     // buffer in make_adjustment().
     ThreadCritical tc;
-    s->_all_mallocs = _all_mallocs;
-    for (int index = 0; index < mt_number_of_types; index ++) {
-      s->_malloc[index] = _malloc[index];
-    }
+    size_t total_mallocs;
+    do {
+      total_mallocs = 0;
+      s->_all_mallocs = _all_mallocs;
+      for (int index = 0; index < mt_number_of_types; index ++) {
+        s->_malloc[index] = _malloc[index];
+        total_mallocs += _malloc[index].malloc_size();
+      }
+      if (s->_all_mallocs.size() != total_mallocs) {
+        log_debug(nmt, tracking)("some malloc items changed after copied. The sum is different: %ld, %ld",s->_all_mallocs.size(), total_mallocs);
+      }
+      assert(s->_all_mallocs.size() == total_mallocs, "Total != Sum of parts");
+    } while(s->_all_mallocs.size() != total_mallocs);
   }
 
   // Make adjustment by subtracting chunks used by arenas
