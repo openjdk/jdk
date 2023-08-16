@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,8 +704,9 @@ class FileSystemPreferences extends AbstractPreferences {
     public void removeNode() throws BackingStoreException {
         synchronized (isUserNode()? userLockFile: systemLockFile) {
             // to remove a node we need an exclusive lock
-            if (!lockFile(false))
-                throw(new BackingStoreException("Couldn't get file lock."));
+            int errCode = lockFile(false);
+            if (errCode != 0)
+                throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode));
            try {
                 super.removeNode();
            } finally {
@@ -765,8 +766,12 @@ class FileSystemPreferences extends AbstractPreferences {
             shared = !isSystemRootWritable;
         }
         synchronized (isUserNode()? userLockFile:systemLockFile) {
-           if (!lockFile(shared))
-               throw(new BackingStoreException("Couldn't get file lock."));
+           int errCode = lockFile(shared);
+           if (errCode != 0) {
+               String sharingMode = "shared";
+               if (!shared) sharingMode = "nonshared";
+               throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + " mode is " + sharingMode));
+           }
            final Long newModTime =
                 AccessController.doPrivileged(
                     new PrivilegedAction<Long>() {
@@ -927,10 +932,10 @@ class FileSystemPreferences extends AbstractPreferences {
      * Try to acquire the appropriate file lock (user or system).  If
      * the initial attempt fails, several more attempts are made using
      * an exponential backoff strategy.  If all attempts fail, this method
-     * returns false.
+     * returns the error code.
      * @throws SecurityException if file access denied.
      */
-    private boolean lockFile(boolean shared) throws SecurityException{
+    private int lockFile(boolean shared) throws SecurityException{
         boolean usernode = isUserNode();
         int[] result;
         int errorCode = 0;
@@ -948,7 +953,7 @@ class FileSystemPreferences extends AbstractPreferences {
                      } else {
                          systemRootLockHandle = result[LOCK_HANDLE];
                      }
-                     return true;
+                     return 0;
                   }
             } catch(IOException e) {
 //                // If at first, you don't succeed...
@@ -958,12 +963,12 @@ class FileSystemPreferences extends AbstractPreferences {
                 Thread.sleep(sleepTime);
             } catch(InterruptedException e) {
                 checkLockFile0ErrorCode(errorCode);
-                return false;
+                return errorCode;
             }
             sleepTime *= 2;
         }
         checkLockFile0ErrorCode(errorCode);
-        return false;
+        return errorCode;
     }
 
     /**
