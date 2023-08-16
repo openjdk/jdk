@@ -1446,11 +1446,12 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
       }
       break;
     case DW_LNS_advance_pc: { // 1 operand
-      uint64_t operation_advance;
-      if (!_reader.read_uleb128(&operation_advance, 4)) {
+      uint64_t adv;
+      if (!_reader.read_uleb128(&adv, 4)) {
         // Must be at most 4 bytes because the index register is only 4 bytes wide.
         return false;
       }
+      uint8_t operation_advance = checked_cast<uint8_t>(adv);
       _state->add_to_address_register(operation_advance, _header);
       if (_state->_dwarf_version == 4) {
         _state->set_index_register(operation_advance, _header);
@@ -1707,7 +1708,7 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint64_t operation_advance,
+void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint8_t operation_advance,
                                                                                    const LineNumberProgramHeader& header) {
   if (_dwarf_version == 2 || _dwarf_version == 3) {
     _address += (uintptr_t)(operation_advance * header._minimum_instruction_length);
@@ -1718,7 +1719,7 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_regist
 }
 
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
-void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(const uint64_t operation_advance,
+void DwarfFile::LineNumberProgram::LineNumberProgramState::set_index_register(const uint8_t operation_advance,
                                                                               const LineNumberProgramHeader& header) {
   _op_index = (_op_index + operation_advance) % header._maximum_operations_per_instruction;
 }
