@@ -1412,7 +1412,7 @@ public class CSS implements Serializable {
         } else if (strlc.charAt(0) == '#') {
             return hexToColor(str);
         } else {
-            if(colorNames == null) {
+            if (colorNames == null) {
                 colorNames = initColorNames();
             }
             Color color = colorNames.get(strlc);
