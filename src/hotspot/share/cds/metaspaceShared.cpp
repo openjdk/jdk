@@ -1328,8 +1328,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
                                      os::vm_page_size(), (char*) base_address);
     } else {
-      // Reserve anywhere, but mapping start address must be directly encodable as encoding base.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, true);
+      // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
+      // case we reserve whereever, but the start address needs to be encodable as narrow Klass encoding base
+      // since the archived heap objects contain nKlass IDs precalculated toward the start of the shared Metaspace.
+      // The "cds_runtime" parameter expresses that.
+      constexpr bool cds_runtime = true;
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, cds_runtime);
     }
 
     if (!total_space_rs.is_reserved()) {
