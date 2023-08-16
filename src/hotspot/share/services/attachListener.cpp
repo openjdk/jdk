@@ -411,11 +411,6 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
         }
       }
 
-      // check for platform dependent attach operation
-      if (info == nullptr) {
-        info = AttachListener::pd_find_operation(op->name());
-      }
-
       if (info != nullptr) {
         // dispatch to the function that implements this operation
         res = (info->func)(op, &st);

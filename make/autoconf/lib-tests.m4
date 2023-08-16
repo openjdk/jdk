@@ -29,7 +29,7 @@
 
 # Minimum supported versions
 JTREG_MINIMUM_VERSION=7.3
-GTEST_MINIMUM_VERSION=1.13.0
+GTEST_MINIMUM_VERSION=1.14.0
 
 ###############################################################################
 #
