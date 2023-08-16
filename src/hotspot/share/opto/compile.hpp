@@ -511,9 +511,9 @@ private:
   void print_inlining_assert_ready();
   void print_inlining_reset();
 
-  void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = nullptr) {
+  void print_inlining(ciMethod* method, int inline_level, int bci, Inlining::Kind success, const char* msg = nullptr) {
     stringStream ss;
-    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
+    CompileTask::print_inlining_inner(&ss, method, inline_level, bci, success, msg);
     print_inlining_stream()->print("%s", ss.freeze());
   }
 

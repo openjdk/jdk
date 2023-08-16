@@ -409,7 +409,7 @@ bool CompileTask::check_break_at_flags() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_inlining
-void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg) {
+void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, Inlining::Kind success, const char* msg) {
   //         1234567
   st->print("        ");     // print timestamp
   //         1234
@@ -436,6 +436,7 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
 
   for (int i = 0; i < inline_level; i++)  st->print("  ");
 
+  st->print(success == Inlining::SUCCESS ? "+" : "-");
   st->print("@ %d  ", bci);  // print bci
   method->print_short_name(st);
   if (method->is_loaded())
@@ -469,11 +470,11 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
   }
 }
 
-void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, const char* msg) {
+void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, Inlining::Kind success, const char* msg) {
   LogTarget(Debug, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print_inlining_inner(&ls, method, inline_level, bci, msg);
+    print_inlining_inner(&ls, method, inline_level, bci, success, msg);
   }
 }
 
