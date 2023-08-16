@@ -188,13 +188,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
-  // Global marking has completed and we may have collected regions with no live objects.
-  // We need to fill in any unmarked objects in the old generation so that subsequent
-  // remembered set scans will not walk pointers into reclaimed memory.
-  if (heap->mode()->is_generational() && _generation->is_global()) {
-    entry_global_coalesce_and_fill();
-  }
-
   // Continue the cycle with evacuation and optional update-refs.
   // This may be skipped if there is nothing to evacuate.
   // If so, evac_in_progress would be unset by collection set preparation code.
@@ -596,21 +589,6 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
   op_cleanup_complete();
 }
 
-void ShenandoahConcurrentGC::entry_global_coalesce_and_fill() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
-  const char* msg = "Coalescing and filling old regions in global collect";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::coalesce_and_fill);
-
-  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  EventMark em("%s", msg);
-  ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_marking(),
-                              "concurrent coalesce and fill");
-
-  op_global_coalesce_and_fill();
-}
-
 void ShenandoahConcurrentGC::op_reset() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahPacing) {
@@ -815,7 +793,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
         // Arm nmethods/stack for concurrent processing
         if (!heap->collection_set()->is_empty()) {
           // Iff objects will be evaluated, arm the nmethod barriers. These will be disarmed
-          // under the same condition (established in preprare_concurrent_roots) after strong
+          // under the same condition (established in prepare_concurrent_roots) after strong
           // root evacuation has completed (see op_strong_roots).
           ShenandoahCodeRoots::arm_nmethods();
           ShenandoahStackWatermark::change_epoch_id();
@@ -1315,10 +1293,6 @@ void ShenandoahConcurrentGC::op_final_roots() {
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
   ShenandoahHeap::heap()->free_set()->recycle_trash();
-}
-
-void ShenandoahConcurrentGC::op_global_coalesce_and_fill() {
-  ShenandoahHeap::heap()->coalesce_and_fill_old_regions();
 }
 
 bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {

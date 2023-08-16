@@ -136,15 +136,17 @@ public:
   // Adjust internal state to reflect that one fewer old-collection candidate remains to be processed.
   void consume_old_collection_candidate();
 
-  // How many old-collection regions were identified at the end of the most recent old-gen mark to require their
-  // unmarked objects to be coalesced and filled?
-  uint last_old_region_index() const;
-
-  // Fill in buffer with all of the old-collection regions that were identified at the end of the most recent old-gen
+  // Fill in buffer with all the old-collection regions that were identified at the end of the most recent old-gen
   // mark to require their unmarked objects to be coalesced and filled.  The buffer array must have at least
   // last_old_region_index() entries, or memory may be corrupted when this function overwrites the
   // end of the array.
   unsigned int get_coalesce_and_fill_candidates(ShenandoahHeapRegion** buffer);
+
+  // True if there are old regions that need to be filled.
+  bool has_coalesce_and_fill_candidates() const { return coalesce_and_fill_candidates_count() > 0; }
+
+  // Return the number of old regions that need to be filled.
+  size_t coalesce_and_fill_candidates_count() const { return _last_old_region - _next_old_collection_candidate; }
 
   // If a GLOBAL gc occurs, it will collect the entire heap which invalidates any collection candidates being
   // held by this heuristic for supplying mixed collections.

@@ -36,16 +36,16 @@ public:
   : ShenandoahGeneration(generational ? GLOBAL_GEN : GLOBAL_NON_GEN, max_queues, max_capacity, soft_max_capacity) { }
 
 public:
-  virtual const char* name() const override;
+  const char* name() const override;
 
-  virtual size_t max_capacity() const override;
-  virtual size_t soft_max_capacity() const override;
-  virtual size_t used_regions() const override;
-  virtual size_t used_regions_size() const override;
-  virtual size_t available() const override;
-  virtual size_t soft_available() const override;
+  size_t max_capacity() const override;
+  size_t soft_max_capacity() const override;
+  size_t used_regions() const override;
+  size_t used_regions_size() const override;
+  size_t available() const override;
+  size_t soft_available() const override;
 
-  virtual void set_concurrent_mark_in_progress(bool in_progress) override;
+  void set_concurrent_mark_in_progress(bool in_progress) override;
 
   bool contains(ShenandoahHeapRegion* region) const override;
 
@@ -59,6 +59,10 @@ public:
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   bool is_concurrent_mark_in_progress() override;
+
+  void set_mark_complete() override;
+
+  void set_mark_incomplete() override;
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 };

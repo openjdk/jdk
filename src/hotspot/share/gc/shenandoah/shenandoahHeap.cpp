@@ -1170,29 +1170,6 @@ bool ShenandoahHeap::is_old_gc_active() {
   return _old_generation->state() != ShenandoahOldGeneration::IDLE;
 }
 
-void ShenandoahHeap::coalesce_and_fill_old_regions() {
-  class ShenandoahGlobalCoalesceAndFill : public ShenandoahHeapRegionClosure {
-   public:
-    virtual void heap_region_do(ShenandoahHeapRegion* region) override {
-      // old region is not in the collection set and was not immediately trashed
-      if (region->is_old() && region->is_active() && !region->is_humongous()) {
-        // Reset the coalesce and fill boundary because this is a global collect
-        // and cannot be preempted by young collects. We want to be sure the entire
-        // region is coalesced here and does not resume from a previously interrupted
-        // or completed coalescing.
-        region->begin_preemptible_coalesce_and_fill();
-        region->oop_fill_and_coalesce();
-      }
-    }
-
-    virtual bool is_thread_safe() override {
-      return true;
-    }
-  };
-  ShenandoahGlobalCoalesceAndFill coalesce;
-  parallel_heap_region_iterate(&coalesce);
-}
-
 // xfer_limit is the maximum we're able to transfer from young to old
 void ShenandoahHeap::adjust_generation_sizes_for_next_cycle(
   size_t xfer_limit, size_t young_cset_regions, size_t old_cset_regions) {

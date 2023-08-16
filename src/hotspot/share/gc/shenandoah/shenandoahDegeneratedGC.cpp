@@ -96,16 +96,20 @@ void ShenandoahDegenGC::op_degenerated() {
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
-    if (_generation->is_global()) {
-      // We can only get to a degenerated global cycle _after_ a concurrent global cycle
-      // has been cancelled. In which case, we expect the concurrent global cycle to have
-      // cancelled the old gc already.
-      assert(!heap->is_old_gc_active(), "Old GC should not be active during global cycle");
-    }
-
+    ShenandoahOldGeneration* old_generation = heap->old_generation();
     if (!heap->is_concurrent_old_mark_in_progress()) {
       // If we are not marking the old generation, there should be nothing in the old mark queues
-      assert(heap->old_generation()->task_queues()->is_empty(), "Old gen task queues should be empty");
+      assert(old_generation->task_queues()->is_empty(), "Old gen task queues should be empty");
+    }
+
+    if (_generation->is_global()) {
+      // If we are in a global cycle, the old generation should not be marking. It is, however,
+      // allowed to be holding regions for evacuation or coalescing.
+      ShenandoahOldGeneration::State state = old_generation->state();
+      assert(state == ShenandoahOldGeneration::IDLE
+             || state == ShenandoahOldGeneration::WAITING_FOR_EVAC
+             || state == ShenandoahOldGeneration::WAITING_FOR_FILL,
+             "Old generation cannot be in state: %s", old_generation->state_name());
     }
   }
 #endif
@@ -192,11 +196,6 @@ void ShenandoahDegenGC::op_degenerated() {
       op_cleanup_early();
 
     case _degenerated_evac:
-
-      if (heap->mode()->is_generational() && _generation->is_global()) {
-        op_global_coalesce_and_fill();
-      }
-
       // If heuristics thinks we should do the cycle, this flag would be set,
       // and we can do evacuation. Otherwise, it would be the shortcut cycle.
       if (heap->is_evacuation_in_progress()) {
@@ -299,7 +298,7 @@ void ShenandoahDegenGC::op_degenerated() {
           region_destination = "old";
           success = heap->generation_sizer()->transfer_to_old(old_region_deficit);
           if (!success) {
-            ((ShenandoahOldHeuristics *) heap->old_generation()->heuristics())->trigger_cannot_expand();
+            heap->old_heuristics()->trigger_cannot_expand();
           }
         } else {
           region_destination = "none";
@@ -421,10 +420,6 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
 
 void ShenandoahDegenGC::op_cleanup_early() {
   ShenandoahHeap::heap()->recycle_trash();
-}
-
-void ShenandoahDegenGC::op_global_coalesce_and_fill() {
-  ShenandoahHeap::heap()->coalesce_and_fill_old_regions();
 }
 
 void ShenandoahDegenGC::op_evacuate() {

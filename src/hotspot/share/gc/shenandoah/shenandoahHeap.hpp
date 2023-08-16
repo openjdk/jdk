@@ -854,7 +854,7 @@ public:
   void retire_plab(PLAB* plab, Thread* thread);
   void cancel_old_gc();
   bool is_old_gc_active();
-  void coalesce_and_fill_old_regions();
+
   void adjust_generation_sizes_for_next_cycle(size_t old_xfer_limit, size_t young_cset_regions, size_t old_cset_regions);
 
 // ---------- Helper functions

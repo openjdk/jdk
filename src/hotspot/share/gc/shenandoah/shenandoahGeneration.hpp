@@ -186,8 +186,8 @@ private:
 
   // We need to track the status of marking for different generations.
   bool is_mark_complete();
-  void set_mark_complete();
-  void set_mark_incomplete();
+  virtual void set_mark_complete();
+  virtual void set_mark_incomplete();
 
   ShenandoahMarkingContext* complete_marking_context();
 

@@ -669,6 +669,23 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
         // only make use of evacuation budgets when we are evacuating
         adjust_evacuation_budgets(heap, collection_set, consumed_by_advance_promotion);
       }
+
+      if (is_global()) {
+        // We have just chosen a collection set for a global cycle. The mark bitmap covering old regions is complete, so
+        // the remembered set scan can use that to avoid walking into garbage. When the next old mark begins, we will
+        // use the mark bitmap to make the old regions parseable by coalescing and filling any unmarked objects. Thus,
+        // we prepare for old collections by remembering which regions are old at this time. Note that any objects
+        // promoted into old regions will be above TAMS, and so will be considered marked. However, free regions that
+        // become old after this point will not be covered correctly by the mark bitmap, so we must be careful not to
+        // coalesce those regions. Only the old regions which are not part of the collection set at this point are
+        // eligible for coalescing. As implemented now, this has the side effect of possibly initiating mixed-evacuations
+        // after a global cycle for old regions that were not included in this collection set.
+        assert(heap->old_generation()->is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
+        heap->old_heuristics()->prepare_for_old_collections();
+        log_info(gc)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
+                     heap->old_heuristics()->unprocessed_old_collection_candidates(),
+                     heap->old_heuristics()->coalesce_and_fill_candidates_count());
+      }
     } else {
       _heuristics->choose_collection_set(collection_set);
     }

@@ -117,6 +117,10 @@ public:
     return _state;
   }
 
+  const char* state_name() const {
+    return state_name(_state);
+  }
+
   void transition_to(State new_state);
 
   size_t get_live_bytes_after_last_mark() const;
