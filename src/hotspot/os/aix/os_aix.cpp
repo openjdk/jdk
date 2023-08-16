@@ -2985,7 +2985,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   jio_snprintf(buffer, bufferSize, "%s/core or core.%d",
                                                p, current_process_id());
 
-  return strlen(buffer);
+  return checked_cast<int>(strlen(buffer));
 }
 
 bool os::start_debugging(char *buf, int buflen) {
@@ -3023,7 +3023,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 bool os::supports_map_sync() {

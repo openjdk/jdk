@@ -1270,7 +1270,7 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.13.0+1.0"
+            revision: "1.14.0+1.0"
         },
 
         libffi: {

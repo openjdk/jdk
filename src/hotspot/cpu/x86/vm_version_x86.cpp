@@ -1913,9 +1913,9 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        log->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        log->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
 
@@ -3169,7 +3169,7 @@ bool VM_Version::is_intel_tsc_synched_at_init() {
   return false;
 }
 
-intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
+int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // Hardware prefetching (distance/size in bytes):
   // Pentium 3 -  64 /  32
   // Pentium 4 - 256 / 128
