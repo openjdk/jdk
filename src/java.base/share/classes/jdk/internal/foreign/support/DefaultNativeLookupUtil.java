@@ -44,7 +44,7 @@ public final class DefaultNativeLookupUtil {
         return returnValue == 1;
     }
 
-    private static MemorySegment lookup(String name) {
+    public static MemorySegment lookup(String name) {
         var address = Linker.nativeLinker()
                 .defaultLookup()
                 .find(name);
