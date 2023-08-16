@@ -176,9 +176,9 @@ public interface ConstantPool {
      * in the constant pool.
      *
      * @param index if {@code opcode} is -1,  {@code index} is a constant pool index. Otherwise {@code opcode}
-     *              must be ${code Bytecodes.INVOKEDYNAMIC}, and {@code index} must be the operand of that
-     *              opcode in the bytecode stream (i.e., a {$code rawIndex}).
-     * @param opcode must be ${code Bytecodes.INVOKEDYNAMIC}, or -1 if
+     *              must be {@code Bytecodes.INVOKEDYNAMIC}, and {@code index} must be the operand of that
+     *              opcode in the bytecode stream (i.e., a {@code rawIndex}).
+     * @param opcode must be {@code Bytecodes.INVOKEDYNAMIC}, or -1 if
      *            {@code index} was not decoded from a bytecode stream
      * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
      *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}

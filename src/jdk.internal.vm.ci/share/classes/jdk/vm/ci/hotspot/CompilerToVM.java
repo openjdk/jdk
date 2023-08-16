@@ -562,7 +562,7 @@ final class CompilerToVM {
     /**
      * Gets the appendix object (if any) associated with the entry identified by {@code which}.
      *
-     * @param which if negative, is treated as an encoded indy index for INVONEDYNAMIC;
+     * @param which if negative, is treated as an encoded indy index for INVOKEDYNAMIC;
      *              Otherwise, it's treated as a constant pool cache index (returned by HotSpotConstantPool::rawIndexToConstantPoolCacheIndex)
      *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */

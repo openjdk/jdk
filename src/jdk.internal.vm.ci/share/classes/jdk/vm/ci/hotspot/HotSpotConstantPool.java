@@ -57,7 +57,8 @@ import jdk.vm.ci.meta.UnresolvedJavaType;
  * <li>which -    May be either a {@code rawIndex} or a {@code cpci}.</li>
  * </ul>
  *
- * Note that {@code cpci} and {@code which} are used only in the HotSpot-specific implementation. They are not used by the public iterface in jdk.vm.ci.meta.*.
+ * Note that {@code cpci} and {@code which} are used only in the HotSpot-specific implementation. They
+ * are not used by the public interface in jdk.vm.ci.meta.*.
  * After JDK-8301993, all uses of {@code cpci} and {@code which} will be replaced with {@code rawIndex}.
  */
 public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleObject {
