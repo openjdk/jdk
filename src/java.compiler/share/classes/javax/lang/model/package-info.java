@@ -57,7 +57,7 @@
  * <h3><a id=DefUse>Definitions and Uses</a></h3>
  *
  * In broad terms the {@link javax.lang.model.element element} package
- * models the declarations, that is <em>definitions</em>, of elements while
+ * models the declarations, that is the <em>definitions</em>, of elements while
  * the {@link javax.lang.model.type type} package models <em>uses</em>
  * of types. In general, distinct uses can have individualized
  * information separate from the information associated with the
@@ -111,19 +111,30 @@
  * modifiers} can be retrieved.
  *
  * <p>All elements can be {@linkplain
- * javax.lang.model.element.Element#asType() mapped to} some type. For
- * classes and interfaces, their elements get {@linkplain
+ * javax.lang.model.element.Element#asType() mapped to} some type.
+ * The elements for classes and interfaces get {@linkplain
  * javax.lang.model.element.TypeElement#asType() mapped to} a
- * prototypical type. Conversely, in general, many types can map to a
- * given type element. For example, the type mirror for the raw type
+ * prototypical type.
+ * (If a class or interface is generic, its prototypical type mirror
+ * is parameterized with type arguments matching the type variables of
+ * the declaration. Otherwise, for a non-generic class or interface,
+ * the prototypical type mirror corresponds to an unannotated use of
+ * the type.)
+ * Conversely, in general, many types can map to
+ * the same {@linkplain javax.lang.model.element.TypeElement type element}. For example, the type mirror for the raw type
  * {@code java.util.Set}, the prototypical type {@code
  * java.util.Set<E>}, and the type {@code java.util.Set<String>} would
  * all {@linkplain javax.lang.model.type.DeclaredType#asElement() map
- * to} the element for {@code java.util.Set}. Several kinds of types
- * can be {@linkplain
- * javax.lang.model.util.Types#asElement(TypeMirror) mapped to
- * elements}, but other kinds of types do <em>not</em> have an element
- * mapping.
+ * to} the type element for {@code java.util.Set}. Several kinds of
+ * types can be mapped to elements, but other kinds of types do
+ * <em>not</em> have an {@linkplain
+ * javax.lang.model.util.Types#asElement(TypeMirror) element mapping}.
+ * For example, the type mirror of an {@linkplain
+ * javax.lang.model.type.ExecutableType executable type} does
+ * <em>not</em> have an element mapping while a {@linkplain
+ * javax.lang.model.type.DeclaredType declared type} would map to a
+ * {@linkplain javax.lang.model.element.TypeElement type element}, as
+ * discussed above.
  *
  * @since 1.6
  *
