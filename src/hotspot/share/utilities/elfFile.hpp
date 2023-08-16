@@ -790,15 +790,15 @@ class DwarfFile : public ElfFile {
       uint64_t _op_index;
 
       // The identity of the source file corresponding to a machine instruction.
-      uint64_t _file;
+      uint32_t _file;
 
       // A source line number. Lines are numbered beginning at 1. The compiler may emit the value 0 in cases where an
       // instruction cannot be attributed to any source line.
-      uint64_t _line;
+      uint32_t _line;
 
       // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
       // that a statement begins at the "left edge" of the line.
-      uint64_t _column;
+      uint32_t _column;
 
       // Indicates that the current instruction is a recommended breakpoint location.
       bool _is_stmt;
@@ -820,10 +820,10 @@ class DwarfFile : public ElfFile {
 
       // Encodes the applicable instruction set architecture for the current instruction.
       // This field was introduced with DWARF 3.
-      uint64_t _isa;
+      uint32_t _isa;
 
       // Identifies the block to which the current instruction belongs. This field was introduced with DWARF 4.
-      uint64_t _discriminator;
+      uint32_t _discriminator;
 
       /*
        * Additional fields which are not part of the actual state as described in DWARF spec.

@@ -1334,7 +1334,7 @@ bool DwarfFile::LineNumberProgram::run_line_number_program(char* filename, const
       }
 
       // We do not actually store the matrix while searching the correct entry. Enable logging to print/debug it.
-      DWARF_LOG_DEBUG(INTPTR_FORMAT "    " INT64_FORMAT "    " INT64_FORMAT "        " INT64_FORMAT,
+      DWARF_LOG_DEBUG(INTPTR_FORMAT "    %-5u    %-3u       %-4u",
                       _state->_address, _state->_line, _state->_column, _state->_file);
       previous_file = _state->_file;
       previous_line = _state->_line;
@@ -1423,7 +1423,7 @@ bool DwarfFile::LineNumberProgram::apply_extended_opcode() {
         // Must be an unsigned integer as specified in section 6.2.2 of the DWARF 4 spec for the discriminator register.
         return false;
       }
-      _state->_discriminator = discriminator;
+      _state->_discriminator = static_cast<uint32_t>(discriminator);
       break;
     default:
       assert(false, "Unknown extended opcode");
@@ -1464,8 +1464,8 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // line register is 4 bytes wide.
         return false;
       }
-      _state->_line += line;
-      DWARF_LOG_TRACE("    DW_LNS_advance_line (" INT64_FORMAT ")", _state->_line);
+      _state->_line += static_cast<uint32_t>(line);
+      DWARF_LOG_TRACE("    DW_LNS_advance_line (%d)", _state->_line);
       break;
     case DW_LNS_set_file: // 1 operand
       uint64_t file;
@@ -1473,8 +1473,8 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // file register is 4 bytes wide.
         return false;
       }
-      _state->_file = file;
-      DWARF_LOG_TRACE("    DW_LNS_set_file (" INT64_FORMAT ")", _state->_file);
+      _state->_file = static_cast<uint32_t>(file);
+      DWARF_LOG_TRACE("    DW_LNS_set_file (%u)", _state->_file);
       break;
     case DW_LNS_set_column: // 1 operand
       uint64_t column;
@@ -1482,8 +1482,8 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // column register is 4 bytes wide.
         return false;
       }
-      _state->_column = column;
-      DWARF_LOG_TRACE("    DW_LNS_set_column (" INT64_FORMAT ")", _state->_column);
+      _state->_column = static_cast<uint32_t>(column);
+      DWARF_LOG_TRACE("    DW_LNS_set_column (%u)", _state->_column);
       break;
     case DW_LNS_negate_stmt: // No operands
       DWARF_LOG_TRACE("    DW_LNS_negate_stmt");
@@ -1528,8 +1528,8 @@ bool DwarfFile::LineNumberProgram::apply_standard_opcode(const uint8_t opcode) {
         // isa register is 4 bytes wide.
         return false;
       }
-      _state->_isa = isa;  // only save 4 bytes
-      DWARF_LOG_TRACE("    DW_LNS_set_isa (" INT64_FORMAT ")", _state->_isa);
+      _state->_isa = static_cast<uint32_t>(isa);  // only save 4 bytes
+      DWARF_LOG_TRACE("    DW_LNS_set_isa (%u)", _state->_isa);
       break;
     default:
       assert(false, "Unknown standard opcode");
@@ -1550,7 +1550,7 @@ void DwarfFile::LineNumberProgram::apply_special_opcode(const uint8_t opcode) {
     _state->_discriminator = 0;
   }
   _state->_line += _header._line_base + (adjusted_opcode % _header._line_range);
-  DWARF_LOG_TRACE("    address += " INTPTR_FORMAT ", line += " INT64_FORMAT, _state->_address - old_address,
+  DWARF_LOG_TRACE("    address += " INTPTR_FORMAT ", line += %d", _state->_address - old_address,
                   _state->_line - old_line);
   _state->_append_row = true;
   _state->_basic_block = false;
@@ -1598,7 +1598,7 @@ void DwarfFile::LineNumberProgram::print_and_store_prev_entry(const uint32_t pre
   _state->_line = previous_line;
   DWARF_LOG_DEBUG("^^^ Found line for requested offset " UINT32_FORMAT_X_0 " ^^^", _offset_in_library);
   // Also print the currently parsed entry.
-  DWARF_LOG_DEBUG(INTPTR_FORMAT "    " INT64_FORMAT "    " INT64_FORMAT "       " INT64_FORMAT,
+  DWARF_LOG_DEBUG(INTPTR_FORMAT "    %-5u    %-3u       %-4u",
                   _state->_address, _state->_line, _state->_column, _state->_file);
 }
 
