@@ -109,7 +109,7 @@ class UnixPath implements Path {
             return "/";
         StringBuilder sb = new StringBuilder(input.length());
         if (off > 0)
-            sb.append(input.substring(0, off));
+            sb.append(input, 0, off);
         char prevChar = 0;
         for (int i=off; i < n; i++) {
             char c = input.charAt(i);
