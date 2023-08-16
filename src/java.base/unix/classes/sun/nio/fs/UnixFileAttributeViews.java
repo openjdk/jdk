@@ -282,6 +282,7 @@ class UnixFileAttributeViews {
                 fd = open(file, O_RDONLY, O_NOFOLLOW);
             } catch (UnixException e1) {
                 if (e1.errno() == EACCES) {
+                    // retry with write access if there is no read permission
                     try {
                         fd = open(file, O_WRONLY, O_NOFOLLOW);
                     } catch (UnixException e2) {
