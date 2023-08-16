@@ -71,8 +71,8 @@ public class LdapSSLHandshakeFailureTest {
         env.put("java.naming.ldap.version", "3");
         env.put("com.sun.jndi.ldap.connect.timeout", "1000");
         env.put(Context.SECURITY_AUTHENTICATION, "Simple");
-        env.put(Context.SECURITY_PRINCIPAL, "cn=orcladmin");
-        env.put(Context.SECURITY_CREDENTIALS, "password1");
+        env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
+        env.put(Context.SECURITY_CREDENTIALS, "justpassword");
         try {
             LdapContext ctx = new InitialLdapContext(env, null);
             ctx.close();
