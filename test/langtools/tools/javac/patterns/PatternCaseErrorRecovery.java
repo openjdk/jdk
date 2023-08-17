@@ -2,9 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8268859
  * @summary Verify error recovery/disambiguation of case labels that mix expressions and patterns
- * @enablePreview
  * @compile/fail/ref=PatternCaseErrorRecovery.out -XDrawDiagnostics PatternCaseErrorRecovery.java
  */
+
 public class PatternCaseErrorRecovery {
     Object expressionLikeType(Object o1, Object o2) {
         final int a = 1;

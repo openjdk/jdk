@@ -1823,6 +1823,42 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         count += end - off;
     }
 
+    /**
+     * Used by StringConcatHelper via JLA. Adds the current builder count to the
+     * accumulation of items being concatenated. If the coder for the builder is
+     * UTF16 then upgrade the whole concatenation to UTF16.
+     *
+     * @param lengthCoder running accumulation of length and coder
+     *
+     * @return updated accumulation of length and coder
+     */
+    long mix(long lengthCoder) {
+        return (lengthCoder + count) | ((long)coder << 32);
+    }
+
+    /**
+     * Used by StringConcatHelper via JLA. Adds the characters in the builder value to the
+     * concatenation buffer and then updates the running accumulation of length.
+     *
+     * @param lengthCoder running accumulation of length and coder
+     * @param buffer      concatenation buffer
+     *
+     * @return running accumulation of length and coder minus the number of characters added
+     */
+    long prepend(long lengthCoder, byte[] buffer) {
+        lengthCoder -= count;
+
+        if (lengthCoder < ((long)UTF16 << 32)) {
+            System.arraycopy(value, 0, buffer, (int)lengthCoder, count);
+        } else if (coder == LATIN1) {
+            StringUTF16.inflate(value, 0, buffer, (int)lengthCoder, count);
+        } else {
+            System.arraycopy(value, 0, buffer, (int)lengthCoder << 1, count << 1);
+        }
+
+        return lengthCoder;
+    }
+
     private AbstractStringBuilder repeat(char c, int count) {
         int limit = this.count + count;
         ensureCapacityInternal(limit);

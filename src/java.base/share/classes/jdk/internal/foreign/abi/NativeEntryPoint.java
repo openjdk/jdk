@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ public class NativeEntryPoint {
     private static final SoftReferenceCache<CacheKey, NativeEntryPoint> NEP_CACHE = new SoftReferenceCache<>();
     private record CacheKey(MethodType methodType, ABIDescriptor abi,
                             List<VMStorage> argMoves, List<VMStorage> retMoves,
-                            boolean needsReturnBuffer, int capturedStateMask) {}
+                            boolean needsReturnBuffer, int capturedStateMask,
+                            boolean needsTransition) {}
 
     private NativeEntryPoint(MethodType methodType, long downcallStubAddress) {
         this.methodType = methodType;
@@ -58,15 +59,18 @@ public class NativeEntryPoint {
                                         VMStorage[] argMoves, VMStorage[] returnMoves,
                                         MethodType methodType,
                                         boolean needsReturnBuffer,
-                                        int capturedStateMask) {
+                                        int capturedStateMask,
+                                        boolean needsTransition) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
             throw new AssertionError("Multiple register return, but needsReturnBuffer was false");
         }
         checkType(methodType, needsReturnBuffer, capturedStateMask);
 
-        CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves), needsReturnBuffer, capturedStateMask);
+        CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves),
+                                    needsReturnBuffer, capturedStateMask, needsTransition);
         return NEP_CACHE.get(key, k -> {
-            long downcallStub = makeDowncallStub(methodType, abi, argMoves, returnMoves, needsReturnBuffer, capturedStateMask);
+            long downcallStub = makeDowncallStub(methodType, abi, argMoves, returnMoves, needsReturnBuffer,
+                                                 capturedStateMask, needsTransition);
             NativeEntryPoint nep = new NativeEntryPoint(methodType, downcallStub);
             CLEANER.register(nep, () -> freeDowncallStub(downcallStub));
             return nep;
@@ -87,7 +91,8 @@ public class NativeEntryPoint {
     private static native long makeDowncallStub(MethodType methodType, ABIDescriptor abi,
                                                 VMStorage[] encArgMoves, VMStorage[] encRetMoves,
                                                 boolean needsReturnBuffer,
-                                                int capturedStateMask);
+                                                int capturedStateMask,
+                                                boolean needsTransition);
 
     private static native boolean freeDowncallStub0(long downcallStub);
     private static void freeDowncallStub(long downcallStub) {

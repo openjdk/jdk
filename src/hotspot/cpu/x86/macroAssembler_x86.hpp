@@ -117,13 +117,13 @@ class MacroAssembler: public Assembler {
     if (op == 0xEB || (op & 0xF0) == 0x70) {
       // short offset operators (jmp and jcc)
       char* disp = (char*) &branch[1];
-      int imm8 = target - (address) &disp[1];
+      int imm8 = checked_cast<int>(target - (address) &disp[1]);
       guarantee(this->is8bit(imm8), "Short forward jump exceeds 8-bit offset at %s:%d",
                 file == nullptr ? "<null>" : file, line);
-      *disp = imm8;
+      *disp = (char)imm8;
     } else {
       int* disp = (int*) &branch[(op == 0x0F || op == 0xC7)? 2: 1];
-      int imm32 = target - (address) &disp[1];
+      int imm32 = checked_cast<int>(target - (address) &disp[1]);
       *disp = imm32;
     }
   }
@@ -149,6 +149,8 @@ class MacroAssembler: public Assembler {
 
   void increment(Register reg, int value = 1) { LP64_ONLY(incrementq(reg, value)) NOT_LP64(incrementl(reg, value)) ; }
   void decrement(Register reg, int value = 1) { LP64_ONLY(decrementq(reg, value)) NOT_LP64(decrementl(reg, value)) ; }
+  void increment(Address dst, int value = 1)  { LP64_ONLY(incrementq(dst, value)) NOT_LP64(incrementl(dst, value)) ; }
+  void decrement(Address dst, int value = 1)  { LP64_ONLY(decrementq(dst, value)) NOT_LP64(decrementl(dst, value)) ; }
 
   void decrementl(Address dst, int value = 1);
   void decrementl(Register reg, int value = 1);
@@ -601,6 +603,16 @@ public:
                                Label& no_such_interface,
                                bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register scan_temp,
+                                    Register temp_reg2,
+                                    Register receiver,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   void lookup_virtual_method(Register recv_klass,
                              RegisterOrConstant vtable_index,
@@ -737,7 +749,7 @@ public:
   void addptr(Register dst, int32_t src);
   void addptr(Register dst, Register src);
   void addptr(Register dst, RegisterOrConstant src) {
-    if (src.is_constant()) addptr(dst, src.as_constant());
+    if (src.is_constant()) addptr(dst, checked_cast<int>(src.as_constant()));
     else                   addptr(dst, src.as_register());
   }
 
@@ -1776,6 +1788,9 @@ public:
   using Assembler::evpandq;
   void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  using Assembler::evpaddq;
+  void evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
+
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
@@ -2007,6 +2022,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
+  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

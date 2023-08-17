@@ -78,6 +78,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -568,7 +571,7 @@ unsigned __stdcall os::win32::thread_native_entry(void* t) {
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
                                   int thread_id) {
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) return nullptr;
 
   // Initialize the JDK library's interrupt event.
@@ -621,9 +624,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
-                       p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -673,7 +676,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   unsigned thread_id;
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -715,6 +718,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
+    default:  // presume the unknown thread type is an internal VM one
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
       break;
     }
@@ -827,6 +831,10 @@ jlong os::elapsed_frequency() {
 
 
 julong os::available_memory() {
+  return win32::available_memory();
+}
+
+julong os::free_memory() {
   return win32::available_memory();
 }
 
@@ -1246,13 +1254,34 @@ void  os::dll_unload(void *lib) {
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
     snprintf(name, MAX_PATH, "<not available>");
   }
+
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(name);
+#endif
+
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const DWORD errcode = ::GetLastError();
+    char buf[500];
+    size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+#if INCLUDE_JFR
+    event.set_success(false);
+    if (tl == 0) {
+      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+    }
+    event.set_errorMessage(buf);
+    event.commit();
+#endif
   }
 }
 
@@ -1521,13 +1550,21 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(name);
+#endif
   void * result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1541,6 +1578,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(ebuf);
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1551,6 +1593,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("open on dll file did not work");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1577,6 +1624,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("failed to get lib architecture");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1621,6 +1673,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage("lib architecture matches, but other error occured");
+    event.commit();
+#endif
     return nullptr;
   }
 
@@ -1634,6 +1691,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(ebuf);
+  event.commit();
+#endif
 
   return nullptr;
 }
@@ -1721,7 +1783,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -4771,8 +4833,19 @@ FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  return ::write(fd, buf, nBytes);
+ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
+  ssize_t original_len = (ssize_t)nBytes;
+  while (nBytes > 0) {
+    unsigned int len = nBytes > INT_MAX ? INT_MAX : (unsigned int)nBytes;
+    // On Windows, ::write takes 'unsigned int' no of bytes, so nBytes should be split if larger.
+    ssize_t written_bytes = ::write(fd, buf, len);
+    if (written_bytes < 0) {
+      return OS_ERR;
+    }
+    nBytes -= written_bytes;
+    buf = (char *)buf + written_bytes;
+  }
+  return original_len;
 }
 
 void os::exit(int num) {
@@ -5249,6 +5322,21 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
+int PlatformEvent::park_nanos(jlong nanos) {
+  assert(nanos > 0, "nanos are positive");
+
+  // Windows timers are still quite unpredictable to handle sub-millisecond granularity.
+  // Instead of implementing sub-millisecond sleeps, fall back to the usual behavior of
+  // rounding up any excess requested nanos to the full millisecond. This is how
+  // Thread.sleep(millis, nanos) has always behaved with only millisecond granularity.
+  jlong millis = nanos / NANOSECS_PER_MILLISEC;
+  if (nanos > millis * NANOSECS_PER_MILLISEC) {
+    millis++;
+  }
+  assert(millis > 0, "should always be positive");
+  return park(millis);
+}
+
 int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
@@ -5418,6 +5506,10 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+PlatformMutex::~PlatformMutex() {
+  DeleteCriticalSection(&_mutex);
+}
+
 // Platform Monitor implementation
 
 // Must already be locked
@@ -5537,19 +5629,19 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   return ::recv(fd, buf, (int)nBytes, flags);
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
@@ -5991,6 +6083,33 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
   }
 }
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+
+  BOOL ret = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) &pmex, sizeof(pmex));
+  if (ret != 0) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(pmex.WorkingSetSize);
+    event.set_peak(pmex.PeakWorkingSetSize);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: GetProcessMemoryInfo failed");
+      first_warning = false;
+    }
+  }
+}
+
+#endif // INCLUDE_JFR
+
 
 // File conventions
 const char* os::file_separator() { return "\\"; }

@@ -92,10 +92,8 @@ public:
     }
     inline ~SafepointOp() { // reload oops
       _cont._continuation = _conth();
-      if (_cont._tail != nullptr) {
-        _cont._tail = jdk_internal_vm_Continuation::tail(_cont._continuation);
-       }
-       _cont.disallow_safepoint();
+      _cont._tail = jdk_internal_vm_Continuation::tail(_cont._continuation);
+      _cont.disallow_safepoint();
     }
   };
 

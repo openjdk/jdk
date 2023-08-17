@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.stream.Collectors;
 
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.VariableTree;
@@ -426,24 +425,18 @@ public class Analyzer {
 
         @Override
         boolean match(JCEnhancedForLoop tree){
-            return tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE &&
-                    !isImplicitlyTyped((JCVariableDecl) tree.varOrRecordPattern);
+            return !isImplicitlyTyped(tree.var);
         }
         @Override
         List<JCEnhancedForLoop> rewrite(JCEnhancedForLoop oldTree) {
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
             JCEnhancedForLoop newTree = copier.copy(oldTree);
-            newTree.varOrRecordPattern = rewriteVarType((JCVariableDecl) oldTree.varOrRecordPattern);
+            newTree.var = rewriteVarType(oldTree.var);
             newTree.body = make.at(oldTree.body).Block(0, List.nil());
             return List.of(newTree);
         }
         @Override
         void process(JCEnhancedForLoop oldTree, JCEnhancedForLoop newTree, boolean hasErrors){
-            Assert.check(oldTree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
-            processVar((JCVariableDecl) oldTree.varOrRecordPattern,
-                           (JCVariableDecl) newTree.varOrRecordPattern, hasErrors);
+            processVar(oldTree.var, newTree.var, hasErrors);
         }
     }
 

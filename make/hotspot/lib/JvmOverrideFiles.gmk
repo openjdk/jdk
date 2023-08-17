@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,11 @@ else ifeq ($(call isTargetOs, macosx), true)
   endif
 
 else ifeq ($(call isTargetOs, aix), true)
-  BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
+  ifeq ($(TOOLCHAIN_TYPE), clang)
+    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -fno-inline
+  else
+    BUILD_LIBJVM_synchronizer.cpp_CXXFLAGS := -qnoinline
+  endif
   BUILD_LIBJVM_sharedRuntimeTrans.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
   # Disable aggressive optimizations for functions in sharedRuntimeTrig.cpp
   # and sharedRuntimeTrans.cpp on ppc64.

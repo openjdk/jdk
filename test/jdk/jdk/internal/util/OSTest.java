@@ -32,11 +32,14 @@ import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 
+import jdk.internal.util.StaticProperty;
+import jdk.internal.util.OSVersion;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -82,5 +85,13 @@ public class OSTest {
         OperatingSystem current = OperatingSystem.current();
         assertEquals(os == current, isXXX,
                 "Mismatch " + os + " == " + current + " vs is" + os);
+    }
+
+    @Test
+    public void checkOsVersion() {
+        OSVersion ver = OSVersion.current();
+        String osVersion = StaticProperty.osVersion();
+        System.err.printf("os.version: %s, version().toString(): %s%n", osVersion, ver);
+        assertTrue(osVersion.startsWith(ver.toString()), "version().toString() is not prefix of vs os.version property");
     }
  }

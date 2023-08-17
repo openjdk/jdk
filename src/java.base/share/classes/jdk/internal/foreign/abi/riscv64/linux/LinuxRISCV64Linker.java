@@ -6,7 +6,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -29,13 +31,10 @@ package jdk.internal.foreign.abi.riscv64.linux;
 import jdk.internal.foreign.abi.AbstractLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.VaList;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.util.function.Consumer;
+import java.nio.ByteOrder;
 
 public final class LinuxRISCV64Linker extends AbstractLinker {
 
@@ -57,21 +56,12 @@ public final class LinuxRISCV64Linker extends AbstractLinker {
     }
 
     @Override
-    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function) {
-        return LinuxRISCV64CallArranger.arrangeUpcall(targetType, function);
+    protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        return LinuxRISCV64CallArranger.arrangeUpcall(targetType, function, options);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
-        LinuxRISCV64VaList.Builder builder = LinuxRISCV64VaList.builder(scope);
-        actions.accept(builder);
-        return builder.build();
-    }
-
-    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
-        return LinuxRISCV64VaList.ofAddress(address, scope);
-    }
-
-    public static VaList emptyVaList() {
-        return LinuxRISCV64VaList.empty();
+    @Override
+    protected ByteOrder linkerByteOrder() {
+        return ByteOrder.LITTLE_ENDIAN;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ class os::win32 {
   static void print_uptime_info(outputStream* st);
 
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size);
+                                          char *buf, int buf_size, address& lastpc);
 
   static bool register_code_area(char *low, char *high);
 
@@ -63,6 +63,7 @@ class os::win32 {
     return _processor_level;
   }
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory

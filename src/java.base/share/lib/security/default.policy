@@ -97,6 +97,8 @@ grant codeBase "jrt:/java.xml.crypto" {
     permission java.security.SecurityPermission
                    "com.sun.org.apache.xml.internal.security.register";
     permission java.security.SecurityPermission
+                   "getProperty.jdk.xml.dsig.hereFunctionSupported";
+    permission java.security.SecurityPermission
                    "getProperty.jdk.xml.dsig.secureValidationPolicy";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.*";
@@ -123,15 +125,6 @@ grant codeBase "jrt:/jdk.charsets" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.util";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
-};
-
-grant codeBase "jrt:/jdk.crypto.ec" {
-    permission java.lang.RuntimePermission
-                   "accessClassInPackage.sun.security.*";
-    permission java.lang.RuntimePermission "loadLibrary.sunec";
-    permission java.security.SecurityPermission "putProviderProperty.SunEC";
-    permission java.security.SecurityPermission "clearProviderProperties.SunEC";
-    permission java.security.SecurityPermission "removeProviderProperty.SunEC";
 };
 
 grant codeBase "jrt:/jdk.crypto.cryptoki" {

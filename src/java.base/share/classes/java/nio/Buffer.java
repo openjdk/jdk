@@ -181,15 +181,17 @@ import java.util.function.Function;
  * specified to return the buffer upon which they are invoked.  This allows
  * method invocations to be chained; for example, the sequence of statements
  *
- * <blockquote><pre>
- * b.flip();
- * b.position(23);
- * b.limit(42);</pre></blockquote>
+ * {@snippet lang=java :
+ *     b.flip();
+ *     b.position(23);
+ *     b.limit(42);
+ * }
  *
  * can be replaced by the single, more compact statement
  *
- * <blockquote><pre>
- * b.flip().position(23).limit(42);</pre></blockquote>
+ * {@snippet lang=java :
+ *     b.flip().position(23).limit(42);
+ * }
  *
  *
  * @author Mark Reinhold
@@ -440,9 +442,10 @@ public abstract sealed class Buffer
      * <p> Invoke this method before using a sequence of channel-read or
      * <i>put</i> operations to fill this buffer.  For example:
      *
-     * <blockquote><pre>
-     * buf.clear();     // Prepare buffer for reading
-     * in.read(buf);    // Read data</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.clear();     // Prepare buffer for reading
+     *     in.read(buf);    // Read data
+     * }
      *
      * <p> This method does not actually erase the data in the buffer, but it
      * is named as if it did because it will most often be used in situations
@@ -466,11 +469,12 @@ public abstract sealed class Buffer
      * this method to prepare for a sequence of channel-write or relative
      * <i>get</i> operations.  For example:
      *
-     * <blockquote><pre>
-     * buf.put(magic);    // Prepend header
-     * in.read(buf);      // Read data into rest of buffer
-     * buf.flip();        // Flip buffer
-     * out.write(buf);    // Write header + data to channel</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.put(magic);    // Prepend header
+     *     in.read(buf);      // Read data into rest of buffer
+     *     buf.flip();        // Flip buffer
+     *     out.write(buf);    // Write header + data to channel
+     * }
      *
      * <p> This method is often used in conjunction with the {@link
      * java.nio.ByteBuffer#compact compact} method when transferring data from
@@ -493,10 +497,11 @@ public abstract sealed class Buffer
      * operations, assuming that the limit has already been set
      * appropriately.  For example:
      *
-     * <blockquote><pre>
-     * out.write(buf);    // Write remaining data
-     * buf.rewind();      // Rewind buffer
-     * buf.get(array);    // Copy data into array</pre></blockquote>
+     * {@snippet lang=java :
+     *     out.write(buf);    // Write remaining data
+     *     buf.rewind();      // Rewind buffer
+     *     buf.get(array);    // Copy data into array
+     * }
      *
      * @return  This buffer
      */
@@ -815,7 +820,9 @@ public abstract sealed class Buffer
 
                 @Override
                 public ByteBuffer newMappedByteBuffer(UnmapperProxy unmapperProxy, long address, int cap, Object obj, MemorySegment segment) {
-                    return new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
+                    return unmapperProxy == null
+                            ? new DirectByteBuffer(address, cap, obj, segment)
+                            : new DirectByteBuffer(address, cap, obj, unmapperProxy.fileDescriptor(), unmapperProxy.isSync(), segment);
                 }
 
                 @Override

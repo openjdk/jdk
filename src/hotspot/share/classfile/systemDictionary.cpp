@@ -69,6 +69,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -112,9 +113,11 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
+using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InvokeMethodTypeTable* _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1125,7 +1128,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1180,7 +1184,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    int path_index = ik->shared_classpath_index();
+    s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
 
@@ -1583,12 +1587,14 @@ void SystemDictionary::methods_do(void f(Method*)) {
   }
 
   auto doit = [&] (InvokeMethodKey key, Method* method) {
-    f(method);
+    if (method != nullptr) {
+      f(method);
+    }
   };
 
   {
-    MutexLocker ml(InvokeMethodTable_lock);
-    _invoke_method_intrinsic_table.iterate_all(doit);
+    MutexLocker ml(InvokeMethodIntrinsicTable_lock);
+    _invoke_method_intrinsic_table->iterate_all(doit);
   }
 
 }
@@ -1597,10 +1603,15 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
+  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrinsicTable();
+  _invoke_method_type_table = new (mtClass) InvokeMethodTypeTable();
+  ResolutionErrorTable::initialize();
+  LoaderConstraintTable::initialize();
+  PlaceholderTable::initialize();
+  ProtectionDomainCacheTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
-
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
@@ -1939,40 +1950,68 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
+  InvokeMethodKey key(signature, iid_as_int);
+  Method** met = nullptr;
+
+  // We only want one entry in the table for this (signature/id, method) pair but the code
+  // to create the intrinsic method needs to be outside the lock.
+  // The first thread claims the entry by adding the key and the other threads wait, until the
+  // Method has been added as the value.
   {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    InvokeMethodKey key(signature, iid_as_int);
-    Method** met = _invoke_method_intrinsic_table.get(key);
-    if (met != nullptr) {
-      return *met;
+    MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
+    while (true) {
+      bool created;
+      met = _invoke_method_intrinsic_table->put_if_absent(key, &created);
+      assert(met != nullptr, "either created or found");
+      if (*met != nullptr) {
+        return *met;
+      } else if (created) {
+        // The current thread won the race and will try to create the full entry.
+        break;
+      } else {
+        // Another thread beat us to it, so wait for them to complete
+        // and return *met; or if they hit an error we get another try.
+        ml.wait();
+        // Note it is not safe to read *met here as that entry could have
+        // been deleted, so we must loop and try put_if_absent again.
+      }
     }
+  }
 
-    bool throw_error = false;
-    // This function could get an OOM but it is safe to call inside of a lock because
-    // throwing OutOfMemoryError doesn't call Java code.
-    methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
-    if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-        // Generate a compiled form of the MH intrinsic
-        // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
-        AdapterHandlerLibrary::create_native_wrapper(m);
-        // Check if have the compiled code.
-        throw_error = (!m->has_compiled_code());
-    }
+  methodHandle m = Method::make_method_handle_intrinsic(iid, signature, THREAD);
+  bool throw_error = HAS_PENDING_EXCEPTION;
+  if (!throw_error && (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative)) {
+    // Generate a compiled form of the MH intrinsic
+    // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
+    AdapterHandlerLibrary::create_native_wrapper(m);
+    // Check if have the compiled code.
+    throw_error = (!m->has_compiled_code());
+  }
 
-    if (!throw_error) {
+  {
+    MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
+    if (throw_error) {
+      // Remove the entry and let another thread try, or get the same exception.
+      bool removed = _invoke_method_intrinsic_table->remove(key);
+      assert(removed, "must be the owner");
+      ml.notify_all();
+    } else {
       signature->make_permanent(); // The signature is never unloaded.
-      bool created = _invoke_method_intrinsic_table.put(key, m());
-      assert(created, "must be since we still hold the lock");
       assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
              m->code()->entry_point() == m->from_compiled_entry()),
              "MH intrinsic invariant");
+      *met = m(); // insert the element
+      ml.notify_all();
       return m();
     }
   }
 
-  // Throw error outside of the lock.
-  THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
-                 "Out of space in CodeCache for method handle intrinsic");
+  // Throw VirtualMachineError or the pending exception in the JavaThread
+  if (throw_error && !HAS_PENDING_EXCEPTION) {
+    THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(),
+                   "Out of space in CodeCache for method handle intrinsic");
+  }
+  return nullptr;
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
@@ -2115,8 +2154,8 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   Handle empty;
   OopHandle* o;
   {
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
-    o = _invoke_method_type_table.get(signature);
+    MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
+    o = _invoke_method_type_table->get(signature);
   }
 
   if (o != nullptr) {
@@ -2184,14 +2223,14 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
 
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
-    MutexLocker ml(THREAD, InvokeMethodTable_lock);
+    MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     bool created = false;
     assert(method_type != nullptr, "unexpected null");
-    OopHandle* h = _invoke_method_type_table.get(signature);
+    OopHandle* h = _invoke_method_type_table->get(signature);
     if (h == nullptr) {
       signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
-      bool created = _invoke_method_type_table.put(signature, elem);
+      bool created = _invoke_method_type_table->put(signature, elem);
       assert(created, "better be created");
     }
   }

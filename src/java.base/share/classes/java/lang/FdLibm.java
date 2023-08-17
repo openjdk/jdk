@@ -57,13 +57,23 @@ package java.lang;
  * operations in terms of floating-point operations when convenient to
  * do so.
  */
-class FdLibm {
+final class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
     private static final double TWO24    = 0x1.0p24; // 1.67772160000000000000e+07
     private static final double TWO54    = 0x1.0p54; // 1.80143985094819840000e+16
     private static final double HUGE     = 1.0e+300;
 
+    /*
+     * Constants for bit-wise manipulation of IEEE 754 double
+     * values. These constants are for the high-order 32-bits of a
+     * 64-bit double value: 1 sign bit as the most significant bit,
+     * followed by 11 exponent bits, and then the remaining bits as
+     * the significand.
+     */
+    private static final int SIGN_BIT        = 0x8000_0000;
+    private static final int EXP_BITS        = 0x7ff0_0000;
+    private static final int EXP_SIGNIF_BITS = 0x7fff_ffff;
 
     private FdLibm() {
         throw new UnsupportedOperationException("No FdLibm instances for you.");
@@ -144,7 +154,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Sin {
+    static final class Sin {
         private Sin() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -156,10 +166,10 @@ class FdLibm {
             ix = __HI(x);
 
             // |x| ~< pi/4
-            ix &= 0x7fff_ffff;
+            ix &= EXP_SIGNIF_BITS;
             if (ix <= 0x3fe9_21fb) {
                 return __kernel_sin(x, z, 0);
-            } else if (ix>=0x7ff0_0000) {  // sin(Inf or NaN) is NaN
+            } else if (ix >= EXP_BITS) {  // sin(Inf or NaN) is NaN
                 return x - x;
             } else { // argument reduction needed
                 n = RemPio2.__ieee754_rem_pio2(x, y);
@@ -211,7 +221,7 @@ class FdLibm {
         static double __kernel_sin(double x, double y, int iy) {
             double z, r, v;
             int ix;
-            ix = __HI(x) & 0x7fff_ffff;        // high word of x
+            ix = __HI(x) & EXP_SIGNIF_BITS;    // high word of x
             if (ix < 0x3e40_0000) {            // |x| < 2**-27
                 if ((int)x == 0)               // generate inexact
                     return x;
@@ -257,7 +267,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Cos {
+    static final class Cos {
         private Cos() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -269,11 +279,11 @@ class FdLibm {
             ix = __HI(x);
 
             // |x| ~< pi/4
-            ix &= 0x7fff_ffff;
+            ix &= EXP_SIGNIF_BITS;
             if (ix <= 0x3fe9_21fb) {
                 return __kernel_cos(x, z);
-            } else if (ix >= 0x7ff0_0000) { // cos(Inf or NaN) is NaN
-                return x-x;
+            } else if (ix >= EXP_BITS) { // cos(Inf or NaN) is NaN
+                return x - x;
             } else { // argument reduction needed
                 n = RemPio2.__ieee754_rem_pio2(x,y);
                 switch (n & 3) {
@@ -331,7 +341,7 @@ class FdLibm {
         static double __kernel_cos(double x, double y) {
             double a, hz, z, r, qx = 0.0;
             int ix;
-            ix = __HI(x) & 0x7fff_ffff;       // ix = |x|'s high word
+            ix = __HI(x) & EXP_SIGNIF_BITS;       // ix = |x|'s high word
             if (ix < 0x3e40_0000) {           // if x < 2**27
                 if (((int)x) == 0) {          // generate inexact
                     return 1.0;
@@ -383,7 +393,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Tan {
+    static final class Tan {
         private Tan() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -395,11 +405,11 @@ class FdLibm {
             ix = __HI(x);
 
             // |x| ~< pi/4
-            ix &= 0x7fff_ffff;
+            ix &= EXP_SIGNIF_BITS;
             if (ix <= 0x3fe9_21fb) {
                 return __kernel_tan(x, z, 1);
-            } else if (ix >= 0x7ff0_0000) { // tan(Inf or NaN) is NaN
-                return x-x;            // NaN
+            } else if (ix >= EXP_BITS) { // tan(Inf or NaN) is NaN
+                return x - x;            // NaN
             } else {           // argument reduction needed
                 n = RemPio2.__ieee754_rem_pio2(x, y);
                 return __kernel_tan(y[0], y[1], 1 - ((n & 1) << 1)); // 1 -- n even; -1 -- n odd
@@ -462,7 +472,7 @@ class FdLibm {
             double z, r, v, w, s;
             int ix, hx;
             hx = __HI(x);   // high word of x
-            ix = hx&0x7fff_ffff;     // high word of |x|
+            ix = hx & EXP_SIGNIF_BITS;     // high word of |x|
             if (ix < 0x3e30_0000) {  // x < 2**-28
                 if ((int)x == 0) {   // generate inexact
                     if (((ix | __LO(x)) | (iy + 1)) == 0) {
@@ -532,7 +542,7 @@ class FdLibm {
      * return the remainder of x rem pi/2 in y[0]+y[1]
      * use __kernel_rem_pio2()
      */
-    static class RemPio2 {
+    static final class RemPio2 {
         /*
          * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
          */
@@ -584,7 +594,7 @@ class FdLibm {
             int e0, i, j, nx, n, ix, hx;
 
             hx = __HI(x);           // high word of x
-            ix = hx & 0x7fff_ffff;
+            ix = hx & EXP_SIGNIF_BITS;
             if (ix <= 0x3fe9_21fb) {   // |x| ~<= pi/4 , no need for reduction
                 y[0] = x;
                 y[1] = 0;
@@ -655,13 +665,13 @@ class FdLibm {
             /*
              * all other (large) arguments
              */
-            if (ix >= 0x7ff0_0000) {            // x is inf or NaN
+            if (ix >= EXP_BITS) {            // x is inf or NaN
                 y[0] = y[1] = x - x;
                 return 0;
             }
-            // set z = scalbn(|x|,ilogb(x)-23)
+            // set z = scalbn(|x|, ilogb(x)-23)
             z = __LO(z, __LO(x));
-            e0 = (ix >> 20) - 1046;        /* e0 = ilogb(z)-23; */
+            e0 = (ix >> 20) - 1046;        // e0 = ilogb(z) - 23;
             z = __HI(z, ix - (e0 << 20));
             for (i=0; i < 2; i++) {
                 tx[i] = (double)((int)(z));
@@ -788,7 +798,7 @@ class FdLibm {
      *              it also indicates the *sign* of the result.
      *
      */
-    static class KernelRemPio2 {
+    static final class KernelRemPio2 {
         /*
          * Constants:
          * The hexadecimal values are the intended ones for the following
@@ -859,7 +869,7 @@ class FdLibm {
 
                 // compute n
                 z  = Math.scalb(z, q0);              // actual value of z
-                z -= 8.0*Math.floor(z*0.125);           // trim off integer >= 8
+                z -= 8.0*Math.floor(z*0.125);        // trim off integer >= 8
                 n  = (int) z;
                 z -= (double)n;
                 ih = 0;
@@ -1048,7 +1058,7 @@ class FdLibm {
      *      if |x|>1, return NaN with invalid signal.
      *
      */
-    static class Asin {
+    static final class Asin {
         private Asin() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1071,7 +1081,7 @@ class FdLibm {
             double t = 0, w, p, q, c, r, s;
             int hx, ix;
             hx = __HI(x);
-            ix = hx & 0x7fff_ffff;
+            ix = hx & EXP_SIGNIF_BITS;
             if (ix >= 0x3ff0_0000) {           // |x| >= 1
                 if(((ix - 0x3ff0_0000) | __LO(x)) == 0) {
                     // asin(1) = +-pi/2 with inexact
@@ -1136,7 +1146,7 @@ class FdLibm {
      *
      * Function needed: sqrt
      */
-    static class Acos {
+    static final class Acos {
         private Acos() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1157,7 +1167,7 @@ class FdLibm {
             double z, p, q, r, w, s, c, df;
             int hx, ix;
             hx = __HI(x);
-            ix = hx & 0x7fff_ffff;
+            ix = hx & EXP_SIGNIF_BITS;
             if (ix >= 0x3ff0_0000) {    // |x| >= 1
                 if (((ix - 0x3ff0_0000) | __LO(x)) == 0) {  // |x| == 1
                     if (hx > 0) {// acos(1) = 0
@@ -1166,7 +1176,7 @@ class FdLibm {
                         return Math.PI + 2.0*pio2_lo;
                     }
                 }
-                return (x-x)/(x-x);         // acos(|x| > 1) is NaN
+                return (x - x)/(x - x);         // acos(|x| > 1) is NaN
             }
             if (ix < 0x3fe0_0000) {     // |x| < 0.5
                 if (ix <= 0x3c60_0000) {  // if |x| < 2**-57
@@ -1219,7 +1229,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Atan {
+    static final class Atan {
         private Atan() {throw new UnsupportedOperationException();}
 
         private static final double atanhi[] = {
@@ -1255,10 +1265,10 @@ class FdLibm {
             int ix, hx, id;
 
             hx = __HI(x);
-            ix = hx & 0x7fff_ffff;
+            ix = hx & EXP_SIGNIF_BITS;
             if (ix >= 0x4410_0000) {    // if |x| >= 2^66
-                if (ix > 0x7ff0_0000 ||
-                    (ix == 0x7ff0_0000 && (__LO(x) != 0))) {
+                if (ix > EXP_BITS ||
+                    (ix == EXP_BITS && (__LO(x) != 0))) {
                     return x+x;             // NaN
                 }
                 if (hx > 0) {
@@ -1337,7 +1347,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Atan2 {
+    static final class Atan2 {
         private Atan2() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1352,10 +1362,10 @@ class FdLibm {
             /*unsigned*/ int lx, ly;
 
             hx = __HI(x);
-            ix = hx & 0x7fff_ffff;
+            ix = hx & EXP_SIGNIF_BITS;
             lx = __LO(x);
             hy = __HI(y);
-            iy = hy&0x7fff_ffff;
+            iy = hy & EXP_SIGNIF_BITS;
             ly = __LO(y);
             if (Double.isNaN(x) || Double.isNaN(y))
                 return x + y;
@@ -1378,8 +1388,8 @@ class FdLibm {
             }
 
             // when x is INF
-            if (ix == 0x7ff0_0000) {
-                if (iy == 0x7ff0_0000) {
+            if (ix == EXP_BITS) {
+                if (iy == EXP_BITS) {
                     switch(m) {
                     case 0: return  pi_o_4 + tiny;      // atan(+INF, +INF)
                     case 1: return -pi_o_4 - tiny;      // atan(-INF, +INF)
@@ -1396,7 +1406,7 @@ class FdLibm {
                 }
             }
             // when y is INF
-            if (iy == 0x7ff0_0000) {
+            if (iy == EXP_BITS) {
                 return (hy < 0)? -pi_o_2 - tiny : pi_o_2 + tiny;
             }
 
@@ -1487,14 +1497,14 @@ class FdLibm {
      * Other methods : see the appended file at the end of the program below.
      *---------------
      */
-    static class Sqrt {
+    static final class Sqrt {
         private Sqrt() {throw new UnsupportedOperationException();}
 
         private static final double tiny = 1.0e-300;
 
         static double compute(double x) {
             double z = 0.0;
-            int sign = 0x8000_0000;
+            int sign = SIGN_BIT;
             /*unsigned*/ int r, t1, s1, ix1, q1;
             int ix0, s0, q, m, t, i;
 
@@ -1502,7 +1512,7 @@ class FdLibm {
             ix1 = __LO(x);  // low word of x
 
             // take care of Inf and NaN
-            if ((ix0 & 0x7ff0_0000) == 0x7ff0_0000) {
+            if ((ix0 & EXP_BITS) == EXP_BITS) {
                 return x*x + x; // sqrt(NaN)=NaN, sqrt(+inf)=+inf, sqrt(-inf)=sNaN
             }
             // take care of zero
@@ -1510,7 +1520,7 @@ class FdLibm {
                 if (((ix0 & (~sign)) | ix1) == 0)
                     return x; // sqrt(+-0) = +-0
                 else if (ix0 < 0)
-                    return (x-x)/(x-x); // sqrt(-ve) = sNaN
+                    return (x - x)/(x - x); // sqrt(-ve) = sNaN
             }
             // normalize x
             m = (ix0 >> 20);
@@ -1686,7 +1696,7 @@ class FdLibm {
      *        This formula has one division fewer than the one above; however,
      *        it requires more multiplications and additions. Also x must be
      *        scaled in advance to avoid spurious overflow in evaluating the
-     *        expression 3y*y+x. Hence it is not recommended uless division
+     *        expression 3y*y+x. Hence it is not recommended unless division
      *        is slow. If division is very slow, then one should use the
      *        reciproot algorithm given in section B.
      *
@@ -1865,7 +1875,7 @@ class FdLibm {
      * cbrt(x)
      * Return cube root of x
      */
-    public static class Cbrt {
+    static final class Cbrt {
         // unsigned
         private static final int B1 = 715094163; /* B1 = (682-0.03306235651)*2**20 */
         private static final int B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
@@ -1955,7 +1965,7 @@ class FdLibm {
      *      hypot(x,y) returns sqrt(x^2 + y^2) with error less
      *      than 1 ulp (unit in the last place)
      */
-    public static class Hypot {
+    static final class Hypot {
         public static final double TWO_MINUS_600 = 0x1.0p-600;
         public static final double TWO_PLUS_600  = 0x1.0p+600;
 
@@ -2098,7 +2108,7 @@ class FdLibm {
      *      always returns the correct integer provided it is
      *      representable.
      */
-    public static class Pow {
+    static final class Pow {
         private Pow() {
             throw new UnsupportedOperationException();
         }
@@ -2136,7 +2146,7 @@ class FdLibm {
             }
 
             final int hx = __HI(x);
-            int ix = hx & 0x7fffffff;
+            int ix = hx & EXP_SIGNIF_BITS;
 
             /*
              * When x < 0, determine if y is an odd integer:
@@ -2176,7 +2186,7 @@ class FdLibm {
 
             // (x < 0)**(non-int) is NaN
             if ((n | y_is_int) == 0)
-                return (x-x)/(x-x);
+                return (x - x)/(x - x);
 
             s = 1.0; // s (sign of result -ve**odd) = -1 else = 1
             if ( (n | (y_is_int - 1)) == 0)
@@ -2299,7 +2309,7 @@ class FdLibm {
                     if (p_l + OVT > z - p_h)
                         return s * INFINITY;   // Overflow
                 }
-            } else if ((j & 0x7fffffff) >= 0x4090cc00 ) {        // z <= -1075
+            } else if ((j & EXP_SIGNIF_BITS) >= 0x4090cc00 ) {        // z <= -1075
                 if (((j - 0xc090cc00) | i)!=0)           // z < -1075
                     return s * 0.0;           // Underflow
                 else {
@@ -2319,12 +2329,12 @@ class FdLibm {
             final double LG2     =  0x1.62e4_2fef_a39efp-1;  //  6.93147180559945286227e-01
             final double LG2_H   =  0x1.62e43p-1;            //  6.93147182464599609375e-01
             final double LG2_L   = -0x1.05c6_10ca_86c39p-29; // -1.90465429995776804525e-09
-            i = j & 0x7fffffff;
+            i = j & EXP_SIGNIF_BITS;
             k = (i >> 20) - 0x3ff;
             n = 0;
             if (i > 0x3fe00000) {              // if |z| > 0.5, set n = [z + 0.5]
                 n = j + (0x00100000 >> (k + 1));
-                k = ((n & 0x7fffffff) >> 20) - 0x3ff;     // new k for n
+                k = ((n & EXP_SIGNIF_BITS) >> 20) - 0x3ff;     // new k for n
                 t = 0.0;
                 t = __HI(t, (n & ~(0x000fffff >> k)) );
                 n = ((n & 0x000fffff) | 0x00100000) >> (20 - k);
@@ -2449,7 +2459,7 @@ class FdLibm {
 
             hx  = __HI(x);  /* high word of x */
             xsb = (hx >> 31) & 1;               /* sign bit of x */
-            hx &= 0x7fffffff;               /* high word of |x| */
+            hx &= EXP_SIGNIF_BITS;              /* high word of |x| */
 
             /* filter out non-finite argument */
             if (hx >= 0x40862E42) {                  /* if |x| >= 709.78... */
@@ -2568,8 +2578,6 @@ class FdLibm {
             Lg6    = 0x1.39a09d078c69fp-3,  // 1.531383769920937332e-01
             Lg7    = 0x1.2f112df3e5244p-3;  // 1.479819860511658591e-01
 
-        private static final double zero = 0.0;
-
         static double compute(double x) {
             double hfsq, f, s, z, R, w, t1, t2, dk;
             int k, hx, i, j;
@@ -2580,17 +2588,17 @@ class FdLibm {
 
             k=0;
             if (hx < 0x0010_0000) {                  // x < 2**-1022
-                if (((hx & 0x7fff_ffff) | lx) == 0) { // log(+-0) = -inf
-                    return -TWO54/zero;
+                if (((hx & EXP_SIGNIF_BITS) | lx) == 0) { // log(+-0) = -inf
+                    return -TWO54/0.0;
                 }
                 if (hx < 0) {                        // log(-#) = NaN
-                    return (x - x)/zero;
+                    return (x - x)/0.0;
                 }
                 k -= 54;
                 x *= TWO54;    // subnormal number, scale up x
                 hx = __HI(x);  // high word of x
             }
-            if (hx >= 0x7ff0_0000) {
+            if (hx >= EXP_BITS) {
                 return x + x;
             }
             k += (hx >> 20) - 1023;
@@ -2600,9 +2608,9 @@ class FdLibm {
             k += (i >> 20);
             f = x - 1.0;
             if ((0x000f_ffff & (2 + hx)) < 3) {// |f| < 2**-20
-                if (f == zero) {
+                if (f == 0.0) {
                     if (k == 0) {
-                        return zero;
+                        return 0.0;
                     } else {
                         dk = (double)k;
                         return dk*ln2_hi + dk*ln2_lo;
@@ -2675,7 +2683,7 @@ class FdLibm {
      * from decimal to binary accurately enough to produce the hexadecimal values
      * shown.
      */
-    static class Log10 {
+    static final class Log10 {
         private static final double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
 
         private static final double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
@@ -2694,7 +2702,7 @@ class FdLibm {
 
             k=0;
             if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
-                if (((hx & 0x7fff_ffff) | lx) == 0) {
+                if (((hx & EXP_SIGNIF_BITS) | lx) == 0) {
                     return -TWO54/0.0;               /* log(+-0)=-inf */
                 }
                 if (hx < 0) {
@@ -2705,12 +2713,12 @@ class FdLibm {
                 hx = __HI(x);
             }
 
-            if (hx >= 0x7ff0_0000) {
+            if (hx >= EXP_BITS) {
                 return x + x;
             }
 
             k += (hx >> 20) - 1023;
-            i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
+            i  = (k  & SIGN_BIT) >>> 31; // unsigned shift
             hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
             y  = (double)(k + i);
             x = __HI(x, hx); // replace high word of x with hx
@@ -2784,7 +2792,7 @@ class FdLibm {
      *
      *       See HP-15C Advanced Functions Handbook, p.193.
      */
-    static class Log1p {
+    static final class Log1p {
         private static final double ln2_hi = 0x1.62e42feep-1;       // 6.93147180369123816490e-01
         private static final double ln2_lo = 0x1.a39ef35793c76p-33; // 1.90821492927058770002e-10
         private static final double Lp1    = 0x1.5555555555593p-1;  // 6.666666666666735130e-01
@@ -2800,7 +2808,7 @@ class FdLibm {
             int k, hx, hu=0, ax;
 
             hx = __HI(x);           /* high word of x */
-            ax = hx & 0x7fff_ffff;
+            ax = hx & EXP_SIGNIF_BITS;
 
             k = 1;
             if (hx < 0x3FDA_827A) {                  /* x < 0.41422  */
@@ -2826,7 +2834,7 @@ class FdLibm {
                 }
             }
 
-            if (hx >= 0x7ff0_0000) {
+            if (hx >= EXP_BITS) {
                 return x + x;
             }
 
@@ -2976,8 +2984,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Expm1 {
-        private static final double one         =  1.0;
+    static final class Expm1 {
         private static final double huge        =  1.0e+300;
         private static final double tiny        =  1.0e-300;
         private static final double o_threshold =  0x1.62e42fefa39efp9;   //  7.09782712893383973096e+02
@@ -2997,9 +3004,9 @@ class FdLibm {
             /*unsigned*/ int hx;
 
             hx  = __HI(x);  // high word of x
-            xsb = hx & 0x8000_0000;          // sign bit of x
+            xsb = hx & SIGN_BIT;                 // sign bit of x
             y = Math.abs(x);
-            hx &= 0x7fff_ffff;               // high word of |x|
+            hx &= EXP_SIGNIF_BITS;               // high word of |x|
 
             // filter out huge and non-finite argument
             if (hx >= 0x4043_687A) {                  // if |x| >= 56*ln2
@@ -3017,7 +3024,7 @@ class FdLibm {
                 }
                 if (xsb != 0) { // x < -56*ln2, return -1.0 with inexact
                     if (x + tiny < 0.0) {         // raise inexact
-                        return tiny - one;        // return -1
+                        return tiny - 1.0;        // return -1
                     }
                 }
             }
@@ -3052,7 +3059,7 @@ class FdLibm {
             // x is now in primary range
             hfx = 0.5*x;
             hxs = x*hfx;
-            r1 = one + hxs*(Q1 + hxs*(Q2 + hxs*(Q3 + hxs*(Q4 + hxs*Q5))));
+            r1 = 1.0 + hxs*(Q1 + hxs*(Q2 + hxs*(Q3 + hxs*(Q4 + hxs*Q5))));
             t  = 3.0 - r1*hfx;
             e  = hxs *((r1 - t)/(6.0 - x*t));
             if (k == 0) {
@@ -3067,15 +3074,15 @@ class FdLibm {
                     if (x < -0.25) {
                         return -2.0*(e - (x + 0.5));
                     } else {
-                        return one + 2.0*(x - e);
+                        return 1.0 + 2.0*(x - e);
                     }
                 }
                 if (k <= -2 || k > 56) {   // suffice to return exp(x) - 1
-                    y = one - (e - x);
+                    y = 1.0 - (e - x);
                     y = __HI(y, __HI(y) + (k << 20));     // add k to y's exponent
-                    return y - one;
+                    return y - 1.0;
                 }
-                t = one;
+                t = 1.0;
                 if (k < 20) {
                     t = __HI(t, 0x3ff0_0000 - (0x2_00000 >> k));  // t = 1-2^-k
                     y = t - ( e - x);
@@ -3083,7 +3090,7 @@ class FdLibm {
                 } else {
                     t = __HI(t, ((0x3ff - k) << 20));     // 2^-k
                     y = x - (e + t);
-                    y += one;
+                    y += 1.0;
                     y = __HI(y, __HI(y) + (k << 20));     // add k to y's exponent
                 }
             }
@@ -3120,10 +3127,10 @@ class FdLibm {
 
             // High word of |x|
             jx = __HI(x);
-            ix = jx & 0x7fff_ffff;
+            ix = jx & EXP_SIGNIF_BITS;
 
             // x is INF or NaN
-            if (ix >= 0x7ff0_0000) {
+            if (ix >= EXP_BITS) {
                 return x + x;
             }
 
@@ -3149,7 +3156,7 @@ class FdLibm {
                 return h*StrictMath.exp(Math.abs(x));
             }
 
-            // |x| in [log(maxdouble), overflowthresold]
+            // |x| in [log(maxdouble), overflowthreshold]
             lx = __LO(x);
             if (ix < 0x4086_33CE ||
                 ((ix == 0x4086_33ce) &&
@@ -3159,7 +3166,7 @@ class FdLibm {
                 return t * w;
             }
 
-            // |x| > overflowthresold, sinh(x) overflow
+            // |x| > overflowthreshold, sinh(x) overflow
             return x * shuge;
         }
     }
@@ -3196,10 +3203,10 @@ class FdLibm {
 
             // High word of |x|
             ix = __HI(x);
-            ix &= 0x7fff_ffff;
+            ix &= EXP_SIGNIF_BITS;
 
             // x is INF or NaN
-            if (ix >= 0x7ff0_0000) {
+            if (ix >= EXP_BITS) {
                 return x*x;
             }
 
@@ -3224,7 +3231,7 @@ class FdLibm {
                 return 0.5*StrictMath.exp(Math.abs(x));
             }
 
-            // |x| in [log(maxdouble), overflowthresold]
+            // |x| in [log(maxdouble), overflowthreshold]
             lx = __LO(x);
             if (ix<0x4086_33CE ||
                 ((ix == 0x4086_33ce) &&
@@ -3234,7 +3241,7 @@ class FdLibm {
                 return t*w;
             }
 
-            // |x| > overflowthresold, cosh(x) overflow
+            // |x| > overflowthreshold, cosh(x) overflow
             return huge*huge;
         }
     }
@@ -3273,10 +3280,10 @@ class FdLibm {
 
             // High word of |x|.
             jx = __HI(x);
-            ix = jx & 0x7fff_ffff;
+            ix = jx & EXP_SIGNIF_BITS;
 
             // x is INF or NaN
-            if (ix >= 0x7ff0_0000) {
+            if (ix >= EXP_BITS) {
                 if (jx >= 0) {  // tanh(+-inf)=+-1
                     return 1.0/x + 1.0;
                 } else {        // tanh(NaN) = NaN
@@ -3314,17 +3321,17 @@ class FdLibm {
             lx = __LO(x);           // low  word of x
             hp = __HI(p);           // high word of p
             lp = __LO(p);           // low  word of p
-            sx = hx & 0x8000_0000;
-            hp &= 0x7fff_ffff;
-            hx &= 0x7fff_ffff;
+            sx = hx & SIGN_BIT;
+            hp &= EXP_SIGNIF_BITS;
+            hx &= EXP_SIGNIF_BITS;
 
             // purge off exception values
             if ((hp | lp) == 0) {// p = 0
                 return (x*p)/(x*p);
             }
-            if ((hx >= 0x7ff0_0000) ||                   // not finite
-                ((hp >= 0x7ff0_0000) &&                   // p is NaN
-                 (((hp - 0x7ff0_0000) | lp) != 0)))
+            if ((hx >= EXP_BITS) ||                   // not finite
+                ((hp >= EXP_BITS) &&                   // p is NaN
+                 (((hp - EXP_BITS) | lp) != 0)))
                 return (x*p)/(x*p);
 
             if (hp <= 0x7fdf_ffff) {  // now x < 2p
@@ -3362,13 +3369,13 @@ class FdLibm {
             lx = __LO(x);           // low  word of x
             hy = __HI(y);           // high word of y
             ly = __LO(y);           // low  word of y
-            sx = hx & 0x8000_0000;  // sign of x
+            sx = hx & SIGN_BIT;     // sign of x
             hx ^= sx;               // |x|
-            hy &= 0x7fff_ffff;      // |y|
+            hy &= EXP_SIGNIF_BITS;  // |y|
 
             // purge off exception values
-            if ((hy | ly) == 0 || (hx >= 0x7ff0_0000)||       // y = 0, or x not finite
-               ((hy | ((ly | -ly) >>> 31)) > 0x7ff0_0000))    // or y is NaN, unsigned shift
+            if ((hy | ly) == 0 || (hx >= EXP_BITS)||       // y = 0, or x not finite
+               ((hy | ((ly | -ly) >>> 31)) > EXP_BITS))    // or y is NaN, unsigned shift
                 return (x*y)/(x*y);
             if (hx <= hy) {
                 if ((hx < hy) || (Integer.compareUnsigned(lx, ly) < 0)) { // |x| < |y| return x

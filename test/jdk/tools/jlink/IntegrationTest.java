@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.function.Function;
 import jdk.tools.jlink.internal.Jlink;
 import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin;
@@ -160,7 +161,7 @@ public class IntegrationTest {
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
-                mods, ByteOrder.nativeOrder(),
+                mods,
                 JlinkTask.newModuleFinder(modulePaths, limits, mods));
 
         List<Plugin> lst = new ArrayList<>();
@@ -189,7 +190,8 @@ public class IntegrationTest {
             lst.add(new MyPostProcessor());
         }
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(output, Collections.emptyMap());
+        DefaultImageBuilder builder = new DefaultImageBuilder(output, Collections.emptyMap(),
+                Platform.runtime());
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
 

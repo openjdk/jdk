@@ -25,7 +25,7 @@
  * @bug 8295447
  * @summary NullPointerException with invalid pattern matching construct in constructor call
  * @modules jdk.compiler
- * @compile/fail/ref=T8295447.out -XDrawDiagnostics --enable-preview -source ${jdk.version} T8295447.java
+ * @compile/fail/ref=T8295447.out -XDrawDiagnostics T8295447.java
  */
 public class T8295447 {
     class Foo {

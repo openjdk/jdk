@@ -85,8 +85,11 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     public String serverAuthority() {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + getAddress().getPort();
+        final InetSocketAddress inetSockAddr = getAddress();
+        final String hostIP = inetSockAddr.getAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + inetSockAddr.getPort();
     }
 
     public Http2TestServer(boolean secure,

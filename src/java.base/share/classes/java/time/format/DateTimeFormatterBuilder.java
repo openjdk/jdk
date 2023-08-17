@@ -2612,9 +2612,15 @@ public final class DateTimeFormatterBuilder {
                 throw new DateTimeException(
                     "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
+            var count = padWidth - len;
+            if (count == 0) {
+                return true;
             }
+            if (count == 1) {
+                buf.insert(preLen, padChar);
+                return true;
+            }
+            buf.insert(preLen, String.valueOf(padChar).repeat(count));
             return true;
         }
 
@@ -4719,7 +4725,7 @@ public final class DateTimeFormatterBuilder {
          * @return the position after the parse
          */
         private int parseOffsetBased(DateTimeParseContext context, CharSequence text, int prefixPos, int position, OffsetIdPrinterParser parser) {
-            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase();
+            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase(Locale.ROOT);
             if (position >= text.length()) {
                 context.setParsed(ZoneId.of(prefix));
                 return position;

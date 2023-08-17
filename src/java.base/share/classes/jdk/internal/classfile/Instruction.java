@@ -31,6 +31,7 @@ import jdk.internal.classfile.instruction.ArrayStoreInstruction;
 import jdk.internal.classfile.instruction.BranchInstruction;
 import jdk.internal.classfile.instruction.ConstantInstruction;
 import jdk.internal.classfile.instruction.ConvertInstruction;
+import jdk.internal.classfile.instruction.DiscontinuedInstruction;
 import jdk.internal.classfile.instruction.FieldInstruction;
 import jdk.internal.classfile.instruction.IncrementInstruction;
 import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
@@ -56,9 +57,9 @@ import jdk.internal.classfile.instruction.TypeCheckInstruction;
  */
 public sealed interface Instruction extends CodeElement
         permits ArrayLoadInstruction, ArrayStoreInstruction, BranchInstruction,
-                ConstantInstruction, ConvertInstruction, FieldInstruction,
-                InvokeDynamicInstruction, InvokeInstruction, LoadInstruction,
-                StoreInstruction, IncrementInstruction,
+                ConstantInstruction, ConvertInstruction, DiscontinuedInstruction,
+                FieldInstruction, InvokeDynamicInstruction, InvokeInstruction,
+                LoadInstruction, StoreInstruction, IncrementInstruction,
                 LookupSwitchInstruction, MonitorInstruction, NewMultiArrayInstruction,
                 NewObjectInstruction, NewPrimitiveArrayInstruction, NewReferenceArrayInstruction,
                 NopInstruction, OperatorInstruction, ReturnInstruction,

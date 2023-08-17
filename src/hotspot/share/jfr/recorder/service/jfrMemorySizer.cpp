@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,7 +339,7 @@ static void assert_post_condition(const JfrMemoryOptions* options) {
 // MEMORY SIZING ALGORITHM
 
 bool JfrMemorySizer::adjust_options(JfrMemoryOptions* options) {
-  assert(options != NULL, "invariant");
+  assert(options != nullptr, "invariant");
 
   enum MemoryOptions {
     MEMORY_SIZE = 1,
@@ -361,7 +361,7 @@ bool JfrMemorySizer::adjust_options(JfrMemoryOptions* options) {
   //
   // Unordered selection:
   //
-  // C(4, 0) = {} = NULL set = 1
+  // C(4, 0) = {} = null set = 1
   // C(4, 1) = { (M), (G), (C), (T) } = 4
   // C(4, 2) = { (M, G), (M, C), (M, T), (G, C), (G, T), (C, T) } = 6
   // C(4, 3) = { (M, G, C), (M, G, T), (M, C, T), (G, C, T) } = 4

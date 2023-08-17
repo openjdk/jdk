@@ -236,6 +236,8 @@ class frame {
 
   bool is_entry_frame_valid(JavaThread* thread) const;
 
+  Method* safe_interpreter_frame_method() const;
+
   // All frames:
 
   // A low-level interface for vframes:
@@ -514,7 +516,7 @@ class FrameValues {
     if (a->location == b->location) {
       return a->priority - b->priority;
     }
-    return a->location - b->location;
+    return checked_cast<int>(a->location - b->location);
   }
 
   void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,
