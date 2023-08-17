@@ -523,21 +523,12 @@ public class HierarchicalStableLayoutManager {
     private class ProcessInput {
         public void removeDuplicateLinks() {
             HashSet<Link> links = new HashSet<>();
-            for (Link link1 : currentLinks) {
-                if (link1.getTo().getVertex().equals(link1.getFrom().getVertex())) {
+            for (Link link : currentLinks) {
+                if (link.getTo().getVertex().equals(link.getFrom().getVertex())) {
                     // self-edge
                     continue;
                 }
-                boolean duplicate = false;
-                for (Link link2 : links) {
-                    if (link1.equals(link2)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-                if (!duplicate) {
-                    links.add(link1);
-                }
+                links.add(link);
             }
             currentLinks = links;
         }
