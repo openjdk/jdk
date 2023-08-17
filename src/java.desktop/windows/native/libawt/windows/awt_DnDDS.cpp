@@ -41,6 +41,7 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 
 #include <shlobj.h>
 
+// Moved here as we don't want to pull in the redefined allocation functions
 #include "awt_ole.h"
 #include "awt_DCHolder.h"
 
