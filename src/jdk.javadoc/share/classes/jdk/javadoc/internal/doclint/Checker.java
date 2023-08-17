@@ -41,6 +41,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -1138,8 +1140,21 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     }
 
     private void checkUnknownTag(DocTree tree, String tagName) {
+        // if it were a standard tag, this method wouldn't be called:
+        // a standard tag is never represented by Unknown{Block,Inline}TagTree
+        assert tree instanceof UnknownBlockTagTree
+                || tree instanceof UnknownInlineTagTree;
+        assert !getStandardTags().contains(tagName);
+        // report an unknown tag only if custom tags are set, see 8314213
         if (env.customTags != null && !env.customTags.contains(tagName))
             env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+    }
+
+    private Set<String> getStandardTags() {
+        return Stream.of(DocTree.Kind.values())
+                .filter(k -> k.tagName != null) // not all DocTree represent tags
+                .map(k -> k.tagName)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
