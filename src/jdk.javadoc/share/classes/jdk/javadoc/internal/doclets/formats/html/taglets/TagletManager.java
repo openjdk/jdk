@@ -361,11 +361,10 @@ public class TagletManager {
             if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
                     messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
-                    continue;
                 } else {
                     messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
-                    continue;
                 }
+                continue;
             }
             final Taglet taglet = allTaglets.get(name);
             // Check and verify tag usage
