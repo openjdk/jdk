@@ -2950,7 +2950,7 @@ void os::Aix::initialize_libperfstat() {
 // Get the current stack base and size from the OS (actually, the pthread library).
 // Note: base usually not page aligned.
 // Returned size is such that (base - size) is always aligned to page size.
-address os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   AixMisc::stackbounds_t bounds;
   bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
   guarantee(rc, "Unable to retrieve stack bounds.");
