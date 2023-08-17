@@ -50,8 +50,10 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.InlineTagTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -350,11 +352,15 @@ public class TagletManager {
      */
     public void checkTags(Element element, Iterable<? extends DocTree> trees) {
         for (DocTree tag : trees) {
-            String name = tag.getKind().tagName;
+            String name = switch (tag.getKind()) {
+                case UNKNOWN_INLINE_TAG -> ((InlineTagTree) tag).getTagName();
+                case UNKNOWN_BLOCK_TAG -> ((BlockTagTree) tag).getTagName();
+                default -> tag.getKind().tagName;
+            };
             if (name == null) {
-                continue;
+                continue; // not a tag
             }
-            if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
+            if (! (standardTags.contains(name) || allTaglets.containsKey(name))) {
                 var ch = utils.getCommentHelper(element);
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
                     messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
