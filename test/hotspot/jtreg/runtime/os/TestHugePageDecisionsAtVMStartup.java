@@ -119,9 +119,7 @@ public class TestHugePageDecisionsAtVMStartup {
             out.shouldContain(warningNoLP);
         } else if (useLP && useTHP && !configuration.supportsTHP()) {
             out.shouldContain(warningNoTHP);
-        }
-
-        else if (useLP && !useTHP &&
+        } else if (useLP && !useTHP &&
                  configuration.supportsStaticHugePages() && haveUsableStaticHugePages) {
             out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getStaticDefaultHugePageSize()));
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=0");
