@@ -1263,7 +1263,7 @@ public class HierarchicalStableLayoutManager {
                         }
 
                         if (n.preds.size() == 1) {
-                            n.succs.remove(edgeToRemove); 
+                            n.succs.remove(edgeToRemove);
                             prev = n;
                             edgeToRemove = n.preds.get(0);
                             n = edgeToRemove.from;
