@@ -418,7 +418,7 @@ public final class ObjectStreamClass implements Serializable {
                             new Class<?>[] { ObjectInputStream.class },
                             Void.TYPE);
                         readObjectNoDataMethod = getPrivateMethod(
-                            cl, "readObjectNoData", null, Void.TYPE);
+                            cl, "readObjectNoData", new Class<?>[] {}, Void.TYPE);
                         hasWriteObjectData = (writeObjectMethod != null);
                     }
                     domains = getProtectionDomains(cons, cl);
@@ -1476,6 +1476,22 @@ public final class ObjectStreamClass implements Serializable {
         return canonicalCtr;
     }
 
+    private static Method getDeclaredMethod(Class<?> cl, String name,
+            Class<?> returnType, Class<?>... parameterTypes) {
+        /*
+         * This method is invoked inside a doPrivileged(), so the
+         * getDeclaredMethods() cannot throw.
+         */
+        for (Method m : cl.getDeclaredMethods()) {
+            if (m.getName().equals(name)
+                    && m.getReturnType() == returnType
+                    && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
+                return m;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns non-static, non-abstract method with given signature provided it
      * is defined by or accessible (via inheritance) by the given class, or
@@ -1522,16 +1538,14 @@ public final class ObjectStreamClass implements Serializable {
                                            Class<?>[] argTypes,
                                            Class<?> returnType)
     {
-        try {
-            Method meth = cl.getDeclaredMethod(name, argTypes);
-            meth.setAccessible(true);
-            int mods = meth.getModifiers();
-            return ((meth.getReturnType() == returnType) &&
-                    ((mods & Modifier.STATIC) == 0) &&
-                    ((mods & Modifier.PRIVATE) != 0)) ? meth : null;
-        } catch (NoSuchMethodException ex) {
+        Method meth = getDeclaredMethod(cl, name, returnType, argTypes);
+        if (meth == null) {
             return null;
         }
+        meth.setAccessible(true);
+        int mods = meth.getModifiers();
+        return (((mods & Modifier.STATIC) == 0) &&
+                ((mods & Modifier.PRIVATE) != 0)) ? meth : null;
     }
 
     /**
