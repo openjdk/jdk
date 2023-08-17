@@ -370,12 +370,11 @@ public class TagletManager {
                 continue;
             }
             final Taglet taglet = allTaglets.get(name);
-            // Check and verify tag usage
             if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
-                // taglet has been disabled
-                return;
+                return; // taglet has been disabled
             }
 
+            // Check and verify tag usage
             new SimpleElementVisitor14<Void, Void>() {
                 @Override
                 public Void visitModule(ModuleElement e, Void p) {
