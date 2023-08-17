@@ -106,6 +106,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
@@ -1917,6 +1918,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final void compute() {
             try {
                 realCompute();
+            } catch (CancellationException ex) {
+                throw ex; // expected by some tests
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }
@@ -1932,6 +1935,8 @@ public class JSR166TestCase extends TestCase {
         @Override protected final T compute() {
             try {
                 return realCompute();
+            } catch (CancellationException ex) {
+                throw ex;
             } catch (Throwable fail) {
                 threadUnexpectedException(fail);
             }
