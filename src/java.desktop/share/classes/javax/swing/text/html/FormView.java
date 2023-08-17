@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import javax.swing.Box;
 import javax.swing.ButtonModel;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultButtonModel;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -941,7 +940,7 @@ public class FormView extends ComponentView implements ActionListener {
             ElementIterator it = new ElementIterator(parent);
             Element next;
 
-            while((next = it.next()) != null) {
+            while ((next = it.next()) != null) {
                 if (isControl(next)) {
                     AttributeSet elemAttr = next.getAttributes();
                     Object m = elemAttr.getAttribute(StyleConstants.
