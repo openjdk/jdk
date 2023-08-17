@@ -23,48 +23,52 @@
 
 /*
  * @test
- * @bug 4992438 6633113
+ * @bug 4992438 6633113 8314515
  * @summary Checks that fairness setting is respected.
  */
 
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Fairness {
-    private static void testFairness(boolean fair,
-                                     final BlockingQueue<Integer> q)
+    private static void testFairness(boolean fair, SynchronousQueue<Integer> q)
         throws Throwable
     {
-        final ReentrantLock lock = new ReentrantLock();
-        final Condition ready = lock.newCondition();
-        final int threadCount = 10;
-        final Throwable[] badness = new Throwable[1];
-        lock.lock();
+        int threadCount = ThreadLocalRandom.current().nextInt(2, 8);
+        var badness = new AtomicReference<Throwable>();
+        var ts = new ArrayList<Thread>();
         for (int i = 0; i < threadCount; i++) {
-            final Integer I = i;
-            Thread t = new Thread() { public void run() {
+            final Integer finali = i;
+            CountDownLatch ready = new CountDownLatch(1);
+            Runnable put = () -> {
                 try {
-                    lock.lock();
-                    ready.signal();
-                    lock.unlock();
-                    q.put(I);
-                } catch (Throwable t) { badness[0] = t; }}};
+                    ready.countDown();
+                    q.put(finali);
+                } catch (Throwable fail) { badness.set(fail); }
+            };
+            Thread t = new Thread(put);
             t.start();
+            ts.add(t);
             ready.await();
-            // Probably unnecessary, but should be bullet-proof
+            // Force queueing order by waiting for each thread to block in q.put
+            // before starting the next
             while (t.getState() == Thread.State.RUNNABLE)
                 Thread.yield();
         }
         for (int i = 0; i < threadCount; i++) {
             int j = q.take();
-            // Non-fair queues are lifo in our implementation
+            // Fair queues are specified to be FIFO.
+            // Non-fair queues are LIFO in our implementation.
             if (fair ? j != i : j != threadCount - 1 - i)
-                throw new Error(String.format("fair=%b i=%d j=%d%n",
-                                              fair, i, j));
+                throw new Error(String.format("fair=%b i=%d/%d j=%d%n",
+                                              fair, i, threadCount, j));
         }
-        if (badness[0] != null) throw new Error(badness[0]);
+        for (Thread t : ts) t.join();
+        if (badness.get() != null) throw new Error(badness.get());
     }
 
     public static void main(String[] args) throws Throwable {
