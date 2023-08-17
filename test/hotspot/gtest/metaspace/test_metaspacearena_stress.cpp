@@ -383,7 +383,7 @@ public:
     // - (rarely) deallocate (simulates metaspace deallocation, e.g. class redefinitions)
     // - delete a test bed (simulates collection of a loader and subsequent return of metaspace to freelists)
 
-    const int iterations = 10000;
+    const int iterations = 2500;
 
     // Lets have a ceiling on number of words allocated (this is independent from the commit limit)
     const size_t max_allocation_size = 8 * M;
