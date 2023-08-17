@@ -644,7 +644,7 @@ public class HierarchicalStableLayoutManager {
          *
          * @param node
          * @param layer
-         * @return
+         * @return The optimal position within given layer
          */
         private int optimalPosition(LayoutNode node, int layer) {
             assert layers.keySet().contains(layer);
@@ -1106,7 +1106,7 @@ public class HierarchicalStableLayoutManager {
          *
          * @param vertex
          * @param links
-         * @return
+         * @return the optimal layer to insert the given vertex
          */
         private int optimalLayer(Vertex vertex, List<Link> links) {
             if (vertex.isRoot()) {
@@ -1162,7 +1162,6 @@ public class HierarchicalStableLayoutManager {
         }
 
         private void applyAddVertexAction(VertexAction action) {
-            // System.out.println("Adding vertex " + action.vertex);
             LayoutNode node = new LayoutNode();
             Dimension size = action.vertex.getSize();
             node.width = (int) size.getWidth();
@@ -1201,7 +1200,6 @@ public class HierarchicalStableLayoutManager {
 
             // Add associated edges
             for (LinkAction a : action.linkActions) {
-                // System.out.println("Associated action " + a.action + " on " + a.link);
                 if (a.action == Action.ADD) {
                     applyAddLinkAction(a.link);
                 }
@@ -1265,7 +1263,7 @@ public class HierarchicalStableLayoutManager {
                         }
 
                         if (n.preds.size() == 1) {
-                            n.succs.remove(edgeToRemove);       // necessary??
+                            n.succs.remove(edgeToRemove); 
                             prev = n;
                             edgeToRemove = n.preds.get(0);
                             n = edgeToRemove.from;
@@ -1345,13 +1343,11 @@ public class HierarchicalStableLayoutManager {
 
         private void applyRemoveVertexAction(VertexAction action) {
             LayoutNode node = vertexToLayoutNode.get(action.vertex);
-            // System.out.println("Removing " + node);
 
             assert nodes.contains(node);
 
             // Remove associated edges
             for (LinkAction a : action.linkActions) {
-                // System.out.println("Associated action " + a.action + " on " + a.link);
                 if (a.action == Action.REMOVE) {
                     applyRemoveLinkAction(a.link);
                 }
@@ -1379,7 +1375,7 @@ public class HierarchicalStableLayoutManager {
                         applyAddVertexAction(action);
                         break;
                     default:
-                        System.out.println("Should not be here");
+                        assert false : "Invalid update action";
                 }
             }
 
@@ -1875,10 +1871,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             // Ensure all edges are drawn
-            if (currentLinks.size() != linkPositions.keySet().size()) {
-                System.out.println(
-                        "current links: " + currentLinks.size() + ", drawn links: " + linkPositions.keySet().size());
-            }
             assert currentLinks.size() <= linkPositions.keySet().size();
 
             int minX = Integer.MAX_VALUE;
