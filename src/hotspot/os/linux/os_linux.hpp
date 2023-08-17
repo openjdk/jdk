@@ -99,7 +99,7 @@ class os::Linux {
   static bool print_ld_preload_file(outputStream* st);
   static void print_uptime_info(outputStream* st);
 
-  static void current_stack_region(address* bottom, size_t* size);
+  static void current_stack_region(address* base, size_t* size);
 
  public:
   struct CPUPerfTicks {

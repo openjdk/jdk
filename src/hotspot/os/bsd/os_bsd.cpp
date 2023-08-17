@@ -747,9 +747,7 @@ void os::free_thread(OSThread* osthread) {
 }
 
 void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
-  address stack_bottom;
-  os::Bsd::current_stack_region(&stack_bottom, stack_size);
-  *stack_base = stack_bottom + *stack_size;
+  os::Bsd::current_stack_region(stack_base, stack_size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

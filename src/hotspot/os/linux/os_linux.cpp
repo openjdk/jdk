@@ -5367,19 +5367,22 @@ bool os::start_debugging(char *buf, int buflen) {
 //    |                        |/
 // P2 +------------------------+ Thread::stack_base()
 //
-// ** P1 (aka bottom) and size (P2 = P1 - size) are the address and stack size
+// ** P1 (aka bottom) and size are the address and stack size
 //    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 - size)
 // ** If adjustStackSizeForGuardPages() is true the guard pages have been taken
 //    out of the stack size given in pthread_attr. We work around this for
 //    threads created by the VM. We adjust bottom to be P1 and size accordingly.
 //
 #ifndef ZERO
-void os::Linux::current_stack_region(address* bottom, size_t* size) {
+void os::Linux::current_stack_region(address* base, size_t* size) {
+  address bottom;
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
     // may return bogus value.
-    *bottom = os::Linux::initial_thread_stack_bottom();
-    *size   = os::Linux::initial_thread_stack_size();
+    bottom = os::Linux::initial_thread_stack_bottom();
+    *size = os::Linux::initial_thread_stack_size();
+    *base = bottom + *size;
   } else {
     pthread_attr_t attr;
 
@@ -5394,9 +5397,11 @@ void os::Linux::current_stack_region(address* bottom, size_t* size) {
       }
     }
 
-    if (pthread_attr_getstack(&attr, (void **)bottom, size) != 0) {
+    if (pthread_attr_getstack(&attr, (void **)&bottom, size) != 0) {
       fatal("Cannot locate current stack attributes!");
     }
+
+    *base = bottom + *size;
 
     if (os::Linux::adjustStackSizeForGuardPages()) {
       size_t guard_size = 0;
@@ -5404,23 +5409,20 @@ void os::Linux::current_stack_region(address* bottom, size_t* size) {
       if (rslt != 0) {
         fatal("pthread_attr_getguardsize failed with error = %d", rslt);
       }
-      *bottom += guard_size;
-      *size   -= guard_size;
+      bottom += guard_size;
+      *size  -= guard_size;
     }
 
     pthread_attr_destroy(&attr);
-
   }
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 #endif
 
 void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
-  address stack_bottom;
-  os::Linux::current_stack_region(&stack_bottom, stack_size);
-  *stack_base = stack_bottom + *stack_size;
+  os::Linux::current_stack_region(stack_base, stack_size);
 }
 
 
