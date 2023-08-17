@@ -77,7 +77,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * individual arguments, maintaining proper relations between the
  * method at different arguments is also important.  Therefore, most
  * methods with more than 0.5 ulp errors are required to be
- * <i>semi-monotonic</i>: whenever the mathematical function is
+ * <dfn>{@index "semi-monotonic"}</dfn>: whenever the mathematical function is
  * non-decreasing, so is the floating-point approximation, likewise,
  * whenever the mathematical function is non-increasing, so is the
  * floating-point approximation.  Not all approximations that have 1
