@@ -430,17 +430,24 @@ public class ForkJoinPool extends AbstractExecutorService {
      * letting them time out and terminate when idle.
      *
      * Array "queues" holds references to WorkQueues.  It is updated
-     * (only during worker creation and termination) under the runState
-     * lock. It is otherwise concurrently readable but reads for use
-     * in scans (see below) are always prefaced by a volatile read of
-     * runState (or equivalent constructions), ensuring that its state is
-     * current at the point it is used (which is all we require). To
-     * simplify index-based operations, the array size is always a
-     * power of two, and all readers must tolerate null slots.  Worker
-     * queues are at odd indices. Worker phase ids masked with SMASK
-     * match their index. Shared (submission) queues are at even
-     * indices. Grouping them together in this way simplifies and
-     * speeds up task scanning.
+     * (only during worker creation and termination) under the
+     * runState lock. It is otherwise concurrently readable but reads
+     * for use in scans (see below) are always prefaced by a volatile
+     * read of runState (or equivalent constructions), ensuring that
+     * its state is current at the point it is used (which is all we
+     * require). To simplify index-based operations, the array size is
+     * always a power of two, and all readers must tolerate null
+     * slots.  Worker queues are at odd indices. Worker phase ids
+     * masked with SMASK match their index. Shared (submission) queues
+     * are at even indices. Grouping them together in this way aids in
+     * task scanning: At top-level, both kinds of queues should be
+     * sampled with approximately the same probability, which is
+     * simpler if they are all in the same array. But we also need to
+     * identify what kind they are without looking at them, leading to
+     * this odd/even scheme. One disadvantage is that there are
+     * usually many fewer submission queues, so there can be many
+     * wasted probes (null slots). But this is still cheaper than
+     * alternatives.
      *
      * All worker thread creation is on-demand, triggered by task
      * submissions, replacement of terminated workers, and/or
@@ -453,7 +460,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * essence, the queues array serves as a weak reference
      * mechanism. In particular, the stack top subfield of ctl stores
      * indices, not references. Operations on queues obtained from
-     * these indices remain OK (with at most some unnecessary extra
+     * these indices remain valid (with at most some unnecessary extra
      * work) even if an underlying worker failed and was replaced by
      * another at the same index. During termination, worker queue
      * array updates are disabled.
@@ -718,7 +725,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * because chains cannot include even-numbered external queues,
      * they are ignored, and 0 is an OK default.) The scan in method
      * helpJoin uses these markers to try to find a worker to help
-     * (i.e., steal back a task from and execute it) that could makje
+     * (i.e., steal back a task from and execute it) that could make
      * progress toward completion of the actively joined task.  Thus,
      * the joiner executes a task that would be on its own local deque
      * if the to-be-joined task had not been stolen. This is a
@@ -765,7 +772,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * without (unobtainably) perfect information about whether worker
      * creation is actually necessary.  False alarms are common enough
      * to negatively impact performance, so compensation is by default
-     * attempted only when it appears possible the the pool could
+     * attempted only when it appears possible that the pool could
      * stall due to lack of any unblocked workers.  However, we allow
      * users to override defaults using the long form of the
      * ForkJoinPool constructor. The compensation mechanism may also
