@@ -1674,6 +1674,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 vertexToLayoutNode.put(v, node);
             }
 
+            // Set up edges
             List<Link> links = new ArrayList<>(graph.getLinks());
             links.sort(linkComparator);
             for (Link l : links) {
