@@ -3789,7 +3789,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     if ((round_mask & ~right_n_bits(eshift)) == 0)
       round_mask = 0;  // strength-reduce it if it goes away completely
     assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
-    int header_size_min  = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    int header_size_min = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     assert(header_size_min <= hsize, "generic minimum is smallest");
     header_size = intcon(hsize);
   } else {
