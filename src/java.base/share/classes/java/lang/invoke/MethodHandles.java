@@ -56,7 +56,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
-import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2252,7 +2251,7 @@ public class MethodHandles {
         }
 
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
-                "jdk.invoke.MethodHandle.dumpClassFiles", Path.of("DUMP_CLASS_FILES"));
+                "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
         static class ClassFile {
             final String name;  // internal name
@@ -2845,10 +2844,16 @@ assertEquals("[x, y, z]", pb.command().toString());
          * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
+         * For a class or an interface, the name is the {@linkplain ClassLoader##binary-name binary name}.
+         * For an array class of {@code n} dimensions, the name begins with {@code n} occurrences
+         * of {@code '['} and followed by the element type as encoded in the
+         * {@linkplain Class##nameFormat table} specified in {@link Class#getName}.
+         * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
          * its class loader, and the {@linkplain #lookupModes() lookup modes}.
          *
-         * @param targetName the fully qualified name of the class to be looked up.
+         * @param targetName the {@linkplain ClassLoader##binary-name binary name} of the class
+         *                   or the string representing an array class
          * @return the requested class.
          * @throws SecurityException if a security manager is present and it
          *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
@@ -3844,7 +3849,7 @@ return mh1;
 
         /**
          * Perform steps 1 and 2b <a href="MethodHandles.Lookup.html#secmgr">access checks</a>
-         * for ensureInitialzed, findClass or accessClass.
+         * for ensureInitialized, findClass or accessClass.
          */
         void checkSecurityManager(Class<?> refc) {
             if (allowedModes == TRUSTED)  return;
@@ -3929,6 +3934,14 @@ return mh1;
             throw m.makeAccessException(message, this);
         }
 
+        private boolean isArrayClone(byte refKind, Class<?> refc, MemberName m) {
+            return Modifier.isProtected(m.getModifiers()) &&
+                    refKind == REF_invokeVirtual &&
+                    m.getDeclaringClass() == Object.class &&
+                    m.getName().equals("clone") &&
+                    refc.isArray();
+        }
+
         /** Check public/protected/private bits on the symbolic reference class and its member. */
         void checkAccess(byte refKind, Class<?> refc, MemberName m) throws IllegalAccessException {
             assert(m.referenceKindIsConsistentWith(refKind) &&
@@ -3937,11 +3950,7 @@ return mh1;
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
-            if (Modifier.isProtected(mods) &&
-                    refKind == REF_invokeVirtual &&
-                    m.getDeclaringClass() == Object.class &&
-                    m.getName().equals("clone") &&
-                    refc.isArray()) {
+            if (isArrayClone(refKind, refc, m)) {
                 // The JVM does this hack also.
                 // (See ClassVerifier::verify_invoke_instructions
                 // and LinkResolver::check_method_accessability.)
@@ -4068,7 +4077,7 @@ return mh1;
 
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
-                !refc.isInterface() &&
+                !refc.isInterface() && !lookupClass().isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
@@ -4101,7 +4110,12 @@ return mh1;
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
             if ((doRestrict && refKind == REF_invokeSpecial) ||
-                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
+                    (MethodHandleNatives.refKindHasReceiver(refKind) &&
+                            restrictProtectedReceiver(method) &&
+                            // All arrays simply inherit the protected Object.clone method.
+                            // The leading argument is already restricted to the requested
+                            // array type (not the lookup class).
+                            !isArrayClone(refKind, refc, method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, boundCaller);
@@ -4193,7 +4207,7 @@ return mh1;
                 }
                 refc = lookupClass();
             }
-            return VarHandles.makeFieldHandle(getField, refc, getField.getFieldType(),
+            return VarHandles.makeFieldHandle(getField, refc,
                                               this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
         }
         /** Check access and get the requested constructor. */
@@ -4246,14 +4260,14 @@ return mh1;
             }
             MemberName resolved = resolveOrFail(refKind, member);
             mh = getDirectMethodForConstant(refKind, defc, resolved);
-            if (mh instanceof DirectMethodHandle
+            if (mh instanceof DirectMethodHandle dmh
                     && canBeCached(refKind, defc, resolved)) {
                 MemberName key = mh.internalMemberName();
                 if (key != null) {
                     key = key.asNormalOriginal();
                 }
                 if (member.equals(key)) {  // better safe than sorry
-                    LOOKASIDE_TABLE.put(key, (DirectMethodHandle) mh);
+                    LOOKASIDE_TABLE.put(key, dmh);
                 }
             }
             return mh;
@@ -7948,23 +7962,23 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     /**
      * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
-     * by viewing its contents as a sequence of the provided value layout.
+     * at a given byte offset, using the provided value layout.
      *
      * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
      * the {@linkplain ValueLayout#byteSize() byte size},
      * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
      * associated with the returned var handle.
      *
-     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
-     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
-     * a given memory segment. The returned var handle accesses bytes at an offset in a given
-     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
-     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     * <p>The list of coordinate types associated with the returned var handle is {@code (MemorySegment, long)},
+     * where the {@code long} coordinate type corresponds to byte offset into the given memory segment coordinate.
+     * Thus, the returned var handle accesses bytes at an offset in a given memory segment, composing bytes to or from
+     * a value of the var handle type. Moreover, the access operation will honor the endianness and the
+     * alignment constraints expressed in the provided layout.
      *
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
      *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(32),
+     *             MemoryLayout.paddingLayout(4),
      *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
      *     );
      * }
@@ -8015,7 +8029,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.
-     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      * @throws NullPointerException if {@code layout} is {@code null}.
      * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
      * @since 19
@@ -8181,19 +8194,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * filter function and the target var handle is then called on the modified (usually shortened)
      * coordinate list.
      * <p>
-     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
-     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
-     * any coordinate not passed to the filter.
-     * No coordinates are reordered, and the result returned from the filter
-     * replaces (in order) the whole subsequence of coordinates originally
-     * passed to the adapter.
-     * <p>
-     * The argument types (if any) of the filter
-     * replace zero or one coordinate types of the target var handle, at position {@code pos},
-     * in the resulting adapted var handle.
-     * The return type of the filter must be identical to the
-     * coordinate type of the target var handle at position {@code pos}, and that target var handle
-     * coordinate is supplied by the return value of the filter.
+     * If {@code R} is the return type of the filter, then:
+     * <ul>
+     * <li>if {@code R} <em>is not</em> {@code void}, the target var handle must have a coordinate of type {@code R} in
+     * position {@code pos}. The parameter types of the filter will replace the coordinate type at position {@code pos}
+     * of the target var handle. When the returned var handle is invoked, it will be as if the filter is invoked first,
+     * and its result is passed in place of the coordinate at position {@code pos} in a downstream invocation of the
+     * target var handle.</li>
+     * <li> if {@code R} <em>is</em> {@code void}, the parameter types (if any) of the filter will be inserted in the
+     * coordinate type list of the target var handle at position {@code pos}. In this case, when the returned var handle
+     * is invoked, the filter essentially acts as a side effect, consuming some of the coordinate values, before a
+     * downstream invocation of the target var handle.</li>
+     * </ul>
      * <p>
      * If any of the filters throws a checked exception when invoked, the resulting var handle will
      * throw an {@link IllegalStateException}.
@@ -8202,12 +8214,12 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * atomic access guarantees as those featured by the target var handle.
      *
      * @param target the var handle to invoke after the coordinates have been filtered
-     * @param pos the position of the coordinate to be filtered
+     * @param pos the position in the coordinate list of the target var handle where the filter is to be inserted
      * @param filter the filter method handle
      * @return an adapter var handle which filters the incoming coordinate values,
      * before calling the target var handle
      * @throws IllegalArgumentException if the return type of {@code filter}
-     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * is not void, and it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
      * or if it's determined that {@code filter} throws any checked exceptions.

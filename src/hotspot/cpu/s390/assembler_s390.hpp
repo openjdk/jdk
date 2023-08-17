@@ -189,11 +189,6 @@ class Address {
     _index(noreg),
     _disp(0) {}
 
-  Address(Register base, Register index, intptr_t disp = 0) :
-    _base(base),
-    _index(index),
-    _disp(disp) {}
-
   Address(Register base, intptr_t disp = 0) :
     _base(base),
     _index(noreg),
@@ -354,7 +349,7 @@ class AddressLiteral {
 
   intptr_t value() const { return (intptr_t) _address; }
 
-  const relocInfo::relocType rtype() const { return _rspec.type(); }
+  relocInfo::relocType rtype()       const { return _rspec.type(); }
   const RelocationHolder&    rspec() const { return _rspec; }
 
   RelocationHolder rspec(int offset) const {

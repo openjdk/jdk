@@ -511,10 +511,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
   return nullptr;
 }
 
-bool G1CollectedHeap::check_archive_addresses(MemRegion range) {
-  return _hrm.reserved().contains(range);
-}
-
 template <typename Func>
 void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func) {
   // Mark each G1 region touched by the range as old, add it to
@@ -532,43 +528,40 @@ void G1CollectedHeap::iterate_regions_in_range(MemRegion range, const Func& func
   }
 }
 
-bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
+HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* preferred_addr) {
   assert(!is_init_completed(), "Expect to be called at JVM init time");
   MutexLocker x(Heap_lock);
 
   MemRegion reserved = _hrm.reserved();
 
+  if (reserved.word_size() <= word_size) {
+    log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = " SIZE_FORMAT
+                       " bytes, heap = " SIZE_FORMAT " bytes", word_size, reserved.word_size());
+    return nullptr;
+  }
+
   // Temporarily disable pretouching of heap pages. This interface is used
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  // For the specified MemRegion range, allocate the corresponding G1
-  // region(s) and mark them as old region(s).
-  HeapWord* start_address = range.start();
-  size_t word_size = range.word_size();
-  HeapWord* last_address = range.last();
   size_t commits = 0;
-
-  guarantee(reserved.contains(start_address) && reserved.contains(last_address),
-            "MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
-            p2i(start_address), p2i(last_address));
-
-  // Perform the actual region allocation, exiting if it fails.
-  // Then note how much new space we have allocated.
+  // Attempt to allocate towards the end of the heap.
+  HeapWord* start_addr = reserved.end() - align_up(word_size, HeapRegion::GrainWords);
+  MemRegion range = MemRegion(start_addr, word_size);
+  HeapWord* last_address = range.last();
   if (!_hrm.allocate_containing_regions(range, &commits, workers())) {
-    return false;
+    return nullptr;
   }
   increase_used(word_size * HeapWordSize);
   if (commits != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: " SIZE_FORMAT "B",
                               HeapRegion::GrainWords * HeapWordSize * commits);
-
   }
 
   // Mark each G1 region touched by the range as old, add it to
   // the old set, and set top.
   auto set_region_to_old = [&] (HeapRegion* r, bool is_last) {
-    assert(r->is_empty() && !r->is_pinned(), "Region already in use (%u)", r->hrm_index());
+    assert(r->is_empty(), "Region already in use (%u)", r->hrm_index());
 
     HeapWord* top = is_last ? last_address + 1 : r->end();
     r->set_top(top);
@@ -579,7 +572,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion range) {
   };
 
   iterate_regions_in_range(range, set_region_to_old);
-  return true;
+  return start_addr;
 }
 
 void G1CollectedHeap::populate_archive_regions_bot_part(MemRegion range) {
@@ -1314,10 +1307,10 @@ G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* des
 
   os::trace_page_sizes_for_requested_size(description,
                                           size,
-                                          page_size,
                                           preferred_page_size,
                                           rs.base(),
-                                          rs.size());
+                                          rs.size(),
+                                          page_size);
 
   return result;
 }
@@ -1407,9 +1400,9 @@ jint G1CollectedHeap::initialize() {
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        reserved_byte_size,
-                       page_size,
                        heap_rs.base(),
-                       heap_rs.size());
+                       heap_rs.size(),
+                       page_size);
   heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table and the bitmap.
@@ -2471,6 +2464,12 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   _verifier->verify_after_gc();
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
+
+  if (collector_state()->in_concurrent_start_gc()) {
+    log_debug(gc, verify)("Marking state");
+    _verifier->verify_marking_state();
+  }
+
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
@@ -2621,8 +2620,8 @@ void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_hum
 }
 
 bool G1CollectedHeap::should_sample_collection_set_candidates() const {
-  G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
-  return candidates != nullptr && candidates->num_remaining() > 0;
+  const G1CollectionSetCandidates* candidates = collection_set()->candidates();
+  return !candidates->is_empty();
 }
 
 void G1CollectedHeap::set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats) {
@@ -2657,6 +2656,11 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   if (free_list != nullptr) {
     free_list->add_ordered(hr);
   }
+}
+
+void G1CollectedHeap::retain_region(HeapRegion* hr) {
+  MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
+  collection_set()->candidates()->add_retained_region_unsorted(hr);
 }
 
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
@@ -2984,9 +2988,6 @@ void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, si
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
   _cm->raw_mark_in_bitmap(obj);
-  if (collector_state()->in_concurrent_start_gc()) {
-    _cm->add_to_liveness(worker_id, obj, obj_size);
-  }
 }
 
 // Optimized nmethod scanning

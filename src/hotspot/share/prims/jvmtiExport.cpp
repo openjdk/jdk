@@ -378,17 +378,6 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
         return JNI_EVERSION;  // unsupported major version number
       }
   }
-  if (Continuations::enabled()) {
-    // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
-    if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-        ThreadInVMfromNative __tiv(JavaThread::current());
-        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
-      }
-    } else {
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
-    }
-  }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
     JavaThread* current_thread = JavaThread::current();
@@ -399,12 +388,26 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
+
+    if (Continuations::enabled()) {
+      // Virtual threads support for agents loaded into running VM.
+      // There is a performance impact when VTMS transitions are enabled.
+      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+      }
+    }
     return JNI_OK;
 
   } else if (JvmtiEnv::get_phase() == JVMTI_PHASE_ONLOAD) {
     // not live, no thread to transition
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
+
+    if (Continuations::enabled()) {
+      // Virtual threads support for agents loaded at startup.
+      // There is a performance impact when VTMS transitions are enabled.
+      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+    }
     return JNI_OK;
 
   } else {
@@ -829,8 +832,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
@@ -872,8 +873,6 @@ JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
@@ -914,7 +913,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _data_ptr = data_ptr;
     _end_ptr = end_ptr;
     _thread = JavaThread::current();
-    _curr_len = *end_ptr - *data_ptr;
+    _curr_len = pointer_delta_as_int(*end_ptr, *data_ptr);
     _curr_data = *data_ptr;
     _curr_env = nullptr;
     _cached_class_file_ptr = cache_ptr;
@@ -1068,8 +1067,7 @@ bool JvmtiExport::has_early_class_hook_env() {
 bool JvmtiExport::_should_post_class_file_load_hook = false;
 
 // This flag is read by C2 during VM internal objects allocation
-bool JvmtiExport::_should_notify_object_alloc = false;
-
+int JvmtiExport::_should_notify_object_alloc = 0;
 
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
@@ -1480,11 +1478,13 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
   // do JVMTI thread initialization (if needed)
   JvmtiEventController::thread_started(thread);
 
-  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
-    // Check for VirtualThreadStart event instead.
-    HandleMark hm(thread);
-    Handle vthread(thread, thread->threadObj());
-    JvmtiExport::post_vthread_start((jthread)vthread.raw_value());
+  if (thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    if (JvmtiExport::can_support_virtual_threads()) {
+      // Check for VirtualThreadStart event instead.
+      HandleMark hm(thread);
+      Handle vthread(thread, thread->threadObj());
+      JvmtiExport::post_vthread_start((jthread)vthread.raw_value());
+    }
     return;
   }
 
@@ -1524,11 +1524,13 @@ void JvmtiExport::post_thread_end(JavaThread *thread) {
     return;
   }
 
-  if (JvmtiExport::can_support_virtual_threads() && thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
-    // Check for VirtualThreadEnd event instead.
-    HandleMark hm(thread);
-    Handle vthread(thread, thread->threadObj());
-    JvmtiExport::post_vthread_end((jthread)vthread.raw_value());
+  if (thread->threadObj()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    if (JvmtiExport::can_support_virtual_threads()) {
+      // Check for VirtualThreadEnd event instead.
+      HandleMark hm(thread);
+      Handle vthread(thread, thread->threadObj());
+      JvmtiExport::post_vthread_end((jthread)vthread.raw_value());
+    }
     return;
   }
 
@@ -2596,8 +2598,6 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
                                                                   address code_begin, address code_end)
 {
   JavaThread* thread = JavaThread::current();
-  assert(!thread->is_in_any_VTMS_transition(), "dynamic code generated events are not allowed in any VTMS transition");
-
   // register the stub with the current dynamic code event collector
   // Cannot take safepoint here so do not use state_for to get
   // jvmti thread state.

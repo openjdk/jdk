@@ -1,27 +1,26 @@
 /*
- *  Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.  Oracle designates this
- *  particular file as subject to the "Classpath" exception as provided
- *  by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.lang.foreign;
@@ -37,8 +36,8 @@ import java.util.Optional;
 
 /**
  * A value layout used to model the address of some region of memory. The carrier associated with an address layout is
- * {@code MemorySegment.class}. The size and alignment of an address layout are platform dependent
- * (e.g. on a 64-bit platform, the size and alignment of an address layout are set to 64 bits).
+ * {@code MemorySegment.class}. The size and alignment of an address layout are platform-dependent
+ * (e.g. on a 64-bit platform, the size and alignment of an address layout are set to 8 bytes).
  * <p>
  * An address layout may optionally feature a {@linkplain #targetLayout() target layout}. An address layout with
  * target layout {@code T} can be used to model the address of a region of memory whose layout is {@code T}.
@@ -74,7 +73,7 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
      * {@inheritDoc}
      */
     @Override
-    AddressLayout withBitAlignment(long bitAlignment);
+    AddressLayout withByteAlignment(long byteAlignment);
 
     /**
      * {@inheritDoc}
@@ -113,9 +112,9 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
 
     /**
      * Returns an address layout with the same carrier, alignment constraint, name and order as this address layout,
-     * but without any specified target layout.
-     * <p>
-     * This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
+     * but with no target layout.
+     *
+     * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
      *
      * @return an address layout with same characteristics as this layout, but with no target layout.
      * @see #targetLayout()

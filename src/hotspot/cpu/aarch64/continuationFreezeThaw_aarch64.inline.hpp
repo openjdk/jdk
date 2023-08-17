@@ -149,7 +149,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
   // locals value, we don't need to change the locals value here.
 
-  // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
+  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
@@ -217,7 +217,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     intptr_t* heap_sp = hf.unextended_sp();
     // If caller is interpreted it already made room for the callee arguments
     int overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
-    const int fsize = ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap;
+    const int fsize = (int)(ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap);
     const int locals = hf.interpreter_frame_method()->max_locals();
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     intptr_t* fp = frame_sp + (hf.fp() - heap_sp);

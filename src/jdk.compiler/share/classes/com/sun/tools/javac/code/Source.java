@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,7 +132,13 @@ public enum Source {
     /**
       * 21, tbd
       */
-    JDK21("21");
+    JDK21("21"),
+
+    /**
+      * 22, tbd
+      */
+    JDK22("22"),
+    ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -184,6 +190,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK22  -> Target.JDK1_22;
         case JDK21  -> Target.JDK1_21;
         case JDK20  -> Target.JDK1_20;
         case JDK19  -> Target.JDK1_19;
@@ -232,12 +239,15 @@ public enum Source {
         REIFIABLE_TYPES_INSTANCEOF(JDK16, Fragments.FeatureReifiableTypesInstanceof, DiagKind.PLURAL),
         RECORDS(JDK16, Fragments.FeatureRecords, DiagKind.PLURAL),
         SEALED_CLASSES(JDK17, Fragments.FeatureSealedClasses, DiagKind.PLURAL),
-        CASE_NULL(JDK17, Fragments.FeatureCaseNull, DiagKind.NORMAL),
-        PATTERN_SWITCH(JDK17, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
+        CASE_NULL(JDK21, Fragments.FeatureCaseNull, DiagKind.NORMAL),
+        PATTERN_SWITCH(JDK21, Fragments.FeaturePatternSwitch, DiagKind.PLURAL),
         REDUNDANT_STRICTFP(JDK17),
-        UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK19, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
-        RECORD_PATTERNS(JDK19, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
+        UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK21, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
+        RECORD_PATTERNS(JDK21, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
+        STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
+        UNNAMED_CLASSES(JDK21, Fragments.FeatureUnnamedClasses, DiagKind.PLURAL),
         WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
+        UNNAMED_VARIABLES(JDK21, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
         ;
 
         enum DiagKind {
@@ -321,6 +331,7 @@ public enum Source {
         case JDK19  -> RELEASE_19;
         case JDK20  -> RELEASE_20;
         case JDK21  -> RELEASE_21;
+        case JDK22  -> RELEASE_22;
         default     -> null;
         };
     }

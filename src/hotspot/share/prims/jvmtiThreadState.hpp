@@ -120,7 +120,7 @@ class JvmtiVTMSTransitionDisabler {
   static void VTMS_mount_begin(jobject vthread);
   static void VTMS_mount_end(jobject vthread);
 
-  static void VTMS_unmount_begin(jobject vthread);
+  static void VTMS_unmount_begin(jobject vthread, bool last_unmount);
   static void VTMS_unmount_end(jobject vthread);
 };
 

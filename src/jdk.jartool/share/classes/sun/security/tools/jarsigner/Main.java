@@ -753,6 +753,13 @@ public class Main {
                             && SignatureFileVerifier.isBlockOrSF(name)) {
                         String alias = name.substring(name.lastIndexOf('/') + 1,
                                 name.lastIndexOf('.'));
+                        long uncompressedSize = je.getSize();
+                        if (uncompressedSize > SignatureFileVerifier.MAX_SIG_FILE_SIZE) {
+                            unparsableSignatures.putIfAbsent(alias, String.format(
+                                    rb.getString("history.unparsable"), name));
+                            continue;
+                        }
+
                         try {
                             if (name.endsWith(".SF")) {
                                 Manifest sf = new Manifest(is);

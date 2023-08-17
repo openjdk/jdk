@@ -77,13 +77,7 @@ import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
-import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.*;
 import static org.testng.Assert.*;
 
 public class TestByteBuffer {
@@ -102,12 +96,12 @@ public class TestByteBuffer {
         }
     }
 
-    static final ValueLayout.OfChar BB_CHAR = JAVA_CHAR.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
-    static final ValueLayout.OfShort BB_SHORT = JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
-    static final ValueLayout.OfInt BB_INT = JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
-    static final ValueLayout.OfLong BB_LONG = JAVA_LONG.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
-    static final ValueLayout.OfFloat BB_FLOAT = JAVA_FLOAT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
-    static final ValueLayout.OfDouble BB_DOUBLE = JAVA_DOUBLE.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(8);
+    static final ValueLayout.OfChar BB_CHAR = JAVA_CHAR_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    static final ValueLayout.OfShort BB_SHORT = JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    static final ValueLayout.OfInt BB_INT = JAVA_INT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    static final ValueLayout.OfLong BB_LONG = JAVA_LONG_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    static final ValueLayout.OfFloat BB_FLOAT = JAVA_FLOAT_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
+    static final ValueLayout.OfDouble BB_DOUBLE = JAVA_DOUBLE_UNALIGNED.withOrder(ByteOrder.BIG_ENDIAN);
 
     static SequenceLayout tuples = MemoryLayout.sequenceLayout(500,
             MemoryLayout.structLayout(
@@ -385,7 +379,7 @@ public class TestByteBuffer {
     }
 
     static void checkByteArrayAlignment(MemoryLayout layout) {
-        if (layout.bitSize() > 32
+        if (layout.byteSize() > 4
                 && System.getProperty("sun.arch.data.model").equals("32")) {
             throw new SkipException("avoid unaligned access on 32-bit system");
         }

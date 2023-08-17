@@ -47,6 +47,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -591,8 +592,8 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 #if defined(AARCH64) || defined(PPC64)
   const size_t alignment = Metaspace::reserve_alignment();
 
-  // AArch64: Try to align metaspace so that we can decode a compressed
-  // klass with a single MOVK instruction. We can do this iff the
+  // AArch64: Try to align metaspace class space so that we can decode a
+  // compressed klass with a single MOVK instruction. We can do this iff the
   // compressed class base is a multiple of 4G.
   // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
   // of the upper 32-bits of the address are zero so we can handle a shift
@@ -615,17 +616,37 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     {  nullptr, nullptr, 0 }
   };
 
+  // Calculate a list of all possible values for the starting address for the
+  // compressed class space.
+  ResourceMark rm;
+  GrowableArray<address> list(36);
   for (int i = 0; search_ranges[i].from != nullptr; i ++) {
     address a = search_ranges[i].from;
     assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
     while (a < search_ranges[i].to) {
-      ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                       os::vm_page_size(), (char*)a);
-      if (rs.is_reserved()) {
-        assert(a == (address)rs.base(), "Sanity");
-        return rs;
-      }
+      list.append(a);
       a +=  search_ranges[i].increment;
+    }
+  }
+
+  int len = list.length();
+  int r = 0;
+  if (!DumpSharedSpaces) {
+    // Starting from a random position in the list. If the address cannot be reserved
+    // (the OS already assigned it for something else), go to the next position, wrapping
+    // around if necessary, until we exhaust all the items.
+    os::init_random((int)os::javaTimeNanos());
+    r = os::random();
+    log_info(metaspace)("Randomizing compressed class space: start from %d out of %d locations",
+                        r % len, len);
+  }
+  for (int i = 0; i < len; i++) {
+    address a = list.at((i + r) % len);
+    ReservedSpace rs(size, Metaspace::reserve_alignment(),
+                     os::vm_page_size(), (char*)a);
+    if (rs.is_reserved()) {
+      assert(a == (address)rs.base(), "Sanity");
+      return rs;
     }
   }
 #endif // defined(AARCH64) || defined(PPC64)
@@ -875,7 +896,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
 
-  assert(loader_data != nullptr, "Should never pass around a nullptr loader_data. "
+  assert(loader_data != nullptr, "Should never pass around a null loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
 
   // Deal with concurrent unloading failed allocation starvation

@@ -54,8 +54,7 @@ public sealed interface InnerClassInfo
     Optional<ClassEntry> outerClass();
 
     /**
-     * {@return the name of the class or interface of which this class is a
-     * member, if it is a member of a class or interface}
+     * {@return the simple name of this class, or empty if this class is anonymous}
      */
     Optional<Utf8Entry> innerName();
 

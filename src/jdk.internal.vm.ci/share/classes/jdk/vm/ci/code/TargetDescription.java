@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.services.Services;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Represents the target machine for a compiler, including the CPU architecture, the size of
@@ -33,8 +34,8 @@ import jdk.vm.ci.services.Services;
  */
 public class TargetDescription {
 
-    public final boolean linuxOs = Services.getSavedProperty("os.name", "").startsWith("Linux");
-    public final boolean macOs = Services.getSavedProperty("os.name", "").startsWith("Mac");
+    public final boolean linuxOs = OperatingSystem.isLinux();
+    public final boolean macOs = OperatingSystem.isMacOS();
 
     public final Architecture arch;
 

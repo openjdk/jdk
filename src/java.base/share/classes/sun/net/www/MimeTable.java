@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.FileNameMap;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -164,7 +165,7 @@ public class MimeTable implements FileNameMap {
 
         String ext = "";
         if (i != -1 && fname.charAt(i) == '.') {
-            ext = fname.substring(i).toLowerCase();
+            ext = fname.substring(i).toLowerCase(Locale.ROOT);
         }
 
         return findByExt(ext);

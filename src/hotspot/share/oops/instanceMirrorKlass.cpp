@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/iterator.inline.hpp"
@@ -69,6 +70,6 @@ int InstanceMirrorKlass::compute_static_oop_field_count(oop obj) {
 
 #if INCLUDE_CDS
 void InstanceMirrorKlass::serialize_offsets(SerializeClosure* f) {
-  f->do_u4((u4*)&_offset_of_static_fields);
+  f->do_int(&_offset_of_static_fields);
 }
 #endif

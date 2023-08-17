@@ -156,7 +156,7 @@ public class TestSpliterator {
         MemorySegment segment = scope.allocate(8, 1);
         // compute an alignment constraint (in bytes) which exceed that of the native segment
         long bigByteAlign = Long.lowestOneBit(segment.address()) << 1;
-        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withBitAlignment(bigByteAlign * 8)));
+        segment.elements(MemoryLayout.sequenceLayout(2, ValueLayout.JAVA_INT.withByteAlignment(bigByteAlign)));
     }
 
     static long sumSingle(long acc, MemorySegment segment) {

@@ -22,20 +22,28 @@
  */
 
 // no precompiled headers
+#include "c1/c1_Compiler.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "jvmci/jvmciEnv.hpp"
+#if INCLUDE_ZGC
+#include "gc/x/xBarrierSetRuntime.hpp"
+#include "gc/x/xThreadLocalData.hpp"
+#endif
 #include "jvmci/jvmciCompilerToVM.hpp"
+#include "jvmci/jvmciEnv.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#include "opto/c2compiler.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -52,6 +60,27 @@ address CompilerToVM::Data::SharedRuntime_handle_wrong_method_stub;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
+address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+
+address CompilerToVM::Data::nmethod_entry_barrier;
+int CompilerToVM::Data::thread_disarmed_guard_value_offset;
+int CompilerToVM::Data::thread_address_bad_mask_offset;
+
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded;
+address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_array;
+address CompilerToVM::Data::ZBarrierSetRuntime_clone;
+
+bool CompilerToVM::Data::continuations_enabled;
+
+#ifdef AARCH64
+int CompilerToVM::Data::BarrierSetAssembler_nmethod_patching_type;
+address CompilerToVM::Data::BarrierSetAssembler_patching_epoch_addr;
+#endif
 
 size_t CompilerToVM::Data::ThreadLocalAllocBuffer_alignment_reserve;
 
@@ -108,6 +137,33 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack = SharedRuntime::deopt_blob()->unpack();
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
+  SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
+    AMD64_ONLY(nmethod_entry_barrier = StubRoutines::x86::method_entry_barrier());
+    AARCH64_ONLY(nmethod_entry_barrier = StubRoutines::aarch64::method_entry_barrier());
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
+    AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
+  }
+
+#if INCLUDE_ZGC
+  if (UseZGC) {
+    thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
+    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_oop_array =                               XBarrierSetRuntime::load_barrier_on_oop_array_addr();
+    ZBarrierSetRuntime_clone =                                                   XBarrierSetRuntime::clone_addr();
+  }
+#endif
+
+  continuations_enabled = Continuations::enabled();
 
   ThreadLocalAllocBuffer_alignment_reserve = ThreadLocalAllocBuffer::alignment_reserve();
 
@@ -185,7 +241,10 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     }                                                                    \
     JVMCIObject name_str = VM_SYMBOL_TO_STRING(name);                    \
     JVMCIObject sig_str = VM_SYMBOL_TO_STRING(sig);                      \
-    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, JVMCI_CHECK_NULL); \
+    JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, \
+                                    (jboolean) vmIntrinsics::is_intrinsic_available(vmIntrinsics::id),                   \
+                                    (jboolean) Compiler::is_intrinsic_supported(vmIntrinsics::id),                       \
+                                    (jboolean) C2Compiler::is_intrinsic_supported(vmIntrinsics::id), JVMCI_CHECK_NULL);  \
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
@@ -199,19 +258,19 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 }
 
 #define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
-  do_intx_flag(AllocateInstancePrefetchLines)                              \
-  do_intx_flag(AllocatePrefetchDistance)                                   \
+  do_int_flag(AllocateInstancePrefetchLines)                               \
+  do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
-  do_intx_flag(AllocatePrefetchLines)                                      \
-  do_intx_flag(AllocatePrefetchStepSize)                                   \
-  do_intx_flag(AllocatePrefetchStyle)                                      \
+  do_int_flag(AllocatePrefetchLines)                                       \
+  do_int_flag(AllocatePrefetchStepSize)                                    \
+  do_int_flag(AllocatePrefetchStyle)                                       \
   do_intx_flag(BciProfileWidth)                                            \
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \
   do_bool_flag(CITimeEach)                                                 \
   do_uintx_flag(CodeCacheSegmentSize)                                      \
   do_intx_flag(CodeEntryAlignment)                                         \
-  do_intx_flag(ContendedPaddingWidth)                                      \
+  do_int_flag(ContendedPaddingWidth)                                       \
   do_bool_flag(DontCompileHugeMethods)                                     \
   do_bool_flag(EagerJVMCI)                                                 \
   do_bool_flag(EnableContended)                                            \
@@ -232,7 +291,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_uintx_flag(TLABWasteIncrement)                                        \
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \
-  X86_ONLY(do_int_flag(UseAVX))                                           \
+  X86_ONLY(do_int_flag(UseAVX))                                            \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
@@ -252,7 +311,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA1Intrinsics)                                          \
   do_bool_flag(UseSHA256Intrinsics)                                        \
   do_bool_flag(UseSHA512Intrinsics)                                        \
-  X86_ONLY(do_int_flag(UseSSE))                                           \
+  X86_ONLY(do_int_flag(UseSSE))                                            \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \

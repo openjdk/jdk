@@ -1,24 +1,24 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 /*
@@ -36,6 +36,7 @@ import org.testng.annotations.Test;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -350,6 +351,20 @@ public class TestSegments {
         assertEquals(segment.address(), 0); // base address should be zero (no leaking of impl details)
         MemorySegment end = segment.asSlice(segment.byteSize(), 0);
         assertEquals(end.address(), segment.byteSize()); // end address should be equal to segment byte size
+    }
+
+    @Test
+    void testReinterpret() {
+        AtomicInteger counter = new AtomicInteger();
+        try (Arena arena = Arena.ofConfined()){
+            // check size
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100).byteSize(), 100);
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize(), 100);
+            // check scope and cleanup
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+        }
+        assertEquals(counter.get(), 2);
     }
 
     @DataProvider(name = "badSizeAndAlignments")

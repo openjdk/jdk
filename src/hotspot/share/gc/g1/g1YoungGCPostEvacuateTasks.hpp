@@ -55,7 +55,7 @@ public:
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
 // - Update Derived Pointers (s)
-// - Clear Retained Region Bitmaps (on evacuation failure)
+// - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
@@ -66,11 +66,11 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class UpdateDerivedPointersTask;
 #endif
 
-  class ClearRetainedRegionBitmaps;
+  class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
   class RestorePreservedMarksTask;
-  class ResizeTLABsTask;
   class FreeCollectionSetTask;
+  class ResizeTLABsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

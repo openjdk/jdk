@@ -47,6 +47,7 @@ public final class DiagnosticCollector<S> implements DiagnosticListener<S> {
      */
     public DiagnosticCollector() {}
 
+    @Override
     public void report(Diagnostic<? extends S> diagnostic) {
         Objects.requireNonNull(diagnostic);
         diagnostics.add(diagnostic);

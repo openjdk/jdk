@@ -72,7 +72,7 @@ class JVMCIEnv;
 
 #define JVMCI_CATCH                              \
   JVMCIENV); if (JVMCI_HAS_PENDING_EXCEPTION) {  \
-    JVMCIENV->describe_pending_exception(true);  \
+    JVMCIENV->describe_pending_exception(tty);   \
     ShouldNotReachHere();                        \
   } (void)(0
 

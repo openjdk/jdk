@@ -226,7 +226,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         const VirtualMemory* thread_stack_usage =
          _vm_snapshot->by_type(mtThreadStack);
         // report thread count
-        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
         out->print("%27s (stack: ", " ");
         print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
       } else {
@@ -234,7 +234,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         const char* scale = current_scale();
         // report thread count
         assert(ThreadStackTracker::thread_count() == 0, "Not used");
-        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
+        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
         out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
           amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
       }
@@ -492,8 +492,9 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   const char* scale = current_scale();
   outputStream* out = output();
   out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
-  if (diff_in_current_scale(current_amount, early_amount) != 0) {
-    out->print(" " INT64_PLUS_FORMAT "d", diff_in_current_scale(current_amount, early_amount));
+  int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
+  if (amount_diff != 0) {
+    out->print(" " INT64_PLUS_FORMAT "%s", amount_diff, scale);
   }
 
   out->print(" #" SIZE_FORMAT "", current_count);
@@ -594,7 +595,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
 
     } else if (flag == mtThread) {
       // report thread count
-      out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
+      out->print("%27s (threads #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
       const ssize_t thread_count_diff = counter_diff(_current_baseline.thread_count(), _early_baseline.thread_count());
       if (thread_count_diff != 0) {
         out->print(" " SSIZE_PLUS_FORMAT, thread_count_diff);
@@ -780,6 +781,13 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
       } else if (compVal > 0) {
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
+      } else if (early_site->flag() != current_site->flag()) {
+        // This site was originally allocated with one flag, then released,
+        // then re-allocated at the same site (as far as we can tell) with a different flag.
+        old_virtual_memory_site(early_site);
+        early_site = early_itr.next();
+        new_virtual_memory_site(current_site);
+        current_site = current_itr.next();
       } else {
         diff_virtual_memory_site(early_site, current_site);
         early_site   = early_itr.next();
@@ -842,8 +850,6 @@ void MemDetailDiffReporter::old_virtual_memory_site(const VirtualMemoryAllocatio
 
 void MemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
   const VirtualMemoryAllocationSite* current) const {
-  assert(early->flag() == current->flag() || early->flag() == mtNone,
-    "Expect the same flag, but %s != %s", NMTUtil::flag_to_name(early->flag()),NMTUtil::flag_to_name(current->flag()));
   diff_virtual_memory_site(current->call_stack(), current->reserved(), current->committed(),
     early->reserved(), early->committed(), current->flag());
 }

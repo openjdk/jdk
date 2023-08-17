@@ -123,6 +123,10 @@ public class TreeKindTest {
                 ok = ok & verify(k, i, i == OpensTree.class);
                 break;
 
+            case TEMPLATE:
+                ok = ok & verify(k, i, i == StringTemplateTree.class);
+                break;
+
             case OTHER:
                 ok = ok & verify(k, i, i == null);
                 break;

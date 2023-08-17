@@ -30,7 +30,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms1g -Xmx1g -Xlog:gc TestJNICriticalStressTest 30 4 4 G1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC -Xms1g -Xmx1g -Xlog:gc TestJNICriticalStressTest 30 4 4 G1
  */
 
  /*

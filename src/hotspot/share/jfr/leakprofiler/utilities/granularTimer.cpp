@@ -36,8 +36,8 @@ void GranularTimer::start(jlong duration_ticks, long granularity) {
   _granularity = granularity;
   _counter = granularity;
   _start_time_ticks = JfrTicks::now();
-  const jlong end_time_ticks = _start_time_ticks.value() + duration_ticks;
-  _finish_time_ticks = end_time_ticks < 0 ? JfrTicks(max_jlong) : JfrTicks(end_time_ticks);
+  const julong end_time_ticks = (julong)_start_time_ticks.value() + (julong)duration_ticks;
+  _finish_time_ticks = end_time_ticks > (julong)max_jlong ? JfrTicks(max_jlong) : JfrTicks(end_time_ticks);
   _finished = _finish_time_ticks == _start_time_ticks;
   assert(_finish_time_ticks.value() >= 0, "invariant");
   assert(_finish_time_ticks >= _start_time_ticks, "invariant");

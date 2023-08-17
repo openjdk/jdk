@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -449,14 +450,10 @@ class JavaThread: public Thread {
   intptr_t* _cont_fastpath; // the sp of the oldest known interpreted/call_stub frame inside the
                             // continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
+
   // It's signed for error detection.
-#ifdef _LP64
-  int64_t _held_monitor_count;  // used by continuations for fast lock detection
-  int64_t _jni_monitor_count;
-#else
-  int32_t _held_monitor_count;  // used by continuations for fast lock detection
-  int32_t _jni_monitor_count;
-#endif
+  intx _held_monitor_count;  // used by continuations for fast lock detection
+  intx _jni_monitor_count;
 
 private:
 
@@ -598,11 +595,11 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  void inc_held_monitor_count(int i = 1, bool jni = false);
-  void dec_held_monitor_count(int i = 1, bool jni = false);
+  void inc_held_monitor_count(intx i = 1, bool jni = false);
+  void dec_held_monitor_count(intx i = 1, bool jni = false);
 
-  int64_t held_monitor_count() { return (int64_t)_held_monitor_count; }
-  int64_t jni_monitor_count()  { return (int64_t)_jni_monitor_count;  }
+  intx held_monitor_count() { return _held_monitor_count; }
+  intx jni_monitor_count()  { return _jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   inline bool is_vthread_mounted() const;
@@ -1140,10 +1137,24 @@ private:
   ParkEvent * _SleepEvent;
 public:
   bool sleep(jlong millis);
+  bool sleep_nanos(jlong nanos);
 
   // java.lang.Thread interruption support
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+
+  static ByteSize lock_stack_offset()      { return byte_offset_of(JavaThread, _lock_stack); }
+  // Those offsets are used in code generators to access the LockStack that is embedded in this
+  // JavaThread structure. Those accesses are relative to the current thread, which
+  // is typically in a dedicated register.
+  static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
+  static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static OopStorage* thread_oop_storage();
 

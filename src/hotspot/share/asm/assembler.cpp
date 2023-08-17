@@ -33,7 +33,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 
-
 // Implementation of AbstractAssembler
 //
 // The AbstractAssembler is generating code into a CodeBuffer. To make code generation faster,
@@ -42,10 +41,10 @@
 // The code buffer is updated via set_code_end(...) after emitting a whole instruction.
 
 AbstractAssembler::AbstractAssembler(CodeBuffer* code) {
-  if (code == NULL)  return;
+  if (code == nullptr)  return;
   CodeSection* cs = code->insts();
   cs->clear_mark();   // new assembler kills old mark
-  if (cs->start() == NULL)  {
+  if (cs->start() == nullptr)  {
     vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "CodeCache: no room for %s", code->name());
   }
   _code_section = cs;
@@ -66,15 +65,15 @@ address AbstractAssembler::start_a_stub(int required_space) {
   CodeSection* cs = cb->stubs();
   assert(_code_section == cb->insts(), "not in insts?");
   if (cs->maybe_expand_to_ensure_remaining(required_space)
-      && cb->blob() == NULL) {
-    return NULL;
+      && cb->blob() == nullptr) {
+    return nullptr;
   }
   set_code_section(cs);
   return pc();
 }
 
 // Inform CodeBuffer that incoming code and relocation will be code
-// Should not be called if start_a_stub() returned NULL
+// Should not be called if start_a_stub() returned null
 void AbstractAssembler::end_a_stub() {
   assert(_code_section == code()->stubs(), "not in stubs?");
   set_code_section(code()->insts());
@@ -86,9 +85,9 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
   CodeSection* cs = cb->consts();
   assert(_code_section == cb->insts() || _code_section == cb->stubs(), "not in insts/stubs?");
   address end = cs->end();
-  int pad = -(intptr_t)end & (required_align-1);
+  int pad = checked_cast<int>(-(intptr_t)end & (required_align-1));
   if (cs->maybe_expand_to_ensure_remaining(pad + required_space)) {
-    if (cb->blob() == NULL)  return NULL;
+    if (cb->blob() == nullptr)  return nullptr;
     end = cs->end();  // refresh pointer
   }
   if (pad > 0) {
@@ -162,7 +161,7 @@ void Label::add_patch_at(CodeBuffer* cb, int branch_loc, const char* file, int l
     _files[_patch_index] = file;
 #endif
   } else {
-    if (_patch_overflow == NULL) {
+    if (_patch_overflow == nullptr) {
       _patch_overflow = cb->create_patch_overflow();
     }
     _patch_overflow->push(branch_loc);
@@ -179,7 +178,7 @@ void Label::patch_instructions(MacroAssembler* masm) {
     --_patch_index;
     int branch_loc;
     int line = 0;
-    const char* file = NULL;
+    const char* file = nullptr;
     if (_patch_index >= PatchCacheSize) {
       branch_loc = _patch_overflow->pop();
     } else {
@@ -212,7 +211,7 @@ const char* AbstractAssembler::code_string(const char* str) {
   if (sect() == CodeBuffer::SECT_INSTS || sect() == CodeBuffer::SECT_STUBS) {
     return code_section()->outer()->code_string(str);
   }
-  return NULL;
+  return nullptr;
 }
 
 bool MacroAssembler::uses_implicit_null_check(void* address) {
@@ -221,7 +220,7 @@ bool MacroAssembler::uses_implicit_null_check(void* address) {
   uintptr_t addr = reinterpret_cast<uintptr_t>(address);
   uintptr_t page_size = (uintptr_t)os::vm_page_size();
 #ifdef _LP64
-  if (UseCompressedOops && CompressedOops::base() != NULL) {
+  if (UseCompressedOops && CompressedOops::base() != nullptr) {
     // A SEGV can legitimately happen in C2 code at address
     // (heap_base + offset) if  Matcher::narrow_oop_use_complex_address
     // is configured to allow narrow oops field loads to be implicitly

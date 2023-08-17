@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public class stop001 {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
 
     //----------------------------------------------------- templete parameters
     static final String
@@ -180,7 +181,7 @@ public class stop001 {
                 log2("     : returned string is 'checkend'");
                 break ;
             } else if (!line.equals("checkready")) {
-                log3("ERROR: returned string is not 'checkready'");
+                log3("ERROR: returned string is not 'checkready': " + line);
                 testExitCode = FAILED;
                 break ;
             }
@@ -233,7 +234,7 @@ public class stop001 {
                 if (expresult != returnCode0)
                     break label1;
 
-
+                boolean caughtExpected = false;
                 try {
                     log2("      getting a mirror of the throwableObj");
                     throwableObj = (ObjectReference)
@@ -245,8 +246,19 @@ public class stop001 {
                 } catch ( InvalidTypeException e1 ) {
                     log3("ERROR: InvalidTypeException ???");
                     expresult = returnCode1;
-                } catch ( Exception e2 ) {
-                    log3("ERROR: unexpected exception: " + e2);
+                } catch ( IllegalThreadStateException e2 ) {
+                    if (vthreadMode) {
+                        caughtExpected = true;
+                    } else {
+                        log3("ERROR: unexpected exception: " + e2);
+                        expresult = returnCode1;
+                    }
+                } catch ( Exception e3 ) {
+                    log3("ERROR: unexpected exception: " + e3);
+                    expresult = returnCode1;
+                }
+                if (vthreadMode && !caughtExpected) {
+                    log3("ERROR: didn't catch expected IllegalThreadStateException");
                     expresult = returnCode1;
                 }
 
@@ -256,16 +268,24 @@ public class stop001 {
                 log2("......getting result from mainThread:");
                 line = pipe.readln();
                 log2("       returned string is: " + line);
-                if (line.equals("null")) {
-                    log3("ERROR: 'stop001a.tObj = e1;' was not assigned");
-                    expresult = returnCode1;
-                } else if (line.equals("equal")) {
-                } else if (line.equals("NOT_equal")) {
-                    log3("ERROR: in the debugee, e1 is not 'LineUnavailableException'");
-                    expresult = returnCode1;
+                if (vthreadMode) {
+                    // Because the stop() call failed, stop001a.tObj should be "null".
+                    if (!line.equals("null")) {
+                        log3("ERROR: 'stop001a.tObj' is not 'null'");
+                        expresult = returnCode1;
+                    }
                 } else {
-                    log3("ERROR: returned string is unexpected");
-                    expresult = returnCode4;
+                    if (line.equals("null")) {
+                        log3("ERROR: 'stop001a.tObj = e1;' was not assigned");
+                        expresult = returnCode1;
+                    } else if (line.equals("equal")) {
+                    } else if (line.equals("NOT_equal")) {
+                        log3("ERROR: in the debugee, e1 is not 'LineUnavailableException'");
+                        expresult = returnCode1;
+                    } else {
+                        log3("ERROR: returned string is unexpected");
+                        expresult = returnCode4;
+                    }
                 }
             }
 

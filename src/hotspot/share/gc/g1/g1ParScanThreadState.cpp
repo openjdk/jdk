@@ -59,8 +59,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            PreservedMarks* preserved_marks,
                                            uint worker_id,
                                            uint num_workers,
-                                           size_t young_cset_length,
-                                           size_t optional_cset_length,
+                                           G1CollectionSet* collection_set,
                                            G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
@@ -78,18 +77,19 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _trim_ticks(),
     _surviving_young_words_base(nullptr),
     _surviving_young_words(nullptr),
-    _surviving_words_length(young_cset_length + 1),
+    _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
     _partial_array_stepper(num_workers),
     _string_dedup_requests(),
-    _max_num_optional_regions(optional_cset_length),
+    _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
-    _evac_failure_regions(evac_failure_regions)
+    _evac_failure_regions(evac_failure_regions),
+    _evac_failure_enqueued_cards(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -104,7 +104,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
 
   _plab_allocator = new G1PLABAllocator(_g1h->allocator());
 
-  _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
+  _closures = G1EvacuationRootClosures::create_root_closures(_g1h,
+                                                             this,
+                                                             collection_set->only_contains_young_regions());
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_max_num_optional_regions];
 
@@ -144,6 +146,10 @@ size_t G1ParScanThreadState::lab_waste_words() const {
 
 size_t G1ParScanThreadState::lab_undo_waste_words() const {
   return _plab_allocator->undo_waste();
+}
+
+size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
+  return _evac_failure_enqueued_cards;
 }
 
 #ifdef ASSERT
@@ -569,8 +575,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
                                _preserved_marks_set.get(worker_id),
                                worker_id,
                                _num_workers,
-                               _young_cset_length,
-                               _optional_cset_length,
+                               _collection_set,
                                _evac_failure_regions);
   }
   return _states[worker_id];
@@ -595,10 +600,12 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
+    size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_enqueued_cards, G1GCPhaseTimes::MergePSSEvacFailExtra);
 
     delete pss;
     _states[worker_id] = nullptr;
@@ -640,12 +647,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the
-    // existing closure to scan evacuated objects because:
-    // - for objects referring into the collection set we do not need to gather
-    // cards at this time. The regions they are in will be unconditionally turned
-    // to old regions without remembered sets.
-    // - since we are iterating from a collection set region (i.e. never a Survivor
-    // region), we always need to gather cards for this case.
+    // existing closure to scan evacuated objects; since we are iterating from a
+    // collection set region (i.e. never a Survivor region), we always need to
+    // gather cards for this case.
     G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
     old->oop_iterate_backwards(&_scanner);
 
@@ -690,16 +694,14 @@ void G1ParScanThreadState::update_numa_stats(uint node_index) {
 
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                                                  uint num_workers,
-                                                 size_t young_cset_length,
-                                                 size_t optional_cset_length,
+                                                 G1CollectionSet* collection_set,
                                                  G1EvacFailureRegions* evac_failure_regions) :
     _g1h(g1h),
+    _collection_set(collection_set),
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
     _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
-    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, young_cset_length + 1, mtGC)),
-    _young_cset_length(young_cset_length),
-    _optional_cset_length(optional_cset_length),
+    _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
     _evac_failure_regions(evac_failure_regions) {
@@ -707,13 +709,12 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
   }
-  memset(_surviving_young_words_total, 0, (young_cset_length + 1) * sizeof(size_t));
+  memset(_surviving_young_words_total, 0, (collection_set->young_region_length() + 1) * sizeof(size_t));
 }
 
 G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
-  _preserved_marks_set.assert_empty();
   _preserved_marks_set.reclaim();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.IntBinaryOperator;
 
@@ -259,7 +260,7 @@ public class SSLFlowDelegate {
         final SequentialScheduler scheduler;
         volatile ByteBuffer readBuf;
         volatile boolean completing;
-        final Object readBufferLock = new Object();
+        final ReentrantLock readBufferLock = new ReentrantLock();
         final Logger debugr = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
         private final class ReaderDownstreamPusher implements Runnable {
@@ -340,7 +341,8 @@ public class SSLFlowDelegate {
         // readBuf is kept ready for reading outside of this method
         private void addToReadBuf(List<ByteBuffer> buffers, boolean complete) {
             assert Utils.remaining(buffers) > 0 || buffers.isEmpty();
-            synchronized (readBufferLock) {
+            readBufferLock.lock();
+            try {
                 for (ByteBuffer buf : buffers) {
                     readBuf.compact();
                     while (readBuf.remaining() < buf.remaining())
@@ -357,6 +359,8 @@ public class SSLFlowDelegate {
                     this.completing = complete;
                     minBytesRequired = 0;
                 }
+            } finally {
+                readBufferLock.unlock();
             }
         }
 
@@ -423,7 +427,8 @@ public class SSLFlowDelegate {
                     boolean handshaking = false;
                     try {
                         EngineResult result;
-                        synchronized (readBufferLock) {
+                        readBufferLock.lock();
+                        try {
                             complete = this.completing;
                             if (debugr.on()) debugr.log("Unwrapping: %s", readBuf.remaining());
                             // Unless there is a BUFFER_UNDERFLOW, we should try to
@@ -436,6 +441,8 @@ public class SSLFlowDelegate {
                                 debugr.log("Unwrapped: result: %s", result.result);
                                 debugr.log("Unwrapped: consumed: %s", result.bytesConsumed());
                             }
+                        } finally {
+                            readBufferLock.unlock();
                         }
                         if (result.bytesProduced() > 0) {
                             if (debugr.on())
@@ -448,7 +455,8 @@ public class SSLFlowDelegate {
                             // not enough data in the read buffer...
                             // no need to try to unwrap again unless we get more bytes
                             // than minBytesRequired = len in the read buffer.
-                            synchronized (readBufferLock) {
+                            readBufferLock.lock();
+                            try {
                                 minBytesRequired = len;
                                 // more bytes could already have been added...
                                 assert readBuf.remaining() >= len;
@@ -465,6 +473,8 @@ public class SSLFlowDelegate {
                                     throw new IOException("BUFFER_UNDERFLOW with EOF, "
                                             + len + " bytes non decrypted.");
                                 }
+                            } finally {
+                                readBufferLock.unlock();
                             }
                             // request more data and return.
                             requestMore();
@@ -500,8 +510,11 @@ public class SSLFlowDelegate {
                     }
                 }
                 if (!complete) {
-                    synchronized (readBufferLock) {
+                    readBufferLock.lock();
+                    try {
                         complete = this.completing && !readBuf.hasRemaining();
+                    } finally {
+                        readBufferLock.unlock();
                     }
                 }
                 if (complete) {
@@ -754,7 +767,7 @@ public class SSLFlowDelegate {
         }
 
         private boolean hsTriggered() {
-            synchronized(writeList) {
+            synchronized (writeList) {
                 for (ByteBuffer b : writeList)
                     if (b == HS_TRIGGER)
                         return true;
@@ -1173,8 +1186,12 @@ public class SSLFlowDelegate {
                     // won't be able to send the acknowledgement.
                     // Nothing more will come from the socket either,
                     // so mark the reader as completed.
-                    synchronized (reader.readBufferLock) {
+                    var readerLock = reader.readBufferLock;
+                    readerLock.lock();
+                    try {
                         reader.completing = true;
+                    } finally {
+                        readerLock.unlock();
                     }
                 }
             }

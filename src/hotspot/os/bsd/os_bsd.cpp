@@ -69,6 +69,9 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here
 # include <dlfcn.h>
@@ -101,6 +104,7 @@
 #endif
 
 #ifdef __APPLE__
+  #include <mach/task_info.h>
   #include <mach-o/dyld.h>
 #endif
 
@@ -135,6 +139,10 @@ static volatile int processor_id_next = 0;
 // utility functions
 
 julong os::available_memory() {
+  return Bsd::available_memory();
+}
+
+julong os::free_memory() {
   return Bsd::available_memory();
 }
 
@@ -586,7 +594,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -679,7 +687,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -971,11 +979,21 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   log_info(os)("attempting shared library load of %s", filename);
 
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
 
@@ -990,6 +1008,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(error_report);
+  event.commit();
+#endif
 
   return nullptr;
 #endif // STATIC_BUILD
@@ -1000,11 +1023,22 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return os::get_default_process_handle();
 #else
   log_info(os)("attempting shared library load of %s", filename);
+
+#if INCLUDE_JFR
+  EventNativeLibraryLoad event;
+  event.set_name(filename);
+#endif
+
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
     return result;
   }
 
@@ -1021,7 +1055,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
+#if INCLUDE_JFR
+  event.set_success(false);
+  event.set_errorMessage(error_report);
+  event.commit();
+#endif
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
@@ -2073,7 +2111,7 @@ uint os::processor_id() {
     // Assign processor id to APIC id
     processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
       Atomic::store(&processor_id_map[apic_id], processor_id);
     }
   }
@@ -2170,9 +2208,9 @@ static inline struct timespec get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   struct timespec filetime1 = get_mtime(file1);
   struct timespec filetime2 = get_mtime(file2);
-  int diff = filetime1.tv_sec - filetime2.tv_sec;
+  int diff = primitive_compare(filetime1.tv_sec, filetime2.tv_sec);
   if (diff == 0) {
-    return filetime1.tv_nsec - filetime2.tv_nsec;
+    diff = primitive_compare(filetime1.tv_nsec, filetime2.tv_nsec);
   }
   return diff;
 }
@@ -2449,3 +2487,31 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(info.resident_size);
+    event.set_peak(info.resident_size_max);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: task_info failed");
+      first_warning = false;
+    }
+  }
+
+#endif // __APPLE__
+}
+
+#endif // INCLUDE_JFR

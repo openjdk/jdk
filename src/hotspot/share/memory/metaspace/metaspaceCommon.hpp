@@ -26,6 +26,7 @@
 #ifndef SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 #define SHARE_MEMORY_METASPACE_METASPACECOMMON_HPP
 
+#include "oops/compressedKlass.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"

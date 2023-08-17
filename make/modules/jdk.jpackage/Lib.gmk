@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     INCLUDE_FILES := $(JPACKAGE_APPLAUNCHER_INCLUDE_FILES), \
     TOOLCHAIN := $(JPACKAGE_APPLAUNCHER_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
+    DISABLED_WARNINGS_clang_LinuxPackage.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
     CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \
         $(JPACKAGE_APPLAUNCHER_INCLUDES), \
     CFLAGS := $(call JpackageWithStaticCrt, $(CFLAGS_JDKEXE)) \
@@ -103,6 +105,8 @@ ifeq ($(call isTargetOs, linux), true)
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
+      DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
+      DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       CFLAGS := $(CFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \

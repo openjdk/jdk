@@ -110,7 +110,6 @@ address OptoRuntime::_rethrow_Java                                = nullptr;
 address OptoRuntime::_slow_arraycopy_Java                         = nullptr;
 address OptoRuntime::_register_finalizer_Java                     = nullptr;
 #if INCLUDE_JVMTI
-address OptoRuntime::_notify_jvmti_object_alloc                   = nullptr;
 address OptoRuntime::_notify_jvmti_vthread_start                  = nullptr;
 address OptoRuntime::_notify_jvmti_vthread_end                    = nullptr;
 address OptoRuntime::_notify_jvmti_vthread_mount                  = nullptr;
@@ -156,7 +155,6 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
 #if INCLUDE_JVMTI
-  gen(env, _notify_jvmti_object_alloc      , notify_jvmti_object_alloc_Type, SharedRuntime::notify_jvmti_object_alloc, 0, true, false);
   gen(env, _notify_jvmti_vthread_start     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_start, 0, true, false);
   gen(env, _notify_jvmti_vthread_end       , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_end,   0, true, false);
   gen(env, _notify_jvmti_vthread_mount     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_mount, 0, true, false);
@@ -481,21 +479,6 @@ const TypeFunc *OptoRuntime::new_instance_Type() {
 }
 
 #if INCLUDE_JVMTI
-const TypeFunc *OptoRuntime::notify_jvmti_object_alloc_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-   // create result type (range)
-   fields = TypeTuple::fields(1);
-   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // Returned oop
-
-   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-   return TypeFunc::make(domain, range);
-}
-
 const TypeFunc *OptoRuntime::notify_jvmti_vthread_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
@@ -505,7 +488,7 @@ const TypeFunc *OptoRuntime::notify_jvmti_vthread_Type() {
 
   // no result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = NULL; // void
+  fields[TypeFunc::Parms+0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
 
   return TypeFunc::make(domain,range);
@@ -1579,10 +1562,6 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //
 address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address ret_pc) {
-
-  // Enable WXWrite: the function called directly by compiled code.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
   // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
   // This needs authenticating, but to do that here requires the fp of the previous frame.
   // A better way of doing it would be authenticate in the caller by adding a

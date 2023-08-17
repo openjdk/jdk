@@ -1009,6 +1009,24 @@ public:
   void cas_for_lock_acquire(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
   void cas_for_lock_release(Register oldval, Register newval, Register base, Register tmp, Label &slow_case, bool allow_fallthrough_on_failure = false, bool one_shot = false);
 
+  // Attempt to fast-lock an object
+  // Registers:
+  //  - obj: the object to be locked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void fast_lock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+
+  // Attempt to fast-unlock an object
+  // Registers:
+  //  - obj: the object to be unlocked
+  //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
+  // Result:
+  //  - Success: fallthrough
+  //  - Error:   break to slow, Z cleared.
+  void fast_unlock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow);
+
 #ifndef PRODUCT
   // Preserves flags and all registers.
   // On SMP the updated value might not be visible to external observers without a synchronization barrier
@@ -1017,7 +1035,7 @@ public:
 
   // unconditional non-atomic increment
   void inc_counter(address counter_addr, Register tmpreg1, Register tmpreg2);
-  void inc_counter(int* counter_addr, Register tmpreg1, Register tmpreg2) {
+  void inc_counter(uint* counter_addr, Register tmpreg1, Register tmpreg2) {
     inc_counter((address) counter_addr, tmpreg1, tmpreg2);
   }
 
