@@ -117,9 +117,7 @@ public class TestHugePageDecisionsAtVMStartup {
         } else if (useLP && !useTHP &&
                  (!configuration.supportsStaticHugePages() || !haveUsableStaticHugePages)) {
             out.shouldContain(warningNoLP);
-        }
-
-        else if (useLP && useTHP && !configuration.supportsTHP()) {
+        } else if (useLP && useTHP && !configuration.supportsTHP()) {
             out.shouldContain(warningNoTHP);
         }
 
