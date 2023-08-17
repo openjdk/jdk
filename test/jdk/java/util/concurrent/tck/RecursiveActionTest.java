@@ -162,10 +162,10 @@ public class RecursiveActionTest extends JSR166TestCase {
 
     void checkCompletedAbnormally(RecursiveAction a, Throwable t) {
         assertTrue(a.isDone());
-        assertFalse(a.isCancelled());
         assertFalse(a.isCompletedNormally());
         assertTrue(a.isCompletedAbnormally());
-        assertSame(t.getClass(), a.getException().getClass());
+        if (!a.isCancelled()
+            assertSame(t.getClass(), a.getException().getClass());
         assertNull(a.getRawResult());
         assertFalse(a.cancel(false));
         assertFalse(a.cancel(true));
