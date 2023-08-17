@@ -39,12 +39,8 @@ namespace metaspace {
 // (only a few words). It is used to manage deallocated blocks - see
 // class FreeBlocks.
 
-// Memory blocks are kept in linked lists. Each list
-// contains blocks of only one size. There is a list for blocks of two words,
-// for blocks of three words, etc. The list heads are kept in a vector,
-// ordered by block size.
+// Memory blocks are kept in a vector of linked lists of equi-sized blocks:
 //
-
 // wordsize
 //
 //       +---+   +---+   +---+      +---+
@@ -103,12 +99,14 @@ private:
 
   MemRangeCounter _counter;
 
+  // Given a word size, returns the index of the list holding blocks of that size
   static int index_for_word_size(size_t word_size) {
     int index = (int)(word_size - MinWordSize);
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
     return index;
   }
 
+  // Given an index of a list, return the word size that list serves
   static size_t word_size_for_index(int index) {
     assert(index >= 0 && index < num_lists, "Invalid index %d", index);
     return index + MinWordSize;
@@ -151,7 +149,7 @@ public:
     DEBUG_ONLY(write_canary(p, word_size);)
     const int index = index_for_word_size(word_size);
     Block* old_head = _blocks[index];
-    Block* new_head = new(p)Block(old_head);
+    Block* new_head = new (p) Block(old_head);
     _blocks[index] = new_head;
     _counter.add(word_size);
   }

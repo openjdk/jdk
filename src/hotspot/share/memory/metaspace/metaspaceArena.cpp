@@ -228,11 +228,11 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   UL2(trace, "requested " SIZE_FORMAT " words.", requested_word_size);
 
   MetaWord* p = nullptr;
-  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
+  const size_t aligned_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (_fbl != nullptr && !_fbl->is_empty()) {
-    p = _fbl->remove_block(raw_word_size);
+    p = _fbl->remove_block(aligned_word_size);
     if (p != nullptr) {
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "returning " PTR_FORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
@@ -246,7 +246,7 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
   }
 
   // Primary allocation
-  p = allocate_inner(raw_word_size);
+  p = allocate_inner(aligned_word_size);
 
 #ifdef ASSERT
   // Fence allocation
@@ -269,11 +269,11 @@ MetaWord* MetaspaceArena::allocate(size_t requested_word_size) {
 }
 
 // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
-MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
+MetaWord* MetaspaceArena::allocate_inner(size_t word_size) {
 
   assert_lock_strong(lock());
+  assert_is_aligned(word_size, metaspace::AllocationAlignmentWordSize);
 
-  const size_t raw_word_size = get_raw_word_size_for_requested_word_size(requested_word_size);
   MetaWord* p = nullptr;
   bool current_chunk_too_small = false;
   bool commit_failure = false;
@@ -284,8 +284,8 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
 
     // If the current chunk is too small to hold the requested size, attempt to enlarge it.
     // If that fails, retire the chunk.
-    if (current_chunk()->free_words() < raw_word_size) {
-      if (!attempt_enlarge_current_chunk(raw_word_size)) {
+    if (current_chunk()->free_words() < word_size) {
+      if (!attempt_enlarge_current_chunk(word_size)) {
         current_chunk_too_small = true;
       } else {
         DEBUG_ONLY(InternalStats::inc_num_chunks_enlarged();)
@@ -297,15 +297,15 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
     // hit a limit (either GC threshold or MaxMetaspaceSize). In that case retire the
     // chunk.
     if (!current_chunk_too_small) {
-      if (!current_chunk()->ensure_committed_additional(raw_word_size)) {
-        UL2(info, "commit failure (requested size: " SIZE_FORMAT ")", raw_word_size);
+      if (!current_chunk()->ensure_committed_additional(word_size)) {
+        UL2(info, "commit failure (requested size: " SIZE_FORMAT ")", word_size);
         commit_failure = true;
       }
     }
 
     // Allocate from the current chunk. This should work now.
     if (!current_chunk_too_small && !commit_failure) {
-      p = current_chunk()->allocate(raw_word_size);
+      p = current_chunk()->allocate(word_size);
       assert(p != nullptr, "Allocation from chunk failed.");
     }
   }
@@ -315,12 +315,12 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
     assert(current_chunk() == nullptr ||
            current_chunk_too_small || commit_failure, "Sanity");
 
-    Metachunk* new_chunk = allocate_new_chunk(raw_word_size);
+    Metachunk* new_chunk = allocate_new_chunk(word_size);
     if (new_chunk != nullptr) {
       UL2(debug, "allocated new chunk " METACHUNK_FORMAT " for requested word size " SIZE_FORMAT ".",
-          METACHUNK_FORMAT_ARGS(new_chunk), requested_word_size);
+          METACHUNK_FORMAT_ARGS(new_chunk), word_size);
 
-      assert(new_chunk->free_below_committed_words() >= raw_word_size, "Sanity");
+      assert(new_chunk->free_below_committed_words() >= word_size, "Sanity");
 
       // We have a new chunk. Before making it the current chunk, retire the old one.
       if (current_chunk() != nullptr) {
@@ -331,10 +331,10 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
       _chunks.add(new_chunk);
 
       // Now, allocate from that chunk. That should work.
-      p = current_chunk()->allocate(raw_word_size);
+      p = current_chunk()->allocate(word_size);
       assert(p != nullptr, "Allocation from chunk failed.");
     } else {
-      UL2(info, "failed to allocate new chunk for requested word size " SIZE_FORMAT ".", requested_word_size);
+      UL2(info, "failed to allocate new chunk for requested word size " SIZE_FORMAT ".", word_size);
     }
   }
 
@@ -342,7 +342,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
     InternalStats::inc_num_allocs_failed_limit();
   } else {
     DEBUG_ONLY(InternalStats::inc_num_allocs();)
-    _total_used_words_counter->increment_by(raw_word_size);
+    _total_used_words_counter->increment_by(word_size);
   }
 
   SOMETIMES(verify_locked();)

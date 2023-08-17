@@ -46,7 +46,7 @@ using metaspace::MemRangeCounter;
 template <class BINLISTTYPE>
 struct BinListBasicTest {
 
-    static const size_t maxws;
+  static const size_t maxws;
 
   static void basic_test() {
 
