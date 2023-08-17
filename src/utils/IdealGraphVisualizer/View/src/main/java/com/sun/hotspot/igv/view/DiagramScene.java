@@ -487,7 +487,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         });
 
         hierarchicalStableLayoutManager = new HierarchicalStableLayoutManager();
-        update();
     }
 
     @Override
