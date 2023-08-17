@@ -708,7 +708,7 @@ void Metaspace::ergo_initialize() {
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = (size_t)((double) MaxMetaspaceSize * 0.8);
+    size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
     size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
 
     // CCS must be aligned to root chunk size, and be at least the size of one

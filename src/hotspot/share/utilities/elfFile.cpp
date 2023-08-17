@@ -789,7 +789,7 @@ bool DwarfFile::DebugAranges::read_set_header(DebugArangesSetHeader& header) {
 
   // We must align to twice the address size.
   uint8_t alignment = DwarfFile::ADDRESS_SIZE * 2;
-  uint64_t padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
+  long padding = alignment - (_reader.get_position() - _section_start_address) % alignment;
   return _reader.move_position(padding);
 }
 
