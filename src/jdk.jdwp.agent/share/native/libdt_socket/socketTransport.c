@@ -740,11 +740,6 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         listenAddr = &(addrInfo[0]);
     }
 
-    if (listenAddr == NULL) {
-        dbgsysFreeAddrInfo(addrInfo);
-        RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
-    }
-
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
     // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
     // connections only. Make sure that IN6ADDR_ANY is preferred over
