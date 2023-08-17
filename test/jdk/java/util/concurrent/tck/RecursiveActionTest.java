@@ -164,7 +164,7 @@ public class RecursiveActionTest extends JSR166TestCase {
         assertTrue(a.isDone());
         assertFalse(a.isCompletedNormally());
         assertTrue(a.isCompletedAbnormally());
-        if (!a.isCancelled()
+        if (!a.isCancelled())
             assertSame(t.getClass(), a.getException().getClass());
         assertNull(a.getRawResult());
         assertFalse(a.cancel(false));
