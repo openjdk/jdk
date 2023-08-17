@@ -343,7 +343,7 @@ void os::Linux::current_stack_region(address* base, size_t* size) {
     size_t guard_bytes;
     rslt = pthread_attr_getguardsize(&attr, &guard_bytes);
     if (rslt != 0) {
-      fatal("pthread_attr_getguardsize failed with errno = %d", res);
+      fatal("pthread_attr_getguardsize failed with errno = %d", rslt);
     }
     int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
     assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");

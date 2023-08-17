@@ -717,7 +717,7 @@ void os::Bsd::current_stack_region(address* base, size_t* size) {
   address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  *base = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
   // workaround for OS X 10.9.0 (Mavericks)
   // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages

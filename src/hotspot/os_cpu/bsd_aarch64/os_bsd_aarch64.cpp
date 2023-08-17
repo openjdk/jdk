@@ -359,7 +359,7 @@ void os::Bsd::current_stack_region(address* base, size_t* size) {
   address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  *base = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
   bottom = *base - *size;
 #elif defined(__OpenBSD__)
