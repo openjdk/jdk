@@ -350,7 +350,6 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     }
                 }
 
-                // THIS PART MIGHT NOT BE NECESSARY SINCE ALL EDGES CAN BE DRAWN FROM BOTTOM UP
                 for (LayoutEdge e : n.succs) {
                     if (e.link != null && !linkPositions.containsKey(e.link)) {
                         ArrayList<Point> points = new ArrayList<>();
