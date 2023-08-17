@@ -27,29 +27,35 @@ import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
 import java.util.List;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 /*
  * @test NoTargetAnnotations
  * @summary test that annotations with no Target meta type is emitted
  *          only once as declaration annotation
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
-public class NoTargetAnnotations {
+public class NoTargetAnnotations extends ClassfileTestHelper {
 
     public static void main(String[] args) throws Exception {
         new NoTargetAnnotations().run();
     }
 
     public void run() throws Exception {
-        ClassFile cf = getClassFile("NoTargetAnnotations$Test.class");
-        for (Field f : cf.fields) {
-            test(cf, f);
-            testDeclaration(cf, f);
+        ClassModel cm = getClassFile("NoTargetAnnotations$Test.class");
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
+            testDeclaration(fm);
         }
-        for (Method m: cf.methods) {
-            test(cf, m);
-            testDeclaration(cf, m);
+        for (MethodModel mm: cm.methods()) {
+            test(mm);
+            testDeclaration(mm);
         }
 
         countAnnotations();
@@ -59,90 +65,34 @@ public class NoTargetAnnotations {
         System.out.println("PASSED");
     }
 
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
+    ClassModel getClassFile(String name) throws IOException {
         URL url = getClass().getResource(name);
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
+        assert url != null;
+        try (InputStream in = url.openStream()) {
+            return Classfile.of().parse(in.readAllBytes());
         }
     }
 
-    /************ Helper annotations counting methods ******************/
-    void test(ClassFile cf, Method m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
+
+    void testDeclaration(AttributedElement m) {
+        testDecl(m, Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
+        testDecl(m, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
     }
 
-    void test(ClassFile cf, Field m) {
-        test(cf, m, Attribute.RuntimeVisibleTypeAnnotations, true);
-        test(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, false);
-    }
-
-    void testDeclaration(ClassFile cf, Method m) {
-        testDecl(cf, m, Attribute.RuntimeVisibleAnnotations, true);
-        testDecl(cf, m, Attribute.RuntimeInvisibleAnnotations, false);
-    }
-
-    void testDeclaration(ClassFile cf, Field m) {
-        testDecl(cf, m, Attribute.RuntimeVisibleAnnotations, true);
-        testDecl(cf, m, Attribute.RuntimeInvisibleAnnotations, false);
-    }
-
-    // test the result of Attributes.getIndex according to expectations
+    // test the result of AttributedElement.findAttribute according to expectations
     // encoded in the method's name
-    void test(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void test(ClassFile cf, Field m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            all += tAttr.annotations.length;
-            if (visible)
-                visibles += tAttr.annotations.length;
-            else
-                invisibles += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void testDecl(ClassFile cf, Method m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeAnnotations_attribute;
-            RuntimeAnnotations_attribute tAttr = (RuntimeAnnotations_attribute)attr;
-            this.declAnnotations += tAttr.annotations.length;
-        }
-    }
-
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    void testDecl(ClassFile cf, Field m, String name, boolean visible) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeAnnotations_attribute;
-            RuntimeAnnotations_attribute tAttr = (RuntimeAnnotations_attribute)attr;
-            this.declAnnotations += tAttr.annotations.length;
+    <T extends Attribute<T>> void testDecl(AttributedElement m, AttributeMapper<T> name) {
+        Attribute<T> attr = m.findAttribute(name).orElse(null);
+        if (attr != null) {
+            switch (attr) {
+                case RuntimeVisibleAnnotationsAttribute tAttr -> {
+                    this.declAnnotations += tAttr.annotations().size();
+                }
+                case RuntimeInvisibleAnnotationsAttribute tAttr -> {
+                    this.declAnnotations += tAttr.annotations().size();
+                }
+                default -> throw new AssertionError();
+            }
         }
     }
 

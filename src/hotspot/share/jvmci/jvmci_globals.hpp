@@ -157,6 +157,11 @@ class fileStream;
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
                                                                             \
+  product(bool, LibJVMCICompilerThreadHidden, true, EXPERIMENTAL,           \
+          "If true then native JVMCI compiler threads are hidden from "     \
+          "JVMTI and FlightRecorder.  This must be set to false if you "    \
+          "wish to use a Java debugger against JVMCI threads.")             \
+                                                                            \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
                                                                             \

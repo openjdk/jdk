@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @build SigningPackageTwoStepTest
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageTwoStepTest
  */
 public class SigningPackageTwoStepTest {
@@ -80,7 +80,7 @@ public class SigningPackageTwoStepTest {
     private static void verifyDMG(JPackageCommand cmd) {
         // DMG always unsigned, so we will check it
         Path outputBundle = cmd.outputBundle();
-        SigningBase.verifyCodesign(outputBundle, false);
+        SigningBase.verifyDMG(outputBundle);
     }
 
     private static void verifyAppImageInDMG(JPackageCommand cmd) {

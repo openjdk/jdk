@@ -1654,6 +1654,28 @@ void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   sign_extend(Rd, Rd, 32);
 }
 
+// Rd = Rs1 & (~Rd2)
+void MacroAssembler::andn(Register Rd, Register Rs1, Register Rs2) {
+  if (UseZbb) {
+    Assembler::andn(Rd, Rs1, Rs2);
+    return;
+  }
+
+  notr(Rd, Rs2);
+  andr(Rd, Rs1, Rd);
+}
+
+// Rd = Rs1 | (~Rd2)
+void MacroAssembler::orn(Register Rd, Register Rs1, Register Rs2) {
+  if (UseZbb) {
+    Assembler::orn(Rd, Rs1, Rs2);
+    return;
+  }
+
+  notr(Rd, Rs2);
+  orr(Rd, Rs1, Rd);
+}
+
 // Note: load_unsigned_short used to be called load_unsigned_word.
 int MacroAssembler::load_unsigned_short(Register dst, Address src) {
   int off = offset();
