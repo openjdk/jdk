@@ -1264,9 +1264,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    size_t buffer_capacity = dcqs.buffer_capacity();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_capacity, worker_id);
+      cl->apply_to_buffer(node, worker_id);
       dcqs.deallocate_buffer(node);
     }
   }
