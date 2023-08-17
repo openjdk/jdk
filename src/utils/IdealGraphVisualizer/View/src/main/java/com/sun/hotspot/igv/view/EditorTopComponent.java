@@ -195,7 +195,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
-        
+
         diagramViewModel.getGraphChangedEvent().addListener(model -> {
             // HierarchicalStableLayoutManager is not stable for difference graphs
             boolean isDiffGraph = model.getGraph().isDiffGraph();
