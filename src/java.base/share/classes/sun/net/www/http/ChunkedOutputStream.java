@@ -60,7 +60,7 @@ public class ChunkedOutputStream extends OutputStream {
 
     /* the chunk size we use */
     private final int preferredChunkDataSize;
-    private final int preferedHeaderSize;
+    private final int preferredHeaderSize;
     private final int preferredChunkGrossSize;
     /* header for a complete Chunk */
     private final byte[] completeHeader;
@@ -119,8 +119,8 @@ public class ChunkedOutputStream extends OutputStream {
                     getHeaderSize(DEFAULT_CHUNK_SIZE) - FOOTER_SIZE;
         }
 
-        preferedHeaderSize = getHeaderSize(preferredChunkDataSize);
-        preferredChunkGrossSize = preferedHeaderSize + preferredChunkDataSize
+        preferredHeaderSize = getHeaderSize(preferredChunkDataSize);
+        preferredChunkGrossSize = preferredHeaderSize + preferredChunkDataSize
                 + FOOTER_SIZE;
         completeHeader = getHeader(preferredChunkDataSize);
 
@@ -151,7 +151,7 @@ public class ChunkedOutputStream extends OutputStream {
                 /* adjust a header start index in case the header of the last
                  * chunk is shorter then preferedHeaderSize */
 
-                int adjustedHeaderStartIndex = preferedHeaderSize -
+                int adjustedHeaderStartIndex = preferredHeaderSize -
                         getHeaderSize(size);
 
                 /* write header */
@@ -277,7 +277,7 @@ public class ChunkedOutputStream extends OutputStream {
     public void reset() {
         writeLock.lock();
         try {
-            count = preferedHeaderSize;
+            count = preferredHeaderSize;
             size = 0;
             spaceInCurrentChunk = preferredChunkDataSize;
         } finally {
