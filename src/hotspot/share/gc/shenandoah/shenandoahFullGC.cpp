@@ -413,6 +413,16 @@ void ShenandoahFullGC::phase1_mark_heap() {
   ShenandoahSTWMark mark(heap->global_generation(), true /*full_gc*/);
   mark.mark();
   heap->parallel_cleaning(true /* full_gc */);
+
+  size_t live_bytes_in_old = 0;
+  for (size_t i = 0; i < heap->num_regions(); i++) {
+    ShenandoahHeapRegion* r = heap->get_region(i);
+    if (r->is_old()) {
+      live_bytes_in_old += r->get_live_data_bytes();
+    }
+  }
+  log_info(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
+  heap->old_generation()->set_live_bytes_after_last_mark(live_bytes_in_old);
 }
 
 class ShenandoahPrepareForCompactionTask : public WorkerTask {
