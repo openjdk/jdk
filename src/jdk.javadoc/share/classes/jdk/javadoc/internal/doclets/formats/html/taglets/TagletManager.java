@@ -349,7 +349,6 @@ public class TagletManager {
      * @param trees the trees containing the comments
      */
     public void checkTags(Element element, Iterable<? extends DocTree> trees) {
-        CommentHelper ch = utils.getCommentHelper(element);
         for (DocTree tag : trees) {
             String name = tag.getKind().tagName;
             if (name == null) {
@@ -359,6 +358,7 @@ public class TagletManager {
                 name = name.substring(1);
             }
             if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
+                var ch = utils.getCommentHelper(element);
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
                     messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
                 } else {
