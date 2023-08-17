@@ -258,12 +258,12 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 }
 
 #define PREDEFINED_CONFIG_FLAGS(do_bool_flag, do_int_flag, do_intx_flag, do_uintx_flag) \
-  do_intx_flag(AllocateInstancePrefetchLines)                              \
-  do_intx_flag(AllocatePrefetchDistance)                                   \
+  do_int_flag(AllocateInstancePrefetchLines)                               \
+  do_int_flag(AllocatePrefetchDistance)                                    \
   do_intx_flag(AllocatePrefetchInstr)                                      \
-  do_intx_flag(AllocatePrefetchLines)                                      \
-  do_intx_flag(AllocatePrefetchStepSize)                                   \
-  do_intx_flag(AllocatePrefetchStyle)                                      \
+  do_int_flag(AllocatePrefetchLines)                                       \
+  do_int_flag(AllocatePrefetchStepSize)                                    \
+  do_int_flag(AllocatePrefetchStyle)                                       \
   do_intx_flag(BciProfileWidth)                                            \
   do_bool_flag(BootstrapJVMCI)                                             \
   do_bool_flag(CITime)                                                     \

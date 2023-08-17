@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,14 +643,12 @@ public final class Connection implements Runnable {
                         ldapUnbind(reqCtls);
                     }
                 } finally {
-                    try {
-                        outStream.flush();
-                        sock.close();
-                        unpauseReader();
-                    } catch (IOException ie) {
-                        if (debug)
-                            System.err.println("Connection: problem closing socket: " + ie);
-                    }
+
+                    flushAndCloseOutputStream();
+                    // 8313657 socket is not closed until GC is run
+                    closeOpenedSocket();
+                    tryUnpauseReader();
+
                     if (!notifyParent) {
                         LdapRequest ldr = pendingRequests;
                         while (ldr != null) {
@@ -684,6 +682,43 @@ public final class Connection implements Runnable {
         }
     }
 
+    // flush and close output stream
+    private void flushAndCloseOutputStream() {
+        try {
+            outStream.flush();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
+        }
+        try {
+            outStream.close();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
+        }
+    }
+
+    // close socket
+    private void closeOpenedSocket() {
+        try {
+            sock.close();
+        } catch (IOException ioEx) {
+            if (debug) {
+                System.err.println("Connection.closeConnectionSocket: Socket close problem: " + ioEx);
+                System.err.println("Socket isClosed: " + sock.isClosed());
+            }
+        }
+    }
+
+    // unpause reader
+    private void tryUnpauseReader() {
+        try {
+            unpauseReader();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.tryUnpauseReader: unpauseReader problem " + ioEx);
+        }
+    }
 
     // Assume everything is "quiet"
     // "synchronize" might lead to deadlock so don't synchronize method

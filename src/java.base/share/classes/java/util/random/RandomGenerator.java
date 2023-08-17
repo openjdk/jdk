@@ -293,7 +293,7 @@ public interface RandomGenerator {
      *         or {@code right} is not finite, or if the specified interval
      *         is empty.
      *
-     * @since 21
+     * @since 22
      */
     default DoubleStream equiDoubles(double left, double right,
         boolean isLeftIncluded, boolean isRightIncluded) {
