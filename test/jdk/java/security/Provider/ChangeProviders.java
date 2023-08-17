@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,22 @@ public class ChangeProviders extends Provider {
         }
         if (Security.getProviders()[0] != p) {
             throw new Exception("Provider not at pos 1");
+        }
+
+        //Ensure that providers inserted at position 0 or > n are placed
+        //at the n+1st position
+        class NextProvider extends Provider {
+            public NextProvider() { super("Bar", "47.23", "none"); }
+        }
+        Provider r = new NextProvider();
+        Security.insertProviderAt(r,0);
+        if (plen() != n+2 || Security.getProviders()[n+1] != r) {
+            throw new Exception("Provider inserted at zero not at pos n+1");
+        }
+        Security.removeProvider(r.getName());
+        Security.insertProviderAt(r, n+5);
+        if (plen() != n+2 || Security.getProviders()[n+1] != r) {
+            throw new Exception("Provider inserted at n+5 not at pos n+1");
         }
 
         System.out.println("All tests passed.");
