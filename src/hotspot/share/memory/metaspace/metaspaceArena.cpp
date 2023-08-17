@@ -135,7 +135,7 @@ MetaspaceArena::~MetaspaceArena() {
 #ifdef ASSERT
   SOMETIMES(verify();)
   if (Settings::use_allocation_guard()) {
-    SOMETIMES(verify_allocation_guards();)
+    verify_allocation_guards();
   }
 #endif
 
