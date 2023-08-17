@@ -848,8 +848,8 @@ class DwarfFile : public ElfFile {
 
       void reset_fields();
       // Defined in section 6.2.5.1 of the DWARF spec 4. add_to_address_register() must always be executed before set_index_register.
-      void add_to_address_register(uint8_t operation_advance, const LineNumberProgramHeader& header);
-      void set_index_register(uint8_t operation_advance, const LineNumberProgramHeader& header);
+      void add_to_address_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
+      void set_index_register(uint32_t operation_advance, const LineNumberProgramHeader& header);
     };
 
     DwarfFile* _dwarf_file;
