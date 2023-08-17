@@ -21,10 +21,7 @@
  * questions.
  */
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -33,6 +30,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.Context;
+import java.security.KeyStore;
 import java.util.Hashtable;
 
 import jdk.test.lib.net.URIBuilder;
@@ -140,12 +138,27 @@ public class LdapSSLHandshakeFailureTest {
         }
     }
 
-    private static void setKeyStore() {
+    private static void setKeyStore() throws Exception {
+        String filePath = getKeystoreFilePath();
+        System.setProperty("javax.net.ssl.keyStore", filePath);
+        System.setProperty("javax.net.ssl.keyStorePassword", "123456");
+        System.setProperty("javax.net.ssl.trustStore", filePath);
+        System.setProperty("javax.net.ssl.trustStorePassword", "123456");
+    }
+
+    private static String getKeystoreFilePath() throws Exception {
         String dir = System.getProperty("test.src", ".") + File.separator;
-        System.setProperty("javax.net.ssl.keyStore", dir + "ksWithSAN");
-        System.setProperty("javax.net.ssl.keyStorePassword", "welcome1");
-        System.setProperty("javax.net.ssl.trustStore", dir + "ksWithSAN");
-        System.setProperty("javax.net.ssl.trustStorePassword", "welcome1");
+        File file = new File(dir+"myKeyStore");
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        if (file.exists()) {
+            // if exists, load
+            keyStore.load(new FileInputStream(file), "123456".toCharArray());
+        } else {
+            // if not exists, create
+            keyStore.load(null, null);
+            keyStore.store(new FileOutputStream(file), "123456".toCharArray());
+        }
+        return file.getPath();
     }
 
     static class TestServer extends Thread implements AutoCloseable {

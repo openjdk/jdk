@@ -282,14 +282,13 @@ public final class Connection implements Runnable {
 
         Socket socket = null;
         try {
-            // create the socket with factory
-            if (socketFactory != null) {
-                socket = createSocketWithFactory (host, port, socketFactory, connectTimeout) ;
-            } else {
-                // create the socket without factory
-                socket = createSocketWithoutFactory(host, port, connectTimeout);
-            }
-            //the handshake with server and reset timeout for the socket
+            // create socket with or without socket factory
+            socket = newCreateSocket (socketFactory);
+
+            // connect the socket with or without timeout
+            connectSocket (socket, host, port, connectTimeout);
+
+            //the handshake for SSL connection with server and reset timeout for the socket
             initialSSLHandshake (socket, connectTimeout);
         } catch (Exception e) {
             // 8314063 the socket is not closed after the failure of handshake
@@ -300,15 +299,45 @@ public final class Connection implements Runnable {
         return socket;
     }
 
-    // close the socket when the error happens
-    private void closeSocket (Socket socket) {
-        if (socket != null && !socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException ioe) {
-                if (debug) {
-                    System.err.println("Connection: createSocket failed with " + ioe);
-                }
+    // create the socket with or without factory
+    private Socket newCreateSocket(String socketFactory) throws Exception {
+
+        Socket socket;
+        if (socketFactory != null) {
+            @SuppressWarnings("unchecked")
+            Class<? extends SocketFactory> socketFactoryClass = (Class<? extends SocketFactory>)
+                    Obj.helper.loadClass(socketFactory);
+            Method getDefault =
+                    socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
+            SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+            socket = factory.createSocket();
+            if (debug) {
+                System.err.println("Socket Created by the Factory");
+            }
+        } else {
+            socket = new Socket();
+            if (debug) {
+                System.err.println("New Socket Created");
+            }
+        }
+        return socket;
+    }
+
+    // connect the socket with setting of timeout
+    private void connectSocket( Socket socket, String host, int port, int connectTimeout)
+            throws IOException {
+        InetSocketAddress endpoint =
+                createInetSocketAddress(host, port);
+
+        if (connectTimeout <= 0) {
+            connectTimeout = 0;
+        }
+        socket.connect(endpoint, connectTimeout);
+        if (debug) {
+            if( connectTimeout > 0 ) {
+                System.err.println("Socket connected with timeout " + connectTimeout);
+            } else {
+                System.err.println("Socket connected without timeout ");
             }
         }
     }
@@ -336,67 +365,17 @@ public final class Connection implements Runnable {
         }
     }
 
-    // create the socket without the factory
-    private Socket createSocketWithoutFactory (String host, int port, int connectTimeout) throws Exception {
-        Socket socket = null;
-
-        if (connectTimeout > 0) {
-            InetSocketAddress endpoint = createInetSocketAddress(host, port);
-            socket = new Socket();
-            if (debug) {
-                System.err.println("Connection: creating socket with " +
-                        "a timeout");
+    // close the socket when the error happens
+    private void closeSocket (Socket socket) {
+        if (socket != null && !socket.isClosed()) {
+            try {
+                socket.close();
+            } catch (IOException ioe) {
+                if (debug) {
+                    System.err.println("Connection: createSocket failed with " + ioe);
+                }
             }
-            socket.connect(endpoint, connectTimeout);
         }
-
-        // continue (but ignore connectTimeout)
-        if (socket == null) {
-            if (debug) {
-                System.err.println("Connection: creating socket");
-            }
-            // connected socket
-            socket = new Socket(host, port);
-        }
-        return socket;
-    }
-
-    // create the socket with the provided factory
-    private Socket createSocketWithFactory(String host, int port, String socketFactory,
-                                           int connectTimeout) throws Exception {
-        Socket socket = null;
-        @SuppressWarnings("unchecked")
-        Class<? extends SocketFactory> socketFactoryClass = (Class<? extends SocketFactory>)
-                Obj.helper.loadClass(socketFactory);
-        Method getDefault =
-                socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
-        SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
-
-        // create the socket
-        if (connectTimeout > 0) {
-
-            InetSocketAddress endpoint =
-                    createInetSocketAddress(host, port);
-            // unconnected socket
-            socket = factory.createSocket();
-            if (debug) {
-                System.err.println("Connection: creating socket with " +
-                        "a timeout using supplied socket factory");
-            }
-            // connected socket
-            socket.connect(endpoint, connectTimeout);
-        }
-
-        // continue (but ignore connectTimeout)
-        if (socket == null) {
-            if (debug) {
-                System.err.println("Connection: creating socket using " +
-                        "supplied socket factory");
-            }
-            // connected socket
-            socket = factory.createSocket(host, port);
-        }
-        return socket;
     }
 
     ////////////////////////////////////////////////////////////////////////////
