@@ -354,9 +354,6 @@ public class TagletManager {
             if (name == null) {
                 continue;
             }
-            if (!name.isEmpty() && name.charAt(0) == '@') {
-                name = name.substring(1);
-            }
             if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
                 var ch = utils.getCommentHelper(element);
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
