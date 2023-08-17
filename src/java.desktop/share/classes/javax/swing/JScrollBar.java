@@ -760,6 +760,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * rigid along the other axis.
      */
     public Dimension getMinimumSize() {
+        if (isMinimumSizeSet()) {
+            return super.getMinimumSize();
+        }
         Dimension pref = getPreferredSize();
         if (orientation == VERTICAL) {
             return new Dimension(pref.width, 5);
