@@ -234,13 +234,13 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
 void ShenandoahHeuristics::record_success_concurrent(bool abbreviated) {
   _degenerated_cycles_in_a_row = 0;
   _successful_cycles_in_a_row++;
-
-  if (!(abbreviated && ShenandoahAdaptiveIgnoreShortCycles)) {
-    _gc_cycle_time_history->add(elapsed_cycle_time());
-    _gc_times_learned++;
-  }
+  _gc_times_learned++;
 
   adjust_penalty(Concurrent_Adjust);
+
+  if (_gc_times_learned <= ShenandoahLearningSteps || !(abbreviated && ShenandoahAdaptiveIgnoreShortCycles)) {
+    _gc_cycle_time_history->add(elapsed_cycle_time());
+  }
 }
 
 void ShenandoahHeuristics::record_success_degenerated() {
