@@ -371,7 +371,7 @@ public class TagletManager {
             }
             final Taglet taglet = allTaglets.get(name);
             if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
-                return; // taglet has been disabled
+                continue; // taglet has been disabled
             }
 
             // Check and verify tag usage
