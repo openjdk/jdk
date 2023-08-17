@@ -306,7 +306,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-static void current_stack_region(address *bottom, size_t *size) {
+void os::Linux::current_stack_region(address *bottom, size_t *size) {
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
     // may return bogus value.
@@ -374,21 +374,6 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   *bottom = stack_bottom;
   *size = stack_top - stack_bottom;
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return bottom + size;
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
 }
 
 /////////////////////////////////////////////////////////////////////////////

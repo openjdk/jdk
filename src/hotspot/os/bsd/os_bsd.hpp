@@ -55,6 +55,7 @@ class os::Bsd {
 
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
 
+  static void current_stack_region(address* bottom, size_t* size);
  public:
 
   static void init_thread_fpu_state();

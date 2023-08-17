@@ -5374,7 +5374,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //    threads created by the VM. We adjust bottom to be P1 and size accordingly.
 //
 #ifndef ZERO
-static void current_stack_region(address * bottom, size_t * size) {
+void os::Linux::current_stack_region(address* bottom, size_t* size) {
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
     // may return bogus value.
@@ -5415,22 +5415,15 @@ static void current_stack_region(address * bottom, size_t * size) {
          os::current_stack_pointer() < *bottom + *size, "just checking");
 }
 
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
+#endif
+
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
+  address stack_bottom;
+  os::Linux::current_stack_region(&stack_bottom, stack_size);
+  *stack_base = stack_bottom + *stack_size;
 }
 
-size_t os::current_stack_size() {
-  // This stack size includes the usable stack and HotSpot guard pages
-  // (for the threads that have Hotspot guard pages).
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
-}
-#endif
+
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;

@@ -712,7 +712,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // ** P1 (aka bottom) and size ( P2 = P1 - size) are the address and stack size returned from
 //    pthread_attr_getstack()
 
-static void current_stack_region(address * bottom, size_t * size) {
+void os::Bsd::current_stack_region(address* bottom, size_t* size) {
 #ifdef __APPLE__
   pthread_t self = pthread_self();
   void *stacktop = pthread_get_stackaddr_np(self);
@@ -771,21 +771,6 @@ static void current_stack_region(address * bottom, size_t * size) {
 #endif
   assert(os::current_stack_pointer() >= *bottom &&
          os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
 }
 
 /////////////////////////////////////////////////////////////////////////////
