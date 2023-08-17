@@ -1357,40 +1357,51 @@ public class CSS implements Serializable {
     }
 
     /**
-     * Convert a "#FFFFFF" hex string to a Color.
-     * If the color specification is bad, an attempt
-     * will be made to fix it up.
+     * Convert a "#FFF", "#FFFF", "#FFFFFF" or "#FFFFFFFF" hex string to a Color.
+     * If the color specification is bad, an attempt will be made to fix it up.
      */
-    static final Color hexToColor(String value) {
-        String digits;
-        int n = value.length();
-        if (value.startsWith("#")) {
-            digits = value.substring(1, Math.min(value.length(), 7));
-        } else {
-            digits = value;
+    static final Color hexToColor(String digits) {
+        // CSS Color level 4 allows webpage passes 3, 4, 6 or 8 digit color codes.
+        //   - 3 digits #[R][G][B] ........ represents #[RR][GG][BB]FF
+        //   - 4 digits #[R][G][B][A] ..... represents #[RR][GG][BB][AA]
+        //   - 6 digits #[RR][GG][BB] ..... represents #[RR][GG][BB]FF
+        //   - 8 digits #[RR][GG][BB][AA] . represents #[RR][GG][BB][AA]
+        final byte[] iseq = digits.startsWith("#") ?
+                                 iseqmap.get(Integer.valueOf(digits.length())):
+                                 iseqmap.get(Integer.valueOf(-digits.length()));
+        if (iseq == null) {
+            // Rejects string argument with a wrong number length.
+            return null;
         }
-        // Some webpage passes 3 digit color code as in #fff which is
-        // decoded as #000FFF resulting in blue background.
-        // As per https://www.w3.org/TR/CSS1/#color-units,
-        // The three-digit RGB notation (#rgb) is converted into six-digit form
-        // (#rrggbb) by replicating digits, not by adding zeros.
-        // This makes sure that white (#ffffff) can be specified with the short notation
-        // (#fff) and removes any dependencies on the color depth of the display.
-        if (digits.length() == 3) {
-            final String r = digits.substring(0, 1);
-            final String g = digits.substring(1, 2);
-            final String b = digits.substring(2, 3);
-            digits = String.format("%s%s%s%s%s%s", r, r, g, g, b, b);
+        // Only 3, 4, 6 and 8 digits notations.
+        // Parses the string argument and build color value.
+        int dv;
+        int value = 0;
+        for (byte i : iseq) {
+            dv = i == -15 ? 15 : Character.digit(digits.charAt(i), 16);
+            if (dv < 0) {
+                // Rejects string argument with at least a non digit Character.
+                return null;
+            }
+            value = dv | value << 4;
         }
-        String hstr = "0x" + digits;
-        Color c;
-        try {
-            c = Color.decode(hstr);
-        } catch (NumberFormatException nfe) {
-            c = null;
-        }
-         return c;
-     }
+        return new Color(value, true);
+    }
+
+    // Map of Index Sequences. Index -15 means, use the default value 15.
+    private static final Map<Integer, byte[]> iseqmap =
+        Map.ofEntries(
+            // Positive key, for # prefixed string, is associated with index from 1 to 8.
+            // Negative key, for not # prefixed string, is associated with index from 0 to 7.
+            Map.entry(Integer.valueOf(4), new byte[]{-15, -15, 1, 1, 2, 2, 3, 3}),
+            Map.entry(Integer.valueOf(5), new byte[]{4, 4, 1, 1, 2, 2, 3, 3}),
+            Map.entry(Integer.valueOf(7), new byte[]{-15, -15, 1, 2, 3, 4, 5, 6}),
+            Map.entry(Integer.valueOf(9), new byte[]{7, 8, 1, 2, 3, 4, 6, 6}),
+            Map.entry(Integer.valueOf(-3), new byte[]{-15, -15, 0, 0, 1, 1, 2, 2}),
+            Map.entry(Integer.valueOf(-4), new byte[]{3, 3, 0, 0, 1, 1, 2, 2}),
+            Map.entry(Integer.valueOf(-6), new byte[]{-15, -15, 0, 1, 2, 3, 4, 5}),
+            Map.entry(Integer.valueOf(-8), new byte[]{6, 7, 0, 1, 2, 3, 4, 5})
+        );
 
     private static Map<String, Color> colorNames;
 
