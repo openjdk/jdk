@@ -361,13 +361,15 @@ public class TagletManager {
                 continue; // not a tag
             }
             if (!allTaglets.containsKey(name)) {
-                var ch = utils.getCommentHelper(element);
-                if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
-                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
-                } else {
-                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
+                if (!config.isDocLintSyntaxGroupEnabled()) {
+                    var ch = utils.getCommentHelper(element);
+                    if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
+                    } else {
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
+                    }
                 }
-                continue;
+                continue; // unknown tag
             }
             final Taglet taglet = allTaglets.get(name);
             if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
