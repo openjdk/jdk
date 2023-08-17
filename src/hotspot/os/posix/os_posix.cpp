@@ -49,6 +49,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
+
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #endif
@@ -445,7 +449,7 @@ void os::Posix::print_load_average(outputStream* st) {
 // for reboot at least on my test machines
 void os::Posix::print_uptime_info(outputStream* st) {
   int bootsec = -1;
-  int currsec = time(nullptr);
+  time_t currsec = time(nullptr);
   struct utmpx* ent;
   setutxent();
   while ((ent = getutxent())) {
@@ -456,7 +460,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   }
 
   if (bootsec != -1) {
-    os::print_dhm(st, "OS uptime:", (long) (currsec-bootsec));
+    os::print_dhm(st, "OS uptime:", currsec-bootsec);
   }
 }
 
@@ -714,6 +718,7 @@ void os::dll_unload(void *lib) {
   // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
   // copy the string to be able to reference it after dlclose.
   const char* l_path = nullptr;
+
 #ifdef LINUX
   char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
@@ -721,6 +726,12 @@ void os::dll_unload(void *lib) {
     l_path = l_pathdup = os::strdup(l_path);
   }
 #endif  // LINUX
+
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(l_path);
+#endif
+
   if (l_path == nullptr) {
     l_path = "<not available>";
   }
@@ -730,6 +741,11 @@ void os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -740,6 +756,11 @@ void os::dll_unload(void *lib) {
                             l_path, p2i(lib), error_report);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   }
   // Update the dll cache
   AIX_ONLY(LoadedLibraries::reload());
@@ -799,20 +820,20 @@ int os::socket_close(int fd) {
   return ::close(fd);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_SSIZE_T(::recv(fd, buf, nBytes, flags));
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_SSIZE_T(::send(fd, buf, nBytes, flags));
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
-  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_SSIZE_T(::connect(fd, him, len));
 }
 
 void os::exit(int num) {
@@ -1208,7 +1229,7 @@ void os::Posix::init(void) {
 #if defined(_ALLBSD_SOURCE)
   clock_tics_per_sec = CLK_TCK;
 #else
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+  clock_tics_per_sec = checked_cast<int>(sysconf(_SC_CLK_TCK));
 #endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
@@ -1332,7 +1353,7 @@ static jlong millis_to_nanos_bounded(jlong millis) {
 
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
-  DEBUG_ONLY(int max_secs = MAX_SECS;)
+  DEBUG_ONLY(time_t max_secs = MAX_SECS;)
 
   if (timeout < 0) {
     timeout = 0;
@@ -1414,7 +1435,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
 
 // Time since start-up in seconds to a fine granularity.
 double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+  return ((double)os::elapsed_counter()) / (double)os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {

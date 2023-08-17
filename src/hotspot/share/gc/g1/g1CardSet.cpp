@@ -258,9 +258,12 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
 
     uintx get_hash() const { return G1CardSetHashTable::get_hash(_region_idx); }
 
-    bool equals(G1CardSetHashTableValue* value, bool* is_dead) {
-      *is_dead = false;
+    bool equals(G1CardSetHashTableValue* value) {
       return value->_region_idx == _region_idx;
+    }
+
+    bool is_dead(G1CardSetHashTableValue*) {
+      return false;
     }
   };
 

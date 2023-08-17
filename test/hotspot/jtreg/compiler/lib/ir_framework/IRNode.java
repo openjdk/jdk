@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework;
 
 import compiler.lib.ir_framework.driver.irmatching.mapping.*;
+import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.shared.CheckedTestFrameworkException;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -69,6 +70,17 @@ import java.util.Map;
  *                                 Using this IR node expects another user provided string in the constraint list of
  *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be used as normal IR nodes.
  *                                 Trying to do so will result in a format violation error.</li>
+ *     <li><p>Vector IR nodes:  The IR node placeholder string contains an additional {@link #VECTOR_PREFIX}.
+ *                              Using this IR node, one can check for the type and size of a vector. The type must
+ *                              be directly specified in {@link #vectorNode}. The size can be specified directly with
+ *                              an additional argument using {@link #VECTOR_SIZE}, followed by a size tag or a comma
+ *                              separated list of sizes. If the size argument is not given, then a default size of
+ *                              {@link #VECTOR_SIZE_MAX} is taken, which is the number of elements that can fit in a
+ *                              vector of the specified type (depends on the VM flag MaxVectorSize and CPU features).
+ *                              However, when using {@link IR#failOn} or {@link IR#counts()} with comparison {@code <},
+ *                              or {@code <=} or {@code =0}, the default size is {@link #VECTOR_SIZE_ANY}, allowing any
+ *                              size. The motivation for these default values is that in most cases one wants to have
+ *                              vectorization with maximal vector width, or no vectorization of any vector width.
  * </ul>
  */
 public class IRNode {
@@ -80,6 +92,11 @@ public class IRNode {
      * Prefix for composite IR nodes.
      */
     private static final String COMPOSITE_PREFIX = PREFIX + "C#";
+    /**
+     * Prefix for vector IR nodes.
+     */
+    private static final String VECTOR_PREFIX = PREFIX + "V#";
+
     private static final String POSTFIX = "#_";
 
     private static final String START = "(\\d+(\\s){2}(";
@@ -90,20 +107,44 @@ public class IRNode {
 
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
+    public static final String VECTOR_SIZE = "_@";
+    public static final String VECTOR_SIZE_TAG_ANY = "any";
+    public static final String VECTOR_SIZE_TAG_MAX = "max_for_type";
+    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + VECTOR_SIZE_TAG_ANY; // default for counts "=0" and failOn
+    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + VECTOR_SIZE_TAG_MAX; // default in counts
+    public static final String VECTOR_SIZE_2   = VECTOR_SIZE + "2";
+    public static final String VECTOR_SIZE_4   = VECTOR_SIZE + "4";
+    public static final String VECTOR_SIZE_8   = VECTOR_SIZE + "8";
+    public static final String VECTOR_SIZE_16  = VECTOR_SIZE + "16";
+    public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
+    public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
+
+    private static final String TYPE_BYTE   = "byte";
+    private static final String TYPE_CHAR   = "char";
+    private static final String TYPE_SHORT  = "short";
+    private static final String TYPE_INT    = "int";
+    private static final String TYPE_LONG   = "long";
+    private static final String TYPE_FLOAT  = "float";
+    private static final String TYPE_DOUBLE = "double";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
      */
     private static final Map<String, IRNodeMapEntry> IR_NODE_MAPPINGS = new HashMap<>();
 
+    /**
+     * Map every vectorNode to a type string.
+     */
+    private static final Map<String, String> VECTOR_NODE_TYPE = new HashMap<>();
+
     /*
      * Start of IR placeholder string definitions followed by a static block defining the regex-for-compile-phase mapping.
      * An IR node placeholder string must start with PREFIX for normal IR nodes or COMPOSITE_PREFIX for composite IR
-     * nodes (see class description above).
+     * nodes, or VECTOR_PREFIX for vector nodes (see class description above).
      *
      * An IR node definition looks like this:
      *
-     * public static final String IR_NODE = [PREFIX|COMPOSITE_PREFIX] + "IR_NODE" + POSTFIX;
+     * public static final String IR_NODE = [PREFIX|COMPOSITE_PREFIX|VECTOR_PREFIX] + "IR_NODE" + POSTFIX;
      * static {
      *    // Define IR_NODE to regex-for-compile-phase mapping. Create a new IRNodeMapEntry object and add it to
      *    // IR_NODE_MAPPINGS. This can be done by using the helper methods defined after all IR node placeholder string
@@ -131,9 +172,36 @@ public class IRNode {
         beforeMatchingNameRegex(ABS_L, "AbsL");
     }
 
-    public static final String ABS_V = PREFIX + "ABS_V" + POSTFIX;
+    public static final String ABS_VB = VECTOR_PREFIX + "ABS_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ABS_V, "AbsV(B|S|I|L|F|D)");
+        vectorNode(ABS_VB, "AbsVB", TYPE_BYTE);
+    }
+
+    // ABS_VC / AbsVC does not exist (char is 2 byte unsigned)
+
+    public static final String ABS_VS = VECTOR_PREFIX + "ABS_VS" + POSTFIX;
+    static {
+        vectorNode(ABS_VS, "AbsVS", TYPE_SHORT);
+    }
+
+    public static final String ABS_VI = VECTOR_PREFIX + "ABS_VI" + POSTFIX;
+    static {
+        vectorNode(ABS_VI, "AbsVI", TYPE_INT);
+    }
+
+    public static final String ABS_VL = VECTOR_PREFIX + "ABS_VL" + POSTFIX;
+    static {
+        vectorNode(ABS_VL, "AbsVL", TYPE_LONG);
+    }
+
+    public static final String ABS_VF = VECTOR_PREFIX + "ABS_VF" + POSTFIX;
+    static {
+        vectorNode(ABS_VF, "AbsVF", TYPE_FLOAT);
+    }
+
+    public static final String ABS_VD = VECTOR_PREFIX + "ABS_VD" + POSTFIX;
+    static {
+        vectorNode(ABS_VD, "AbsVD", TYPE_DOUBLE);
     }
 
     public static final String ADD = PREFIX + "ADD" + POSTFIX;
@@ -151,24 +219,34 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_L, "AddL");
     }
 
-    public static final String ADD_V = PREFIX + "ADD_V" + POSTFIX;
+    public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_V, "AddV(B|S|I|L|F|D)");
+        vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
     }
 
-    public static final String ADD_VD = PREFIX + "ADD_VD" + POSTFIX;
+    public static final String ADD_VI = VECTOR_PREFIX + "ADD_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VD, "AddVD");
+        vectorNode(ADD_VI, "AddVI", TYPE_INT);
     }
 
-    public static final String ADD_VI = PREFIX + "ADD_VI" + POSTFIX;
+    public static final String ADD_VF = VECTOR_PREFIX + "ADD_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VI, "AddVI");
+        vectorNode(ADD_VF, "AddVF", TYPE_FLOAT);
     }
 
-    public static final String ADD_VF = PREFIX + "ADD_VF" + POSTFIX;
+    public static final String ADD_VB = VECTOR_PREFIX + "ADD_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_VF, "AddVF");
+        vectorNode(ADD_VB, "AddVB", TYPE_BYTE);
+    }
+
+    public static final String ADD_VS = VECTOR_PREFIX + "ADD_VS" + POSTFIX;
+    static {
+        vectorNode(ADD_VS, "AddVS", TYPE_SHORT);
+    }
+
+    public static final String ADD_VL = VECTOR_PREFIX + "ADD_VL" + POSTFIX;
+    static {
+        vectorNode(ADD_VL, "AddVL", TYPE_LONG);
     }
 
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
@@ -235,9 +313,29 @@ public class IRNode {
         beforeMatchingNameRegex(AND_L, "AndL");
     }
 
-    public static final String AND_V = PREFIX + "AND_V" + POSTFIX;
+    public static final String AND_VB = VECTOR_PREFIX + "AND_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(AND_V, "AndV");
+        vectorNode(AND_VB, "AndV", TYPE_BYTE);
+    }
+
+    public static final String AND_VC = VECTOR_PREFIX + "AND_VC" + POSTFIX;
+    static {
+        vectorNode(AND_VC, "AndV", TYPE_CHAR);
+    }
+
+    public static final String AND_VS = VECTOR_PREFIX + "AND_VS" + POSTFIX;
+    static {
+        vectorNode(AND_VS, "AndV", TYPE_SHORT);
+    }
+
+    public static final String AND_VI = VECTOR_PREFIX + "AND_VI" + POSTFIX;
+    static {
+        vectorNode(AND_VI, "AndV", TYPE_INT);
+    }
+
+    public static final String AND_VL = VECTOR_PREFIX + "AND_VL" + POSTFIX;
+    static {
+        vectorNode(AND_VL, "AndV", TYPE_LONG);
     }
 
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
@@ -386,9 +484,14 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_L, "DivL");
     }
 
-    public static final String DIV_V = PREFIX + "DIV_V" + POSTFIX;
+    public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(DIV_V, "DivV(F|D)");
+        vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
+    }
+
+    public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
+    static {
+        vectorNode(DIV_VD, "DivVD", TYPE_DOUBLE);
     }
 
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
@@ -418,9 +521,14 @@ public class IRNode {
         optoOnly(FIELD_ACCESS, regex);
     }
 
-    public static final String FMA_V = PREFIX + "FMA_V" + POSTFIX;
+    public static final String FMA_VF = VECTOR_PREFIX + "FMA_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(FMA_V, "FmaV(F|D)");
+        vectorNode(FMA_VF, "FmaVF", TYPE_FLOAT);
+    }
+
+    public static final String FMA_VD = VECTOR_PREFIX + "FMA_VD" + POSTFIX;
+    static {
+        vectorNode(FMA_VD, "FmaVD", TYPE_DOUBLE);
     }
 
     public static final String IF = PREFIX + "IF" + POSTFIX;
@@ -582,9 +690,39 @@ public class IRNode {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
     }
 
-    public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
+    public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
+        vectorNode(LOAD_VECTOR_B, "LoadVector", TYPE_BYTE);
+    }
+
+    public static final String LOAD_VECTOR_C = VECTOR_PREFIX + "LOAD_VECTOR_C" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_C, "LoadVector", TYPE_CHAR);
+    }
+
+    public static final String LOAD_VECTOR_S = VECTOR_PREFIX + "LOAD_VECTOR_S" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_S, "LoadVector", TYPE_SHORT);
+    }
+
+    public static final String LOAD_VECTOR_I = VECTOR_PREFIX + "LOAD_VECTOR_I" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_I, "LoadVector", TYPE_INT);
+    }
+
+    public static final String LOAD_VECTOR_L = VECTOR_PREFIX + "LOAD_VECTOR_L" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_L, "LoadVector", TYPE_LONG);
+    }
+
+    public static final String LOAD_VECTOR_F = VECTOR_PREFIX + "LOAD_VECTOR_F" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_F, "LoadVector", TYPE_FLOAT);
+    }
+
+    public static final String LOAD_VECTOR_D = VECTOR_PREFIX + "LOAD_VECTOR_D" + POSTFIX;
+    static {
+        vectorNode(LOAD_VECTOR_D, "LoadVector", TYPE_DOUBLE);
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
@@ -624,9 +762,29 @@ public class IRNode {
         beforeMatchingNameRegex(LSHIFT_L, "LShiftL");
     }
 
-    public static final String LSHIFT_V = PREFIX + "LSHIFT_V" + POSTFIX;
+    public static final String LSHIFT_VB = VECTOR_PREFIX + "LSHIFT_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(LSHIFT_V, "LShiftV(B|S|I|L)");
+        vectorNode(LSHIFT_VB, "LShiftVB", TYPE_BYTE);
+    }
+
+    public static final String LSHIFT_VS = VECTOR_PREFIX + "LSHIFT_VS" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VS, "LShiftVS", TYPE_SHORT);
+    }
+
+    public static final String LSHIFT_VC = VECTOR_PREFIX + "LSHIFT_VC" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VC, "LShiftVS", TYPE_CHAR); // using short op with char type
+    }
+
+    public static final String LSHIFT_VI = VECTOR_PREFIX + "LSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VI, "LShiftVI", TYPE_INT);
+    }
+
+    public static final String LSHIFT_VL = VECTOR_PREFIX + "LSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VL, "LShiftVL", TYPE_LONG);
     }
 
     public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
@@ -669,9 +827,19 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_L, "MaxL");
     }
 
-    public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
+    public static final String MAX_VI = VECTOR_PREFIX + "MAX_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MAX_V, "MaxV");
+        vectorNode(MAX_VI, "MaxV", TYPE_INT);
+    }
+
+    public static final String MAX_VF = VECTOR_PREFIX + "MAX_VF" + POSTFIX;
+    static {
+        vectorNode(MAX_VF, "MaxV", TYPE_FLOAT);
+    }
+
+    public static final String MAX_VD = VECTOR_PREFIX + "MAX_VD" + POSTFIX;
+    static {
+        vectorNode(MAX_VD, "MaxV", TYPE_DOUBLE);
     }
 
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
@@ -719,9 +887,19 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_L, "MinL");
     }
 
-    public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
+    public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MIN_V, "MinV");
+        vectorNode(MIN_VI, "MinV", TYPE_INT);
+    }
+
+    public static final String MIN_VF = VECTOR_PREFIX + "MIN_VF" + POSTFIX;
+    static {
+        vectorNode(MIN_VF, "MinV", TYPE_FLOAT);
+    }
+
+    public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
+    static {
+        vectorNode(MIN_VD, "MinV", TYPE_DOUBLE);
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -749,29 +927,34 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_L, "MulL");
     }
 
-    public static final String MUL_V = PREFIX + "MUL_V" + POSTFIX;
+    public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_V, "MulV(B|S|I|L|F|D)");
+        vectorNode(MUL_VL, "MulVL", TYPE_LONG);
     }
 
-    public static final String MUL_VL = PREFIX + "MUL_VL" + POSTFIX;
+    public static final String MUL_VI = VECTOR_PREFIX + "MUL_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VL, "MulVL");
+        vectorNode(MUL_VI, "MulVI", TYPE_INT);
     }
 
-    public static final String MUL_VI = PREFIX + "MUL_VI" + POSTFIX;
+    public static final String MUL_VF = VECTOR_PREFIX + "MUL_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VI, "MulVI");
+        vectorNode(MUL_VF, "MulVF", TYPE_FLOAT);
     }
 
-    public static final String MUL_VF = PREFIX + "MUL_VF" + POSTFIX;
+    public static final String MUL_VD = VECTOR_PREFIX + "MUL_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VF, "MulVF");
+        vectorNode(MUL_VD, "MulVD", TYPE_DOUBLE);
     }
 
-    public static final String MUL_VD = PREFIX + "MUL_VD" + POSTFIX;
+    public static final String MUL_VB = VECTOR_PREFIX + "MUL_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(MUL_VD, "MulVD");
+        vectorNode(MUL_VB, "MulVB", TYPE_BYTE);
+    }
+
+    public static final String MUL_VS = VECTOR_PREFIX + "MUL_VS" + POSTFIX;
+    static {
+        vectorNode(MUL_VS, "MulVS", TYPE_SHORT);
     }
 
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
@@ -804,9 +987,14 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
-    public static final String NEG_V = PREFIX + "NEG_V" + POSTFIX;
+    public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
+        vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
+    }
+
+    public static final String NEG_VD = VECTOR_PREFIX + "NEG_VD" + POSTFIX;
+    static {
+        vectorNode(NEG_VD, "NegVD", TYPE_DOUBLE);
     }
 
     public static final String NOP = PREFIX + "NOP" + POSTFIX;
@@ -824,9 +1012,24 @@ public class IRNode {
         trapNodes(NULL_CHECK_TRAP,"null_check");
     }
 
-    public static final String OR_V = PREFIX + "OR_V" + POSTFIX;
+    public static final String OR_VB = VECTOR_PREFIX + "OR_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(OR_V, "OrV");
+        vectorNode(OR_VB, "OrV", TYPE_BYTE);
+    }
+
+    public static final String OR_VS = VECTOR_PREFIX + "OR_VS" + POSTFIX;
+    static {
+        vectorNode(OR_VS, "OrV", TYPE_SHORT);
+    }
+
+    public static final String OR_VI = VECTOR_PREFIX + "OR_VI" + POSTFIX;
+    static {
+        vectorNode(OR_VI, "OrV", TYPE_INT);
+    }
+
+    public static final String OR_VL = VECTOR_PREFIX + "OR_VL" + POSTFIX;
+    static {
+        vectorNode(OR_VL, "OrV", TYPE_LONG);
     }
 
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
@@ -855,24 +1058,24 @@ public class IRNode {
         beforeMatchingNameRegex(POPCOUNT_L, "PopCountL");
     }
 
-    public static final String POPCOUNT_VI = PREFIX + "POPCOUNT_VI" + POSTFIX;
+    public static final String POPCOUNT_VI = VECTOR_PREFIX + "POPCOUNT_VI" + POSTFIX;
     static {
-        superWordNodes(POPCOUNT_VI, "PopCountVI");
+        vectorNode(POPCOUNT_VI, "PopCountVI", TYPE_INT);
     }
 
-    public static final String POPCOUNT_VL = PREFIX + "POPCOUNT_VL" + POSTFIX;
+    public static final String POPCOUNT_VL = VECTOR_PREFIX + "POPCOUNT_VL" + POSTFIX;
     static {
-        superWordNodes(POPCOUNT_VL, "PopCountVL");
+        vectorNode(POPCOUNT_VL, "PopCountVL", TYPE_LONG);
     }
 
-    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    public static final String COUNTTRAILINGZEROS_VL = VECTOR_PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
     static {
-        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+        vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
     }
 
-    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    public static final String COUNTLEADINGZEROS_VL = VECTOR_PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
     static {
-        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+        vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", TYPE_LONG);
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
@@ -941,9 +1144,24 @@ public class IRNode {
                                                                     CompilePhase.BEFORE_MATCHING));
     }
 
-    public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
+    public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(REVERSE_BYTES_V, "ReverseBytesV");
+        vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", TYPE_BYTE);
+    }
+
+    public static final String REVERSE_BYTES_VS = VECTOR_PREFIX + "REVERSE_BYTES_VS" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VS, "ReverseBytesV", TYPE_SHORT);
+    }
+
+    public static final String REVERSE_BYTES_VI = VECTOR_PREFIX + "REVERSE_BYTES_VI" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VI, "ReverseBytesV", TYPE_INT);
+    }
+
+    public static final String REVERSE_BYTES_VL = VECTOR_PREFIX + "REVERSE_BYTES_VL" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VL, "ReverseBytesV", TYPE_LONG);
     }
 
     public static final String REVERSE_I = PREFIX + "REVERSE_I" + POSTFIX;
@@ -956,19 +1174,24 @@ public class IRNode {
         beforeMatchingNameRegex(REVERSE_L, "ReverseL");
     }
 
-    public static final String REVERSE_V = PREFIX + "REVERSE_V" + POSTFIX;
+    public static final String REVERSE_VI = VECTOR_PREFIX + "REVERSE_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(REVERSE_V, "ReverseV");
+        vectorNode(REVERSE_VI, "ReverseV", TYPE_INT);
     }
 
-    public static final String ROUND_VD = PREFIX + "ROUND_VD" + POSTFIX;
+    public static final String REVERSE_VL = VECTOR_PREFIX + "REVERSE_VL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ROUND_VD, "RoundVD");
+        vectorNode(REVERSE_VL, "ReverseV", TYPE_LONG);
     }
 
-    public static final String ROUND_VF = PREFIX + "ROUND_VF" + POSTFIX;
+    public static final String ROUND_VD = VECTOR_PREFIX + "ROUND_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ROUND_VF, "RoundVF");
+        vectorNode(ROUND_VD, "RoundVD", TYPE_LONG);
+    }
+
+    public static final String ROUND_VF = VECTOR_PREFIX + "ROUND_VF" + POSTFIX;
+    static {
+        vectorNode(ROUND_VF, "RoundVF", TYPE_INT);
     }
 
     public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
@@ -991,9 +1214,9 @@ public class IRNode {
         beforeMatchingNameRegex(ROTATE_RIGHT_V, "RotateRightV");
     }
 
-    public static final String ROUND_DOUBLE_MODE_V = PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
+    public static final String ROUND_DOUBLE_MODE_V = VECTOR_PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV");
+        vectorNode(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV", TYPE_DOUBLE);
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
@@ -1011,19 +1234,29 @@ public class IRNode {
         beforeMatchingNameRegex(RSHIFT_L, "RShiftL");
     }
 
-    public static final String RSHIFT_VB = PREFIX + "RSHIFT_VB" + POSTFIX;
+    public static final String RSHIFT_VB = VECTOR_PREFIX + "RSHIFT_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(RSHIFT_VB, "RShiftVB");
+        vectorNode(RSHIFT_VB, "RShiftVB", TYPE_BYTE);
     }
 
-    public static final String RSHIFT_VS = PREFIX + "RSHIFT_VS" + POSTFIX;
+    public static final String RSHIFT_VS = VECTOR_PREFIX + "RSHIFT_VS" + POSTFIX;
     static {
-        beforeMatchingNameRegex(RSHIFT_VS, "RShiftVS");
+        vectorNode(RSHIFT_VS, "RShiftVS", TYPE_SHORT);
     }
 
-    public static final String RSHIFT_V = PREFIX + "RSHIFT_V" + POSTFIX;
+    public static final String RSHIFT_VC = VECTOR_PREFIX + "RSHIFT_VC" + POSTFIX;
     static {
-        beforeMatchingNameRegex(RSHIFT_V, "RShiftV(B|S|I|L)");
+        vectorNode(RSHIFT_VC, "RShiftVS", TYPE_CHAR); // short computation with char type
+    }
+
+    public static final String RSHIFT_VI = VECTOR_PREFIX + "RSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VI, "RShiftVI", TYPE_INT);
+    }
+
+    public static final String RSHIFT_VL = VECTOR_PREFIX + "RSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VL, "RShiftVL", TYPE_LONG);
     }
 
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
@@ -1037,19 +1270,24 @@ public class IRNode {
         optoOnly(SCOPE_OBJECT, regex);
     }
 
-    public static final String SIGNUM_VD = PREFIX + "SIGNUM_VD" + POSTFIX;
+    public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SIGNUM_VD, "SignumVD");
+        vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
     }
 
-    public static final String SIGNUM_VF = PREFIX + "SIGNUM_VF" + POSTFIX;
+    public static final String SIGNUM_VF = VECTOR_PREFIX + "SIGNUM_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SIGNUM_VF, "SignumVF");
+        vectorNode(SIGNUM_VF, "SignumVF", TYPE_FLOAT);
     }
 
-    public static final String SQRT_V = PREFIX + "SQRT_V" + POSTFIX;
+    public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SQRT_V, "SqrtV(F|D)");
+        vectorNode(SQRT_VF, "SqrtVF", TYPE_FLOAT);
+    }
+
+    public static final String SQRT_VD = VECTOR_PREFIX + "SQRT_VD" + POSTFIX;
+    static {
+        vectorNode(SQRT_VD, "SqrtVD", TYPE_DOUBLE);
     }
 
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
@@ -1188,9 +1426,34 @@ public class IRNode {
         beforeMatchingNameRegex(SUB_L, "SubL");
     }
 
-    public static final String SUB_V = PREFIX + "SUB_V" + POSTFIX;
+    public static final String SUB_VB = VECTOR_PREFIX + "SUB_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
+        vectorNode(SUB_VB, "SubVB", TYPE_BYTE);
+    }
+
+    public static final String SUB_VS = VECTOR_PREFIX + "SUB_VS" + POSTFIX;
+    static {
+        vectorNode(SUB_VS, "SubVS", TYPE_SHORT);
+    }
+
+    public static final String SUB_VI = VECTOR_PREFIX + "SUB_VI" + POSTFIX;
+    static {
+        vectorNode(SUB_VI, "SubVI", TYPE_INT);
+    }
+
+    public static final String SUB_VL = VECTOR_PREFIX + "SUB_VL" + POSTFIX;
+    static {
+        vectorNode(SUB_VL, "SubVL", TYPE_LONG);
+    }
+
+    public static final String SUB_VF = VECTOR_PREFIX + "SUB_VF" + POSTFIX;
+    static {
+        vectorNode(SUB_VF, "SubVF", TYPE_FLOAT);
+    }
+
+    public static final String SUB_VD = VECTOR_PREFIX + "SUB_VD" + POSTFIX;
+    static {
+        vectorNode(SUB_VD, "SubVD", TYPE_DOUBLE);
     }
 
     public static final String SUBTYPE_CHECK = PREFIX + "SUBTYPE_CHECK" + POSTFIX;
@@ -1268,9 +1531,29 @@ public class IRNode {
         beforeMatchingNameRegex(URSHIFT_S, "URShiftS");
     }
 
-    public static final String URSHIFT_V = PREFIX + "URSHIFT_V" + POSTFIX;
+    public static final String URSHIFT_VB = VECTOR_PREFIX + "URSHIFT_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(URSHIFT_V, "URShiftV(B|S|I|L)");
+        vectorNode(URSHIFT_VB, "URShiftVB", TYPE_BYTE);
+    }
+
+    public static final String URSHIFT_VS = VECTOR_PREFIX + "URSHIFT_VS" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VS, "URShiftVS", TYPE_SHORT);
+    }
+
+    public static final String URSHIFT_VC = VECTOR_PREFIX + "URSHIFT_VC" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VC, "URShiftVS", TYPE_CHAR); // short computation with char type
+    }
+
+    public static final String URSHIFT_VI = VECTOR_PREFIX + "URSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VI, "URShiftVI", TYPE_INT);
+    }
+
+    public static final String URSHIFT_VL = VECTOR_PREFIX + "URSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VL, "URShiftVL", TYPE_LONG);
     }
 
     public static final String VAND_NOT_I = PREFIX + "VAND_NOT_I" + POSTFIX;
@@ -1283,54 +1566,199 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L, "vand_notL");
     }
 
-    public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
+    public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
+        vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
     }
 
-    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    public static final String VECTOR_BLEND_F = VECTOR_PREFIX + "VECTOR_BLEND_F" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+        vectorNode(VECTOR_BLEND_F, "VectorBlend", TYPE_FLOAT);
     }
 
-    public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
+    public static final String VECTOR_BLEND_D = VECTOR_PREFIX + "VECTOR_BLEND_D" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
+        vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
-    public static final String VECTOR_CAST_D2X = PREFIX + "VECTOR_CAST_D2X" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_D2X, "VectorCastD2X");
+        vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);
     }
 
-    public static final String VECTOR_CAST_F2X = PREFIX + "VECTOR_CAST_F2X" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_L = VECTOR_PREFIX + "VECTOR_MASK_CMP_L" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_F2X, "VectorCastF2X");
+        vectorNode(VECTOR_MASK_CMP_L, "VectorMaskCmp", TYPE_LONG);
     }
 
-    public static final String VECTOR_CAST_I2X = PREFIX + "VECTOR_CAST_I2X" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_F = VECTOR_PREFIX + "VECTOR_MASK_CMP_F" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_I2X, "VectorCastI2X");
+        vectorNode(VECTOR_MASK_CMP_F, "VectorMaskCmp", TYPE_FLOAT);
     }
 
-    public static final String VECTOR_CAST_L2X = PREFIX + "VECTOR_CAST_L2X" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_D = VECTOR_PREFIX + "VECTOR_MASK_CMP_D" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_L2X, "VectorCastL2X");
+        vectorNode(VECTOR_MASK_CMP_D, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
-    public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
+    public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
+        vectorNode(VECTOR_CAST_B2S, "VectorCastB2X", TYPE_SHORT);
     }
 
-    public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    public static final String VECTOR_CAST_B2I = VECTOR_PREFIX + "VECTOR_CAST_B2I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
+        vectorNode(VECTOR_CAST_B2I, "VectorCastB2X", TYPE_INT);
     }
 
-    public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    public static final String VECTOR_CAST_B2L = VECTOR_PREFIX + "VECTOR_CAST_B2L" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
+        vectorNode(VECTOR_CAST_B2L, "VectorCastB2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_CAST_B2F = VECTOR_PREFIX + "VECTOR_CAST_B2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_B2F, "VectorCastB2X", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_CAST_B2D = VECTOR_PREFIX + "VECTOR_CAST_B2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_B2D, "VectorCastB2X", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_CAST_D2B = VECTOR_PREFIX + "VECTOR_CAST_D2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2B, "VectorCastD2X", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_CAST_D2S = VECTOR_PREFIX + "VECTOR_CAST_D2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2S, "VectorCastD2X", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_CAST_D2I = VECTOR_PREFIX + "VECTOR_CAST_D2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2I, "VectorCastD2X", TYPE_INT);
+    }
+
+    public static final String VECTOR_CAST_D2L = VECTOR_PREFIX + "VECTOR_CAST_D2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2L, "VectorCastD2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_CAST_D2F = VECTOR_PREFIX + "VECTOR_CAST_D2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2F, "VectorCastD2X", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_CAST_F2B = VECTOR_PREFIX + "VECTOR_CAST_F2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2B, "VectorCastF2X", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_CAST_F2S = VECTOR_PREFIX + "VECTOR_CAST_F2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2S, "VectorCastF2X", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_CAST_F2I = VECTOR_PREFIX + "VECTOR_CAST_F2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2I, "VectorCastF2X", TYPE_INT);
+    }
+
+    public static final String VECTOR_CAST_F2L = VECTOR_PREFIX + "VECTOR_CAST_F2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2L, "VectorCastF2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_CAST_F2D = VECTOR_PREFIX + "VECTOR_CAST_F2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2D, "VectorCastF2X", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_CAST_I2B = VECTOR_PREFIX + "VECTOR_CAST_I2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_I2B, "VectorCastI2X", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_CAST_I2S = VECTOR_PREFIX + "VECTOR_CAST_I2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_I2S, "VectorCastI2X", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_CAST_I2L = VECTOR_PREFIX + "VECTOR_CAST_I2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_I2L, "VectorCastI2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_CAST_I2F = VECTOR_PREFIX + "VECTOR_CAST_I2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_I2F, "VectorCastI2X", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_CAST_I2D = VECTOR_PREFIX + "VECTOR_CAST_I2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_I2D, "VectorCastI2X", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_CAST_L2B = VECTOR_PREFIX + "VECTOR_CAST_L2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2B, "VectorCastL2X", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_CAST_L2S = VECTOR_PREFIX + "VECTOR_CAST_L2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2S, "VectorCastL2X", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_CAST_L2I = VECTOR_PREFIX + "VECTOR_CAST_L2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2I, "VectorCastL2X", TYPE_INT);
+    }
+
+    public static final String VECTOR_CAST_L2F = VECTOR_PREFIX + "VECTOR_CAST_L2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2F, "VectorCastL2X", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_CAST_L2D = VECTOR_PREFIX + "VECTOR_CAST_L2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2D, "VectorCastL2X", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_CAST_S2B = VECTOR_PREFIX + "VECTOR_CAST_S2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2B, "VectorCastS2X", TYPE_BYTE);
+    }
+
+    public static final String VECTOR_CAST_S2I = VECTOR_PREFIX + "VECTOR_CAST_S2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2I, "VectorCastS2X", TYPE_INT);
+    }
+
+    public static final String VECTOR_CAST_S2L = VECTOR_PREFIX + "VECTOR_CAST_S2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2L, "VectorCastS2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_CAST_S2F = VECTOR_PREFIX + "VECTOR_CAST_S2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2F, "VectorCastS2X", TYPE_FLOAT);
+    }
+
+    public static final String VECTOR_CAST_S2D = VECTOR_PREFIX + "VECTOR_CAST_S2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2D, "VectorCastS2X", TYPE_DOUBLE);
+    }
+
+    public static final String VECTOR_CAST_F2HF = VECTOR_PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2HF, "VectorCastF2HF", TYPE_SHORT);
+    }
+
+    public static final String VECTOR_CAST_HF2F = VECTOR_PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_HF2F, "VectorCastHF2F", TYPE_FLOAT);
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
@@ -1343,19 +1771,34 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
     }
 
-    public static final String VECTOR_UCAST_B2X = PREFIX + "VECTOR_UCAST_B2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_B2X, "VectorUCastB2X");
+        vectorNode(VECTOR_UCAST_B2S, "VectorUCastB2X", TYPE_SHORT);
     }
 
-    public static final String VECTOR_UCAST_I2X = PREFIX + "VECTOR_UCAST_I2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2I = VECTOR_PREFIX + "VECTOR_UCAST_B2I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_I2X, "VectorUCastI2X");
+        vectorNode(VECTOR_UCAST_B2I, "VectorUCastB2X", TYPE_INT);
     }
 
-    public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2L = VECTOR_PREFIX + "VECTOR_UCAST_B2L" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
+        vectorNode(VECTOR_UCAST_B2L, "VectorUCastB2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_UCAST_I2L = VECTOR_PREFIX + "VECTOR_UCAST_I2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_I2L, "VectorUCastI2X", TYPE_LONG);
+    }
+
+    public static final String VECTOR_UCAST_S2I = VECTOR_PREFIX + "VECTOR_UCAST_S2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_S2I, "VectorUCastS2X", TYPE_INT);
+    }
+
+    public static final String VECTOR_UCAST_S2L = VECTOR_PREFIX + "VECTOR_UCAST_S2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_S2L, "VectorUCastS2X", TYPE_LONG);
     }
 
     public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
@@ -1388,6 +1831,11 @@ public class IRNode {
         machOnlyNameRegex(VFNMSB_MASKED, "vfnmsb_masked");
     }
 
+    public static final String VFMAD_MASKED = PREFIX + "VFMAD_MASKED" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFMAD_MASKED, "vfmad_masked");
+    }
+
     public static final String VMASK_AND_NOT_L = PREFIX + "VMASK_AND_NOT_L" + POSTFIX;
     static {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
@@ -1401,6 +1849,36 @@ public class IRNode {
     public static final String VMLA_MASKED = PREFIX + "VMLA_MASKED" + POSTFIX;
     static {
         machOnlyNameRegex(VMLA_MASKED, "vmla_masked");
+    }
+
+    public static final String FMSUB = PREFIX + "FMSUB" + POSTFIX;
+    static {
+        machOnlyNameRegex(FMSUB, "msub(F|D)_reg_reg");
+    }
+
+    public static final String FNMADD = PREFIX + "FNMADD" + POSTFIX;
+    static {
+        machOnlyNameRegex(FNMADD, "mnadd(F|D)_reg_reg");
+    }
+
+    public static final String FNMSUB = PREFIX + "FNMSUB" + POSTFIX;
+    static {
+        machOnlyNameRegex(FNMSUB, "mnsub(F|D)_reg_reg");
+    }
+
+    public static final String VFMLA = PREFIX + "VFMLA" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFMLA, "vfmla");
+    }
+
+    public static final String VFMLS = PREFIX + "VFMLS" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFMLS, "vfmls");
+    }
+
+    public static final String VFNMLA = PREFIX + "VFNMLA" + POSTFIX;
+    static {
+        machOnlyNameRegex(VFNMLA, "vfnmla");
     }
 
     public static final String VMLS = PREFIX + "VMLS" + POSTFIX;
@@ -1503,9 +1981,24 @@ public class IRNode {
         beforeMatchingNameRegex(XOR_L, "XorL");
     }
 
-    public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
+    public static final String XOR_VB = VECTOR_PREFIX + "XOR_VB" + POSTFIX;
     static {
-        beforeMatchingNameRegex(XOR_V, "XorV");
+        vectorNode(XOR_VB, "XorV", TYPE_BYTE);
+    }
+
+    public static final String XOR_VS = VECTOR_PREFIX + "XOR_VS" + POSTFIX;
+    static {
+        vectorNode(XOR_VS, "XorV", TYPE_SHORT);
+    }
+
+    public static final String XOR_VI = VECTOR_PREFIX + "XOR_VI" + POSTFIX;
+    static {
+        vectorNode(XOR_VI, "XorV", TYPE_INT);
+    }
+
+    public static final String XOR_VL = VECTOR_PREFIX + "XOR_VL" + POSTFIX;
+    static {
+        vectorNode(XOR_VL, "XorV", TYPE_LONG);
     }
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
@@ -1528,14 +2021,24 @@ public class IRNode {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
     }
 
-    public static final String COMPRESS_BITSV = PREFIX + "COMPRESS_BITSV" + POSTFIX;
+    public static final String COMPRESS_BITS_VI = VECTOR_PREFIX + "COMPRESS_BITS_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(COMPRESS_BITSV, "CompressBitsV");
+        vectorNode(COMPRESS_BITS_VI, "CompressBitsV", TYPE_INT);
     }
 
-    public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
+    public static final String COMPRESS_BITS_VL = VECTOR_PREFIX + "COMPRESS_BITS_VL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
+        vectorNode(COMPRESS_BITS_VL, "CompressBitsV", TYPE_LONG);
+    }
+
+    public static final String EXPAND_BITS_VI = VECTOR_PREFIX + "EXPAND_BITS_VI" + POSTFIX;
+    static {
+        vectorNode(EXPAND_BITS_VI, "ExpandBitsV", TYPE_INT);
+    }
+
+    public static final String EXPAND_BITS_VL = VECTOR_PREFIX + "EXPAND_BITS_VL" + POSTFIX;
+    static {
+        vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
     }
 
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
@@ -1635,6 +2138,20 @@ public class IRNode {
     private static void beforeMatchingNameRegex(String irNodePlaceholder, String irNodeRegex) {
         String regex = START + irNodeRegex + MID + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
+    }
+
+    /**
+     * Apply {@code irNodeRegex} as regex for the IR vector node name on all machine independent ideal graph phases up to and
+     * including {@link CompilePhase#BEFORE_MATCHING}. Since this is a vector node, we can also check the vector element
+     * type {@code typeString} and the vector size (number of elements), {@see VECTOR_SIZE}.
+     */
+    private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
+        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed prefix check for irNodePlaceholder "
+                                                               + irNodePlaceholder + " -> did you use VECTOR_PREFIX?");
+        // IS_REPLACED is later replaced with the specific type and size of the vector.
+        String regex = START + irNodeRegex + MID  + IS_REPLACED + END;
+        IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
+        VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
     }
 
     private static void allocNodes(String irNode, String irNodeName, String optoRegex) {
@@ -1753,6 +2270,149 @@ public class IRNode {
     }
 
     /**
+     * Is {@code irVectorNodeString} an IR vector node placeholder string?
+     */
+    public static boolean isVectorIRNode(String irVectorNodeString) {
+        return irVectorNodeString.startsWith(VECTOR_PREFIX);
+    }
+
+    /**
+     * Is {@code irVectorSizeString} a vector size string?
+     */
+    public static boolean isVectorSize(String irVectorSizeString) {
+        return irVectorSizeString.startsWith(VECTOR_SIZE);
+    }
+
+    /**
+     * Parse {@code sizeString} and generate a regex pattern to match for the size in the IR dump.
+     */
+    public static String parseVectorNodeSize(String sizeString, String typeString, VMInfo vmInfo) {
+        if (sizeString.equals(VECTOR_SIZE_TAG_ANY)) {
+            return "\\\\d+"; // match with any number
+        }
+        // Try to parse any tags, convert to comma separated list of ints
+        sizeString = parseVectorNodeSizeTag(sizeString, typeString, vmInfo);
+        // Parse comma separated list of numbers
+        String[] sizes = sizeString.split(",");
+        String regex = "";
+        for (int i = 0; i < sizes.length; i++) {
+            int size = 0;
+            try {
+                size = Integer.parseInt(sizes[i]);
+            } catch (NumberFormatException e) {
+                throw new TestFormatException("Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
+            }
+            TestFormat.checkNoReport(size > 1, "Vector node size must be 2 or larger, but got \"" + sizes[i] + "\", in \"" + sizeString + "\"");
+            regex += ((i > 0) ? "|" : "") + size;
+        }
+        if (sizes.length > 1) {
+           regex = "(" + regex + ")";
+        }
+        return regex;
+    }
+
+    /**
+     * If {@code sizeTagString} is a size tag, return the list of accepted sizes, else return sizeTagString.
+     */
+    public static String parseVectorNodeSizeTag(String sizeTagString, String typeString, VMInfo vmInfo) {
+        // Parse out "min(a,b,c,...)"
+        if (sizeTagString.startsWith("min(") && sizeTagString.endsWith(")")) {
+            return parseVectorNodeSizeTagMin(sizeTagString, typeString, vmInfo);
+        }
+
+        // Parse individual tags
+        return switch (sizeTagString) {
+            case VECTOR_SIZE_TAG_MAX -> String.valueOf(getMaxElementsForType(typeString, vmInfo));
+            case "max_byte"          -> String.valueOf(getMaxElementsForType(TYPE_BYTE, vmInfo));
+            case "max_char"          -> String.valueOf(getMaxElementsForType(TYPE_CHAR, vmInfo));
+            case "max_short"         -> String.valueOf(getMaxElementsForType(TYPE_SHORT, vmInfo));
+            case "max_int"           -> String.valueOf(getMaxElementsForType(TYPE_INT, vmInfo));
+            case "max_long"          -> String.valueOf(getMaxElementsForType(TYPE_LONG, vmInfo));
+            case "max_float"         -> String.valueOf(getMaxElementsForType(TYPE_FLOAT, vmInfo));
+            case "max_double"        -> String.valueOf(getMaxElementsForType(TYPE_DOUBLE, vmInfo));
+            case "LoopMaxUnroll"     -> String.valueOf(vmInfo.getLongValue("LoopMaxUnroll"));
+            default                  -> sizeTagString;
+        };
+    }
+
+    /**
+     * Parse {@code sizeTagString}, which must be a min-clause.
+     */
+    public static String parseVectorNodeSizeTagMin(String sizeTagString, String typeString, VMInfo vmInfo) {
+        String[] tags = sizeTagString.substring(4, sizeTagString.length() - 1).split(",");
+        TestFormat.checkNoReport(tags.length > 1, "Vector node size \"min(...)\" must have at least 2 comma separated arguments, got \"" + sizeTagString + "\"");
+        int minVal = 1024;
+        for (int i = 0; i < tags.length; i++) {
+            String tag = parseVectorNodeSizeTag(tags[i].trim(), typeString, vmInfo);
+            int tag_val = 0;
+            try {
+                tag_val = Integer.parseInt(tag);
+            } catch (NumberFormatException e) {
+                throw new TestFormatException("Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
+            }
+            minVal = Math.min(minVal, tag_val);
+        }
+        return String.valueOf(minVal);
+    }
+
+    /**
+     * Return maximal number of elements that can fit in a vector of the specified type.
+     */
+    public static long getMaxElementsForType(String typeString, VMInfo vmInfo) {
+        long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
+        TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        long maxBytes = maxVectorSize;
+
+        if (Platform.isX64() || Platform.isX86()) {
+            maxBytes = Math.min(maxBytes, getMaxElementsForTypeOnX86(typeString, vmInfo));
+        }
+
+        // compute elements per vector: vector bytes divided by bytes per element
+        int bytes = getTypeSizeInBytes(typeString);
+        return maxBytes / bytes;
+    }
+
+    /**
+     * Return maximal number of elements that can fit in a vector of the specified type, on x86 / x64.
+     */
+    public static long getMaxElementsForTypeOnX86(String typeString, VMInfo vmInfo) {
+        // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes in x86.ad:
+        boolean avx1 = vmInfo.hasCPUFeature("avx");
+        boolean avx2 = vmInfo.hasCPUFeature("avx2");
+        boolean avx512 = vmInfo.hasCPUFeature("avx512f");
+        boolean avx512bw = vmInfo.hasCPUFeature("avx512bw");
+        long maxBytes;
+        if (avx512) {
+            maxBytes = 64;
+        } else if (avx2) {
+            maxBytes = 32;
+        } else {
+            maxBytes = 16;
+        }
+        if (avx1 && (typeString.equals(TYPE_FLOAT) || typeString.equals(TYPE_DOUBLE))) {
+            maxBytes = avx512 ? 64 : 32;
+        }
+        if (avx512 && (typeString.equals(TYPE_BYTE) || typeString.equals(TYPE_SHORT) || typeString.equals(TYPE_CHAR))) {
+            maxBytes = avx512bw ? 64 : 32;
+        }
+
+        return maxBytes;
+    }
+
+    /**
+     * Return size in bytes of type named by {@code typeString}, return 0 if it does not name a type.
+     */
+    public static int getTypeSizeInBytes(String typeString) {
+        return switch (typeString) {
+            case TYPE_BYTE              -> 1;
+            case TYPE_CHAR, TYPE_SHORT  -> 2;
+            case TYPE_INT, TYPE_FLOAT   -> 4;
+            case TYPE_LONG, TYPE_DOUBLE -> 8;
+            default                     -> 0;
+        };
+    }
+
+    /**
      * Returns "IRNode.XYZ", where XYZ is one of the IR node placeholder variable names defined above.
      */
     public static String getIRNodeAccessString(String irNodeString) {
@@ -1761,6 +2421,10 @@ public class IRNode {
             TestFramework.check(irNodeString.length() > COMPOSITE_PREFIX.length() + POSTFIX.length(),
                                 "Invalid composite node placeholder: " + irNodeString);
             prefixLength = COMPOSITE_PREFIX.length();
+        } else if (isVectorIRNode(irNodeString)) {
+            TestFramework.check(irNodeString.length() > VECTOR_PREFIX.length() + POSTFIX.length(),
+                                "Invalid vector node placeholder: " + irNodeString);
+            prefixLength = VECTOR_PREFIX.length();
         } else {
             prefixLength = PREFIX.length();
         }
@@ -1834,5 +2498,12 @@ public class IRNode {
                          "   Violation";
         TestFormat.checkNoReport(entry != null, failMsg);
         return entry.defaultCompilePhase();
+    }
+
+    public static String getVectorNodeType(String irNode) {
+        String typeString = VECTOR_NODE_TYPE.get(irNode);
+        String failMsg = "\"" + irNode + "\" is not a Vector IR node defined in class IRNode";
+        TestFormat.check(typeString != null, failMsg);
+        return typeString;
     }
 }
