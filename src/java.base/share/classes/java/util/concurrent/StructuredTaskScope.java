@@ -936,7 +936,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                 T r = (T) result;
                 return r;
             }
-            throw new IllegalStateException("Subtask not completed or did not complete successfully");
+            throw new IllegalStateException(
+                    "Result is unavailable or subtask did not complete successfully");
         }
 
         @Override
@@ -946,7 +947,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             if (result instanceof AltResult alt && alt.state() == State.FAILED) {
                 return alt.exception();
             }
-            throw new IllegalStateException("Subtask not completed or did not complete with exception");
+            throw new IllegalStateException(
+                    "Exception is unavailable or subtask did not complete with exception");
         }
 
         @Override
