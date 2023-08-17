@@ -1675,20 +1675,11 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
 
             // Set up edges, ensuring no duplicates
-            List<Link> links = new ArrayList<>();
-            for (Link link1 : graph.getLinks()) {
-                boolean duplicate = false;
-                for (Link link2 : links) {
-                    if (link1.equals(link2)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-                if (!duplicate) {
-                    links.add(link1);
-                }
+            Set<Link> linkSet = new HashSet<>();
+            for (Link link : graph.getLinks()) {
+                linkSet.add(link);
             }
-
+            List<Link> links = new ArrayList<>(linkSet);
             links.sort(linkComparator);
             for (Link l : links) {
                 LayoutEdge edge = new LayoutEdge();
