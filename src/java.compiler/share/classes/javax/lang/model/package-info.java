@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 /**
  * Types and hierarchies of packages comprising a {@index "Java language
- * model"}, a model of the declarations and types of the Java
+ * model"}, a reflective API that models the declarations and types of the Java
  * programming language.
  *
  * The members of this package and its subpackages are for use in
@@ -51,6 +51,89 @@
  *
  * <p>Unless otherwise specified, methods in this package will throw
  * a {@code NullPointerException} if given a {@code null} argument.
+ *
+ * <h2><a id=elementsAndTypes>Elements and Types</a></h2>
+ *
+ * <h3><a id=DefUse>Definitions and Uses</a></h3>
+ *
+ * In broad terms the {@link javax.lang.model.element element} package
+ * models the declarations, that is the <em>definitions</em>, of elements while
+ * the {@link javax.lang.model.type type} package models <em>uses</em>
+ * of types. In general, distinct uses can have individualized
+ * information separate from the information associated with the
+ * definition. In some sense, the information in the definition is
+ * shared by all the uses.
+
+ * <p>For example, consider the uses of {@code
+ * java.lang.String} in the string processing method {@code
+ * identityOrEmpty} below:
+ *
+ * {@snippet lang=java :
+ * // Return the argument if it is non-null and the empty string otherwise.
+ * public static @DefinitelyNotNull String identityOrEmpty(@MightBeNull String argument) {
+ *    ...
+ * }
+ * }
+ *
+ * The return type of the method is a {@code String} annotated with
+ * a {@code @DefinitelyNotNull} type annotation while the type of
+ * the parameter is a {@code String} annotated with a {@code
+ * @MightBeNull} type annotation. In a reflective API, since the set
+ * of annotations is different for the two <em>uses</em> of {@code
+ * String} as a type, the return type and argument type would need to
+ * be represented by different objects to distinguish between these two
+ * cases. The <em>definition</em> of {@code java.lang.String} itself
+ * is annotated with neither of the type annotations in question.
+ *
+ * <p>Another example, consider the declaration of the generic
+ * interface (JLS {@jls 9.1.2}) {@code java.util.Set} which has one
+ * type parameter. This declaration captures commonality between the
+ * many parameterized types (JLS {@jls 4.5}) derived from that
+ * declaration such as {@code java.util.Set<String>}, {@code
+ * java.util.Set<E>}, {@code java.util.Set<?>}, and also the raw type
+ * (JLS {@jls 4.8}) {@code java.util.Set}.
+ *
+ * <h3><a id=elementTypeMapping>Mapping between Elements and Types</a></h3>
+ *
+ * While distinct concepts, there are bidirectional (partial) mappings
+ * between elements and types, between definitions and uses. For
+ * example, roughly speaking, information that would be invariant for
+ * all uses of a type can be retrieved from the element defining a
+ * type. For example, consider a {@link
+ * javax.lang.model.type.DeclaredType DeclaredType} type mirror
+ * modeling a use of {@code java.lang.String}. Calling {@link
+ * javax.lang.model.type.DeclaredType#asElement()} would return the
+ * {@link javax.lang.model.element.TypeElement} for {@code
+ * java.lang.String}. From the {@code TypeElement}, common information
+ * such as {@linkplain
+ * javax.lang.model.element.TypeElement#getSimpleName() name} and
+ * {@linkplain javax.lang.model.element.TypeElement#getModifiers()
+ * modifiers} can be retrieved.
+ *
+ * <p>All elements can be {@linkplain
+ * javax.lang.model.element.Element#asType() mapped to} some type.
+ * The elements for classes and interfaces get {@linkplain
+ * javax.lang.model.element.TypeElement#asType() mapped to} a
+ * prototypical type.  (If a class or interface is generic, its
+ * prototypical type mirror is parameterized with type arguments
+ * matching the type variables of the declaration, all
+ * unannotated. Otherwise, for a non-generic class or interface, the
+ * prototypical type mirror corresponds to an unannotated use of the
+ * type.)  Conversely, in general, many types can map to the same
+ * {@linkplain javax.lang.model.element.TypeElement type element}. For
+ * example, the type mirror for the raw type {@code java.util.Set},
+ * the prototypical type {@code java.util.Set<E>}, and the type {@code
+ * java.util.Set<String>} would all {@linkplain
+ * javax.lang.model.type.DeclaredType#asElement() map to} the type
+ * element for {@code java.util.Set}. Several kinds of types can be
+ * mapped to elements, but other kinds of types do <em>not</em> have
+ * an {@linkplain javax.lang.model.util.Types#asElement(TypeMirror)
+ * element mapping}.  For example, the type mirror of an {@linkplain
+ * javax.lang.model.type.ExecutableType executable type} does
+ * <em>not</em> have an element mapping while a {@linkplain
+ * javax.lang.model.type.DeclaredType declared type} would map to a
+ * {@linkplain javax.lang.model.element.TypeElement type element}, as
+ * discussed above.
  *
  * @since 1.6
  *

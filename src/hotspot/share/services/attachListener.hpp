@@ -121,9 +121,6 @@ class AttachListener: AllStatic {
   // platform specific initialization
   static int pd_init();
 
-  // platform specific operation
-  static AttachOperationFunctionInfo* pd_find_operation(const char* name);
-
   // platform specific flag change
   static jint pd_set_flag(AttachOperation* op, outputStream* out);
 
