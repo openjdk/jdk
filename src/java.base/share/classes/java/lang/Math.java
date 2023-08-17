@@ -55,7 +55,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <p>The quality of implementation specifications concern two
  * properties, accuracy of the returned result and monotonicity of the
  * method.  Accuracy of the floating-point {@code Math} methods is
- * measured in terms of <i>ulps</i>, units in the last place.  For a
+ * measured in terms of <dfn>{@index ulp}s</dfn>, {@index "units in the last place"}.  For a
  * given floating-point format, an {@linkplain #ulp(double) ulp} of a
  * specific real number value is the distance between the two
  * floating-point values bracketing that numerical value.  When
@@ -63,8 +63,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * specific argument, the number of ulps cited is for the worst-case
  * error at any argument.  If a method always has an error less than
  * 0.5 ulps, the method always returns the floating-point number
- * nearest the exact result; such a method is <i>correctly
- * rounded</i>.  A correctly rounded method is generally the best a
+ * nearest the exact result; such a method is <dfn>correctly
+ * rounded</dfn>.  A {@index "correctly rounded"} method is generally the best a
  * floating-point approximation can be; however, it is impractical for
  * many floating-point methods to be correctly rounded.  Instead, for
  * the {@code Math} class, a larger error bound of 1 or 2 ulps is
@@ -85,7 +85,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * <p>
  * The platform uses signed two's complement integer arithmetic with
- * int and long primitive types.  The developer should choose
+ * {@code int} and {@code long} primitive types.  The developer should choose
  * the primitive type to ensure that arithmetic operations consistently
  * produce correct results, which in some cases means the operations
  * will not overflow the range of values of the computation.
@@ -119,7 +119,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @see <a href="https://standards.ieee.org/ieee/754/6210/">
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
  *
- * @author  Joseph D. Darcy
  * @since   1.0
  */
 
