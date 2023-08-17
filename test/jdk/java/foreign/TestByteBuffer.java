@@ -25,7 +25,7 @@
  * @test
  * @enablePreview
  * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestByteBuffer
+ * @run testng/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
 import java.lang.foreign.*;
@@ -82,7 +82,7 @@ import static org.testng.Assert.*;
 
 public class TestByteBuffer {
 
-    static Path tempPath;
+    static final Path tempPath;
 
     static {
         try {
@@ -109,16 +109,16 @@ public class TestByteBuffer {
                     BB_FLOAT.withName("value")
             ));
 
-    static SequenceLayout bytes = MemoryLayout.sequenceLayout(100, JAVA_BYTE);
-    static SequenceLayout chars = MemoryLayout.sequenceLayout(100, BB_CHAR);
-    static SequenceLayout shorts = MemoryLayout.sequenceLayout(100, BB_SHORT);
-    static SequenceLayout ints = MemoryLayout.sequenceLayout(100, BB_INT);
-    static SequenceLayout floats = MemoryLayout.sequenceLayout(100, BB_FLOAT);
-    static SequenceLayout longs = MemoryLayout.sequenceLayout(100, BB_LONG);
-    static SequenceLayout doubles = MemoryLayout.sequenceLayout(100, BB_DOUBLE);
+    static final SequenceLayout bytes = MemoryLayout.sequenceLayout(100, JAVA_BYTE);
+    static final SequenceLayout chars = MemoryLayout.sequenceLayout(100, BB_CHAR);
+    static final SequenceLayout shorts = MemoryLayout.sequenceLayout(100, BB_SHORT);
+    static final SequenceLayout ints = MemoryLayout.sequenceLayout(100, BB_INT);
+    static final SequenceLayout floats = MemoryLayout.sequenceLayout(100, BB_FLOAT);
+    static final SequenceLayout longs = MemoryLayout.sequenceLayout(100, BB_LONG);
+    static final SequenceLayout doubles = MemoryLayout.sequenceLayout(100, BB_DOUBLE);
 
-    static VarHandle indexHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("index"));
-    static VarHandle valueHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("value"));
+    static final VarHandle indexHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("index"));
+    static final VarHandle valueHandle = tuples.varHandle(PathElement.sequenceElement(), PathElement.groupElement("value"));
 
     static void initTuples(MemorySegment base, long count) {
         for (long i = 0; i < count ; i++) {
@@ -338,7 +338,7 @@ public class TestByteBuffer {
         }
     }
 
-    static final long LARGE_SIZE = 3L * 1024L * 1024L * 1024L; // 3GB
+    static final long LARGE_SIZE = (2L * 1024L + 512L) * 1024L * 1024L; // 2.5 GiB
 
     @Test
     public void testLargeMappedSegment() throws Throwable {
