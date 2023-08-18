@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -169,7 +170,16 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       // additional, required work.
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
-      __ get_cache_and_index_and_bytecode_at_bcp(temp_reg, bc_reg, temp_reg, byte_no, 1);
+      __ load_field_entry(temp_reg, bc_reg);
+      if (byte_no == f1_byte) {
+        __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::get_code_offset())));
+      } else {
+        __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
+      }
+      // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
+      __ membar(MacroAssembler::AnyAny);
+      __ lbu(temp_reg, Address(temp_reg, 0));
+      __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
       __ beqz(temp_reg, L_patch_done);
       break;
@@ -2155,11 +2165,6 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   Label resolved, clinit_barrier_slow;
 
   Bytecodes::Code code = bytecode();
-  switch (code) {
-    case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-    case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-    default: break;
-  }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   __ get_cache_and_index_and_bytecode_at_bcp(Rcache, index, temp, byte_no, 1, index_size);
@@ -2185,6 +2190,71 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
     __ load_resolved_method_at_index(byte_no, temp, Rcache);
     __ load_method_holder(temp, temp);
     __ clinit_barrier(temp, t0, nullptr, &clinit_barrier_slow);
+  }
+}
+
+void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
+                                            Register Rcache,
+                                            Register index) {
+  const Register temp = x9;
+  assert_different_registers(Rcache, index, temp);
+
+  Label resolved;
+
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
+  }
+
+  assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+  __ load_field_entry(Rcache, index);
+  if (byte_no == f1_byte) {
+    __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::get_code_offset())));
+  } else {
+    __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
+  }
+  // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
+  __ membar(MacroAssembler::AnyAny);
+  __ lbu(temp, Address(temp, 0));
+  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  __ mv(t0, (int) code);  // have we resolved this bytecode?
+  __ beq(temp, t0, resolved);
+
+  // resolve first time through
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mv(temp, (int) code);
+  __ call_VM(noreg, entry, temp);
+
+  // Update registers with resolved info
+  __ load_field_entry(Rcache, index);
+  __ bind(resolved);
+}
+
+void TemplateTable::load_resolved_field_entry(Register obj,
+                                              Register cache,
+                                              Register tos_state,
+                                              Register offset,
+                                              Register flags,
+                                              bool is_static = false) {
+  assert_different_registers(cache, tos_state, flags, offset);
+
+  // Field offset
+  __ load_sized_value(offset, Address(cache, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+
+  // Flags
+  __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
+
+  // TOS state
+  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+
+  // Klass overwrite register
+  if (is_static) {
+    __ ld(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()));
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+    __ ld(obj, Address(obj, mirror_offset));
+    __ resolve_oop_handle(obj, x15, t1);
   }
 }
 
@@ -2343,8 +2413,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
 
     __ beqz(x10, L1);
 
-    __ get_cache_and_index_at_bcp(c_rarg2, c_rarg3, 1);
-    __ la(c_rarg2, Address(c_rarg2, in_bytes(ConstantPoolCache::base_offset())));
+    __ load_field_entry(c_rarg2, index);
 
     if (is_static) {
       __ mv(c_rarg1, zr); // null object reference
@@ -2354,11 +2423,10 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     }
     // c_rarg1: object pointer or null
     // c_rarg2: cache entry pointer
-    // c_rarg3: jvalue object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::post_field_access),
-                                       c_rarg1, c_rarg2, c_rarg3);
-    __ get_cache_and_index_at_bcp(cache, index, 1);
+                                       c_rarg1, c_rarg2);
+    __ load_field_entry(cache, index);
     __ bind(L1);
   }
 }
@@ -2370,17 +2438,17 @@ void TemplateTable::pop_and_check_object(Register r) {
 }
 
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
-  const Register cache     = x12;
-  const Register index     = x13;
+  const Register cache     = x14;
   const Register obj       = x14;
+  const Register index     = x13;
+  const Register tos_state = x13;
   const Register off       = x9;
-  const Register flags     = x10;
-  const Register raw_flags = x16;
+  const Register flags     = x16;
   const Register bc        = x14; // uses same reg as obj, so don't mix them
 
-  resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
+  resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
-  load_field_cp_cache_entry(obj, cache, index, off, raw_flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   if (!is_static) {
     // obj is on the stack
@@ -2393,12 +2461,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   Label Done, notByte, notBool, notInt, notShort, notChar,
               notLong, notFloat, notObj, notDouble;
 
-  __ slli(flags, raw_flags, XLEN - (ConstantPoolCacheEntry::tos_state_shift +
-                                    ConstantPoolCacheEntry::tos_state_bits));
-  __ srli(flags, flags, XLEN - ConstantPoolCacheEntry::tos_state_bits);
-
   assert(btos == 0, "change code, btos != 0");
-  __ bnez(flags, notByte);
+  __ bnez(tos_state, notByte);
 
   // Don't rewrite getstatic, only getfield
   if (is_static) {
@@ -2415,7 +2479,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notByte);
-  __ sub(t0, flags, (u1)ztos);
+  __ sub(t0, tos_state, (u1)ztos);
   __ bnez(t0, notBool);
 
   // ztos (same code as btos)
@@ -2429,7 +2493,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notBool);
-  __ sub(t0, flags, (u1)atos);
+  __ sub(t0, tos_state, (u1)atos);
   __ bnez(t0, notObj);
   // atos
   do_oop_load(_masm, field, x10, IN_HEAP);
@@ -2440,7 +2504,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notObj);
-  __ sub(t0, flags, (u1)itos);
+  __ sub(t0, tos_state, (u1)itos);
   __ bnez(t0, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
@@ -2453,7 +2517,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notInt);
-  __ sub(t0, flags, (u1)ctos);
+  __ sub(t0, tos_state, (u1)ctos);
   __ bnez(t0, notChar);
   // ctos
   __ access_load_at(T_CHAR, IN_HEAP, x10, field, noreg, noreg);
@@ -2465,7 +2529,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notChar);
-  __ sub(t0, flags, (u1)stos);
+  __ sub(t0, tos_state, (u1)stos);
   __ bnez(t0, notShort);
   // stos
   __ access_load_at(T_SHORT, IN_HEAP, x10, field, noreg, noreg);
@@ -2477,7 +2541,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notShort);
-  __ sub(t0, flags, (u1)ltos);
+  __ sub(t0, tos_state, (u1)ltos);
   __ bnez(t0, notLong);
   // ltos
   __ access_load_at(T_LONG, IN_HEAP, x10, field, noreg, noreg);
@@ -2489,7 +2553,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notLong);
-  __ sub(t0, flags, (u1)ftos);
+  __ sub(t0, tos_state, (u1)ftos);
   __ bnez(t0, notFloat);
   // ftos
   __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
@@ -2502,7 +2566,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ sub(t0, flags, (u1)dtos);
+  __ sub(t0, tos_state, (u1)dtos);
   __ bnez(t0, notDouble);
 #endif
   // dtos
@@ -2522,7 +2586,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bind(Done);
 
   Label notVolatile;
-  __ test_bit(t0, raw_flags, ConstantPoolCacheEntry::is_volatile_shift);
+  __ test_bit(t0, flags, ResolvedFieldEntry::is_volatile_shift);
   __ beqz(t0, notVolatile);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ bind(notVolatile);
@@ -2546,8 +2610,6 @@ void TemplateTable::getstatic(int byte_no)
 void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is_static) {
   transition(vtos, vtos);
 
-  ByteSize cp_base_offset = ConstantPoolCache::base_offset();
-
   if (JvmtiExport::can_post_field_modification()) {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
@@ -2561,7 +2623,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     });
     __ beqz(x10, L1);
 
-    __ get_cache_and_index_at_bcp(c_rarg2, t0, 1);
+    __ mv(c_rarg2, cache);
 
     if (is_static) {
       // Life is simple. Null out the object pointer.
@@ -2571,11 +2633,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
       // the object. We don't know the size of the value, though; it
       // could be one or two words depending on its type. As a result,
       // we must find the type to determine where the object is.
-      __ lwu(c_rarg3, Address(c_rarg2,
-                              in_bytes(cp_base_offset +
-                                       ConstantPoolCacheEntry::flags_offset())));
-      __ srli(c_rarg3, c_rarg3, ConstantPoolCacheEntry::tos_state_shift);
-      ConstantPoolCacheEntry::verify_tos_state_shift();
+      __ load_unsigned_byte(c_rarg3, Address(c_rarg2, in_bytes(ResolvedFieldEntry::type_offset())));
       Label nope2, done, ok;
       __ ld(c_rarg1, at_tos_p1());   // initially assume a one word jvalue
       __ sub(t0, c_rarg3, ltos);
@@ -2586,8 +2644,6 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
       __ ld(c_rarg1, at_tos_p2());  // ltos (two word jvalue);
       __ bind(nope2);
     }
-    // cache entry pointer
-    __ add(c_rarg2, c_rarg2, in_bytes(cp_base_offset));
     // object (tos)
     __ mv(c_rarg3, esp);
     // c_rarg1: object pointer set up above (null if static)
@@ -2597,7 +2653,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
                CAST_FROM_FN_PTR(address,
                                 InterpreterRuntime::post_field_modification),
                                 c_rarg1, c_rarg2, c_rarg3);
-    __ get_cache_and_index_at_bcp(cache, index, 1);
+    __ load_field_entry(cache, index);
     __ bind(L1);
   }
 }
@@ -2605,23 +2661,24 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
 void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   transition(vtos, vtos);
 
-  const Register cache = x12;
-  const Register index = x13;
-  const Register obj   = x12;
-  const Register off   = x9;
-  const Register flags = x10;
-  const Register bc    = x14;
+  const Register cache     = x12;
+  const Register index     = x13;
+  const Register tos_state = x13;
+  const Register obj       = x12;
+  const Register off       = x9;
+  const Register flags     = x10;
+  const Register bc        = x14;
 
-  resolve_cache_and_index(byte_no, cache, index, sizeof(u2));
+  resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_mod(cache, index, is_static);
-  load_field_cp_cache_entry(obj, cache, index, off, flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   Label Done;
   __ mv(x15, flags);
 
   {
     Label notVolatile;
-    __ test_bit(t0, x15, ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x15, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -2630,12 +2687,8 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   Label notByte, notBool, notInt, notShort, notChar,
         notLong, notFloat, notObj, notDouble;
 
-  __ slli(flags, flags, XLEN - (ConstantPoolCacheEntry::tos_state_shift +
-                                ConstantPoolCacheEntry::tos_state_bits));
-  __ srli(flags, flags, XLEN - ConstantPoolCacheEntry::tos_state_bits);
-
   assert(btos == 0, "change code, btos != 0");
-  __ bnez(flags, notByte);
+  __ bnez(tos_state, notByte);
 
   // Don't rewrite putstatic, only putfield
   if (is_static) {
@@ -2659,7 +2712,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notByte);
-  __ sub(t0, flags, (u1)ztos);
+  __ sub(t0, tos_state, (u1)ztos);
   __ bnez(t0, notBool);
 
   // ztos
@@ -2679,7 +2732,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notBool);
-  __ sub(t0, flags, (u1)atos);
+  __ sub(t0, tos_state, (u1)atos);
   __ bnez(t0, notObj);
 
   // atos
@@ -2700,7 +2753,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notObj);
-  __ sub(t0, flags, (u1)itos);
+  __ sub(t0, tos_state, (u1)itos);
   __ bnez(t0, notInt);
 
   // itos
@@ -2720,7 +2773,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notInt);
-  __ sub(t0, flags, (u1)ctos);
+  __ sub(t0, tos_state, (u1)ctos);
   __ bnez(t0, notChar);
 
   // ctos
@@ -2740,7 +2793,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notChar);
-  __ sub(t0, flags, (u1)stos);
+  __ sub(t0, tos_state, (u1)stos);
   __ bnez(t0, notShort);
 
   // stos
@@ -2760,7 +2813,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notShort);
-  __ sub(t0, flags, (u1)ltos);
+  __ sub(t0, tos_state, (u1)ltos);
   __ bnez(t0, notLong);
 
   // ltos
@@ -2780,7 +2833,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notLong);
-  __ sub(t0, flags, (u1)ftos);
+  __ sub(t0, tos_state, (u1)ftos);
   __ bnez(t0, notFloat);
 
   // ftos
@@ -2801,7 +2854,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ sub(t0, flags, (u1)dtos);
+  __ sub(t0, tos_state, (u1)dtos);
   __ bnez(t0, notDouble);
 #endif
 
@@ -2831,7 +2884,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   {
     Label notVolatile;
-    __ test_bit(t0, x15, ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x15, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
@@ -2884,7 +2937,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     }
     __ mv(c_rarg3, esp);             // points to jvalue on the stack
     // access constant pool cache entry
-    __ get_cache_entry_pointer_at_bcp(c_rarg2, x10, 1);
+    __ load_field_entry(c_rarg2, x10);
     __ verify_oop(x9);
     // x9: object pointer copied above
     // c_rarg2: cache entry pointer
@@ -2918,21 +2971,18 @@ void TemplateTable::fast_storefield(TosState state) {
   jvmti_post_fast_field_mod();
 
   // access constant pool cache
-  __ get_cache_and_index_at_bcp(x12, x11, 1);
+  __ load_field_entry(x12, x11);
+  __ push_reg(x10);
+  // X11: field offset, X12: TOS, X13: flags
+  load_resolved_field_entry(x12, x12, x10, x11, x13);
+  __ pop_reg(x10);
 
   // Must prevent reordering of the following cp cache loads with bytecode load
   __ membar(MacroAssembler::LoadLoad);
 
-  // test for volatile with x13
-  __ lwu(x13, Address(x12, in_bytes(base +
-                                    ConstantPoolCacheEntry::flags_offset())));
-
-  // replace index with field offset from cache entry
-  __ ld(x11, Address(x12, in_bytes(base + ConstantPoolCacheEntry::f2_offset())));
-
   {
     Label notVolatile;
-    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -2980,7 +3030,7 @@ void TemplateTable::fast_storefield(TosState state) {
 
   {
     Label notVolatile;
-    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
@@ -3002,7 +3052,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     });
     __ beqz(x12, L1);
     // access constant pool cache entry
-    __ get_cache_entry_pointer_at_bcp(c_rarg2, t1, 1);
+    __ load_field_entry(c_rarg2, t1);
     __ verify_oop(x10);
     __ push_ptr(x10);  // save object pointer before call_VM() clobbers it
     __ mv(c_rarg1, x10);
@@ -3017,15 +3067,13 @@ void TemplateTable::fast_accessfield(TosState state) {
   }
 
   // access constant pool cache
-  __ get_cache_and_index_at_bcp(x12, x11, 1);
+  __ load_field_entry(x12, x11);
 
   // Must prevent reordering of the following cp cache loads with bytecode load
   __ membar(MacroAssembler::LoadLoad);
 
-  __ ld(x11, Address(x12, in_bytes(ConstantPoolCache::base_offset() +
-                                   ConstantPoolCacheEntry::f2_offset())));
-  __ lwu(x13, Address(x12, in_bytes(ConstantPoolCache::base_offset() +
-                                    ConstantPoolCacheEntry::flags_offset())));
+  __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // x10: object
   __ verify_oop(x10);
@@ -3066,7 +3114,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   }
   {
     Label notVolatile;
-    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
+    __ test_bit(t0, x13, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
@@ -3079,9 +3127,8 @@ void TemplateTable::fast_xaccess(TosState state) {
   // get receiver
   __ ld(x10, aaddress(0));
   // access constant pool cache
-  __ get_cache_and_index_at_bcp(x12, x13, 2);
-  __ ld(x11, Address(x12, in_bytes(ConstantPoolCache::base_offset() +
-                                   ConstantPoolCacheEntry::f2_offset())));
+  __ load_field_entry(x12, x13, 2);
+  __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
 
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)
@@ -3108,9 +3155,8 @@ void TemplateTable::fast_xaccess(TosState state) {
 
   {
     Label notVolatile;
-    __ lwu(x13, Address(x12, in_bytes(ConstantPoolCache::base_offset() +
-                                      ConstantPoolCacheEntry::flags_offset())));
-    __ test_bit(t0, x13, ConstantPoolCacheEntry::is_volatile_shift);
+    __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
+    __ test_bit(t0, x13, ResolvedFieldEntry::is_volatile_shift);
     __ beqz(t0, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);

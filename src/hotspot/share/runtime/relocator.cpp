@@ -295,7 +295,7 @@ void Relocator::change_jump(int bci, int offset, bool is_short, int break_bci, i
     if (is_short && ((new_delta > MAX_SHORT) || new_delta < MIN_SHORT)) {
       push_jump_widen(bci, delta, new_delta);
     } else if (is_short) {
-      short_at_put(offset, new_delta);
+      short_at_put(offset, checked_cast<short>(new_delta));
     } else {
       int_at_put(offset, new_delta);
     }
@@ -397,13 +397,13 @@ void Relocator::adjust_exception_table(int bci, int delta) {
   ExceptionTable table(_method());
   for (int index = 0; index < table.length(); index ++) {
     if (table.start_pc(index) > bci) {
-      table.set_start_pc(index, table.start_pc(index) + delta);
-      table.set_end_pc(index, table.end_pc(index) + delta);
+      table.set_start_pc(index, checked_cast<u2>(table.start_pc(index) + delta));
+      table.set_end_pc(index, checked_cast<u2>(table.end_pc(index) + delta));
     } else if (bci < table.end_pc(index)) {
-      table.set_end_pc(index, table.end_pc(index) + delta);
+      table.set_end_pc(index, checked_cast<u2>(table.end_pc(index) + delta));
     }
     if (table.handler_pc(index) > bci)
-      table.set_handler_pc(index, table.handler_pc(index) + delta);
+      table.set_handler_pc(index, checked_cast<u2>(table.handler_pc(index) + delta));
   }
 }
 
@@ -449,11 +449,11 @@ void Relocator::adjust_local_var_table(int bci, int delta) {
     for (int i = 0; i < localvariable_table_length; i++) {
       u2 current_bci = table[i].start_bci;
       if (current_bci > bci) {
-        table[i].start_bci = current_bci + delta;
+        table[i].start_bci = checked_cast<u2>(current_bci + delta);
       } else {
         u2 current_length = table[i].length;
         if (current_bci + current_length > bci) {
-          table[i].length = current_length + delta;
+          table[i].length = checked_cast<u2>(current_length + delta);
         }
       }
     }
@@ -531,7 +531,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
           // Now convert the frames in place
           if (frame->is_same_frame()) {
-            same_frame_extended::create_at(frame_addr, new_offset_delta);
+            same_frame_extended::create_at(frame_addr, checked_cast<u2>(new_offset_delta));
           } else {
             same_locals_1_stack_item_extended::create_at(
               frame_addr, new_offset_delta, nullptr);
@@ -549,7 +549,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
       for (int i = 0; i < number_of_types; ++i) {
         if (types->is_uninitialized() && types->bci() > bci) {
-          types->set_bci(types->bci() + delta);
+          types->set_bci(checked_cast<u2>(types->bci() + delta));
         }
         types = types->next();
       }
@@ -562,7 +562,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
         types = ff->stack(eol);
         for (int i = 0; i < number_of_types; ++i) {
           if (types->is_uninitialized() && types->bci() > bci) {
-            types->set_bci(types->bci() + delta);
+            types->set_bci(checked_cast<u2>(types->bci() + delta));
           }
           types = types->next();
         }
@@ -632,6 +632,7 @@ bool Relocator::relocate_code(int bci, int ilen, int delta) {
 
   memmove(addr_at(next_bci + delta), addr_at(next_bci), code_length() - next_bci);
   set_code_length(code_length() + delta);
+
   // Also adjust exception tables...
   adjust_exception_table(bci, delta);
   // Line number tables...
@@ -707,12 +708,12 @@ bool Relocator::handle_jump_widen(int bci, int delta) {
       if (!relocate_code(bci, 3, /*delta*/add_bci)) return false;
 
       // if bytecode points to goto_w instruction
-      short_at_put(bci + 1, ilen + goto_length);
+      short_at_put(bci + 1, checked_cast<short>(ilen + goto_length));
 
       int cbci = bci + ilen;
       // goto around
       code_at_put(cbci, Bytecodes::_goto);
-      short_at_put(cbci + 1, add_bci);
+      short_at_put(cbci + 1, checked_cast<short>(add_bci));
       // goto_w <wide delta>
       cbci = cbci + goto_length;
       code_at_put(cbci, Bytecodes::_goto_w);

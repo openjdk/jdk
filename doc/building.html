@@ -324,7 +324,8 @@ GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build
 machine, and instead create a 32-bit target using
 <code>--with-target-bits=32</code>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
+a future release.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of
 RAM. (The more cores to use, the more memory you need.) At least 6 GB of
@@ -401,7 +402,8 @@ to the build system, e.g. in arguments to <code>configure</code>. So,
 use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
 <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
 conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
+a future release.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment
 is required for building the JDK on Windows. If you have a 64-bit OS, we
@@ -1113,13 +1115,13 @@ just unpacked.</p>
 Test framework. The top directory, which contains both
 <code>googletest</code> and <code>googlemock</code> directories, should
 be specified via <code>--with-gtest</code>. The minimum supported
-version of Google Test is 1.13.0, whose source code can be obtained:</p>
+version of Google Test is 1.14.0, whose source code can be obtained:</p>
 <ul>
 <li>by downloading and unpacking the source bundle from <a
-href="https://github.com/google/googletest/releases/tag/v1.13.0">here</a></li>
-<li>or by checking out <code>v1.13.0</code> tag of
+href="https://github.com/google/googletest/releases/tag/v1.14.0">here</a></li>
+<li>or by checking out <code>v1.14.0</code> tag of
 <code>googletest</code> project:
-<code>git clone -b v1.13.0 https://github.com/google/googletest</code></li>
+<code>git clone -b v1.14.0 https://github.com/google/googletest</code></li>
 </ul>
 <p>To execute the most basic tests (tier 1), use:</p>
 <pre><code>make run-test-tier1</code></pre>
@@ -2255,18 +2257,7 @@ However, please bear in mind that the JDK is a massive project, and we
 must ask you to follow our rules and guidelines to be able to accept
 your contribution.</p>
 <p>The official place to start is the <a
-href="http://openjdk.org/contribute/">'How to contribute' page</a>.
-There is also an official (but somewhat outdated and skimpy on details)
-<a href="http://openjdk.org/guide/">Developer's Guide</a>.</p>
-<p>If this seems overwhelming to you, the Adoption Group is there to
-help you! A good place to start is their <a
-href="https://wiki.openjdk.org/display/Adoption/New+Contributor">'New
-Contributor' page</a>, or start reading the comprehensive <a
-href="https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/">Getting
-Started Kit</a>. The Adoption Group will also happily answer any
-questions you have about contributing. Contact them by <a
-href="http://mail.openjdk.org/mailman/listinfo/adoption-discuss">mail</a>
-or <a href="http://openjdk.org/irc/">IRC</a>.</p>
+href="https://openjdk.org/guide/">OpenJDK Developers’ Guide</a>.</p>
 <h2 id="editing-this-document">Editing this document</h2>
 <p>If you want to contribute changes to this document, edit
 <code>doc/building.md</code> and then run

@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent -XX:-DisableExplicitGC
- *                   -XX:+UseG1GC jdk.jfr.jcmd.TestJcmdView
+ *                   -XX:+UseG1GC -Xlog:jfr+dcmd=debug -Xlog:jfr+system+parser=info jdk.jfr.jcmd.TestJcmdView
  */
 public class TestJcmdView {
     private static volatile Instant lastTimestamp;
@@ -94,7 +94,7 @@ public class TestJcmdView {
             jvmInformation.await();
             systemGC.await();
             gcHeapSummary.await();
-            oldCollection.countDown();
+            oldCollection.await();
             // Wait for Instant.now() to advance 1 s past the last event timestamp.
             // The rationale for this is twofold:
             // - DcmdView starts one second before Instant.now() (to make the command
@@ -105,12 +105,14 @@ public class TestJcmdView {
             while (Instant.now().isBefore(end)) {
                 Thread.sleep(10);
             }
+            System.out.println("Time before testEventType() " + Instant.now());
             // Test events that are in the current chunk
             testEventType();
             testFormView();
             testTableView();
             rs.disable("jdk.JVMInformation");
             // Force chunk rotation
+            System.out.println("About to rotate chunk");
             rotate();
             // Test events that are NOT in current chunk
             testEventType();
