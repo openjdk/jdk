@@ -47,7 +47,6 @@ import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
 
 /*
  * @test
- * @key headful
  * @bug 8312555
  * @summary Verifies that hieroglyphs are stretched by AffineTransform.scale(2, 1)
  * @run main StretchedFontTest
@@ -62,7 +61,7 @@ public class StretchedFontTest {
     public static void main(String[] args) {
         List<String> errors =
                 Arrays.stream(getLocalGraphicsEnvironment()
-                              .getAvailableFontFamilyNames(Locale.US))
+                              .getAvailableFontFamilyNames(Locale.ENGLISH))
                       .map(family -> new Font(family, Font.PLAIN, FONT_SIZE))
                       .filter(font -> font.canDisplay(TEXT.codePointAt(0)))
                       .map(font -> font.deriveFont(STRETCH_TRANSFORM))
@@ -122,7 +121,7 @@ public class StretchedFontTest {
         if (verifyImage(image)) {
             return null;
         }
-        String fontName = font.getFontName(Locale.US);
+        String fontName = font.getFontName(Locale.ENGLISH);
         String hintValue = getHintString(hint);
         saveImage(image, fontName + "-" + hintValue);
         return "Font: " + fontName + ", Hint: " + hintValue;
