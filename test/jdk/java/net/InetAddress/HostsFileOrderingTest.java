@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.net.IPSupport;
+
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.Assert;
@@ -39,6 +41,8 @@ import org.testng.Assert;
 
 /* @test
  * @bug 8244958
+ * @library /test/lib
+ * @build jdk.test.lib.Platform jdk.test.lib.net.IPSupport
  * @summary Test that "jdk.net.hosts.file" NameService implementation returns addresses
  *          with respect to "java.net.preferIPv4Stack" and "java.net.preferIPv6Addresses" system
  *          property values
@@ -84,16 +88,18 @@ public class HostsFileOrderingTest {
      */
     @Test
     public void testOrdering() throws Exception {
-        String [] resolvedAddresses = Arrays.stream(InetAddress.getAllByName("hostname.test.com"))
-                .map(InetAddress::getHostAddress).toArray(String[]::new);
-        String [] expectedAddresses = getExpectedAddressesArray();
+        if (IPSupport.hasIPv6()) {
+            String [] resolvedAddresses = Arrays.stream(InetAddress.getAllByName("hostname.test.com"))
+                    .map(InetAddress::getHostAddress).toArray(String[]::new);
+            String [] expectedAddresses = getExpectedAddressesArray();
 
-        if (Arrays.deepEquals(resolvedAddresses, expectedAddresses)) {
-            System.err.println("Test passed: The expected list of IP addresses is returned");
-        } else {
-            System.err.printf("Expected addresses:%n%s%n", Arrays.deepToString(expectedAddresses));
-            System.err.printf("Resolved addresses:%n%s%n", Arrays.deepToString(resolvedAddresses));
-            Assert.fail("Wrong host resolution result is returned");
+            if (Arrays.deepEquals(resolvedAddresses, expectedAddresses)) {
+                System.err.println("Test passed: The expected list of IP addresses is returned");
+            } else {
+                System.err.printf("Expected addresses:%n%s%n", Arrays.deepToString(expectedAddresses));
+                System.err.printf("Resolved addresses:%n%s%n", Arrays.deepToString(resolvedAddresses));
+                Assert.fail("Wrong host resolution result is returned");
+            }
         }
     }
 
