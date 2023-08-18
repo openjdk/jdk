@@ -762,8 +762,6 @@ jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x6
 
 # jdk_foreign
 
-java/foreign/TestByteBuffer.java 8309475 aix-ppc64
-
 ############################################################################
 # Client manual tests
 
