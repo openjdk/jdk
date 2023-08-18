@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 package org.openjdk.bench.jdk.incubator.vector;
 
 import java.util.Random;
+
 import jdk.incubator.vector.*;
+
 import java.util.concurrent.TimeUnit;
+
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -33,11 +36,11 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector", "-XX:-TieredCompilation"})
-public class MatrixMultiplicationBenchmark{
+public class MatrixMultiplicationBenchmark {
 
     private static final VectorSpecies<Float> SPECIES = FloatVector.SPECIES_PREFERRED;
 
-    private final int BLOCK_SIZE = 16;
+    private static final int BLOCK_SIZE = 16;
     @Param({"32", "1024"})
     private int size;
     private float[] left;
@@ -46,41 +49,39 @@ public class MatrixMultiplicationBenchmark{
     private float[] result;
 
     @Setup
-    public void setup(){
+    public void setup() {
         this.left = MatrixMultiplicationBenchmark.newFloatRowMatrix(size * size);
         this.right = MatrixMultiplicationBenchmark.newFloatRowMatrix(size * size);
         this.result = new float[size * size];
-
     }
 
     @Benchmark
-    public void mmulBaseline(){
-        baseline(left, right, result, size);
+    public float[] mmulBaseline() {
+        return baseline(left, right, result, size);
     }
 
     @Benchmark
-    public void mmulBlocked(){
-        blocked(left, right, result, size, BLOCK_SIZE);
+    public float[] mmulBlocked() {
+        return blocked(left, right, result, size, BLOCK_SIZE);
     }
 
     @Benchmark
-    public void mmulSimpleFMA(){
-        simpleFMA(left, right, result, size);
+    public float[] mmulSimpleFMA() {
+        return simpleFMA(left, right, result, size);
     }
 
     @Benchmark
-    public void mmulSimpleVector(){
-        simpleVector(left, right, result, size);
+    public float[] mmulSimpleVector() {
+        return simpleVector(left, right, result, size);
     }
 
     @Benchmark
-    public void mmulBlockedVectorAuto(){
-        blockedVector(left, right, result, size);
+    public float[] mmulBlockedVectorAuto() {
+        return blockedVector(left, right, result, size);
     }
 
 
-
-    private float[] baseline(float[] a, float[] b, float[] result, int n){
+    private float[] baseline(float[] a, float[] b, float[] result, int n) {
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 float sum = 0.0f;
@@ -117,7 +118,7 @@ public class MatrixMultiplicationBenchmark{
             for (int k = 0; k < n; ++k) {
                 float aik = a[in + k];
                 for (int j = 0; j < n; ++j) {
-                    result[in + j] = Math.fma(aik,  b[kn + j], result[in + j]);
+                    result[in + j] = Math.fma(aik, b[kn + j], result[in + j]);
                 }
                 kn += n;
             }
@@ -136,7 +137,7 @@ public class MatrixMultiplicationBenchmark{
                 float aik = a[in + k];
                 FloatVector vaik = FloatVector.broadcast(SPECIES, aik);
 
-                for (int j=0; j < upperBound; j += SPECIES.length()) {
+                for (int j = 0; j < upperBound; j += SPECIES.length()) {
                     // FloatVector va, vb, vc
                     var vb = FloatVector.fromArray(SPECIES, b, kn + j);
                     var vResult = FloatVector.fromArray(SPECIES, result, in + j);
@@ -157,13 +158,13 @@ public class MatrixMultiplicationBenchmark{
         for (int rowOffset = 0; rowOffset < n; rowOffset += blockHeight) {
             for (int columnOffset = 0; columnOffset < n; columnOffset += blockWidth) {
                 for (int i = 0; i < n; i++) {
-                    for (int j = columnOffset; j < columnOffset + blockWidth && j < n; j+=SPECIES.length()) {
+                    for (int j = columnOffset; j < columnOffset + blockWidth && j < n; j += SPECIES.length()) {
                         var sum = FloatVector.fromArray(SPECIES, result, i * n + j);
                         for (int k = rowOffset; k < rowOffset + blockHeight && k < n; k++) {
-                            var multiplier = FloatVector.broadcast(SPECIES, a[i*n + k]);
-                            sum = multiplier.fma(FloatVector.fromArray(SPECIES, b, k*n + j), sum);
+                            var multiplier = FloatVector.broadcast(SPECIES, a[i * n + k]);
+                            sum = multiplier.fma(FloatVector.fromArray(SPECIES, b, k * n + j), sum);
                         }
-                        sum.intoArray(result, i*n + j);
+                        sum.intoArray(result, i * n + j);
                     }
                 }
             }
