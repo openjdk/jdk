@@ -491,7 +491,9 @@ void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
   mv(x19_sender_sp, sp);
   // record last_sp
-  sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  sub(t0, esp, fp);
+  srai(t0, t0, Interpreter::logStackElementSize);
+  sd(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
 
 // Jump to from_interpreted entry of a call unless single stepping is possible
