@@ -55,7 +55,6 @@ public class MissingSafepointOnTryCatch version 52:0 {
         endtry t0;
     }
 
-
     public static Method th:"()V"
       throws java/lang/Exception
       stack 2 locals 0
@@ -97,7 +96,6 @@ public class MissingSafepointOnTryCatch version 52:0 {
             return;
         endtry t;
     }
-
 
     static Method testInfinite:"()V" stack 1 {
         try t;
