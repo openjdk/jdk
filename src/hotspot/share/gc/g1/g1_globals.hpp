@@ -146,7 +146,7 @@
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
-          range(1, max_uintx)                                               \
+          constraint(G1SATBBufferSizeConstraintFunc, AtParse)               \
                                                                             \
   develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
           "Number of completed buffers that triggers log processing.")      \
@@ -166,7 +166,7 @@
                                                                             \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
-          range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
+          constraint(G1UpdateBufferSizeConstraintFunc, AtParse)             \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -249,6 +249,12 @@
           "Threshold for regions to be considered for inclusion in the "    \
           "collection set of mixed GCs. "                                   \
           "Regions with live bytes exceeding this will not be collected.")  \
+          range(0, 100)                                                     \
+                                                                            \
+  product(uintx, G1RetainRegionLiveThresholdPercent, 85, EXPERIMENTAL,      \
+          "Threshold for evacuation failed regions to be considered for "   \
+          "inclusion in the collection set candidates."                     \
+          "Regions with live bytes exceeding this will not be retained.")   \
           range(0, 100)                                                     \
                                                                             \
   product(uintx, G1HeapWastePercent, 5,                                     \

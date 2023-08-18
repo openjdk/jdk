@@ -44,6 +44,9 @@ const categories = {
 const highlight = "<span class='result-highlight'>$&</span>";
 const NO_MATCH = {};
 const MAX_RESULTS = 300;
+const UNICODE_LETTER = 0;
+const UNICODE_DIGIT = 1;
+const UNICODE_OTHER = 2;
 function checkUnnamed(name, separator) {
     return name === "<Unnamed>" || !name ? "" : name + separator;
 }
@@ -127,13 +130,13 @@ function createMatcher(term, camelCase) {
     var pattern = "";
     var upperCase = [];
     term.trim().split(/\s+/).forEach(function(w, index, array) {
-        var tokens = w.split(/(?=[A-Z,.()<>?[\/])/);
+        var tokens = w.split(/(?=[\p{Lu},.()<>?[\/])/u);
         for (var i = 0; i < tokens.length; i++) {
             var s = tokens[i];
             // ',' and '?' are the only delimiters commonly followed by space in java signatures
-            pattern += "(" + $.ui.autocomplete.escapeRegex(s).replace(/[,?]/g, "$&\\s*?") + ")";
+            pattern += "(" + escapeUnicodeRegex(s).replace(/[,?]/g, "$&\\s*?") + ")";
             upperCase.push(false);
-            var isWordToken =  /\w$/.test(s);
+            var isWordToken =  /[\p{L}\p{Nd}_]$/u.test(s);
             if (isWordToken) {
                 if (i === tokens.length - 1 && index < array.length - 1) {
                     // space in query string matches all delimiters
@@ -143,7 +146,7 @@ function createMatcher(term, camelCase) {
                     if (!camelCase && isUpperCase(s) && s.length === 1) {
                         pattern += "()";
                     } else {
-                        pattern += "([a-z0-9$<>?[\\]]*?)";
+                        pattern += "([\\p{L}\\p{Nd}\\p{Sc}<>?[\\]]*?)";
                     }
                     upperCase.push(isUpperCase(s[0]));
                 }
@@ -153,9 +156,13 @@ function createMatcher(term, camelCase) {
             }
         }
     });
-    var re = new RegExp(pattern, "gi");
+    var re = new RegExp(pattern, "gui");
     re.upperCase = upperCase;
     return re;
+}
+// Unicode regular expressions do not allow certain characters to be escaped
+function escapeUnicodeRegex(pattern) {
+    return pattern.replace(/[\[\]{}()*+?.\\^$|\s]/g, '\\$&');
 }
 function findMatch(matcher, input, startOfName, endOfName) {
     var from = startOfName;
@@ -176,20 +183,25 @@ function findMatch(matcher, input, startOfName, endOfName) {
     var start = match.index;
     var prevEnd = -1;
     for (var i = 1; i < match.length; i += 2) {
-        var isUpper = isUpperCase(input[start]);
+        var charType = getCharType(input[start]);
         var isMatcherUpper = matcher.upperCase[i];
         // capturing groups come in pairs, match and non-match
         boundaries.push(start, start + match[i].length);
         // make sure groups are anchored on a left word boundary
         var prevChar = input[start - 1] || "";
         var nextChar = input[start + 1] || "";
-        if (start !== 0 && !/[\W_]/.test(prevChar) && !/[\W_]/.test(input[start])) {
-            if (isUpper && (isLowerCase(prevChar) || isLowerCase(nextChar))) {
-                score -= 0.1;
-            } else if (isMatcherUpper && start === prevEnd) {
-                score -= isUpper ? 0.1 : 1.0;
-            } else {
+        if (start !== 0) {
+            if (charType === UNICODE_DIGIT && getCharType(prevChar) === UNICODE_DIGIT) {
                 return NO_MATCH;
+            } else if (charType === UNICODE_LETTER && getCharType(prevChar) === UNICODE_LETTER) {
+                var isUpper = isUpperCase(input[start]);
+                if (isUpper && (isLowerCase(prevChar) || isLowerCase(nextChar))) {
+                    score -= 0.1;
+                } else if (isMatcherUpper && start === prevEnd) {
+                    score -= isUpper ? 0.1 : 1.0;
+                } else {
+                    return NO_MATCH;
+                }
             }
         }
         prevEnd = start + match[i].length;
@@ -214,15 +226,30 @@ function findMatch(matcher, input, startOfName, endOfName) {
         boundaries: boundaries
     };
 }
+function isLetter(s) {
+    return /\p{L}/u.test(s);
+}
 function isUpperCase(s) {
-    return s !== s.toLowerCase();
+    return /\p{Lu}/u.test(s);
 }
 function isLowerCase(s) {
-    return s !== s.toUpperCase();
+    return /\p{Ll}/u.test(s);
+}
+function isDigit(s) {
+    return /\p{Nd}/u.test(s);
+}
+function getCharType(s) {
+    if (isLetter(s)) {
+        return UNICODE_LETTER;
+    } else if (isDigit(s)) {
+        return UNICODE_DIGIT;
+    } else {
+        return UNICODE_OTHER;
+    }
 }
 function rateNoise(str) {
     return (str.match(/([.(])/g) || []).length / 5
-         + (str.match(/([A-Z]+)/g) || []).length / 10
+         + (str.match(/(\p{Lu}+)/gu) || []).length / 10
          +  str.length / 20;
 }
 function doSearch(request, response) {
@@ -413,7 +440,7 @@ $(function() {
         var id = hdr.attr("id") || hdr.parent("section").attr("id") || hdr.children("a").attr("id");
         if (id) {
             hdr.append(" <a href='#" + id + "' class='anchor-link' aria-label='" + messages.linkToSection
-                + "'><img src='" + pathtoroot + "link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
+                + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
                 + " width='16' height='16'></a>");
         }
     });

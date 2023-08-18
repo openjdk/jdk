@@ -234,25 +234,22 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
     }
 
     const char* num_str = op->arg(2);
-    uintx level = 0;
+    uint level = 0;
     if (num_str != nullptr && num_str[0] != '\0') {
-      if (!Arguments::parse_uintx(num_str, &level, 0)) {
+      if (!Arguments::parse_uint(num_str, &level, 0)) {
         out->print_cr("Invalid compress level: [%s]", num_str);
         return JNI_ERR;
       } else if (level < 1 || level > 9) {
-        out->print_cr("Compression level out of range (1-9): " UINTX_FORMAT, level);
+        out->print_cr("Compression level out of range (1-9): %u", level);
         return JNI_ERR;
       }
     }
-    // Parallel thread number for heap dump, initialize based on active processor count.
-    // Note the real number of threads used is also determined by active workers and compression
-    // backend thread number. See heapDumper.cpp.
-    uint parallel_thread_num = MAX2<uint>(1, (uint)os::initial_active_processor_count() * 3 / 8);
+
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, (int)level, false, (uint)parallel_thread_num);
+    dumper.dump(path, out, level, false, HeapDumper::default_num_of_dump_threads());
   }
   return JNI_OK;
 }
@@ -290,13 +287,13 @@ static jint heap_inspection(AttachOperation* op, outputStream* out) {
 
   const char* num_str = op->arg(2);
   if (num_str != nullptr && num_str[0] != '\0') {
-    uintx num;
-    if (!Arguments::parse_uintx(num_str, &num, 0)) {
+    uint num;
+    if (!Arguments::parse_uint(num_str, &num, 0)) {
       out->print_cr("Invalid parallel thread number: [%s]", num_str);
       delete fs;
       return JNI_ERR;
     }
-    parallel_thread_num = num == 0 ? parallel_thread_num : (uint)num;
+    parallel_thread_num = num == 0 ? parallel_thread_num : num;
   }
 
   VM_GC_HeapInspection heapop(os, live_objects_only /* request full gc */, parallel_thread_num);
@@ -375,7 +372,7 @@ static AttachOperationFunctionInfo funcs[] = {
 // from the queue, examines the operation name (command), and dispatches
 // to the corresponding function to perform the operation.
 
-static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
+void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
   os::set_priority(thread, NearMaxPriority);
 
   assert(thread == Thread::current(), "Must be");
@@ -412,11 +409,6 @@ static void attach_listener_thread_entry(JavaThread* thread, TRAPS) {
           info = &(funcs[i]);
           break;
         }
-      }
-
-      // check for platform dependent attach operation
-      if (info == nullptr) {
-        info = AttachListener::pd_find_operation(op->name());
       }
 
       if (info != nullptr) {
@@ -460,7 +452,7 @@ void AttachListener::init() {
     return;
   }
 
-  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread* thread = new AttachListenerThread();
   JavaThread::vm_exit_on_osthread_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);

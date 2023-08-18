@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 class fieldDescriptor;
 class klassVtable;
+class ObjArrayKlass;
 
 // ArrayKlass is the abstract baseclass for all array classes
 
@@ -38,8 +39,8 @@ class ArrayKlass: public Klass {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ArrayKlass::metaspace_pointers_do().
   int      _dimension;         // This is n'th-dimensional array.
-  Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
-  Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
+  ObjArrayKlass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
+  ArrayKlass* volatile    _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
 
  protected:
   // Constructors
@@ -56,13 +57,13 @@ class ArrayKlass: public Klass {
   int dimension() const                 { return _dimension;      }
   void set_dimension(int dimension)     { _dimension = dimension; }
 
-  Klass* higher_dimension() const     { return _higher_dimension; }
-  inline Klass* higher_dimension_acquire() const; // load with acquire semantics
-  void set_higher_dimension(Klass* k) { _higher_dimension = k; }
-  inline void release_set_higher_dimension(Klass* k); // store with release semantics
+  ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
+  inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
+  void set_higher_dimension(ObjArrayKlass* k) { _higher_dimension = k; }
+  inline void release_set_higher_dimension(ObjArrayKlass* k); // store with release semantics
 
-  Klass* lower_dimension() const      { return _lower_dimension; }
-  void set_lower_dimension(Klass* k)  { _lower_dimension = k; }
+  ArrayKlass* lower_dimension() const      { return _lower_dimension; }
+  void set_lower_dimension(ArrayKlass* k)  { _lower_dimension = k; }
 
   // offset of first element, including any padding for the sake of alignment
   int  array_header_in_bytes() const    { return layout_helper_header_size(layout_helper()); }
@@ -122,6 +123,7 @@ class ArrayKlass: public Klass {
   void cds_print_value_on(outputStream* st) const;
 #endif
 
+  void log_array_class_load(Klass* k);
   // Printing
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;

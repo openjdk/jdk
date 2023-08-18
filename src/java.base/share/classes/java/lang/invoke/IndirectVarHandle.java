@@ -103,6 +103,6 @@ import java.util.function.BiFunction;
     @Override
     MethodHandle getMethodHandleUncached(int mode) {
         MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
-        return handleFactory.apply(AccessMode.values()[mode], targetHandle);
+        return handleFactory.apply(AccessMode.valueFromOrdinal(mode), targetHandle);
     }
 }
