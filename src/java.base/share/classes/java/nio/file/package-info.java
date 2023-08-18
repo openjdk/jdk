@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,12 @@
  * is made. Whether this guarantee is possible with other {@link
  * java.nio.file.spi.FileSystemProvider provider} implementations is provider
  * specific. </p>
+ *
+ * <h2><a id="directories">Operations on Directories</a></h2>
+ * <p> Many operations which can be performed on regular files can also be
+ * performed on directories. It is highly implementation specific, however, as
+ * to whether such operations will succeed. These operations will either work
+ * or throw an {@code IOException}. </p>
  *
  * <h2>General Exceptions</h2>
  * <p> Unless otherwise noted, passing a {@code null} argument to a constructor

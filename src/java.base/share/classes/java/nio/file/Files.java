@@ -1569,7 +1569,8 @@ public final class Files {
      * {@code mismatch(f,f)} returns {@code -1L}). If the file system and files
      * remain static, then this method is <i>symmetric</i> (for two {@code Paths f}
      * and {@code g}, {@code mismatch(f,g)} will return the same value as
-     * {@code mismatch(g,f)}).
+     * {@code mismatch(g,f)}). If both paths locate the same file, the file
+     * system is not accessed.
      *
      * @param   path
      *          the path to the first file
@@ -1583,7 +1584,8 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to both files.
+     *          method is invoked to check read access to both files unless both
+     *          paths locate the same file
      *
      * @since 12
      */
