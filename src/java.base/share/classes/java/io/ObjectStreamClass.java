@@ -73,6 +73,7 @@ import sun.reflect.misc.ReflectUtil;
  * <a href="{@docRoot}/../specs/serialization/class.html#stream-unique-identifiers">
  *    <cite>Java Object Serialization Specification,</cite> Section 4.6, "Stream Unique Identifiers"</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see ObjectStreamField

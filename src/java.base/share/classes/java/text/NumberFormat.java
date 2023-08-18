@@ -586,6 +586,8 @@ public abstract class NumberFormat extends Format  {
      *
      * @param inLocale the desired locale
      * @return the {@code NumberFormat} instance for currency formatting
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      */
     public static NumberFormat getCurrencyInstance(Locale inLocale) {
         return getInstance(inLocale, null, CURRENCYSTYLE);
@@ -709,13 +711,10 @@ public abstract class NumberFormat extends Format  {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }
-        if (getClass() != obj.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;

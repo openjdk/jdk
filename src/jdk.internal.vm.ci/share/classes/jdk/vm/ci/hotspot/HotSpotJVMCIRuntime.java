@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -39,6 +40,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Formatter;
@@ -192,23 +194,25 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                     // initialized.
                     JVMCI.getRuntime();
                 }
-                // Make sure all the primitive box caches are populated (required to properly
-                // materialize boxed primitives
-                // during deoptimization).
-                Boolean.valueOf(false);
-                Byte.valueOf((byte) 0);
-                Short.valueOf((short) 0);
-                Character.valueOf((char) 0);
-                Integer.valueOf(0);
-                Long.valueOf(0);
             }
         }
         return result;
     }
 
     @VMEntryPoint
-    static String callToString(Object o) {
-        return o.toString();
+    static String[] exceptionToString(Throwable o, boolean toString, boolean stackTrace) {
+        String[] res = {null, null};
+        if (toString) {
+            res[0] = o.toString();
+        }
+        if (stackTrace) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            try (PrintStream ps = new PrintStream(buf)) {
+                o.printStackTrace(ps);
+            }
+            res[1] = buf.toString(StandardCharsets.UTF_8);
+        }
+        return res;
     }
 
     /**
@@ -623,11 +627,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             return HotSpotResolvedPrimitiveType.forKind(JavaKind.fromJavaClass(javaClass));
         }
         if (IS_IN_NATIVE_IMAGE) {
-            try {
-                return compilerToVm.lookupType(javaClass.getName().replace('.', '/'), null, true);
-            } catch (ClassNotFoundException e) {
-                throw new JVMCIError(e);
-            }
+            return compilerToVm.lookupType(javaClass.getClassLoader(), javaClass.getName().replace('.', '/'));
         }
         return compilerToVm.lookupClass(javaClass);
     }
@@ -865,17 +865,13 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
         // Resolve non-primitive types in the VM.
         HotSpotResolvedObjectTypeImpl hsAccessingType = (HotSpotResolvedObjectTypeImpl) accessingType;
-        try {
-            final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
+        final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
 
-            if (klass == null) {
-                assert resolve == false : name;
-                return UnresolvedJavaType.create(name);
-            }
-            return klass;
-        } catch (ClassNotFoundException e) {
-            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
+        if (klass == null) {
+            assert resolve == false : name;
+            return UnresolvedJavaType.create(name);
         }
+        return klass;
     }
 
     /**

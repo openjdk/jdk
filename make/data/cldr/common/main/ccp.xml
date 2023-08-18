@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -979,6 +979,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">𑄎𑄨𑄟𑄴𑄝𑄝𑄪𑄠𑄬</territory>
 			<territory type="ZZ">𑄃𑄨𑄌𑄨𑄚𑄴 𑄎𑄉</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">𑄃𑄨𑄁𑄣𑄳𑄠𑄚𑄳𑄓𑄴</subdivision>
+			<subdivision type="gbsct">𑄌𑄳𑄇𑄧𑄖𑄴𑄣𑄳𑄠𑄚𑄳𑄓𑄴</subdivision>
+			<subdivision type="gbwls">𑄃𑄮𑄠𑄬𑄣𑄴</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="provisional">𑄛𑄨𑄚𑄴𑄃𑄨𑄚𑄴 𑄟𑄮𑄟𑄚𑄭𑄎𑄬𑄥𑄧𑄚𑄴</variant>
 			<variant type="WADEGILE" draft="provisional">𑄤𑄘𑄬-𑄉𑄨𑄣𑄬𑄌𑄴 𑄢𑄮𑄟𑄚𑄭𑄎𑄬𑄥𑄧𑄚𑄴</variant>

@@ -54,6 +54,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
@@ -202,16 +204,17 @@ void print_method_invocation_histogram() {
   total = int_total + comp_total;
   special_total = final_total + static_total +synch_total + native_total + access_total;
   tty->print_cr("Invocations summary for %d methods:", collected_invoked_methods->length());
+  double total_div = (double)total;
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (100%%)  total",           total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * int_total    / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * comp_total   / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * (double)int_total    / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * (double)comp_total   / total_div);
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- special methods (interpreted and compiled)",
-                                                                         special_total, 100.0 * special_total/ total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * synch_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * final_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * static_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * native_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * access_total / total);
+                                                                         special_total, 100.0 * (double)special_total/ total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * (double)synch_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * (double)final_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * (double)static_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * (double)native_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * (double)access_total / total_div);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
 }
@@ -439,6 +442,14 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 #endif
 
+#if INCLUDE_CDS
+  // Dynamic CDS dumping must happen whilst we can still reliably
+  // run Java code.
+  DynamicArchive::dump_at_exit(thread, ArchiveClassesAtExit);
+  assert(!thread->has_pending_exception(), "must be");
+#endif
+
+
   // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
@@ -462,18 +473,13 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
-  if (PeriodicTask::num_tasks() > 0) {
-    WatcherThread::stop();
-  }
+  WatcherThread::stop();
 
   // shut down the StatSampler task
   StatSampler::disengage();
   StatSampler::destroy();
 
-  // Shut down string deduplication if running.
-  if (StringDedup::is_enabled()) {
-    StringDedup::stop();
-  }
+  NativeHeapTrimmer::cleanup();
 
   // Stop concurrent GC threads
   Universe::heap()->stop();
@@ -508,26 +514,11 @@ void before_exit(JavaThread* thread, bool halt) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::post_vm_death();
-  Threads::shutdown_vm_agents();
+  JvmtiAgentList::unload_agents();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.
   os::terminate_signal_thread();
-
-#if INCLUDE_CDS
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
-    ExceptionMark em(thread);
-    DynamicArchive::dump(ArchiveClassesAtExit, thread);
-    if (thread->has_pending_exception()) {
-      ResourceMark rm(thread);
-      oop pending_exception = thread->pending_exception();
-      log_error(cds)("ArchiveClassesAtExit has failed %s: %s", pending_exception->klass()->external_name(),
-                     java_lang_String::as_utf8_string(java_lang_Throwable::message(pending_exception)));
-      thread->clear_pending_exception();
-    }
-  }
-#endif
 
   print_statistics();
   Universe::heap()->print_tracing_info();

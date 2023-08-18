@@ -49,7 +49,7 @@ class os::Linux {
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
-  static size_t _default_large_page_size;
+  static julong available_memory_in_container();
 
  protected:
 
@@ -57,6 +57,8 @@ class os::Linux {
   static pthread_t _main_thread;
 
   static julong available_memory();
+  static julong free_memory();
+
   static int active_processor_count();
 
   static void initialize_system_info();
@@ -73,12 +75,7 @@ class os::Linux {
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
 
-  static size_t default_large_page_size();
-  static size_t scan_default_large_page_size();
-  static os::PageSizes scan_multiple_page_support();
-
   static bool setup_large_page_type(size_t page_size);
-  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
   static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
   static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
 
@@ -148,6 +145,8 @@ class os::Linux {
 
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
+
+  static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
 
   static void capture_initial_stack(size_t max_size);
 

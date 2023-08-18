@@ -378,14 +378,6 @@ public:
                      bool concurrent_discovery = false,
                      BoolObjectClosure* is_alive_non_header = nullptr);
 
-  // RefDiscoveryPolicy values
-  enum DiscoveryPolicy {
-    ReferenceBasedDiscovery = 0,
-    ReferentBasedDiscovery  = 1,
-    DiscoveryPolicyMin      = ReferenceBasedDiscovery,
-    DiscoveryPolicyMax      = ReferentBasedDiscovery
-  };
-
   static void init_statics();
 
   // get and set "is_alive_non_header" field

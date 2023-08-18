@@ -50,7 +50,7 @@
 #include "gc/shenandoah/vmStructs_shenandoah.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/vmStructs_z.hpp"
+#include "gc/z/shared/vmStructs_z_shared.hpp"
 #endif
 
 #define VM_STRUCTS_GC(nonstatic_field,                                                                                               \
@@ -72,9 +72,9 @@
   SHENANDOAHGC_ONLY(VM_STRUCTS_SHENANDOAH(nonstatic_field,                                                                           \
                                volatile_nonstatic_field,                                                                             \
                                static_field))                                                                                        \
-  ZGC_ONLY(VM_STRUCTS_ZGC(nonstatic_field,                                                                                           \
-                          volatile_nonstatic_field,                                                                                  \
-                          static_field))                                                                                             \
+  ZGC_ONLY(VM_STRUCTS_Z_SHARED(nonstatic_field,                                                                                      \
+                               volatile_nonstatic_field,                                                                             \
+                               static_field))                                                                                        \
                                                                                                                                      \
   /**********************************************************************************/                                               \
   /* Generation and Space hierarchies                                               */                                               \
@@ -89,12 +89,9 @@
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
-  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
-  nonstatic_field(CardTable,                   _cur_covered_regions,                          int)                                   \
-  nonstatic_field(CardTable,                   _covered,                                      MemRegion*)                            \
-  nonstatic_field(CardTable,                   _committed,                                    MemRegion*)                            \
+  nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                 \
   nonstatic_field(CardTable,                   _guard_region,                                 MemRegion)                             \
-  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                                \
+  nonstatic_field(CardTable,                   _byte_map_base,                                CardTable::CardValue*)                 \
   nonstatic_field(CardTableBarrierSet,         _defer_initial_card_mark,                      bool)                                  \
   nonstatic_field(CardTableBarrierSet,         _card_table,                                   CardTable*)                            \
                                                                                                                                      \
@@ -149,9 +146,9 @@
   SHENANDOAHGC_ONLY(VM_TYPES_SHENANDOAH(declare_type,                     \
                              declare_toplevel_type,                       \
                              declare_integer_type))                       \
-  ZGC_ONLY(VM_TYPES_ZGC(declare_type,                                     \
-                        declare_toplevel_type,                            \
-                        declare_integer_type))                            \
+  ZGC_ONLY(VM_TYPES_Z_SHARED(declare_type,                                \
+                             declare_toplevel_type,                       \
+                             declare_integer_type))                       \
                                                                           \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
@@ -213,8 +210,8 @@
                                           declare_constant_with_value))     \
   SHENANDOAHGC_ONLY(VM_INT_CONSTANTS_SHENANDOAH(declare_constant,           \
                                      declare_constant_with_value))          \
-  ZGC_ONLY(VM_INT_CONSTANTS_ZGC(declare_constant,                           \
-                                declare_constant_with_value))               \
+  ZGC_ONLY(VM_INT_CONSTANTS_Z_SHARED(declare_constant,                      \
+                                     declare_constant_with_value))          \
                                                                             \
   /********************************************/                            \
   /* Generation and Space Hierarchy Constants */                            \
@@ -246,6 +243,6 @@
   declare_constant(Generation::GenGrain)                                    \
 
 #define VM_LONG_CONSTANTS_GC(declare_constant)                              \
-  ZGC_ONLY(VM_LONG_CONSTANTS_ZGC(declare_constant))
+  ZGC_ONLY(VM_LONG_CONSTANTS_Z_SHARED(declare_constant))
 
 #endif // SHARE_GC_SHARED_VMSTRUCTS_GC_HPP

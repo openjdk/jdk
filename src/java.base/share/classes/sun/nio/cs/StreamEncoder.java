@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,14 +58,10 @@ public final class StreamEncoder extends Writer {
                                                       String charsetName)
         throws UnsupportedEncodingException
     {
-        String csn = charsetName;
-        if (csn == null) {
-            csn = Charset.defaultCharset().name();
-        }
         try {
-            return new StreamEncoder(out, lock, Charset.forName(csn));
+            return new StreamEncoder(out, lock, Charset.forName(charsetName));
         } catch (IllegalCharsetNameException | UnsupportedCharsetException x) {
-            throw new UnsupportedEncodingException (csn);
+            throw new UnsupportedEncodingException (charsetName);
         }
     }
 
@@ -418,8 +414,8 @@ public final class StreamEncoder extends Writer {
     }
 
     void implClose() throws IOException {
-        flushLeftoverChar(null, true);
-        try {
+        try (ch; out) {
+            flushLeftoverChar(null, true);
             for (;;) {
                 CoderResult cr = encoder.flush(bb);
                 if (cr.isUnderflow())
@@ -434,15 +430,8 @@ public final class StreamEncoder extends Writer {
 
             if (bb.position() > 0)
                 writeBytes();
-            if (ch != null)
-                ch.close();
-            else {
-                try {
-                    out.flush();
-                } finally {
-                    out.close();
-                }
-            }
+            if (out != null)
+                out.flush();
         } catch (IOException x) {
             encoder.reset();
             throw x;

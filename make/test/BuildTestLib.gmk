@@ -36,7 +36,7 @@ TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
-    SRC := $(TEST_LIB_SOURCE_DIR)/jdk/test/whitebox/parser, \
+    SRC := $(TEST_LIB_SOURCE_DIR)/jdk/test/whitebox/, \
     BIN := $(TEST_LIB_SUPPORT)/wb_classes, \
     JAR := $(TEST_LIB_SUPPORT)/wb.jar, \
     DISABLED_WARNINGS := deprecation removal preview, \
@@ -53,7 +53,12 @@ $(eval $(call SetupJavaCompilation, BUILD_TEST_LIB_JAR, \
     HEADERS := $(TEST_LIB_SUPPORT)/test-lib_headers, \
     JAR := $(TEST_LIB_SUPPORT)/test-lib.jar, \
     DISABLED_WARNINGS := try deprecation rawtypes unchecked serial cast removal preview, \
-    JAVAC_FLAGS := --enable-preview, \
+    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+        --enable-preview, \
 ))
 
 TARGETS += $(BUILD_TEST_LIB_JAR)

@@ -60,6 +60,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 
 ###############################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
@@ -405,9 +406,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # WARNING: This might be a bad thing to do. You need to be sure you want to
     # have a configuration in this directory. Do some sanity checks!
 
-    if test ! -e "$OUTPUTDIR/spec.gmk"; then
-      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
-      # other files
+    if test ! -e "$OUTPUTDIR/spec.gmk" && test ! -e "$OUTPUTDIR/configure-support/generated-configure.sh"; then
+      # If we have a spec.gmk or configure-support/generated-configure.sh,
+      # we have run here before and we are OK. Otherwise, check for other files
       files_present=`$LS $OUTPUTDIR`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
@@ -422,8 +423,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
         AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
-        AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
-        AC_MSG_NOTICE([seriously mess up just about everything.])
+        AC_MSG_NOTICE([However, this directory is not empty, additionally to some allowed files])
+        AC_MSG_NOTICE([it contains $filtered_files.])
+        AC_MSG_NOTICE([This is not allowed, since it could seriously mess up just about everything.])
         AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
         AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])
@@ -477,7 +479,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      DF_LOCAL_ONLY_OPTION='-T local'
+      if "$DF -T local > /dev/null 2>&1"; then
+        DF_LOCAL_ONLY_OPTION='-T local'
+      else # AIX may use GNU-utils instead
+        DF_LOCAL_ONLY_OPTION='-l'
+      fi
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
       # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'

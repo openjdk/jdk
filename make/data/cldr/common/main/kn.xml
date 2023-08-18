@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1004,7 +1004,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TN">ಟುನೀಶಿಯ</territory>
 			<territory type="TO">ಟೊಂಗಾ</territory>
 			<territory type="TR">ಟರ್ಕಿ</territory>
-			<territory type="TR" alt="variant">ಟರ್ಕಿಯೆ</territory>
 			<territory type="TT">ಟ್ರಿನಿಡಾಡ್ ಮತ್ತು ಟೊಬಾಗೊ</territory>
 			<territory type="TV">ಟುವಾಲು</territory>
 			<territory type="TW">ತೈವಾನ್</territory>
@@ -1037,6 +1036,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">ಜಿಂಬಾಬ್ವೆ</territory>
 			<territory type="ZZ">ಅಜ್ಞಾತ ಪ್ರದೇಶ</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">ಇಂಗ್ಲೆಂಡ್‌</subdivision>
+			<subdivision type="gbsct">ಸ್ಕಾಟ್ಲೆಂಡ್</subdivision>
+			<subdivision type="gbwls">ವೇಲ್ಸ್‌</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="PINYIN" draft="contributed">ಪಿನ್‌ಯಿನ್ ರೋಮನೈಸೇಶನ್</variant>
 			<variant type="WADEGILE" draft="contributed">ವೇಡ್-ಗೈಲ್ಸ್ ರೋಮನೈಸೇಶನ್</variant>
@@ -4099,6 +4103,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Hermosillo">
 				<exemplarCity>ಹರ್ಮೊಸಿಲ್ಲೋ</exemplarCity>
 			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>ಸಿಯುಡಾಡ್ ವಾರೆಝ್</exemplarCity>
+			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>ಮಜಟ್ಲಾನ್</exemplarCity>
 			</zone>
@@ -5578,18 +5585,320 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<native>knda</native>
 		</otherNumberingSystems>
 		<minimumGroupingDigits>1</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="knda">
 			<decimal>.</decimal>
 			<group>,</group>
+			<list draft="contributed">;</list>
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
 			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
@@ -5604,6 +5913,351 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
 			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lepc">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<decimal draft="contributed">.</decimal>
+			<group draft="contributed">,</group>
+			<list draft="contributed">;</list>
+			<percentSign draft="contributed">%</percentSign>
+			<plusSign draft="contributed">+</plusSign>
+			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign draft="contributed">~</approximatelySign>
+			<exponential draft="contributed">E</exponential>
+			<superscriptingExponent draft="contributed">×</superscriptingExponent>
+			<perMille draft="contributed">‰</perMille>
+			<infinity draft="contributed">∞</infinity>
+			<nan draft="contributed">NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="knda">
 			<decimalFormatLength>
@@ -6976,6 +7630,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="dative">ಚದರಕ್ಕೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="genitive">ಚದರದ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಚದರದಲ್ಲಿ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="vocative">ಚದರವು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ಚದರಗಳು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ಚದರಗಳನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಚದರಗಳಿಗೆ {0}</compoundUnitPattern1>
@@ -6990,6 +7645,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="one" case="dative">ಕ್ಯೂಬಿಕ್‌ಗೆ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="genitive">ಕ್ಯೂಬಿಕ್‌ನ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one" case="locative">ಕ್ಯೂಬಿಕ್‌ನಲ್ಲಿ {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="vocative">ಕ್ಯೂಬಿಕ್ {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">ಕ್ಯೂಬಿಕ್‌ಗಳು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="accusative">ಕ್ಯೂಬಿಕ್‌ಗಳನ್ನು {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" case="dative">ಕ್ಯೂಬಿಕ್‌ಗಳಿಗೆ {0}</compoundUnitPattern1>
@@ -7008,11 +7664,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಜಿ-ಫೋರ್ಸ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಜಿ-ಫೋರ್ಸ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 				<unitPattern count="other">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಜಿ-ಫೋರ್ಸ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಜಿ-ಫೋರ್ಸ್</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<gender>neuter</gender>
@@ -7036,11 +7694,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ತಿರುಗುವಿಕೆಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ತಿರುಗುವಿಕೆಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ತಿರುಗುವಿಕೆಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ತಿರುಗುವಿಕೆಯು</unitPattern>
 				<unitPattern count="other">{0} ತಿರುಗುವಿಕೆಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ತಿರುಗುವಿಕೆಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ತಿರುಗುವಿಕೆಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ತಿರುಗುವಿಕೆಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ತಿರುಗುವಿಕೆಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ತಿರುಗುವಿಕೆಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<gender>neuter</gender>
@@ -7050,11 +7710,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ರೇಡಿಯಾನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ರೇಡಿಯಾನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ರೇಡಿಯಾನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ರೇಡಿಯಾನ್‌</unitPattern>
 				<unitPattern count="other">{0} ರೇಡಿಯಾನ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ರೇಡಿಯಾನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ರೇಡಿಯಾನ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ರೇಡಿಯಾನ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ರೇಡಿಯಾನ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ರೇಡಿಯಾನ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<gender>neuter</gender>
@@ -7064,6 +7726,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಡಿಗ್ರಿಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಡಿಗ್ರಿಯು</unitPattern>
 				<unitPattern count="other">{0}ಡಿಗ್ರಿಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0}ಡಿಗ್ರಿಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0}ಡಿಗ್ರಿಗಳಿಗೆ</unitPattern>
@@ -7079,11 +7742,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್</unitPattern>
 				<unitPattern count="other">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಆರ್ಕ್‌ಮಿನಿಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<gender>neuter</gender>
@@ -7093,11 +7758,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="other">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಆರ್ಕ್‌ಸೆಕೆಂಡುಗಳು</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<gender>neuter</gender>
@@ -7122,11 +7789,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಹೆಕ್ಟೇರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಹೆಕ್ಟೇರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಹೆಕ್ಟೇರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಹೆಕ್ಟೇರ್</unitPattern>
 				<unitPattern count="other">{0} ಹೆಕ್ಟೇರುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಹೆಕ್ಟೇರುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಹೆಕ್ಟೇರುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಹೆಕ್ಟೇರುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಹೆಕ್ಟೇರುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಹೆಕ್ಟೇರುಗಳು</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<gender>neuter</gender>
@@ -7198,11 +7867,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಕಾರಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕಾರಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕಾರಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಕಾರಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಕಾರಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕಾರಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕಾರಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕಾರಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕಾರಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಕಾರಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>ಪ್ರತಿ ಡೆಸಿಲೀಟರ್‌ಗೆ ಮಿಲಿಗ್ರಾಂಗಳು</displayName>
@@ -7245,11 +7916,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗವು</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಪ್ರತಿ ಮಿಲಿಯನ್ ಭಾಗಗಳು</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<gender>neuter</gender>
@@ -7259,11 +7932,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಶೇಕಡಾಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಶೇಕಡಾದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಶೇಕಡಾದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಶೇಕಡಾವು</unitPattern>
 				<unitPattern count="other">{0} ಶೇಕಡಾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಶೇಕಡಾಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಶೇಕಡಾಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಶೇಕಡಾಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಶೇಕಡಾಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಶೇಕಡಾ</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>neuter</gender>
@@ -7273,6 +7948,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಪ್ರತಿ ಸಾವಿರವು</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪ್ರತಿ ಸಾವಿರದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪ್ರತಿ ಸಾವಿರದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಪ್ರತಿ ಸಾವಿರವು</unitPattern>
 				<unitPattern count="other">{0} ಪ್ರತಿ ಸಾವಿರಕ್ಕೆ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪ್ರತಿ ಸಾವಿರಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪ್ರತಿ ಸಾವಿರಗಳಿಗೆ</unitPattern>
@@ -7288,11 +7964,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಪರ್‌ಮಿರಿಯಾಡ್</unitPattern>
 				<unitPattern count="other">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಪರ್‌ಮಿರಿಯಾಡ್‌</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<gender>neuter</gender>
@@ -7308,6 +7986,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} ಮೋಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೋಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೋಲ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಮೋಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<gender>neuter</gender>
@@ -7481,11 +8160,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಬೈಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬೈಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬೈಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಬೈಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬೈಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬೈಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬೈಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬೈಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬೈಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಬೈಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<gender>neuter</gender>
@@ -7495,11 +8176,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಬಿಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬಿಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬಿಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಬಿಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬಿಟ್‍ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬಿಟ್‍ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬಿಟ್‍ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬಿಟ್‍ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬಿಟ್‍ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಬಿಟ್‍ಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<gender>neuter</gender>
@@ -7509,11 +8192,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಶತಮಾನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಶತಮಾನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಶತಮಾನದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಶತಮಾನವು</unitPattern>
 				<unitPattern count="other">{0}ಶತಮಾನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಶತಮಾನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಶತಮಾನಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಶತಮಾನಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಶತಮಾನಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0}ಶತಮಾನಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>neuter</gender>
@@ -7523,11 +8208,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ದಶಕಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ದಶಕದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ದಶಕದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ದಶಕವು</unitPattern>
 				<unitPattern count="other">{0} ದಶಕಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ದಶಕಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ದಶಕಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ದಶಕಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ದಶಕಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ದಶಕಗಳು</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<gender>neuter</gender>
@@ -7537,11 +8224,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವರ್ಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವರ್ಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವರ್ಷದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವರ್ಷವು</unitPattern>
 				<unitPattern count="other">{0} ವರ್ಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವರ್ಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವರ್ಷಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವರ್ಷಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವರ್ಷಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ವರ್ಷಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ವರ್ಷಕ್ಕೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -7567,6 +8256,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ತಿಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ತಿಂಗಳ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ತಿಂಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ತಿಂಗಳು</unitPattern>
 				<unitPattern count="other">{0} ತಿಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ತಿಂಗಳುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ತಿಂಗಳುಗಳಿಗೆ</unitPattern>
@@ -7583,11 +8273,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವಾರಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವಾರದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವಾರದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವಾರವು</unitPattern>
 				<unitPattern count="other">{0} ವಾರಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವಾರಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವಾರಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವಾರಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವಾರಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ವಾರಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ವಾರಕ್ಕೆ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
@@ -7598,11 +8290,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ದಿನಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ದಿನದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ದಿನದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ದಿನವು</unitPattern>
 				<unitPattern count="other">{0} ದಿನಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ದಿನಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ದಿನಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ದಿನಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ದಿನಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ದಿನಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ದಿನಕ್ಕೆ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -7613,11 +8307,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಗಂಟೆಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಗಂಟೆಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಗಂಟೆಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಗಂಟೆಯು</unitPattern>
 				<unitPattern count="other">{0} ಗಂಟೆಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಗಂಟೆಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಗಂಟೆಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಗಂಟೆಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಗಂಟೆಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಗಂಟೆಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಗಂಟೆಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -7628,11 +8324,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ನಿಮಿಷಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ನಿಮಿಷದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ನಿಮಿಷದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ನಿಮಿಷವು</unitPattern>
 				<unitPattern count="other">{0} ನಿಮಿಷಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ನಿಮಿಷಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ನಿಮಿಷಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ನಿಮಿಷಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ನಿಮಿಷಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ನಿಮಿಷಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ನಿಮಿಷಕ್ಕೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
@@ -7643,11 +8341,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಸೆಕೆಂಡಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಸೆಕೆಂಡಿನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಸೆಕೆಂಡಿನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಸೆಕೆಂಡ್</unitPattern>
 				<unitPattern count="other">{0} ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಸೆಕೆಂಡುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಸೆಕೆಂಡುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಸೆಕೆಂಡುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಸೆಕೆಂಡುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಸೆಕೆಂಡುಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಸೆಕೆಂಡ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -7730,11 +8430,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಓಂ ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಓಂ ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಓಂ ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಓಂ</unitPattern>
 				<unitPattern count="other">{0} ಓಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಓಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಓಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಓಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಓಂಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಓಂಗಳು</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<gender>neuter</gender>
@@ -7744,11 +8446,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವೋಲ್ಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವೋಲ್ಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವೋಲ್ಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವೋಲ್ಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ವೋಲ್ಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವೋಲ್ಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವೋಲ್ಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವೋಲ್ಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವೋಲ್ಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ವೋಲ್ಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
 				<displayName>ಕಿಲೋಕ್ಯಾಲೋರಿಗಳು</displayName>
@@ -7763,11 +8467,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಕ್ಯಾಲೋರಿಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕ್ಯಾಲೋರಿಯ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕ್ಯಾಲೋರಿಯಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಕ್ಯಾಲೋರಿ</unitPattern>
 				<unitPattern count="other">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕ್ಯಾಲೋರಿಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕ್ಯಾಲೋರಿಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕ್ಯಾಲೋರಿಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕ್ಯಾಲೋರಿಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>ಕ್ಯಾಲೋರಿಗಳು</displayName>
@@ -7796,11 +8502,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಜೌಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಜೌಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಜೌಲ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಜೌಲ್‌</unitPattern>
 				<unitPattern count="other">{0} ಜೌಲ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಜೌಲ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಜೌಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಜೌಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಜೌಲ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಜೌಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<gender>neuter</gender>
@@ -7932,11 +8640,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} em ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} em ದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} em ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} em</unitPattern>
 				<unitPattern count="other">{0} ems ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} em ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} em ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} em ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} em ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ems ಗಳು</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>neuter</gender>
@@ -7946,11 +8656,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಪಿಕ್ಸೆಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಪಿಕ್ಸೆಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಪಿಕ್ಸೆಲ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಪಿಕ್ಸೆಲ್</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆಲ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಪಿಕ್ಸೆಲ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಪಿಕ್ಸೆಲ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<gender>neuter</gender>
@@ -8028,11 +8740,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಮೀಟರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೀಟರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೀಟರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಮೀಟರ್</unitPattern>
 				<unitPattern count="other">{0} ಮೀಟರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೀಟರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೀಟರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಮೀಟರ್‌ಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಮೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -8180,11 +8894,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲು</unitPattern>
 				<unitPattern count="other">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಸ್ಕ್ಯಾಂಡಿನೇವಿಯನ್-ಮೈಲುಗಳು</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>ಪಾಯಿಂಟ್ಸ್</displayName>
@@ -8204,6 +8920,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಲಕ್ಸ್‌‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲಕ್ಸ್‌‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲಕ್ಸ್‌‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="other">{0} ಲಕ್ಸ್‌‌</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲಕ್ಸ್‌‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲಕ್ಸ್‌‌ಗಳಿಗೆ</unitPattern>
@@ -8235,6 +8952,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಲೂಮೆನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲೂಮೆನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲೂಮೆನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಲೂಮೆನ್</unitPattern>
 				<unitPattern count="other">{0} ಲೂಮೆನ್</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲೂಮೆನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲೂಮೆನ್‌ಗಳಿಗೆ</unitPattern>
@@ -8255,11 +8973,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಟನ್‌</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್‌‌ ಟನ್‌‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<gender>neuter</gender>
@@ -8269,11 +8989,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಕಿಲೋಗ್ರಾಂಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕಿಲೋಗ್ರಾಂನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕಿಲೋಗ್ರಾಂನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಕಿಲೋಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಕಿಲೋಗ್ರಾಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕಿಲೋಗ್ರಾಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕಿಲೋಗ್ರಾಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕಿಲೋಗ್ರಾಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕಿಲೋಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಕಿಲೋಗ್ರಾಂಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ಕಿಲೋಗ್ರಾಂಗೆ</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
@@ -8284,11 +9006,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಗ್ರಾಂ ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಗ್ರಾಂ ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಗ್ರಾಂ ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0} ಗ್ರಾಂಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಗ್ರಾಂಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಗ್ರಾಂಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಗ್ರಾಂಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಗ್ರಾಂಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಗ್ರಾಂಗಳು</unitPattern>
 				<perUnitPattern>{0} ಪ್ರತಿ ಗ್ರಾಂಗೆ</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -8354,11 +9078,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಕ್ಯಾರೆಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕ್ಯಾರೆಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕ್ಯಾರೆಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಕ್ಯಾರೆಟ್‌</unitPattern>
 				<unitPattern count="other">{0} ಕ್ಯಾರೆಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕ್ಯಾರೆಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕ್ಯಾರೆಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕ್ಯಾರೆಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕ್ಯಾರೆಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಕ್ಯಾರೆಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ಡಿಎ</displayName>
@@ -8430,11 +9156,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವ್ಯಾಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವ್ಯಾಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವ್ಯಾಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವ್ಯಾಟ್</unitPattern>
 				<unitPattern count="other">{0} ವ್ಯಾಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವ್ಯಾಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವ್ಯಾಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವ್ಯಾಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವ್ಯಾಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ವ್ಯಾಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<gender>neuter</gender>
@@ -8478,11 +9206,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಬಾರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಬಾರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಬಾರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಬಾರ್‌</unitPattern>
 				<unitPattern count="other">{0} ಬಾರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಬಾರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಬಾರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಬಾರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಬಾರ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಬಾರ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<gender>neuter</gender>
@@ -8506,11 +9236,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ವಾತಾವರಣಕ್ಕೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ವಾತಾವರಣದ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ವಾತಾವರಣದಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ವಾತಾವರಣ</unitPattern>
 				<unitPattern count="other">{0} ವಾತಾವರಣಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ವಾತಾವರಣಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ವಾತಾವರಣಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ವಾತಾವರಣಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ವಾತಾವರಣಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ವಾತಾವರಣಗಳು</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>neuter</gender>
@@ -8632,11 +9364,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
 				<unitPattern count="other">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಡಿಗ್ರಿ ಸೆಲ್ಶಿಯಸ್</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>ಡಿಗ್ರಿ ಫ್ಯಾರೆನ್‌ಹಿಟ್</displayName>
@@ -8651,11 +9385,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಕೆಲ್ವಿನ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಕೆಲ್ವಿನ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಕೆಲ್ವಿನ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಕೆಲ್ವಿನ್</unitPattern>
 				<unitPattern count="other">{0} ಕೆಲ್ವಿನ್‍ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಕೆಲ್ವಿನ್‍ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಕೆಲ್ವಿನ್‍ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಕೆಲ್ವಿನ್‍ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಕೆಲ್ವಿನ್‍ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಕೆಲ್ವಿನ್‍ಗಳು</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>ಪೌಂಡ್-ಫೋರ್ಸ್-ಅಡಿ</displayName>
@@ -8776,11 +9512,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಲೀಟರ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಲೀಟರ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಲೀಟರ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಲೀಟರ್</unitPattern>
 				<unitPattern count="other">{0} ಲೀಟರ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಲೀಟರ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಲೀಟರ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಲೀಟರ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಲೀಟರ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಲೀಟರ್‌ಗಳು</unitPattern>
 				<perUnitPattern>ಪ್ರತಿ ಲೀಟರ್‌ಗೆ {0}</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -8833,11 +9571,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್ ಪಿಂಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>neuter</gender>
@@ -8847,11 +9587,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗೆ</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ನ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ನಲ್ಲಿ</unitPattern>
+				<unitPattern count="one" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌</unitPattern>
 				<unitPattern count="other">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳು</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳನ್ನು</unitPattern>
 				<unitPattern count="other" case="dative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳಿಗೆ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳ</unitPattern>
 				<unitPattern count="other" case="locative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳಲ್ಲಿ</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ಮೆಟ್ರಿಕ್‌ ಕಪ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ಎಕರೆ-ಅಡಿ</displayName>
@@ -9049,6 +9791,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="power2">
 				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
 				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
@@ -9472,6 +10218,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
+				<displayName>ಪಿಕ್ಸೆಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0} ಪಿಕ್ಸೆ</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆ</unitPattern>
 			</unit>
@@ -9607,6 +10354,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>ಸೌರ ಪ್ರಕಾಶಗಳು</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ಟ</displayName>
@@ -10088,7 +10837,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
+			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName>ಜಿ-ಫೋರ್ಸ್</displayName>
 				<unitPattern count="one">{0}ಜಿ-ಫೋ.</unitPattern>
 				<unitPattern count="other">{0}ಜಿ-ಫೋ.</unitPattern>
 			</unit>
@@ -10098,28 +10861,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಮೀ/ಸೆ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
+				<displayName>ತಿರುಗು</displayName>
 				<unitPattern count="one">{0}ತಿರುಗು</unitPattern>
 				<unitPattern count="other">{0}ತಿರುಗು</unitPattern>
 			</unit>
 			<unit type="angle-radian">
+				<displayName>ರೇಡಿಯಾನ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ರೇಡಿ.</unitPattern>
 				<unitPattern count="other">{0}ರೇಡಿ.</unitPattern>
 			</unit>
 			<unit type="angle-degree">
+				<displayName>ಡಿಗ್ರಿಗಳು</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>ಆರ್ಕ್‌ಮಿನಿ</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>ಆರ್ಕ್‌ಸೆಕೆಂ</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>ಕಿಮೀ²</displayName>
 				<unitPattern count="one">{0} ಚ.ಕಿಮೀ.</unitPattern>
 				<unitPattern count="other">{0} ಚ.ಕಿಮೀ.</unitPattern>
+				<perUnitPattern>{0}/ಕಿಮೀ²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>ಹೆಕ್ಟೇರ್</displayName>
@@ -10127,12 +10897,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಹೆ.</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>ಮೀಟರ್‌ಗಳು²</displayName>
 				<unitPattern count="one">{0} ಮೀ²</unitPattern>
 				<unitPattern count="other">{0} ಮೀ²</unitPattern>
+				<perUnitPattern>{0}/ಮೀ²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>ಸೆಂ.ಮೀ²</displayName>
+				<unitPattern count="one">{0} ಸೆಂ.ಮೀ²</unitPattern>
+				<unitPattern count="other">{0} ಸೆಂ.ಮೀ²</unitPattern>
+				<perUnitPattern>{0}/ಸೆಂ.ಮೀ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
+				<displayName>ಚದರ ಮೈಲುಗಳು</displayName>
 				<unitPattern count="one">{0}ಚ.ಮೀ.</unitPattern>
 				<unitPattern count="other">{0}ಚ.ಮೀ.</unitPattern>
+				<perUnitPattern>{0}/ಚ.ಮೀ²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>ಎಕರೆ</displayName>
@@ -10141,23 +10921,39 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>ಗ²</displayName>
+				<unitPattern count="one">{0} ಗ²</unitPattern>
+				<unitPattern count="other">{0} ಗ²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ft²</displayName>
 				<unitPattern count="one">{0}ಚ.ಅ</unitPattern>
 				<unitPattern count="other">{0}ಚ.ಅ</unitPattern>
 			</unit>
+			<unit type="area-square-inch">
+				<displayName>ಅಂಗುಲಗಳು²</displayName>
+				<unitPattern count="one">{0} ಅಂ²</unitPattern>
+				<unitPattern count="other">{0} ಅಂ²</unitPattern>
+				<perUnitPattern>{0}/ಅಂ²</perUnitPattern>
+			</unit>
 			<unit type="area-dunam">
+				<displayName>ಡುನಮ್‌</displayName>
 				<unitPattern count="one">{0}ಡುನಮ್</unitPattern>
 				<unitPattern count="other">{0}ಡುನಮ್</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
+				<displayName>ಕಾರಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ಕಾರ.</unitPattern>
 				<unitPattern count="other">{0}ಕಾರ.</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>ಮಿಗ್ರಾಂ/ಡೆಲೀ</displayName>
 				<unitPattern count="one">{0}ಮಿಗ್ರಾಂ/ಡೆಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಮಿಗ್ರಾಂ/ಡೆಲೀ</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ಮಿಲ್ಲಿಮೊ/ಲೀಟರ್</displayName>
+				<unitPattern count="one">{0} ಮಿಮೊಲ್/ಲೀ</unitPattern>
+				<unitPattern count="other">{0} ಮಿಮೋಲ್/ಲೀ</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>ವಸ್ತು</displayName>
@@ -10176,16 +10972,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>‰</displayName>
+				<unitPattern count="one">{0}‰</unitPattern>
+				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
+				<unitPattern count="one">{0}‱</unitPattern>
+				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
+				<displayName>ಮೋಲ್‌</displayName>
 				<unitPattern count="one">{0}ಮೋಲ್</unitPattern>
 				<unitPattern count="other">{0}ಮೋಲ್</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ಲೀ/ಕಿಮೀ</displayName>
+				<unitPattern count="one">{0} ಲೀ/ಕಿ.ಮೀ</unitPattern>
+				<unitPattern count="other">{0} ಲೀ/ಕಿ.ಮೀ</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>ಲೀ/100ಕಿ.ಮೀ</displayName>
@@ -10213,6 +11016,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಟೆ.ಬೈ.</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
+				<displayName>ಟೆ.ಬಿ.</displayName>
 				<unitPattern count="one">{0}ಟೆ.ಬಿ.</unitPattern>
 				<unitPattern count="other">{0}ಟೆ.ಬಿ.</unitPattern>
 			</unit>
@@ -10232,24 +11036,34 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಮೆ.ಬೈ.</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
+				<displayName>ಮೆ.ಬಿ.</displayName>
 				<unitPattern count="one">{0}ಮೆ.ಬಿ.</unitPattern>
 				<unitPattern count="other">{0}ಮೆ.ಬಿ.</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
+				<displayName>ಕಿ.ಬೈ.</displayName>
 				<unitPattern count="one">{0}ಕಿ.ಬೈ.</unitPattern>
 				<unitPattern count="other">{0}ಕಿ.ಬೈ.</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
+				<displayName>ಕಿ.ಬಿ.</displayName>
 				<unitPattern count="one">{0}ಕಿ.ಬಿ.</unitPattern>
 				<unitPattern count="other">{0}ಕಿ.ಬಿ.</unitPattern>
 			</unit>
 			<unit type="digital-byte">
+				<displayName>ಬೈಟ್</displayName>
 				<unitPattern count="one">{0}ಬೈ</unitPattern>
 				<unitPattern count="other">{0} ಬೈ.</unitPattern>
 			</unit>
 			<unit type="digital-bit">
+				<displayName>ಬಿಟ್‌</displayName>
 				<unitPattern count="one">{0}ಬಿಟ್</unitPattern>
 				<unitPattern count="other">{0}ಬಿಟ್</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>ಶ</displayName>
+				<unitPattern count="one">{0} ಶ</unitPattern>
+				<unitPattern count="other">{0} ಶ</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName>ದಶಕ</displayName>
@@ -10260,6 +11074,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ವ</displayName>
 				<unitPattern count="one">{0}ವ</unitPattern>
 				<unitPattern count="other">{0}ವ</unitPattern>
+				<perUnitPattern>{0}/ವ</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>ತ್ರೈಮಾಸಿಕ</displayName>
@@ -10277,6 +11092,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ವಾರ</displayName>
 				<unitPattern count="one">{0}ವಾ</unitPattern>
 				<unitPattern count="other">{0}ವಾ</unitPattern>
+				<perUnitPattern>{0}/ವಾ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ದಿನ</displayName>
@@ -10309,12 +11125,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsec</displayName>
+				<unitPattern count="one">{0} μs</unitPattern>
+				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
+				<displayName>ನ್ಯಾ.ಸೆ</displayName>
 				<unitPattern count="one">{0}ನ್ಯಾಸೆ</unitPattern>
 				<unitPattern count="other">{0}ನ್ಯಾಸೆ</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
+				<displayName>ಆಂ.</displayName>
 				<unitPattern count="one">{0}ಆಂ.</unitPattern>
 				<unitPattern count="other">{0}ಆಂ.</unitPattern>
 			</unit>
@@ -10324,18 +11144,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
+				<displayName>ಓಂಗಳು</displayName>
 				<unitPattern count="one">{0}Ω</unitPattern>
 				<unitPattern count="other">{0}Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
+				<displayName>ವೋ.</displayName>
 				<unitPattern count="one">{0}ವೋ</unitPattern>
 				<unitPattern count="other">{0}ವೋ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<displayName>ಕಿ.ಕ್ಯಾ</displayName>
 				<unitPattern count="one">{0}ಕಿ.ಕ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0} ಕಿ.ಕ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
+				<displayName>ಕ್ಯಾಲೊ</displayName>
 				<unitPattern count="one">{0}ಕ್ಯಾಲೊ</unitPattern>
 				<unitPattern count="other">{0}ಕ್ಯಾಲೊ</unitPattern>
 			</unit>
@@ -10345,18 +11169,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಕ್ಯಾಲೊ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
+				<displayName>ಕಿ.ಜೌ</displayName>
 				<unitPattern count="one">{0}ಕಿ.ಜೌ</unitPattern>
 				<unitPattern count="other">{0}ಕಿ.ಜೌ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
+				<displayName>ಜೌಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ಜೌ</unitPattern>
 				<unitPattern count="other">{0}ಜೌ</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
+				<displayName>ಕಿ.ವ್ಯಾ-ಗಂ</displayName>
 				<unitPattern count="one">{0}ಕಿವ್ಯಾಗಂ</unitPattern>
 				<unitPattern count="other">{0}ಕಿವ್ಯಾಗಂ</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
+				<displayName>ಎಲೆಕ್ಟ್ರಾನ್‌ವೋಲ್ಟ್‌</displayName>
 				<unitPattern count="one">{0}ಎವೋ</unitPattern>
 				<unitPattern count="other">{0}ಎವೋ</unitPattern>
 			</unit>
@@ -10366,11 +11194,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಬ್ರಿಉಯು</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
+				<displayName>ಯುಎಸ್ ಥರ್ಮ್ಸ್</displayName>
 				<unitPattern count="one">{0}ಯುಎಸ್ ಥರ್ಮ್ಸ್</unitPattern>
 				<unitPattern count="other">{0}ಯುಎಸ್ ಥರ್ಮ್ಸ್</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>ಎಲ್‌ಬಿಎಫ್</displayName>
+				<unitPattern count="one">{0} ಎಲ್‌ಬಿಎಫ್</unitPattern>
+				<unitPattern count="other">{0} ಎಲ್‌ಬಿಎಫ್</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>ನ್ಯೂ</displayName>
@@ -10379,6 +11210,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>ಕಿವ್ಯಾಗಂ/100ಕಿಮೀ</displayName>
+				<unitPattern count="one">{0} ಕಿವ್ಯಾಗಂ/100ಕಿಮೀ</unitPattern>
+				<unitPattern count="other">{0} ಕಿವ್ಯಾಗಂ/100ಕಿಮೀ</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -10401,6 +11234,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಹರ್ಟ್ಜ್</unitPattern>
 			</unit>
 			<unit type="graphics-em">
+				<displayName>em</displayName>
 				<unitPattern count="one">{0}em</unitPattern>
 				<unitPattern count="other">{0}em</unitPattern>
 			</unit>
@@ -10415,18 +11249,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}MP</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
+				<displayName>ppcm</displayName>
 				<unitPattern count="one">{0}ppcm</unitPattern>
 				<unitPattern count="other">{0}ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
+				<displayName>ppi</displayName>
 				<unitPattern count="one">{0}ppi</unitPattern>
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
+				<displayName>dpcm</displayName>
 				<unitPattern count="one">{0}dpcm</unitPattern>
 				<unitPattern count="other">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
+				<displayName>dpi</displayName>
 				<unitPattern count="one">{0}dpi</unitPattern>
 				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
@@ -10434,6 +11272,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಡಾಟ್</displayName>
 				<unitPattern count="one">{0} ಡಾಟ್</unitPattern>
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆ</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>ಕಿಮೀ</displayName>
@@ -10469,10 +11312,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
+				<displayName>ನ್ಯಾ.ಮೀ</displayName>
 				<unitPattern count="one">{0}nm</unitPattern>
 				<unitPattern count="other">{0}nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
+				<displayName>ಪಿ.ಮೀ</displayName>
 				<unitPattern count="one">{0}ಪಿಎಂ</unitPattern>
 				<unitPattern count="other">{0}ಪಿಎಂ</unitPattern>
 			</unit>
@@ -10500,15 +11345,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-parsec">
 				<displayName>ಪಾರ್‌ಸೆಕೆಂ</displayName>
+				<unitPattern count="one">{0} ಪಾ.ಸೆ</unitPattern>
+				<unitPattern count="other">{0} ಪಾ.ಸೆ</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>ಬೆ.ವರ್ಷ</displayName>
+				<unitPattern count="one">{0} ಬೆ.ವರ್ಷ</unitPattern>
+				<unitPattern count="other">{0} ಬೆ.ವರ್ಷ</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>ಅ.ಯೂ</displayName>
+				<unitPattern count="one">{0} ಅ.ಯೂ</unitPattern>
+				<unitPattern count="other">{0} ಅ.ಯೂ</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName>ಫರ್ಲಾಂಗ್</displayName>
+				<unitPattern count="one">{0} ಫರ್</unitPattern>
+				<unitPattern count="other">{0} ಫರ್</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName>ಫ್ಯಾಥಮ್</displayName>
+				<unitPattern count="one">{0} fth</unitPattern>
+				<unitPattern count="other">{0} fth</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>ನಾ.ಮೈ</displayName>
+				<unitPattern count="one">{0} ನಾ.ಮೈ</unitPattern>
+				<unitPattern count="other">{0} ನಾ.ಮೈ</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName>ಸ್ಕ್ಯಾಂ.ಮೈ</displayName>
@@ -10516,6 +11379,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}smi</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<displayName>ಪಾಯಿಂಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ಪಾಯಿಂಟ್</unitPattern>
 				<unitPattern count="other">{0}ಪಾಯಿಂಟ್</unitPattern>
 			</unit>
@@ -10525,21 +11389,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
+				<displayName>ಲಕ್ಸ್</displayName>
 				<unitPattern count="one">{0}ಎಲ್‌ಎಕ್ಸ್</unitPattern>
 				<unitPattern count="other">{0}ಎಲ್‌ಎಕ್ಸ್</unitPattern>
 			</unit>
 			<unit type="light-candela">
+				<displayName>ಕ್ಯಾಂ</displayName>
 				<unitPattern count="one">{0}ಕ್ಯಾಂ</unitPattern>
 				<unitPattern count="other">{0}ಕ್ಯಾಂ</unitPattern>
 			</unit>
 			<unit type="light-lumen">
+				<displayName>ಎಲ್ಎಮ್</displayName>
 				<unitPattern count="one">{0}ಎಲ್ಎಮ್</unitPattern>
 				<unitPattern count="other">{0}ಎಲ್ಎಮ್</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
+				<displayName>ಟ</displayName>
 				<unitPattern count="one">{0}ಟ</unitPattern>
 				<unitPattern count="other">{0}ಟ</unitPattern>
 			</unit>
@@ -10556,6 +11426,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ಗ್ರಾ</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
+				<displayName>ಮಿ.ಗ್ರಾಂ</displayName>
 				<unitPattern count="one">{0}ಮಿ.ಗ್ರಾಂ</unitPattern>
 				<unitPattern count="other">{0}ಮಿ.ಗ್ರಾಂ</unitPattern>
 			</unit>
@@ -10565,6 +11436,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
+				<displayName>ಟನ್‍ಗಳು</displayName>
 				<unitPattern count="one">{0}ಟನ್‌</unitPattern>
 				<unitPattern count="other">{0}ಟನ್‌</unitPattern>
 			</unit>
@@ -10596,6 +11468,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}CD</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
+				<displayName>ಡಿಎ</displayName>
 				<unitPattern count="one">{0}ಡಿಎ</unitPattern>
 				<unitPattern count="other">{0} Da</unitPattern>
 			</unit>
@@ -10610,30 +11483,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
+				<displayName>ಗ್ರೇನ್</displayName>
 				<unitPattern count="one">{0}ಗ್ರೇನ್</unitPattern>
 				<unitPattern count="other">{0}ಗ್ರೇನ್</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
+				<displayName>ಗಿ.ವ್ಯಾ</displayName>
 				<unitPattern count="one">{0}ಗಿ.ವ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0}ಗಿ.ವ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
+				<displayName>ಮೆ.ವ್ಯಾ</displayName>
 				<unitPattern count="one">{0}ಮೆ.ವ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0}ಮೆ.ವ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
+				<displayName>ಕಿ.ವ್ಯಾ</displayName>
 				<unitPattern count="one">{0}ಕಿ.ವ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0}ಕಿ.ವ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>ವ್ಯಾಟ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ವ್ಯಾ.</unitPattern>
 				<unitPattern count="other">{0}ವ್ಯಾ.</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
+				<displayName>ಮಿ.ವ್ಯಾ</displayName>
 				<unitPattern count="one">{0}ಮಿ.ವ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0}ಮಿ.ವ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
+				<displayName>ಹೆಚ್‌ಪಿ</displayName>
 				<unitPattern count="one">{0}ಹೆಚ್‌ಪಿ</unitPattern>
 				<unitPattern count="other">{0}ಹೆಚ್‌ಪಿ</unitPattern>
 			</unit>
@@ -10653,6 +11533,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}&quot; Hg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
+				<displayName>ಬಾರ್‌</displayName>
 				<unitPattern count="one">{0}ಬಾರ್‌</unitPattern>
 				<unitPattern count="other">{0}ಬಾರ್‌</unitPattern>
 			</unit>
@@ -10662,10 +11543,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಮಿ.ಬಾ.</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
+				<displayName>ವಾತಾವರಣಗಳು</displayName>
 				<unitPattern count="one">{0}ವಾತಾವರಣ</unitPattern>
 				<unitPattern count="other">{0}ವಾತಾವರಣ</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
+				<displayName>ಪಾ</displayName>
 				<unitPattern count="one">{0}ಪ್ಯಾ</unitPattern>
 				<unitPattern count="other">{0}ಪ್ಯಾ</unitPattern>
 			</unit>
@@ -10686,6 +11569,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>ಕಿ.ಮೀ/ಗಂ</displayName>
+				<unitPattern count="one">{0} ಕಿ.ಮೀ./ಗಂ</unitPattern>
+				<unitPattern count="other">{0} ಕಿ.ಮೀ./ಗಂ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>ಮೀ.ಗಳು/ಸೆ</displayName>
@@ -10698,6 +11583,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಮೈ/ಗಂ</unitPattern>
 			</unit>
 			<unit type="speed-knot">
+				<displayName>ನಾ</displayName>
 				<unitPattern count="one">{0}ನಾ</unitPattern>
 				<unitPattern count="other">{0}ನಾ</unitPattern>
 			</unit>
@@ -10727,26 +11613,54 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಎಲ್‌ಬಿಎಫ್-ಎಫ್‌ಟಿ</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
+				<displayName>ನ್ಯೂ.ಮೀ</displayName>
 				<unitPattern count="one">{0}ನ್ಯೂ.ಮೀ</unitPattern>
 				<unitPattern count="other">{0}ನ್ಯೂ.ಮೀ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>ಕಿಮೀ³</displayName>
 				<unitPattern count="one">{0}ಕಿಮೀ³</unitPattern>
 				<unitPattern count="other">{0}ಕಿಮೀ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
+				<displayName>ಮೀ³</displayName>
 				<unitPattern count="one">{0}ಮೀ³</unitPattern>
 				<unitPattern count="other">{0}ಮೀ³</unitPattern>
+				<perUnitPattern>{0}/ಮೀ³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>ಸೆಮೀ³</displayName>
+				<unitPattern count="one">{0} ಸೆಮೀ³</unitPattern>
+				<unitPattern count="other">{0} ಸೆಮೀ³</unitPattern>
+				<perUnitPattern>{0}/ಸೆಮೀ³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
+				<displayName>ಮೈ³</displayName>
 				<unitPattern count="one">{0}ಮೈ³</unitPattern>
 				<unitPattern count="other">{0}ಮೈ³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ಗಜಗಳು³</displayName>
+				<unitPattern count="one">{0} ಗಜ³</unitPattern>
+				<unitPattern count="other">{0} ಗಜ³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>ಅಡಿ³</displayName>
+				<unitPattern count="one">{0} ಅಡಿ³</unitPattern>
+				<unitPattern count="other">{0} ಅಡಿ³</unitPattern>
+			</unit>
 			<unit type="volume-cubic-inch">
+				<displayName>ಅಂಗುಲಗಳು³</displayName>
 				<unitPattern count="one">{0}ಅಂ³</unitPattern>
 				<unitPattern count="other">{0}ಅಂ³</unitPattern>
 			</unit>
+			<unit type="volume-megaliter">
+				<displayName>ಮೆ.ಲೀ</displayName>
+				<unitPattern count="one">{0} ಮೆ.ಲೀ</unitPattern>
+				<unitPattern count="other">{0} ಮೆ.ಲೀ</unitPattern>
+			</unit>
 			<unit type="volume-hectoliter">
+				<displayName>ಹೆ.ಲೀ</displayName>
 				<unitPattern count="one">{0}ಹೆ.ಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಹೆ.ಲೀ</unitPattern>
 			</unit>
@@ -10754,84 +11668,127 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ಲೀಟರ್</displayName>
 				<unitPattern count="one">{0}ಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಲೀ</unitPattern>
+				<perUnitPattern>{0}/ಲೀ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
+				<displayName>ಡೆ.ಲೀ</displayName>
 				<unitPattern count="one">{0}ಡೆ.ಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಡೆ.ಲೀ</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
+				<displayName>ಸೆಂ.ಲೀ</displayName>
 				<unitPattern count="one">{0}ಸೆಂ.ಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಸೆಂ.ಲೀ</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
+				<displayName>ಮಿ.ಲೀ</displayName>
 				<unitPattern count="one">{0}ಮಿ.ಲೀ</unitPattern>
 				<unitPattern count="other">{0}ಮಿ.ಲೀ</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
+				<displayName>ಮೆ.ಪಿಂ</displayName>
 				<unitPattern count="one">{0}ಮೆ.ಪಿಂ</unitPattern>
 				<unitPattern count="other">{0}ಮೆ.ಪಿಂ</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
+				<displayName>ಮೆ.ಕಪ್‌</displayName>
 				<unitPattern count="one">{0}ಮೆ.ಕಪ್‌</unitPattern>
 				<unitPattern count="other">{0}ಮೆ.ಕ</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
+				<displayName>ಎಕರೆ ಅಡಿ</displayName>
 				<unitPattern count="one">{0}ಎ. ಅ</unitPattern>
 				<unitPattern count="other">{0}ಎ. ಅ</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
+				<displayName>ಬುಶಲ್‌ಗಳು</displayName>
 				<unitPattern count="one">{0}ಬು</unitPattern>
 				<unitPattern count="other">{0}ಬು</unitPattern>
 			</unit>
+			<unit type="volume-gallon">
+				<displayName>ಗ್ಯಾ</displayName>
+				<unitPattern count="one">{0} ಗ್ಯಾ</unitPattern>
+				<unitPattern count="other">{0} ಗ್ಯಾ</unitPattern>
+				<perUnitPattern>{0}/ಗ್ಯಾ</perUnitPattern>
+			</unit>
 			<unit type="volume-gallon-imperial">
+				<displayName>Imp ಗ್ಯಾಲನ್</displayName>
 				<unitPattern count="one">{0}galIm</unitPattern>
 				<unitPattern count="other">{0}galIm</unitPattern>
+				<perUnitPattern>{0} / Imp ಗ್ಯಾ</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
+				<displayName>ಕಾ.ಭಾ</displayName>
 				<unitPattern count="one">{0}ಕಾ.ಭಾ</unitPattern>
 				<unitPattern count="other">{0}ಕಾ.ಭಾ</unitPattern>
 			</unit>
+			<unit type="volume-pint">
+				<displayName>ಪಿಂಟ್‍ಗಳು</displayName>
+				<unitPattern count="one">{0} ಪಿಂಟ್‌</unitPattern>
+				<unitPattern count="other">{0} ಪಿಂಟ್‌</unitPattern>
+			</unit>
 			<unit type="volume-cup">
+				<displayName>ಕಪ್‍ಗಳು</displayName>
 				<unitPattern count="one">{0}ಕ</unitPattern>
 				<unitPattern count="other">{0}ಕ</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
+				<displayName>ಫ್ಲೂ.ಔ</displayName>
 				<unitPattern count="one">{0}ಫ್ಲೂ.ಔ</unitPattern>
 				<unitPattern count="other">{0}ಫ್ಲೂ.ಔ</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
+				<displayName>ಇಂಪಿ. ಫ್ಲೂ. ಔ.</displayName>
 				<unitPattern count="one">{0}fl oz Im</unitPattern>
 				<unitPattern count="other">{0}fl oz Im</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
+				<displayName>ಟೇ.ಸ್ಪೂ</displayName>
 				<unitPattern count="one">{0}ಟೇ.ಸ್ಪೂ</unitPattern>
 				<unitPattern count="other">{0}ಟೇ.ಸ್ಪೂ</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
+				<displayName>ಟೀ ಸ್ಪೂ</displayName>
 				<unitPattern count="one">{0}ಟೀಸ್ಪೂ</unitPattern>
 				<unitPattern count="other">{0}ಟೀಸ್ಪೂ</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>ಬ್ಯಾರೆಲ್</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon">
+				<displayName>ಡೆ.ಸ್ಪೂ</displayName>
 				<unitPattern count="one">{0}ಡೆಸ್ಪೂ</unitPattern>
 				<unitPattern count="other">{0}ಡೆಸ್ಪೂ</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
+				<displayName>ಡೆ.ಸ್ಪೂ.ಇಂಪಿ</displayName>
 				<unitPattern count="one">{0}dsp-Imp</unitPattern>
 				<unitPattern count="other">{0}dsp-Imp</unitPattern>
 			</unit>
 			<unit type="volume-drop">
+				<displayName>ಡ್ರಾಪ್</displayName>
 				<unitPattern count="one">{0}ಡ್ರಾಪ್</unitPattern>
 				<unitPattern count="other">{0}ಡ್ರಾಪ್</unitPattern>
 			</unit>
 			<unit type="volume-dram">
+				<displayName>ಡ್ರಾಮ್ ಫ್ಲೂಡ್</displayName>
 				<unitPattern count="one">{0}fl.dr.</unitPattern>
 				<unitPattern count="other">{0}fl.dr.</unitPattern>
 			</unit>
+			<unit type="volume-jigger">
+				<displayName>ಜಿಗರ್</displayName>
+				<unitPattern count="one">{0} ಜಿಗರ್</unitPattern>
+				<unitPattern count="other">{0} ಜಿಗರ್</unitPattern>
+			</unit>
 			<unit type="volume-pinch">
+				<displayName>ಪಿಂಚ್</displayName>
 				<unitPattern count="one">{0}ಪಿಂಚ್</unitPattern>
 				<unitPattern count="other">{0}ಪಿಂಚ್</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
+				<displayName>ಕ್ವಾ.ಇಂಪ್</displayName>
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
@@ -10866,7 +11823,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0}, ಅಥವಾ {1}</listPatternPart>
 			<listPatternPart type="2">{0} ಅಥವಾ {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, ಅಥವಾ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ಅಥವಾ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, ಅಥವಾ {1}</listPatternPart>
+			<listPatternPart type="2">{0} ಅಥವಾ {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -11075,27 +12046,171 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kn</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<sampleName item="givenOnly">
-			<nameField type="given">ಸಿನ್‌ಬಾದ್</nameField>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{given} {given2-initial} {surname} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {title} {given} {given2} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {given} {given2-initial} {generation}, {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">ಝೆಂಡೇಯಾ</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">ಐರಿನ್</nameField>
 			<nameField type="surname">ಆ್ಯಡ್ಲರ್</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">ಜಾನ್</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">ಮೇರಿ ಸೂ</nameField>
 			<nameField type="given2">ಹಮಿಶ್</nameField>
 			<nameField type="surname">ವ್ಯಾಟ್ಸನ್</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">ಪ್ರೊ. ಡಾ.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">ಶ್ರೀ.</nameField>
+			<nameField type="given">ಬರ್ಟ್‌ರಾಮ್ ವಿಲ್ಬರ್‌ಫೋರ್ಸ್</nameField>
+			<nameField type="given-informal">ಬರ್ಟೀ</nameField>
+			<nameField type="given2">ಹೆನ್ರಿ ರಾಬರ್ಟ್</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">ವೂಸ್ಟರ್</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">ಜೂನಿಯರ್</nameField>
+			<nameField type="credentials">ಎಮ್‌ಪಿ</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">ಸಿನ್‍ಬಾದ್</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">ಕ್ಯಾಥಿ</nameField>
+			<nameField type="surname">ಮಲ್ಲರ್</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">ಝಝಿಲಿಯಾ</nameField>
+			<nameField type="given2">ಹಮಿಶ್</nameField>
+			<nameField type="surname">ಸ್ಟೋಬರ್</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">ಪ್ರೊ. ಡಾ.</nameField>
 			<nameField type="given">ಅಡಾ ಕಾರ್ನೆಲಿಯಾ</nameField>
 			<nameField type="given-informal">ನೀಲ್</nameField>
-			<nameField type="given2">ಇವಾ ಸೋಫಿಯಾ</nameField>
-			<nameField type="surname-prefix">ವ್ಯಾನ್ ಡೆನ್</nameField>
-			<nameField type="surname-core">ವೋಲ್ಫ್</nameField>
-			<nameField type="surname2">ಬೆಕರ್ ಸ್ಮಿತ್</nameField>
-			<nameField type="suffix">ಎಂ.ಡಿ. ಪಿ.ಎಚ್.ಡಿ.</nameField>
+			<nameField type="given2">ಸಿಸಾರ್ ಮಾರ್ಟಿನ್</nameField>
+			<nameField type="surname-prefix">ವಾನ್</nameField>
+			<nameField type="surname-core">ಬ್ರಾಲ್</nameField>
+			<nameField type="surname2">ಗೊನ್ಸಾಲೀಸ್ ಡೊಮಿಂಗೊ</nameField>
+			<nameField type="generation">ಜೂನಿಯರ್</nameField>
+			<nameField type="credentials">ಎಂ.ಡಿ ಡಿ.ಡಿ.ಎಸ್</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -63,9 +63,11 @@ public:
 
   void verify();
 
-  void clear_into_younger(Generation* old_gen);
-
-  void invalidate_or_clear(Generation* old_gen);
+  // Update old gen cards to maintain old-to-young-pointer invariant: Clear
+  // the old generation card table completely if the young generation had been
+  // completely evacuated, otherwise dirties the whole old generation to
+  // conservatively not loose any old-to-young pointer.
+  void maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty);
 
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions

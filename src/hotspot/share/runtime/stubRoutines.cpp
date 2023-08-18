@@ -50,9 +50,10 @@ address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
 
 // Class Variables
 
-BufferBlob* StubRoutines::_code1                                = nullptr;
-BufferBlob* StubRoutines::_code2                                = nullptr;
-BufferBlob* StubRoutines::_code3                                = nullptr;
+BufferBlob* StubRoutines::_initial_stubs_code                   = nullptr;
+BufferBlob* StubRoutines::_final_stubs_code                     = nullptr;
+BufferBlob* StubRoutines::_compiler_stubs_code                  = nullptr;
+BufferBlob* StubRoutines::_continuation_stubs_code              = nullptr;
 
 address StubRoutines::_call_stub_return_address                 = nullptr;
 address StubRoutines::_call_stub_entry                          = nullptr;
@@ -160,6 +161,7 @@ address StubRoutines::_vectorizedMismatch = nullptr;
 address StubRoutines::_dexp = nullptr;
 address StubRoutines::_dlog = nullptr;
 address StubRoutines::_dlog10 = nullptr;
+address StubRoutines::_fmod = nullptr;
 address StubRoutines::_dpow = nullptr;
 address StubRoutines::_dsin = nullptr;
 address StubRoutines::_dcos = nullptr;
@@ -180,6 +182,8 @@ address StubRoutines::_cont_returnBarrierExc = nullptr;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
+JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
+JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 // Initialization
 //
@@ -187,7 +191,7 @@ JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
 // The first one generates stubs needed during universe init (e.g., _handle_must_compile_first_entry).
 // The second phase includes all other stubs (which may depend on universe being initialized.)
 
-extern void StubGenerator_generate(CodeBuffer* code, int phase); // only interface to generators
+extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
 
 void UnsafeCopyMemory::create_table(int max_size) {
   UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
@@ -214,182 +218,94 @@ address UnsafeCopyMemory::page_error_continue_pc(address pc) {
   return nullptr;
 }
 
-void StubRoutines::initialize1() {
-  if (_code1 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 10;
-    int size = code_size1 + CodeEntryAlignment * max_aligned_stubs;
-    _code1 = BufferBlob::create("StubRoutines (1)", size);
-    if (_code1 == nullptr) {
-      vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
-    }
-    CodeBuffer buffer(_code1);
-    StubGenerator_generate(&buffer, 0);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size1 == 0 || buffer.insts_remaining() > 200, "increase code_size1");
+
+static BufferBlob* initialize_stubs(StubCodeGenerator::StubsKind kind,
+                                    int code_size, int max_aligned_stubs,
+                                    const char* timer_msg,
+                                    const char* buffer_name,
+                                    const char* assert_msg) {
+  ResourceMark rm;
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  // Add extra space for large CodeEntryAlignment
+  int size = code_size + CodeEntryAlignment * max_aligned_stubs;
+  BufferBlob* stubs_code = BufferBlob::create(buffer_name, size);
+  if (stubs_code == nullptr) {
+    vm_exit_out_of_memory(code_size, OOM_MALLOC_ERROR, "CodeCache: no room for %s", buffer_name);
+  }
+  CodeBuffer buffer(stubs_code);
+  StubGenerator_generate(&buffer, kind);
+  // When new stubs added we need to make sure there is some space left
+  // to catch situation when we should increase size again.
+  assert(code_size == 0 || buffer.insts_remaining() > 200, "increase %s", assert_msg);
+
+  LogTarget(Info, stubs) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("%s\t [" INTPTR_FORMAT ", " INTPTR_FORMAT "] used: %d, free: %d",
+                buffer_name, p2i(stubs_code->content_begin()), p2i(stubs_code->content_end()),
+                buffer.total_content_size(), buffer.insts_remaining());
+  }
+  return stubs_code;
+}
+
+void StubRoutines::initialize_initial_stubs() {
+  if (_initial_stubs_code == nullptr) {
+    _initial_stubs_code = initialize_stubs(StubCodeGenerator::Initial_stubs,
+                                           _initial_stubs_code_size, 10,
+                                           "StubRoutines generation initial stubs",
+                                           "StubRoutines (initial stubs)",
+                                           "_initial_stubs_code_size");
   }
 }
 
-#ifdef ASSERT
-typedef void (*arraycopy_fn)(address src, address dst, int count);
-
-// simple tests of generated arraycopy functions
-static void test_arraycopy_func(address func, int alignment) {
-  int v = 0xcc;
-  int v2 = 0x11;
-  jlong lbuffer[8];
-  jlong lbuffer2[8];
-  address fbuffer  = (address) lbuffer;
-  address fbuffer2 = (address) lbuffer2;
-  unsigned int i;
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    fbuffer[i] = v; fbuffer2[i] = v2;
-  }
-  // C++ does not guarantee jlong[] array alignment to 8 bytes.
-  // Use middle of array to check that memory before it is not modified.
-  address buffer  = align_up((address)&lbuffer[4], BytesPerLong);
-  address buffer2 = align_up((address)&lbuffer2[4], BytesPerLong);
-  // do an aligned copy
-  ((arraycopy_fn)func)(buffer, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust destination alignment
-  ((arraycopy_fn)func)(buffer, buffer2 + alignment, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-  // adjust source alignment
-  ((arraycopy_fn)func)(buffer + alignment, buffer2, 0);
-  for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
-  }
-}
-#endif // ASSERT
-
-void StubRoutines::initializeContinuationStubs() {
-  if (_code3 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 3", TRACETIME_LOG(Info, startuptime));
-    _code3 = BufferBlob::create("StubRoutines (3)", code_size2);
-    if (_code3 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (3)");
-    }
-    CodeBuffer buffer(_code3);
-    StubGenerator_generate(&buffer, 1);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size3");
+void StubRoutines::initialize_continuation_stubs() {
+  if (_continuation_stubs_code == nullptr) {
+    _continuation_stubs_code = initialize_stubs(StubCodeGenerator::Continuation_stubs,
+                                           _continuation_stubs_code_size, 10,
+                                           "StubRoutines generation continuation stubs",
+                                           "StubRoutines (continuation stubs)",
+                                           "_continuation_stubs_code_size");
   }
 }
 
-void StubRoutines::initialize2() {
-  if (_code2 == nullptr) {
-    ResourceMark rm;
-    TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
-    // Add extra space for large CodeEntryAlignment
-    int max_aligned_stubs = 100;
-    int size = code_size2 + CodeEntryAlignment * max_aligned_stubs;
-    _code2 = BufferBlob::create("StubRoutines (2)", size);
-    if (_code2 == nullptr) {
-      vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
-    }
-    CodeBuffer buffer(_code2);
-    StubGenerator_generate(&buffer, 2);
-    // When new stubs added we need to make sure there is some space left
-    // to catch situation when we should increase size again.
-    assert(code_size2 == 0 || buffer.insts_remaining() > 200, "increase code_size2");
+void StubRoutines::initialize_compiler_stubs() {
+  if (_compiler_stubs_code == nullptr) {
+    _compiler_stubs_code = initialize_stubs(StubCodeGenerator::Compiler_stubs,
+                                           _compiler_stubs_code_size, 100,
+                                           "StubRoutines generation compiler stubs",
+                                           "StubRoutines (compiler stubs)",
+                                           "_compiler_stubs_code_size");
   }
-
-#ifdef ASSERT
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
-
-#define TEST_ARRAYCOPY(type)                                                    \
-  test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
-  test_arraycopy_func(          type##_disjoint_arraycopy(), sizeof(type));     \
-  test_arraycopy_func(arrayof_##type##_arraycopy(),          sizeof(HeapWord)); \
-  test_arraycopy_func(arrayof_##type##_disjoint_arraycopy(), sizeof(HeapWord))
-
-  // Make sure all the arraycopy stubs properly handle zero count
-  TEST_ARRAYCOPY(jbyte);
-  TEST_ARRAYCOPY(jshort);
-  TEST_ARRAYCOPY(jint);
-  TEST_ARRAYCOPY(jlong);
-
-#undef TEST_ARRAYCOPY
-
-#define TEST_FILL(type)                                                                      \
-  if (_##type##_fill != nullptr) {                                                              \
-    union {                                                                                  \
-      double d;                                                                              \
-      type body[96];                                                                         \
-    } s;                                                                                     \
-                                                                                             \
-    int v = 32;                                                                              \
-    for (int offset = -2; offset <= 2; offset++) {                                           \
-      for (int i = 0; i < 96; i++) {                                                         \
-        s.body[i] = 1;                                                                       \
-      }                                                                                      \
-      type* start = s.body + 8 + offset;                                                     \
-      for (int aligned = 0; aligned < 2; aligned++) {                                        \
-        if (aligned) {                                                                       \
-          if (((intptr_t)start) % HeapWordSize == 0) {                                       \
-            ((void (*)(type*, int, int))StubRoutines::_arrayof_##type##_fill)(start, v, 80); \
-          } else {                                                                           \
-            continue;                                                                        \
-          }                                                                                  \
-        } else {                                                                             \
-          ((void (*)(type*, int, int))StubRoutines::_##type##_fill)(start, v, 80);           \
-        }                                                                                    \
-        for (int i = 0; i < 96; i++) {                                                       \
-          if (i < (8 + offset) || i >= (88 + offset)) {                                      \
-            assert(s.body[i] == 1, "what?");                                                 \
-          } else {                                                                           \
-            assert(s.body[i] == 32, "what?");                                                \
-          }                                                                                  \
-        }                                                                                    \
-      }                                                                                      \
-    }                                                                                        \
-  }                                                                                          \
-
-  TEST_FILL(jbyte);
-  TEST_FILL(jshort);
-  TEST_FILL(jint);
-
-#undef TEST_FILL
-
-#define TEST_COPYRTN(type) \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::arrayof_conjoint_##type##s), (int)MAX2(sizeof(HeapWord), sizeof(type)))
-
-  // Make sure all the copy runtime routines properly handle zero count
-  TEST_COPYRTN(jbyte);
-  TEST_COPYRTN(jshort);
-  TEST_COPYRTN(jint);
-  TEST_COPYRTN(jlong);
-
-#undef TEST_COPYRTN
-
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words), sizeof(HeapWord));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words_atomic), sizeof(HeapWord));
-  // Aligned to BytesPerLong
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
-  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
-
-  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
-
-#endif
 }
 
+void StubRoutines::initialize_final_stubs() {
+  if (_final_stubs_code == nullptr) {
+    _final_stubs_code = initialize_stubs(StubCodeGenerator::Final_stubs,
+                                         _final_stubs_code_size, 10,
+                                         "StubRoutines generation final stubs",
+                                         "StubRoutines (final stubs)",
+                                         "_final_stubs_code_size");
+  }
+}
 
-void stubRoutines_init1() { StubRoutines::initialize1(); }
-void stubRoutines_init2() { StubRoutines::initialize2(); }
-void stubRoutines_initContinuationStubs() { StubRoutines::initializeContinuationStubs(); }
+void initial_stubs_init()      { StubRoutines::initialize_initial_stubs(); }
+void continuation_stubs_init() { StubRoutines::initialize_continuation_stubs(); }
+void final_stubs_init()        { StubRoutines::initialize_final_stubs(); }
+
+void compiler_stubs_init(bool in_compiler_thread) {
+  if (in_compiler_thread && DelayCompilerStubsGeneration) {
+    // Temporarily revert state of stubs generation because
+    // it is called after final_stubs_init() finished
+    // during compiler runtime initialization.
+    // It is fine because these stubs are only used by
+    // compiled code and compiler is not running yet.
+    StubCodeDesc::unfreeze();
+    StubRoutines::initialize_compiler_stubs();
+    StubCodeDesc::freeze();
+  } else if (!in_compiler_thread && !DelayCompilerStubsGeneration) {
+    StubRoutines::initialize_compiler_stubs();
+  }
+}
 
 //
 // Default versions of arraycopy functions

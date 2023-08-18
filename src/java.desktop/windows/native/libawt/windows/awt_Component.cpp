@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "awt.h"
 
 #include <windowsx.h>
@@ -47,7 +49,6 @@
 #include "awt_Win32GraphicsDevice.h"
 #include "Hashtable.h"
 #include "ComCtl32Util.h"
-#include "math.h"
 
 #include <Region.h>
 
@@ -6584,7 +6585,7 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
                                                           "java/awt/event/InputEvent",
                                                           "getButtonDownMasks", "()[I").l;
     CHECK_NULL(obj);
-    jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
+    jint * tmp = env->GetIntArrayElements(obj, nullptr);
     CHECK_NULL(tmp);
     jsize len = env->GetArrayLength(obj);
     AwtComponent::masks = SAFE_SIZE_NEW_ARRAY(jint, len);

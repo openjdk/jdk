@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +49,8 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 
 public class LightWeightHttpServer {
@@ -111,7 +112,7 @@ public class LightWeightHttpServer {
         httpServer.setExecutor(executor);
         httpsServer.setExecutor(executor);
         ctx = new SimpleSSLContext().get();
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(ctx));
+        httpsServer.setHttpsConfigurator(new TestServerConfigurator(addr.getAddress(), ctx));
         httpServer.start();
         httpsServer.start();
 
@@ -119,12 +120,19 @@ public class LightWeightHttpServer {
         System.out.println("HTTP server port = " + port);
         httpsport = httpsServer.getAddress().getPort();
         System.out.println("HTTPS server port = " + httpsport);
-        httproot = "http://localhost:" + port + "/";
-        httpsroot = "https://localhost:" + httpsport + "/";
+        httproot = "http://" + makeServerAuthority(httpServer.getAddress()) + "/";
+        httpsroot = "https://" + makeServerAuthority(httpsServer.getAddress()) + "/";
 
         proxy = new ProxyServer(0, false);
         proxyPort = proxy.getPort();
         System.out.println("Proxy port = " + proxyPort);
+    }
+
+    private static String makeServerAuthority(final InetSocketAddress addr) {
+        final String hostIP = addr.getAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + addr.getPort();
     }
 
     public static void stop() throws IOException {

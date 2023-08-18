@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
 #include <strsafe.h>
-#include <math.h>
 #include <windef.h>
 #include <wtypes.h>
 #include <winuser.h>
@@ -2637,7 +2637,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
  */
 JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
 (JNIEnv *env, jobject self, jlong printDC, jstring text, jint strLen,
-     boolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
+     jboolean glyphCodes, jfloat x, jfloat y, jfloatArray positions)
 {
 
     long posX = ROUND_TO_LONG(x);
@@ -3925,9 +3925,13 @@ static void throwPrinterException(JNIEnv *env, DWORD err) {
                   sizeof(t_errStr),
                   NULL );
 
-    WideCharToMultiByte(CP_UTF8, 0, t_errStr, -1,
+    int nb = WideCharToMultiByte(CP_UTF8, 0, t_errStr, -1,
                         errStr, sizeof(errStr), NULL, NULL);
-    JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
+    if (nb > 0) {
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
+    } else {
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "secondary error during OS message extraction");
+    }
 }
 
 

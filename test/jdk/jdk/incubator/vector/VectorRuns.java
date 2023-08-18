@@ -27,7 +27,10 @@ import java.util.stream.IntStream;
 
 /**
  * @test
+ * @bug 8309727
  * @modules jdk.incubator.vector
+ * @run main VectorRuns
+ * @run main/othervm/java.security.policy=empty_security.policy VectorRuns
  */
 
 public class VectorRuns {
@@ -68,7 +71,7 @@ public class VectorRuns {
         if (r >= a.length)
             return a.length;
 
-        int length = a.length & (species.length() - 1);
+        int length = species.loopBound(a.length);
         if (length == a.length) length -= species.length();
         while (r < length) {
             IntVector vl = IntVector.fromArray(species, a, r - 1);

@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -59,6 +61,30 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   const TypeInt *ti = t->is_int();
   if( ti->_hi < 0 || ti->_lo > 0 ) return TypeInt::ONE;
   return TypeInt::BOOL;
+}
+
+Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!Matcher::match_rule_supported(Op_Conv2B)) {
+    if (phase->C->post_loop_opts_phase()) {
+      // Get type of comparison to make
+      const Type* t = phase->type(in(1));
+      Node* cmp = nullptr;
+      if (t->isa_int()) {
+        cmp = phase->transform(new CmpINode(in(1), phase->intcon(0)));
+      } else if (t->isa_ptr()) {
+        cmp = phase->transform(new CmpPNode(in(1), phase->zerocon(BasicType::T_OBJECT)));
+      } else {
+        assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[in(1)->Opcode()]);
+      }
+
+      // Replace Conv2B with the cmove
+      Node* bol = phase->transform(new BoolNode(cmp, BoolTest::eq));
+      return new CMoveINode(bol, phase->intcon(1), phase->intcon(0), TypeInt::BOOL);
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
+  }
+  return nullptr;
 }
 
 
@@ -320,6 +346,20 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
     }
   }
   return this_type;
+}
+
+Node* ConvI2LNode::Identity(PhaseGVN* phase) {
+  // If type is in "int" sub-range, we can
+  // convert I2L(L2I(x)) => x
+  // since the conversions have no effect.
+  if (in(1)->Opcode() == Op_ConvL2I) {
+    Node* x = in(1)->in(1);
+    const TypeLong* t = phase->type(x)->isa_long();
+    if (t != nullptr && t->_lo >= min_jint && t->_hi <= max_jint) {
+      return x;
+    }
+  }
+  return this;
 }
 
 #ifdef ASSERT

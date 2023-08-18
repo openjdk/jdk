@@ -41,7 +41,6 @@
  * an appropriate error value.
  */
 #define SHARED_GC_CONSTRAINTS(f)                               \
- f(uint,   ParallelGCThreadsConstraintFunc)                    \
  f(size_t, YoungPLABSizeConstraintFunc)                        \
  f(size_t, OldPLABSizeConstraintFunc)                          \
  f(uintx,  MinHeapFreeRatioConstraintFunc)                     \

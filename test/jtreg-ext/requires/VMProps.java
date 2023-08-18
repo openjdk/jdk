@@ -43,9 +43,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.foreign.CABI;
 
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
@@ -99,6 +102,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
         map.put("vm.jvmci", this::vmJvmci);
+        map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
         map.put("vm.emulatedClient", this::vmEmulatedClient);
         // vm.hasSA is "true" if the VM contains the serviceability agent
         // and jhsdb.
@@ -119,6 +123,10 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
+        // jdk.hasLibgraal is true if the libgraal shared library file is present
+        map.put("jdk.hasLibgraal", this::hasLibgraal);
+        // vm.libgraal.enabled is true if libgraal is used as JIT
+        map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -126,6 +134,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
+        map.put("jdk.foreign.linker", this::jdkForeignLinker);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -262,6 +271,20 @@ public class VMProps implements Callable<Map<String, String>> {
         return "true";
     }
 
+
+    /**
+     * @return true if JVMCI is enabled
+     */
+    protected String vmJvmciEnabled() {
+        // builds with jvmci have this flag
+        if ("false".equals(vmJvmci())) {
+            return "false";
+        }
+
+        return "" + Compiler.isJVMCIEnabled();
+    }
+
+
     /**
      * @return true if VM runs in emulated-client mode and false otherwise.
      */
@@ -291,12 +314,23 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmGC(SafeMap map) {
         var isJVMCIEnabled = Compiler.isJVMCIEnabled();
+        Predicate<GC> vmGCProperty = (GC gc) -> (gc.isSupported()
+                                        && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
+                                        && (gc.isSelected() || GC.isSelectedErgonomically()));
         for (GC gc: GC.values()) {
-            map.put("vm.gc." + gc.name(),
-                    () -> "" + (gc.isSupported()
-                            && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
-                            && (gc.isSelected() || GC.isSelectedErgonomically())));
+            map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
         }
+
+        // Special handling for ZGC modes
+        var vmGCZ = vmGCProperty.test(GC.Z);
+        var genZ = WB.getBooleanVMFlag("ZGenerational");
+        var genZIsDefault = WB.isDefaultVMFlag("ZGenerational");
+        // vm.gc.ZGenerational=true means:
+        //    vm.gc.Z is true and ZGenerational is either explicitly true, or default
+        map.put("vm.gc.ZGenerational", () -> "" + (vmGCZ && (genZ || genZIsDefault)));
+        // vm.gc.ZSinglegen=true means:
+        //    vm.gc.Z is true and ZGenerational is either explicitly false, or default
+        map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
     /**
@@ -346,11 +380,13 @@ public class VMProps implements Callable<Map<String, String>> {
     protected void vmOptFinalFlags(SafeMap map) {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "ClassUnloadingWithConcurrentMark");
-        vmOptFinalFlag(map, "UseCompressedOops");
-        vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
+        vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "UseCompressedOops");
+        vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
         vmOptFinalFlag(map, "UseVtableBasedCHA");
+        vmOptFinalFlag(map, "ZGenerational");
     }
 
     /**
@@ -455,6 +491,24 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * Check if the libgraal shared library file is present.
+     *
+     * @return true if the libgraal shared library file is present.
+     */
+    protected String hasLibgraal() {
+        return "" + WB.hasLibgraal();
+    }
+
+    /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    protected String isLibgraalEnabled() {
+        return "" + Compiler.isLibgraalEnabled();
+    }
+
+    /**
      * Check if Compiler1 is present.
      *
      * @return true if Compiler1 is used as JIT compiler, either alone or as part of the tiered system.
@@ -472,7 +526,7 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + Compiler.isC2Enabled();
     }
 
-   /**
+    /**
      * A simple check for docker support
      *
      * @return true if docker is supported in a given environment
@@ -652,6 +706,17 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + result;
     }
 
+    /*
+     * A string indicating the foreign linker that is currently being used. See jdk.internal.foreign.CABI
+     * for valid values.
+     *
+     * "FALLBACK" and "UNSUPPORTED" are special values. The former indicates the fallback linker is
+     * being used. The latter indicates an unsupported platform.
+     */
+    private String jdkForeignLinker() {
+        return String.valueOf(CABI.current());
+    }
+
     /**
      * Dumps the map to the file if the file name is given as the property.
      * This functionality could be helpful to know context in the real
@@ -666,6 +731,7 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
+        Collections.sort(lines);
         try {
             Files.write(Paths.get(dumpFileName), lines,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);

@@ -22,10 +22,7 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -36,8 +33,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.lang.foreign.SegmentScope;
-import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.Arena;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +61,8 @@ public class QSort extends CLayouts {
     static MemorySegment qsort_addr = abi.defaultLookup().find("qsort").get();
 
     static {
-        INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), SegmentScope.global());
+        MemoryLayout layout = MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT);
+        INPUT_SEGMENT = Arena.global().allocate(layout);
         INPUT_SEGMENT.copyFrom(MemorySegment.ofArray(INPUT));
 
         System.loadLibrary("QSortJNI");
@@ -83,7 +80,7 @@ public class QSort extends CLayouts {
                             "panama_upcall_compar",
                             MethodType.methodType(int.class, MemorySegment.class, MemorySegment.class)),
                     FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER),
-                    SegmentScope.global()
+                    Arena.global()
             );
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);

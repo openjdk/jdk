@@ -39,8 +39,9 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgent.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -135,11 +136,11 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     assert(false, "buffer_length too small");
     return nullptr;
   }
-  const int milliseconds_per_microsecond = 1000;
+  const int milliseconds_per_second = 1000;
   const time_t seconds_since_19700101 =
-    milliseconds_since_19700101 / milliseconds_per_microsecond;
+    milliseconds_since_19700101 / milliseconds_per_second;
   const int milliseconds_after_second =
-    milliseconds_since_19700101 % milliseconds_per_microsecond;
+    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_second);
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
   if (utc) {
@@ -161,7 +162,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   // No offset when dealing with UTC
   time_t UTC_to_local = 0;
   if (!utc) {
-#if defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)
+#if (defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)) && !defined(AIX)
     UTC_to_local = -(time_struct.tm_gmtoff);
 #elif defined(_WINDOWS)
     long zone;
@@ -476,7 +477,7 @@ void os::initialize_jdk_signal_support(TRAPS) {
   if (!ReduceSignalUsage) {
     // Setup JavaThread for processing signals
     const char* name = "Signal Dispatcher";
-    Handle thread_oop = JavaThread::create_system_thread_object(name, true /* visible */, CHECK);
+    Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
     JavaThread* thread = new JavaThread(&signal_thread_entry);
     JavaThread::vm_exit_on_osthread_failure(thread);
@@ -534,7 +535,7 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
                               const char *syms[], size_t syms_len) {
   assert(agent_lib != nullptr, "sanity check");
   const char *lib_name;
@@ -561,29 +562,29 @@ void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
                             size_t syms_len) {
   void *ret;
   void *proc_handle;
   void *save_handle;
 
-  assert(agent_lib != nullptr, "sanity check");
-  if (agent_lib->name() == nullptr) {
+  assert(agent != nullptr, "sanity check");
+  if (agent->name() == nullptr) {
     return false;
   }
   proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent_lib->os_lib();
+  save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
-  agent_lib->set_os_lib(proc_handle);
-  ret = find_agent_function(agent_lib, true, syms, syms_len);
+  agent->set_os_lib(proc_handle);
+  ret = find_agent_function(agent, true, syms, syms_len);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
-    agent_lib->set_valid();
-    agent_lib->set_static_lib(true);
+    agent->set_static_lib();
+    agent->set_loaded();
     return true;
   }
-  agent_lib->set_os_lib(save_handle);
+  agent->set_os_lib(save_handle);
   return false;
 }
 
@@ -877,8 +878,8 @@ bool os::print_function_and_library_name(outputStream* st,
   // this as a function descriptor for the reader (see below).
   if (!have_function_name && os::is_readable_pointer(addr)) {
     address addr2 = (address)os::resolve_function_descriptor(addr);
-    if (have_function_name = is_function_descriptor =
-        dll_address_to_function_name(addr2, p, buflen, &offset, demangle)) {
+    if ((have_function_name = is_function_descriptor =
+        dll_address_to_function_name(addr2, p, buflen, &offset, demangle))) {
       addr = addr2;
     }
   }
@@ -927,13 +928,63 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static void print_hex_readable_pointer(outputStream* st, address p,
-                                                         int unitsize) {
-  switch (unitsize) {
-    case 1: st->print("%02x", *(u1*)p); break;
-    case 2: st->print("%04x", *(u2*)p); break;
-    case 4: st->print("%08x", *(u4*)p); break;
-    case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
+ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
+  const intptr_t errval = 0x1717;
+  intptr_t i = SafeFetchN(p, errval);
+  if (i == errval) {
+    i = SafeFetchN(p, ~errval);
+    if (i == ~errval) {
+      return false;
+    }
+  }
+  (*result) = i;
+  return true;
+}
+
+static void print_hex_location(outputStream* st, address p, int unitsize) {
+  assert(is_aligned(p, unitsize), "Unaligned");
+  address pa = align_down(p, sizeof(intptr_t));
+#ifndef _LP64
+  // Special handling for printing qwords on 32-bit platforms
+  if (unitsize == 8) {
+    intptr_t i1, i2;
+    if (read_safely_from((intptr_t*)pa, &i1) &&
+        read_safely_from((intptr_t*)pa + 1, &i2)) {
+      const uint64_t value =
+        LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
+        BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
+      st->print("%016" FORMAT64_MODIFIER "x", value);
+    } else {
+      st->print_raw("????????????????");
+    }
+    return;
+  }
+#endif // 32-bit, qwords
+  intptr_t i = 0;
+  if (read_safely_from((intptr_t*)pa, &i)) {
+    // bytes:   CA FE BA BE DE AD C0 DE
+    // bytoff:   0  1  2  3  4  5  6  7
+    // LE bits:  0  8 16 24 32 40 48 56
+    // BE bits: 56 48 40 32 24 16  8  0
+    const int offset = (int)(p - (address)pa);
+    const int bitoffset =
+      LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
+      BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
+    const int bitfieldsize = unitsize * BitsPerByte;
+    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    switch (unitsize) {
+      case 1: st->print("%02x", (u1)value); break;
+      case 2: st->print("%04x", (u2)value); break;
+      case 4: st->print("%08x", (u4)value); break;
+      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+    }
+  } else {
+    switch (unitsize) {
+      case 1: st->print_raw("??"); break;
+      case 2: st->print_raw("????"); break;
+      case 4: st->print_raw("????????"); break;
+      case 8: st->print_raw("????????????????"); break;
+    }
   }
 }
 
@@ -954,11 +1005,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   // Print out the addresses as if we were starting from logical_start.
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    if (is_readable_pointer(p)) {
-      print_hex_readable_pointer(st, p, unitsize);
-    } else {
-      st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
-    }
+    print_hex_location(st, p, unitsize);
     p += unitsize;
     logical_p += unitsize;
     cols++;
@@ -1006,6 +1053,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       }
     }
   }
+}
+
+void os::print_register_info(outputStream* st, const void* context) {
+  int continuation = 0;
+  print_register_info(st, context, continuation);
 }
 
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
@@ -1122,7 +1174,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is nullptr");
+    st->print_cr("0x0 is null");
     return;
   }
 
@@ -1201,6 +1253,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 #endif
+
+  // Still nothing? If NMT is enabled, we can ask what it thinks...
+  if (MemTracker::print_containing_region(addr, st)) {
+    return;
+  }
 
   // Try an OS specific find
   if (os::find(addr, st)) {
@@ -1371,6 +1428,22 @@ bool os::file_exists(const char* filename) {
   }
   return os::stat(filename, &statbuf) == 0;
 }
+
+bool os::write(int fd, const void *buf, size_t nBytes) {
+  ssize_t res;
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
+    if (res == OS_ERR) {
+      return false;
+    }
+    buf = (void *)((char *)buf + nBytes);
+    nBytes -= res;
+  }
+
+  return true;
+}
+
 
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".
@@ -1628,43 +1701,43 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
-                          const size_t page_size,
                           const char* base,
-                          const size_t size) {
+                          const size_t size,
+                          const size_t page_size) {
 
   log_info(pagesize)("%s: "
                      " min=" SIZE_FORMAT "%s"
                      " max=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t requested_size,
-                                             const size_t page_size,
-                                             const size_t alignment,
+                                             const size_t requested_page_size,
                                              const char* base,
-                                             const size_t size) {
+                                             const size_t size,
+                                             const size_t page_size) {
 
   log_info(pagesize)("%s:"
                      " req_size=" SIZE_FORMAT "%s"
+                     " req_page_size=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " alignment=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(requested_size),
+                     trace_page_size_params(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(alignment),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 

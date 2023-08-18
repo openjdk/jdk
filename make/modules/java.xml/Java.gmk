@@ -23,7 +23,7 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += lossy-conversions
+DISABLED_WARNINGS_java += lossy-conversions this-escape
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:$(call CommaList, javax.xml.catalog javax.xml.datatype \
     javax.xml.transform javax.xml.validation javax.xml.xpath)'

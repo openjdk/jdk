@@ -413,7 +413,7 @@ hb_ot_get_glyph_extents (hb_font_t *font,
   if (ot_face->sbix->get_extents (font, glyph, extents)) return true;
   if (ot_face->CBDT->get_extents (font, glyph, extents)) return true;
 #endif
-#if !defined(HB_NO_COLOR)
+#if !defined(HB_NO_COLOR) && !defined(HB_NO_PAINT)
   if (ot_face->COLR->get_extents (font, glyph, extents)) return true;
 #endif
   if (ot_face->glyf->get_extents (font, glyph, extents)) return true;
@@ -632,21 +632,5 @@ hb_ot_font_set_funcs (hb_font_t *font)
                      ot_font,
                      _hb_ot_font_destroy);
 }
-
-#ifndef HB_NO_VAR
-bool
-_glyf_get_leading_bearing_with_var_unscaled (hb_font_t *font, hb_codepoint_t glyph, bool is_vertical,
-                                             int *lsb)
-{
-  return font->face->table.glyf->get_leading_bearing_with_var_unscaled (font, glyph, is_vertical, lsb);
-}
-
-unsigned
-_glyf_get_advance_with_var_unscaled (hb_font_t *font, hb_codepoint_t glyph, bool is_vertical)
-{
-  return font->face->table.glyf->get_advance_with_var_unscaled (font, glyph, is_vertical);
-}
-#endif
-
 
 #endif

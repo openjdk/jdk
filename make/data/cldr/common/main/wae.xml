@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -582,8 +582,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="contributed">E, d. MMM – E, d. MMM</greatestDifference>
@@ -764,8 +764,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="contributed">E, d. MMM – E, d. MMM</greatestDifference>
@@ -793,12 +793,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="contributed">d. – d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. – d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. MMM – d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. MMM y – d. MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E, d. – E, d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d. – E, d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E, d. MMM – E, d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E, d. MMM y – E, d. MMM y</greatestDifference>
 						</intervalFormatItem>
@@ -1140,8 +1140,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="M" draft="contributed">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. – d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">d. – d. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="contributed">E, d. MMM – E, d. MMM</greatestDifference>
@@ -1169,12 +1169,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y" draft="contributed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="contributed">d. – d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">d. – d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. MMM – d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">d. MMM y – d. MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="contributed">E, d. – E, d. MMM y</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d. – E, d. MMM y</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E, d. MMM – E, d. MMM y</greatestDifference>
 							<greatestDifference id="y" draft="contributed">E, d. MMM y – E, d. MMM y</greatestDifference>
 						</intervalFormatItem>

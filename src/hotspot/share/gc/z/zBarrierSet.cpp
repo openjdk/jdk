@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,16 @@
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
 #include "gc/z/zBarrierSetStackChunk.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zThreadLocalData.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/registerMap.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/z/c1/zBarrierSetC1.hpp"
@@ -42,8 +47,8 @@
 class ZBarrierSetC1;
 class ZBarrierSetC2;
 
-ZBarrierSet::ZBarrierSet() :
-    BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
+ZBarrierSet::ZBarrierSet()
+  : BarrierSet(make_barrier_set_assembler<ZBarrierSetAssembler>(),
                make_barrier_set_c1<ZBarrierSetC1>(),
                make_barrier_set_c2<ZBarrierSetC2>(),
                new ZBarrierSetNMethod(),
@@ -80,18 +85,71 @@ void ZBarrierSet::on_thread_destroy(Thread* thread) {
 }
 
 void ZBarrierSet::on_thread_attach(Thread* thread) {
-  // Set thread local address bad mask
-  ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  // Set thread local masks
+  ZThreadLocalData::set_load_bad_mask(thread, ZPointerLoadBadMask);
+  ZThreadLocalData::set_load_good_mask(thread, ZPointerLoadGoodMask);
+  ZThreadLocalData::set_mark_bad_mask(thread, ZPointerMarkBadMask);
+  ZThreadLocalData::set_store_bad_mask(thread, ZPointerStoreBadMask);
+  ZThreadLocalData::set_store_good_mask(thread, ZPointerStoreGoodMask);
+  ZThreadLocalData::set_nmethod_disarmed(thread, ZPointerStoreGoodMask);
   if (thread->is_Java_thread()) {
     JavaThread* const jt = JavaThread::cast(thread);
     StackWatermark* const watermark = new ZStackWatermark(jt);
     StackWatermarkSet::add_watermark(jt, watermark);
+    ZThreadLocalData::store_barrier_buffer(jt)->initialize();
   }
 }
 
 void ZBarrierSet::on_thread_detach(Thread* thread) {
   // Flush and free any remaining mark stacks
   ZHeap::heap()->mark_flush_and_free(thread);
+}
+
+static void deoptimize_allocation(JavaThread* thread) {
+  RegisterMap reg_map(thread, RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
+  const frame runtime_frame = thread->last_frame();
+  assert(runtime_frame.is_runtime_frame(), "must be runtime frame");
+
+  const frame caller_frame = runtime_frame.sender(&reg_map);
+  assert(caller_frame.is_compiled_frame(), "must be compiled");
+
+  const nmethod* const nm = caller_frame.cb()->as_nmethod();
+  if (nm->is_compiled_by_c2() && !caller_frame.is_deoptimized_frame()) {
+    Deoptimization::deoptimize_frame(thread, caller_frame.id());
+  }
+}
+
+void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+  const ZPage* const page = ZHeap::heap()->page(to_zaddress(new_obj));
+  const ZPageAge age = page->age();
+  if (age == ZPageAge::old) {
+    // We promised C2 that its allocations would end up in young gen. This object
+    // breaks that promise. Take a few steps in the interpreter instead, which has
+    // no such assumptions about where an object resides.
+    deoptimize_allocation(thread);
+    return;
+  }
+
+  if (!ZGeneration::young()->is_phase_mark_complete()) {
+    return;
+  }
+
+  if (!page->is_relocatable()) {
+    return;
+  }
+
+  if (ZRelocate::compute_to_age(age) != ZPageAge::old) {
+    return;
+  }
+
+  // If the object is young, we have to still be careful that it isn't racingly
+  // about to get promoted to the old generation. That causes issues when null
+  // pointers are supposed to be coloured, but the JIT is a bit sloppy and
+  // reinitializes memory with raw nulls. We detect this situation and detune
+  // rather than relying on the JIT to never be sloppy with redundant initialization.
+  deoptimize_allocation(thread);
 }
 
 void ZBarrierSet::print_on(outputStream* st) const {

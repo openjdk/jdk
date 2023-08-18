@@ -415,7 +415,8 @@ public class TestCommon extends CDSTestUtils {
     public static OutputAnalyzer runWithArchive(CDSOptions opts)
         throws Exception {
 
-        ArrayList<String> cmd = opts.getRuntimePrefix();
+        ArrayList<String> cmd = new ArrayList<String>();
+        cmd.addAll(opts.prefix);
         cmd.add("-Xshare:" + opts.xShareMode);
         cmd.add("-showversion");
         cmd.add("-XX:SharedArchiveFile=" + getCurrentArchiveName());

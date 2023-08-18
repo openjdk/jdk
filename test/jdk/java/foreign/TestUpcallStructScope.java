@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,19 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  *
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=false
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   TestUpcallStructScope
  * @run testng/othervm/native
  *   --enable-native-access=ALL-UNNAMED
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   TestUpcallStructScope
  */
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 
 import org.testng.annotations.Test;
 
@@ -62,7 +58,8 @@ public class TestUpcallStructScope extends NativeTestHelper {
     static final MemoryLayout S_PDI_LAYOUT = MemoryLayout.structLayout(
         C_POINTER.withName("p0"),
         C_DOUBLE.withName("p1"),
-        C_INT.withName("p2")
+        C_INT.withName("p2"),
+        MemoryLayout.paddingLayout(4)
     );
 
     static {
@@ -89,9 +86,9 @@ public class TestUpcallStructScope extends NativeTestHelper {
         AtomicReference<MemorySegment> capturedSegment = new AtomicReference<>();
         MethodHandle target = methodHandle(capturedSegment::set);
         FunctionDescriptor upcallDesc = FunctionDescriptor.ofVoid(S_PDI_LAYOUT);
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDesc, arena.scope());
-            MemorySegment argSegment = MemorySegment.allocateNative(S_PDI_LAYOUT, arena.scope());;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment upcallStub = LINKER.upcallStub(target, upcallDesc, arena);
+            MemorySegment argSegment = arena.allocate(S_PDI_LAYOUT);
             MH_do_upcall.invoke(upcallStub, argSegment);
         }
 

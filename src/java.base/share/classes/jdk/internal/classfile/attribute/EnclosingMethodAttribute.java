@@ -36,6 +36,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models the {@code EnclosingMethod} attribute {@jvms 4.7.7}, which can appear
@@ -81,7 +82,7 @@ public sealed interface EnclosingMethodAttribute
      * immediately enclosed by a method or constructor}
      */
     default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
-        return enclosingMethodType().map(n -> MethodTypeDesc.ofDescriptor(n.stringValue()));
+        return enclosingMethod().map(Util::methodTypeSymbol);
     }
 
     /**

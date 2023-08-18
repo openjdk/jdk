@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -51,9 +52,20 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   TruncatedSeq _rate_avg;
 };
 
+/*
+ * The adaptive heuristic tracks the allocation behavior and average cycle
+ * time of the application. It attempts to start a cycle with enough time
+ * to complete before the available memory is exhausted. It errors on the
+ * side of starting cycles early to avoid allocation failures (degenerated
+ * cycles).
+ *
+ * This heuristic limits the number of regions for evacuation such that the
+ * evacuation reserve is respected. This helps it avoid allocation failures
+ * during evacuation. It preferentially selects regions with the most garbage.
+ */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics();
+  ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
@@ -99,11 +111,12 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
+protected:
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
-  // tend to over estimate the rate at which mutators will deplete the
+  // tend to overestimate the rate at which mutators will deplete the
   // heap. In other words, erring on the side of caution will trigger more
   // concurrent GCs.
   double _margin_of_error_sd;

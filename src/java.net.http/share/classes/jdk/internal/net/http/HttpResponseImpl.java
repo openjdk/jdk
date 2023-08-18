@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
 import java.net.http.HttpClient;
@@ -123,7 +123,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
      *         the channel.
      */
     @Override
-    public synchronized RawChannel rawChannel() throws IOException {
+    public RawChannel rawChannel() throws IOException {
         if (rawChannelProvider == null) {
             throw new UnsupportedOperationException(
                     "RawChannel is only supported for WebSocket creation");
@@ -147,7 +147,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
      *         the channel.
      */
     @Override
-    public synchronized void closeRawChannel() throws IOException {
+    public void closeRawChannel() throws IOException {
         if (rawChannelProvider == null) {
             throw new UnsupportedOperationException(
                     "RawChannel is only supported for WebSocket creation");
@@ -180,6 +180,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         private final HttpConnection connection;
         private final Exchange<?> exchange;
         private RawChannel rawchan;
+        private final ReentrantLock stateLock = new ReentrantLock();
         RawChannelProvider(HttpConnection conn, Exchange<?> exch) {
             connection = conn;
             exchange = exch;
@@ -193,7 +194,16 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
         }
 
         @Override
-        public synchronized RawChannel rawChannel() {
+        public RawChannel rawChannel() {
+            stateLock.lock();
+            try {
+                return rawChannel0();
+            } finally {
+                stateLock.unlock();
+            }
+        }
+
+        private RawChannel rawChannel0() {
             if (rawchan == null) {
                 ExchangeImpl<?> exchImpl = exchangeImpl();
                 if (!(exchImpl instanceof Http1Exchange)) {
@@ -213,11 +223,16 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
             return rawchan;
         }
 
-        public synchronized void closeRawChannel() throws IOException {
+        public void closeRawChannel() throws IOException {
             //  close the rawChannel, if created, or the
             // connection, if not.
-            if (rawchan != null) rawchan.close();
-            else connection.close();
+            stateLock.lock();
+            try {
+                if (rawchan != null) rawchan.close();
+                else connection.close();
+            } finally {
+                stateLock.unlock();
+            }
         }
 
         private static HttpConnection connection(Response resp, Exchange<?> exch) {

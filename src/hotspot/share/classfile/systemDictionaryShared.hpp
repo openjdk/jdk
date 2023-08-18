@@ -164,9 +164,7 @@ public:
 private:
 
   static DumpTimeSharedClassTable* _dumptime_table;
-  static DumpTimeSharedClassTable* _cloned_dumptime_table;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
-  static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
 
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
@@ -289,15 +287,6 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
-
-  // For repeatable dumping, we
-  //   1. clone DumpTimeSharedClassTable, same for DumpTimeLambdaProxyClassDictionary
-  //      clone SharedClassPathTable
-  //   2. do dumping
-  //   3. restore DumpTimeSharedClassTable, DumpTimeLambdaProxyClassDictionary and SharedClassPathTable
-  //      from cloned versions.
-  static void clone_dumptime_tables();
-  static void restore_dumptime_tables();
 
   static void check_excluded_classes();
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);

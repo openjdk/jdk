@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -415,6 +416,8 @@ class JavaThread: public Thread {
 
   StackOverflow    _stack_overflow_state;
 
+  void pretouch_stack();
+
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
   // code)
@@ -447,14 +450,10 @@ class JavaThread: public Thread {
   intptr_t* _cont_fastpath; // the sp of the oldest known interpreted/call_stub frame inside the
                             // continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
+
   // It's signed for error detection.
-#ifdef _LP64
-  int64_t _held_monitor_count;  // used by continuations for fast lock detection
-  int64_t _jni_monitor_count;
-#else
-  int32_t _held_monitor_count;  // used by continuations for fast lock detection
-  int32_t _jni_monitor_count;
-#endif
+  intx _held_monitor_count;  // used by continuations for fast lock detection
+  intx _jni_monitor_count;
 
 private:
 
@@ -510,9 +509,7 @@ private:
   virtual bool is_Java_thread() const            { return true;  }
   virtual bool can_call_java() const             { return true; }
 
-  virtual bool is_active_Java_thread() const {
-    return on_thread_list() && !is_terminated();
-  }
+  virtual bool is_active_Java_thread() const;
 
   // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
@@ -598,11 +595,11 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  void inc_held_monitor_count(int i = 1, bool jni = false);
-  void dec_held_monitor_count(int i = 1, bool jni = false);
+  void inc_held_monitor_count(intx i = 1, bool jni = false);
+  void dec_held_monitor_count(intx i = 1, bool jni = false);
 
-  int64_t held_monitor_count() { return (int64_t)_held_monitor_count; }
-  int64_t jni_monitor_count()  { return (int64_t)_jni_monitor_count;  }
+  intx held_monitor_count() { return _held_monitor_count; }
+  intx jni_monitor_count()  { return _jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   inline bool is_vthread_mounted() const;
@@ -810,6 +807,11 @@ private:
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
   static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
+
+#if INCLUDE_JVMTI
+  static ByteSize is_in_VTMS_transition_offset()     { return byte_offset_of(JavaThread, _is_in_VTMS_transition); }
+  static ByteSize is_in_tmp_VTMS_transition_offset() { return byte_offset_of(JavaThread, _is_in_tmp_VTMS_transition); }
+#endif
 
   // Returns the jni environment for this thread
   JNIEnv* jni_environment()                      { return &_jni_environment; }
@@ -1135,20 +1137,33 @@ private:
   ParkEvent * _SleepEvent;
 public:
   bool sleep(jlong millis);
+  bool sleep_nanos(jlong nanos);
 
   // java.lang.Thread interruption support
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+
+  static ByteSize lock_stack_offset()      { return byte_offset_of(JavaThread, _lock_stack); }
+  // Those offsets are used in code generators to access the LockStack that is embedded in this
+  // JavaThread structure. Those accesses are relative to the current thread, which
+  // is typically in a dedicated register.
+  static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
+  static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 
   // Helper function to create the java.lang.Thread object for a
-  // VM-internal thread. The thread will have the given name, be
-  // part of the System ThreadGroup and if is_visible is true will be
-  // discoverable via the system ThreadGroup.
-  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+  // VM-internal thread. The thread will have the given name and be
+  // part of the System ThreadGroup.
+  static Handle create_system_thread_object(const char* name, TRAPS);
 
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.

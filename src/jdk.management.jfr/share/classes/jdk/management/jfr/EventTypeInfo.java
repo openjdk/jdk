@@ -44,7 +44,7 @@ import jdk.jfr.SettingDescriptor;
  * @since 9
  */
 public final class EventTypeInfo {
-    private final List<SettingDescriptorInfo> settings;
+    private final List<SettingDescriptorInfo> settingDescriptors;
     private final long id;
     private final String name;
     private final String description;
@@ -53,7 +53,7 @@ public final class EventTypeInfo {
 
     // package private
     EventTypeInfo(EventType eventType) {
-        this.settings = creatingSettingDescriptorInfos(eventType);
+        this.settingDescriptors = creatingSettingDescriptorInfos(eventType);
         this.id = eventType.getId();
         this.name = eventType.getName();
         this.label = eventType.getLabel();
@@ -62,12 +62,20 @@ public final class EventTypeInfo {
     }
 
     private EventTypeInfo(CompositeData cd) {
-        this.settings = createSettings(cd.get("settings"));
+        if (cd.containsKey("settings")) {
+            this.settingDescriptors = createSettingDescriptors(cd.get("settings"));
+        } else {
+            this.settingDescriptors = createSettingDescriptors(cd.get("settingDescriptors"));
+        }
         this.id = (long) cd.get("id");
         this.name = (String) cd.get("name");
         this.label = (String) cd.get("label");
         this.description = (String) cd.get("description");
-        this.categoryNames = createCategoryNames((Object[]) cd.get("category"));
+        if (cd.containsKey("category")) {
+            this.categoryNames = createCategoryNames((Object[]) cd.get("category"));
+        } else {
+            this.categoryNames = createCategoryNames((Object[]) cd.get("categoryNames"));
+        }
     }
 
     private static List<String> createCategoryNames(Object[] array) {
@@ -87,7 +95,7 @@ public final class EventTypeInfo {
         return Collections.unmodifiableList(settingDescriptorInfos);
     }
 
-    private static List<SettingDescriptorInfo> createSettings(Object settings) {
+    private static List<SettingDescriptorInfo> createSettingDescriptors(Object settings) {
         if (settings instanceof Object[] settingsArray) {
             List<SettingDescriptorInfo> list = new ArrayList<>(settingsArray.length);
             for (Object element : settingsArray) {
@@ -174,7 +182,7 @@ public final class EventTypeInfo {
      * @see EventType#getSettingDescriptors()
      */
     public List<SettingDescriptorInfo> getSettingDescriptors() {
-        return settings;
+        return settingDescriptors;
     }
 
     /**
@@ -229,11 +237,11 @@ public final class EventTypeInfo {
      * <td>{@code String}</td>
      * </tr>
      * <tr>
-     * <th scope="row">category</th>
+     * <th scope="row">categoryNames</th>
      * <td><code>ArrayType(1, SimpleType.STRING)</code></td>
      * </tr>
      * <tr>
-     * <th scope="row">settings</th>
+     * <th scope="row">settingDescriptors</th>
      * <td>{@code javax.management.openmbean.CompositeData[]} whose element type
      * is the mapped type for {@link SettingDescriptorInfo} as specified in the
      * {@link SettingDescriptorInfo#from} method.</td>

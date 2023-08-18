@@ -174,12 +174,8 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
             // caller-sensitive method is invoked through a per-caller invoker while
             // the target MH is always spreading the args
             var invoker = JLIA.reflectiveInvoker(caller);
-            try {
-                // invoke the target method handle via an invoker
-                return invoker.invokeExact(target, obj, args);
-            } catch (IllegalArgumentException e) {
-                throw new InvocationTargetException(e);
-            }
+            // invoke the target method handle via an invoker
+            return invoker.invokeExact(target, obj, args);
         }
     }
 

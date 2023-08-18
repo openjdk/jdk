@@ -43,7 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -151,11 +151,11 @@ JRT_ENTRY(void, InterpreterRuntime::ldc(JavaThread* current, bool wide))
   // access constant pool
   LastFrameAccessor last_frame(current);
   ConstantPool* pool = last_frame.method()->constants();
-  int index = wide ? last_frame.get_index_u2(Bytecodes::_ldc_w) : last_frame.get_index_u1(Bytecodes::_ldc);
-  constantTag tag = pool->tag_at(index);
+  int cp_index = wide ? last_frame.get_index_u2(Bytecodes::_ldc_w) : last_frame.get_index_u1(Bytecodes::_ldc);
+  constantTag tag = pool->tag_at(cp_index);
 
   assert (tag.is_unresolved_klass() || tag.is_klass(), "wrong ldc call");
-  Klass* klass = pool->klass_at(index, CHECK);
+  Klass* klass = pool->klass_at(cp_index, CHECK);
   oop java_class = klass->java_mirror();
   current->set_vm_result(java_class);
 JRT_END
@@ -664,16 +664,17 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
                     bytecode == Bytecodes::_putstatic);
   bool is_static = (bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic);
 
+  int field_index = last_frame.get_index_u2(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.
-    LinkResolver::resolve_field_access(info, pool, last_frame.get_index_u2_cpcache(bytecode),
+    LinkResolver::resolve_field_access(info, pool, field_index,
                                        m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  if (cp_cache_entry->is_resolved(bytecode)) return;
+  if (pool->resolved_field_entry_at(field_index)->is_resolved(bytecode)) return;
+
 
   // compute auxiliary field attributes
   TosState state  = as_TosState(info.field_type());
@@ -713,16 +714,11 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
     }
   }
 
-  cp_cache_entry->set_field(
-    get_code,
-    put_code,
-    info.field_holder(),
-    info.index(),
-    info.offset(),
-    state,
-    info.access_flags().is_final(),
-    info.access_flags().is_volatile()
-  );
+  ResolvedFieldEntry* entry = pool->resolved_field_entry_at(field_index);
+  entry->set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
+  entry->fill_in(info.field_holder(), info.offset(),
+                 checked_cast<u2>(info.index()), checked_cast<u1>(state),
+                 static_cast<u1>(get_code), static_cast<u1>(put_code));
 }
 
 
@@ -735,6 +731,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
 //%note monitor_1
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
+  assert(LockingMode != LM_LIGHTWEIGHT, "Should call monitorenter_obj() when using the new lightweight locking");
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
@@ -749,6 +746,22 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #endif
 JRT_END
 
+// NOTE: We provide a separate implementation for the new lightweight locking to workaround a limitation
+// of registers in x86_32. This entry point accepts an oop instead of a BasicObjectLock*.
+// The problem is that we would need to preserve the register that holds the BasicObjectLock,
+// but we are using that register to hold the thread. We don't have enough registers to
+// also keep the BasicObjectLock, but we don't really need it anyway, we only need
+// the object. See also InterpreterMacroAssembler::lock_object().
+// As soon as legacy stack-locking goes away we could remove the other monitorenter() entry
+// point, and only use oop-accepting entries (same for monitorexit() below).
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
+  assert(LockingMode == LM_LIGHTWEIGHT, "Should call monitorenter() when not using the new lightweight locking");
+  Handle h_obj(current, cast_to_oop(obj));
+  assert(Universe::heap()->is_in_or_null(h_obj()),
+         "must be null or an object");
+  ObjectSynchronizer::enter(h_obj, nullptr, current);
+  return;
+JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
@@ -947,8 +960,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(pool, info);
+  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
 }
 
 // This function is the interface to the assembly code. It returns the resolved
@@ -1149,13 +1161,13 @@ JRT_LEAF(void, InterpreterRuntime::at_unwind(JavaThread* current))
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDesc* obj,
-                                                      ConstantPoolCacheEntry *cp_entry))
+                                                      ResolvedFieldEntry *entry))
 
   // check the access_flags for the field in the klass
 
-  InstanceKlass* ik = InstanceKlass::cast(cp_entry->f1_as_klass());
-  int index = cp_entry->field_index();
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  InstanceKlass* ik = entry->field_holder();
+  int index = entry->field_index();
+  if (!ik->field_status(index).is_access_watched()) return;
 
   bool is_static = (obj == nullptr);
   HandleMark hm(current);
@@ -1165,26 +1177,25 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
     // non-static field accessors have an object, but we need a handle
     h_obj = Handle(current, obj);
   }
-  InstanceKlass* cp_entry_f1 = InstanceKlass::cast(cp_entry->f1_as_klass());
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(cp_entry_f1, cp_entry->f2_as_index(), is_static);
+  InstanceKlass* field_holder = entry->field_holder(); // HERE
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(field_holder, entry->field_offset(), is_static);
   LastFrameAccessor last_frame(current);
-  JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), cp_entry_f1, h_obj, fid);
+  JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), field_holder, h_obj, fid);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current, oopDesc* obj,
-                                                            ConstantPoolCacheEntry *cp_entry, jvalue *value))
+                                                            ResolvedFieldEntry *entry, jvalue *value))
 
-  Klass* k = cp_entry->f1_as_klass();
+  InstanceKlass* ik = entry->field_holder();
 
   // check the access_flags for the field in the klass
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  int index = cp_entry->field_index();
+  int index = entry->field_index();
   // bail out if field modifications are not watched
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_modification_watched()) return;
 
   char sig_type = '\0';
 
-  switch(cp_entry->flag_state()) {
+  switch((TosState)entry->tos_state()) {
     case btos: sig_type = JVM_SIGNATURE_BYTE;    break;
     case ztos: sig_type = JVM_SIGNATURE_BOOLEAN; break;
     case ctos: sig_type = JVM_SIGNATURE_CHAR;    break;
@@ -1199,7 +1210,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
   bool is_static = (obj == nullptr);
 
   HandleMark hm(current);
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, cp_entry->f2_as_index(), is_static);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(ik, entry->field_offset(), is_static);
   jvalue fvalue;
 #ifdef _LP64
   fvalue = *value;
@@ -1489,8 +1500,8 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   }
   ConstantPool* cpool = method->constants();
   int cp_index = Bytes::get_native_u2(bcp + 1) + ConstantPool::CPCACHE_INDEX_TAG;
-  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index));
-  Symbol* mname = cpool->name_ref_at(cp_index);
+  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
+  Symbol* mname = cpool->name_ref_at(cp_index, code);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
     oop member_name_oop = cast_to_oop(member_name);

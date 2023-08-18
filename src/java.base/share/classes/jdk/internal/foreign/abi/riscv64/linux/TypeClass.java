@@ -1,12 +1,14 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -83,30 +85,33 @@ public enum TypeClass {
         static final FieldCounter SINGLE_POINTER = new FieldCounter(0, 0, 1);
 
         static FieldCounter flatten(MemoryLayout layout) {
-            if (layout instanceof ValueLayout valueLayout) {
-                return switch (classifyValueType(valueLayout)) {
-                    case INTEGER -> FieldCounter.SINGLE_INTEGER;
-                    case FLOAT -> FieldCounter.SINGLE_FLOAT;
-                    case POINTER -> FieldCounter.SINGLE_POINTER;
-                    default -> throw new IllegalStateException("Should not reach here.");
-                };
-            } else if (layout instanceof GroupLayout groupLayout) {
-                FieldCounter currCounter = FieldCounter.EMPTY;
-                for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
-                    if (memberLayout instanceof PaddingLayout) {
-                        continue;
+            switch (layout) {
+                case ValueLayout valueLayout -> {
+                    return switch (classifyValueType(valueLayout)) {
+                        case INTEGER -> FieldCounter.SINGLE_INTEGER;
+                        case FLOAT   -> FieldCounter.SINGLE_FLOAT;
+                        case POINTER -> FieldCounter.SINGLE_POINTER;
+                        default -> throw new IllegalStateException("Should not reach here.");
+                    };
+                }
+                case GroupLayout groupLayout -> {
+                    FieldCounter currCounter = FieldCounter.EMPTY;
+                    for (MemoryLayout memberLayout : groupLayout.memberLayouts()) {
+                        if (memberLayout instanceof PaddingLayout) {
+                            continue;
+                        }
+                        currCounter = currCounter.add(flatten(memberLayout));
                     }
-                    currCounter = currCounter.add(flatten(memberLayout));
+                    return currCounter;
                 }
-                return currCounter;
-            } else if (layout instanceof SequenceLayout sequenceLayout) {
-                long elementCount = sequenceLayout.elementCount();
-                if (elementCount == 0) {
-                    return FieldCounter.EMPTY;
+                case SequenceLayout sequenceLayout -> {
+                    long elementCount = sequenceLayout.elementCount();
+                    if (elementCount == 0) {
+                        return FieldCounter.EMPTY;
+                    }
+                    return flatten(sequenceLayout.elementLayout()).mul(elementCount);
                 }
-                return flatten(sequenceLayout.elementLayout()).mul(elementCount);
-            } else {
-                throw new IllegalStateException("Cannot get here: " + layout);
+                default -> throw new IllegalStateException("Cannot get here: " + layout);
             }
         }
 
@@ -178,7 +183,7 @@ public enum TypeClass {
     }
 
     private static boolean isRegisterAggregate(MemoryLayout type) {
-        return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
+        return type.byteSize() <= MAX_AGGREGATE_REGS_SIZE * 8;
     }
 
     private static TypeClass classifyStructType(GroupLayout layout) {

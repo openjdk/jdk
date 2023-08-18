@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,10 @@ import java.util.Objects;
  * java.io.BufferedReader} to read text from a file "{@code access.log}". The
  * file is located in a directory "{@code logs}" relative to the current working
  * directory and is UTF-8 encoded.
- * <pre>
+ * {@snippet lang=java :
  *     Path path = FileSystems.getDefault().getPath("logs", "access.log");
  *     BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
- * </pre>
+ * }
  *
  * <a id="interop"></a><h2>Interoperability</h2>
  * <p> Paths associated with the default {@link
@@ -125,10 +125,10 @@ public interface Path
      * utility of the calling code. Hence it should not be used in library code
      * intended for flexible reuse. A more flexible alternative is to use an
      * existing {@code Path} instance as an anchor, such as:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     Path dir = ...
      *     Path path = dir.resolve("file");
-     * }</pre>
+     * }
      *
      * @param   first
      *          the path string or initial part of the path string
@@ -266,9 +266,9 @@ public interface Path
      *
      * <p> If this path has more than one element, and no root component, then
      * this method is equivalent to evaluating the expression:
-     * <blockquote><pre>
-     * subpath(0,&nbsp;getNameCount()-1);
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     subpath(0, getNameCount()-1);
+     * }
      *
      * @return  a path representing the path's parent
      */
@@ -363,9 +363,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     startsWith(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the given path string
@@ -419,9 +419,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     endsWith(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the given path string
@@ -498,9 +498,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     resolve(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the path string to resolve against this path
@@ -517,6 +517,90 @@ public interface Path
     }
 
     /**
+     * Resolves a path against this path, and then iteratively resolves any
+     * additional paths.
+     *
+     * <p> This method resolves {@code first} against this {@code Path} as if
+     * by calling {@link #resolve(Path)}. If {@code more} has one or more
+     * elements then it resolves the first element against the result, then
+     * iteratively resolves all subsequent elements. This method returns the
+     * result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     *     Path result = resolve(first);
+     *     for (Path p : more) {
+     *         result = result.resolve(p);
+     *     }
+     * }
+     *
+     * @param   first
+     *          the first path to resolve against this path
+     * @param   more
+     *          additional paths to iteratively resolve
+     *
+     * @return  the resulting path
+     *
+     * @see #resolve(Path)
+     * @since 22
+     */
+    default Path resolve(Path first, Path... more) {
+        Path result = resolve(first);
+        for (Path p : more) {
+            result = result.resolve(p);
+        }
+        return result;
+    }
+
+    /**
+     * Converts a path string to a path, resolves that path against this path,
+     * and then iteratively performs the same procedure for any additional
+     * path strings.
+     *
+     * <p> This method converts {@code first} to a {@code Path} and resolves
+     * that {@code Path} against this {@code Path} as if by calling
+     * {@link #resolve(String)}. If {@code more} has one or more elements
+     * then it converts the first element to a path, resolves that path against
+     * the result, then iteratively converts and resolves all subsequent
+     * elements. This method returns the result from the final resolve.
+     *
+     * @implSpec
+     * The default implementation is equivalent to the result obtained with:
+     * {@snippet lang=java :
+     * Path result = resolve(first);
+     * for (String s : more) {
+     *     result = result.resolve(s);
+     * }
+     * }
+     *
+     * @param   first
+     *          the first path string to convert to a path and
+     *          resolve against this path
+     *
+     * @param   more
+     *          additional path strings to be iteratively converted to
+     *          paths and resolved
+     *
+     * @return  the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if a path string cannot be converted to a Path.
+     *
+     * @see #resolve(Path,Path...)
+     * @see #resolve(String)
+     *
+     * @since 22
+     */
+    default Path resolve(String first, String... more) {
+        Path result = resolve(first);
+        for (String s : more) {
+            result = result.resolve(s);
+        }
+        return result;
+    }
+
+    /**
      * Resolves the given path against this path's {@link #getParent parent}
      * path. This is useful where a file name needs to be <i>replaced</i> with
      * another file name. For example, suppose that the name separator is
@@ -530,9 +614,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     (getParent() == null) ? other : getParent().resolve(other);
-     * }</pre>
+     * }
      * unless {@code other == null}, in which case a
      * {@code NullPointerException} is thrown.
      *
@@ -557,9 +641,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     resolveSibling(getFileSystem().getPath(other));
-     * }</pre>
+     * }
      *
      * @param   other
      *          the path string to resolve against this path's parent
@@ -753,9 +837,9 @@ public interface Path
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     new File(toString());
-     * }</pre>
+     * }
      * if the {@code FileSystem} which created this {@code Path} is the default
      * file system; otherwise an {@code UnsupportedOperationException} is
      * thrown.
@@ -845,25 +929,26 @@ public interface Path
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     watchable.{@link #register(WatchService,WatchEvent.Kind[],WatchEvent.Modifier[]) register}(watcher, events, new WatchEvent.Modifier[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="register" target="Watchable#register" :
+     *     register(watcher, events, new WatchEvent.Modifier[0]);
+     * }
      *
      * <p> <b>Usage Example:</b>
      * Suppose we wish to register a directory for entry create, delete, and modify
      * events:
-     * <pre>
+     * {@snippet lang=java :
      *     Path dir = ...
      *     WatchService watcher = ...
      *
      *     WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-     * </pre>
+     * }
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
-     * <pre>{@code
+     * {@snippet lang=java :
      *     register(watcher, events, new WatchEvent.Modifier[0]);
-     * }</pre>
+     * }
      *
      * @param   watcher
      *          The watch service to which this object is to be registered
@@ -983,6 +1068,7 @@ public interface Path
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
+    @Override
     boolean equals(Object other);
 
     /**
@@ -994,10 +1080,11 @@ public interface Path
      *
      * @return  the hash-code value for this path
      */
+    @Override
     int hashCode();
 
     /**
-     * Returns the string representation of this path.
+     * {@return the string representation of this path}
      *
      * <p> If this path was created by converting a path string using the
      * {@link FileSystem#getPath getPath} method then the path string returned
@@ -1005,8 +1092,7 @@ public interface Path
      *
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
-     *
-     * @return  the string representation of this path
      */
+    @Override
     String toString();
 }

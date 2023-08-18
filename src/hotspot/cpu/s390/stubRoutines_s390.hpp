@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,9 +32,11 @@
 static bool returns_to_call_stub(address return_pc) { return return_pc == _call_stub_return_address; }
 
 enum { // Platform dependent constants.
-  // TODO: May be able to shrink this a lot
-  code_size1 = 20000,      // Simply increase if too small (assembler will crash if too small).
-  code_size2 = 20000       // Simply increase if too small (assembler will crash if too small).
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      = 20000,
+  _continuation_stubs_code_size =  2000,
+  _compiler_stubs_code_size     = 20000,
+  _final_stubs_code_size        = 20000
 };
 
 // MethodHandles adapters

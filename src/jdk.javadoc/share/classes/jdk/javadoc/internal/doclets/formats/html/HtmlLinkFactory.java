@@ -46,7 +46,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -327,6 +326,9 @@ public class HtmlLinkFactory {
             return links;
         }
         if (!vars.isEmpty()) {
+            if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
+                links.add(new HtmlTree(TagName.WBR));
+            }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {

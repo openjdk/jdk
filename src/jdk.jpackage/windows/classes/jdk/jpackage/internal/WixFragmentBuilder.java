@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import jdk.jpackage.internal.IOUtils.XmlConsumer;
 import jdk.jpackage.internal.OverridableResource.Source;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import jdk.internal.util.Architecture;
 
 /**
  * Creates WiX fragment.
@@ -102,7 +103,7 @@ abstract class WixFragmentBuilder {
     }
 
     static boolean is64Bit() {
-        return !("x86".equals(System.getProperty("os.arch")));
+        return Architecture.is64bit();
     }
 
     protected Path getConfigRoot() {

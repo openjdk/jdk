@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bal"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}، {1}</localeSeparator>
+			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
+		<languages>
+			<language type="bal">بلۆچی</language>
+			<language type="bal_Latn" draft="provisional">Balóchi</language>
+			<language type="de" draft="provisional">جرمن</language>
+			<language type="de_AT" draft="provisional">آستریایی جرمن</language>
+			<language type="de_CH" draft="provisional">سویزی جرمن</language>
+			<language type="en" draft="provisional">انگرێزی</language>
+			<language type="en_AU" draft="provisional">اُسترالیایی انگرێزی</language>
+			<language type="en_CA" draft="provisional">کانادایی انگرێزی</language>
+			<language type="en_GB" draft="provisional">برتانیایی انگرێزی</language>
+			<language type="en_US" draft="provisional">امریکی انگرێزی</language>
+			<language type="es" draft="provisional">اِسپانیایی</language>
+			<language type="es_419" draft="provisional">جنوب امریکی اسپانیایی</language>
+			<language type="es_ES" draft="provisional">اسپانیایی</language>
+			<language type="es_MX" draft="provisional">مکسیکی اسپانیایی</language>
+			<language type="fr" draft="provisional">پرانسی</language>
+			<language type="fr_CA" draft="provisional">کانادایی پرانسی</language>
+			<language type="fr_CH" draft="provisional">سویزی پرانسی</language>
+			<language type="it" draft="provisional">ایتالیایی</language>
+			<language type="ja" draft="provisional">جاپانی</language>
+			<language type="pt" draft="provisional">پرتگالی</language>
+			<language type="pt_BR" draft="provisional">برازیلی پرتگالی</language>
+			<language type="pt_PT" draft="provisional">یورپی پرتگالی</language>
+			<language type="ru" draft="provisional">روسی</language>
+			<language type="und" draft="provisional">نگیشّتگێن زبان</language>
+			<language type="zh">چینی</language>
+			<language type="zh_Hans">ساده کرتگێن چینی</language>
+			<language type="zh_Hant" draft="provisional">اسلیگێن چینی</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="provisional">اربی</script>
+			<script type="Cyrl" draft="provisional">روسی</script>
+			<script type="Hans" draft="provisional">هان (ساده کرتگێن)</script>
+			<script type="Hant" draft="provisional">هان (اسلیگێن)</script>
+			<script type="Latn" draft="provisional">لاتین</script>
+			<script type="Zxxx" draft="provisional">نبشته نبوتگێن سیاهگ</script>
+			<script type="Zzzz" draft="provisional">کۆڈ نبوتگێن سیاهگ</script>
+		</scripts>
+		<territories>
+			<territory type="BR" draft="provisional">برازیل</territory>
+			<territory type="CN" draft="provisional">چین</territory>
+			<territory type="DE" draft="provisional">جرمنی</territory>
+			<territory type="FR" draft="provisional">پرانس</territory>
+			<territory type="GB" draft="provisional">برتانیا</territory>
+			<territory type="IN" draft="provisional">هندستان</territory>
+			<territory type="IT" draft="provisional">ایتالیا</territory>
+			<territory type="JP" draft="provisional">جاپان</territory>
+			<territory type="PK" draft="provisional">پاکستان</territory>
+			<territory type="RU" draft="provisional">روس</territory>
+			<territory type="US" draft="provisional">امریکی هئوارێن ملک</territory>
+			<territory type="ZZ" draft="provisional">نگیشّتگێن دمگ</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="buddhist" draft="provisional">بُدّایی سالدر</type>
+			<type key="calendar" type="chinese" draft="provisional">چینی سالدر</type>
+			<type key="calendar" type="coptic" draft="provisional">کپتی سالدر</type>
+			<type key="calendar" type="dangi" draft="provisional">دانگی سالدر</type>
+			<type key="calendar" type="ethiopic" draft="provisional">ایتیوپیایی سالدر</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="provisional">ایتیوپیایی آمیت آلم سالدر</type>
+			<type key="calendar" type="gregorian" draft="provisional">گرێگۆری سالدر</type>
+			<type key="calendar" type="hebrew" draft="provisional">ابرانی سالدر</type>
+			<type key="calendar" type="indian" draft="provisional">هندی کئومی سالدر</type>
+			<type key="calendar" type="islamic" draft="provisional">اسلامی سالدر</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">اسلامی شهری سالدر</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">اسلامی سئوودی اربی سالدر</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">اسلامی نجومی سالدر</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">اسلامی ام الکراهی سالدر</type>
+			<type key="calendar" type="iso8601" draft="provisional">سالدر ISO-8601</type>
+			<type key="calendar" type="japanese" draft="provisional">جاپانی سالدر</type>
+			<type key="calendar" type="persian" draft="provisional">پارسی سالدر</type>
+			<type key="calendar" type="roc" draft="provisional">مینگۆ چینی سالدر</type>
+			<type key="cf" type="standard" draft="provisional">زرّئے گیشّتگێن کالب</type>
+			<type key="collation" type="standard" draft="provisional">گیشّتگێن ترتیب</type>
+			<type key="numbers" type="arab" draft="provisional">اربی-هندی نمبر</type>
+			<type key="numbers" type="cyrl" draft="provisional">روسی نمبر</type>
+			<type key="numbers" type="deva" draft="provisional">دێوناگری نمبر</type>
+			<type key="numbers" type="latn" draft="provisional">مگربی نمبر</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="provisional">میتَری</measurementSystemName>
+			<measurementSystemName type="UK" draft="provisional">برتانی</measurementSystemName>
+			<measurementSystemName type="US" draft="provisional">امریکی</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">زبان: {0}</codePattern>
+			<codePattern type="script">سیاهگ: {0}</codePattern>
+			<codePattern type="territory">دمگ: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+			<lineOrder>top-to-bottom</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters draft="contributed">[\u064E \u064F \u0650 \u0651 \u0652 آ ا ئ ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ک گ ل م ن و ۆ ه ی ێ ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[\u200C\u200D \u064B \u0654 ء أ ؤ إ ة ث ح خ ذ ص ض ط ظ ع غ ف ق ں ھ ہ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[آ ا {ای} {اێ} {ائی} ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ف ک گ ل م ن و ه ی]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[، ؛ \: ! ؟ . ' ‹ › &quot; « »]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">جن</month>
+							<month type="2" draft="provisional">پر</month>
+							<month type="3" draft="provisional">مار</month>
+							<month type="4" draft="provisional">اپر</month>
+							<month type="5" draft="provisional">مئیی</month>
+							<month type="6" draft="provisional">جون</month>
+							<month type="7" draft="provisional">جۆل</month>
+							<month type="8" draft="provisional">اگست</month>
+							<month type="9" draft="provisional">ستم</month>
+							<month type="10" draft="provisional">اکت</month>
+							<month type="11" draft="provisional">نئوم</month>
+							<month type="12" draft="provisional">دسم</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="provisional">جنوری</month>
+							<month type="2" draft="provisional">پروری</month>
+							<month type="3" draft="provisional">مارچ</month>
+							<month type="4" draft="provisional">اپرێل</month>
+							<month type="5" draft="provisional">مئیی</month>
+							<month type="6" draft="provisional">جون</month>
+							<month type="7" draft="provisional">جۆلایی</month>
+							<month type="8" draft="provisional">اگست</month>
+							<month type="9" draft="provisional">ستمبر</month>
+							<month type="10" draft="provisional">اکتوبر</month>
+							<month type="11" draft="provisional">نئومبر</month>
+							<month type="12" draft="provisional">دسمبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="provisional">یک</day>
+							<day type="mon" draft="provisional">دو</day>
+							<day type="tue" draft="provisional">سئے</day>
+							<day type="wed" draft="provisional">چار</day>
+							<day type="thu" draft="provisional">پنچ</day>
+							<day type="fri" draft="provisional">جمه</day>
+							<day type="sat" draft="provisional">شم</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="provisional">یکشمبه</day>
+							<day type="mon" draft="provisional">دوشمبه</day>
+							<day type="tue" draft="provisional">سئیشمبه</day>
+							<day type="wed" draft="provisional">چارشمبه</day>
+							<day type="thu" draft="provisional">پنچشمبه</day>
+							<day type="fri" draft="provisional">جمه</day>
+							<day type="sat" draft="provisional">شمبه</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">1/4</quarter>
+							<quarter type="2" draft="provisional">2/4</quarter>
+							<quarter type="3" draft="provisional">3/4</quarter>
+							<quarter type="4" draft="provisional">4/4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="provisional">1</quarter>
+							<quarter type="2" draft="provisional">2</quarter>
+							<quarter type="3" draft="provisional">3</quarter>
+							<quarter type="4" draft="provisional">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">ائوَلی چارِک</quarter>
+							<quarter type="2" draft="provisional">دومی چارِک</quarter>
+							<quarter type="3" draft="provisional">سئیمی چارِک</quarter>
+							<quarter type="4" draft="provisional">چارُمی چارِک</quarter>
+						</quarterWidth>
+					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">1/4</quarter>
+							<quarter type="2" draft="provisional">2/4</quarter>
+							<quarter type="3" draft="provisional">3/4</quarter>
+							<quarter type="4" draft="provisional">4/4</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1" draft="provisional">1</quarter>
+							<quarter type="2" draft="provisional">2</quarter>
+							<quarter type="3" draft="provisional">3</quarter>
+							<quarter type="4" draft="provisional">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">ائوَلی چارِک</quarter>
+							<quarter type="2" draft="provisional">دومی چارِک</quarter>
+							<quarter type="3" draft="provisional">سئیمی چارِک</quarter>
+							<quarter type="4" draft="provisional">چارُمی چارِک</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="provisional">EEEE, d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="provisional">d MMMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="provisional">d MMM, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a zzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="provisional">hh:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern draft="provisional">{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="provisional">اَلاسکائے ساهت</generic>
+					<standard draft="provisional">اَلاسکائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">اَلاسکائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic draft="provisional">امازۆنئے ساهت</generic>
+					<standard draft="provisional">امازۆنئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">امازۆنئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="provisional">نیامی امریکائے ساهت</generic>
+					<standard draft="provisional">نیامی امریکائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نیامی امریکائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="provisional">رۆدراتکی امریکائے ساهت</generic>
+					<standard draft="provisional">رۆدراتکی امریکائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆدراتکی امریکائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="provisional">کۆهستگێن امریکائے ساهت</generic>
+					<standard draft="provisional">کۆهستگێن امریکائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">کۆهستگێن امریکائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="provisional">آرامزِری امریکائے ساهت</generic>
+					<standard draft="provisional">آرامزِری امریکائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">آرامزِری امریکائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="provisional">ارجنتینائے ساهت</generic>
+					<standard draft="provisional">ارجنتینائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">ارجنتینائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic draft="provisional">رۆنندی ارجنتینائے ساهت</generic>
+					<standard draft="provisional">رۆنندی ارجنتینائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆنندی ارجنتینائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic draft="provisional">نیامی اُسترالیائے ساهت</generic>
+					<standard draft="provisional">نیامی اُسترالیائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نیامی اُسترالیائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic draft="provisional">نیام‌رۆنندی اُسترالیائے ساهت</generic>
+					<standard draft="provisional">نیام‌رۆنندی اُسترالیائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نیام‌رۆنندی اُسترالیائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic draft="provisional">رۆدراتکی اُسترالیائے ساهت</generic>
+					<standard draft="provisional">رۆدراتکی اُسترالیائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆدراتکی اُسترالیائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic draft="provisional">رۆنندی اُسترالیائے ساهت</generic>
+					<standard draft="provisional">رۆنندی اُسترالیائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆنندی اُسترالیائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic draft="provisional">برازیلئے ساهت</generic>
+					<standard draft="provisional">برازیلئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">برازیلئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="provisional">نیامی یورپئے ساهت</generic>
+					<standard draft="provisional">نیامی یورپئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نیامی یورپئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="provisional">رۆدراتکی یورپئے ساهت</generic>
+					<standard draft="provisional">رۆدراتکی یورپئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆدراتکی یورپئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard draft="provisional">دێمتری رۆدراتکی یورپئے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="provisional">رۆنندی یورپئے ساهت</generic>
+					<standard draft="provisional">رۆنندی یورپئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">رۆنندی یورپئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="provisional">هئواییئے ساهت</generic>
+					<standard draft="provisional">هئواییئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">هئواییئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard draft="provisional">نیامی اندۆنیزیائے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard draft="provisional">رۆدراتکی اندۆنیزیائے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard draft="provisional">رۆنندی اندۆنیزیائے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic draft="provisional">ایرکوتسکئے ساهت</generic>
+					<standard draft="provisional">ایرکوتسکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">ایرکوتسکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="provisional">رۆدراتکی کازکستانئے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="provisional">رۆنندی کازکستانئے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic draft="provisional">کرانسنُیارسکئے ساهت</generic>
+					<standard draft="provisional">کرانسنُیارسکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">کرانسنُیارسکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic draft="provisional">لۆرڈ هئو اُسترالیائے ساهت</generic>
+					<standard draft="provisional">لۆرڈ هئو اُسترالیائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">لۆرڈ هئو اُسترالیائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="provisional">ماکواریئے گیشّتگێن ساهت</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic draft="provisional">مَگَدَنئے ساهت</generic>
+					<standard draft="provisional">مَگَدَنئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">مَگَدَنئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic draft="provisional">شمالی مِکسیکۆئے ساهت</generic>
+					<standard draft="provisional">شمالی مِکسیکۆئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">شمالی مِکسیکۆئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic draft="provisional">آرامزِری مِکسیکۆئے ساهت</generic>
+					<standard draft="provisional">آرامزِری مِکسیکۆئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">آرامزِری مِکسیکۆئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic draft="provisional">ماسکۆئے ساهت</generic>
+					<standard draft="provisional">ماسکۆئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">ماسکۆئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic draft="provisional">نیوفاوونڈلئینڈئے ساهت</generic>
+					<standard draft="provisional">نیوفاوونڈلئینڈئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نیوفاوونڈلئینڈئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic draft="provisional">نُرُنهائے ساهت</generic>
+					<standard draft="provisional">نُرُنهائے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نُرُنهائے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic draft="provisional">نۆوۆسیبیرسکئے ساهت</generic>
+					<standard draft="provisional">نۆوۆسیبیرسکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">نۆوۆسیبیرسکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic draft="provisional">اۆمسکئے ساهت</generic>
+					<standard draft="provisional">اۆمسکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">اۆمسکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic draft="provisional">ولادیوُستُکئے ساهت</generic>
+					<standard draft="provisional">ولادیوُستُکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">ولادیوُستُکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic draft="provisional">یاکوتسکئے ساهت</generic>
+					<standard draft="provisional">یاکوتسکئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">یاکوتسکئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic draft="provisional">یێکاترینبورگئے ساهت</generic>
+					<standard draft="provisional">یێکاترینبورگئے گیشّتگێن ساهت</standard>
+					<daylight draft="provisional">یێکاترینبورگئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem draft="provisional">latn</defaultNumberingSystem>
+		<symbols numberSystem="latn">
+			<decimal draft="provisional">.</decimal>
+			<group draft="provisional">,</group>
+			<percentSign draft="provisional">%</percentSign>
+			<plusSign draft="provisional">+</plusSign>
+			<minusSign draft="provisional">-</minusSign>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern draft="provisional">#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern draft="provisional">#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="provisional">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="provisional">¤ #,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName draft="provisional">برازیلی ریال</displayName>
+				<symbol draft="provisional">R$</symbol>
+				<symbol alt="narrow" draft="provisional">R$</symbol>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="provisional">یورۆ</displayName>
+				<symbol draft="provisional">€</symbol>
+				<symbol alt="narrow" draft="provisional">€</symbol>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="provisional">برتانی پئوند</displayName>
+				<symbol draft="provisional">£</symbol>
+				<symbol alt="narrow" draft="provisional">£</symbol>
+			</currency>
+			<currency type="INR">
+				<displayName draft="provisional">هندُستانی روپّئیی</displayName>
+				<symbol draft="provisional">₹</symbol>
+				<symbol alt="narrow" draft="provisional">₹</symbol>
+			</currency>
+			<currency type="IRR">
+				<displayName draft="provisional">اێرانی ریال</displayName>
+				<symbol draft="provisional">ریال</symbol>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="provisional">جاپانی یَن</displayName>
+				<symbol draft="provisional">¥</symbol>
+				<symbol alt="narrow" draft="provisional">¥</symbol>
+			</currency>
+			<currency type="PKR">
+				<displayName draft="provisional">پاکستانی روپی</displayName>
+				<symbol draft="provisional">Rs</symbol>
+				<symbol alt="narrow" draft="provisional">Rs</symbol>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="provisional">روسی روبل</displayName>
+				<symbol draft="provisional">₽</symbol>
+				<symbol alt="narrow" draft="provisional">₽</symbol>
+			</currency>
+			<currency type="USD">
+				<displayName draft="provisional">امریکی دالر</displayName>
+				<symbol draft="provisional">$</symbol>
+				<symbol alt="narrow" draft="provisional">$</symbol>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="provisional">نگیشّتگێن زَرّ</displayName>
+				<symbol draft="provisional">XXX</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr draft="provisional">هئو:ه</yesstr>
+			<nostr draft="provisional">نه:ن</nostr>
+		</messages>
+	</posix>
+</ldml>

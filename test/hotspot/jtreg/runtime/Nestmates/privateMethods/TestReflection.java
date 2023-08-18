@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Test access to private methods between nestmates and nest-host
  *          using different flavours of named nested types using core reflection
  * @run main TestReflection
- * @run main/othervm -Dsun.reflect.noInflation=true TestReflection
  */
 
 // The first run will use NativeMethodAccessor and due to the limited number

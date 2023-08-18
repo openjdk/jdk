@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -965,6 +966,33 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         return isFullScreenMode;
     }
 
+    private void waitForWindowState(int state) {
+        if (peer.getState() == state) {
+            return;
+        }
+
+        Object lock = new Object();
+        WindowStateListener wsl = new WindowStateListener() {
+            public void windowStateChanged(WindowEvent e) {
+                synchronized (lock) {
+                    if (e.getNewState() == state) {
+                        lock.notifyAll();
+                    }
+                }
+            }
+        };
+
+        target.addWindowStateListener(wsl);
+        if (peer.getState() != state) {
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException ie) {}
+            }
+        }
+        target.removeWindowStateListener(wsl);
+    }
+
     @Override
     public void setWindowState(int windowState) {
         if (peer == null || !peer.isVisible()) {
@@ -986,6 +1014,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
                     unmaximize();
+                    waitForWindowState(Frame.NORMAL);
                 }
                 execute(CWrapper.NSWindow::miniaturize);
                 break;
@@ -993,6 +1022,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.ICONIFIED) {
                     // let's return into the normal states first
                     execute(CWrapper.NSWindow::deminiaturize);
+                    waitForWindowState(Frame.NORMAL);
+
                 }
                 maximize();
                 break;
@@ -1022,7 +1053,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             // We are going to show a modal window. Previously displayed window will be
             // blocked/disabled. So we have to send mouse exited event to it now, since
             // all mouse events are discarded for blocked/disabled windows.
-            execute(ptr -> nativeSynthesizeMouseEnteredExitedEvents(ptr, CocoaConstants.NSMouseExited));
+            execute(ptr -> nativeSynthesizeMouseEnteredExitedEvents(ptr, CocoaConstants.NSEventTypeMouseExited));
         }
 
         execute(ptr -> nativeSetEnabled(ptr, !blocked));

@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.filterwindow.actions;
 
+import com.sun.hotspot.igv.filter.CustomFilter;
 import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filterwindow.FilterTopComponent;
 import javax.swing.Action;
@@ -54,8 +55,8 @@ public final class RemoveFilterAction extends CookieAction {
                 options[2]);
 
         if (n == JOptionPane.YES_OPTION) {
-            for (int i = 0; i < activatedNodes.length; i++) {
-                FilterTopComponent.findInstance().removeFilter(activatedNodes[i].getLookup().lookup(Filter.class));
+            for (Node activatedNode : activatedNodes) {
+                FilterTopComponent.findInstance().removeFilter(activatedNode.getLookup().lookup(CustomFilter.class));
             }
         }
     }

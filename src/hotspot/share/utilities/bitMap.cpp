@@ -131,7 +131,7 @@ CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(map(), size());
+  free(map(), size_in_words());
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
@@ -638,7 +638,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
     sum += count_one_bits_within_word(boundary, end);
   }
 
-  assert(sum <= (beg - end), "must be");
+  assert(sum <= (end - beg), "must be");
 
   return sum;
 
@@ -653,6 +653,12 @@ void BitMap::write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const {
   assert(buffer_size_in_bytes == size_in_bytes(), "must be");
   memcpy(buffer, _map, size_in_bytes());
 }
+
+#ifdef ASSERT
+void BitMap::IteratorImpl::assert_not_empty() const {
+  assert(!is_empty(), "empty iterator");
+}
+#endif
 
 #ifndef PRODUCT
 

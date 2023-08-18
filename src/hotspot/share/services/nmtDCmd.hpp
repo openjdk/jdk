@@ -44,6 +44,7 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<char*> _scale;
 
  public:
+  static int num_arguments() { return 7; }
   NMTDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.native_memory"; }
   static const char* description() {

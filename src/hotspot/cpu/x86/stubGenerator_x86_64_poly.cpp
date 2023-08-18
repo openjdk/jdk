@@ -53,7 +53,7 @@
 //    [ ] used to denote vector numbers (with their elements)
 
 // Constant Pool:
-ATTRIBUTE_ALIGNED(64) uint64_t POLY1305_PAD_MSG[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t POLY1305_PAD_MSG[] = {
   0x0000010000000000, 0x0000010000000000,
   0x0000010000000000, 0x0000010000000000,
   0x0000010000000000, 0x0000010000000000,
@@ -63,7 +63,7 @@ static address poly1305_pad_msg() {
   return (address)POLY1305_PAD_MSG;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t POLY1305_MASK42[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t POLY1305_MASK42[] = {
   0x000003ffffffffff, 0x000003ffffffffff,
   0x000003ffffffffff, 0x000003ffffffffff,
   0x000003ffffffffff, 0x000003ffffffffff,
@@ -73,7 +73,7 @@ static address poly1305_mask42() {
   return (address)POLY1305_MASK42;
 }
 
-ATTRIBUTE_ALIGNED(64) uint64_t POLY1305_MASK44[] = {
+ATTRIBUTE_ALIGNED(64) static const uint64_t POLY1305_MASK44[] = {
   0x00000fffffffffff, 0x00000fffffffffff,
   0x00000fffffffffff, 0x00000fffffffffff,
   0x00000fffffffffff, 0x00000fffffffffff,

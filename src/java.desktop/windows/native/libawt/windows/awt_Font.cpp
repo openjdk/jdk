@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
-#include <math.h>
 #include <strsafe.h>
 #include "jlong.h"
 #include "awt_Font.h"
@@ -486,7 +486,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
             VERIFY(::DeleteObject(oldFont));
         }
         avgWidth = tm.tmAveCharWidth;
-        logFont.lfWidth = (LONG) ScaleUpX((fabs) (avgWidth * awScale));
+        logFont.lfWidth = (LONG) ScaleUpX((fabsf) (avgWidth * awScale));
         hFont = ::CreateFontIndirect(&logFont);
         DASSERT(hFont != NULL);
         VERIFY(::ReleaseDC(0, hDC));
@@ -1790,10 +1790,16 @@ void CCombinedSegTable::GetEUDCFileName(LPWSTR lpszFileName, int cchFileName)
     DWORD dwBytes = sizeof(szFileName);
     // try Typeface-specific EUDC font
     char szTmpName[80];
-    VERIFY(::WideCharToMultiByte(CP_ACP, 0, szFamilyName, -1,
-        szTmpName, sizeof(szTmpName), NULL, NULL));
-    LONG lStatus = ::RegQueryValueExA(hKey, (LPCSTR) szTmpName,
-        NULL, &dwType, szFileName, &dwBytes);
+    int nb = ::WideCharToMultiByte(CP_ACP, 0, szFamilyName, -1,
+        szTmpName, sizeof(szTmpName), NULL, NULL);
+    VERIFY(nb);
+
+    LONG lStatus = 1;
+    if (nb > 0) {
+        lStatus = ::RegQueryValueExA(hKey, (LPCSTR) szTmpName,
+                                     NULL, &dwType, szFileName, &dwBytes);
+    }
+
     BOOL fUseDefault = FALSE;
     if (lStatus != ERROR_SUCCESS){ // try System default EUDC font
         if (m_fTTEUDCFileExist == FALSE)
