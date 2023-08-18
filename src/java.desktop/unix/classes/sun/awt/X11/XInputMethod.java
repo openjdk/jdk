@@ -32,6 +32,7 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Window;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextHitInfo;
@@ -179,6 +180,8 @@ public class XInputMethod extends X11InputMethod {
             default:
                 break;
         }
+
+		super.dispatchEvent(e);
     }
 
     private void positionCandidateWindow() {
@@ -204,6 +207,11 @@ public class XInputMethod extends X11InputMethod {
 
              x += temp.getX();
              y += temp.getY();
+
+             // Dialog has a parent, no use.
+             if (parent instanceof Window) {
+                 break;
+             }
              temp = parent;
         }
 

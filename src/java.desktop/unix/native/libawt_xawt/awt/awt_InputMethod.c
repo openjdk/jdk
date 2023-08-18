@@ -863,14 +863,11 @@ static Bool
 createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
 {
     XVaNestedList preedit = NULL;
-    XVaNestedList status  = NULL;
-    /* On ubuntu, XIMPreeditCallbacks doesn't work,
-       and block the candidate window to move with caret.
-     */
-    XIMStyle on_the_spot_styles = XIMPreeditNothing,
-             active_styles      = 0,
-             passive_styles     = 0,
-             no_styles          = 0;
+    XVaNestedList status = NULL;
+    XIMStyle on_the_spot_styles = XIMPreeditCallbacks,
+             active_styles = ROOT_WINDOW_STYLES,
+             passive_styles = 0,
+             no_styles = 0;
     XIMCallback *callbacks;
     unsigned short i;
     XIMStyles *im_styles;
@@ -897,22 +894,18 @@ createXIC(JNIEnv * env, X11InputMethodData *pX11IMData, Window w)
       at the same time, so use StatusCallback to draw the status
       ourself
     */
-    /*
     for (i = 0; i < im_styles->count_styles; i++) {
         if (im_styles->supported_styles[i] == (XIMPreeditCallbacks | XIMStatusCallbacks)) {
             on_the_spot_styles = (XIMPreeditCallbacks | XIMStatusCallbacks);
             break;
         }
     }
-    */
-#else
-    on_the_spot_styles |= XIMPreeditCallbacks;
 #endif /* __linux__ */
 
     for (i = 0; i < im_styles->count_styles; i++) {
-        active_styles  |= im_styles->supported_styles[i] & on_the_spot_styles;
+        active_styles |= im_styles->supported_styles[i] & on_the_spot_styles;
         passive_styles |= im_styles->supported_styles[i] & ROOT_WINDOW_STYLES;
-        no_styles      |= im_styles->supported_styles[i] & NO_STYLES;
+        no_styles |= im_styles->supported_styles[i] & NO_STYLES;
     }
 
     XFree(im_styles);
