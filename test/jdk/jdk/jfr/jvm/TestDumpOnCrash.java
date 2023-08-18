@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ public class TestDumpOnCrash {
         Process p = ProcessTools.createTestJvm(
                 "-Xmx64m",
                 "-XX:-CreateCoredumpOnCrash",
+                "-XX:-TieredCompilation", // Avoid secondary crashes (see JDK-8293166)
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:StartFlightRecording:" + flightRecordingOptions,
                 crasher.getName(),
