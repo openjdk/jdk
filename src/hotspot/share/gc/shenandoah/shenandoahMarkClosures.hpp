@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 
 class ShenandoahMarkingContext;
 class ShenandoahHeapRegion;
@@ -42,4 +43,17 @@ public:
   bool is_thread_safe() { return true; }
 };
 
+// Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
+// for adaptive tenuring when census is taken during marking.
+class ShenandoahUpdateCensusZeroCohortClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+  size_t _pop;   // running tally of population
+public:
+  ShenandoahUpdateCensusZeroCohortClosure(ShenandoahMarkingContext* ctx);
+
+  void heap_region_do(ShenandoahHeapRegion* r);
+
+  size_t get_population() { return _pop; }
+};
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKCLOSURES_HPP

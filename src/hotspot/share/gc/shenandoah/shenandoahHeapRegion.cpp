@@ -81,7 +81,11 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _live_data(0),
   _critical_pins(0),
   _update_watermark(start),
-  _age(0) {
+  _age(0)
+#ifdef SHENANDOAH_CENSUS_NOISE
+  , _youth(0)
+#endif // SHENANDOAH_CENSUS_NOISE
+  {
 
   assert(Universe::on_page_boundary(_bottom) && Universe::on_page_boundary(_end),
          "invalid space boundaries");
@@ -322,6 +326,7 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 void ShenandoahHeapRegion::make_empty() {
   shenandoah_assert_heaplocked();
   reset_age();
+  CENSUS_NOISE(clear_youth();)
   switch (_state) {
     case _trash:
       set_state(_empty_committed);
@@ -1004,7 +1009,7 @@ void ShenandoahHeapRegion::promote_in_place() {
   assert(heap->active_generation()->is_mark_complete(), "sanity");
   assert(is_young(), "Only young regions can be promoted");
   assert(is_regular(), "Use different service to promote humongous regions");
-  assert(age() >= InitialTenuringThreshold, "Only promote regions that are sufficiently aged");
+  assert(age() >= heap->age_census()->tenuring_threshold(), "Only promote regions that are sufficiently aged");
 
   ShenandoahOldGeneration* old_gen = heap->old_generation();
   ShenandoahYoungGeneration* young_gen = heap->young_generation();
@@ -1084,7 +1089,7 @@ void ShenandoahHeapRegion::promote_humongous() {
   assert(heap->active_generation()->is_mark_complete(), "sanity");
   assert(is_young(), "Only young regions can be promoted");
   assert(is_humongous_start(), "Should not promote humongous continuation in isolation");
-  assert(age() >= InitialTenuringThreshold, "Only promote regions that are sufficiently aged");
+  assert(age() >= heap->age_census()->tenuring_threshold(), "Only promote regions that are sufficiently aged");
 
   ShenandoahGeneration* old_generation = heap->old_generation();
   ShenandoahGeneration* young_generation = heap->young_generation();

@@ -169,7 +169,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t)) {
-        do_task<T, STRING_DEDUP>(q, cl, live_data, req, &t);
+        do_task<T, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
       } else {
         assert(q->is_empty(), "Must be empty");
         q = queues->claim_next();
@@ -198,7 +198,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     for (uint i = 0; i < stride; i++) {
       if (q->pop(t) ||
           queues->steal(worker_id, t)) {
-        do_task<T, STRING_DEDUP>(q, cl, live_data, req, &t);
+        do_task<T, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {
         break;

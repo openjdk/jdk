@@ -64,6 +64,8 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   size_t free = 0;
   size_t free_regions = 0;
 
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
+
   // This counts number of humongous regions that we intend to promote in this cycle.
   size_t humongous_regions_promoted = 0;
   // This counts bytes of memory used by humongous regions to be promoted in place.
@@ -82,7 +84,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     total_garbage += garbage;
     if (region->is_empty()) {
       free_regions++;
-      free += ShenandoahHeapRegion::region_size_bytes();
+      free += region_size_bytes;
     } else if (region->is_regular()) {
       if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
@@ -93,13 +95,12 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
         bool is_candidate;
         // This is our candidate for later consideration.
         if (collection_set->is_preselected(i)) {
-          // If !is_generational, we cannot ask if is_preselected.  If is_preselected, we know
-          //   region->age() >= InitialTenuringThreshold).
+          assert(region->age() >= tenuring_threshold, "Preselection filter");
           is_candidate = true;
           preselected_candidates++;
           // Set garbage value to maximum value to force this into the sorted collection set.
           garbage = region_size_bytes;
-        } else if (region->is_young() && (region->age() >= InitialTenuringThreshold)) {
+        } else if (region->is_young() && (region->age() >= tenuring_threshold)) {
           // Note that for GLOBAL GC, region may be OLD, and OLD regions do not qualify for pre-selection
 
           // This region is old enough to be promoted but it was not preselected, either because its garbage is below
@@ -136,7 +137,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
         immediate_regions++;
         immediate_garbage += garbage;
       } else {
-        if (region->is_young() && region->age() >= InitialTenuringThreshold) {
+        if (region->is_young() && region->age() >= tenuring_threshold) {
           oop obj = cast_to_oop(region->bottom());
           size_t humongous_regions = ShenandoahHeapRegion::required_regions(obj->size() * HeapWordSize);
           humongous_regions_promoted += humongous_regions;
@@ -230,6 +231,10 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_set(ShenandoahCollectionSet* cset,
                                                                                    const RegionData* data,
                                                                                    size_t size) const {
+#ifdef ASSERT
+  const uint tenuring_threshold = ShenandoahHeap::heap()->age_census()->tenuring_threshold();
+#endif
+
   // cur_young_garbage represents the amount of memory to be reclaimed from young-gen.  In the case that live objects
   // are known to be promoted out of young-gen, we count this as cur_young_garbage because this memory is reclaimed
   // from young-gen and becomes available to serve future young-gen allocation requests.
@@ -237,7 +242,7 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
     if (cset->is_preselected(r->index())) {
-      assert(r->age() >= InitialTenuringThreshold, "Preselected regions must have tenure age");
+      assert(r->age() >= tenuring_threshold, "Preselected regions must have tenure age");
       // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
       // This region has been pre-selected and its impact on promotion reserve is already accounted for.
 

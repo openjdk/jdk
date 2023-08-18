@@ -34,6 +34,8 @@
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 
+class ShenandoahHeap;
+
 template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
 {

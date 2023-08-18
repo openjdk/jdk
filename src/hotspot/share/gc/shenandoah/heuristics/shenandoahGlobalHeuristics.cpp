@@ -83,6 +83,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t capacity = heap->young_generation()->max_capacity();
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
 
   size_t max_young_cset = (size_t) (heap->get_young_evac_reserve() / ShenandoahEvacWaste);
   size_t young_cur_cset = 0;
@@ -109,7 +110,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
         add_region = true;
         old_cur_cset = new_cset;
       }
-    } else if (r->age() < InitialTenuringThreshold) {
+    } else if (r->age() < tenuring_threshold) {
       size_t new_cset = young_cur_cset + r->get_live_data_bytes();
       size_t region_garbage = r->garbage();
       size_t new_garbage = cur_young_garbage + region_garbage;

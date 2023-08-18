@@ -495,6 +495,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->mode()->is_generational(), "Only in generational mode");
   ShenandoahMarkingContext* const ctx = heap->marking_context();
+
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
+
   size_t old_consumed = 0;
   size_t promo_potential = 0;
   size_t anticipated_promote_in_place_live = 0;
@@ -519,7 +522,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
       continue;
     }
-    if (r->age() >= InitialTenuringThreshold) {
+    if (r->age() >= tenuring_threshold) {
       if ((r->garbage() < old_garbage_threshold)) {
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
@@ -579,7 +582,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
       //   If we are auto-tuning the tenure age and regions that were anticipated to be promoted in place end up
       //   being promoted by evacuation, this event should feed into the tenure-age-selection heuristic so that
       //   the tenure age can be increased.
-      if (heap->is_aging_cycle() && (r->age() + 1 == InitialTenuringThreshold)) {
+      if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
         if (r->garbage() >= old_garbage_threshold) {
           anticipated_candidates++;
           promo_potential += r->get_live_data_bytes();
@@ -622,6 +625,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
 void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahCollectionSet* collection_set = heap->collection_set();
+  bool is_generational = heap->mode()->is_generational();
 
   assert(!heap->is_full_gc_in_progress(), "Only for concurrent and degenerated GC");
   assert(!is_old(), "Only YOUNG and GLOBAL GC perform evacuations");
@@ -641,13 +645,30 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     }
   }
 
+  // Tally the census counts and compute the adaptive tenuring threshold
+  if (is_generational && ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+    // Objects above TAMS weren't included in the age census. Since they were all
+    // allocated in this cycle they belong in the age 0 cohort. We walk over all
+    // young regions and sum the volume of objects between TAMS and top.
+    ShenandoahUpdateCensusZeroCohortClosure age0_cl(complete_marking_context());
+    heap->young_generation()->heap_region_iterate(&age0_cl);
+    size_t age0_pop = age0_cl.get_population();
+
+    // Age table updates
+    ShenandoahAgeCensus* census = heap->age_census();
+    census->prepare_for_census_update();
+    // Update the global census, including the missed age 0 cohort above,
+    // along with the census during marking, and compute the tenuring threshold
+    census->update_census(age0_pop);
+  }
+
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::choose_cset :
                             ShenandoahPhaseTimings::degen_gc_choose_cset);
 
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
-    if (heap->mode()->is_generational()) {
+    if (is_generational) {
       size_t consumed_by_advance_promotion;
       bool* preselected_regions = (bool*) alloca(heap->num_regions() * sizeof(bool));
       for (unsigned int i = 0; i < heap->num_regions(); i++) {

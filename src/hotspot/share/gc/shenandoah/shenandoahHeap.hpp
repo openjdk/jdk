@@ -27,21 +27,24 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
+#include "gc/shared/ageTable.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "memory/metaspace.hpp"
 #include "services/memoryManager.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -377,6 +380,8 @@ private:
 
   bool _upgraded_to_full;
 
+  ShenandoahAgeCensus* _age_census;    // Age census used for adapting tenuring threshold in generational mode
+
   // At the end of final mark, but before we begin evacuating, heuristics calculate how much memory is required to
   // hold the results of evacuating to young-gen and to old-gen.  These quantitites, stored in _promoted_reserve,
   // _old_evac_reserve, and _young_evac_reserve, are consulted prior to rebuilding the free set (ShenandoahFreeSet)
@@ -482,6 +487,9 @@ public:
   // Returns previous value
   inline size_t set_young_evac_reserve(size_t new_val);
   inline size_t get_young_evac_reserve() const;
+
+  // Return the age census object for young gen (in generational mode)
+  inline ShenandoahAgeCensus* age_census() const;
 
 private:
   void manage_satb_barrier(bool active);
@@ -881,7 +889,15 @@ public:
   size_t trash_humongous_region_at(ShenandoahHeapRegion *r);
 
   static inline void increase_object_age(oop obj, uint additional_age);
+
+  // Return the object's age (at a safepoint or when object isn't
+  // mutable by the mutator)
   static inline uint get_object_age(oop obj);
+
+  // Return the object's age, or a sentinel value when the age can't
+  // necessarily be determined because of concurrent locking by the
+  // mutator
+  static inline uint get_object_age_concurrent(oop obj);
 
   void transfer_old_pointers_from_satb();
 

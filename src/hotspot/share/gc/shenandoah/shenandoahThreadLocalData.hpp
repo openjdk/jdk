@@ -68,36 +68,8 @@ private:
 
   ShenandoahEvacuationStats* _evacuation_stats;
 
-  ShenandoahThreadLocalData() :
-    _gc_state(0),
-    _oom_scope_nesting_level(0),
-    _oom_during_evac(false),
-    _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
-    _gclab(nullptr),
-    _gclab_size(0),
-    _paced_time(0),
-    _plab(nullptr),
-    _plab_size(0),
-    _plab_evacuated(0),
-    _plab_promoted(0),
-    _plab_preallocated_promoted(0),
-    _plab_allows_promotion(true),
-    _plab_retries_enabled(true),
-    _evacuation_stats(new ShenandoahEvacuationStats()) {
-  }
-
-  ~ShenandoahThreadLocalData() {
-    if (_gclab != nullptr) {
-      delete _gclab;
-    }
-    if (_plab != nullptr) {
-      ShenandoahHeap::heap()->retire_plab(_plab);
-      delete _plab;
-    }
-
-    // TODO: Preserve these stats somewhere for mutator threads.
-    delete _evacuation_stats;
-  }
+  ShenandoahThreadLocalData();
+  ~ShenandoahThreadLocalData();
 
   static ShenandoahThreadLocalData* data(Thread* thread) {
     assert(UseShenandoahGC, "Sanity");
@@ -154,8 +126,12 @@ public:
     data(thread)->_evacuation_stats->begin_evacuation(bytes);
   }
 
-  static void end_evacuation(Thread* thread, size_t bytes, uint age) {
-    data(thread)->_evacuation_stats->end_evacuation(bytes, age);
+  static void end_evacuation(Thread* thread, size_t bytes) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes);
+  }
+
+  static void record_age(Thread* thread, size_t bytes, uint age) {
+    data(thread)->_evacuation_stats->record_age(bytes, age);
   }
 
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {

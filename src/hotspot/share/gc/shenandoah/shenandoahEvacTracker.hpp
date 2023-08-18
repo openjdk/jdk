@@ -35,12 +35,17 @@ private:
   size_t _evacuations_attempted;
   size_t _bytes_attempted;
 
-  AgeTable _age_table;
+  bool      _use_age_table;
+  AgeTable* _age_table;
 
-public:
-  ShenandoahEvacuationStats();
+ public:
+  ShenandoahEvacuationStats(bool generational);
+
+  AgeTable* age_table() const;
+
   void begin_evacuation(size_t bytes);
-  void end_evacuation(size_t bytes, uint age);
+  void end_evacuation(size_t bytes);
+  void record_age(size_t bytes, uint age);
 
   void print_on(outputStream* st);
   void accumulate(const ShenandoahEvacuationStats* other);
@@ -54,15 +59,23 @@ struct ShenandoahCycleStats {
 
 class ShenandoahEvacuationTracker : public CHeapObj<mtGC> {
 private:
+  bool _generational;
+
   ShenandoahEvacuationStats _workers_global;
   ShenandoahEvacuationStats _mutators_global;
 
 public:
+  ShenandoahEvacuationTracker(bool generational) :
+   _generational(generational),
+   _workers_global(generational),
+   _mutators_global(generational) {}
+
   void begin_evacuation(Thread* thread, size_t bytes);
-  void end_evacuation(Thread* thread, size_t bytes, uint age);
+  void end_evacuation(Thread* thread, size_t bytes);
+  void record_age(Thread* thread, size_t bytes, uint age);
 
   void print_global_on(outputStream* st);
-  static void print_evacuations_on(outputStream* st,
+  void print_evacuations_on(outputStream* st,
                                    ShenandoahEvacuationStats* workers,
                                    ShenandoahEvacuationStats* mutators);
 

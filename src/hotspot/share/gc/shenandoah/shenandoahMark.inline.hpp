@@ -57,8 +57,8 @@ void ShenandoahMark::dedup_string(oop obj, StringDedup::Requests* const req) {
   }
 }
 
-template <class T, StringDedupMode STRING_DEDUP>
-void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task) {
+template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_DEDUP>
+void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
   oop obj = task->obj();
 
   // TODO: This will push array chunks into the mark queue with no regard for
@@ -99,7 +99,7 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
     // Avoid double-counting objects that are visited twice due to upgrade
     // from final- to strong mark.
     if (task->count_liveness()) {
-      count_liveness(live_data, obj);
+      count_liveness<GENERATION>(live_data, obj, worker_id);
     }
   } else {
     // Case 4: Array chunk, has sensible chunk id. Process it.
@@ -107,11 +107,23 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   }
 }
 
-inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj) {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  size_t region_idx = heap->heap_region_index_containing(obj);
-  ShenandoahHeapRegion* region = heap->get_region(region_idx);
-  size_t size = obj->size();
+template <ShenandoahGenerationType GENERATION>
+inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop obj, uint worker_id) {
+  const ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  const size_t region_idx = heap->heap_region_index_containing(obj);
+  ShenandoahHeapRegion* const region = heap->get_region(region_idx);
+  const size_t size = obj->size();
+
+  // Age census for objects in the young generation
+  if (GENERATION == YOUNG || (GENERATION == GLOBAL_GEN && region->is_young())) {
+    assert(heap->mode()->is_generational(), "Only if generational");
+    if (ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+      assert(region->is_young(), "Only for young objects");
+      uint age = ShenandoahHeap::get_object_age_concurrent(obj);
+      CENSUS_NOISE(heap->age_census()->add(age, region->age(), region->youth(), size, worker_id);)
+      NO_CENSUS_NOISE(heap->age_census()->add(age, region->age(), size, worker_id);)
+    }
+  }
 
   if (!region->is_humongous_start()) {
     assert(!region->is_humongous(), "Cannot have continuations here");

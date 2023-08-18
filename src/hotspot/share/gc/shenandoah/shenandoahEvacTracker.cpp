@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
@@ -30,22 +31,33 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/thread.hpp"
 
-ShenandoahEvacuationStats::ShenandoahEvacuationStats()
+ShenandoahEvacuationStats::ShenandoahEvacuationStats(bool generational)
   : _evacuations_completed(0), _bytes_completed(0),
     _evacuations_attempted(0), _bytes_attempted(0),
-    _age_table(false) {}
+    _use_age_table(generational && (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring)) {
+  if (_use_age_table) {
+    _age_table = new AgeTable(false);
+  }
+}
+
+AgeTable* ShenandoahEvacuationStats::age_table() const {
+  assert(_use_age_table, "Don't call");
+  return _age_table;
+}
 
 void ShenandoahEvacuationStats::begin_evacuation(size_t bytes) {
   ++_evacuations_attempted;
   _bytes_attempted += bytes;
 }
 
-void ShenandoahEvacuationStats::end_evacuation(size_t bytes, uint age) {
+void ShenandoahEvacuationStats::end_evacuation(size_t bytes) {
   ++_evacuations_completed;
   _bytes_completed += bytes;
-  if (age > 0) {
-    _age_table.add(age, bytes >> LogBytesPerWord);
-  }
+}
+
+void ShenandoahEvacuationStats::record_age(size_t bytes, uint age) {
+  assert(_use_age_table, "Don't call!");
+  _age_table->add(age, bytes >> LogBytesPerWord);
 }
 
 void ShenandoahEvacuationStats::accumulate(const ShenandoahEvacuationStats* other) {
@@ -53,14 +65,17 @@ void ShenandoahEvacuationStats::accumulate(const ShenandoahEvacuationStats* othe
   _bytes_completed += other->_bytes_completed;
   _evacuations_attempted += other->_evacuations_attempted;
   _bytes_attempted += other->_bytes_attempted;
-
-  _age_table.merge(&other->_age_table);
+  if (_use_age_table) {
+    _age_table->merge(other->age_table());
+  }
 }
 
 void ShenandoahEvacuationStats::reset() {
   _evacuations_completed = _evacuations_attempted = 0;
   _bytes_completed = _bytes_attempted = 0;
-  _age_table.clear();
+  if (_use_age_table) {
+    _age_table->clear();
+  }
 }
 
 void ShenandoahEvacuationStats::print_on(outputStream* st) {
@@ -72,7 +87,9 @@ void ShenandoahEvacuationStats::print_on(outputStream* st) {
             _evacuations_completed,
             byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
             abandoned_count);
-  _age_table.print_on(st, InitialTenuringThreshold);
+  if (_use_age_table) {
+    _age_table->print_on(st, ShenandoahHeap::heap()->age_census()->tenuring_threshold());
+  }
 }
 
 void ShenandoahEvacuationTracker::print_global_on(outputStream* st) {
@@ -89,24 +106,20 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
   mutators->print_on(st);
   st->cr();
 
-  AgeTable young_region_ages(false), old_region_ages(false);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  for (uint i = 0; i < heap->num_regions(); ++i) {
-    ShenandoahHeapRegion* r = heap->get_region(i);
-    if (r->age() > 0 && r->age() < AgeTable::table_size) {
+  if (_generational) {
+    AgeTable young_region_ages(false);
+    for (uint i = 0; i < heap->num_regions(); ++i) {
+      ShenandoahHeapRegion* r = heap->get_region(i);
       if (r->is_young()) {
         young_region_ages.add(r->age(), r->get_live_data_words());
-      } else {
-        assert(r->is_old(), "Sanity");
-        old_region_ages.add(r->age(), r->get_live_data_words());
       }
     }
+    uint tenuring_threshold = heap->age_census()->tenuring_threshold();
+    st->print("Young regions: ");
+    young_region_ages.print_on(st, tenuring_threshold);
+    st->cr();
   }
-  st->print("Young regions: ");
-  young_region_ages.print_on(st, InitialTenuringThreshold);
-  st->cr();
-  st->print("Old regions: ");
-  old_region_ages.print_on(st, InitialTenuringThreshold);
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
@@ -121,7 +134,7 @@ public:
 };
 
 ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
-  ShenandoahEvacuationStats mutators, workers;
+  ShenandoahEvacuationStats mutators(_generational), workers(_generational);
 
   ThreadsListHandle java_threads_iterator;
   ShenandoahStatAggregator aggregate_mutators(&mutators);
@@ -133,6 +146,17 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);
 
+  if (_generational && (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring)) {
+    // Ingest population vectors into the heap's global census
+    // data, and use it to compute an appropriate tenuring threshold
+    // for use in the next cycle.
+    ShenandoahAgeCensus* census = ShenandoahHeap::heap()->age_census();
+    census->prepare_for_census_update();
+    // The first argument is used for any age 0 cohort population that we may otherwise have
+    // missed during the census. This is non-zero only when census happens at marking.
+    census->update_census(0, _mutators_global.age_table(), _workers_global.age_table());
+  }
+
   return {workers, mutators};
 }
 
@@ -140,6 +164,10 @@ void ShenandoahEvacuationTracker::begin_evacuation(Thread* thread, size_t bytes)
   ShenandoahThreadLocalData::begin_evacuation(thread, bytes);
 }
 
-void ShenandoahEvacuationTracker::end_evacuation(Thread* thread, size_t bytes, uint age) {
-  ShenandoahThreadLocalData::end_evacuation(thread, bytes, age);
+void ShenandoahEvacuationTracker::end_evacuation(Thread* thread, size_t bytes) {
+  ShenandoahThreadLocalData::end_evacuation(thread, bytes);
+}
+
+void ShenandoahEvacuationTracker::record_age(Thread* thread, size_t bytes, uint age) {
+  ShenandoahThreadLocalData::record_age(thread, bytes, age);
 }

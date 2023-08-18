@@ -318,6 +318,12 @@ inline HeapWord* ShenandoahHeap::allocate_from_plab(Thread* thread, size_t size,
   return obj;
 }
 
+inline ShenandoahAgeCensus* ShenandoahHeap::age_census() const {
+  assert(mode()->is_generational(), "Only in generational mode");
+  assert(_age_census != nullptr, "Error: not initialized");
+  return _age_census;
+}
+
 inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
   if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
@@ -342,7 +348,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
     if (mark.has_displaced_mark_helper()) {
       // We don't want to deal with MT here just to ensure we read the right mark word.
       // Skip the potential promotion attempt for this one.
-    } else if (r->age() + mark.age() >= InitialTenuringThreshold) {
+    } else if (r->age() + mark.age() >= age_census()->tenuring_threshold()) {
       oop result = try_evacuate_object(p, thread, r, OLD_GENERATION);
       if (result != nullptr) {
         return result;
@@ -470,9 +476,20 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    _evac_tracker->end_evacuation(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
-    if (mode()->is_generational() && target_gen == OLD_GENERATION) {
-      handle_old_evacuation(copy, size, from_region->is_young());
+    _evac_tracker->end_evacuation(thread, size * HeapWordSize);
+    if (mode()->is_generational()) {
+      if (target_gen == OLD_GENERATION) {
+        handle_old_evacuation(copy, size, from_region->is_young());
+      } else {
+        // When copying to the old generation above, we don't care
+        // about recording object age in the census stats.
+        assert(target_gen == YOUNG_GENERATION, "Error");
+        // We record this census only when simulating pre-adaptive tenuring behavior, or
+        // when we have been asked to record the census at evacuation rather than at mark
+        if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
+          _evac_tracker->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
+        }
+      }
     }
     shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
@@ -529,8 +546,27 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   }
 }
 
+// Return the object's age (at a safepoint or when object isn't
+// mutable by the mutator)
 uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->has_displaced_mark() ? obj->displaced_mark() : obj->mark();
+  assert(w.age() <= markWord::max_age, "Impossible!");
+  return w.age();
+}
+
+// Return the object's age, or a sentinel value when the age can't
+// necessarily be determined because of concurrent locking by the
+// mutator
+uint ShenandoahHeap::get_object_age_concurrent(oop obj) {
+  // This is impossible to do unless we "freeze" ABA-type oscillations
+  // With Lilliput, we can do this more easily.
+  markWord w = obj->mark();
+  // We can do better for objects with inflated monitor
+  if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
+    // Informs caller that we aren't able to determine the age
+    return markWord::max_age + 1; // sentinel
+  }
+  assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
 }
 

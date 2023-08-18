@@ -429,7 +429,8 @@ void ShenandoahControlThread::process_phase_timings(const ShenandoahHeap* heap) 
     heap->pacer()->flush_stats_to_cycle();
   }
 
-  ShenandoahCycleStats evac_stats = heap->evac_tracker()->flush_cycle_to_global();
+  ShenandoahEvacuationTracker* evac_tracker = heap->evac_tracker();
+  ShenandoahCycleStats         evac_stats   = evac_tracker->flush_cycle_to_global();
 
   // Print GC stats for current cycle
   {
@@ -438,8 +439,8 @@ void ShenandoahControlThread::process_phase_timings(const ShenandoahHeap* heap) 
       ResourceMark rm;
       LogStream ls(lt);
       heap->phase_timings()->print_cycle_on(&ls);
-      ShenandoahEvacuationTracker::print_evacuations_on(&ls, &evac_stats.workers,
-                                                        &evac_stats.mutators);
+      evac_tracker->print_evacuations_on(&ls, &evac_stats.workers,
+                                              &evac_stats.mutators);
       if (ShenandoahPacing) {
         heap->pacer()->print_cycle_on(&ls);
       }
