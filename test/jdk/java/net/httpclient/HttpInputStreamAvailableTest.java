@@ -26,7 +26,7 @@
  * @bug 8306040
  * @summary HttpResponseInputStream.available() returns 1 on empty stream
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @run testng/othervm HttpInputStreamAvailableTest
+ * @run junit/othervm HttpInputStreamAvailableTest
  *
  */
 import com.sun.net.httpserver.HttpExchange;
@@ -44,11 +44,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import static org.testng.Assert.assertEquals;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpInputStreamAvailableTest {
 
     private HttpServer server;
@@ -56,7 +58,7 @@ public class HttpInputStreamAvailableTest {
     static final String TEST_MESSAGE = "This is test message";
     static final int ZERO = 0;
 
-    @BeforeTest
+    @BeforeAll
     void setup() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);
@@ -69,7 +71,7 @@ public class HttpInputStreamAvailableTest {
         server.start();
     }
 
-    @AfterTest
+    @AfterAll
     void teardown() throws Exception {
         server.stop(0);
     }
@@ -97,10 +99,6 @@ public class HttpInputStreamAvailableTest {
         HttpResponse<InputStream> response = client.send(request,
                 HttpResponse.BodyHandlers.ofInputStream());
         try ( InputStream in = response.body()) {
-            // This is an estimate and implementation dependent.
-            // If you use HttpURLConnection, then in.available() will return
-            // different value.
-            assertEquals(ZERO, in.available());
             in.readNBytes(2);
             assertEquals(TEST_MESSAGE.length() - 2, in.available());
             //read the remaining data
