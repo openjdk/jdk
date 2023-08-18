@@ -62,7 +62,4 @@ public class TestMissingSafepointOnTryCatch {
         MissingSafepointOnTryCatch.test4();
         infiniteLoop();
     }
-
-
-
 }

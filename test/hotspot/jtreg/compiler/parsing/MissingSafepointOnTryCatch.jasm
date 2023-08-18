@@ -23,7 +23,6 @@
 
 public class MissingSafepointOnTryCatch version 52:0 {
 
-
     static Method m:"()V" {
         return;
     }
