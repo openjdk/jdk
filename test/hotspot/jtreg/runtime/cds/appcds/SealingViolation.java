@@ -26,7 +26,7 @@
  * @test
  * @bug 8312434
  * @summary A jar file containing classes in the same package. Sign the jar file with
- *          a disabled algorithm. The jar will be treated as unsigned. 
+ *          a disabled algorithm. The jar will be treated as unsigned.
  *          Dump only one class into the CDS archive. During runtime, load the class
  *          stored in the archive and then load another class not from the archive
  *          but from the same pacakge. Loading of the second class should not result
@@ -34,7 +34,7 @@
  *
  * @requires vm.cds
  * @library /test/lib
- * @compile test-classes/GenericTestApp.java test-classes/pkg/ClassInPackage.java test-classes/C2.java 
+ * @compile test-classes/GenericTestApp.java test-classes/pkg/ClassInPackage.java test-classes/C2.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run driver SealingViolation
  */
