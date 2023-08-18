@@ -3298,10 +3298,13 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * Unless the pattern set is in scientific notation, there is no limit to
-     * integer digits set by this routine, since that is the typical end-user desire.
-     * Use {@link #setMaximumIntegerDigits(int)} if you want to set a limit to integer
-     * digits when the applied pattern is not in scientific notation.
+     * If the pattern set is in scientific notation, the limit of integer
+     * digits will be derived from the pattern. Otherwise, if the pattern is not
+     * in scientific notation, the limit of integer digits will not be based on the
+     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
+     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
+     * if you want to set a specific limit to integer digits when the
+     * applied pattern is not in scientific notation.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3326,10 +3329,13 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * Unless the pattern set is in scientific notation, there is no limit to
-     * integer digits set by this routine, since that is the typical end-user desire.
-     * Use {@link #setMaximumIntegerDigits(int)} if you want to set a limit to integer
-     * digits when the applied pattern is not in scientific notation.
+     * If the pattern set is in scientific notation, the limit of integer
+     * digits will be derived from the pattern. Otherwise, if the pattern is not
+     * in scientific notation, the limit of integer digits will not be based on the
+     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
+     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
+     * if you want to set a specific limit to integer digits when the
+     * applied pattern is not in scientific notation.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
