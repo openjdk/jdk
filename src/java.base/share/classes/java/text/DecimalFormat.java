@@ -449,6 +449,13 @@ public class DecimalFormat extends NumberFormat {
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is a convenient way to obtain a
      * DecimalFormat when internationalization is not the main concern.
+     * If the given pattern is in scientific notation, the limit of integer
+     * digits will be derived from the pattern. Otherwise, if the pattern is not
+     * in scientific notation, the limit of integer digits will not be based on the
+     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
+     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
+     * if you want to set a specific limit to integer digits when the
+     * given pattern is not in scientific notation.
      * <p>
      * To obtain standard formats for a given locale, use the factory methods
      * on NumberFormat such as getNumberInstance. These factories will
@@ -474,6 +481,13 @@ public class DecimalFormat extends NumberFormat {
      * Creates a DecimalFormat using the given pattern and symbols.
      * Use this constructor when you need to completely customize the
      * behavior of the format.
+     * If the given pattern is in scientific notation, the limit of integer
+     * digits will be derived from the pattern. Otherwise, if the pattern is not
+     * in scientific notation, the limit of integer digits will not be based on the
+     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
+     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
+     * if you want to set a specific limit to integer digits when the
+     * given pattern is not in scientific notation.
      * <p>
      * To obtain standard formats for a given
      * locale, use the factory methods on NumberFormat such as
