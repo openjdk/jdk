@@ -483,7 +483,7 @@ class DwarfFile : public ElfFile {
 
     DwarfFile* _dwarf_file;
     MarkedDwarfFileReader _reader;
-    uint32_t _section_start_address;
+    uintptr_t _section_start_address;
 
     // a calculated end position
     long _entry_end;

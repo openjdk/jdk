@@ -47,7 +47,6 @@ enum MapArchiveResult {
 class MetaspaceShared : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
-  static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _shared_metaspace_static_top;
@@ -102,10 +101,10 @@ public:
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
+  static bool is_shared_static(void* p) NOT_CDS_RETURN_(false);
 
   static void unrecoverable_loading_error(const char* message = nullptr);
   static void unrecoverable_writing_error(const char* message = nullptr);
-  static void exit_after_static_dump();
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 

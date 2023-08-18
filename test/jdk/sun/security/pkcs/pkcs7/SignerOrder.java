@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,10 +102,10 @@ public class SignerOrder {
         printSignerInfos(pkcs72.getSignerInfos());
 
         System.out.println("Verified signers of original:");
-        SignerInfo[] verifs1 = pkcs71.verify();
+        SignerInfo[] verifs1 = pkcs71.verify(null);
 
         System.out.println("Verified signers of after read-in:");
-        SignerInfo[] verifs2 = pkcs72.verify();
+        SignerInfo[] verifs2 = pkcs72.verify(null);
 
         if (verifs1.length != verifs2.length) {
             throw new RuntimeException("Length or Original vs read-in "

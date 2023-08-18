@@ -756,6 +756,12 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * {@code join} or {@code joinUntil} will return immediately.
      * </ul>
      *
+     * <p> The {@linkplain Subtask.State state} of unfinished subtasks that complete at
+     * around the time that the task scope is shutdown is not defined. A subtask that
+     * completes successfully with a result, or fails with an exception, at around
+     * the time that the task scope is shutdown may or may not <i>transition</i> to a
+     * terminal state.
+     *
      * <p> This method may only be invoked by the task scope owner or threads contained
      * in the task scope.
      *

@@ -758,6 +758,9 @@ static GString *(*fp_g_string_erase)(GString *string,
                                      gssize pos,
                                      gssize len);
 
+static GString *(*fp_g_string_set_size)(GString* string,
+                                        gsize len);
+
 static gchar *(*fp_g_string_free)(GString *string,
                                   gboolean free_segment);
 
