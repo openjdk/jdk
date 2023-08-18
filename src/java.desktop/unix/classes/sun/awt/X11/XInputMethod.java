@@ -181,7 +181,7 @@ public class XInputMethod extends X11InputMethod {
                 break;
         }
 
-		super.dispatchEvent(e);
+        super.dispatchEvent(e);
     }
 
     private void positionCandidateWindow() {
