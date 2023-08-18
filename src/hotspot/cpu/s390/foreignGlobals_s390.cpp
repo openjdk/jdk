@@ -127,11 +127,11 @@ static void move_reg(MacroAssembler* masm, int out_stk_bias,
         __ z_lgfr(as_Register(from_reg), as_Register(from_reg));
       }
       switch (to_reg.stack_size()) {
-        case 8: __ reg2mem_opt(as_Register(from_reg), Address(Z_SP, reg2offset(to_reg, out_bias)), true);break;
-        case 4: __ reg2mem_opt(as_Register(from_reg), Address(Z_SP, reg2offset(to_reg, out_bias)), false);break;
+        case 8: __ reg2mem_opt(as_Register(from_reg), Address(Z_SP, reg2offset(to_reg, out_bias)), true); break;
+        case 4: __ reg2mem_opt(as_Register(from_reg), Address(Z_SP, reg2offset(to_reg, out_bias)), false); break;
         default: ShouldNotReachHere();
       }
-    }break;
+    } break;
     default: ShouldNotReachHere();
   }
 }

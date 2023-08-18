@@ -153,17 +153,14 @@ void DowncallStubGenerator::generate() {
   }
 #endif
 
-  int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == frame::z_abi_160_size, "expected space according to ABI");
-  allocated_frame_size = _abi._shadow_space_bytes;
+  int allocated_frame_size = _abi._shadow_space_bytes;
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
   assert(!_needs_return_buffer, "unexpected needs_return_buffer");
   RegSpiller out_reg_spiller(_output_registers);
-  int spill_offset = -1;
-
-    spill_offset = allocated_frame_size;
-    allocated_frame_size += BytesPerWord;
+  int spill_offset = allocated_frame_size;
+  allocated_frame_size += BytesPerWord;
 
   StubLocations locs;
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch2);
