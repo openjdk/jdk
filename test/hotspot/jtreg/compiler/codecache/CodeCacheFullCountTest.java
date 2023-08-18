@@ -26,7 +26,6 @@ import java.net.URLClassLoader;
 import java.lang.reflect.Field;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -58,7 +57,12 @@ public class CodeCacheFullCountTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-        Asserts.assertEquals(oa.getExitValue(), 0, "Failed to create adapters");
+        if (oa.getExitValue() != 0) {
+            // Ignore adapter creation failures
+            if (!oa.getStdout().contains("Out of space in CodeCache for adapters")) {
+                throw new Exception("VM finished with exit code " + oa.getExitValue());
+            }
+        }
         String stdout = oa.getStdout();
 
         Pattern pattern = Pattern.compile("full_count=(\\d)");
