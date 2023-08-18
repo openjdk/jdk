@@ -512,7 +512,18 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
 }
 
 void G1ConcurrentMark::old_region_reclaimed(HeapRegion* r) {
+  assert_at_safepoint();
   assert(r->is_old(), "must be");
+
+  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+    return;
+  }
+
+  // Old regions that would be reclaimed (i.e. were collection set candidates) during
+  // the marking process are not marked through, so there are no bits on the mark
+  // bitmap to clear.
+
+  // They have their TARS set though which needs to be cleared.
   clear_statistics(r);
 }
 
