@@ -299,7 +299,7 @@ public final class Security {
      * 1 is most preferred, followed by 2, and so on.  If the position
      * is less than 1 or greater than n, where n is the number of installed
      * providers, the provider (if not already installed) is inserted at
-     * the end ofthe list, or at the n + 1 position.
+     * the end of the list, or at the n + 1 position.
      *
      * <p>If the given provider is installed at the requested position,
      * the provider that used to be at that position, and all providers

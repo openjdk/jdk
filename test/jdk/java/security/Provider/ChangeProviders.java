@@ -81,19 +81,16 @@ public class ChangeProviders extends Provider {
             throw new Exception("Provider not at pos 1");
         }
 
-        //Ensure that providers inserted at position 0 or > n are placed
-        //at the n+1st position
-        class NextProvider extends Provider {
-            public NextProvider() { super("Bar", "47.23", "none"); }
-        }
-        Provider r = new NextProvider();
-        Security.insertProviderAt(r,0);
-        if (plen() != n+2 || Security.getProviders()[n+1] != r) {
+        // Ensure that providers inserted at positions outside of [1..n] are placed
+        // at the n+1st position
+        Security.removeProvider(p.getName());
+        Security.insertProviderAt(p, 0);
+        if (plen() != n + 1 || Security.getProviders()[n] != p) {
             throw new Exception("Provider inserted at zero not at pos n+1");
         }
-        Security.removeProvider(r.getName());
-        Security.insertProviderAt(r, n+5);
-        if (plen() != n+2 || Security.getProviders()[n+1] != r) {
+        Security.removeProvider(p.getName());
+        Security.insertProviderAt(p, n + 5);
+        if (plen() != n + 1 || Security.getProviders()[n] != p) {
             throw new Exception("Provider inserted at n+5 not at pos n+1");
         }
 
