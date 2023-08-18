@@ -358,7 +358,7 @@ public class TagletManager {
             if (!name.isEmpty() && name.charAt(0) == '@') {
                 name = name.substring(1);
             }
-            if (! (standardTags.contains(name) || allTaglets.containsKey(name))) {
+            if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
                 if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
                     messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
                     continue;

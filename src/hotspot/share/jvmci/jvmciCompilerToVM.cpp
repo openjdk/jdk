@@ -906,9 +906,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JVMCIENV->get_jobject(result);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, index);
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, which);
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(appendix_oop));
 C2V_END
 
