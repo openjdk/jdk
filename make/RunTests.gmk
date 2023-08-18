@@ -586,8 +586,7 @@ define SetupRunMicroTestBody
   $$(eval $$(call SetMicroValue,$1,MICRO_JAVA_OPTIONS))
 
   # Current tests needs to open java.io
-  $1_MICRO_JAVA_OPTIONS += --add-opens=java.base/java.io=ALL-UNNAMED \
-                           --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED
+  $1_MICRO_JAVA_OPTIONS += --add-opens=java.base/java.io=ALL-UNNAMED
 
   # Save output as JSON or CSV file
   ifneq ($$(MICRO_RESULTS_FORMAT), )

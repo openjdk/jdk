@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public class StackRecorderUtil implements Iterable<StackRecorderUtil.TestFrame> 
      */
     public void compareFrame(int index, StackFrame sf) {
         TestFrame tf = testFrames.get(index);
-        System.out.println(index + ": " + tf + " stack frame: " + sf);
         if (compareClasses) {
             if (!tf.declaringClass.equals(sf.getDeclaringClass())) {
                 throw new RuntimeException("Expected class: " +

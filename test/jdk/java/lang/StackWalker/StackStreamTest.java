@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.lang.StackWalker.StackFrame;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -157,6 +158,19 @@ public class StackStreamTest {
 
             // Check STEs for correctness
             checkStackTraceElements(GOLDEN_CLASS_NAMES, GOLDEN_METHOD_NAMES, stacktrace);
+
+            System.out.println("Collect classes");
+            List<Class<?>> classes = StackWalker.getInstance(Set.of(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO))
+                    .walk(s -> {
+                        return s.map(StackFrame::getDeclaringClass).collect(Collectors.toList());
+                    });
+            for (i=0; i < GOLDEN_CLASS_NAMES.size(); i++) {
+                Class<?> c = classes.get(i);
+                if (!GOLDEN_CLASS_NAMES.get(i).equals(c.getName())) {
+                    throw new RuntimeException("unexpected class at " + i + " " + c.getName() +
+                            " expected " + GOLDEN_CLASS_NAMES.get(i));
+                }
+            }
         }
 
         static void checkStackTraceElements(List<String> classNames,

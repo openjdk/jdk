@@ -147,9 +147,6 @@ private:
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
-  static inline bool get_caller_class(jlong mode) {
-    return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
-  }
   static inline bool skip_hidden_frames(jlong mode) {
     return (mode & JVM_STACKWALK_SHOW_HIDDEN_FRAMES) == 0;
   }

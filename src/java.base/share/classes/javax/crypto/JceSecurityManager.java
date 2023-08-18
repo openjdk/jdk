@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ final class JceSecurityManager {
         INSTANCE = dummySecurityManager;
 
         PrivilegedAction<StackWalker> paWalker =
-                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+                () -> StackWalker.getInstance(Set.of(Option.RETAIN_CLASS_REFERENCE, Option.NO_METHOD_INFO));
         @SuppressWarnings("removal")
         StackWalker dummyWalker = AccessController.doPrivileged(paWalker);
 
@@ -106,11 +106,11 @@ final class JceSecurityManager {
         // javax.crypto.* packages.
         // NOTE: javax.crypto.* package maybe subject to package
         // insertion, so need to check its classloader as well.
-        return WALKER.walkClass(s ->
-                s.filter(c -> !c.getPackageName().equals("javax.crypto"))
-                 .map(cls -> {
-                     URL callerCodeBase = JceSecurity.getCodeBase(cls);
-                     return (callerCodeBase != null) ?
+        return WALKER.walk(s -> s.map(StackFrame::getDeclaringClass)
+                .filter(c -> !c.getPackageName().equals("javax.crypto"))
+                .map(cls -> {
+                    URL callerCodeBase = JceSecurity.getCodeBase(cls);
+                    return (callerCodeBase != null) ?
                             getCryptoPermissionFromURL(callerCodeBase,
                                     alg, defaultPerm) : defaultPerm;})
                 .findFirst().get()         // nulls not possible for Optional

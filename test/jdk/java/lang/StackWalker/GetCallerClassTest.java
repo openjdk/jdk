@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8140450 8152893 8189291
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames GetCallerClassTest
  * @run main/othervm -Djava.security.manager=allow GetCallerClassTest sm
  */
 

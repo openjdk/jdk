@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,19 +67,19 @@ import jdk.internal.vm.ContinuationScope;
  * Examples
  *
  * <p>1. To find the first caller filtering a known list of implementation class:
- * <pre>{@code
- *     StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+ * {@snippet lang="java" :
+ *     StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE, Option.NO_METHOD_INFO);
  *     Optional<Class<?>> callerClass = walker.walk(s ->
- *         s.map(StackFrame::getDeclaringClass)
- *          .filter(interestingClasses::contains)
- *          .findFirst());
- * }</pre>
+ *             s.map(StackFrame::getDeclaringClass)
+ *              .filter(interestingClasses::contains)
+ *              .findFirst());
+ * }
  *
  * <p>2. To snapshot the top 10 stack frames of the current thread,
- * <pre>{@code
+ * {@snippet lang="java" :
  *     List<StackFrame> stack = StackWalker.getInstance().walk(s ->
- *         s.limit(10).collect(Collectors.toList()));
- * }</pre>
+ *             s.limit(10).collect(Collectors.toList()));
+ * }
  *
  * Unless otherwise noted, passing a {@code null} argument to a
  * constructor or method in this {@code StackWalker} class
@@ -93,41 +93,46 @@ public final class StackWalker {
      * A {@code StackFrame} object represents a method invocation returned by
      * {@link StackWalker}.
      *
-     * <p> The {@link #getDeclaringClass()} method may be unsupported as determined
-     * by the {@linkplain Option stack walking options} of a {@linkplain
-     * StackWalker stack walker}.
+     * <p> The information of a {@code StackFrame} is determined by
+     * {@linkplain Option the stack walking options}.
+     * By default, the class and method information is available but not
+     * the {@link #getDeclaringClass() Class} object.
+     * To access the {@code Class} object, {@link Option#RETAIN_CLASS_REFERENCE
+     * Option.RETAIN_CLASS_REFERENCE} can be used.
+     *
+     * <p> If the method information is not needed, {@link Option#NO_METHOD_INFO
+     * Option.NO_METHOD_INFO} can be used such that the {@code StackWalker}
+     * can save the overhead in extracting the method information from the
+     * stack frames.
      *
      * @since 9
-     * @jvms 2.6
+     * @jvms 2.6 Frames
      */
     public interface StackFrame {
         /**
-         * Gets the <a href="ClassLoader.html#binary-name">binary name</a>
-         * of the declaring class of the method represented by this stack frame.
-         *
-         * @return the binary name of the declaring class of the method
-         *         represented by this stack frame
+         * {@return the <a href="ClassLoader.html#binary-name">binary name</a>
+         * of the declaring class of the method represented by this stack frame}
          *
          * @jls 13.1 The Form of a Binary
          */
         public String getClassName();
 
         /**
-         * Gets the name of the method represented by this stack frame.
-         * @return the name of the method represented by this stack frame
+         * {@return the name of the method represented by this stack frame}
+         *
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
          */
         public String getMethodName();
 
         /**
-         * Gets the declaring {@code Class} for the method represented by
-         * this stack frame.
+         * {@return the declaring {@code Class} for the method represented by
+         * this stack frame}
          *
-         * @return the declaring {@code Class} of the method represented by
-         * this stack frame
-         *
-         * @throws UnsupportedOperationException if this {@code StackWalker}
-         *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
-         *         Option.RETAIN_CLASS_REFERENCE}.
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured without
+         *         {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE}
          */
         public Class<?> getDeclaringClass();
 
@@ -140,9 +145,10 @@ public final class StackWalker {
          *
          * @return the {@code MethodType} for this stack frame
          *
-         * @throws UnsupportedOperationException if this {@code StackWalker}
-         *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
-         *         Option.RETAIN_CLASS_REFERENCE}.
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured without
+         *         {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE}
+         *         or with {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
          *
          * @since 10
          */
@@ -160,6 +166,10 @@ public final class StackWalker {
          *
          * @return the descriptor of the method represented by
          *         this stack frame
+         *
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
          *
          * @see MethodType#fromMethodDescriptorString(String, ClassLoader)
          * @see MethodType#toMethodDescriptorString()
@@ -182,6 +192,10 @@ public final class StackWalker {
          *         containing the execution point represented by this stack frame,
          *         or a negative number if the method is native.
          *
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
+         *
          * @jvms 4.7.3 The {@code Code} Attribute
          */
         public int getByteCodeIndex();
@@ -198,6 +212,10 @@ public final class StackWalker {
          *         represented by this stack frame, or {@code null} if
          *         this information is unavailable.
          *
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
+         *
          * @jvms 4.7.10 The {@code SourceFile} Attribute
          */
         public String getFileName();
@@ -213,23 +231,30 @@ public final class StackWalker {
          *         point represented by this stack frame, or a negative number if
          *         this information is unavailable.
          *
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
+         *
          * @jvms 4.7.12 The {@code LineNumberTable} Attribute
          */
         public int getLineNumber();
 
         /**
-         * Returns {@code true} if the method containing the execution point
-         * represented by this stack frame is a native method.
+         * {@return {@code true} if the method containing the execution point
+         * represented by this stack frame is a native method}
          *
-         * @return {@code true} if the method containing the execution point
-         *         represented by this stack frame is a native method.
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
          */
         public boolean isNativeMethod();
 
         /**
-         * Gets a {@code StackTraceElement} for this stack frame.
+         * {@return {@code StackTraceElement} for this stack frame}
          *
-         * @return {@code StackTraceElement} for this stack frame.
+         * @throws UnsupportedOperationException if this {@code StackFrame}
+         *         is produced by a {@code StackWalker} configured with
+         *         {@link Option#NO_METHOD_INFO Option.NO_METHOD_INFO}
          */
         public StackTraceElement toStackTraceElement();
     }
@@ -280,7 +305,28 @@ public final class StackWalker {
          * reflection frames}. A {@code StackWalker} with this {@code SHOW_HIDDEN_FRAMES}
          * option will show all hidden frames (including reflection frames).
          */
-        SHOW_HIDDEN_FRAMES;
+        SHOW_HIDDEN_FRAMES,
+
+        /**
+         * No method information.
+         *
+         * <p> By default, method information is available in {@code StackFrame}s
+         * walked by a stack walker.   This option allows a {@code StackWalker}
+         * to collect only the class information of the stack frames such as
+         * {@link StackFrame#getClassName() class name} and the
+         * {@link StackFrame#getDeclaringClass() Class} object
+         * if {@link #RETAIN_CLASS_REFERENCE RETAIN_CLASS_REFERENCE} is set.
+         * Method information such as {@linkplain StackFrame#getMethodName() method name},
+         * {@linkplain StackFrame#getMethodType() method type},
+         * {@linkplain StackFrame#getLineNumber() line number} and
+         * {@linkplain StackFrame#getByteCodeIndex() bytecode index} is not collected
+         * by a {@code StackWalker} with this option.
+         *
+         * @apiNote
+         * This option allows the implementation to skip the
+         * @since 22
+         */
+        NO_METHOD_INFO;
     }
 
     enum ExtendedOption {
@@ -359,6 +405,29 @@ public final class StackWalker {
     }
 
     /**
+     * Returns a {@code StackWalker} instance with the given options specifying
+     * the stack frame information it can access.
+     *
+     * <p>
+     * If a security manager is present and the given {@code options} contains
+     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
+     * it calls its {@link SecurityManager#checkPermission checkPermission}
+     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
+     *
+     * @param options {@link Option stack walking options}
+     *
+     * @return a {@code StackWalker} configured with the given options
+     *
+     * @throws SecurityException if a security manager exists and its
+     *         {@code checkPermission} method denies access.
+     *
+     * @since 22
+     */
+    public static StackWalker getInstance(Option... options) {
+        return getInstance(Set.of(Objects.requireNonNull(options)));
+    }
+
+    /**
      * Returns a {@code StackWalker} instance with the given option specifying
      * the stack frame information it can access.
      *
@@ -393,7 +462,7 @@ public final class StackWalker {
      * it calls its {@link SecurityManager#checkPermission checkPermission}
      * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
-     * @param options {@link Option stack walking option}
+     * @param options {@link Option stack walking options}
      *
      * @return a {@code StackWalker} configured with the given options
      *
@@ -417,7 +486,7 @@ public final class StackWalker {
      * it calls its {@link SecurityManager#checkPermission checkPermission}
      * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
      *
-     * @param options {@link Option stack walking option}
+     * @param options {@link Option stack walking options}
      * @param contScope the continuation scope up to which (inclusive) to walk the stack
      *
      * @return a {@code StackWalker} configured with the given options
@@ -541,13 +610,12 @@ public final class StackWalker {
      * @apiNote
      * For example, to find the first 10 calling frames, first skipping those frames
      * whose declaring class is in package {@code com.foo}:
-     * <blockquote>
-     * <pre>{@code
+     * {@snippet lang="java" :
      * List<StackFrame> frames = StackWalker.getInstance().walk(s ->
-     *     s.dropWhile(f -> f.getClassName().startsWith("com.foo."))
-     *      .limit(10)
-     *      .collect(Collectors.toList()));
-     * }</pre></blockquote>
+     *         s.dropWhile(f -> f.getClassName().startsWith("com.foo."))
+     *          .limit(10)
+     *          .collect(Collectors.toList()));
+     * }
      *
      * <p>This method takes a {@code Function} accepting a {@code Stream<StackFrame>},
      * rather than returning a {@code Stream<StackFrame>} and allowing the
@@ -586,69 +654,6 @@ public final class StackWalker {
 
         Objects.requireNonNull(function);
         return StackStreamFactory.makeStackTraverser(this, function)
-                                 .walk();
-    }
-
-    /**
-     * Applies the given function to the stream of {@code Class}es
-     * for the current thread, traversing from the top frame of the stack,
-     * which is the method calling this {@code walk} method.
-     *
-     * <p>This is equivalant to calling the {@link #walk(Function) walk} method
-     * with a function that first maps {@code StackFrame} to
-     * its declaring class through {@code StackFrame::getDeclaringClass} mapper
-     * and then applies the given function.
-     *
-     * <p>The {@code Class} stream will be closed when
-     * this method returns.  When a closed {@code Stream<Class<?>} object
-     * is reused, {@code IllegalStateException} will be thrown.
-     *
-     * <p>This method takes a {@code Function} accepting a {@code Stream<Class<?>},
-     * rather than returning a {@code Stream<Class<?>} and allowing the
-     * caller to directly manipulate the stream. The Java virtual machine is
-     * free to reorganize a thread's control stack, for example, via
-     * deoptimization. By taking a {@code Function} parameter, this method
-     * allows access to stack frames through a stable view of a thread's control
-     * stack.
-     *
-     * <p>Parallel execution is effectively disabled and stream pipeline
-     * execution will only occur on the current thread.
-     *
-     * @implNote The implementation stabilizes the stack by anchoring a frame
-     * specific to the stack walking and ensures that the stack walking is
-     * performed above the anchored frame. When the stream object is closed or
-     * being reused, {@code IllegalStateException} will be thrown.
-     *
-     * @param function a function that takes a stream of
-     *                 {@code Class<?>} and returns a result.
-     * @param <T> The type of the result of applying the function to the
-     *            stream of {@code Class<?>}.
-     *
-     * @return the result of applying the function to the stream of
-     *         {@code Class<?>}.
-     *
-     * @throws UnsupportedOperationException if this {@code StackWalker}
-     *         is not configured with {@link Option#RETAIN_CLASS_REFERENCE
-     *         Option.RETAIN_CLASS_REFERENCE}.
-     */
-    @CallerSensitive
-    public <T> T walkClass(Function<? super Stream<Class<?>>, ? extends T> function) {
-        if (!retainClassRef) {
-            throw new UnsupportedOperationException("This stack walker " +
-                    "does not have RETAIN_CLASS_REFERENCE access");
-        }
-
-        // Returning a Stream<Class<?> would be unsafe, as the stream could
-        // be used to access the stack frames in an uncontrolled manner.  For
-        // example, a caller might pass a Spliterator of stack frames after one
-        // or more frames had been traversed. There is no robust way to detect
-        // whether the execution point when
-        // Spliterator.tryAdvance(java.util.function.Consumer<? super T>) is
-        // invoked is the exact same execution point where the stack frame
-        // traversal is expected to resume.
-
-        Objects.requireNonNull(function);
-        return StackStreamFactory.makeClassTraverser(this, function)
                                  .walk();
     }
 
@@ -701,9 +706,9 @@ public final class StackWalker {
      * the class loader to load the resource bundle. The caller class
      * in this example is {@code MyTool}.
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      * class Util {
-     *     private final StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+     *     private final StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE, Option.NO_METHOD_INFO);
      *     public ResourceBundle getResourceBundle(String bundleName) {
      *         Class<?> caller = walker.getCallerClass();
      *         return ResourceBundle.getBundle(bundleName, Locale.getDefault(), caller.getClassLoader());
@@ -716,18 +721,18 @@ public final class StackWalker {
      *         ResourceBundle rb = util.getResourceBundle("mybundle");
      *     }
      * }
-     * }</pre>
+     * }
      *
      * An equivalent way to find the caller class using the
      * {@link StackWalker#walk walk} method is as follows
      * (filtering the reflection frames, {@code MethodHandle} and hidden frames
      * not shown below):
-     * <pre>{@code
+     * {@snippet lang="java" :
      *     Optional<Class<?>> caller = walker.walk(s ->
      *         s.map(StackFrame::getDeclaringClass)
      *          .skip(2)
      *          .findFirst());
-     * }</pre>
+     * }
      *
      * When the {@code getCallerClass} method is called from a method that
      * is the bottom most frame on the stack,

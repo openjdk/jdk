@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,24 +28,19 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.ContinuationScope;
 
-import java.lang.StackWalker.StackFrame;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Modifier;
 
-class StackFrameInfo implements StackFrame {
+class StackFrameInfo extends ClassFrameInfo {
     private static final JavaLangInvokeAccess JLIA =
         SharedSecrets.getJavaLangInvokeAccess();
 
     private final boolean retainClassRef;
-    private Object memberName;    // MemberName initialized by VM
-    private int bci;              // initialized by VM to >= 0
+    private String name;
+    private Object type;          // String or MethodType
+    private int bci;              // set by VM to >= 0
     private ContinuationScope contScope;
     private volatile StackTraceElement ste;
-    // private ResolvedMethodName method;
-    // private Class<?> clazz;
-    // private MethodType type;
-    // private String name;
-    // private int flags;
-    // save 3 fields: method, vmindex and resolution
 
     /*
      * Construct an empty StackFrameInfo object that will be filled by the VM
@@ -56,13 +51,12 @@ class StackFrameInfo implements StackFrame {
      */
     StackFrameInfo(StackWalker walker) {
         this.retainClassRef = walker.retainClassRef;
-        this.memberName = JLIA.newMemberName();
     }
 
     // package-private called by StackStreamFactory to skip
     // the capability check
     Class<?> declaringClass() {
-        return JLIA.getDeclaringClass(memberName);
+        return JLIA.getDeclaringClass(classOrMemberName);
     }
 
     // ----- implementation of StackFrame methods
@@ -80,18 +74,46 @@ class StackFrameInfo implements StackFrame {
 
     @Override
     public String getMethodName() {
-        return JLIA.getName(memberName);
+        if (name == null) {
+            expandStackFrameInfo();
+            assert name != null;
+        }
+        return name;
     }
 
     @Override
     public MethodType getMethodType() {
         ensureRetainClassRefEnabled();
-        return JLIA.getMethodType(memberName);
+
+        if (type == null) {
+            expandStackFrameInfo();
+            assert type != null;
+        }
+
+        {
+            // Get a snapshot of type which doesn't get changed by racing threads.
+            final Object type = this.type;
+            if (type instanceof MethodType mt) {
+                return mt;
+            }
+        }
+
+        // type is not a MethodType yet.  Convert it thread-safely.
+        synchronized (this) {
+            if (type instanceof String sig) {
+                type = JLIA.getMethodType(sig, declaringClass().getClassLoader());
+            }
+            assert type instanceof MethodType : "bad method type " + type;
+        }
+        return (MethodType)type;
     }
+
+    // expand the name and type field of StackFrameInfo
+    private native void expandStackFrameInfo();
 
     @Override
     public String getDescriptor() {
-        return JLIA.getMethodDescriptor(memberName);
+        return getMethodType().descriptorString();
     }
 
     @Override
@@ -120,7 +142,7 @@ class StackFrameInfo implements StackFrame {
 
     @Override
     public boolean isNativeMethod() {
-        return JLIA.isNative(memberName);
+        return Modifier.isNative(flags);
     }
 
     private String getContinuationScopeName() {

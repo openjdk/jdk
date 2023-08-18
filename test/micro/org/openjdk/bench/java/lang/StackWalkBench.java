@@ -24,8 +24,8 @@ package org.openjdk.bench.java.lang;
 
 import java.lang.StackWalker.StackFrame;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
-import jdk.internal.reflect.Reflection;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -37,11 +37,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.openjdk.jmh.profile.GCProfiler;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+import static java.lang.StackWalker.Option.*;
 
 /**
  * Benchmarks for java.lang.StackWalker
@@ -53,10 +50,18 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class StackWalkBench {
-    private static final StackWalker WALKER_DEFAULT = StackWalker.getInstance();
-
     private static final StackWalker WALKER_CLASS =
-        StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            StackWalker.getInstance(RETAIN_CLASS_REFERENCE);
+    private static final StackWalker WALKER_CLASS_NO_METHOD =
+            StackWalker.getInstance(Set.of(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO));
+
+    static StackWalker walker(String name) {
+        return switch (name) {
+            case "default" -> WALKER_CLASS;
+            case "no_method" -> WALKER_CLASS_NO_METHOD;
+            default -> throw new IllegalArgumentException(name);
+        };
+    }
 
     // TestStack will add this number of calls to the call stack
     @Param({"4", "100", "1000"})
@@ -69,6 +74,9 @@ public class StackWalkBench {
     // benchmarks, so not a @Param by default.
     // @Param({"4"})
     public int mark = 4;
+
+    @Param({"default", "no_method"})
+    public String walker;
 
     /** Build a call stack of a given size, then run trigger code in it.
       * (Does not account for existing frames higher up in the JMH machinery).
@@ -182,7 +190,7 @@ public class StackWalkBench {
         final boolean[] done = {false};
         new TestStack(depth, new Runnable() {
             public void run() {
-                WALKER_DEFAULT.forEach(localBH::consume);
+                walker(walker).forEach(localBH::consume);
                 done[0] = true;
             }
         }).start();
@@ -200,7 +208,7 @@ public class StackWalkBench {
         final boolean[] done = {false};
         new TestStack(depth, new Runnable() {
             public void run() {
-                WALKER_DEFAULT.walk(s -> {
+                walker(walker).walk(s -> {
                     s.map(StackFrame::getClassName).forEach(localBH::consume);
                     return null;
                 });
@@ -219,9 +227,11 @@ public class StackWalkBench {
     public void walk_MethodNames(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
+        final StackWalker sw = walker(walker);
+        if (sw != WALKER_CLASS) return;
         new TestStack(depth, new Runnable() {
             public void run() {
-                WALKER_DEFAULT.walk( s -> {
+                sw.walk( s -> {
                     s.map(StackFrame::getMethodName).forEach(localBH::consume);
                     return null;
                 });
@@ -240,9 +250,10 @@ public class StackWalkBench {
     public void walk_DeclaringClass(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
+        final StackWalker sw = walker(walker);
         new TestStack(depth, new Runnable() {
             public void run() {
-                WALKER_CLASS.walk(s -> {
+                sw.walk(s -> {
                     s.map(StackFrame::getDeclaringClass).forEach(localBH::consume);
                     return null;
                 });
@@ -254,47 +265,26 @@ public class StackWalkBench {
         }
     }
 
-        /**
-         * Use Stackwalker.walkClass() to fetch all Class instances
-         */
-        @Benchmark
-        public void walkClass(Blackhole bh) {
-            final Blackhole localBH = bh;
-            final boolean[] done = {false};
-            new TestStack(depth, new Runnable() {
-                public void run() {
-                    WALKER_CLASS.walkClass(s -> {
-                        s.forEach(localBH::consume);
-                        return null;
-                    });
-                    done[0] = true;
-                }
-            }).start();
-            if (!done[0]) {
-                throw new RuntimeException();
+    /**
+     * Use Stackwalker.walk() to fetch all instances
+     */
+    @Benchmark
+    public void walk_StackFrame(Blackhole bh) {
+        final Blackhole localBH = bh;
+        final boolean[] done = {false};
+        new TestStack(depth, new Runnable() {
+            public void run() {
+                walker(walker).walk(s -> {
+                    s.forEach(localBH::consume);
+                    return null;
+                });
+                done[0] = true;
             }
+        }).start();
+        if (!done[0]) {
+            throw new RuntimeException();
         }
-
-        /**
-         * Use Stackwalker.walk() to fetch all instances
-         */
-        @Benchmark
-        public void walkStackFrame(Blackhole bh) {
-            final Blackhole localBH = bh;
-            final boolean[] done = {false};
-            new TestStack(depth, new Runnable() {
-                public void run() {
-                    WALKER_CLASS.walk(s -> {
-                        s.forEach(localBH::consume);
-                        return null;
-                    });
-                    done[0] = true;
-                }
-            }).start();
-            if (!done[0]) {
-                throw new RuntimeException();
-            }
-        }
+    }
 
     /**
      * Use StackWalker.walk() to fetch StackTraceElements
@@ -303,9 +293,12 @@ public class StackWalkBench {
     public void walk_StackTraceElements(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
+        final StackWalker sw = walker(walker);
+        if (sw != WALKER_CLASS) return;
+
         new TestStack(depth, new Runnable() {
             public void run() {
-                WALKER_DEFAULT.walk(s -> {
+                sw.walk(s -> {
                     s.map(StackFrame::toStackTraceElement).forEach(localBH::consume);
                     return null;
                 });
@@ -324,27 +317,10 @@ public class StackWalkBench {
     public void getCallerClass(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
+        final StackWalker sw = walker(walker);
         new TestStack(depth, new Runnable() {
             public void run() {
-                localBH.consume(WALKER_CLASS.getCallerClass());
-                done[0] = true;
-            }
-        }).start();
-        if (!done[0]) {
-            throw new RuntimeException();
-        }
-    }
-
-    /**
-     * Reflection.getCallerClass()
-     */
-    @Benchmark
-    public void reflect_getCallerClass(Blackhole bh) {
-        final Blackhole localBH = bh;
-        final boolean[] done = {false};
-        new TestStack(depth, new Runnable() {
-            public void run() {
-                localBH.consume(Reflection.getCallerClass());
+                localBH.consume(sw.getCallerClass());
                 done[0] = true;
             }
         }).start();
@@ -362,11 +338,11 @@ public class StackWalkBench {
     public void walk_filterCallerClass(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
-
+        final StackWalker sw = walker(walker);
         new MarkedTestStack(depth, mark, new Runnable() {
             public void run() {
                 // To be comparable with Reflection.getCallerClass(), return the Class object
-                WALKER_CLASS.walk(s -> {
+                sw.walk(s -> {
                     localBH.consume(s.filter(f -> TestMarker.class.equals(f.getDeclaringClass())).findFirst().get().getDeclaringClass());
                     return null;
                 });
@@ -388,11 +364,11 @@ public class StackWalkBench {
     public void walk_filterCallerClassHalfStack(Blackhole bh) {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
-
+        final StackWalker sw = walker(walker);
         new MarkedTestStack(depth, depth / 2, new Runnable() {
             public void run() {
                 // To be comparable with Reflection.getCallerClass(), return the Class object
-                WALKER_CLASS.walk(s -> {
+                sw.walk(s -> {
                     localBH.consume(s.filter((f) -> TestMarker.class.equals(f.getDeclaringClass())).findFirst().get().getDeclaringClass());
                     return null;
                 });

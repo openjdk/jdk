@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/packageEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -155,8 +154,8 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 //   BaseFrameStream  stream of frames
 //   max_nframes      Maximum number of frames to be filled.
 //   start_index      Start index to the user-supplied buffers.
-//   frames_array     Buffer to store Class or StackFrame in, starting at start_index.
-//                    frames array is a Class<?>[] array when only getting caller
+//   frames_array     Buffer to store stack frame information in, starting at start_index.
+//                    frames array is a ClassFrameInfo[] array when only getting caller
 //                    reference, and a StackFrameInfo[] array (or derivative)
 //                    otherwise. It should never be null.
 //   end_index        End index to the user-supplied buffers with unpacked frames.
@@ -187,9 +186,9 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
 
     // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
     // not set) and when StackWalker::getCallerClass is called
-    if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
+    LogTarget(Debug, stackwalk) lt;
+    if (!ShowHiddenFrames && skip_hidden_frames(mode)) {
       if (method->is_hidden()) {
-        LogTarget(Debug, stackwalk) lt;
         if (lt.is_enabled()) {
           ResourceMark rm(THREAD);
           LogStream ls(lt);
@@ -197,6 +196,7 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
           method->print_short_name(&ls);
           ls.cr();
         }
+
         // We end a batch on continuation bottom to let the Java side skip top frames of the next one
         if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
         continue;
@@ -204,7 +204,6 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     }
 
     int index = end_index++;
-    LogTarget(Debug, stackwalk) lt;
     if (lt.is_enabled()) {
       ResourceMark rm(THREAD);
       LogStream ls(lt);
@@ -213,13 +212,6 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
       ls.print_cr(" bci=%d", stream.bci());
     }
 
-    if (!need_method_info(mode) && get_caller_class(mode) &&
-          index == start_index && method->caller_sensitive()) {
-      ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
-        err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",
-                method->external_name()));
-    }
     // fill in StackFrameInfo and initialize MemberName
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
 
@@ -257,7 +249,9 @@ void JavaFrameStream::fill_frame(int index, objArrayHandle  frames_array,
     Handle stackFrame(THREAD, frames_array->obj_at(index));
     fill_stackframe(stackFrame, method, CHECK);
   } else {
-    frames_array->obj_at_put(index, method->method_holder()->java_mirror());
+    HandleMark hm(THREAD);
+    Handle stackFrame(THREAD, frames_array->obj_at(index));
+    java_lang_ClassFrameInfo::init_class(stackFrame, method);
   }
 }
 
@@ -357,7 +351,7 @@ objArrayHandle LiveFrameStream::monitors_to_object_array(GrowableArray<MonitorIn
   return array_h;
 }
 
-// Fill StackFrameInfo with bci and initialize memberName
+// Fill StackFrameInfo with bci and initialize ResolvedMethodName
 void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& method, TRAPS) {
   java_lang_StackFrameInfo::set_method_and_bci(stackFrame, method, bci(), cont(), THREAD);
 }
@@ -406,8 +400,8 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
 //   cont_scope     Continuation scope to walk (if not in this scope, we'll walk all the way).
 //   frame_count    Number of frames to be traversed.
 //   start_index    Start index to the user-supplied buffers.
-//   frames_array   Buffer to store StackFrame in, starting at start_index.
-//                  frames array is a Class<?>[] array when only getting caller
+//   frames_array   Buffer to store stack frame info in, starting at start_index.
+//                  frames array is a ClassFrameInfo[] array when only getting caller
 //                  reference, and a StackFrameInfo[] array (or derivative)
 //                  otherwise. It should never be null.
 //

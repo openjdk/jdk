@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class CSM {
 
         try {
             Class<?> c2 = walker.getCallerClass();
-            throw new RuntimeException("Exception not thrown by StackWalker::getCallerClass");
+            throw new RuntimeException("Exception not thrown by StackWalker::getCallerClass. Returned " + c2.getName());
         } catch (UnsupportedOperationException e) {}
         return c1;
     }

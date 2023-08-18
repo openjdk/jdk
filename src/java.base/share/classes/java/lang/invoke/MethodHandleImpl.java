@@ -57,6 +57,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.MN_CALLER_SENSITIVE;
+import static java.lang.invoke.MethodHandleNatives.Constants.MN_HIDDEN_MEMBER;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
@@ -1543,37 +1545,22 @@ abstract class MethodHandleImpl {
     static {
         SharedSecrets.setJavaLangInvokeAccess(new JavaLangInvokeAccess() {
             @Override
-            public Object newMemberName() {
-                return new MemberName();
+            public Class<?> getDeclaringClass(Object rmname) {
+                ResolvedMethodName method = (ResolvedMethodName)rmname;
+                return method.declaringClass();
             }
 
             @Override
-            public String getName(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getName();
-            }
-            @Override
-            public Class<?> getDeclaringClass(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getDeclaringClass();
+            public MethodType getMethodType(String descriptor, ClassLoader loader) {
+                return MethodType.fromDescriptor(descriptor, loader);
             }
 
-            @Override
-            public MethodType getMethodType(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getMethodType();
+            public boolean isCallerSensitive(int flags) {
+                return (flags & MN_CALLER_SENSITIVE) == MN_CALLER_SENSITIVE;
             }
 
-            @Override
-            public String getMethodDescriptor(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.getMethodDescriptor();
-            }
-
-            @Override
-            public boolean isNative(Object mname) {
-                MemberName memberName = (MemberName)mname;
-                return memberName.isNative();
+            public boolean isHiddenMember(int flags) {
+                return (flags & MN_HIDDEN_MEMBER) == MN_HIDDEN_MEMBER;
             }
 
             @Override
