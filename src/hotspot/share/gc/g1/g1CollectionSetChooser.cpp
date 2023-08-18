@@ -164,7 +164,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       // likely to have already survived a few collections, so they might be longer
       // lived anyway.
       // Otherwise the Old region must satisfy the liveness condition.
-      bool should_add = !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) ||
+      bool should_add = !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
                         G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes());
       if (should_add) {
         add_region(r);
