@@ -57,11 +57,9 @@ public class CodeCacheFullCountTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-        if (oa.getExitValue() != 0) {
-            // Ignore adapter creation failures
-            if (!oa.getStderr().contains("Out of space in CodeCache for adapters")) {
-                throw new Exception("VM finished with exit code " + oa.getExitValue());
-            }
+        // Ignore adapter creation failures
+        if (oa.getExitValue() != 0 && !oa.getStderr().contains("Out of space in CodeCache for adapters")) {
+            throw new RuntimeException("VM finished with exit code " + oa.getExitValue());
         }
         String stdout = oa.getStdout();
 
