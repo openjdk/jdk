@@ -136,11 +136,11 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     assert(false, "buffer_length too small");
     return nullptr;
   }
-  const int milliseconds_per_microsecond = 1000;
+  const int milliseconds_per_second = 1000;
   const time_t seconds_since_19700101 =
-    milliseconds_since_19700101 / milliseconds_per_microsecond;
+    milliseconds_since_19700101 / milliseconds_per_second;
   const int milliseconds_after_second =
-    milliseconds_since_19700101 % milliseconds_per_microsecond;
+    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_second);
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
   if (utc) {
@@ -928,13 +928,63 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static void print_hex_readable_pointer(outputStream* st, address p,
-                                                         int unitsize) {
-  switch (unitsize) {
-    case 1: st->print("%02x", *(u1*)p); break;
-    case 2: st->print("%04x", *(u2*)p); break;
-    case 4: st->print("%08x", *(u4*)p); break;
-    case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
+ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
+  const intptr_t errval = 0x1717;
+  intptr_t i = SafeFetchN(p, errval);
+  if (i == errval) {
+    i = SafeFetchN(p, ~errval);
+    if (i == ~errval) {
+      return false;
+    }
+  }
+  (*result) = i;
+  return true;
+}
+
+static void print_hex_location(outputStream* st, address p, int unitsize) {
+  assert(is_aligned(p, unitsize), "Unaligned");
+  address pa = align_down(p, sizeof(intptr_t));
+#ifndef _LP64
+  // Special handling for printing qwords on 32-bit platforms
+  if (unitsize == 8) {
+    intptr_t i1, i2;
+    if (read_safely_from((intptr_t*)pa, &i1) &&
+        read_safely_from((intptr_t*)pa + 1, &i2)) {
+      const uint64_t value =
+        LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
+        BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
+      st->print("%016" FORMAT64_MODIFIER "x", value);
+    } else {
+      st->print_raw("????????????????");
+    }
+    return;
+  }
+#endif // 32-bit, qwords
+  intptr_t i = 0;
+  if (read_safely_from((intptr_t*)pa, &i)) {
+    // bytes:   CA FE BA BE DE AD C0 DE
+    // bytoff:   0  1  2  3  4  5  6  7
+    // LE bits:  0  8 16 24 32 40 48 56
+    // BE bits: 56 48 40 32 24 16  8  0
+    const int offset = (int)(p - (address)pa);
+    const int bitoffset =
+      LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
+      BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
+    const int bitfieldsize = unitsize * BitsPerByte;
+    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    switch (unitsize) {
+      case 1: st->print("%02x", (u1)value); break;
+      case 2: st->print("%04x", (u2)value); break;
+      case 4: st->print("%08x", (u4)value); break;
+      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+    }
+  } else {
+    switch (unitsize) {
+      case 1: st->print_raw("??"); break;
+      case 2: st->print_raw("????"); break;
+      case 4: st->print_raw("????????"); break;
+      case 8: st->print_raw("????????????????"); break;
+    }
   }
 }
 
@@ -955,11 +1005,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   // Print out the addresses as if we were starting from logical_start.
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    if (is_readable_pointer(p)) {
-      print_hex_readable_pointer(st, p, unitsize);
-    } else {
-      st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
-    }
+    print_hex_location(st, p, unitsize);
     p += unitsize;
     logical_p += unitsize;
     cols++;

@@ -73,10 +73,11 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(EnableJVMCIProduct)
   JVMCI_FLAG_CHECKED(UseGraalJIT)
 
-  CHECK_NOT_SET(BootstrapJVMCI,   UseJVMCICompiler)
-  CHECK_NOT_SET(PrintBootstrap,   UseJVMCICompiler)
-  CHECK_NOT_SET(JVMCIThreads,     UseJVMCICompiler)
-  CHECK_NOT_SET(JVMCIHostThreads, UseJVMCICompiler)
+  CHECK_NOT_SET(BootstrapJVMCI,               UseJVMCICompiler)
+  CHECK_NOT_SET(PrintBootstrap,               UseJVMCICompiler)
+  CHECK_NOT_SET(JVMCIThreads,                 UseJVMCICompiler)
+  CHECK_NOT_SET(JVMCIHostThreads,             UseJVMCICompiler)
+  CHECK_NOT_SET(LibJVMCICompilerThreadHidden, UseJVMCICompiler)
 
   if (UseJVMCICompiler) {
     if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
@@ -185,6 +186,7 @@ bool JVMCIGlobals::enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graa
     "UseJVMCINativeLibrary",
     "JVMCINativeLibraryThreadFraction",
     "JVMCINativeLibraryErrorFile",
+    "LibJVMCICompilerThreadHidden",
     nullptr
   };
 

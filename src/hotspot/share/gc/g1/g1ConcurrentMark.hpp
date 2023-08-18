@@ -264,6 +264,10 @@ public:
   // The number of root regions to scan.
   uint num_root_regions() const;
 
+  // Is the given memregion contained in the root regions; the MemRegion must
+  // match exactly.
+  bool contains(const MemRegion mr) const;
+
   void cancel_scan();
 
   // Flag that we're done with root region scanning and notify anyone
@@ -467,6 +471,8 @@ public:
   // Live bytes in the given region as determined by concurrent marking, i.e. the amount of
   // live bytes between bottom and TAMS.
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
+  // Set live bytes for concurrent marking.
+  void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
@@ -555,6 +561,7 @@ public:
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
   void add_root_region(HeapRegion* r);
+  bool is_root_region(HeapRegion* r);
   void root_region_scan_abort_and_wait();
 
 private:

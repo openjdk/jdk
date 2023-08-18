@@ -28,15 +28,19 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
  * @compile -g:none NoSourceFileAttribute.java
  * @run main NoSourceFileAttribute
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import java.io.IOException;
 
@@ -46,9 +50,9 @@ public class NoSourceFileAttribute extends TestBase {
         new NoSourceFileAttribute().test();
     }
 
-    public void test() throws IOException, ConstantPoolException {
+    public void test() throws IOException {
         assertNull(
-                ClassFile.read(getClassFile(NoSourceFileAttribute.class)).getAttribute(Attribute.SourceFile),
+                Classfile.of().parse(getClassFile(NoSourceFileAttribute.class).toPath()).findAttribute(Attributes.SOURCE_FILE).orElse(null),
                 "Classfile should have no SourceFile attribute when compiled without debug information.");
     }
 }

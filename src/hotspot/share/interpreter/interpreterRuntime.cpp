@@ -716,7 +716,9 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
   ResolvedFieldEntry* entry = pool->resolved_field_entry_at(field_index);
   entry->set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
-  entry->fill_in(info.field_holder(), info.offset(), (u2)info.index(), (u1)state, (u1)get_code, (u1)put_code);
+  entry->fill_in(info.field_holder(), info.offset(),
+                 checked_cast<u2>(info.index()), checked_cast<u1>(state),
+                 static_cast<u1>(get_code), static_cast<u1>(put_code));
 }
 
 
@@ -1331,7 +1333,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         ResourceMark rm;
         ptrdiff_t align_offset = align_up(_buffer, CodeEntryAlignment) - (address)_buffer;
         CodeBuffer buffer((address)(_buffer + align_offset),
-                          SignatureHandlerLibrary::buffer_size - align_offset);
+                          checked_cast<int>(SignatureHandlerLibrary::buffer_size - align_offset));
         InterpreterRuntime::SignatureHandlerGenerator(method, &buffer).generate(fingerprint);
         // copy into code heap
         address handler = set_handler(&buffer);

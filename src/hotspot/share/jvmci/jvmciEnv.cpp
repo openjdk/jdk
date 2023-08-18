@@ -433,8 +433,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
-  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
-    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+  bool handle_pending_exception(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (HAS_PENDING_EXCEPTION) {
       Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
       Symbol *ex_name = throwable->klass()->name();
@@ -451,6 +450,14 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
         JVMCI_event_1("error translating exception: %s", char_buffer);
         decode(THREAD, _encode_fail, buffer);
       }
+      return true;
+    }
+    return false;
+  }
+
+  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
       return 0;
     }
     JavaCallArguments jargs;
@@ -462,6 +469,9 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
                             vmSupport,
                             vmSymbols::encodeThrowable_name(),
                             vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
+      return 0;
+    }
     return result.get_jint();
   }
 
@@ -864,7 +874,7 @@ DO_THROW(InvalidInstalledCodeException)
 DO_THROW(UnsatisfiedLinkError)
 DO_THROW(UnsupportedOperationException)
 DO_THROW(OutOfMemoryError)
-DO_THROW(ClassNotFoundException)
+DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
@@ -1449,7 +1459,7 @@ JVMCIObject JVMCIEnv::new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject
   }
 }
 
-JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMIntrinsicMethod::klass()->initialize(CHECK_(JVMCIObject()));
@@ -1458,12 +1468,15 @@ JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObj
     HotSpotJVMCI::VMIntrinsicMethod::set_name(this, obj, HotSpotJVMCI::resolve(name));
     HotSpotJVMCI::VMIntrinsicMethod::set_descriptor(this, obj, HotSpotJVMCI::resolve(descriptor));
     HotSpotJVMCI::VMIntrinsicMethod::set_id(this, obj, id);
+    HotSpotJVMCI::VMIntrinsicMethod::set_isAvailable(this, obj, isAvailable);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c1Supported(this, obj, c1Supported);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c2Supported(this, obj, c2Supported);
     return wrap(obj);
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::VMIntrinsicMethod::clazz(),
                                     JNIJVMCI::VMIntrinsicMethod::constructor(),
-                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id);
+                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id, isAvailable, c1Supported, c2Supported);
     return wrap(result);
   }
 }
