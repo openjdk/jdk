@@ -774,7 +774,7 @@ void os::Bsd::current_stack_region(address* base, size_t* size) {
 
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
+  assert(os::current_stack_pointer() >= bottom &&
          os::current_stack_pointer() < *base, "just checking");
 }
 
