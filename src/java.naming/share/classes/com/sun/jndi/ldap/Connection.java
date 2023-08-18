@@ -297,7 +297,7 @@ public final class Connection implements Runnable {
         } catch (Exception e) {
             // 8314063 the socket is not closed after the failure of handshake
             // close the socket while the error happened
-            closeSocket(socket);
+            closeOpenedSocket(socket);
             throw e;
         }
         return socket;
@@ -371,19 +371,6 @@ public final class Connection implements Runnable {
                 sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
                 sslSocket.startHandshake();
                 sslSocket.setSoTimeout(socketTimeout);
-            }
-        }
-    }
-
-    // close the socket when the error happens
-    private void closeSocket (Socket socket) {
-        if (socket != null && !socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException ioe) {
-                if (debug) {
-                    System.err.println("Connection: createSocket failed with " + ioe);
-                }
             }
         }
     }
@@ -665,7 +652,7 @@ public final class Connection implements Runnable {
 
                     flushAndCloseOutputStream();
                     // 8313657 socket is not closed until GC is run
-                    closeOpenedSocket();
+                    closeOpenedSocket(sock);
                     tryUnpauseReader();
 
                     if (!notifyParent) {
@@ -718,9 +705,10 @@ public final class Connection implements Runnable {
     }
 
     // close socket
-    private void closeOpenedSocket() {
+    private void closeOpenedSocket(Socket socket) {
         try {
-            sock.close();
+            if(socket != null && !socket.isClosed())
+                socket.close();
         } catch (IOException ioEx) {
             if (debug) {
                 System.err.println("Connection.closeConnectionSocket: Socket close problem: " + ioEx);
