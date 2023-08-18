@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.security.SecureRandomSpi;
 import java.security.NoSuchAlgorithmException;
@@ -193,7 +194,7 @@ implements java.io.Serializable {
     /**
      * This static object will be seeded by SeedGenerator, and used
      * to seed future instances of SHA1PRNG SecureRandoms.
-     *
+     * <p>
      * Bloch, Effective Java Second Edition: Item 71
      */
     private static class SeederHolder {
@@ -268,18 +269,24 @@ implements java.io.Serializable {
     }
 
     /*
-     * readObject is called to restore the state of the random object from
-     * a stream.  We have to create a new instance of MessageDigest, because
+     * This method is called to restore the state of the random object from
+     * a stream.
+     * <p>
+     * We have to create a new instance of {@code MessageDigest}, because
      * it is not included in the stream (it is marked "transient").
-     *
-     * Note that the engineNextBytes() method invoked on the restored random
-     * object will yield the exact same (random) bytes as the original.
+     * <p>
+     * Note that the {@code engineNextBytes()} method invoked on the restored
+     * random object will yield the exact same (random) bytes as the original.
      * If you do not want this behaviour, you should re-seed the restored
-     * random object, using engineSetSeed().
+     * random object, using {@code engineSetSeed()}.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
+            throws IOException, ClassNotFoundException {
 
         s.defaultReadObject ();
 
@@ -297,6 +304,35 @@ implements java.io.Serializable {
                 throw new InternalError(
                     "internal error: SHA-1 not available.", exc);
             }
+        }
+
+        // Various consistency checks
+        if ((remainder == null) && (remCount > 0)) {
+            throw new InvalidObjectException(
+                    "Remainder indicated, but no data available");
+        }
+
+        // Not yet allocated state
+        if (state == null) {
+            if (remainder == null) {
+                return;
+            } else {
+                throw new InvalidObjectException(
+                        "Inconsistent buffer allocations");
+            }
+        }
+
+        // Sanity check on sizes/pointer
+        if ((state.length != DIGEST_SIZE) ||
+                ((remainder != null) && (remainder.length != DIGEST_SIZE)) ||
+                (remCount < 0 ) || (remCount >= DIGEST_SIZE)) {
+            throw new InvalidObjectException(
+                    "Inconsistent buffer sizes/state");
+        }
+
+        state = state.clone();
+        if (remainder != null) {
+            remainder = remainder.clone();
         }
     }
 }

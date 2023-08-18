@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2097,8 +2097,17 @@ public class PolicyFile extends java.security.Policy {
                 this.actions.equals(that.actions)))
                 return false;
 
-            if (this.certs.length != that.certs.length)
+            if ((this.certs == null) && (that.certs == null)) {
+                return true;
+            }
+
+            if ((this.certs == null) || (that.certs == null)) {
                 return false;
+            }
+
+            if (this.certs.length != that.certs.length) {
+                return false;
+            }
 
             int i,j;
             boolean match;
@@ -2168,7 +2177,7 @@ public class PolicyFile extends java.security.Policy {
         }
 
         public Certificate[] getCerts() {
-            return certs;
+            return (certs == null ? null : certs.clone());
         }
 
         /**
@@ -2180,6 +2189,22 @@ public class PolicyFile extends java.security.Policy {
          */
         @Override public String toString() {
             return "(SelfPermission " + type + " " + name + " " + actions + ")";
+        }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            stream.defaultReadObject();
+            if (certs != null) {
+                this.certs = certs.clone();
+            }
         }
     }
 

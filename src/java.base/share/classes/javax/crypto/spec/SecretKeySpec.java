@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package javax.crypto.spec;
 import jdk.internal.access.JavaxCryptoSpecAccess;
 import jdk.internal.access.SharedSecrets;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.MessageDigest;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -258,5 +261,27 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      */
     void clear() {
         Arrays.fill(key, (byte)0);
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+
+        if (key == null || algorithm == null) {
+            throw new InvalidObjectException("Missing argument");
+        }
+
+        this.key = key.clone();
+        if (key.length == 0) {
+            throw new InvalidObjectException("Invalid key length");
+        }
     }
 }

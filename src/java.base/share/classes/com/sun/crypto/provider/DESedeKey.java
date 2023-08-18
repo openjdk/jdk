@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.crypto.provider;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.lang.ref.Reference;
 import java.security.MessageDigest;
 import java.security.KeyRep;
@@ -44,7 +46,7 @@ import jdk.internal.ref.CleanerFactory;
 final class DESedeKey implements SecretKey {
 
     @java.io.Serial
-    static final long serialVersionUID = 2463986565756745178L;
+    private static final long serialVersionUID = 2463986565756745178L;
 
     private byte[] key;
 
@@ -112,7 +114,7 @@ final class DESedeKey implements SecretKey {
         for (int i = 1; i < this.key.length; i++) {
             retval += this.key[i] * i;
         }
-        return(retval ^= "desede".hashCode());
+        return(retval ^ "desede".hashCode());
     }
 
     public boolean equals(Object obj) {
@@ -134,15 +136,30 @@ final class DESedeKey implements SecretKey {
     }
 
     /**
-     * readObject is called to restore the state of this key from
-     * a stream.
+     * Restores the state of this object from the stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream s)
-         throws java.io.IOException, ClassNotFoundException
+         throws IOException, ClassNotFoundException
     {
         s.defaultReadObject();
+        if ((key == null) || (key.length != DESedeKeySpec.DES_EDE_KEY_LEN)) {
+            throw new InvalidObjectException("Wrong key size");
+        }
         key = key.clone();
+
+        DESKeyGenerator.setParityBit(key, 0);
+        DESKeyGenerator.setParityBit(key, 8);
+        DESKeyGenerator.setParityBit(key, 16);
+
+        // Use the cleaner to zero the key when no longer referenced
+        final byte[] k = key;
+        CleanerFactory.cleaner().register(this,
+                () -> java.util.Arrays.fill(k, (byte)0x00));
     }
 
     /**
