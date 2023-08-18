@@ -34,7 +34,6 @@
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations GetThreadStateTest
  */
 
-import java.lang.ref.Reference;
 import java.util.StringJoiner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -130,7 +129,6 @@ class GetThreadStateTest {
             }
         } finally {
             thread.join();
-            Reference.reachabilityFence(lock);
         }
     }
 
@@ -173,7 +171,6 @@ class GetThreadStateTest {
         } finally {
             thread.interrupt();
             thread.join();
-            Reference.reachabilityFence(lock);
         }
     }
 
@@ -216,7 +213,6 @@ class GetThreadStateTest {
         } finally {
             thread.interrupt();
             thread.join();
-            Reference.reachabilityFence(lock);
         }
     }
 
@@ -310,7 +306,6 @@ class GetThreadStateTest {
             done.set(true);
             LockSupport.unpark(thread);
             thread.join();
-            Reference.reachabilityFence(lock);
         }
     }
 
@@ -344,7 +339,6 @@ class GetThreadStateTest {
             done.set(true);
             LockSupport.unpark(thread);
             thread.join();
-            Reference.reachabilityFence(lock);
         }
     }
 
