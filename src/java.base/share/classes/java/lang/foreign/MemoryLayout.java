@@ -262,11 +262,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * <p>
  * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
  * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
- * {@code get} and {@code set} access modes will result in an {@code IllegalStateException}. If access is partially aligned,
+ * {@code get} and {@code set} access modes will result in an {@code IllegalArgumentException}. If access is partially aligned,
  * atomic access is only guaranteed when {@code A} is aligned according to {@code S}.
  * <p>
  * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
- * {@code IllegalStateException} is thrown, irrespective of the access mode being used.
+ * {@code IllegalArgumentException} is thrown, irrespective of the access mode being used.
  * <p>
  * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
  * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
@@ -445,9 +445,18 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * offset = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
      * }
      *
-     * The physical address corresponding to the accessed offset must be <a href="MemorySegment.html#segment-alignment">aligned</a>
-     * according to the {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout).
-     * Note that this can be more strict (but not less) than the alignment constraint of the selected value layout.
+     * The physical address of the accessed memory segment must be <a href="MemorySegment.html#segment-alignment">aligned</a>
+     * according to the {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout), or
+     * an {@link IllegalArgumentException} will be issued. Note that the alignment constraint of the root layout
+     * can be more strict (but not less) than the alignment constraint of the selected value layout.
+     * <p>
+     * Moreover, if the access operation (computed as above) falls outside the spatial bounds of the
+     * accessed memory segment, an {@link IndexOutOfBoundsException} is thrown. This is the case when {@code O + A > S},
+     * where {@code O} is the accessed offset (computed as above), {@code A} is the size of the selected layout and {@code S}
+     * is the size of the accessed memory segment.
+     * <p>
+     * Finally, if the {@linkplain MemorySegment#scope() scope} associated with the accessed segment is not
+     * {@linkplain MemorySegment.Scope#isAlive() alive}, the access operation will result in an {@link IllegalStateException}.
      * <p>
      * If the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#get(Object...)}
      * on the returned var handle will return a new memory segment. The segment is associated with a fresh scope that is
