@@ -91,7 +91,7 @@ class DowncallStubGenerator : public StubCodeGenerator {
   }
 };
 
-static const int native_invoker_code_base_size = 384;
+static const int native_invoker_code_base_size = 512;
 static const int native_invoker_size_per_args = 8;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
