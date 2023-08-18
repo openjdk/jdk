@@ -26,7 +26,6 @@
 #define SHARE_CLASSFILE_PLACEHOLDERS_HPP
 
 #include "oops/symbolHandle.hpp"
-#include "runtime/atomic.hpp"
 
 class PlaceholderEntry;
 class Thread;
@@ -117,8 +116,8 @@ class PlaceholderEntry {
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername);
 
-  JavaThread*        definer_acquire()     const { return Atomic::load_acquire(&_definer); }
-  void               release_set_definer(JavaThread* definer) { Atomic::release_store(&_definer, definer); }
+  JavaThread*        definer()     const { return _definer; }
+  void               set_definer(JavaThread* definer) { _definer = definer; }
 
   InstanceKlass*     instance_klass()      const { return _instanceKlass; }
   void               set_instance_klass(InstanceKlass* ik) { _instanceKlass = ik; }

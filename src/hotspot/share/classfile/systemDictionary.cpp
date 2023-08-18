@@ -1451,7 +1451,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     // All threads wait - even those that will throw duplicate class: otherwise
     // caller is surprised by LinkageError: duplicate, but findLoadedClass fails
     // if other thread has not finished updating dictionary
-    while (probe->definer_acquire() != nullptr) {
+    while (probe->definer() != nullptr) {
       SystemDictionary_lock->wait();
     }
     // Only special cases allow parallel defines and can use other thread's results
@@ -1468,7 +1468,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
       return ik;
     } else {
       // This thread will define the class (even if earlier thread tried and had an error)
-      probe->release_set_definer(THREAD);
+      probe->set_definer(THREAD);
     }
   }
 
@@ -1482,7 +1482,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     if (!HAS_PENDING_EXCEPTION) {
       probe->set_instance_klass(k);
     }
-    probe->release_set_definer(nullptr);
+    probe->set_definer(nullptr);
     PlaceholderTable::find_and_remove(name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
     SystemDictionary_lock->notify_all();
   }
