@@ -847,26 +847,25 @@ public class ModuleDescriptor
         }
 
         /**
-         * Returns the fully qualified class name of the service type.
-         *
-         * @return The fully qualified class name of the service type
+         * {@return the {@linkplain ClassLoader##binary-name binary name} of the service type}
          */
         public String service() { return service; }
 
         /**
-         * Returns the list of the fully qualified class names of the providers
-         * or provider factories.
+         * Returns the list of the {@linkplain ClassLoader##binary-name binary names}
+         * of the providers or provider factories.
          *
-         * @return A non-empty and unmodifiable list of the fully qualified class
-         *         names of the providers or provider factories
+         * @return A non-empty and unmodifiable list of the {@linkplain ClassLoader##binary-name
+         *         binary names} of the providers or provider factories
          */
         public List<String> providers() { return providers; }
 
         /**
          * Compares this {@code Provides} to another.
          *
-         * <p> Two {@code Provides} objects are compared by comparing the fully
-         * qualified class name of the service type lexicographically. Where the
+         * <p> Two {@code Provides} objects are compared by comparing the
+         * {@linkplain ClassLoader##binary-name binary name}
+         * of the service type lexicographically. Where the
          * class names are equal then the list of the provider class names are
          * compared by comparing the corresponding elements of both lists
          * lexicographically and in sequence. Where the lists differ in size,
@@ -1446,8 +1445,8 @@ public class ModuleDescriptor
      * <p> If this module is an automatic module then the set of service
      * dependences is empty. </p>
      *
-     * @return  A possibly-empty unmodifiable set of the fully qualified class
-     *          names of the service types used
+     * @return  A possibly-empty unmodifiable set of the {@linkplain ClassLoader##binary-name
+     *          binary names} of the service types used
      */
     public Set<String> uses() {
         return uses;
@@ -1510,7 +1509,7 @@ public class ModuleDescriptor
     /**
      * <p> Returns the module main class. </p>
      *
-     * @return The fully qualified class name of the module's main class
+     * @return The {@linkplain ClassLoader##binary-name binary name} of the module's main class
      */
     public Optional<String> mainClass() {
         return Optional.ofNullable(mainClass);
