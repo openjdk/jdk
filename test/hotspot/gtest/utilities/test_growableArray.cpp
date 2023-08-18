@@ -601,3 +601,18 @@ TEST(GrowableArrayCHeap, sanity) {
     delete a;
   }
 }
+
+struct NoncopyableStruct {
+  int some;
+  int data;
+  NONCOPYABLE(NoncopyableStruct);
+  NoncopyableStruct() : some(0), data(0) {
+  }
+  NoncopyableStruct(NoncopyableStruct&&) = default;
+};
+
+TEST(GrowableArray, ShouldMoveAndNotCopy) {
+  // This should cause a compilation error if GrowableArrayCHeap cannot handle a movable but noncopyable type.
+  GrowableArrayCHeap<NoncopyableStruct, mtTest> my_array;
+  my_array.reserve(256);
+}
