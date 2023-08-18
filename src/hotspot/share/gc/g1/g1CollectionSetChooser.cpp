@@ -151,19 +151,24 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         return false;
       }
 
-      bool should_add =
-        // We will skip any region that's currently used as an old GC
-        // alloc region (we should not consider those for collection
-        // before we fill them up). Otherwise the Old region must satisfy the liveness
-        // condition and have a complete remembered set.
-        !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
-        G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
-        r->rem_set()->is_complete();
+      // Can not add a region without a remembered set to the candidates.
+      assert(!r->rem_set()->is_updating(), "must be");
+      if (!r->rem_set()->is_complete()) {
+        return false;
+      }
 
+      // Skip any region that is currently used as an old GC alloc region. We should
+      // not consider those for collection before we fill them up as the effective
+      // gain from them is small. I.e. we only actually reclaim from the filled part,
+      // as the remainder is still eligible for allocation. These objects are also
+      // likely to have already survived a few collections, so they might be longer
+      // lived anyway.
+      // Otherwise the Old region must satisfy the liveness condition.
+      bool should_add = !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) ||
+                        G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes());
       if (should_add) {
         add_region(r);
       } else {
-        // Clear remembered sets of not-used regions (if there is any).
         r->rem_set()->clear(true /* only_cardset */);
       }
       return false;
