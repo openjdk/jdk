@@ -51,9 +51,15 @@ import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
  * @summary Verifies that hieroglyphs are stretched by AffineTransform.scale(2, 1)
  * @run main StretchedFontTest
  */
-public class StretchedFontTest {
+public final class StretchedFontTest {
     private static final String TEXT = "\u6F22";
     private static final int FONT_SIZE = 20;
+
+    private static final Color BACKGROUND = Color.WHITE;
+    private static final Color[] FOREGROUNDS = {
+            new Color(0xFF000000, true),
+            new Color(0x7F000000, true)
+    };
 
     private static final AffineTransform STRETCH_TRANSFORM =
             AffineTransform.getScaleInstance(2.0, 1.0);
@@ -87,31 +93,49 @@ public class StretchedFontTest {
         return Stream.of(VALUE_TEXT_ANTIALIAS_OFF,
                          VALUE_TEXT_ANTIALIAS_ON,
                          VALUE_TEXT_ANTIALIAS_LCD_HRGB)
-                     .map(hint -> testFont(font, hint));
+                     .flatMap(hint -> testFont(font, hint));
     }
 
     /**
-     * Tests the font with the specified text antialiasing hint.
-     * In case of failure, it saves the rendered image to a file.
+     * Tests the font with the specified text antialiasing hint and a set of
+     * foreground colors.
      *
      * @param font the font to test
      * @param hint the text antialiasing hint to test
-     * @return {@code null} if the text rendered correctly; otherwise,
-     *         a {@code String} with the font family name and the value of
-     *         the rendering hint
+     * @return a stream of test results
+     * @see #testFont(Font, Object, Color)
      */
-    private static String testFont(final Font font, final Object hint) {
+    private static Stream<String> testFont(final Font font, final Object hint) {
+        return Stream.of(FOREGROUNDS)
+                     .map(foreground -> testFont(font, hint, foreground));
+    }
+
+    /**
+     * Tests the font with the specified text antialiasing hint and
+     * foreground color. In case of failure, it saves the rendered
+     * image to a file.
+     *
+     * @param font the font to test
+     * @param hint the text antialiasing hint to test
+     * @param foreground the foreground color to use
+     * @return {@code null} if the text rendered correctly; otherwise,
+     *         a {@code String} with the font family name, the value of
+     *         the rendering hint and the color in hex
+     */
+    private static String testFont(final Font font,
+                                   final Object hint,
+                                   final Color foreground) {
         final Dimension size = getTextSize(font);
         final BufferedImage image =
                 new BufferedImage(size.width, size.height, TYPE_3BYTE_BGR);
 
         final Graphics2D g2d = image.createGraphics();
         try {
-            g2d.setColor(Color.WHITE);
+            g2d.setColor(BACKGROUND);
             g2d.fillRect(0, 0, size.width, size.height);
 
             g2d.setRenderingHint(KEY_TEXT_ANTIALIASING, hint);
-            g2d.setColor(Color.BLACK);
+            g2d.setColor(foreground);
             g2d.setFont(font);
             g2d.drawString(TEXT, 0, g2d.getFontMetrics(font).getAscent());
         } finally {
@@ -123,35 +147,37 @@ public class StretchedFontTest {
         }
         String fontName = font.getFontName(Locale.ENGLISH);
         String hintValue = getHintString(hint);
-        saveImage(image, fontName + "-" + hintValue);
-        return "Font: " + fontName + ", Hint: " + hintValue;
+        String hexColor = String.format("0x%08x", foreground.getRGB());
+        saveImage(image, fontName + "-" + hintValue + "-" + hexColor);
+        return "Font: " + fontName + ", Hint: " + hintValue + ", Color: " + hexColor;
     }
 
     /**
      * Verifies the rendered image of the hieroglyph. The hieroglyph
      * should be stretched across the entire width of the image.
-     * If the right half of the image contains only white pixels,
-     * the hieroglyph isn't stretched correctly
+     * If the right half of the image contains only pixels of the background
+     * color, the hieroglyph isn't stretched correctly
      * &mdash; it's a failure.
      *
      * @param image the image to verify
      * @return {@code true} if the hieroglyph is stretched correctly; or
      *         {@code false} if right half of the image contains only
-     *         white pixels, which means the hieroglyph isn't stretched.
+     *         background-colored pixels, which means the hieroglyph isn't
+     *         stretched.
      */
     private static boolean verifyImage(final BufferedImage image) {
         final int width = image.getWidth();
         final int height = image.getHeight();
         for (int x = width / 2; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                if (image.getRGB(x, y) != Color.WHITE.getRGB()) {
-                    // Any other color but white means the glyph is stretched
+                if (image.getRGB(x, y) != BACKGROUND.getRGB()) {
+                    // Any other color but background means the glyph is stretched
                     return true;
                 }
             }
         }
 
-        // Only white pixels on the right side of the image,
+        // The right side of the image is filled with the background color only,
         // the glyph isn't stretched.
         return false;
     }
