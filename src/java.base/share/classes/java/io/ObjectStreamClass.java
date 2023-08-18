@@ -87,6 +87,8 @@ public final class ObjectStreamClass implements Serializable {
     public static final ObjectStreamField[] NO_FIELDS =
         new ObjectStreamField[0];
 
+    static final Class<?>[] EMPTY_PARAM_TYPES = new Class<?>[0];
+
     @java.io.Serial
     private static final long serialVersionUID = -6120832682080437368L;
     /**
@@ -418,14 +420,14 @@ public final class ObjectStreamClass implements Serializable {
                             new Class<?>[] { ObjectInputStream.class },
                             Void.TYPE);
                         readObjectNoDataMethod = getPrivateMethod(
-                            cl, "readObjectNoData", new Class<?>[] {}, Void.TYPE);
+                            cl, "readObjectNoData", EMPTY_PARAM_TYPES, Void.TYPE);
                         hasWriteObjectData = (writeObjectMethod != null);
                     }
                     domains = getProtectionDomains(cons, cl);
                     writeReplaceMethod = getInheritableMethod(
-                        cl, "writeReplace", null, Object.class);
+                        cl, "writeReplace", EMPTY_PARAM_TYPES, Object.class);
                     readResolveMethod = getInheritableMethod(
-                        cl, "readResolve", null, Object.class);
+                        cl, "readResolve", EMPTY_PARAM_TYPES, Object.class);
                     return null;
                 }
             });
@@ -1476,15 +1478,11 @@ public final class ObjectStreamClass implements Serializable {
         return canonicalCtr;
     }
 
-    private static Method getDeclaredMethod(Class<?> cl, String name,
-            Class<?> returnType, Class<?>... parameterTypes) {
-        /*
-         * This method is invoked inside a doPrivileged(), so the
-         * getDeclaredMethods() cannot throw.
-         */
+    static Method getDeclaredMethod(Class<?> cl,
+            Class<?> returnType, String name, Class<?>... parameterTypes) {
         for (Method m : cl.getDeclaredMethods()) {
-            if (m.getName().equals(name)
-                    && m.getReturnType() == returnType
+            if (m.getReturnType() == returnType
+                    && m.getName().equals(name)
                     && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
                 return m;
             }
@@ -1500,21 +1498,18 @@ public final class ObjectStreamClass implements Serializable {
      */
     private static Method getInheritableMethod(Class<?> cl, String name,
                                                Class<?>[] argTypes,
-                                               Class<?> returnType)
-    {
-        Method meth = null;
+                                               Class<?> returnType) {
+        Method meth;
         Class<?> defCl = cl;
-        while (defCl != null) {
-            try {
-                meth = defCl.getDeclaredMethod(name, argTypes);
-                break;
-            } catch (NoSuchMethodException ex) {
-                defCl = defCl.getSuperclass();
+        for (;;) {
+            if (defCl == null) {
+                return null;
             }
-        }
-
-        if ((meth == null) || (meth.getReturnType() != returnType)) {
-            return null;
+            meth = getDeclaredMethod(defCl, returnType, name, argTypes);
+            if (meth != null) {
+                break;
+            }
+            defCl = defCl.getSuperclass();
         }
         meth.setAccessible(true);
         int mods = meth.getModifiers();
@@ -1536,9 +1531,8 @@ public final class ObjectStreamClass implements Serializable {
      */
     private static Method getPrivateMethod(Class<?> cl, String name,
                                            Class<?>[] argTypes,
-                                           Class<?> returnType)
-    {
-        Method meth = getDeclaredMethod(cl, name, returnType, argTypes);
+                                           Class<?> returnType) {
+        Method meth = getDeclaredMethod(cl, returnType, name, argTypes);
         if (meth == null) {
             return null;
         }
