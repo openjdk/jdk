@@ -77,7 +77,7 @@ class LongLivedAllocationTask extends Exitable implements Runnable {
     @Override
     public void run() {
         while (!shouldExit()) {
-            String prefix = "long" + (System.nanoTime() % 10000); // limit to 4 digits after changing from milliseconds to nanoseconds, else the key will use more memory
+            String prefix = "long" + System.currentTimeMillis();
             for (int i = 0; i < 10; i++) {
                 String key = prefix + " key = " + i;
                 String value = "the value is " + i;
@@ -192,7 +192,7 @@ public class TestSystemGC {
             throw new IllegalArgumentException("Must specify timeout in seconds as first argument");
         }
         long timeoutNanos = Integer.parseInt(args[0]) * 1_000_000_000L;
-        System.out.println("Running with timeout of " + timeoutNanos + "ns");
+        System.out.println("Running with timeout of " + (timeoutNanos / 1_000_000_000L) + " seconds");
         endTimeNanos = System.nanoTime() + timeoutNanos;
         // First allocate the long lived objects and then run all phases.
         populateLongLived();
