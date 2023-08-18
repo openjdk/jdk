@@ -137,14 +137,14 @@ public class TestJNIBlockFullGC {
         System.out.println("# Warmup Threads = " + warmupThreads);
 
         long warmupDurationNanos = 1_000_000L * Integer.parseInt(args[1]);
-        System.out.println("WarmUp Duration Nanos = " + warmupDurationNanos);
+        System.out.println("WarmUp Duration Millis = " + args[1]);
         int warmupIterations = Integer.parseInt(args[2]);
         System.out.println("# Warmup Iterations = "+ warmupIterations);
 
         int mainThreads = Integer.parseInt(args[3]);
         System.out.println("# Main Threads = " + mainThreads);
         long mainDurationNanos = 1_000_000L * Integer.parseInt(args[4]);
-        System.out.println("Main Duration Nanos = " + mainDurationNanos);
+        System.out.println("Main Duration Millis = " + args[4]);
         int mainIterations = Integer.parseInt(args[5]);
         System.out.println("# Main Iterations = " + mainIterations);
 

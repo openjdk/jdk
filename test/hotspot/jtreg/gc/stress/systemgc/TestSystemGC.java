@@ -192,7 +192,7 @@ public class TestSystemGC {
             throw new IllegalArgumentException("Must specify timeout in seconds as first argument");
         }
         long timeoutNanos = Integer.parseInt(args[0]) * 1_000_000_000L;
-        System.out.println("Running with timeout of " + (timeoutNanos / 1_000_000_000L) + " seconds");
+        System.out.println("Running with timeout of " + args[0] + " seconds");
         endTimeNanos = System.nanoTime() + timeoutNanos;
         // First allocate the long lived objects and then run all phases.
         populateLongLived();
