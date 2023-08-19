@@ -133,9 +133,9 @@ public class URLEncoder {
          for (int i = '0'; i <= '9'; i++) {
              DONT_NEED_ENCODING[i] = true;
          }
+         // encoding a space to a + is done in the encode() method
          DONT_NEED_ENCODING[' '] = true;
          DONT_NEED_ENCODING['-'] = true;
-         // encoding a space to a + is done in the encode() method
          DONT_NEED_ENCODING['_'] = true; 
          DONT_NEED_ENCODING['.'] = true;
          DONT_NEED_ENCODING['*'] = true;
