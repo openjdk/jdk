@@ -29,11 +29,13 @@ import java.io.UnsupportedEncodingException;
 import java.io.CharArrayWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
 
 import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -78,7 +80,9 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
-    private static final BitSet DONT_NEED_ENCODING;
+
+    @Stable
+    private static final boolean[] DONT_NEED_ENCODING = new boolean[128];
     private static final int CASE_DIFF = ('a' - 'A');
     private static final String DEFAULT_ENCODING_NAME;
 
@@ -120,17 +124,21 @@ public class URLEncoder {
          *
          */
 
-        DONT_NEED_ENCODING = new BitSet(128);
-
-        DONT_NEED_ENCODING.set('a', 'z' + 1);
-        DONT_NEED_ENCODING.set('A', 'Z' + 1);
-        DONT_NEED_ENCODING.set('0', '9' + 1);
-        DONT_NEED_ENCODING.set(' '); /* encoding a space to a + is done
-                                    * in the encode() method */
-        DONT_NEED_ENCODING.set('-');
-        DONT_NEED_ENCODING.set('_');
-        DONT_NEED_ENCODING.set('.');
-        DONT_NEED_ENCODING.set('*');
+         for (int i = 'a'; i <= 'z'; i++) {
+             DONT_NEED_ENCODING[i] = true;
+         }
+         for (int i = 'A'; i <= 'Z'; i++) {
+             DONT_NEED_ENCODING[i] = true;
+         }
+         for (int i = '0'; i <= '9'; i++) {
+             DONT_NEED_ENCODING[i] = true;
+         }
+         DONT_NEED_ENCODING[' '] = true;
+         DONT_NEED_ENCODING['-'] = true;
+         // encoding a space to a + is done in the encode() method
+         DONT_NEED_ENCODING['_'] = true; 
+         DONT_NEED_ENCODING['.'] = true;
+         DONT_NEED_ENCODING['*'] = true;
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
@@ -219,20 +227,102 @@ public class URLEncoder {
     public static String encode(String s, Charset charset) {
         Objects.requireNonNull(charset, "charset");
 
-        boolean needToChange = false;
-        StringBuilder out = new StringBuilder(s.length());
-        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= 128 || !DONT_NEED_ENCODING[c] || c == ' ') {
+                break;
+            }
+        }
+        if (i == s.length()) {
+            return s;
+        }
 
-        for (int i = 0; i < s.length();) {
-            int c = s.charAt(i);
-            //System.out.println("Examining character: " + c);
-            if (DONT_NEED_ENCODING.get(c)) {
+        if (charset == StandardCharsets.UTF_8) {
+            return encodeUTF8(s, i);
+        } else {
+            return encodeSlow(s, charset, i);
+        }
+    }
+
+    private static void encodeByte(StringBuilder out, byte b) {
+        out.append('%');
+
+        int n0 = (b >> 4) & 0xF;
+        if (n0 < 10) {
+            out.append((char) ('0' + n0));
+        } else {
+            out.append((char) ('A' - 10 + n0));
+        }
+
+        int n1 = b & 0xF;
+        if (n1 < 10) {
+            out.append((char) ('0' + n1));
+        } else {
+            out.append((char) ('A' - 10 + n1));
+        }
+    }
+
+    private static String encodeUTF8(String s, int suffixOffset) {
+        StringBuilder out = new StringBuilder(s.length() << 1);
+        if (suffixOffset > 0) {
+            out.append(s, 0, suffixOffset);
+        }
+
+        for (int i = suffixOffset; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x80) {
+                if (DONT_NEED_ENCODING[c]) {
+                    if (c == ' ') {
+                        c = '+';
+                    }
+                    out.append(c);
+                } else {
+                    encodeByte(out, (byte) c);
+                }
+            } else if (c < 0x800) {
+                encodeByte(out, (byte) (0xc0 | (c >> 6)));
+                encodeByte(out, (byte) (0x80 | (c & 0x3f)));
+            } else if (Character.isHighSurrogate(c)) {
+                if (i < s.length() - 1) {
+                    char d = s.charAt(i + 1);
+                    if (Character.isLowSurrogate(d)) {
+                        int uc = Character.toCodePoint(c, d);
+                        encodeByte(out, (byte) (0xf0 | ((uc >> 18))));
+                        encodeByte(out, (byte) (0x80 | ((uc >> 12) & 0x3f)));
+                        encodeByte(out, (byte) (0x80 | ((uc >> 6) & 0x3f)));
+                        encodeByte(out, (byte) (0x80 | (uc & 0x3f)));
+                        i++;
+                        continue;
+                    }
+                }
+
+                // Replace unmappable characters
+                encodeByte(out, (byte) '?');
+            } else {
+                encodeByte(out, (byte) (0xe0 | ((c >> 12))));
+                encodeByte(out, (byte) (0x80 | ((c >> 6) & 0x3f)));
+                encodeByte(out, (byte) (0x80 | (c & 0x3f)));
+            }
+        }
+
+        return out.toString();
+    }
+
+    private static String encodeSlow(String s, Charset charset, int suffixOffset) {
+        StringBuilder out = new StringBuilder(s.length() << 1);
+        CharArrayWriter charArrayWriter = new CharArrayWriter();
+        if (suffixOffset > 0) {
+            out.append(s, 0, suffixOffset);
+        }
+
+        for (int i = suffixOffset; i < s.length(); ) {
+            char c = s.charAt(i);
+            if (c < 128 && DONT_NEED_ENCODING[c]) {
                 if (c == ' ') {
                     c = '+';
-                    needToChange = true;
                 }
-                //System.out.println("Storing: " + c);
-                out.append((char)c);
+                out.append(c);
                 i++;
             } else {
                 // convert to external encoding before hex conversion
@@ -242,58 +332,32 @@ public class URLEncoder {
                      * If this character represents the start of a Unicode
                      * surrogate pair, then pass in two characters. It's not
                      * clear what should be done if a byte reserved in the
-                     * surrogate pairs range occurs outside of a legal
+                     * surrogate pairs range occurs outside a legal
                      * surrogate pair. For now, just treat it as if it were
                      * any other character.
                      */
-                    if (c >= 0xD800 && c <= 0xDBFF) {
-                        /*
-                          System.out.println(Integer.toHexString(c)
-                          + " is high surrogate");
-                        */
-                        if ( (i+1) < s.length()) {
-                            int d = s.charAt(i+1);
-                            /*
-                              System.out.println("\tExamining "
-                              + Integer.toHexString(d));
-                            */
-                            if (d >= 0xDC00 && d <= 0xDFFF) {
-                                /*
-                                  System.out.println("\t"
-                                  + Integer.toHexString(d)
-                                  + " is low surrogate");
-                                */
+                    if (Character.isHighSurrogate(c)) {
+                        if ((i + 1) < s.length()) {
+                            char d = s.charAt(i + 1);
+                            if (Character.isLowSurrogate(d)) {
                                 charArrayWriter.write(d);
                                 i++;
                             }
                         }
                     }
                     i++;
-                } while (i < s.length() && !DONT_NEED_ENCODING.get((c = s.charAt(i))));
+                } while (i < s.length() && (c = s.charAt(i)) < 128 && !DONT_NEED_ENCODING[c]);
 
                 charArrayWriter.flush();
                 String str = charArrayWriter.toString();
                 byte[] ba = str.getBytes(charset);
                 for (byte b : ba) {
-                    out.append('%');
-                    char ch = Character.forDigit((b >> 4) & 0xF, 16);
-                    // converting to use uppercase letter as part of
-                    // the hex value if ch is a letter.
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
-                    ch = Character.forDigit(b & 0xF, 16);
-                    if (Character.isLetter(ch)) {
-                        ch -= CASE_DIFF;
-                    }
-                    out.append(ch);
+                    encodeByte(out, b);
                 }
                 charArrayWriter.reset();
-                needToChange = true;
             }
         }
 
-        return (needToChange? out.toString() : s);
+        return out.toString();
     }
 }
