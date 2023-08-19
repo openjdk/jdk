@@ -346,7 +346,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && (c = s.charAt(i)) < 128 && !DONT_NEED_ENCODING[c]);
+                } while (i < s.length() && ((c = s.charAt(i)) >= 128 || !DONT_NEED_ENCODING[c]));
 
                 charArrayWriter.flush();
                 String str = charArrayWriter.toString();
