@@ -358,7 +358,7 @@ public:
   DO_THROW(UnsatisfiedLinkError)
   DO_THROW(UnsupportedOperationException)
   DO_THROW(OutOfMemoryError)
-  DO_THROW(ClassNotFoundException)
+  DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
@@ -406,7 +406,7 @@ public:
   JVMCIObject new_HotSpotNmethod(const methodHandle& method, const char* name, jboolean isDefault, jlong compileId, JVMCI_TRAPS);
   JVMCIObject new_VMField(JVMCIObject name, JVMCIObject type, jlong offset, jlong address, JVMCIObject value, JVMCI_TRAPS);
   JVMCIObject new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject value, JVMCI_TRAPS);
-  JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS);
+  JVMCIObject new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS);
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
   JVMCIObject new_FieldInfo(FieldInfo* fieldinfo, JVMCI_TRAPS);

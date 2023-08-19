@@ -290,6 +290,20 @@ class AbstractAssembler : public ResourceObj  {
   };
 #endif
 
+  // sign-extended tolerant cast needed by callers of emit_int8 and emit_int16
+  // Some callers pass signed types that need to fit into the unsigned type so check
+  // that the range is correct.
+  template <typename T>
+  constexpr T narrow_cast(int x) const {
+    if (x < 0) {
+      using stype = std::make_signed_t<T>;
+      assert(x >= std::numeric_limits<stype>::min(), "too negative"); // >= -128 for 8 bits
+      return static_cast<T>(x);  // cut off sign bits
+    } else {
+      return checked_cast<T>(x);
+    }
+  }
+
  public:
 
   // Creation
@@ -298,15 +312,22 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
+  void emit_int8(       int x1)                                     { code_section()->emit_int8(narrow_cast<uint8_t>(x1)); }
 
-  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
-  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
+  void emit_int16(       int x)                                     { code_section()->emit_int16(narrow_cast<uint16_t>(x)); }
 
-  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int16(      int x1,     int x2)                         { code_section()->emit_int16(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2)); }
+
+  void emit_int24(      int x1,     int x2,     int x3)             { code_section()->emit_int24(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2),
+                                                                                                 narrow_cast<uint8_t>(x3)); }
 
   void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
-  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(      int x1,     int x2,     int x3,     int x4) { code_section()->emit_int32(narrow_cast<uint8_t>(x1),
+                                                                                                 narrow_cast<uint8_t>(x2),
+                                                                                                 narrow_cast<uint8_t>(x3),
+                                                                                                 narrow_cast<uint8_t>(x4)); }
 
   void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 

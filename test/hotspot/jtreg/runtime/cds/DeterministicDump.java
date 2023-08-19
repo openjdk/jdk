@@ -80,7 +80,7 @@ public class DeterministicDump {
         String mapName = logName + ".map";
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-Xlog:cds=debug")
-            .addPrefix("-Xlog:cds+map=trace:file=" + mapName + ":none:filesize=0")
+            .addPrefix("-Xlog:cds+map*=trace:file=" + mapName + ":none:filesize=0")
             .setArchiveName(archiveName)
             .addSuffix(args)
             .addSuffix(more);

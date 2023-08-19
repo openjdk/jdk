@@ -63,6 +63,7 @@
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/parseInteger.hpp"
 #ifdef LINUX
 #include "trimCHeapDCmd.hpp"
 #include "mallocInfoDcmd.hpp"
@@ -469,15 +470,20 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                "using the given compression level. 1 (recommended) is the fastest, "
                "9 the strongest compression.", "INT", false, "1"),
   _overwrite("-overwrite", "If specified, the dump file will be overwritten if it exists",
-           "BOOLEAN", false, "false") {
+           "BOOLEAN", false, "false"),
+  _parallel("-parallel", "Number of parallel threads to use for heap dump. The VM "
+                          "will try to use the specified number of threads, but might use fewer.",
+            "INT", false, "1") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
   _dcmdparser.add_dcmd_option(&_overwrite);
+  _dcmdparser.add_dcmd_option(&_parallel);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   jlong level = -1; // -1 means no compression.
+  jlong parallel = HeapDumper::default_num_of_dump_threads();
 
   if (_gzip.is_set()) {
     level = _gzip.value();
@@ -488,11 +494,23 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  if (_parallel.is_set()) {
+    parallel = _parallel.value();
+
+    if (parallel < 0) {
+      output()->print_cr("Invalid number of parallel dump threads.");
+      return;
+    } else if (parallel == 0) {
+      // 0 implies to disable parallel heap dump, in such case, we use serial dump instead
+      parallel = 1;
+    }
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value());
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
@@ -861,11 +879,11 @@ EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   const char* max_value = _max.value();
-  long max = -1;
+  int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    max = ::strtol(max_value, &endptr, 10);
-    if (max == 0 && max_value == endptr) {
+    int max;
+    if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
     }
@@ -889,7 +907,7 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesParser::parse_from_file(_filename.value(), output());
+  DirectivesParser::parse_from_file(_filename.value(), output(), true);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
