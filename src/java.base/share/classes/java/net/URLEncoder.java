@@ -135,7 +135,7 @@ public class URLEncoder {
          // encoding a space to a + is done in the encode() method
          DONT_NEED_ENCODING[' '] = true;
          DONT_NEED_ENCODING['-'] = true;
-         DONT_NEED_ENCODING['_'] = true; 
+         DONT_NEED_ENCODING['_'] = true;
          DONT_NEED_ENCODING['.'] = true;
          DONT_NEED_ENCODING['*'] = true;
 
@@ -347,7 +347,6 @@ public class URLEncoder {
                     i++;
                 } while (i < s.length() && ((c = s.charAt(i)) >= 128 || !DONT_NEED_ENCODING[c]));
 
-                charArrayWriter.flush();
                 String str = charArrayWriter.toString();
                 byte[] ba = str.getBytes(charset);
                 for (byte b : ba) {
