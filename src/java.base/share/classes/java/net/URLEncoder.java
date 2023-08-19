@@ -83,7 +83,6 @@ public class URLEncoder {
 
     @Stable
     private static final boolean[] DONT_NEED_ENCODING = new boolean[128];
-    private static final int CASE_DIFF = ('a' - 'A');
     private static final String DEFAULT_ENCODING_NAME;
 
     static {
