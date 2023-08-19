@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SurrogatePairs {
 
     public static String[][] arguments() {
-        return new String[][]{
+        return new String[][] {
                 {"\uD800\uDC00", "%F0%90%80%80"},
                 {"\uD800\uDFFF", "%F0%90%8F%BF"},
                 {"\uDBFF\uDC00", "%F4%8F%B0%80"},
@@ -59,9 +59,10 @@ public class SurrogatePairs {
                 {"\uDBFF\uDC00@", "%F4%8F%B0%80%40"},
                 {"\u0101\uDBFF\uDC00", "%C4%81%F4%8F%B0%80"},
                 {"\uDBFF\uDC00\u0101", "%F4%8F%B0%80%C4%81"},
-                {"\ude0a\ud83d", "%3F%3F"},
-                {"1\ude0a\ud83d", "1%3F%3F"},
-                {"@\ude0a\ud83d", "%40%3F%3F"}
+                {"\uDE0A\uD83D", "%3F%3F"},
+                {"1\uDE0A\uD83D", "1%3F%3F"},
+                {"@\uDE0A\uD83D", "%40%3F%3F"},
+                {"1@1\uDE0A\uD800\uDC00 \uD83D", "1%401%3F%F0%90%80%80+%3F"}
         };
     }
 
@@ -71,17 +72,17 @@ public class SurrogatePairs {
         String encoded = URLEncoder.encode(str, UTF_8);
         assertEquals(correctEncoding, encoded, () ->
                 "str=%s, expected=%s, actual=%s"
-                        .formatted(getHexBytes(str), getHexBytes(correctEncoding), getHexBytes(encoded)));
+                        .formatted(escape(str), escape(correctEncoding), escape(encoded)));
 
         // Map unmappable characters to '?'
         String cleanStr = new String(str.getBytes(UTF_8), UTF_8);
         String decoded = URLDecoder.decode(encoded, UTF_8);
         assertEquals(cleanStr, decoded, () ->
-                "expected=%s, actual=%s".formatted(getHexBytes(str), getHexBytes(decoded)));
+                "expected=%s, actual=%s".formatted(escape(str), escape(decoded)));
     }
 
-    private static String getHexBytes(String s) {
-        return s.chars().mapToObj(c -> String.format("%02x%02x", (c >> 8) & 0xff, (byte) c))
-                .collect(Collectors.joining(" "));
+    private static String escape(String s) {
+        return s.chars().mapToObj(c -> String.format("\\u%04x", c))
+                .collect(Collectors.joining());
     }
 }
