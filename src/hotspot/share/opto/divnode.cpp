@@ -431,7 +431,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     }
 
     // Shift over the (adjusted) mulhi
-    addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - N)));    
+    addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - N)));
   }
 
   // q = mul_hi(x, c) >> (s - 64) + (x < 0 ? 1 : 0) = mul_hi(x, c) >> (x - 64) - (x >> 63)
@@ -562,7 +562,7 @@ Node* DivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_INT, phase, true);
   if (q != NodeSentinel) {
     return q;
@@ -659,7 +659,7 @@ Node* DivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_LONG, phase, true);
   if (q != NodeSentinel) {
     return q;
@@ -751,7 +751,7 @@ Node* UDivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_INT, phase, false);
   if (q != NodeSentinel) {
     return q;
@@ -814,7 +814,7 @@ Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_LONG, phase, false);
   if (q != NodeSentinel) {
     return q;
@@ -1055,7 +1055,7 @@ Node* ModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if(in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_INT, phase, true);
   if (q != NodeSentinel) {
     return q;
@@ -1206,7 +1206,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  
+
   Node* q = divModIdealCommon(this, T_LONG, phase, true);
   if (q != NodeSentinel) {
     return q;
@@ -1410,7 +1410,7 @@ Node* UModLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
-  
+
   Node* q = divModIdealCommon(this, T_LONG, phase, true);
   if (q != NodeSentinel) {
     return q;
