@@ -189,10 +189,9 @@ inline constexpr int64_t multiply_high_signed(const int64_t x, const int64_t y) 
 //----------------------------------------------------------------------------------------------------
 // Provide methods to calculate the magic constants in transforming divisions
 // by constants into series of multiplications and shifts.
-template <class T, bool is_unsigned>
-void magic_divide_constant(T d, T& M, jint& s);
-
 template <class T>
-void magic_divide_constant_round_up(T d, T& M, jint& s);
+void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s);
+
+void magic_divide_constants_round_down(juint d, juint& c, juint& s);
 
 #endif // SHARE_UTILITIES_JAVAARITHMETIC_HPP

@@ -36,18 +36,13 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
 public class UDivINodeIdealizationTests {
-
-    // The constant for unsigned division by 7 is 4908534053 so 3758096383
-    // is the upper limit of the dividend that the product does not overflow
-    static final int MAGIC_BOUND_7 = (int)3758096383L;
-
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByPow2", "largeDivisorCon", "largeDivisorVar",
-                 "magicDiv13", "magicDiv7", "magicDiv7Bounded1", "magicDiv7Bounded2",
+                 "magicDiv13", "magicDiv7", "magicDiv13Bounded",
                  "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -112,11 +107,10 @@ public class UDivINodeIdealizationTests {
         Asserts.assertEQ(a, identityAgain(a));
         Asserts.assertEQ(udiv(a, 8), divByPow2(a));
         Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
-        Asserts.assertEQ(udiv(a, Math.min(b, Integer.MIN_VALUE)), largeDivisorVar(a, b));
+        Asserts.assertEQ(udiv(a, Math.min((short)b, -1)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
         Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
-        Asserts.assertEQ(udiv(Math.max(a, 0), 7), magicDiv7Bounded1(a));
-        Asserts.assertEQ(udiv(Math.min(a, MAGIC_BOUND_7), 7), magicDiv7Bounded2(a));
+        Asserts.assertEQ(udiv((char)a, 13), magicDiv13Bounded(a));
         Asserts.assertEQ(umod(a, 1), constantModAgain(a));
         Asserts.assertEQ(umod(a, 8), modByPow2(a));
         Asserts.assertEQ(umod(a, 13), magicMod13(a));
@@ -187,7 +181,7 @@ public class UDivINodeIdealizationTests {
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
     public int largeDivisorVar(int x, int y) {
-        return Integer.divideUnsigned(x, Math.min(y, Integer.MIN_VALUE));
+        return Integer.divideUnsigned(x, Math.min((short)y, -1));
     }
 
     @Test
@@ -220,30 +214,14 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.MUL_L, "1",
-                  IRNode.URSHIFT_L, "1",
-                  IRNode.CONV_I2L, "1",
-                  IRNode.CONV_L2I, "1",
+    @IR(counts = {IRNode.MUL_I, "1",
+                  IRNode.URSHIFT_I, "1"
                  })
     // Checks magic int division occurs in general when dividing by a non power of 2.
-    // The constant derived from 7 lies outside the limit of a u32 but inside the limit
-    // of a u33, the dividend is bounded so we do not need to worry about overflow
-    public int magicDiv7Bounded1(int x) {
-        return Integer.divideUnsigned(Math.max(x, 0), 7);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.UDIV_I})
-    @IR(counts = {IRNode.MUL_L, "1",
-                  IRNode.URSHIFT_L, "1",
-                  IRNode.CONV_I2L, "1",
-                  IRNode.CONV_L2I, "1",
-                 })
-    // Checks magic int division occurs in general when dividing by a non power of 2.
-    // The constant derived from 7 lies outside the limit of a u32 but inside the limit
-    // of a u33, the dividend is bounded so we do not need to worry about overflow
-    public int magicDiv7Bounded2(int x) {
-        return Integer.divideUnsigned(Math.min(x, MAGIC_BOUND_7), 7);
+    // When the dividend is bounded, we can use smaller constant and do not need to use
+    // u64 arithmetic
+    public int magicDiv13Bounded(int x) {
+        return Integer.divideUnsigned((char)x, 13);
     }
 
     @Test
@@ -279,7 +257,7 @@ public class UDivINodeIdealizationTests {
                   IRNode.SUB_I, "1"
                  })
     // Checks magic int division occurs in general when dividing by a non power of 2.
-    // The constant derived from 13 lies inside the limit of an u32
+    // The constant derived from 13 lies inside the limit of a u32
     public int magicMod13(int x) {
         return Integer.remainderUnsigned(x, 13);
     }

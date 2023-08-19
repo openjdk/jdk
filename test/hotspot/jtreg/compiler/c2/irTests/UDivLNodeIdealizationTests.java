@@ -41,8 +41,8 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByPow2", "largeDivisor",
-                 "magicDiv19", "magicDiv7", "magicDiv7Bounded",
+                 "retainDenominator", "divByPow2", "largeDivisorCon", "largeDivisorVar",
+                 "magicDiv19", "magicDiv7", "magicDiv28", "magicDiv13Bounded",
                  "constantMod", "constantModAgain", "modByPow2", "magicMod19"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -106,10 +106,12 @@ public class UDivLNodeIdealizationTests {
         Asserts.assertEQ(a, identity(a));
         Asserts.assertEQ(a, identityAgain(a));
         Asserts.assertEQ(udiv(a, 8), divByPow2(a));
-        Asserts.assertEQ(udiv(a, -7), largeDivisor(a));
+        Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
+        Asserts.assertEQ(udiv(a, Math.min((short)b, -1)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 19), magicDiv19(a));
         Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
-        Asserts.assertEQ(a >= 0 ? udiv(a, 7) : 0, magicDiv7Bounded(a));
+        Asserts.assertEQ(udiv(a, 28), magicDiv28(a));
+        Asserts.assertEQ(udiv(Integer.toUnsignedLong((int)a), 13), magicDiv13Bounded(a));
         Asserts.assertEQ(umod(a, 1), constantModAgain(a));
         Asserts.assertEQ(umod(a, 8), modByPow2(a));
         Asserts.assertEQ(umod(a, 19), magicMod19(a));
@@ -169,8 +171,18 @@ public class UDivLNodeIdealizationTests {
                   IRNode.CMOVE_L, "1"
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
-    public long largeDivisor(long x) {
+    public long largeDivisorCon(long x) {
         return Long.divideUnsigned(x, -7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_L})
+    @IR(counts = {IRNode.CMP_UL, "1",
+                  IRNode.CMOVE_L, "1"
+                 })
+    // Checks x / d => x u>= d ? 1 : 0 for large d
+    public long largeDivisorVar(long x, long y) {
+        return Long.divideUnsigned(x, Math.min((short)y, -1));
     }
 
     @Test
@@ -179,7 +191,7 @@ public class UDivLNodeIdealizationTests {
                   IRNode.UMUL_HI_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
-    // The constant derived from 19 lies inside the limit of an u64
+    // The constant derived from 19 lies inside the limit of a u64
     public long magicDiv19(long x) {
         return Long.divideUnsigned(x, 19);
     }
@@ -192,7 +204,7 @@ public class UDivLNodeIdealizationTests {
                   IRNode.SUB_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
-    // The constant derived from 7 lies outside the limit of an u64 but inside the limit
+    // The constant derived from 7 lies outside the limit of a u64 but inside the limit
     // of a u65
     public long magicDiv7(long x) {
         return Long.divideUnsigned(x, 7);
@@ -200,18 +212,26 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.UDIV_L})
-    @IR(counts = {IRNode.URSHIFT_L, "1",
-                  IRNode.UMUL_HI_L, "1",
-                  IRNode.ADD_L, "1"
+    @IR(counts = {IRNode.URSHIFT_L, "2",
+                  IRNode.UMUL_HI_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
-    // The constant derived from 7 lies outside the limit of an u64 but inside the limit
-    // of a u65
-    public long magicDiv7Bounded(long x) {
-        if (x >= 0) {
-            return Long.divideUnsigned(x, 7);
-        }
-        return 0;
+    // The constant derived from 28 lies outside the limit of a u64 but we can transform
+    // x / 28 into (x / 4) / 7
+    public long magicDiv28(long x) {
+        return Long.divideUnsigned(x, 28);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_L})
+    @IR(counts = {IRNode.URSHIFT_L, "1",
+                  IRNode.MUL_L, "1"
+                 })
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // When the dividend is bounded, we can use smaller constant and do not need to use
+    // u128 arithmetic
+    public long magicDiv13Bounded(long x) {
+        return Long.divideUnsigned(Integer.toUnsignedLong((int)x), 13);
     }
 
     @Test
@@ -245,7 +265,7 @@ public class UDivLNodeIdealizationTests {
                   IRNode.SUB_L, "1"
                  })
     // Checks magic long division occurs in general when dividing by a non power of 2.
-    // The constant derived from 19 lies inside the limit of an u64
+    // The constant derived from 19 lies inside the limit of a u64
     public long magicMod19(long x) {
         return Long.remainderUnsigned(x, 19);
     }

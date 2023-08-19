@@ -40,8 +40,8 @@ public class DivLNodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2",
-                 "magicDiv19", "magicDiv15"})
+                 "divByPow2And1",  "divByPow2", "divByNegPow2", "divByMin",
+                 "magicDiv19", "magicDiv15", "magicDiv15Bounded"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
              a = (a == 0) ? 1 : a;
@@ -83,15 +83,18 @@ public class DivLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a / 1        , identity(a));
+        Asserts.assertEQ(a / 1, identity(a));
         Asserts.assertEQ(a / (13 / 13), identityAgain(a));
-        Asserts.assertEQ(a / -1       , divByNegOne(a));
-        Asserts.assertEQ((a & -4) / 2 , divByPow2And(a));
-        Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
-        Asserts.assertEQ(a / 8        , divByPow2(a));
-        Asserts.assertEQ(a / -8       , divByNegPow2(a));
-        Asserts.assertEQ(a / 19       , magicDiv19(a));
-        Asserts.assertEQ(a / 15       , magicDiv15(a));
+        Asserts.assertEQ(a / -1, divByNegOne(a));
+        Asserts.assertEQ((a & -6) / 2, divByPow2And(a));
+        Asserts.assertEQ((a & -2) / 2, divByPow2And1(a));
+        Asserts.assertEQ(a / 8, divByPow2(a));
+        Asserts.assertEQ(a / -8, divByNegPow2(a));
+        Asserts.assertEQ(a / Long.MIN_VALUE, divByMin(a));
+        Asserts.assertEQ(1L, divByMin(Long.MIN_VALUE));
+        Asserts.assertEQ(a / 19, magicDiv19(a));
+        Asserts.assertEQ(a / 15, magicDiv15(a));
+        Asserts.assertEQ((int)a / 15L, magicDiv15Bounded(a));
     }
 
     @Test
@@ -151,7 +154,7 @@ public class DivLNodeIdealizationTests {
     // Having a large enough and in the dividend removes the need to account for
     // rounding when converting to shifts and multiplies as in divByPow2()
     public long divByPow2And(long x) {
-        return (x & -4L) / 2L;
+        return (x & -6L) / 2L;
     }
 
     @Test
@@ -193,6 +196,17 @@ public class DivLNodeIdealizationTests {
     }
 
     @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.URSHIFT_L, "2",
+                  IRNode.RSHIFT_L, "1",
+                  IRNode.ADD_L, "1"
+                 })
+    // Similar to above
+    public long divByMin(long x) {
+        return x / Long.MIN_VALUE;
+    }
+
+    @Test
     @IR(failOn = {IRNode.DIV_L})
     @IR(counts = {IRNode.SUB_L, "1",
                   IRNode.RSHIFT_L, "1",
@@ -216,5 +230,18 @@ public class DivLNodeIdealizationTests {
     // of a u64
     public long magicDiv15(long x) {
         return x / 15L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV_L})
+    @IR(counts = {IRNode.SUB_L, "1",
+                  IRNode.MUL_L, "1",
+                  IRNode.RSHIFT_L, "2"
+                 })
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // When the dividend is bounded, we can use smaller constant and do not need to use
+    // i128 arithmetic
+    public long magicDiv15Bounded(long x) {
+        return (int)x / 15L;
     }
 }

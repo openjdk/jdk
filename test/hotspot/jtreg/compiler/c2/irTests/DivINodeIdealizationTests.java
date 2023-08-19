@@ -39,8 +39,8 @@ public class DivINodeIdealizationTests {
 
     @Run(test = {"constant", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByNegOne", "divByPow2And",
-                 "divByPow2And1",  "divByPow2", "divByNegPow2",
-                 "magicDiv13", "magicDiv7"})
+                 "divByPow2And1",  "divByPow2", "divByNegPow2", "divByMin",
+                 "magicDiv13", "magicDiv7", "magicDiv7Bounded"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
             a = (a == 0) ? 1 : a;
@@ -82,15 +82,18 @@ public class DivINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a / 1        , identity(a));
+        Asserts.assertEQ(a / 1, identity(a));
         Asserts.assertEQ(a / (13 / 13), identityAgain(a));
-        Asserts.assertEQ(a / -1       , divByNegOne(a));
-        Asserts.assertEQ((a & -4) / 2 , divByPow2And(a));
-        Asserts.assertEQ((a & -2) / 2 , divByPow2And1(a));
-        Asserts.assertEQ(a / 8        , divByPow2(a));
-        Asserts.assertEQ(a / -8       , divByNegPow2(a));
-        Asserts.assertEQ(a / 13       , magicDiv13(a));
-        Asserts.assertEQ(a / 7        , magicDiv7(a));
+        Asserts.assertEQ(a / -1, divByNegOne(a));
+        Asserts.assertEQ((a & -6) / 2, divByPow2And(a));
+        Asserts.assertEQ((a & -2) / 2, divByPow2And1(a));
+        Asserts.assertEQ(a / 8, divByPow2(a));
+        Asserts.assertEQ(a / -8, divByNegPow2(a));
+        Asserts.assertEquals(a / Integer.MIN_VALUE, divByMin(a));
+        Asserts.assertEquals(1, divByMin(Integer.MIN_VALUE));
+        Asserts.assertEQ(a / 13, magicDiv13(a));
+        Asserts.assertEQ(a / 7, magicDiv7(a));
+        Asserts.assertEQ((short)a / 7, magicDiv7Bounded(a));
     }
 
     @Test
@@ -149,7 +152,7 @@ public class DivINodeIdealizationTests {
     // Checks (x & -(2^c0)) / 2^c1 => (x >> c1) & (2^c0 >> c1) => (x >> c1) & c3 where 2^c0 > |2^c1| "AND" c3 = 2^c0 >> c1
     // Having a large enough and in the dividend removes the need to account for rounding when converting to shifts and multiplies as in divByPow2()
     public int divByPow2And(int x) {
-        return (x & -4) / 2;
+        return (x & -6) / 2;
     }
 
     @Test
@@ -191,8 +194,21 @@ public class DivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
-    @IR(counts = {IRNode.SUB, "1",
-                  IRNode.MUL, "1",
+    @IR(counts = {IRNode.URSHIFT_I, "2",
+                  IRNode.RSHIFT_I, "1",
+                  IRNode.ADD_I, "1"
+                 })
+
+    // Similar to above, 0 - (v >> 31) = v >>> 31
+    public int divByMin(int x) {
+        return x / Integer.MIN_VALUE;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.MUL_L, "1",
+                  IRNode.RSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
                  })
@@ -204,8 +220,9 @@ public class DivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
-    @IR(counts = {IRNode.SUB, "1",
-                  IRNode.MUL, "1",
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.MUL_L, "1",
+                  IRNode.RSHIFT_L, "1",
                   IRNode.CONV_I2L, "1",
                   IRNode.CONV_L2I, "1",
                  })
@@ -214,5 +231,18 @@ public class DivINodeIdealizationTests {
     // of a u32
     public int magicDiv7(int x) {
         return x / 7;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.SUB, "1",
+                  IRNode.MUL_I, "1",
+                  IRNode.RSHIFT_I, "3"
+                  })
+    // Checks magic int division occurs in general when dividing by a non power of 2.
+    // When the dividend is bounded, we can use smaller constant and do not need to use
+    // i64 arithmetic
+    public int magicDiv7Bounded(int x) {
+        return (short)x / 7;
     }
 }

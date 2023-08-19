@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include <limits>
+#include <type_traits>
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
@@ -39,46 +41,99 @@
 
 // Portions of code courtesy of Clifford Click
 
+template <class T>
+static T max_unsigned_from_signed_bounds(T slo, T shi) {
+  static_assert(std::is_unsigned<T>::value, "must be");
+  return slo <= shi ? shi : std::numeric_limits<T>::max();
+}
+
+static bool jint_mul_no_ovf(jint lo, jint hi, juint c) {
+  jlong prod_lo = jlong(lo) * jlong(c);
+  jlong prod_hi = jlong(hi) * jlong(c);
+  return jlong(jint(prod_lo)) == prod_lo && jlong(jint(prod_hi)) == prod_hi;
+}
+
+static bool juint_mul_no_ovf(juint hi, juint c) {
+  julong prod_hi = julong(hi) * julong(c);
+  return julong(juint(prod_hi)) == prod_hi;
+}
+
+static bool jlong_mul_no_ovf(jlong lo, jlong hi, julong c) {
+  if (jlong(c) < 0) {
+    return lo == 0 && hi == 0;
+  }
+
+  jlong prod_lo_hi = multiply_high_signed(lo, c);
+  jlong prod_lo_lo = java_multiply(lo, c);
+  jlong prod_hi_hi = multiply_high_signed(hi, c);
+  jlong prod_hi_lo = java_multiply(hi, c);
+  return ((prod_lo_hi == 0 && prod_lo_lo >= 0) || (prod_lo_hi == -1 && prod_lo_lo < 0)) &&
+      ((prod_hi_hi == 0 && prod_hi_lo >= 0) || (prod_hi_hi == -1 && prod_hi_lo < 0));
+}
+
+static bool julong_mul_no_ovf(julong hi, julong c) {
+  julong prod_hi_hi = multiply_high_unsigned(hi, c);
+  return prod_hi_hi == 0;
+}
+
+static bool uint128_t_mul_no_ovf(julong hi, julong c_wrapped) {
+  julong mul_hi_c_wrapped = multiply_high_unsigned(hi, c_wrapped);
+  julong mul_hi_wrapped = mul_hi_c_wrapped + hi;
+  return mul_hi_wrapped >= mul_hi_c_wrapped;
+}
+
+/*
+magic_divide_constants in utilities/javaArithmetic.hpp calculates the constant c, s
+such that division(x / d) = floor(x * c / m) + (x < 0 ? 1 : 0) for every integer x in
+the input range. The functions in this file try to derive from the formula in real
+arithmetic to arrive at a formula in int/long arithmetic. More details can be found in
+each individual function.
+*/
+
 // Convert a division by constant divisor into an alternate Ideal graph.
-// Return null if no transformation occurs.
 static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor) {
   // Check for invalid divisors
-  assert(divisor != 0 && divisor != 1 && divisor != min_jint,
-         "bad divisor for transforming to long multiply" );
+  assert(divisor != 0 && divisor != 1,
+         "bad divisor for transforming to long multiply");
   if (divisor == -1) {
     return new SubINode(phase->intcon(0), dividend);
   }
 
   bool d_pos = divisor >= 0;
-  jint d = d_pos ? divisor : -divisor;
+  juint d = ABS<jint>(divisor);
   constexpr int N = 32;
+  const TypeInt* dti = phase->type(dividend)->is_int();
+  juint min_neg = dti->_lo < 0 ? -juint(dti->_lo) : 0;
+  juint max_pos = dti->_hi > 0 ? juint(dti->_hi) : 0;
+  if (min_neg < d && max_pos < d) {
+    return phase->intcon(0);
+  }
 
   if (is_power_of_2(d)) {
     // division by +/- a power of 2
+    juint l = log2i_exact(d);
 
     // See if we can simply do a shift without rounding
     bool needs_rounding = true;
-    const Type* dt = phase->type(dividend);
-    const TypeInt* dti = dt->isa_int();
-    if (dti && dti->_lo >= 0) {
+    if (dti->_lo >= 0) {
       // we don't need to round a positive dividend
       needs_rounding = false;
-    } else if( dividend->Opcode() == Op_AndI ) {
+    } else if (dividend->Opcode() == Op_AndI) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeInt* andconi_t = phase->type( dividend->in(2) )->isa_int();
-      if( andconi_t && andconi_t->is_con() ) {
-        jint andconi = andconi_t->get_con();
-        if( andconi < 0 && is_power_of_2(-andconi) && (-andconi) >= d ) {
-          if( (-andconi) == d ) // Remove AND if it clears bits which will be shifted
+      const TypeInt* andconi_t = phase->type(dividend->in(2))->isa_int();
+      if (andconi_t && andconi_t->is_con()) {
+        juint andconi = andconi_t->get_con();
+        if (count_trailing_zeros(andconi) >= l) {
+          if (-andconi == d) {
+            // Remove AND if it clears bits which will be shifted
             dividend = dividend->in(1);
+          }
           needs_rounding = false;
         }
       }
     }
 
-    // Add rounding to the shift to handle the sign bit
-    int l = log2i_graceful(d - 1) + 1;
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive
@@ -102,108 +157,99 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
     }
 
     return q;
+  }
+
+  juint magic_const;
+  bool magic_const_ovf;
+  juint shift_const;
+  magic_divide_constants<juint>(d, min_neg, max_pos, 0, magic_const, magic_const_ovf, shift_const);
+  assert(!magic_const_ovf, "signed magic constant cannot overflow");
+
+  // x is an i32 and c is a u32, the value of x * c will always lie in the range
+  // of an i64, so we can just perform the calculation directly.
+  Node* addend0;
+  if (jint_mul_no_ovf(dti->_lo, dti->_hi, magic_const)) {
+    // If x * c can fit into an i32, we do int multiplication, this may help
+    // auto vectorization
+    Node* magic = phase->intcon(magic_const);
+    Node* mul = phase->transform(new MulINode(dividend, magic));
+    addend0 = phase->transform(new RShiftINode(mul, phase->intcon(shift_const)));
   } else {
-    // Attempt the jint constant divide -> multiply transform found in
-    //   "Division by Invariant Integers using Multiplication"
-    //     by Granlund and Montgomery
-    // See also "Hacker's Delight", chapter 10 by Warren.
-    //
-    // Some modifications are made since we multiply high by performing
-    // long multiplication
-
-    jlong magic_const;
-    jint shift_const;
-    magic_int_divide_constants(d, magic_const, shift_const);
-    // magic_const should be a u32
-
     Node* magic = phase->longcon(magic_const);
     Node* dividend_long = phase->transform(new ConvI2LNode(dividend));
-
-    // Compute the high half of the dividend x magic multiplication
-    Node* mul_hi = phase->transform(new MulLNode(dividend_long, magic));
-    // i32 * u32 <: i64 so there should be no overflow
-    // No add is required, we can merge the shifts together.
-    mul_hi = phase->transform(new RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-    mul_hi = phase->transform(new ConvL2INode(mul_hi));
-
-    // Get a 0 or -1 from the sign of the dividend.
-    Node* addend0 = mul_hi;
-    Node* addend1 = phase->transform(new RShiftINode(dividend, phase->intcon(N-1)));
-
-    // If the divisor is negative, swap the order of the input addends;
-    // this has the effect of negating the quotient.
-    if (!d_pos) {
-      swap(addend0, addend1);
-    }
-
-    // Adjust the final quotient by subtracting -1 (adding 1)
-    // from the mul_hi.
-    return new SubINode(addend0, addend1);
+    Node* mul = phase->transform(new MulLNode(dividend_long, magic));
+    addend0 = phase->transform(new RShiftLNode(mul, phase->intcon(shift_const)));
+    addend0 = phase->transform(new ConvL2INode(addend0));
   }
+
+  // q = (x * c) >> s + (x < 0 ? 1 : 0) = (x * c) >> s - (x >> (W - 1))
+  Node* addend1 = phase->transform(new RShiftINode(dividend, phase->intcon(N - 1)));
+
+  // If the divisor is negative, swap the order of the input addends;
+  // this has the effect of negating the quotient
+  if (!d_pos) {
+    swap(addend0, addend1);
+  }
+  return new SubINode(addend0, addend1);
 }
 
 // Convert an unsigned division by constant divisor into an alternate Ideal graph.
-// Return null if no transformation occurs.
-static Node* transform_int_udivide( PhaseGVN* phase, Node* dividend, juint divisor ) {
+static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint divisor) {
   assert(divisor > 1, "invalid constant divisor");
   constexpr int N = 32;
+  const TypeInt* i1 = phase->type(dividend)->is_int();
+  juint max_pos = max_unsigned_from_signed_bounds<juint>(i1->_lo, i1->_hi);
+
+  if (max_pos < divisor) {
+    return phase->intcon(0);
+  }
 
   // Result
   if (is_power_of_2(divisor)) {
     int l = log2i_exact(divisor);
     return new URShiftINode(dividend, phase->intcon(l));
-  } else {
-    // Attempt the juint constant divide -> multiply transform found in
-    //   "Division by Invariant Integers using Multiplication"
-    //     by Granlund and Montgomery
-    // See also "Hacker's Delight", chapter 10 by Warren.
-
-    // Unsigned extension of dividend
-    Node* dividend_long = phase->transform(new ConvI2LNode(dividend));
-    dividend_long = phase->transform(new AndLNode(dividend_long, phase->longcon(max_juint)));
-
-    jlong magic_const;
-    jint shift_const;
-    magic_int_unsigned_divide_constants_down(divisor, magic_const, shift_const);
-
-    // magic_const is u33, max_abs_dividend is u32, so we must check for overflow
-    const TypeInt* dividend_type = phase->type(dividend)->is_int();
-    julong max_dividend;
-    if (dividend_type->_hi < 0 || dividend_type->_lo >= 0) {
-      max_dividend = julong(juint(dividend_type->_hi));
-    } else {
-      max_dividend = max_juint;
-    }
-    if (max_dividend == 0 || julong(magic_const) <= max_julong / max_dividend) {
-      // No overflow here, just do the transformation
-      if (shift_const == 32) {
-        return phase->intcon(0);
-      } else {
-        Node* magic = phase->longcon(magic_const);
-
-        // Compute the high half of the dividend x magic multiplication
-        Node* mul_hi = phase->transform(new MulLNode(dividend_long, magic));
-
-        // Merge the shifts together.
-        mul_hi = phase->transform(new URShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-        return new ConvL2INode(mul_hi);
-      }
-    } else {
-      // Original plan fails, rounding down of 1/divisor does not work, change
-      // to rounding up, now it is guaranteed to not overflow, according to
-      // N-Bit Unsigned Division Via N-Bit Multiply-Add by Arch D. Robison
-      magic_int_unsigned_divide_constants_up(divisor, magic_const, shift_const);
-      Node* magic = phase->longcon(magic_const);
-
-      // Compute the high half of the dividend x magic multiplication
-      Node* mul_hi = phase->transform(new AddLNode(dividend_long, phase->longcon(1)));
-      mul_hi = phase->transform(new MulLNode(mul_hi, magic));
-
-      // Merge the shifts together.
-      mul_hi = phase->transform(new URShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-      return new ConvL2INode(mul_hi);
-    }
   }
+
+  juint magic_const;
+  bool magic_const_ovf;
+  juint shift_const;
+  magic_divide_constants<juint>(divisor, 0, max_pos, 0, magic_const, magic_const_ovf, shift_const);
+
+  if (!magic_const_ovf && juint_mul_no_ovf(max_pos, magic_const)) {
+    // If x * c can fit into a u32, use int multiplication
+    Node* mul = phase->transform(new MulINode(dividend, phase->intcon(magic_const)));
+    return new URShiftINode(mul, phase->intcon(shift_const));
+  }
+
+  julong magic_const_long = julong(magic_const) + (magic_const_ovf ? julong(max_juint) + 1 : 0);
+  // Unsigned extension of dividend
+  Node* dividend_long = phase->transform(new ConvI2LNode(dividend));
+  dividend_long = phase->transform(new AndLNode(dividend_long, phase->longcon(max_juint)));
+
+  if (julong_mul_no_ovf(julong(max_pos), magic_const_long)) {
+    // If x * c can fit into a u64, use long multiplication
+
+    // Java shifts are modular so we need this special case
+    if (shift_const == N * 2) {
+      return phase->intcon(0);
+    }
+
+    // q = (x * c) >> s
+    Node* mul = phase->transform(new MulLNode(dividend_long, phase->longcon(magic_const_long)));
+    Node* q = phase->transform(new URShiftLNode(mul, phase->intcon(shift_const)));
+    return new ConvL2INode(q);
+  }
+
+  // Original plan fails, rounding up of 1/divisor does not work, change
+  // to rounding down, now it is guaranteed to be correct, according to
+  // N-Bit Unsigned Division Via N-Bit Multiply-Add by Arch D. Robison
+  magic_divide_constants_round_down(divisor, magic_const, shift_const);
+
+  // q = ((x + 1) * c) >> s, use long arithmetic
+  Node* mul = phase->transform(new AddLNode(dividend_long, phase->longcon(1)));
+  mul = phase->transform(new MulLNode(mul, phase->longcon(magic_const)));
+  Node* q = phase->transform(new URShiftLNode(mul, phase->intcon(shift_const)));
+  return new ConvL2INode(q);
 }
 
 // Generate ideal node graph for upper half of a 64 bit x 64 bit multiplication
@@ -285,43 +331,47 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
 // Return null if no transformation occurs.
 static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong divisor) {
   // Check for invalid divisors
-  assert(divisor != 0L && divisor != 1L && divisor != min_jlong,
+  assert(divisor != 0L && divisor != 1L,
          "bad divisor for transforming to long multiply");
   if (divisor == -1L) {
     return new SubLNode(phase->longcon(0), dividend);
   }
 
   bool d_pos = divisor >= 0;
-  jlong d = d_pos ? divisor : -divisor;
+  julong d = ABS<jlong>(divisor);
   constexpr int N = 64;
+  const TypeLong* dtl = phase->type(dividend)->is_long();
+  julong min_neg = dtl->_lo < 0 ? -julong(dtl->_lo) : 0;
+  julong max_pos = dtl->_hi > 0 ? julong(dtl->_hi) : 0;
+  if (min_neg < d && max_pos < d) {
+    return phase->longcon(0);
+  }
 
   if (is_power_of_2(d)) {
     // division by +/- a power of 2
+    juint l = log2i_exact(d);
 
     // See if we can simply do a shift without rounding
     bool needs_rounding = true;
-    const Type *dt = phase->type(dividend);
-    const TypeLong *dtl = dt->isa_long();
-
-    if (dtl && dtl->_lo > 0) {
+    if (dtl->_lo > 0) {
       // we don't need to round a positive dividend
       needs_rounding = false;
-    } else if( dividend->Opcode() == Op_AndL ) {
+    } else if (dividend->Opcode() == Op_AndL) {
       // An AND mask of sufficient size clears the low bits and
       // I can avoid rounding.
-      const TypeLong *andconl_t = phase->type( dividend->in(2) )->isa_long();
-      if( andconl_t && andconl_t->is_con() ) {
-        jlong andconl = andconl_t->get_con();
-        if( andconl < 0 && is_power_of_2(-andconl) && (-andconl) >= d ) {
-          if( (-andconl) == d ) // Remove AND if it clears bits which will be shifted
+      const TypeLong* andconl_t = phase->type(dividend->in(2))->isa_long();
+      if (andconl_t && andconl_t->is_con()) {
+        julong andconl = andconl_t->get_con();
+        if (count_trailing_zeros(andconl) >= l) {
+          if (-andconl == d) {
+            // Remove AND if it clears bits which will be shifted
             dividend = dividend->in(1);
+          }
           needs_rounding = false;
         }
       }
     }
 
-    // Add rounding to the shift to handle the sign bit
-    int l = log2i_graceful(d - 1) + 1;
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive
@@ -331,9 +381,9 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
       // (-2+3)>>2 becomes 0, etc.
 
       // Compute 0 or -1, based on sign bit
-      Node *sign = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
+      Node* sign = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
       // Mask sign bit to the low sign bits
-      Node *round = phase->transform(new URShiftLNode(sign, phase->intcon(N - l)));
+      Node* round = phase->transform(new URShiftLNode(sign, phase->intcon(N - l)));
       // Round up before shifting
       dividend = phase->transform(new AddLNode(dividend, round));
     }
@@ -344,115 +394,130 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
       q = new SubLNode(phase->longcon(0), phase->transform(q));
     }
     return q;
-  } else if (!Matcher::use_asm_for_ldiv_by_con(d)) { // Use hardware DIV instruction when
-                                                     // it is faster than code generated below.
-    // Attempt the jlong constant divide -> multiply transform found in
-    //   "Division by Invariant Integers using Multiplication"
-    //     by Granlund and Montgomery
-    // See also "Hacker's Delight", chapter 10 by Warren.
+  }
 
-    jlong magic_const;
-    jint shift_const;
-    magic_long_divide_constants(d, magic_const, shift_const);
+  if (Matcher::use_asm_for_ldiv_by_con(d)) {
+    // Use hardware DIV instruction when
+    // it is faster than code generated below.
+    return nullptr;
+  }
+
+  julong magic_const;
+  bool magic_const_ovf;
+  juint shift_const;
+  magic_divide_constants<julong>(d, min_neg, max_pos, 0, magic_const, magic_const_ovf, shift_const);
+  assert(!magic_const_ovf, "signed magic constant cannot overflow");
+
+  Node* addend0;
+  if (jlong_mul_no_ovf(dtl->_lo, dtl->_hi, magic_const)) {
+    // If c * m can fit into an i64, do the multiplication directly
+    Node* mul = phase->transform(new MulLNode(dividend, phase->longcon(magic_const)));
+    addend0 = phase->transform(new RShiftLNode(mul, phase->intcon(shift_const)));
+  } else {
+    if (shift_const < N) {
+      // We need i128 arithmetic here, if s < 64 we need to combine the high and low half of the full
+      // product, force s to be >= 64 so we only need to use the high half
+      magic_divide_constants<julong>(d, min_neg, max_pos, N, magic_const, magic_const_ovf, shift_const);
+      assert(!magic_const_ovf, "signed magic constant cannot overflow");
+    }
 
     // Compute the high half of the dividend x magic multiplication
-    Node *mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
-
-    // The high half of the 128-bit multiply is computed.
-    if (magic_const < 0) {
+    // (x * c) >> s = ((x * c) >> 64) >> (s - 64) = mul_hi(x, c) >> (s - 64)
+    Node* mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
+    if (jlong(magic_const) < 0) {
       // The magic multiplier is too large for a 64 bit constant. We've adjusted
       // it down by 2^64, but have to add 1 dividend back in after the multiplication.
-      // This handles the "overflow" case described by Granlund and Montgomery.
       mul_hi = phase->transform(new AddLNode(dividend, mul_hi));
     }
 
     // Shift over the (adjusted) mulhi
-    mul_hi = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const)));
-
-    // Get a 0 or -1 from the sign of the dividend.
-    Node *addend0 = mul_hi;
-    Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(N-1)));
-
-    // If the divisor is negative, swap the order of the input addends;
-    // this has the effect of negating the quotient.
-    if (!d_pos) {
-      swap(addend0, addend1);
-    }
-
-    // Adjust the final quotient by subtracting -1 (adding 1)
-    // from the mul_hi.
-    return new SubLNode(addend0, addend1);
+    addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - N)));    
   }
 
-  return nullptr;
+  // q = mul_hi(x, c) >> (s - 64) + (x < 0 ? 1 : 0) = mul_hi(x, c) >> (x - 64) - (x >> 63)
+  Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
+
+  // If the divisor is negative, swap the order of the input addends;
+  // this has the effect of negating the quotient.
+  if (!d_pos) {
+    swap(addend0, addend1);
+  }
+  return new SubLNode(addend0, addend1);
 }
 
 // Convert an unsigned division by constant divisor into an alternate Ideal graph.
 // Return null if no transformation occurs.
-static Node* transform_long_udivide( PhaseGVN* phase, Node* dividend, julong divisor ) {
+static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divisor) {
   assert(divisor > 1, "invalid constant divisor");
+  constexpr int N = 64;
 
   if (is_power_of_2(divisor)) {
     int l = log2i_exact(divisor);
     return new URShiftLNode(dividend, phase->intcon(l));
-  } else {
-    if (!Matcher::match_rule_supported(Op_UMulHiL)) {
-      return nullptr; // Don't bother
-    }
-
-    // Attempt the julong constant divide -> multiply transform found in
-    //   "Division by Invariant Integers using Multiplication"
-    //     by Granlund and Montgomery
-    // See also "Hacker's Delight", chapter 10 by Warren.
-
-    // Unsigned extension of dividend
-    jlong magic_const;
-    jint shift_const;
-    bool magic_const_ovf;
-    magic_long_unsigned_divide_constants(divisor, magic_const, shift_const, magic_const_ovf);
-
-    Node* magic = phase->longcon(magic_const);
-    Node* mul_hi = phase->transform(new UMulHiLNode(dividend, magic));
-
-    if (!magic_const_ovf) {
-      assert(shift_const < 64, "sanity");
-      return new URShiftLNode(mul_hi, phase->intcon(shift_const));
-    } else {
-      // If the multiplication does not overflow 128-bit unsigned int, we can
-      // do the addition right after
-      const TypeLong* dividend_type = phase->type(dividend)->is_long();
-      julong max_dividend;
-      if (dividend_type->_hi < 0 || dividend_type->_lo >= 0) {
-        max_dividend = julong(dividend_type->_hi);
-      } else {
-        max_dividend = max_julong;
-      }
-
-      // Just do the minimum for now
-      if (max_dividend <= julong(min_jlong) || shift_const == 0) {
-        if (shift_const == 64) {
-          return phase->longcon(0);
-        } else {
-          mul_hi = phase->transform(new AddLNode(mul_hi, dividend));
-          return new URShiftLNode(mul_hi, phase->intcon(shift_const));
-        }
-      } else {
-        // q = floor((x * c) / 2**(64 + m)) = floor(((x * (c - 2**64)) / 2**64 + x) / 2**m)
-        //
-        // Given: floor((x / m + y) / n) = floor((floor(x / m) + y) / n), we have
-        // q = floor((floor((x * (c - 2**64)) / 2**64) + x) / 2**m)
-        //   = floor((mul_hi + x) / 2**m)
-        // Let p = floor((mul_hi + x) / 2)
-        //       = floor((x - mul_hi) / 2 + mul_hi)
-        //       = floor((x - mul_hi) / 2) + mul_hi
-        // Since x > mul_hi, this operation can be done precisely using Z/2**64Z arithmetic
-        Node* diff = phase->transform(new SubLNode(dividend, mul_hi));
-        diff = phase->transform(new URShiftLNode(diff, phase->intcon(1)));
-        Node* p = phase->transform(new AddLNode(diff, mul_hi));
-        return new URShiftLNode(p, phase->intcon(shift_const - 1));
-      }
-    }
   }
+
+  if (!Matcher::match_rule_supported(Op_UMulHiL)) {
+    return nullptr; // Don't bother
+  }
+
+  const TypeLong* i1 = phase->type(dividend)->is_long();
+  julong magic_const;
+  bool magic_const_ovf;
+  juint shift_const;
+  julong max_pos = max_unsigned_from_signed_bounds<julong>(i1->_lo, i1->_hi);
+  magic_divide_constants<julong>(divisor, 0, max_pos, 0, magic_const, magic_const_ovf, shift_const);
+
+  if (!magic_const_ovf && julong_mul_no_ovf(max_pos, magic_const)) {
+    // If x * c can fit into a u64, use long arithmetic
+    Node* mul = phase->transform(new MulLNode(dividend, phase->longcon(magic_const)));
+    return new URShiftLNode(mul, phase->intcon(shift_const));
+  }
+
+  if (shift_const < N) {
+    // We need i128 arithmetic here, if s < 64 we need to combine the high and low half of the full
+    // product, force s to be >= 64 so we only need to use the high half
+    magic_divide_constants<julong>(divisor, 0, max_pos, N, magic_const, magic_const_ovf, shift_const);
+  }
+
+  if (!magic_const_ovf || uint128_t_mul_no_ovf(max_pos, magic_const)) {
+    // Java shifts are modular so we need this special case
+    if (shift_const == N * 2) {
+      return phase->longcon(0);
+    }
+
+    // q = (x * c) >> s = ((x * c) >> 64) >> (s - 64) = umul_hi(x, c) >> (s - 64)
+    Node* mul_hi = phase->transform(new UMulHiLNode(dividend, phase->longcon(magic_const)));
+    if (magic_const_ovf) {
+      // The magic multiplier is too large for a 64 bit constant. We've adjusted
+      // it down by 2^64, but have to add 1 dividend back in after the multiplication.
+      mul_hi = phase->transform(new AddLNode(dividend, mul_hi));
+    }
+    return new URShiftLNode(mul_hi, phase->intcon(shift_const - N));
+  }
+
+  if ((divisor & 1) == 0) {
+    // x / (2 * d) = (x / 2) / d. This helps decrease the upper bound of the dividend,
+    // guarantee that the product of the new dividend and the new magic constant does not
+    // overflow
+    juint ctz = count_trailing_zeros(divisor);
+    dividend = phase->transform(new URShiftLNode(dividend, phase->intcon(ctz)));
+    return new UDivLNode(nullptr, dividend, phase->longcon(divisor >> ctz));
+  }
+
+  // q = floor((x * c) / 2**(s + 64))) = floor(((x * (c - 2**64)) / 2**64 + x) / 2**s)
+  //
+  // Given: floor((x / s + y) / n) = floor((floor(x / s) + y) / n), we have
+  // q = floor((floor((x * (c - 2**64)) / 2**64) + x) / 2**s)
+  //   = floor((mul_hi + x) / 2**s)
+  // Let p = floor((mul_hi + x) / 2)
+  //       = floor((x - mul_hi) / 2 + mul_hi)
+  //       = floor((x - mul_hi) / 2) + mul_hi
+  // Since x > mul_hi, this operation can be done precisely using Z/2**64Z arithmetic
+  Node* mul_hi = phase->transform(new UMulHiLNode(dividend, phase->longcon(magic_const)));
+  Node* diff = phase->transform(new SubLNode(dividend, mul_hi));
+  diff = phase->transform(new URShiftLNode(diff, phase->intcon(1)));
+  Node* p = phase->transform(new AddLNode(diff, mul_hi));
+  return new URShiftLNode(p, phase->intcon(shift_const - N - 1));
 }
 
 static Node* divModIdealCommon(Node* n, BasicType bt, PhaseGVN* phase, bool need_const_divisor) {
@@ -505,8 +570,7 @@ Node* DivINode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   jint i2_con = phase->type(in(2))->is_int()->get_con();
 
-  // Dividing by MININT does not optimize as a power-of-2 shift.
-  if (i2_con == 1 || i2_con == min_jint) {
+  if (i2_con == 1) {
     return nullptr;
   }
 
@@ -603,8 +667,7 @@ Node* DivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   jlong i2_con = phase->type(in(2))->is_long()->get_con();
 
-  // Dividing by MINLONG does not optimize as a power-of-2 shift.
-  if (i2_con == 1 || i2_con == min_jlong) {
+  if (i2_con == 1) {
     return nullptr;
   }
 
