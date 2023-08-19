@@ -283,8 +283,8 @@ public class URLEncoder {
             } else if (c < 0x800) {
                 encodeByte(out, (byte) (0xc0 | (c >> 6)));
                 encodeByte(out, (byte) (0x80 | (c & 0x3f)));
-            } else if (Character.isHighSurrogate(c)) {
-                if (i < s.length() - 1) {
+            } else if (Character.isSurrogate(c)) {
+                if (Character.isHighSurrogate(c) && i < s.length() - 1) {
                     char d = s.charAt(i + 1);
                     if (Character.isLowSurrogate(d)) {
                         int uc = Character.toCodePoint(c, d);
