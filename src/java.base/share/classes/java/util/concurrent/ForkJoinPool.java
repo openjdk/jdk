@@ -447,7 +447,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * this odd/even scheme. One disadvantage is that there are
      * usually many fewer submission queues, so there can be many
      * wasted probes (null slots). But this is still cheaper than
-     * alternatives.
+     * alternatives. Other loops over the queues array vary in origin
+     * and stride depending on whether they cover only submission
+     * (even) or worker (odd) queues or both, and whether they require
+     * randomness (in which case cyclically exhaustive strides may be
+     * used).
      *
      * All worker thread creation is on-demand, triggered by task
      * submissions, replacement of terminated workers, and/or
@@ -1983,8 +1987,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * quiescent
      */
     private boolean isQuiescent(boolean transition) {
-        long phaseSum = 0L;
-        boolean swept = false, possibleSubmission = false;
+        long phaseSum = -1L;
+        boolean swept = false;
         outer: for (int e = 0;;) {
             int prevRunState = e;
             long c = ctl;
@@ -1992,22 +1996,9 @@ public class ForkJoinPool extends AbstractExecutorService {
                 return true;                          // terminating
             else if ((c & RC_MASK) > 0L)
                 break;                                // at least one active
-            else if (possibleSubmission) {            // cover signal race
-                WorkQueue[] qs; int sp, j; WorkQueue v; Thread t;
-                possibleSubmission = swept = false;
-                if ((sp = (int)c) == 0 || (qs = queues) == null ||
-                    qs.length <= (j = sp & SMASK) || (v = qs[j]) == null)
-                    break;                            // no inactive workers
-                if (compareAndSetCtl(c, (v.stackPred & LMASK) |
-                                     (UMASK & (c + RC_UNIT)) | (c & TC_MASK))) {
-                    v.phase = sp;
-                    if ((t = v.parker) != null)
-                        U.unpark(t);                  // reactivate
-                }
-            }
             else if (ctl != c)                        // re-snapshot
-                ;
-            else if (e == prevRunState && (e & RS_LOCK) == 0 && swept &&
+                swept = false;
+            else if (swept && e == prevRunState && (e & RS_LOCK) == 0 &&
                      (!transition ||
                       casRunState(e, ((e & SHUTDOWN) == 0 ?
                                       e + RS_EPOCH :  // advance
@@ -2021,8 +2012,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                     WorkQueue q; int p;
                     if ((q = qs[i]) != null) {
                         if (((p = q.phase) & IDLE) == 0 || q.top - q.base > 0) {
-                            possibleSubmission = true;
-                            continue outer;          // recheck counts
+                            signalWork();            // ensure live
+                            break outer;
                         }
                         sum += p;
                     }
@@ -2556,7 +2547,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     waits = 0;
                     t.doExec();
                 }
-                else if (isQuiescent(true))
+                else if (isQuiescent(false))
                     break;
                 else if (System.nanoTime() - startTime > nanos)
                     return 0;
