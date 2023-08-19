@@ -85,7 +85,7 @@ static void test_division(T d, T N_neg, T N_pos, juint min_s) {
 template <class T, class U>
 static void test_division_random() {
   constexpr int ITER = 10000;
-  using UT = typename std::make_unsigned_t<T>;
+  using UT = std::conditional_t<std::is_same<T, jlong>::value, julong, std::make_unsigned_t<T>>;
   std::random_device rd;
   std::minstd_rand rng(rd());
   std::uniform_int_distribution<UT> N_dist(0, std::numeric_limits<T>::max());
@@ -102,7 +102,7 @@ static void test_division_random() {
 
 template <class T, class U>
 static void test_division_fixed(const std::vector<julong>& values) {
-  using UT = typename std::make_unsigned_t<T>;
+  using UT = std::conditional_t<std::is_same<T, jlong>::value, julong, std::make_unsigned_t<T>>;
   for (julong N_neg : values) {
     if (N_neg > UT(std::numeric_limits<T>::min())) {
       continue;
