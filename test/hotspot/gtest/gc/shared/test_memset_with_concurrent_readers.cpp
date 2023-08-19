@@ -26,6 +26,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
+#include <iomanip>
 #include <string.h>
 #include <sstream>
 #include "utilities/vmassert_reinstall.hpp"

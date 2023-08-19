@@ -106,7 +106,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
   juint min_neg = dti->_lo < 0 ? -juint(dti->_lo) : 0;
   juint max_pos = dti->_hi > 0 ? juint(dti->_hi) : 0;
   if (min_neg < d && max_pos < d) {
-    return phase->intcon(0);
+    return new ConINode(TypeInt::ZERO);
   }
 
   if (is_power_of_2(d)) {
@@ -201,7 +201,7 @@ static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint diviso
   juint max_pos = max_unsigned_from_signed_bounds<juint>(i1->_lo, i1->_hi);
 
   if (max_pos < divisor) {
-    return phase->intcon(0);
+    return new ConINode(TypeInt::ZERO);
   }
 
   // Result
@@ -231,7 +231,7 @@ static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint diviso
 
     // Java shifts are modular so we need this special case
     if (shift_const == N * 2) {
-      return phase->intcon(0);
+      return new ConINode(TypeInt::ZERO);
     }
 
     // q = (x * c) >> s
@@ -344,7 +344,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
   julong min_neg = dtl->_lo < 0 ? -julong(dtl->_lo) : 0;
   julong max_pos = dtl->_hi > 0 ? julong(dtl->_hi) : 0;
   if (min_neg < d && max_pos < d) {
-    return phase->longcon(0);
+    return new ConLNode(TypeLong::ZERO);
   }
 
   if (is_power_of_2(d)) {
@@ -450,6 +450,12 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
 static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divisor) {
   assert(divisor > 1, "invalid constant divisor");
   constexpr int N = 64;
+  const TypeLong* i1 = phase->type(dividend)->is_long();
+  julong max_pos = max_unsigned_from_signed_bounds<julong>(i1->_lo, i1->_hi);
+
+  if (max_pos < divisor) {
+    return new ConLNode(TypeLong::ZERO);
+  }
 
   if (is_power_of_2(divisor)) {
     int l = log2i_exact(divisor);
@@ -460,11 +466,9 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
     return nullptr; // Don't bother
   }
 
-  const TypeLong* i1 = phase->type(dividend)->is_long();
   julong magic_const;
   bool magic_const_ovf;
   juint shift_const;
-  julong max_pos = max_unsigned_from_signed_bounds<julong>(i1->_lo, i1->_hi);
   magic_divide_constants<julong>(divisor, 0, max_pos, 0, magic_const, magic_const_ovf, shift_const);
 
   if (!magic_const_ovf && julong_mul_no_ovf(max_pos, magic_const)) {
@@ -482,7 +486,7 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
   if (!magic_const_ovf || uint128_t_mul_no_ovf(max_pos, magic_const)) {
     // Java shifts are modular so we need this special case
     if (shift_const == N * 2) {
-      return phase->longcon(0);
+      return new ConLNode(TypeLong::ZERO);
     }
 
     // q = (x * c) >> s = ((x * c) >> 64) >> (s - 64) = umul_hi(x, c) >> (s - 64)
