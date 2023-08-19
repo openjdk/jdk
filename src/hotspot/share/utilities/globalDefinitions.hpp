@@ -1081,7 +1081,7 @@ template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, 
 
 template<class T> constexpr inline T ABS(T x) {
   using U = std::make_unsigned_t<T>;
-  return (x > 0) ? x : U(0) - U(x);
+  return (x >= 0) ? x : U(0) - U(x);
 }
 
 // Return the given value clamped to the range [min ... max]

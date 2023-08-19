@@ -178,6 +178,7 @@ void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ov
 }
 template void magic_divide_constants<juint>(juint, juint, juint, juint, juint&, bool&, juint&);
 template void magic_divide_constants<julong>(julong, julong, julong, juint, julong&, bool&, juint&);
+template void magic_divide_constants<std::make_unsigned_t<jlong>>(julong, julong, julong, juint, julong&, bool&, juint&);
 
 // The constant of a W-bit signed division lies in the range of W-bit unsigned
 // integers. As a result, the product of the dividend and the magic constant cannot

@@ -396,7 +396,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     return q;
   }
 
-  if (Matcher::use_asm_for_ldiv_by_con(d)) {
+  if (Matcher::use_asm_for_ldiv_by_con(divisor)) {
     // Use hardware DIV instruction when
     // it is faster than code generated below.
     return nullptr;
@@ -676,7 +676,7 @@ Node* DivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   q = transform_long_divide(phase, in(1), i2_con);
-  assert(q != nullptr || !Matcher::use_asm_for_ldiv_by_con(i2_con), "sanity");
+  assert(q != nullptr || Matcher::use_asm_for_ldiv_by_con(i2_con), "sanity");
   return q;
 }
 
@@ -845,7 +845,7 @@ Node* UDivLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   q = transform_long_udivide(phase, in(1), i2_con);
-  assert(q != nullptr || Matcher::match_rule_supported(Op_UMulHiL), "sanity");
+  assert(q != nullptr || !Matcher::match_rule_supported(Op_UMulHiL), "sanity");
   return q;
 }
 
@@ -1431,7 +1431,7 @@ Node* UModLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   q = transform_long_udivide(phase, in(1), i2_con);
   if (q == nullptr) {
-    assert(Matcher::match_rule_supported(Op_UMulHiL), "sanity");
+    assert(!Matcher::match_rule_supported(Op_UMulHiL), "sanity");
     return nullptr;
   }
   q = phase->transform(q);
