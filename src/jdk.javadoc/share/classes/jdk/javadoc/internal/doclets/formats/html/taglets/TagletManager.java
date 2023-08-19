@@ -50,8 +50,10 @@ import javax.lang.model.util.SimpleElementVisitor14;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.InlineTagTree;
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -349,89 +351,88 @@ public class TagletManager {
      * @param trees the trees containing the comments
      */
     public void checkTags(Element element, Iterable<? extends DocTree> trees) {
-        CommentHelper ch = utils.getCommentHelper(element);
         for (DocTree tag : trees) {
-            String name = tag.getKind().tagName;
+            String name = switch (tag.getKind()) {
+                case UNKNOWN_INLINE_TAG -> ((InlineTagTree) tag).getTagName();
+                case UNKNOWN_BLOCK_TAG -> ((BlockTagTree) tag).getTagName();
+                default -> tag.getKind().tagName;
+            };
             if (name == null) {
-                continue;
+                continue; // not a tag
             }
-            if (!name.isEmpty() && name.charAt(0) == '@') {
-                name = name.substring(1);
-            }
-            if (! (standardTags.contains(name) || allTaglets.containsKey(name))) { // defunct, see 8314213
-                if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
-                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
-                    continue;
-                } else {
-                    messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
-                    continue;
+            if (!allTaglets.containsKey(name)) {
+                if (!config.isDocLintSyntaxGroupEnabled()) {
+                    var ch = utils.getCommentHelper(element);
+                    if (standardTagsLowercase.contains(Utils.toLowerCase(name))) {
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagLowercase", ch.getTagName(tag));
+                    } else {
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
+                    }
                 }
+                continue; // unknown tag
             }
             final Taglet taglet = allTaglets.get(name);
+            if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
+                continue; // taglet has been disabled
+            }
+
             // Check and verify tag usage
-            if (taglet != null) {
-                if (taglet instanceof SimpleTaglet st && !st.isEnabled()) {
-                    // taglet has been disabled
-                    return;
+            new SimpleElementVisitor14<Void, Void>() {
+                @Override
+                public Void visitModule(ModuleElement e, Void p) {
+                    if (!taglet.inModule()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
+                    }
+                    return null;
                 }
 
-                new SimpleElementVisitor14<Void, Void>() {
-                    @Override
-                    public Void visitModule(ModuleElement e, Void p) {
-                        if (!taglet.inModule()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "module");
-                        }
-                        return null;
+                @Override
+                public Void visitPackage(PackageElement e, Void p) {
+                    if (!taglet.inPackage()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
                     }
+                    return null;
+                }
 
-                    @Override
-                    public Void visitPackage(PackageElement e, Void p) {
-                        if (!taglet.inPackage()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "package");
-                        }
-                        return null;
+                @Override
+                public Void visitType(TypeElement e, Void p) {
+                    if (!taglet.inType()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "class");
                     }
+                    return null;
+                }
 
-                    @Override
-                    public Void visitType(TypeElement e, Void p) {
-                        if (!taglet.inType()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "class");
-                        }
-                        return null;
+                @Override
+                public Void visitExecutable(ExecutableElement e, Void p) {
+                    if (utils.isConstructor(e) && !taglet.inConstructor()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "constructor");
+                    } else if (!taglet.inMethod()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "method");
                     }
+                    return null;
+                }
 
-                    @Override
-                    public Void visitExecutable(ExecutableElement e, Void p) {
-                        if (utils.isConstructor(e) && !taglet.inConstructor()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "constructor");
-                        } else if (!taglet.inMethod()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "method");
-                        }
-                        return null;
+                @Override
+                public Void visitVariable(VariableElement e, Void p) {
+                    if (utils.isField(e) && !taglet.inField()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "field");
                     }
+                    return null;
+                }
 
-                    @Override
-                    public Void visitVariable(VariableElement e, Void p) {
-                        if (utils.isField(e) && !taglet.inField()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "field");
-                        }
-                        return null;
+                @Override
+                public Void visitUnknown(Element e, Void p) {
+                    if (utils.isOverviewElement(e) && !taglet.inOverview()) {
+                        printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "overview");
                     }
+                    return null;
+                }
 
-                    @Override
-                    public Void visitUnknown(Element e, Void p) {
-                        if (utils.isOverviewElement(e) && !taglet.inOverview()) {
-                            printTagMisuseWarn(utils.getCommentHelper(e), taglet, tag, "overview");
-                        }
-                        return null;
-                    }
-
-                    @Override
-                    protected Void defaultAction(Element e, Void p) {
-                        return null;
-                    }
-                }.visit(element);
-            }
+                @Override
+                protected Void defaultAction(Element e, Void p) {
+                    return null;
+                }
+            }.visit(element);
         }
     }
 
