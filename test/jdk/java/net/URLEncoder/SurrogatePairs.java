@@ -73,8 +73,10 @@ public class SurrogatePairs {
                 "str=%s, expected=%s, actual=%s"
                         .formatted(getHexBytes(str), getHexBytes(correctEncoding), getHexBytes(encoded)));
 
+        // Map unmappable characters to '?'
+        String cleanStr = new String(str.getBytes(UTF_8), UTF_8);
         String decoded = URLDecoder.decode(encoded, UTF_8);
-        assertEquals(str, decoded, () ->
+        assertEquals(cleanStr, decoded, () ->
                 "expected=%s, actual=%s".formatted(getHexBytes(str), getHexBytes(decoded)));
     }
 
