@@ -29,11 +29,9 @@ import java.io.UnsupportedEncodingException;
 import java.io.CharArrayWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException ;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 import java.util.Objects;
-
-import jdk.internal.util.StaticProperty;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -80,7 +78,6 @@ import jdk.internal.util.StaticProperty;
 public class URLEncoder {
     private static final BitSet DONT_NEED_ENCODING;
     private static final int CASE_DIFF = ('a' - 'A');
-    private static final String DEFAULT_ENCODING_NAME;
 
     static {
 
@@ -131,8 +128,6 @@ public class URLEncoder {
         DONT_NEED_ENCODING.set('_');
         DONT_NEED_ENCODING.set('.');
         DONT_NEED_ENCODING.set('*');
-
-        DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
     /**
@@ -153,16 +148,7 @@ public class URLEncoder {
      */
     @Deprecated
     public static String encode(String s) {
-
-        String str = null;
-
-        try {
-            str = encode(s, DEFAULT_ENCODING_NAME);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return encode(s, Charset.defaultCharset());
     }
 
     /**
