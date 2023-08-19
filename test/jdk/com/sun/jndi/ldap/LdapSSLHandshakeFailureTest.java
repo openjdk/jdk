@@ -21,7 +21,12 @@
  * questions.
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -30,6 +35,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.Context;
+import java.net.SocketException;
 import java.security.KeyStore;
 import java.util.Hashtable;
 
@@ -48,7 +54,14 @@ import jdk.test.lib.net.URIBuilder;
  * timed out. Before this fix, the socket is kept opened. Right now the exception will be
  * caught and the socket will be closed.
  *
- * @run main/othervm LdapSSLHandshakeFailureTest
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000 true
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000 false
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000 false
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 true
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 false
+ * @run main/othervm LdapSSLHandshakeFailureTest true
+ * @run main/othervm LdapSSLHandshakeFailureTest false
  */
 
 public class LdapSSLHandshakeFailureTest {
@@ -56,10 +69,19 @@ public class LdapSSLHandshakeFailureTest {
     private static String SOCKET_NOT_CLOSED_MSG = "The socket was not closed.";
 
     public static void main(String args[]) throws Exception {
+
         // Set the keystores
         setKeyStore();
         // start the test server first.
-        TestServer server = new TestServer();
+        boolean serverSlowDown = false;
+        if(args.length ==2 ) {
+            serverSlowDown = Boolean.valueOf(args[1]);
+        } else {
+            if(args.length ==1 ) {
+                serverSlowDown = Boolean.valueOf(args[0]);
+            }
+        }
+        TestServer server = new TestServer( serverSlowDown );
         server.start();
         Hashtable<String, Object> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -68,20 +90,32 @@ public class LdapSSLHandshakeFailureTest {
                 .loopback()
                 .port(server.getPortNumber())
                 .buildUnchecked().toString());
-        env.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
+        if (args.length == 2 &&
+                args[0].contains("LdapSSLHandshakeFailureTest")) {
+            env.put("java.naming.ldap.factory.socket", args[0]);
+        }
         env.put("java.naming.ldap.version", "3");
-        env.put("com.sun.jndi.ldap.connect.timeout", "1000");
+        if (args.length == 2 ) {
+            if( args[0].contains("LdapSSLHandshakeFailureTest")) {
+                env.put("com.sun.jndi.ldap.connect.timeout", "1000");
+            } else {
+                env.put("com.sun.jndi.ldap.connect.timeout", args[0]);
+            }
+        }
+
+        env.put(Context.SECURITY_PROTOCOL,"ssl");
         env.put(Context.SECURITY_AUTHENTICATION, "Simple");
         env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
-        env.put(Context.SECURITY_CREDENTIALS, "justpassword");
+        env.put(Context.SECURITY_CREDENTIALS, "123456");
         LdapContext ctx = null;
         try {
             ctx  = new InitialLdapContext(env, null);
         } catch (Exception e) {
-            if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0) {
+            if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0
+                    && args[0].equals("LdapSSLHandshakeFailureTest$CustomSocketFactory")
+                    && Boolean.valueOf(args[1])) {
                 System.out.println(SOCKET_CLOSED_MSG);
             } else {
-                System.out.println(SOCKET_NOT_CLOSED_MSG);
                 throw e;
             }
         } finally {
@@ -90,14 +124,15 @@ public class LdapSSLHandshakeFailureTest {
         }
     }
     public static class CustomSocketFactory extends SocketFactory {
-        public static CustomSocket customSocket = new CustomSocket();
+        private static CustomSocket customSocket;
 
         public static CustomSocketFactory getDefault() {
             return new CustomSocketFactory();
         }
 
         @Override
-        public Socket createSocket() {
+        public Socket createSocket() throws SocketException {
+            customSocket = new CustomSocket();
             return customSocket;
         }
 
@@ -126,47 +161,37 @@ public class LdapSSLHandshakeFailureTest {
 
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
-
+        public CustomSocket () {
+            closeMethodCalled = 0;
+        }
         public int closeMethodCalledCount() {
             return closeMethodCalled;
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() throws java.io.IOException {
             closeMethodCalled++;
             super.close();
         }
     }
 
     private static void setKeyStore() throws Exception {
-        String filePath = getKeystoreFilePath();
-        System.setProperty("javax.net.ssl.keyStore", filePath);
-        System.setProperty("javax.net.ssl.keyStorePassword", "123456");
-        System.setProperty("javax.net.ssl.trustStore", filePath);
-        System.setProperty("javax.net.ssl.trustStorePassword", "123456");
-    }
 
-    private static String getKeystoreFilePath() throws Exception {
-        String dir = System.getProperty("test.src", ".") + File.separator;
-        File file = new File(dir+"myKeyStore");
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        if (file.exists()) {
-            // if exists, load
-            keyStore.load(new FileInputStream(file), "123456".toCharArray());
-        } else {
-            // if not exists, create
-            keyStore.load(null, null);
-            keyStore.store(new FileOutputStream(file), "123456".toCharArray());
-        }
-        return file.getPath();
+        String fileName = "ksWithSAN", dir = System.getProperty("test.src", ".") + File.separator;
+
+        System.setProperty("javax.net.ssl.keyStore", dir + fileName);
+        System.setProperty("javax.net.ssl.keyStorePassword", "welcome1");
+        System.setProperty("javax.net.ssl.trustStore", dir + fileName);
+        System.setProperty("javax.net.ssl.trustStorePassword", "welcome1");
     }
 
     static class TestServer extends Thread implements AutoCloseable {
-
+        private boolean isForceToSleep = false;
         private final ServerSocket serverSocket;
         private final int PORT;
 
-        TestServer() {
+        TestServer(boolean isForceToSleep) {
+            this.isForceToSleep = isForceToSleep;
             try {
                 SSLServerSocketFactory socketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
                 serverSocket = socketFactory.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
@@ -183,13 +208,12 @@ public class LdapSSLHandshakeFailureTest {
 
         @Override
         public void run() {
-            try (Socket socket = serverSocket.accept();
-                 InputStream in = socket.getInputStream();
+            try (Socket socket = serverSocket.accept(); InputStream in = socket.getInputStream();
                  OutputStream out = socket.getOutputStream()) {
-
-                Thread.sleep(10000);
-                byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A, 0x01, 0x00,
-                        0x04, 0x00, 0x04, 0x00};
+                if (isForceToSleep) {
+                    Thread.sleep(5000);
+                }
+                byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
                 // read the bindRequest
                 while (in.read() != -1) {
                     in.skip(in.available());
