@@ -441,7 +441,7 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   // Add up the sizes of all the regions with the same
   // AllocationBase.
   while (1) {
-    VirtualQuery(stack_bottom+size, &minfo, sizeof(minfo));
+    VirtualQuery(stack_bottom + size, &minfo, sizeof(minfo));
     if (stack_bottom == (address)minfo.AllocationBase) {
       size += minfo.RegionSize;
     } else {
