@@ -171,7 +171,7 @@
 
  void encode_iso_array_v(Register src, Register dst,
                          Register len, Register result,
-                         Register tmp);
+                         Register tmp, bool ascii);
 
  void has_negatives_v(Register ary, Register len,
                       Register result, Register tmp);
