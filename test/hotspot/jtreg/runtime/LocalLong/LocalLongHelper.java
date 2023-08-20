@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class LocalLongHelper {
     static Class<?> primitiveValueClass;
     static Method primitiveSize;
     static Method getMethodType;
-    static Field memberName;
+    static Field classOrMemberName;
     static Field offset;
 
     public static void main(String[] args) throws Throwable {
@@ -67,9 +67,10 @@ public class LocalLongHelper {
         longValue = primitiveValueClass.getDeclaredMethod("longValue");
         longValue.setAccessible(true);
 
+        Class<?> classFrameInfoClass = Class.forName("java.lang.ClassFrameInfo");
+        classOrMemberName = classFrameInfoClass.getDeclaredField("classOrMemberName");
+        classOrMemberName.setAccessible(true);
         Class<?> stackFrameInfoClass = Class.forName("java.lang.StackFrameInfo");
-        memberName = stackFrameInfoClass.getDeclaredField("memberName");
-        memberName.setAccessible(true);
         offset = stackFrameInfoClass.getDeclaredField("bci");
         offset.setAccessible(true);
         getMethodType = Class.forName("java.lang.invoke.MemberName").getDeclaredMethod("getMethodType");
