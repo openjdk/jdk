@@ -5425,8 +5425,6 @@ void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   os::Linux::current_stack_region(stack_base, stack_size);
 }
 
-
-
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
