@@ -1579,8 +1579,9 @@ public class CSS implements Serializable {
             if (seplist.indexOf(aChar) > -1/* || Character.isSpaceChar(aChar)*/) {
                 sep = true;
                 if (oosep && aChar != ' ') {
-                    // Two consecutive non space separator.
-                    // Never happens because of CSSParser
+                    // Two consecutive non space separators.
+                    // - Never happens with a parsed string because of CSSParser
+                    // - But useful for StyleSheet.stringToColor
                     return -1;
                 } else {
                     if (aChar != ' ') oosep = true;
@@ -1654,7 +1655,7 @@ public class CSS implements Serializable {
                 }
             }
         }
-        if (index[0] < length && string.charAt(index[0]) == 'e') {
+        if (index[0] < length && (string.charAt(index[0]) == 'e' || string.charAt(index[0]) == 'E')) {
             boolean negativeExpSign = false;
             index[0]++;
             if (index[0] < length && ((aChar = string.charAt(index[0])) == '+' || (negativeExpSign = (aChar == '-')))) {
