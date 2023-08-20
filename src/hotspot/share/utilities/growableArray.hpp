@@ -25,6 +25,8 @@
 #ifndef SHARE_UTILITIES_GROWABLEARRAY_HPP
 #define SHARE_UTILITIES_GROWABLEARRAY_HPP
 
+#include <utility>
+
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/debug.hpp"
@@ -503,7 +505,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   this->_capacity = new_capacity;
   E* newData = static_cast<Derived*>(this)->allocate();
   int i = 0;
-  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(static_cast<E&&>(this->_data[i]));
+  for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(std::move(this->_data[i]));
   for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
   for (i = 0; i < old_capacity; i++) this->_data[i].~E();
   if (this->_data != nullptr) {
@@ -542,7 +544,7 @@ void GrowableArrayWithAllocator<E, Derived>::shrink_to_fit() {
   this->_capacity = len;        // Must preceed allocate().
   if (len > 0) {
     new_data = static_cast<Derived*>(this)->allocate();
-    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(static_cast<E&&>(old_data[i]));
+    for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(std::move(old_data[i]));
   }
   // Destroy contents of old data, and deallocate it.
   for (int i = 0; i < old_capacity; ++i) old_data[i].~E();
