@@ -1734,7 +1734,7 @@ static Window getParentWindow(Window w)
 #endif
 
 JNIEXPORT void JNICALL Java_sun_awt_X11_XInputMethod_moveCandidateWindow
- (JNIEnv *env, jobject this, jint x, jint y)
+  (JNIEnv *env, jobject this, jint x, jint y)
 {
     X11InputMethodData *pX11IMData;
     XVaNestedList preedit_attr;
