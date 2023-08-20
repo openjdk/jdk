@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ void G1NUMAStats::NodeDataArray::create_hit_rate(Stat* result) const {
     }
   }
 
-  assert(result != NULL, "Invariant");
+  assert(result != nullptr, "Invariant");
   result->_hit = hit;
   result->_requested = requested;
 }
@@ -77,7 +77,7 @@ void G1NUMAStats::NodeDataArray::create_hit_rate(Stat* result, uint req_index) c
     requested += _data[req_index][column];
   }
 
-  assert(result != NULL, "Invariant");
+  assert(result != nullptr, "Invariant");
   result->_hit = hit;
   result->_requested = requested;
 }
@@ -112,7 +112,7 @@ size_t G1NUMAStats::NodeDataArray::get(uint req_index, uint alloc_index) {
 }
 
 void G1NUMAStats::NodeDataArray::copy(uint req_index, size_t* stat) {
-  assert(stat != NULL, "Invariant");
+  assert(stat != nullptr, "Invariant");
 
   for (uint column = 0; column < _num_column; column++) {
     _data[req_index][column] += stat[column];

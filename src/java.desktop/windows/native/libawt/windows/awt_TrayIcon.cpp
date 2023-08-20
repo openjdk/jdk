@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -262,7 +262,7 @@ LRESULT CALLBACK AwtTrayIcon::TrayWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam
                 }
             }
             break;
-        case WM_DPICHANGED:
+        case WM_DISPLAYCHANGE:
             // Set the flag to update icon images, see WmTaskbarCreated
             m_bDPIChanged = true;
             break;

@@ -12,6 +12,7 @@ package jdk.internal.org.jline.terminal.impl.jna.win;
 //import com.sun.jna.Pointer;
 //import com.sun.jna.ptr.IntByReference;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsConsoleWriter;
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 
 import java.io.IOException;
 

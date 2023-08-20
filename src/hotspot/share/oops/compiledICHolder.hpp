@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
   Klass*    holder_klass()  const     { return _holder_klass; }
   Metadata* holder_metadata() const   { return _holder_metadata; }
 
-  static int holder_metadata_offset() { return offset_of(CompiledICHolder, _holder_metadata); }
-  static int holder_klass_offset()    { return offset_of(CompiledICHolder, _holder_klass); }
+  static ByteSize holder_metadata_offset() { return byte_offset_of(CompiledICHolder, _holder_metadata); }
+  static ByteSize holder_klass_offset()    { return byte_offset_of(CompiledICHolder, _holder_klass); }
 
   CompiledICHolder* next()     { return _next; }
   void set_next(CompiledICHolder* n) { _next = n; }

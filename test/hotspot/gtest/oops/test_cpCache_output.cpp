@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,12 @@ TEST_VM(ConstantPoolCache, print_on) {
   ASSERT_TRUE(strstr(output, "num parameters:") != NULL) << "must have number of parameters";
 
   // field entry test
-  ASSERT_TRUE(strstr(output, "volatile:") != NULL) << "must have volatile flag";
-  ASSERT_TRUE(strstr(output, "field index:") != NULL) << "must have field index";
+  ASSERT_TRUE(strstr(output, "Offset:") != NULL) << "must have field offset";
+  ASSERT_TRUE(strstr(output, "Field Index:") != NULL) << "must have field index";
+  ASSERT_TRUE(strstr(output, "CP Index:") != NULL) << "must have constant pool index";
+  ASSERT_TRUE(strstr(output, "TOS:") != NULL) << "must have type";
+  ASSERT_TRUE(strstr(output, "Is Final:") != NULL) << "must have final flag";
+  ASSERT_TRUE(strstr(output, "Is Volatile:") != NULL) << "must have volatile flag";
+  ASSERT_TRUE(strstr(output, "Put Bytecode:") != NULL) << "must have \"put code\"";
+  ASSERT_TRUE(strstr(output, "Get Bytecode:") != NULL) << "must have \"get code\"";
 }

@@ -32,7 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassReader;
@@ -40,6 +40,7 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.LabelContext;
+import jdk.internal.classfile.impl.ClassfileImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.StackMapGenerator;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -55,7 +56,13 @@ import org.openjdk.jmh.annotations.Warmup;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {
+        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @Warmup(iterations = 2)
 @Measurement(iterations = 10)
 public class GenerateStackMaps {
@@ -72,13 +79,15 @@ public class GenerateStackMaps {
     List<GenData> data;
     Iterator<GenData> it;
     GenData d;
+    Classfile cc;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        data = new LinkedList<>();
+        cc = Classfile.of();
+        data = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p ->  {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
-                var clm = Classfile.parse(p);
+                var clm = cc.parse(p);
                 var thisCls = clm.thisClass().asSymbol();
                 var cp = new SplitConstantPool((ClassReader)clm.constantPool());
                 for (var m : clm.methods()) {
@@ -114,6 +123,7 @@ public class GenerateStackMaps {
                 d.isStatic(),
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
+                (ClassfileImpl)cc,
                 d.handlers());
     }
 }

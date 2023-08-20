@@ -31,6 +31,7 @@ package sun.java2d.loops;
 
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
+import sun.java2d.loops.GraphicsPrimitiveMgr.GeneralPrimitives;
 
 /**
  *   FillRect
@@ -75,7 +76,7 @@ public class FillRect extends GraphicsPrimitive
                                 int x, int y, int w, int h);
 
     static {
-        GraphicsPrimitiveMgr.registerGeneral(new FillRect(null, null, null));
+        GeneralPrimitives.register(new FillRect(null, null, null));
     }
 
     protected GraphicsPrimitive makePrimitive(SurfaceType srctype,

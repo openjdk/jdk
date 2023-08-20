@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.UnknownHostException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import sun.net.NetProperties;
@@ -95,7 +96,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
             public String run() {
                 String localhost;
                 try {
-                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase();
+                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase(Locale.ROOT);
                 } catch (UnknownHostException e) {
                      localhost = "localhost";
                 }
@@ -119,13 +120,11 @@ public class NTLMAuthentication extends AuthenticationInfo {
      * If this notation is not used, then the domain will be taken
      * from a system property: "http.auth.ntlm.domain".
      */
-    public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw,
-                              String authenticatorKey) {
+    public NTLMAuthentication(boolean isProxy, URL url, PasswordAuthentication pw) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.NTLM,
               url,
-              "",
-              Objects.requireNonNull(authenticatorKey));
+              "");
         init (pw);
     }
 
@@ -138,7 +137,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
                 username = s;
                 ntdomain = defaultDomain;
             } else {
-                ntdomain = s.substring (0, i).toUpperCase();
+                ntdomain = s.substring (0, i).toUpperCase(Locale.ROOT);
                 username = s.substring (i+1);
             }
             password = new String (pw.getPassword());
@@ -155,14 +154,12 @@ public class NTLMAuthentication extends AuthenticationInfo {
     * Constructor used for proxy entries
     */
     public NTLMAuthentication(boolean isProxy, String host, int port,
-                              PasswordAuthentication pw,
-                              String authenticatorKey) {
+                              PasswordAuthentication pw) {
         super(isProxy?PROXY_AUTHENTICATION:SERVER_AUTHENTICATION,
               AuthScheme.NTLM,
               host,
               port,
-              "",
-              Objects.requireNonNull(authenticatorKey));
+              "");
         init (pw);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, Jf
 }
 
 static void write_checkpoint_header(u1* pos, int64_t size, jlong time, u4 checkpoint_type, u4 type_count) {
-  assert(pos != NULL, "invariant");
+  assert(pos != nullptr, "invariant");
   JfrBigEndianWriter be_writer(pos, sizeof(JfrCheckpointEntry));
   be_writer.write(size);
   be_writer.write(time);
@@ -153,9 +153,9 @@ const u1* JfrCheckpointWriter::session_data(size_t* size, bool move /* false */,
   assert(this->is_acquired(), "wrong state!");
   if (!this->is_valid()) {
     *size = 0;
-    return NULL;
+    return nullptr;
   }
-  if (ctx != NULL) {
+  if (ctx != nullptr) {
     const u1* session_start_pos = this->start_pos() + ctx->offset;
     *size = this->current_pos() - session_start_pos;
     return session_start_pos;
@@ -195,7 +195,7 @@ JfrBlobHandle JfrCheckpointWriter::move(const JfrCheckpointContext* ctx /* 0 */)
   size_t size = 0;
   const u1* data = session_data(&size, true, ctx);
   JfrBlobHandle blob = JfrBlob::make(data, size);
-  if (ctx != NULL) {
+  if (ctx != nullptr) {
     const_cast<JfrCheckpointContext*>(ctx)->count = 0;
     set_context(*ctx);
   }

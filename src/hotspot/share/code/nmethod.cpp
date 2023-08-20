@@ -119,23 +119,23 @@
 // These variables are put into one block to reduce relocations
 // and make it simpler to print from the debugger.
 struct java_nmethod_stats_struct {
-  int nmethod_count;
-  int total_size;
-  int relocation_size;
-  int consts_size;
-  int insts_size;
-  int stub_size;
-  int scopes_data_size;
-  int scopes_pcs_size;
-  int dependencies_size;
-  int handler_table_size;
-  int nul_chk_table_size;
+  uint nmethod_count;
+  uint total_size;
+  uint relocation_size;
+  uint consts_size;
+  uint insts_size;
+  uint stub_size;
+  uint scopes_data_size;
+  uint scopes_pcs_size;
+  uint dependencies_size;
+  uint handler_table_size;
+  uint nul_chk_table_size;
 #if INCLUDE_JVMCI
-  int speculations_size;
-  int jvmci_data_size;
+  uint speculations_size;
+  uint jvmci_data_size;
 #endif
-  int oops_size;
-  int metadata_size;
+  uint oops_size;
+  uint metadata_size;
 
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
@@ -158,34 +158,34 @@ struct java_nmethod_stats_struct {
   }
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
-    tty->print_cr("Statistics for %d bytecoded nmethods for %s:", nmethod_count, name);
-    if (total_size != 0)          tty->print_cr(" total in heap  = %d", total_size);
+    tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
+    if (total_size != 0)          tty->print_cr(" total in heap  = %u", total_size);
     if (nmethod_count != 0)       tty->print_cr(" header         = " SIZE_FORMAT, nmethod_count * sizeof(nmethod));
-    if (relocation_size != 0)     tty->print_cr(" relocation     = %d", relocation_size);
-    if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
-    if (insts_size != 0)          tty->print_cr(" main code      = %d", insts_size);
-    if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
-    if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
-    if (metadata_size != 0)       tty->print_cr(" metadata       = %d", metadata_size);
-    if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
-    if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
-    if (dependencies_size != 0)   tty->print_cr(" dependencies   = %d", dependencies_size);
-    if (handler_table_size != 0)  tty->print_cr(" handler table  = %d", handler_table_size);
-    if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %d", nul_chk_table_size);
+    if (relocation_size != 0)     tty->print_cr(" relocation     = %u", relocation_size);
+    if (consts_size != 0)         tty->print_cr(" constants      = %u", consts_size);
+    if (insts_size != 0)          tty->print_cr(" main code      = %u", insts_size);
+    if (stub_size != 0)           tty->print_cr(" stub code      = %u", stub_size);
+    if (oops_size != 0)           tty->print_cr(" oops           = %u", oops_size);
+    if (metadata_size != 0)       tty->print_cr(" metadata       = %u", metadata_size);
+    if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %u", scopes_data_size);
+    if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %u", scopes_pcs_size);
+    if (dependencies_size != 0)   tty->print_cr(" dependencies   = %u", dependencies_size);
+    if (handler_table_size != 0)  tty->print_cr(" handler table  = %u", handler_table_size);
+    if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %u", nul_chk_table_size);
 #if INCLUDE_JVMCI
-    if (speculations_size != 0)   tty->print_cr(" speculations   = %d", speculations_size);
-    if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %d", jvmci_data_size);
+    if (speculations_size != 0)   tty->print_cr(" speculations   = %u", speculations_size);
+    if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %u", jvmci_data_size);
 #endif
   }
 };
 
 struct native_nmethod_stats_struct {
-  int native_nmethod_count;
-  int native_total_size;
-  int native_relocation_size;
-  int native_insts_size;
-  int native_oops_size;
-  int native_metadata_size;
+  uint native_nmethod_count;
+  uint native_total_size;
+  uint native_relocation_size;
+  uint native_insts_size;
+  uint native_oops_size;
+  uint native_metadata_size;
   void note_native_nmethod(nmethod* nm) {
     native_nmethod_count += 1;
     native_total_size       += nm->size();
@@ -196,31 +196,31 @@ struct native_nmethod_stats_struct {
   }
   void print_native_nmethod_stats() {
     if (native_nmethod_count == 0)  return;
-    tty->print_cr("Statistics for %d native nmethods:", native_nmethod_count);
-    if (native_total_size != 0)       tty->print_cr(" N. total size  = %d", native_total_size);
-    if (native_relocation_size != 0)  tty->print_cr(" N. relocation  = %d", native_relocation_size);
-    if (native_insts_size != 0)       tty->print_cr(" N. main code   = %d", native_insts_size);
-    if (native_oops_size != 0)        tty->print_cr(" N. oops        = %d", native_oops_size);
-    if (native_metadata_size != 0)    tty->print_cr(" N. metadata    = %d", native_metadata_size);
+    tty->print_cr("Statistics for %u native nmethods:", native_nmethod_count);
+    if (native_total_size != 0)       tty->print_cr(" N. total size  = %u", native_total_size);
+    if (native_relocation_size != 0)  tty->print_cr(" N. relocation  = %u", native_relocation_size);
+    if (native_insts_size != 0)       tty->print_cr(" N. main code   = %u", native_insts_size);
+    if (native_oops_size != 0)        tty->print_cr(" N. oops        = %u", native_oops_size);
+    if (native_metadata_size != 0)    tty->print_cr(" N. metadata    = %u", native_metadata_size);
   }
 };
 
 struct pc_nmethod_stats_struct {
-  int pc_desc_resets;   // number of resets (= number of caches)
-  int pc_desc_queries;  // queries to nmethod::find_pc_desc
-  int pc_desc_approx;   // number of those which have approximate true
-  int pc_desc_repeats;  // number of _pc_descs[0] hits
-  int pc_desc_hits;     // number of LRU cache hits
-  int pc_desc_tests;    // total number of PcDesc examinations
-  int pc_desc_searches; // total number of quasi-binary search steps
-  int pc_desc_adds;     // number of LUR cache insertions
+  uint pc_desc_resets;   // number of resets (= number of caches)
+  uint pc_desc_queries;  // queries to nmethod::find_pc_desc
+  uint pc_desc_approx;   // number of those which have approximate true
+  uint pc_desc_repeats;  // number of _pc_descs[0] hits
+  uint pc_desc_hits;     // number of LRU cache hits
+  uint pc_desc_tests;    // total number of PcDesc examinations
+  uint pc_desc_searches; // total number of quasi-binary search steps
+  uint pc_desc_adds;     // number of LUR cache insertions
 
   void print_pc_stats() {
-    tty->print_cr("PcDesc Statistics:  %d queries, %.2f comparisons per query",
+    tty->print_cr("PcDesc Statistics:  %u queries, %.2f comparisons per query",
                   pc_desc_queries,
                   (double)(pc_desc_tests + pc_desc_searches)
                   / pc_desc_queries);
-    tty->print_cr("  caches=%d queries=%d/%d, hits=%d+%d, tests=%d+%d, adds=%d",
+    tty->print_cr("  caches=%d queries=%u/%u, hits=%u+%u, tests=%u+%u, adds=%u",
                   pc_desc_resets,
                   pc_desc_queries, pc_desc_approx,
                   pc_desc_repeats, pc_desc_hits,
@@ -550,9 +550,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int nmethod_mirror_index,
-  const char* nmethod_mirror_name,
-  FailedSpeculation** failed_speculations
+  JVMCINMethodData* jvmci_data
 #endif
 )
 {
@@ -561,7 +559,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   // create nmethod
   nmethod* nm = nullptr;
 #if INCLUDE_JVMCI
-  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
 #endif
   int nmethod_size =
     CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
@@ -588,17 +586,11 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
-            jvmci_data_size
+            jvmci_data
 #endif
             );
 
     if (nm != nullptr) {
-#if INCLUDE_JVMCI
-      if (compiler->is_jvmci()) {
-        // Initialize the JVMCINMethodData object inlined into nm
-        nm->jvmci_nmethod_data()->initialize(nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
-      }
-#endif
       // To make dependency checking during class loading fast, record
       // the nmethod dependencies in the classes it is dependent on.
       // This allows the dependency checking code to simply walk the
@@ -786,7 +778,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int jvmci_data_size
+  JVMCINMethodData* jvmci_data
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
@@ -866,6 +858,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _jvmci_data_offset       = _speculations_offset  + align_up(speculations_len, oopSize);
+    int jvmci_data_size      = compiler->is_jvmci() ? jvmci_data->size() : 0;
     _nmethod_end_offset      = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize);
 #else
     _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -884,6 +877,13 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     clear_unloading_state();
+
+#if INCLUDE_JVMCI
+    if (compiler->is_jvmci()) {
+      // Initialize the JVMCINMethodData object inlined into nm
+      jvmci_nmethod_data()->copy(jvmci_data);
+    }
+#endif
 
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
@@ -1132,7 +1132,7 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
   intptr_t cbaddr = (intptr_t) nm;
   intptr_t offset = ((intptr_t) pc) - cbaddr;
 
-  int oopmap_slot = nm->oop_maps()->find_slot_for_offset((intptr_t) pc - (intptr_t) nm->code_begin());
+  int oopmap_slot = nm->oop_maps()->find_slot_for_offset(int((intptr_t) pc - (intptr_t) nm->code_begin()));
   if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
     log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
   } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
@@ -1274,7 +1274,7 @@ void nmethod::inc_decompile_count() {
   mdo->inc_decompile_count();
 }
 
-bool nmethod::try_transition(int new_state_int) {
+bool nmethod::try_transition(signed char new_state_int) {
   signed char new_state = new_state_int;
   assert_lock_strong(CompiledMethod_lock);
   signed char old_state = _state;
@@ -1671,7 +1671,7 @@ class IsUnloadingState: public AllStatic {
   static const uint8_t _unloading_cycle_shift = 1;
 
   static uint8_t set_is_unloading(uint8_t state, bool value) {
-    state &= ~_is_unloading_mask;
+    state &= (uint8_t)~_is_unloading_mask;
     if (value) {
       state |= 1 << _is_unloading_shift;
     }
@@ -1680,8 +1680,8 @@ class IsUnloadingState: public AllStatic {
   }
 
   static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
-    state &= ~_unloading_cycle_mask;
-    state |= value << _unloading_cycle_shift;
+    state &= (uint8_t)~_unloading_cycle_mask;
+    state |= (uint8_t)(value << _unloading_cycle_shift);
     assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
     return state;
   }
@@ -2695,7 +2695,7 @@ void nmethod::print_constant_pool(outputStream* st) {
       Disassembler::print_hexdata(cp, n, st, true);
       st->cr();
     } else {
-      n = (uintptr_t)cp&(bytes_per_line-1);
+      n = (int)((uintptr_t)cp & (bytes_per_line-1));
       st->print_cr("[Constant Pool (unaligned)]");
     }
 
@@ -2883,7 +2883,7 @@ void nmethod::decode2(outputStream* ost) const {
       //---<  Now, finally, print the actual instruction bytes  >---
       unsigned char* p0 = p;
       p = Disassembler::decode_instruction_abstract(p, st, instruction_size_in_bytes, instr_maxlen);
-      compressed_format_idx += p - p0;
+      compressed_format_idx += (int)(p - p0);
 
       if (Disassembler::start_newline(compressed_format_idx-1)) {
         st->cr();
@@ -3137,7 +3137,7 @@ bool nmethod::has_code_comment(address begin, address end) {
   if (str != nullptr) return true;
 
   // implicit exceptions?
-  int cont_offset = ImplicitExceptionTable(this).continuation_offset(begin - code_begin());
+  int cont_offset = ImplicitExceptionTable(this).continuation_offset((uint)(begin - code_begin()));
   if (cont_offset != 0) return true;
 
   return false;
@@ -3145,7 +3145,7 @@ bool nmethod::has_code_comment(address begin, address end) {
 
 void nmethod::print_code_comment_on(outputStream* st, int column, address begin, address end) {
   ImplicitExceptionTable implicit_table(this);
-  int pc_offset = begin - code_begin();
+  int pc_offset = (int)(begin - code_begin());
   int cont_offset = implicit_table.continuation_offset(pc_offset);
   bool oop_map_required = false;
   if (cont_offset != 0) {

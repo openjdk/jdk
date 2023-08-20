@@ -633,9 +633,9 @@ public:
 
   static uint cores_per_cpu();
   static uint threads_per_core();
-  static intx L1_line_size();
+  static uint L1_line_size();
 
-  static intx prefetch_data_size()  {
+  static uint prefetch_data_size()  {
     return L1_line_size();
   }
 
@@ -716,6 +716,8 @@ public:
   static bool is_default_intel_cascade_lake();
 #endif
 
+  static bool is_intel_cascade_lake();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
@@ -748,7 +750,7 @@ public:
 
   static bool supports_compare_and_exchange() { return true; }
 
-  static intx allocate_prefetch_distance(bool use_watermark_prefetch);
+  static int allocate_prefetch_distance(bool use_watermark_prefetch);
 
   // SSE2 and later processors implement a 'pause' instruction
   // that can be used for efficient implementation of

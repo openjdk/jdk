@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8272776
  * @summary Check null handling for non-pattern switches.
- * @enablePreview
  */
 
 public class NullSwitch {

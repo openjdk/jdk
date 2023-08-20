@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -43,6 +44,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -99,20 +101,20 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   }
 }
 
-void HeapRegion::handle_evacuation_failure() {
+void HeapRegion::handle_evacuation_failure(bool retain) {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */);
+  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
-  set_next(NULL);
-  set_prev(NULL);
-  set_containing_set(NULL);
+  set_next(nullptr);
+  set_prev(nullptr);
+  set_containing_set(nullptr);
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
@@ -127,8 +129,6 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
-
-  _gc_efficiency = -1.0;
 }
 
 void HeapRegion::clear_cardtable() {
@@ -136,7 +136,7 @@ void HeapRegion::clear_cardtable() {
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
-void HeapRegion::calc_gc_efficiency() {
+double HeapRegion::calc_gc_efficiency() {
   // GC efficiency is the ratio of how much space would be
   // reclaimed over how long we predict it would take to reclaim it.
   G1Policy* policy = G1CollectedHeap::heap()->policy();
@@ -145,7 +145,7 @@ void HeapRegion::calc_gc_efficiency() {
   // a mixed gc because the region will only be evacuated during a
   // mixed gc.
   double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
-  _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
+  return (double)reclaimable_bytes() / region_elapsed_time_ms;
 }
 
 void HeapRegion::set_free() {
@@ -179,16 +179,6 @@ void HeapRegion::set_old() {
   _type.set_old();
 }
 
-void HeapRegion::set_open_archive() {
-  report_region_type_change(G1HeapRegionTraceType::OpenArchive);
-  _type.set_open_archive();
-}
-
-void HeapRegion::set_closed_archive() {
-  report_region_type_change(G1HeapRegionTraceType::ClosedArchive);
-  _type.set_closed_archive();
-}
-
 void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   assert(!is_humongous(), "sanity / pre-condition");
   assert(top() == bottom(), "should be empty");
@@ -214,7 +204,7 @@ void HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
-  _humongous_start_region = NULL;
+  _humongous_start_region = nullptr;
 }
 
 void HeapRegion::prepare_remset_for_scan() {
@@ -227,23 +217,24 @@ HeapRegion::HeapRegion(uint hrm_index,
                        G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
-  _top(NULL),
+  _top(nullptr),
   _bot_part(bot, this),
-  _pre_dummy_top(NULL),
-  _rem_set(NULL),
+  _pre_dummy_top(nullptr),
+  _rem_set(nullptr),
   _hrm_index(hrm_index),
   _type(),
-  _humongous_start_region(NULL),
+  _humongous_start_region(nullptr),
   _index_in_opt_cset(InvalidCSetIndex),
-  _next(NULL), _prev(NULL),
+  _next(nullptr), _prev(nullptr),
 #ifdef ASSERT
-  _containing_set(NULL),
+  _containing_set(nullptr),
 #endif
-  _top_at_mark_start(NULL),
-  _parsable_bottom(NULL),
+  _top_at_mark_start(nullptr),
+  _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
+  _surv_rate_group(nullptr),
+  _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
@@ -273,23 +264,12 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure() {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
-
-  if (during_concurrent_start) {
-    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
-    // below it.
-    set_top_at_mark_start(top());
-  } else {
-    // Outside of the mixed phase all regions that had an evacuation failure must
-    // be young regions, and their TAMS is always bottom. Similarly, before the
-    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
-    assert(top_at_mark_start() == bottom(), "must be");
-  }
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
@@ -364,8 +344,8 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
-    if (nm != NULL) {
+    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
+    if (nm != nullptr) {
       // Verify that the nemthod is live
       VerifyCodeRootOopClosure oop_cl(_hr);
       nm->oops_do(&oop_cl);
@@ -439,6 +419,9 @@ void HeapRegion::print_on(outputStream* st) const {
   st->print("|%2s", get_short_type_str());
   if (in_collection_set()) {
     st->print("|CS");
+  } else if (is_collection_set_candidate()) {
+    G1CollectionSetCandidates* candidates = G1CollectedHeap::heap()->collection_set()->candidates();
+    st->print("|%s", candidates->get_short_type_str(this));
   } else {
     st->print("|  ");
   }
@@ -625,7 +608,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
-    oop obj = CompressedOops::decode_not_null(heap_oop);
+    oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
     LiveChecker<T> live_check(this, _containing_obj, p, obj, _vo);
     if (live_check.failed()) {

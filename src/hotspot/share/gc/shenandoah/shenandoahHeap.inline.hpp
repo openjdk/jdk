@@ -80,7 +80,7 @@ inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) con
   return index;
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::heap_region_containing(const void* addr) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* addr) const {
   size_t index = heap_region_index_containing(addr);
   ShenandoahHeapRegion* const result = get_region(index);
   assert(addr >= result->bottom() && addr < result->end(), "Heap region contains the address: " PTR_FORMAT, p2i(addr));
@@ -244,25 +244,12 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (! (sts_active && ShenandoahSuspendibleWorkers)) {
-    return cancelled_gc();
-  }
-
-  jbyte prev = _cancelled_gc.cmpxchg(NOT_CANCELLED, CANCELLABLE);
-  if (prev == CANCELLABLE || prev == NOT_CANCELLED) {
+  if (sts_active && ShenandoahSuspendibleWorkers && !cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
-
-    // Back to CANCELLABLE. The thread that poked NOT_CANCELLED first gets
-    // to restore to CANCELLABLE.
-    if (prev == CANCELLABLE) {
-      _cancelled_gc.set(CANCELLABLE);
-    }
-    return false;
-  } else {
-    return true;
   }
+  return cancelled_gc();
 }
 
 inline void ShenandoahHeap::clear_cancelled_gc() {
@@ -561,7 +548,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
   }
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::get_region(size_t region_idx) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const {
   if (region_idx < _num_regions) {
     return _regions[region_idx];
   } else {

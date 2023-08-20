@@ -34,7 +34,8 @@
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   CompiledMethod_lock;             // a lock used to guard a compiled method and OSR queues
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
-extern Mutex*   InvokeMethodTable_lock;
+extern Mutex*   InvokeMethodTypeTable_lock;
+extern Monitor* InvokeMethodIntrinsicTable_lock;
 extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dictionary
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
@@ -73,7 +74,7 @@ extern Mutex*   G1RareEvent_lock;                // Synchronizes (rare) parallel
 extern Mutex*   G1DetachedRefinementStats_lock;  // Lock protecting detached refinement stats
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
-extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools.
+extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools and allocated memory high water mark.
 extern Monitor* ConcurrentGCBreakpoints_lock;    // Protects concurrent GC breakpoint management
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
@@ -180,11 +181,9 @@ void print_lock_ranks(outputStream* st);
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock);
-void assert_locked_or_safepoint_weak(const Mutex* lock);
 void assert_lock_strong(const Mutex* lock);
 #else
 #define assert_locked_or_safepoint(lock)
-#define assert_locked_or_safepoint_weak(lock)
 #define assert_lock_strong(lock)
 #endif
 

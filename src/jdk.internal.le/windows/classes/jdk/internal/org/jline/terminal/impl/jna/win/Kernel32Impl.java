@@ -24,6 +24,7 @@
  */
 package jdk.internal.org.jline.terminal.impl.jna.win;
 
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 import jdk.internal.org.jline.terminal.impl.jna.win.Kernel32.CHAR_INFO;
 import jdk.internal.org.jline.terminal.impl.jna.win.Kernel32.CONSOLE_SCREEN_BUFFER_INFO;
 import jdk.internal.org.jline.terminal.impl.jna.win.Kernel32.COORD;

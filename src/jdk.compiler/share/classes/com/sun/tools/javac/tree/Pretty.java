@@ -26,6 +26,7 @@
 package com.sun.tools.javac.tree;
 
 import java.io.*;
+import java.util.stream.Collectors;
 
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
@@ -714,7 +715,11 @@ public class Pretty extends JCTree.Visitor {
                 } else {
                     printExpr(tree.vartype);
                     print(' ');
-                    print(tree.name);
+                    if (tree.name.isEmpty()) {
+                        print('_');
+                    } else {
+                        print(tree.name);
+                    }
                 }
                 if (tree.init != null) {
                     print(" = ");
@@ -813,7 +818,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.varOrRecordPattern);
+            printExpr(tree.var);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
@@ -861,6 +866,10 @@ public class Pretty extends JCTree.Visitor {
                 print("case ");
                 printExprs(tree.labels);
             }
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
+            }
             if (tree.caseKind == JCCase.STATEMENT) {
                 print(':');
                 println();
@@ -903,10 +912,6 @@ public class Pretty extends JCTree.Visitor {
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         try {
             print(tree.pat);
-            if (tree.guard != null) {
-                print(" when ");
-                print(tree.guard);
-            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -940,12 +945,9 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern patt) {
+    public void visitAnyPattern(JCAnyPattern patt) {
         try {
-            print('(');
-            printExpr(patt.pattern);
-            print(')');
+            print('_');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -1469,6 +1471,23 @@ public class Pretty extends JCTree.Visitor {
                     print('"');
                     break;
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        try {
+            JCExpression processor = tree.processor;
+            print("[");
+            if (processor != null) {
+                printExpr(processor);
+            }
+            print("]");
+            print("\"" + tree.fragments.stream().collect(Collectors.joining("\\{}")) + "\"");
+            print("(");
+            printExprs(tree.expressions);
+            print(")");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

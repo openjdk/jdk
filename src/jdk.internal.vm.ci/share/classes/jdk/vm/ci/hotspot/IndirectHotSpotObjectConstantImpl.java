@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.JavaConstant;
  */
 final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl {
     /**
-     * An object handle in {@code JVMCI::_object_handles}.
+     * An object handle in {@code JVMCIRuntime::_oop_handles}.
      */
     private long objectHandle;
 

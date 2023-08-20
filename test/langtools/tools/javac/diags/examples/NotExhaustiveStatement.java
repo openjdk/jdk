@@ -22,9 +22,6 @@
  */
 
 // key: compiler.err.not.exhaustive.statement
-// key: compiler.note.preview.filename
-// key: compiler.note.preview.recompile
-// options: --enable-preview --source ${jdk.version}
 
 class NotExhaustive {
     void t(Object o) {

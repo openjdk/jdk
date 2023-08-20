@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,22 +38,22 @@
 #include "runtime/vframe.inline.hpp"
 
 static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFrame* rhs_frames) {
-  assert(lhs_frames != NULL, "invariant");
-  assert(rhs_frames != NULL, "invariant");
+  assert(lhs_frames != nullptr, "invariant");
+  assert(rhs_frames != nullptr, "invariant");
   if (length > 0) {
     *lhs_frames = NEW_C_HEAP_ARRAY(JfrStackFrame, length, mtTracing);
     memcpy(*lhs_frames, rhs_frames, length * sizeof(JfrStackFrame));
   }
 }
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(0), _bci(bci), _type(type) {}
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
 
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
-  _next(NULL),
+  _next(nullptr),
   _frames(frames),
   _id(0),
   _hash(0),
@@ -66,7 +66,7 @@ JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
 
 JfrStackTrace::JfrStackTrace(traceid id, const JfrStackTrace& trace, const JfrStackTrace* next) :
   _next(next),
-  _frames(NULL),
+  _frames(nullptr),
   _id(id),
   _hash(trace._hash),
   _nr_of_frames(trace._nr_of_frames),
@@ -230,7 +230,7 @@ static inline bool is_full(const JfrBuffer* enqueue_buffer) {
 }
 
 bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   Thread* current_thread = Thread::current();
   assert(jt != current_thread, "invariant");
@@ -256,7 +256,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
       return false;
     }
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;
@@ -283,7 +283,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
 }
 
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   assert(jt == Thread::current(), "invariant");
   assert(!_lineno, "invariant");
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
@@ -307,7 +307,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
     }
     const Method* method = vfs.method();
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;
@@ -333,7 +333,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
 }
 
 bool JfrStackTrace::record(JavaThread* current_thread, int skip) {
-  assert(current_thread != NULL, "invariant");
+  assert(current_thread != nullptr, "invariant");
   assert(current_thread == Thread::current(), "invariant");
   if (!current_thread->has_last_Java_frame()) {
     return false;
@@ -345,7 +345,7 @@ void JfrStackFrame::resolve_lineno() const {
   assert(_klass, "no klass pointer");
   assert(_line == 0, "already have linenumber");
   const Method* const method = JfrMethodLookup::lookup(_klass, _methodid);
-  assert(method != NULL, "invariant");
+  assert(method != nullptr, "invariant");
   assert(method->method_holder() == _klass, "invariant");
   _line = method->line_number_from_bci(_bci);
 }

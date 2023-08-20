@@ -1805,7 +1805,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Allocation prefetch settings
-  intx cache_line_size = prefetch_data_size();
+  int cache_line_size = checked_cast<int>(prefetch_data_size());
   if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
       (cache_line_size > AllocatePrefetchStepSize)) {
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
@@ -1913,9 +1913,9 @@ void VM_Version::get_processor_features() {
         }
       }
       if (AllocatePrefetchLines > 1) {
-        log->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);
       } else {
-        log->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", AllocatePrefetchDistance, AllocatePrefetchStepSize);
       }
     }
 
@@ -2079,10 +2079,13 @@ bool VM_Version::is_default_intel_cascade_lake() {
   return FLAG_IS_DEFAULT(UseAVX) &&
          FLAG_IS_DEFAULT(MaxVectorSize) &&
          UseAVX > 2 &&
-         is_intel_skylake() &&
-         _stepping >= 5;
+         is_intel_cascade_lake();
 }
 #endif
+
+bool VM_Version::is_intel_cascade_lake() {
+  return is_intel_skylake() && _stepping >= 5;
+}
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
@@ -3134,8 +3137,8 @@ uint VM_Version::threads_per_core() {
   return (result == 0 ? 1 : result);
 }
 
-intx VM_Version::L1_line_size() {
-  intx result = 0;
+uint VM_Version::L1_line_size() {
+  uint result = 0;
   if (is_intel()) {
     result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
   } else if (is_amd_family()) {
@@ -3166,7 +3169,7 @@ bool VM_Version::is_intel_tsc_synched_at_init() {
   return false;
 }
 
-intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
+int VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
   // Hardware prefetching (distance/size in bytes):
   // Pentium 3 -  64 /  32
   // Pentium 4 - 256 / 128

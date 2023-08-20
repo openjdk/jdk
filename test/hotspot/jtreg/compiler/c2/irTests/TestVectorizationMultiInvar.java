@@ -25,6 +25,7 @@ package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Utils;
+import jdk.test.whitebox.WhiteBox;
 import jdk.internal.misc.Unsafe;
 import java.util.Objects;
 import java.util.Random;
@@ -36,14 +37,20 @@ import java.util.Random;
  * @summary C2: vectorization fails on some simple Memory Segment loops
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestVectorizationMultiInvar
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestVectorizationMultiInvar
  */
 
 public class TestVectorizationMultiInvar {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        Object alignVector = wb.getVMFlag("AlignVector");
+        if (alignVector != null && !((Boolean)alignVector)) {
+            TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        }
     }
 
     static int size = 1024;
@@ -53,7 +60,7 @@ public class TestVectorizationMultiInvar {
     static long baseOffset = 0;
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             long j = Objects.checkIndex(i * 8, (long)(src.length * 8));
@@ -68,7 +75,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_B, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest1(byte[] dest, byte[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,
@@ -99,7 +106,7 @@ public class TestVectorizationMultiInvar {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_I, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testLoopNest2(int[] dest, int[] src,
                                      long start1, long stop1,
                                      long start2, long stop2,

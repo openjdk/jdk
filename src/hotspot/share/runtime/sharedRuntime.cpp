@@ -64,7 +64,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -137,13 +137,13 @@ void SharedRuntime::generate_stubs() {
 
 #ifndef PRODUCT
 // For statistics
-int SharedRuntime::_ic_miss_ctr = 0;
-int SharedRuntime::_wrong_method_ctr = 0;
-int SharedRuntime::_resolve_static_ctr = 0;
-int SharedRuntime::_resolve_virtual_ctr = 0;
-int SharedRuntime::_resolve_opt_virtual_ctr = 0;
-int SharedRuntime::_implicit_null_throws = 0;
-int SharedRuntime::_implicit_div0_throws = 0;
+uint SharedRuntime::_ic_miss_ctr = 0;
+uint SharedRuntime::_wrong_method_ctr = 0;
+uint SharedRuntime::_resolve_static_ctr = 0;
+uint SharedRuntime::_resolve_virtual_ctr = 0;
+uint SharedRuntime::_resolve_opt_virtual_ctr = 0;
+uint SharedRuntime::_implicit_null_throws = 0;
+uint SharedRuntime::_implicit_div0_throws = 0;
 
 int64_t SharedRuntime::_nof_normal_calls = 0;
 int64_t SharedRuntime::_nof_inlined_calls = 0;
@@ -153,28 +153,28 @@ int64_t SharedRuntime::_nof_inlined_static_calls = 0;
 int64_t SharedRuntime::_nof_interface_calls = 0;
 int64_t SharedRuntime::_nof_inlined_interface_calls = 0;
 
-int SharedRuntime::_new_instance_ctr=0;
-int SharedRuntime::_new_array_ctr=0;
-int SharedRuntime::_multi2_ctr=0;
-int SharedRuntime::_multi3_ctr=0;
-int SharedRuntime::_multi4_ctr=0;
-int SharedRuntime::_multi5_ctr=0;
-int SharedRuntime::_mon_enter_stub_ctr=0;
-int SharedRuntime::_mon_exit_stub_ctr=0;
-int SharedRuntime::_mon_enter_ctr=0;
-int SharedRuntime::_mon_exit_ctr=0;
-int SharedRuntime::_partial_subtype_ctr=0;
-int SharedRuntime::_jbyte_array_copy_ctr=0;
-int SharedRuntime::_jshort_array_copy_ctr=0;
-int SharedRuntime::_jint_array_copy_ctr=0;
-int SharedRuntime::_jlong_array_copy_ctr=0;
-int SharedRuntime::_oop_array_copy_ctr=0;
-int SharedRuntime::_checkcast_array_copy_ctr=0;
-int SharedRuntime::_unsafe_array_copy_ctr=0;
-int SharedRuntime::_generic_array_copy_ctr=0;
-int SharedRuntime::_slow_array_copy_ctr=0;
-int SharedRuntime::_find_handler_ctr=0;
-int SharedRuntime::_rethrow_ctr=0;
+uint SharedRuntime::_new_instance_ctr=0;
+uint SharedRuntime::_new_array_ctr=0;
+uint SharedRuntime::_multi2_ctr=0;
+uint SharedRuntime::_multi3_ctr=0;
+uint SharedRuntime::_multi4_ctr=0;
+uint SharedRuntime::_multi5_ctr=0;
+uint SharedRuntime::_mon_enter_stub_ctr=0;
+uint SharedRuntime::_mon_exit_stub_ctr=0;
+uint SharedRuntime::_mon_enter_ctr=0;
+uint SharedRuntime::_mon_exit_ctr=0;
+uint SharedRuntime::_partial_subtype_ctr=0;
+uint SharedRuntime::_jbyte_array_copy_ctr=0;
+uint SharedRuntime::_jshort_array_copy_ctr=0;
+uint SharedRuntime::_jint_array_copy_ctr=0;
+uint SharedRuntime::_jlong_array_copy_ctr=0;
+uint SharedRuntime::_oop_array_copy_ctr=0;
+uint SharedRuntime::_checkcast_array_copy_ctr=0;
+uint SharedRuntime::_unsafe_array_copy_ctr=0;
+uint SharedRuntime::_generic_array_copy_ctr=0;
+uint SharedRuntime::_slow_array_copy_ctr=0;
+uint SharedRuntime::_find_handler_ctr=0;
+uint SharedRuntime::_rethrow_ctr=0;
 
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
@@ -479,6 +479,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::cont_returnBarrierExc();
   }
 
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   CompiledMethod* nm = (blob != nullptr) ? blob->as_compiled_method_or_null() : nullptr;
@@ -628,32 +631,30 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_object_alloc(oopDesc* o, JavaThread* current))
-  Handle h = Handle(current, o);
-  if (JvmtiExport::should_post_vm_object_alloc()) {
-    JvmtiExport::post_vm_object_alloc(current, o);
-  }
-  current->set_vm_result(h());
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_FALSE, "must be VTMS transition finish");
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
+  JNIHandles::destroy_local(vthread);
 JRT_END
 
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_TRUE, "must be VTMS transition start");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
-  }
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
+  JNIHandles::destroy_local(vthread);
 JRT_END
 
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
+JRT_END
 
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
-  }
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
 JRT_END
 #endif // INCLUDE_JVMTI
 
@@ -684,7 +685,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
 #if INCLUDE_JVMCI
   if (cm->is_compiled_by_jvmci()) {
     // lookup exception handler for this pc
-    int catch_pco = ret_pc - cm->code_begin();
+    int catch_pco = pointer_delta_as_int(ret_pc, cm->code_begin());
     ExceptionHandlerTable table(cm);
     HandlerTableEntry *t = table.entry_for(catch_pco, -1, 0);
     if (t != nullptr) {
@@ -743,7 +744,7 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
   }
 
   // found handling method => lookup exception handler
-  int catch_pco = ret_pc - nm->code_begin();
+  int catch_pco = pointer_delta_as_int(ret_pc, nm->code_begin());
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
@@ -1224,7 +1225,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     } else {
       // Klass is already loaded.
       constantPoolHandle constants(current, caller->constants());
-      rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
+      rk = constants->klass_ref_at(bytecode_index, bc, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;
     assert(receiver_klass->is_subtype_of(static_receiver_klass),
@@ -1418,9 +1419,9 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
-  int *addr = (is_optimized) ? (&_resolve_opt_virtual_ctr) :
-                (is_virtual) ? (&_resolve_virtual_ctr) :
-                               (&_resolve_static_ctr);
+  uint *addr = (is_optimized) ? (&_resolve_opt_virtual_ctr) :
+                 (is_virtual) ? (&_resolve_virtual_ctr) :
+                                (&_resolve_static_ctr);
   Atomic::inc(addr);
 
   if (TraceCallFixup) {
@@ -1994,7 +1995,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), "register allocation mismatch: a=" INTX_FORMAT ", b=" INTX_FORMAT, a->value(), b->value());
+    assert(a->value() == b->value(), "register allocation mismatch: a= %d, b= %d", a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }
@@ -2060,6 +2061,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
     return;
   }
 
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
+
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
   if (cb == nullptr || !cb->is_compiled() || callee->is_unloading()) {
     return;
@@ -2071,9 +2075,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
 
   // Get the return PC for the passed caller PC.
   address return_pc = caller_pc + frame::pc_return_offset;
-
-  assert(!JavaThread::current()->is_interp_only_mode() || !nm->method()->is_continuation_enter_intrinsic()
-    || ContinuationEntry::is_interpreted_call(return_pc), "interp_only_mode but not in enterSpecial interpreted entry");
 
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
@@ -2112,8 +2113,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         return;
       }
       if (nm->method()->is_continuation_enter_intrinsic()) {
-        assert(ContinuationEntry::is_interpreted_call(call->instruction_address()) == JavaThread::current()->is_interp_only_mode(),
-          "mode: %d", JavaThread::current()->is_interp_only_mode());
         if (ContinuationEntry::is_interpreted_call(call->instruction_address())) {
           return;
         }
@@ -2274,35 +2273,35 @@ void SharedRuntime::print_statistics() {
   SharedRuntime::print_ic_miss_histogram();
 
   // Dump the JRT_ENTRY counters
-  if (_new_instance_ctr) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);
-  if (_new_array_ctr) tty->print_cr("%5d new array requires GC", _new_array_ctr);
-  if (_multi2_ctr) tty->print_cr("%5d multianewarray 2 dim", _multi2_ctr);
-  if (_multi3_ctr) tty->print_cr("%5d multianewarray 3 dim", _multi3_ctr);
-  if (_multi4_ctr) tty->print_cr("%5d multianewarray 4 dim", _multi4_ctr);
-  if (_multi5_ctr) tty->print_cr("%5d multianewarray 5 dim", _multi5_ctr);
+  if (_new_instance_ctr) tty->print_cr("%5u new instance requires GC", _new_instance_ctr);
+  if (_new_array_ctr) tty->print_cr("%5u new array requires GC", _new_array_ctr);
+  if (_multi2_ctr) tty->print_cr("%5u multianewarray 2 dim", _multi2_ctr);
+  if (_multi3_ctr) tty->print_cr("%5u multianewarray 3 dim", _multi3_ctr);
+  if (_multi4_ctr) tty->print_cr("%5u multianewarray 4 dim", _multi4_ctr);
+  if (_multi5_ctr) tty->print_cr("%5u multianewarray 5 dim", _multi5_ctr);
 
-  tty->print_cr("%5d inline cache miss in compiled", _ic_miss_ctr);
-  tty->print_cr("%5d wrong method", _wrong_method_ctr);
-  tty->print_cr("%5d unresolved static call site", _resolve_static_ctr);
-  tty->print_cr("%5d unresolved virtual call site", _resolve_virtual_ctr);
-  tty->print_cr("%5d unresolved opt virtual call site", _resolve_opt_virtual_ctr);
+  tty->print_cr("%5u inline cache miss in compiled", _ic_miss_ctr);
+  tty->print_cr("%5u wrong method", _wrong_method_ctr);
+  tty->print_cr("%5u unresolved static call site", _resolve_static_ctr);
+  tty->print_cr("%5u unresolved virtual call site", _resolve_virtual_ctr);
+  tty->print_cr("%5u unresolved opt virtual call site", _resolve_opt_virtual_ctr);
 
-  if (_mon_enter_stub_ctr) tty->print_cr("%5d monitor enter stub", _mon_enter_stub_ctr);
-  if (_mon_exit_stub_ctr) tty->print_cr("%5d monitor exit stub", _mon_exit_stub_ctr);
-  if (_mon_enter_ctr) tty->print_cr("%5d monitor enter slow", _mon_enter_ctr);
-  if (_mon_exit_ctr) tty->print_cr("%5d monitor exit slow", _mon_exit_ctr);
-  if (_partial_subtype_ctr) tty->print_cr("%5d slow partial subtype", _partial_subtype_ctr);
-  if (_jbyte_array_copy_ctr) tty->print_cr("%5d byte array copies", _jbyte_array_copy_ctr);
-  if (_jshort_array_copy_ctr) tty->print_cr("%5d short array copies", _jshort_array_copy_ctr);
-  if (_jint_array_copy_ctr) tty->print_cr("%5d int array copies", _jint_array_copy_ctr);
-  if (_jlong_array_copy_ctr) tty->print_cr("%5d long array copies", _jlong_array_copy_ctr);
-  if (_oop_array_copy_ctr) tty->print_cr("%5d oop array copies", _oop_array_copy_ctr);
-  if (_checkcast_array_copy_ctr) tty->print_cr("%5d checkcast array copies", _checkcast_array_copy_ctr);
-  if (_unsafe_array_copy_ctr) tty->print_cr("%5d unsafe array copies", _unsafe_array_copy_ctr);
-  if (_generic_array_copy_ctr) tty->print_cr("%5d generic array copies", _generic_array_copy_ctr);
-  if (_slow_array_copy_ctr) tty->print_cr("%5d slow array copies", _slow_array_copy_ctr);
-  if (_find_handler_ctr) tty->print_cr("%5d find exception handler", _find_handler_ctr);
-  if (_rethrow_ctr) tty->print_cr("%5d rethrow handler", _rethrow_ctr);
+  if (_mon_enter_stub_ctr) tty->print_cr("%5u monitor enter stub", _mon_enter_stub_ctr);
+  if (_mon_exit_stub_ctr) tty->print_cr("%5u monitor exit stub", _mon_exit_stub_ctr);
+  if (_mon_enter_ctr) tty->print_cr("%5u monitor enter slow", _mon_enter_ctr);
+  if (_mon_exit_ctr) tty->print_cr("%5u monitor exit slow", _mon_exit_ctr);
+  if (_partial_subtype_ctr) tty->print_cr("%5u slow partial subtype", _partial_subtype_ctr);
+  if (_jbyte_array_copy_ctr) tty->print_cr("%5u byte array copies", _jbyte_array_copy_ctr);
+  if (_jshort_array_copy_ctr) tty->print_cr("%5u short array copies", _jshort_array_copy_ctr);
+  if (_jint_array_copy_ctr) tty->print_cr("%5u int array copies", _jint_array_copy_ctr);
+  if (_jlong_array_copy_ctr) tty->print_cr("%5u long array copies", _jlong_array_copy_ctr);
+  if (_oop_array_copy_ctr) tty->print_cr("%5u oop array copies", _oop_array_copy_ctr);
+  if (_checkcast_array_copy_ctr) tty->print_cr("%5u checkcast array copies", _checkcast_array_copy_ctr);
+  if (_unsafe_array_copy_ctr) tty->print_cr("%5u unsafe array copies", _unsafe_array_copy_ctr);
+  if (_generic_array_copy_ctr) tty->print_cr("%5u generic array copies", _generic_array_copy_ctr);
+  if (_slow_array_copy_ctr) tty->print_cr("%5u slow array copies", _slow_array_copy_ctr);
+  if (_find_handler_ctr) tty->print_cr("%5u find exception handler", _find_handler_ctr);
+  if (_rethrow_ctr) tty->print_cr("%5u rethrow handler", _rethrow_ctr);
 
   AdapterHandlerLibrary::print_statistics();
 
@@ -2310,7 +2309,7 @@ void SharedRuntime::print_statistics() {
 }
 
 inline double percent(int64_t x, int64_t y) {
-  return 100.0 * x / MAX2(y, (int64_t)1);
+  return 100.0 * (double)x / (double)MAX2(y, (int64_t)1);
 }
 
 class MethodArityHistogram {
@@ -2346,13 +2345,13 @@ class MethodArityHistogram {
     const int N = MIN2(9, n);
     double sum = 0;
     double weighted_sum = 0;
-    for (int i = 0; i <= n; i++) { sum += histo[i]; weighted_sum += i*histo[i]; }
-    if (sum >= 1.0) { // prevent divide by zero or divide overflow
+    for (int i = 0; i <= n; i++) { sum += (double)histo[i]; weighted_sum += (double)(i*histo[i]); }
+    if (sum >= 1) { // prevent divide by zero or divide overflow
       double rest = sum;
       double percent = sum / 100;
       for (int i = 0; i <= N; i++) {
-        rest -= histo[i];
-        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], histo[i] / percent);
+        rest -= (double)histo[i];
+        tty->print_cr("%4d: " UINT64_FORMAT_W(12) " (%5.1f%%)", i, histo[i], (double)histo[i] / percent);
       }
       tty->print_cr("rest: " INT64_FORMAT_W(12) " (%5.1f%%)", (int64_t)rest, rest / percent);
       tty->print_cr("(avg. %s = %3.1f, max = %d)", name, weighted_sum / sum, n);
@@ -2623,17 +2622,18 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 };
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
-                  AdapterFingerPrint::equals> _adapter_handler_table;
+                  AdapterFingerPrint::equals>;
+static AdapterHandlerTable* _adapter_handler_table;
 
 // Find a entry with the same fingerprint if it exists
 static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
   NOT_PRODUCT(_lookups++);
   assert_lock_strong(AdapterHandlerLibrary_lock);
   AdapterFingerPrint fp(total_args_passed, sig_bt);
-  AdapterHandlerEntry** entry = _adapter_handler_table.get(&fp);
+  AdapterHandlerEntry** entry = _adapter_handler_table->get(&fp);
   if (entry != nullptr) {
 #ifndef PRODUCT
     if (fp.is_compact()) _compact++;
@@ -2649,10 +2649,10 @@ static void print_table_statistics() {
   auto size = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
     return sizeof(*key) + sizeof(*a);
   };
-  TableStatistics ts = _adapter_handler_table.statistics_calculate(size);
+  TableStatistics ts = _adapter_handler_table->statistics_calculate(size);
   ts.print(tty, "AdapterHandlerTable");
   tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
-                _adapter_handler_table.table_size(), _adapter_handler_table.number_of_entries());
+                _adapter_handler_table->table_size(), _adapter_handler_table->number_of_entries());
   tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d compact %d",
                 _lookups, _equals, _hits, _compact);
 }
@@ -2700,6 +2700,7 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_int_arg_blob = nullptr;
   AdapterBlob* obj_obj_arg_blob = nullptr;
   {
+    _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Create a special handler for abstract methods.  Abstract methods
@@ -2941,7 +2942,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
     tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
-                  _adapter_handler_table.number_of_entries(), fingerprint->as_basic_args_string(),
+                  _adapter_handler_table->number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(entry->get_c2i_entry()));
     if (Verbose || PrintStubCode) {
@@ -2959,7 +2960,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
   if (contains_all_checks || !VerifyAdapterCalls) {
     assert_lock_strong(AdapterHandlerLibrary_lock);
-    _adapter_handler_table.put(fingerprint, entry);
+    _adapter_handler_table->put(fingerprint, entry);
   }
   return entry;
 }
@@ -3292,7 +3293,7 @@ bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
     return (found = (b == CodeCache::find_blob(a->get_i2c_entry())));
   };
   assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-  _adapter_handler_table.iterate(findblob);
+  _adapter_handler_table->iterate(findblob);
   return found;
 }
 
@@ -3309,7 +3310,7 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
     }
   };
   assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-  _adapter_handler_table.iterate(findblob);
+  _adapter_handler_table->iterate(findblob);
   assert(found, "Should have found handler");
 }
 

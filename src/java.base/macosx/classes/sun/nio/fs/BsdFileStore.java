@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.io.IOException;
 import java.util.Arrays;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Bsd implementation of FileStore
@@ -93,11 +92,8 @@ class BsdFileStore
 
             // typical macOS file system types that are known to support xattr
             String fstype = entry().fstype();
-            if ("hfs".equals(fstype))
+            if ("hfs".equals(fstype) || "apfs".equals(fstype)) {
                 return true;
-            if ("apfs".equals(fstype)) {
-                // fgetxattr broken on APFS prior to 10.14
-                return isOsVersionGte(10, 14);
             }
 
             // probe file system capabilities
@@ -112,18 +108,5 @@ class BsdFileStore
         if (name.equals("user"))
             return supportsFileAttributeView(UserDefinedFileAttributeView.class);
         return super.supportsFileAttributeView(name);
-    }
-
-    /**
-     * Returns true if the OS major/minor version is greater than, or equal, to the
-     * given major/minor version.
-     */
-    private static boolean isOsVersionGte(int requiredMajor, int requiredMinor) {
-        String osVersion = GetPropertyAction.privilegedGetProperty("os.version");
-        String[] vers = Util.split(osVersion, '.');
-        int majorVersion = Integer.parseInt(vers[0]);
-        int minorVersion = Integer.parseInt(vers[1]);
-        return (majorVersion > requiredMajor)
-                || (majorVersion == requiredMajor && minorVersion >= requiredMinor);
     }
 }

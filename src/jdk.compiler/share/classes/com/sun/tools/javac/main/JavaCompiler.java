@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,10 @@ import com.sun.tools.javac.util.Log.WriterKind;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
@@ -96,6 +99,7 @@ import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static javax.tools.StandardLocation.ANNOTATION_PROCESSOR_PATH;
 
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -231,6 +235,10 @@ public class JavaCompiler {
     /** The log to be used for error reporting.
      */
     public Log log;
+
+    /** Whether or not the options lint category was initially disabled
+     */
+    boolean optionsCheckingInitiallyDisabled;
 
     /** Factory for creating diagnostic objects
      */
@@ -424,6 +432,12 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
+        // See if lint options checking was explicitly disabled by the
+        // user; this is distinct from the options check being
+        // enabled/disabled.
+        optionsCheckingInitiallyDisabled =
+            options.isSet(Option.XLINT_CUSTOM, "-options") ||
+            options.isSet(Option.XLINT_CUSTOM, "none");
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
@@ -971,6 +985,13 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
+
+            // In case an Abort was thrown before processAnnotations could be called,
+            // we could have deferred diagnostics that haven't been reported.
+            if (deferredDiagnosticHandler != null) {
+                deferredDiagnosticHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(deferredDiagnosticHandler);
+            }
         } finally {
             if (verbose) {
                 elapsed_msec = elapsed(start_msec);
@@ -1132,6 +1153,11 @@ public class JavaCompiler {
             processAnnotations = procEnvImpl.atLeastOneProcessor();
 
             if (processAnnotations) {
+                if (!explicitAnnotationProcessingRequested() &&
+                    !optionsCheckingInitiallyDisabled) {
+                    log.note(Notes.ImplicitAnnotationProcessing);
+                }
+
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
@@ -1279,16 +1305,20 @@ public class JavaCompiler {
     boolean explicitAnnotationProcessingRequested() {
         return
             explicitAnnotationProcessingRequested ||
-            explicitAnnotationProcessingRequested(options);
+            explicitAnnotationProcessingRequested(options, fileManager);
     }
 
-    static boolean explicitAnnotationProcessingRequested(Options options) {
+    static boolean explicitAnnotationProcessingRequested(Options options, JavaFileManager fileManager) {
         return
             options.isSet(PROCESSOR) ||
             options.isSet(PROCESSOR_PATH) ||
             options.isSet(PROCESSOR_MODULE_PATH) ||
             options.isSet(PROC, "only") ||
-            options.isSet(XPRINT);
+            options.isSet(PROC, "full") ||
+            options.isSet(A) ||
+            options.isSet(XPRINT) ||
+            fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH);
+        // Skipping -XprintRounds and -XprintProcessorInfo
     }
 
     public void setDeferredDiagnosticHandler(Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
@@ -1535,11 +1565,6 @@ public class JavaCompiler {
                 super.visitRecordPattern(that);
             }
             @Override
-            public void visitParenthesizedPattern(JCTree.JCParenthesizedPattern tree) {
-                hasPatterns = true;
-                super.visitParenthesizedPattern(tree);
-            }
-            @Override
             public void visitSwitch(JCSwitch tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitch(tree);
@@ -1593,6 +1618,12 @@ public class JavaCompiler {
 
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
+
+            if (shouldStop(CompileState.TRANSLITERALS))
+                return;
+
+            env.tree = TransLiterals.instance(context).translateTopLevelClass(env, env.tree, localMake);
+            compileStates.put(env, CompileState.TRANSLITERALS);
 
             if (shouldStop(CompileState.TRANSPATTERNS))
                 return;

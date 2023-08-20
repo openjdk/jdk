@@ -174,6 +174,9 @@ JVM_IsPreviewEnabled(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsContinuationsSupported(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsForeignLinkerSupported(void);
+
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
@@ -273,7 +276,7 @@ JNIEXPORT void JNICALL
 JVM_Yield(JNIEnv *env, jclass threadClass);
 
 JNIEXPORT void JNICALL
-JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis);
+JVM_SleepNanos(JNIEnv *env, jclass threadClass, jlong nanos);
 
 JNIEXPORT jobject JNICALL
 JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
@@ -1141,10 +1144,16 @@ JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
  * Virtual thread support.
  */
 JNIEXPORT void JNICALL
-JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide, jboolean first_mount);
+JVM_VirtualThreadStart(JNIEnv* env, jobject vthread);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide, jboolean last_unmount);
+JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hide);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
@@ -1154,6 +1163,12 @@ JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
  */
 JNIEXPORT jint JNICALL
 JVM_GetClassFileVersion(JNIEnv *env, jclass current);
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JNIEXPORT jboolean JNICALL
+JVM_PrintWarningAtDynamicAgentLoad(void);
 
 /*
  * This structure is used by the launcher to get the default thread

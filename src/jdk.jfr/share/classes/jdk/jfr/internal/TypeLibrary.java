@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,12 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
 
 public final class TypeLibrary {
     private static boolean implicitFieldTypes;
     private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
-
+    private static volatile boolean initialized;
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
@@ -98,6 +99,11 @@ public final class TypeLibrary {
     }
 
     public static synchronized void initialize() {
+        // The usual case is that TypeLibrary is initialized only once by the MetadataRepository singleton.
+        // However, this check is needed to ensure some tools (ie. GraalVM Native Image) do not perform the initialization routine twice.
+        if (initialized) {
+            return;
+        }
         List<Type> jvmTypes;
         try {
             jvmTypes = MetadataLoader.createTypes();
@@ -106,6 +112,7 @@ public final class TypeLibrary {
             throw new Error("JFR: Could not read metadata");
         }
         visitReachable(jvmTypes, t -> !types.containsKey(t.getId()), t -> types.put(t.getId(), t));
+        initialized = true;
         if (Logger.shouldLog(LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO)) {
             Stream<Type> s = types.values().stream().sorted((x, y) -> Long.compare(x.getId(), y.getId()));
             s.forEach(t -> t.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO));

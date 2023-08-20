@@ -56,7 +56,7 @@ private:
   ciType* compute_type();
   ciType* compute_type_impl();
 
-  ciField(ciInstanceKlass* klass, int index);
+  ciField(ciInstanceKlass* klass, int index, Bytecodes::Code bc);
   ciField(fieldDescriptor* fd);
 
   // shared constructor code

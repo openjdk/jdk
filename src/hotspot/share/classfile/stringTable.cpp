@@ -53,6 +53,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/timerTrace.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
@@ -116,9 +117,11 @@ static size_t _current_size = 0;
 static volatile size_t _items_count = 0;
 
 volatile bool _alt_hash = false;
+
+static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
-uintx hash_string(const jchar* s, int len, bool useAlt) {
+unsigned int hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
     AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
@@ -173,11 +176,9 @@ class StringTableLookupJchar : StackObj {
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
       return false;
     }
     bool equals = java_lang_String::equals(val_oop, _str, _len);
@@ -187,6 +188,10 @@ class StringTableLookupJchar : StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
      _found = Handle(_thread, value->resolve());
     return true;
+  }
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == nullptr;
   }
 };
 
@@ -205,11 +210,9 @@ class StringTableLookupOop : public StackObj {
     return _hash;
   }
 
-  bool equals(WeakHandle* value, bool* is_dead) {
+  bool equals(WeakHandle* value) {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
-      // dead oop, mark this hash dead for cleaning
-      *is_dead = true;
       return false;
     }
     bool equals = java_lang_String::equals(_find(), val_oop);
@@ -219,6 +222,11 @@ class StringTableLookupOop : public StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
     _found = Handle(_thread, value->resolve());
     return true;
+  }
+
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == nullptr;
   }
 };
 
@@ -238,12 +246,12 @@ void StringTable::create_table() {
 #endif
 }
 
-size_t StringTable::item_added() {
-  return Atomic::add(&_items_count, (size_t)1);
+void StringTable::item_added() {
+  Atomic::inc(&_items_count);
 }
 
 void StringTable::item_removed() {
-  Atomic::add(&_items_count, (size_t)-1);
+  Atomic::dec(&_items_count);
 }
 
 double StringTable::get_load_factor() {
@@ -454,6 +462,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
 
   StringTableDeleteCheck stdc;
   StringTableDoDelete stdd;
+  NativeHeapTrimmer::SuspendMark sm("stringtable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, stringtable, perf));
     while(bdt.do_task(jt, stdc, stdd)) {
@@ -529,20 +538,46 @@ bool StringTable::do_rehash() {
   return true;
 }
 
+bool StringTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
+bool StringTable::rehash_table_expects_safepoint_rehashing() {
+  // No rehashing required
+  if (!needs_rehashing()) {
+    return false;
+  }
+
+  // Grow instead of rehash
+  if (should_grow()) {
+    return false;
+  }
+
+  // Already rehashed
+  if (_rehashed) {
+    return false;
+  }
+
+  // Resizing in progress
+  if (!_local_table->is_safepoint_safe()) {
+    return false;
+  }
+
+  return true;
+}
+
 void StringTable::rehash_table() {
-  static bool rehashed = false;
   log_debug(stringtable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
-  if (get_load_factor() > PREF_AVG_LIST_LEN &&
-      !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     log_debug(stringtable)("Choosing growing over rehashing.");
     trigger_concurrent_work();
     _needs_rehashing = false;
     return;
   }
   // Already rehashed.
-  if (rehashed) {
+  if (_rehashed) {
     log_warning(stringtable)("Rehashing already done, still long lists.");
     trigger_concurrent_work();
     _needs_rehashing = false;
@@ -552,7 +587,7 @@ void StringTable::rehash_table() {
   _alt_hash_seed = AltHashing::compute_seed();
   {
     if (do_rehash()) {
-      rehashed = true;
+      _rehashed = true;
     } else {
       log_info(stringtable)("Resizes in progress rehashing skipped.");
     }
@@ -631,12 +666,11 @@ class VerifyCompStrings : StackObj {
     return java_lang_String::equals(a, b);
   }
 
-  ResizeableResourceHashtable<oop, bool,
-                              AnyObj::C_HEAP, mtInternal,
+  ResizeableResourceHashtable<oop, bool, AnyObj::C_HEAP, mtInternal,
                               string_hash, string_equals> _table;
  public:
   size_t _errors;
-  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1), _errors(0) {}
+  VerifyCompStrings() : _table(unsigned(_items_count / 8) + 1, 0 /* do not resize */), _errors(0) {}
   bool operator()(WeakHandle* val) {
     oop s = val->resolve();
     if (s == nullptr) {
@@ -773,7 +807,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 void StringTable::allocate_shared_strings_array(TRAPS) {
   assert(DumpSharedSpaces, "must be");
   if (_items_count > (size_t)max_jint) {
-    fatal("Too many strings to be archived: " SIZE_FORMAT, _items_count);
+    fatal("Too many strings to be archived: %zu", _items_count);
   }
 
   int total = (int)_items_count;
@@ -796,8 +830,8 @@ void StringTable::allocate_shared_strings_array(TRAPS) {
       // This can only happen if you have an extremely large number of classes that
       // refer to more than 16384 * 16384 = 26M interned strings! Not a practical concern
       // but bail out for safety.
-      log_error(cds)("Too many strings to be archived: " SIZE_FORMAT, _items_count);
-      os::_exit(1);
+      log_error(cds)("Too many strings to be archived: %zu", _items_count);
+      MetaspaceShared::unrecoverable_writing_error();
     }
 
     objArrayOop primary = oopFactory::new_objArray(vmClasses::Object_klass(), primary_array_length, CHECK);
@@ -859,7 +893,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
   verify_secondary_array_index_bits();
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
 
   int index = 0;
   auto copy_into_array = [&] (oop string, bool value_ignored) {
@@ -905,6 +939,6 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   }
 
   soc->do_bool(&_is_two_dimensional_shared_strings_array);
-  soc->do_u4((u4*)(&_shared_strings_array_root_index));
+  soc->do_int(&_shared_strings_array_root_index);
 }
 #endif //INCLUDE_CDS_JAVA_HEAP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,10 +129,14 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         int size = reader.readU2(pos);
         var filled = new Object[size];
         int p = pos + 2;
+        int cfLen = reader.classfileLength();
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
             p += 6;
+            if (len < 0 || len > cfLen - p) {
+                throw new IllegalArgumentException("attribute " + name.stringValue() + " too big to handle");
+            }
 
             var mapper = Attributes.standardAttribute(name);
             if (mapper == null) {
@@ -140,7 +144,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             }
             if (mapper != null) {
                 filled[i] = mapper.readAttribute(enclosing, reader, p);
-            } else if (((ClassReaderImpl)reader).options().processUnknownAttributes) {
+            } else if (((ClassReaderImpl)reader).context().unknownAttributesOption() == Classfile.UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES) {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public String name() {
@@ -360,7 +364,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 int p = payloadStart + 1;
                 int pEnd = p + (cnt * 4);
                 for (int i = 0; p < pEnd; p += 4, i++) {
-                    Utf8Entry name = classReader.readUtf8Entry(p);
+                    Utf8Entry name = classReader.readUtf8EntryOrNull(p);
                     int accessFlags = classReader.readU2(p + 2);
                     elements[i] = MethodParameterInfo.of(Optional.ofNullable(name), accessFlags);
                 }

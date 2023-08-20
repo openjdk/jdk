@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 //////////////////////////////////////////////////////////////////////
 
 G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :
-  _reserved(heap), _offset_array(NULL) {
+  _reserved(heap), _offset_array(nullptr) {
 
   MemRegion bot_reserved = storage->reserved();
 
@@ -186,7 +186,7 @@ void G1BlockOffsetTablePart::update_for_block_work(HeapWord* blk_start,
   HeapWord* const cur_card_boundary = align_up_by_card_size(blk_start);
   size_t const index =  _bot->index_for_raw(cur_card_boundary);
 
-  assert(blk_start != NULL && blk_end > blk_start,
+  assert(blk_start != nullptr && blk_end > blk_start,
          "phantom block");
   assert(blk_end > cur_card_boundary, "should be past cur_card_boundary");
   assert(blk_start <= cur_card_boundary, "blk_start should be at or before cur_card_boundary");

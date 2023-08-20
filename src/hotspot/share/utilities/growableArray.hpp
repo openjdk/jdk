@@ -142,17 +142,17 @@ public:
   }
 
   E& at(int i) {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return _data[i];
   }
 
   E const& at(int i) const {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return _data[i];
   }
 
   E* adr_at(int i) const {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return &_data[i];
   }
 
@@ -184,7 +184,7 @@ public:
   }
 
   void at_put(int i, const E& elem) {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     _data[i] = elem;
   }
 
@@ -245,7 +245,7 @@ public:
   }
 
   void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index");
+    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
     for (int j = index + 1; j < _len; j++) {
       _data[j-1] = _data[j];
     }
@@ -259,8 +259,8 @@ public:
 
   // Remove all elements in the range [start - end). The order is preserved.
   void remove_range(int start, int end) {
-    assert(0 <= start, "illegal index");
-    assert(start < end && end <= _len, "erase called with invalid range");
+    assert(0 <= start, "illegal start index %d", start);
+    assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
@@ -270,7 +270,7 @@ public:
 
   // The order is changed.
   void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index");
+    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
     if (index < --_len) {
       // Replace removed element with last one.
       _data[index] = _data[_len];
@@ -285,7 +285,7 @@ public:
     qsort(_data, length() / stride, sizeof(E) * stride, (_sort_Fn)f);
   }
 
-  template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) {
+  template <typename K, int compare(const K&, const E&)> int find_sorted(const K& key, bool& found) const {
     found = false;
     int min = 0;
     int max = length() - 1;
@@ -341,6 +341,14 @@ public:
 template<typename E>
 const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
+template <typename E>
+class GrowableArrayFromArray : public GrowableArrayView<E> {
+public:
+
+  GrowableArrayFromArray<E>(E* data, int len) :
+    GrowableArrayView<E>(data, len, len) {}
+};
+
 // GrowableArrayWithAllocator extends the "view" with
 // the capability to grow and deallocate the data array.
 //
@@ -395,7 +403,7 @@ public:
   void push(const E& elem) { append(elem); }
 
   E at_grow(int i, const E& fill = E()) {
-    assert(0 <= i, "negative index");
+    assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j <= i; j++)
@@ -406,7 +414,7 @@ public:
   }
 
   void at_put_grow(int i, const E& elem, const E& fill = E()) {
-    assert(0 <= i, "negative index");
+    assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++)
@@ -418,7 +426,7 @@ public:
 
   // inserts the given element before the element at index i
   void insert_before(const int idx, const E& elem) {
-    assert(0 <= idx && idx <= this->_len, "illegal index");
+    assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
     if (this->_len == this->_capacity) grow(this->_len);
     for (int j = this->_len - 1; j >= idx; j--) {
       this->_data[j + 1] = this->_data[j];
@@ -428,7 +436,7 @@ public:
   }
 
   void insert_before(const int idx, const GrowableArrayView<E>* array) {
-    assert(0 <= idx && idx <= this->_len, "illegal index");
+    assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
     int array_len = array->length();
     int new_len = this->_len + array_len;
     if (new_len >= this->_capacity) grow(new_len);
@@ -809,12 +817,15 @@ public:
     this->clear_and_deallocate();
   }
 
-  void* operator new(size_t size) throw() {
+  void* operator new(size_t size) {
     return AnyObj::operator new(size, F);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
     return AnyObj::operator new(size, nothrow_constant, F);
+  }
+  void operator delete(void *p) {
+    AnyObj::operator delete(p);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,11 +317,12 @@ class PhaseSender : public PhaseVisitor {
   }
 
   void visit_concurrent(GCPhase* phase) {
-    assert(phase->level() < 2, "There is only two levels for ConcurrentPhase");
+    assert(phase->level() < 3, "There are only three levels for ConcurrentPhase");
 
     switch (phase->level()) {
       case 0: send_phase<EventGCPhaseConcurrent>(phase); break;
       case 1: send_phase<EventGCPhaseConcurrentLevel1>(phase); break;
+      case 2: send_phase<EventGCPhaseConcurrentLevel2>(phase); break;
       default: /* Ignore sending this phase */ break;
     }
   }

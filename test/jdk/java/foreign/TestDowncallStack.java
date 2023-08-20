@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -55,7 +55,7 @@ public class TestDowncallStack extends TestDowncallBase {
         List<Consumer<Object>> checks = new ArrayList<>();
         MemorySegment addr = findNativeOrThrow("s" + fName);
         FunctionDescriptor descriptor = functionStack(ret, paramTypes, fields);
-        try (Arena arena = Arena.openShared()) {
+        try (Arena arena = Arena.ofShared()) {
             Object[] args = makeArgsStack(arena, descriptor, checks);
             boolean needsScope = descriptor.returnLayout().map(GroupLayout.class::isInstance).orElse(false);
             SegmentAllocator allocator = needsScope ?

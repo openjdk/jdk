@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ typedef GSocketConnectable* g_network_address_parse_uri_func();
 typedef const char* g_network_address_get_hostname_func();
 typedef unsigned short g_network_address_get_port_func();
 typedef void g_strfreev_func();
+typedef void g_clear_error_func();
 
 static g_proxy_resolver_get_default_func* g_proxy_resolver_get_default = NULL;
 static g_proxy_resolver_lookup_func* g_proxy_resolver_lookup = NULL;
@@ -104,6 +105,7 @@ static g_network_address_parse_uri_func* g_network_address_parse_uri = NULL;
 static g_network_address_get_hostname_func* g_network_address_get_hostname = NULL;
 static g_network_address_get_port_func* g_network_address_get_port = NULL;
 static g_strfreev_func* g_strfreev = NULL;
+static g_clear_error_func* g_clear_error = NULL;
 
 static void* gconf_client = NULL;
 static int use_gproxyResolver = 0;
@@ -317,13 +319,16 @@ static int initGProxyResolver() {
 
     g_strfreev = (g_strfreev_func*)dlsym(gio_handle, "g_strfreev");
 
+    g_clear_error = (g_clear_error_func*)dlsym(gio_handle, "g_clear_error");
+
     if (!my_g_type_init_func ||
         !g_proxy_resolver_get_default ||
         !g_proxy_resolver_lookup ||
         !g_network_address_parse_uri ||
         !g_network_address_get_hostname ||
         !g_network_address_get_port ||
-        !g_strfreev)
+        !g_strfreev ||
+        !g_clear_error)
     {
         dlclose(gio_handle);
         return 0;
@@ -412,7 +417,13 @@ static jobjectArray getProxyByGProxyResolver(JNIEnv *env, const char *cproto,
                                     proxy_array = NULL;
                                     break;
                                 }
+                            } else {
+                                proxy_array = NULL;
+                                break;
                             }
+                        } else {
+                            proxy_array = NULL;
+                            break;
                         }
                     } else {
                         /* direct connection - no proxy */
@@ -432,6 +443,9 @@ static jobjectArray getProxyByGProxyResolver(JNIEnv *env, const char *cproto,
             }
         }
         (*g_strfreev)(proxies);
+         // as per API doc, g_clear_error doesn't complain if error is NULL, so it's safe to
+         // call without null checks
+        (*g_clear_error)(&error);
     }
 
     return proxy_array;
