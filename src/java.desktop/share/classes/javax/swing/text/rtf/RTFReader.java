@@ -169,8 +169,6 @@ class RTFReader extends RTFParser
       defineCharacterSet("ansicpg", latin1TranslationTable);
   }
 
-/* TODO: per-font font encodings ( \fcharset control word ) ? */
-
     /**
      * Windows font charset
      */
@@ -212,6 +210,9 @@ class RTFReader extends RTFParser
         fcharsetToCP.put("fcharset" + THAI_CHARSET, "ms874");
         fcharsetToCP.put("fcharset" + EASTEUROPE_CHARSET, "windows-1250");
     }
+
+    // Defined for replacement character
+    private static final String REPLACEMENT_CHAR = "\uFFFD";
 
 /**
  * Creates a new RTFReader instance. Text will be sent to
@@ -815,6 +816,7 @@ class FonttblDestination implements Destination
             nextFontNumber = parameter;
             return true;
         }
+        // For fcharset control word
         if (keyword.equals("fcharset")) {
             String fcharset = keyword+parameter;
             String csName = fcharsetToCP.get(fcharset);
@@ -823,9 +825,11 @@ class FonttblDestination implements Destination
                 try {
                     cs = Charset.forName(csName);
                 } catch (IllegalArgumentException iae) {
+                    // Fallback, should not be called
                     cs = ISO_8859_1;
                 }
             } else {
+                // Fallback, fcharset control word number is not defined
                 cs = ISO_8859_1;
             }
             fcharsetTable.put(nextFontNumber, cs);
@@ -1286,17 +1290,21 @@ abstract class AttributeTrackingDestination implements Destination
         if (keyword.equals("f")) {
             parserState.put(keyword, Integer.valueOf(parameter));
 
+            // Check lead byte is stored or not
             if (decoderBB.position() == 1) {
-                handleText("\uFFFD");
+                handleText(REPLACEMENT_CHAR);
             }
+            // Reset decoder byte buffer
+            decoderBB.clear();
+            decoderBB.limit(1);
+            // Check fcharset is used or not 
             Charset cs = fcharsetTable.get(parameter);
             if (cs != null) {
                 decoder = cs.newDecoder();
                 decoder.onMalformedInput(CodingErrorAction.REPLACE)
                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
-                decoderBB.clear();
-                decoderBB.limit(1);
             } else {
+                // fcharset is not used, use translationTable
                 decoder = null;
             }
 
@@ -1694,8 +1702,9 @@ abstract class TextHandlingDestination
 
         if (keyword.equals("par")) {
 //          warnings.println("Ending paragraph.");
+            // Check lead byte is stored or not
             if (decoderBB.position() == 1) {
-                handleText("\uFFFD");
+                handleText(REPLACEMENT_CHAR);
                 decoderBB.clear();
                 decoderBB.limit(1);
             }
