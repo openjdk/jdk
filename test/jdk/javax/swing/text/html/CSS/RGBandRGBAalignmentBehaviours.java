@@ -42,7 +42,7 @@ public class RGBandRGBAalignmentBehaviours {
         boolean passed = true;
         StyleSheet styleSheet = new StyleSheet();
 
-        for(String[] rgb : listRGBetRGBA) {
+        for(String[] rgb : listRGBandRGBA) {
             Object color = styleSheet.stringToColor(rgb[0]);
             String cols = color instanceof Color col ? "\n    " + rgb[0] + " hex =" + Integer.toHexString(col.getRGB()) : null;
 
@@ -57,7 +57,7 @@ public class RGBandRGBAalignmentBehaviours {
         }
     }
 
-    static String[][] listRGBetRGBA = {
+    static String[][] listRGBandRGBA = {
         // RGB subset
         {"rgb(12 24 200)", "ff0c18c8", "rgba(12 24 200 1.0)"},
         {"rgb(12 24 200%)", "ff0c18ff", "rgba(12 24 255 1.0)"},
@@ -125,6 +125,6 @@ public class RGBandRGBAalignmentBehaviours {
         {"rgba(1.2e1 0.24e2 2e2)", "ff0c18c8", "rgba(12 24 200 1.0)"},
         {"rgba(1200e-2 2400e-2 200000e-3)", "ff0c18c8", "rgba(12 24 200 1.0)"},
         {"rgba(1200E-2 2400E-2 200000E-3)", "ff0c18c8", "rgba(12 24 200 1.0)"},
-        {"rgba(120560.64646464632469823160676064670646798706406464098706464097970906464067e-4 2400E-2 200000e-3)", "ff0c18c8", "rgba(12 24 200 1.0)"},
+        {"rgba(120560.64646464632469823160676064670646798706406464098706464097970906464067e-4 2400E-2 200000e-3)", "ff0c18c8", "rgba(12 24 200 1.0)"}
     };
 }
