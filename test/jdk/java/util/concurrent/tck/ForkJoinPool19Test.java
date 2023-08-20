@@ -508,6 +508,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
      * Implicitly closing a new pool using try-with-resources terminates it
      */
     public void testClose() {
+        Thread.interrupted();
         ForkJoinTask f = new FibAction(8);
         ForkJoinPool pool = null;
         try (ForkJoinPool p = new ForkJoinPool()) {
