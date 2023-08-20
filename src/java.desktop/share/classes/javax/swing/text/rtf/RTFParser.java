@@ -405,7 +405,7 @@ abstract class RTFParser extends AbstractFilter
                 return 0; // Skip write operation if return value is 0
             }
         } else {
-            // Fallback, should not be called 
+            // Fallback, should not be called
             decoder.reset();
             decoderBB.clear();
             decoderBB.limit(1);

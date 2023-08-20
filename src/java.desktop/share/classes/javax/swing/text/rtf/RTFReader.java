@@ -1297,7 +1297,7 @@ abstract class AttributeTrackingDestination implements Destination
             // Reset decoder byte buffer
             decoderBB.clear();
             decoderBB.limit(1);
-            // Check fcharset is used or not 
+            // Check fcharset is used or not
             Charset cs = fcharsetTable.get(parameter);
             if (cs != null) {
                 decoder = cs.newDecoder();
