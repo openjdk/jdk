@@ -453,8 +453,9 @@ public:
 };
 
 // Special node that denotes a Parse Predicate added during parsing. A Parse Predicate serves as placeholder to later
-// create Runtime Predicates above it. They all share the same uncommon trap. The Parse Predicate will follow the
-// Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
+// create Regular Predicates (Runtime Predicates with possible Assertion Predicates) above it. Together they form a
+// Predicate Block. The Parse Predicate and Regular Predicates share the same uncommon trap.
+// There are three kinds of Parse Predicates:
 // Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
 // Predicate (used for integer overflow checks when creating a counted loop).
 // More information about predicates can be found in loopPredicate.cpp.
@@ -468,6 +469,8 @@ class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason deopt_reason() const {
     return _deopt_reason;
   }
+
+  Node* uncommon_trap() const;
 
   NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };

@@ -26,25 +26,23 @@
  * @bug 8009170
  * @summary Regression: javac generates redundant bytecode in assignop involving
  * arrays
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @run main RedundantByteCodeInArrayTest
  */
 
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.constantpool.ConstantPool;
 import java.io.File;
 import java.io.IOException;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Code_attribute.InvalidIndex;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
-import com.sun.tools.classfile.Method;
-
 public class RedundantByteCodeInArrayTest {
     public static void main(String[] args)
-            throws IOException, ConstantPoolException, InvalidDescriptor, InvalidIndex {
+            throws IOException {
         new RedundantByteCodeInArrayTest()
                 .checkClassFile(new File(System.getProperty("test.classes", "."),
                     RedundantByteCodeInArrayTest.class.getName() + ".class"));
@@ -55,16 +53,16 @@ public class RedundantByteCodeInArrayTest {
     }
 
     void checkClassFile(File file)
-            throws IOException, ConstantPoolException, InvalidDescriptor, InvalidIndex {
-        ClassFile classFile = ClassFile.read(file);
-        ConstantPool constantPool = classFile.constant_pool;
+            throws IOException {
+        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ConstantPool constantPool = classFile.constantPool();
 
         //lets get all the methods in the class file.
-        for (Method method : classFile.methods) {
-            if (method.getName(constantPool).equals("arrMethod")) {
-                Code_attribute code = (Code_attribute) method.attributes
-                        .get(Attribute.Code);
-                if (code.max_locals > 4)
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString("arrMethod")) {
+                CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+                assert code != null;
+                if (code.maxLocals() > 4)
                     throw new AssertionError("Too many locals for method arrMethod");
             }
         }
