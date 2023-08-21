@@ -23,8 +23,7 @@
 
 /* @test
  * @bug 8313961
- * @summary Checks that magic methods have the expected signature,
- * including the return type.
+ * @summary Checks that the search for magic methods does not stop too soon.
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.constantpool
  */
@@ -45,7 +44,6 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.reflect.AccessFlag.PUBLIC;
 import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
 import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.TypeKind.VoidType;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MultiMagicTest {
@@ -178,7 +176,7 @@ public class MultiMagicTest {
     }
 
     @Test
-    public void test() throws ReflectiveOperationException, IOException {
+    public void test() throws ReflectiveOperationException {
         Object multiMagicInstance = generateLoadInstantiate();
         Class<?> multiMagicClass = multiMagicInstance.getClass();
         ObjectStreamClass osc = ObjectStreamClass.lookup(multiMagicClass);
