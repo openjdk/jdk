@@ -508,37 +508,42 @@ public class ForkJoinPool19Test extends JSR166TestCase {
      * Implicitly closing a new pool using try-with-resources terminates it
      */
     public void testClose() {
-        Thread.interrupted();
-        ForkJoinTask f = new FibAction(8);
-        ForkJoinPool pool = null;
-        try (ForkJoinPool p = new ForkJoinPool()) {
-            pool = p;
-            p.execute(f);
-        }
-        checkCompletedNormally(f);
-        assertTrue(pool != null && pool.isTerminated());
+        Thread t = newStartedThread(new CheckedRunnable() {
+                public void realRun() throws InterruptedException {
+                    ForkJoinTask f = new FibAction(8);
+                    ForkJoinPool pool = null;
+                    try (ForkJoinPool p = new ForkJoinPool()) {
+                        pool = p;
+                        p.execute(f);
+                    }
+                    checkCompletedNormally(f);
+                    assertTrue(pool != null && pool.isTerminated());
+                }});
+        awaitTermination(t);
     }
 
     /**
      * Implicitly closing common pool using try-with-resources has no effect.
      */
     public void testCloseCommonPool() {
-        ForkJoinTask f = new FibAction(8);
-        ForkJoinPool pool;
-        try (ForkJoinPool p = pool = ForkJoinPool.commonPool()) {
-            p.execute(f);
-        }
-
-        assertFalse(pool.isShutdown());
-        assertFalse(pool.isTerminating());
-        assertFalse(pool.isTerminated());
-
         String prop = System.getProperty(
             "java.util.concurrent.ForkJoinPool.common.parallelism");
-        if (! "0".equals(prop)) {
-            f.join();
-            checkCompletedNormally(f);
-        }
+        boolean nothreads = "0".equals(prop);
+        Thread t = newStartedThread(new CheckedRunnable() {
+                public void realRun() throws InterruptedException {
+                    ForkJoinTask f = new FibAction(8);
+                    ForkJoinPool pool;
+                    try (ForkJoinPool p = pool = ForkJoinPool.commonPool()) {
+                        p.execute(f);
+                    }
+                    assertFalse(pool.isShutdown());
+                    assertFalse(pool.isTerminating());
+                    assertFalse(pool.isTerminated());
+                    if (!nothreads) {
+                        f.join();
+                        checkCompletedNormally(f);
+                    }
+                }});
+       awaitTermination(t);
     }
-
 }
