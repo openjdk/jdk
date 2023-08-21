@@ -86,10 +86,8 @@ public class HeapSummary extends Tool {
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
       printValMB("CompressedClassSpaceSize = ", getFlagValue("CompressedClassSpaceSize", flagMap));
       printValMB("MaxMetaspaceSize         = ", getFlagValue("MaxMetaspaceSize", flagMap));
-      if (heap instanceof ShenandoahHeap) {
-         printValMB("ShenandoahRegionSize     = ", ShenandoahHeapRegion.regionSizeBytes());
-      } else {
-         printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
+      if (heap instanceof G1CollectedHeap) {
+        printValMB("G1HeapRegionSize         = ", HeapRegion.grainBytes());
       }
 
       System.out.println();
@@ -138,6 +136,7 @@ public class HeapSummary extends Tool {
          long num_regions = sh.numOfRegions();
          System.out.println("Shenandoah Heap:");
          System.out.println("   regions   = " + num_regions);
+         printValMB("region size = ", ShenandoahHeapRegion.regionSizeBytes());
          printValMB("capacity  = ", num_regions * ShenandoahHeapRegion.regionSizeBytes());
          printValMB("used      = ", sh.used());
          printValMB("committed = ", sh.committed());
