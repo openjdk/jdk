@@ -888,8 +888,9 @@ class UnixPath implements Path {
         }
 
         // if not resolving links then eliminate "." and also ".."
-        // where the previous element is not a link.
+        // where the previous element is neither a link nor ".."
         UnixPath result = fs.rootDirectory();
+        boolean parentIsDotDot = false;
         for (int i = 0; i < absolute.getNameCount(); i++) {
             UnixPath element = absolute.getName(i);
 
@@ -898,7 +899,7 @@ class UnixPath implements Path {
                 (element.asByteArray()[0] == '.'))
                 continue;
 
-            // cannot eliminate ".." if previous element is a link
+            // cannot eliminate ".." if previous element is a link or ".."
             if ((element.asByteArray().length == 2) &&
                 (element.asByteArray()[0] == '.') &&
                 (element.asByteArray()[1] == '.'))
@@ -909,13 +910,16 @@ class UnixPath implements Path {
                 } catch (UnixException x) {
                     x.rethrowAsIOException(result);
                 }
-                if (!attrs.isSymbolicLink()) {
+                if (!attrs.isSymbolicLink() && !parentIsDotDot) {
                     result = result.getParent();
                     if (result == null) {
                         result = fs.rootDirectory();
                     }
                     continue;
                 }
+                parentIsDotDot = true;
+            } else {
+                parentIsDotDot = false;
             }
             result = result.resolve(element);
         }

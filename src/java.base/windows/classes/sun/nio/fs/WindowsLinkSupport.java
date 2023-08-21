@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,20 +190,92 @@ class WindowsLinkSupport {
         WindowsFileSystem fs = input.getFileSystem();
 
         // Start with absolute path
+        WindowsPath absolute = null;
         String path = null;
         try {
-            path = input.toAbsolutePath().toString();
+            absolute = input.toAbsolutePath();
+            path = absolute.toString();
         } catch (IOError x) {
             throw (IOException)(x.getCause());
         }
 
         // Collapse "." and ".."
         if (path.indexOf('.') >= 0) {
-            try {
-                path = GetFullPathName(path);
-            } catch (WindowsException x) {
-                x.rethrowAsIOException(input);
+            // The Windows function GetFullPathName() does not access the
+            // file system, hence is susceptible to removing symbolic links
+            // which are followed by the special name ".." whether or not
+            // links are being followed. Examine the path element-by-element
+            // to determine whether this would occur, and if so use the
+            // full path manually derived in the process.
+            String fullpath = null;
+            if (path.contains("..")) {
+                WindowsPath p = absolute.getRoot();
+                WindowsPath res = p;
+                boolean parentIsLink = false;
+                boolean parentIsDots = false;
+                boolean wouldCollapseLink = false;
+
+                for (int i = 0; i < absolute.getNameCount(); i++) {
+                    WindowsPath element = absolute.getName(i);
+                    String s = element.toString();
+                    if (s.equals("."))
+                        continue;
+
+                    if (s.equals("..")) {
+                        res = res.getParent();
+                        if (res == null)
+                            res = absolute.getRoot();
+
+                        if (parentIsLink)
+                            wouldCollapseLink = true;
+
+                        if (!parentIsLink && !parentIsDots) {
+                            p = p.getParent();
+                            if (p == null) {
+                                p = absolute.getRoot();
+                            }
+                        } else {
+                            p = p.resolve(element);
+                            parentIsDots = true;
+                            parentIsLink = false;
+                        }
+                        continue;
+                    } else {
+                        parentIsDots = false;
+                    }
+
+                    res = res.resolve(element);
+                    WindowsFileAttributes attrs = null;
+                    try {
+                        attrs = WindowsFileAttributes.get(res, false);
+                    } catch (WindowsException x) {
+                        x.rethrowAsIOException(res);
+                    }
+
+                    if (attrs.isSymbolicLink()) {
+                        parentIsLink = true;
+                        res = resolveAllLinks(res);
+                    } else {
+                        parentIsLink = false;
+                    }
+
+                    p = p.resolve(element);
+                }
+
+                if (wouldCollapseLink)
+                    fullpath = p.toString();
             }
+
+            // Use GetFullPathName() if it would not collapse links
+            if (fullpath == null) {
+                try {
+                    fullpath = GetFullPathName(path);
+                } catch (WindowsException x) {
+                    x.rethrowAsIOException(input);
+                }
+            }
+
+            path = fullpath;
         }
 
         // string builder to build up components of path
@@ -215,7 +287,7 @@ class WindowsLinkSupport {
         char c1 = path.charAt(1);
         if ((c0 <= 'z' && c0 >= 'a' || c0 <= 'Z' && c0 >= 'A') &&
             c1 == ':' && path.charAt(2) == '\\') {
-            // Driver specifier
+            // Drive specifier
             sb.append(Character.toUpperCase(c0));
             sb.append(":\\");
             start = 3;
@@ -252,45 +324,63 @@ class WindowsLinkSupport {
             return result;
         }
 
-        // iterate through each component to get its actual name in the
-        // directory
-        int curr = start;
-        while (curr < path.length()) {
-            int next = path.indexOf('\\', curr);
-            int end = (next == -1) ? path.length() : next;
-            String search = sb.toString() + path.substring(curr, end);
-            try {
-                FirstFile fileData = FindFirstFile(WindowsPath.addPrefixIfNeeded(search));
-                FindClose(fileData.handle());
+        // FindFirstFile() and getFinalPath() do not work if there are
+        // any uncollapsed occurrences of ".." in the path
+        if (!path.contains("..")) {
+            // iterate through each component to get its actual name in the
+            // directory
+            int curr = start;
+            while (curr < path.length()) {
+                int next = path.indexOf('\\', curr);
+                int end = (next == -1) ? path.length() : next;
+                String search = sb.toString() + path.substring(curr, end);
+                try {
+                    FirstFile fileData = FindFirstFile(WindowsPath.addPrefixIfNeeded(search));
+                    FindClose(fileData.handle());
 
-                // if a reparse point is encountered then we must return the
-                // final path.
-                if (resolveLinks &&
-                    WindowsFileAttributes.isReparsePoint(fileData.attributes()))
-                {
-                    String result = getFinalPath(input);
-                    if (result == null) {
-                        // Fallback to slow path, usually because there is a sym
-                        // link to a file system that doesn't support sym links.
-                        WindowsPath resolved = resolveAllLinks(
-                            WindowsPath.createFromNormalizedPath(fs, path));
-                        result = getRealPath(resolved, false);
+                    // if a reparse point is encountered then we must return the
+                    // final path.
+                    if (resolveLinks &&
+                        WindowsFileAttributes.isReparsePoint(fileData.attributes()))
+                        {
+                            String result = getFinalPath(input);
+                            if (result == null) {
+                                // Fallback to slow path, usually because there is a sym
+                                // link to a file system that doesn't support sym links.
+                                WindowsPath resolved = resolveAllLinks(
+                                                                       WindowsPath.createFromNormalizedPath(fs, path));
+                                result = getRealPath(resolved, false);
+                            }
+                            return result;
+                        }
+
+                    // add the name to the result
+                    sb.append(fileData.name());
+                    if (next != -1) {
+                        sb.append('\\');
                     }
-                    return result;
+                } catch (WindowsException e) {
+                    e.rethrowAsIOException(path);
                 }
+                curr = end + 1;
+            }
 
-                // add the name to the result
-                sb.append(fileData.name());
-                if (next != -1) {
-                    sb.append('\\');
-                }
+            return sb.toString();
+        }
+
+        // path contains ".."
+        // if resolving links then do so, otherwise we are done
+        if (resolveLinks) {
+            WindowsPath wp = WindowsPath.createFromNormalizedPath(fs, path);
+            WindowsPath resolved = resolveAllLinks(wp);
+            try {
+                path = GetFullPathName(resolved.toString());
             } catch (WindowsException e) {
                 e.rethrowAsIOException(path);
             }
-            curr = end + 1;
+            return getRealPath(resolved, false);
         }
-
-        return sb.toString();
+        return path;
     }
 
     /**

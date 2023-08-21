@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 7029979 8295753
+ * @bug 4313887 6838333 7029979 8295753 8306882
  * @summary Unit test for miscellenous java.nio.file.Path methods
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
@@ -149,6 +149,42 @@ public class Misc {
             Files.createSymbolicLink(link, file.toAbsolutePath());
             assertTrue(link.toRealPath(NOFOLLOW_LINKS).getFileName().equals(link.getFileName()));
             Files.delete(link);
+        }
+
+        /**
+         * Test: toRealPath(NOFOLLOW_LINKS) should not collapse successive ".."
+         */
+        if (supportsLinks) {
+            Path subPath = dir.resolve(Path.of("dir", "subdir"));
+            Path sub = Files.createDirectories(subPath);
+            System.out.println("sub: " + sub);
+            Files.createSymbolicLink(link, sub);
+            System.out.println("link: " + link + " -> " + sub);
+            Path p = Path.of("..", "..", file.getFileName().toString());
+            System.out.println("p: " + p);
+            Path path = link.resolve(p);
+            System.out.println("path:      " + path);
+            System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+            assertTrue(path.toRealPath(NOFOLLOW_LINKS).equals(path));
+            Files.delete(link);
+
+            Path out = Files.createFile(dir.resolve(Path.of("out.txt")));
+            Path aaa = dir.resolve(Path.of("aaa"));
+            Files.createSymbolicLink(aaa, sub);
+            System.out.println("aaa: " + aaa + " -> " + sub);
+            Path bbb = dir.resolve(Path.of("bbb"));
+            Files.createSymbolicLink(bbb, sub);
+            System.out.println("bbb: " + bbb + " -> " + sub);
+            p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
+            path = dir.resolve(p);
+            System.out.println("path:      " + path);
+            System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
+            assertTrue(path.toRealPath(NOFOLLOW_LINKS).equals(path));
+            System.out.println(path.toRealPath());
+            Files.delete(sub);
+            Files.delete(out);
+            Files.delete(aaa);
+            Files.delete(bbb);
         }
 
         /**
