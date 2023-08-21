@@ -67,10 +67,10 @@ public class MonitorCacheDumpPanel extends JPanel {
     tty.println();
     tty.println("  _header: 0x" + Long.toHexString(mon.header().value()));
     OopHandle obj = mon.object();
-    Oop oop = heap.newOop(obj);
     if (obj == null) {
       tty.println("  _object: null");
     } else {
+      Oop oop = heap.newOop(obj);
       tty.println("  _object: " + obj + ", a " + oop.getKlass().getName().asString());
     }
     Address owner = mon.owner();
