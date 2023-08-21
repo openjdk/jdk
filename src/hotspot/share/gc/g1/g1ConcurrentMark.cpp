@@ -436,11 +436,11 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
-  _num_concurrent_workers = ConcGCThreads;
-  _max_concurrent_workers = _num_concurrent_workers;
+  _max_concurrent_workers = ConcGCThreads;
 
   _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
+  _num_concurrent_workers = _concurrent_workers->active_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
@@ -976,17 +976,14 @@ void G1ConcurrentMark::scan_root_regions() {
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
-    _num_concurrent_workers = MIN2(calc_active_marking_workers(),
-                                   // We distribute work on a per-region basis, so starting
-                                   // more threads than that is useless.
-                                   root_regions()->num_root_regions());
-    assert(_num_concurrent_workers <= _max_concurrent_workers,
-           "Maximum number of marking threads exceeded");
+    // Assign one worker to each root-region but subject to the max constraint.
+    const uint num_workers = MIN2(root_regions()->num_root_regions(),
+                                  _max_concurrent_workers);
 
     G1CMRootRegionScanTask task(this);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                        task.name(), _num_concurrent_workers, root_regions()->num_root_regions());
-    _concurrent_workers->run_task(&task, _num_concurrent_workers);
+                        task.name(), num_workers, root_regions()->num_root_regions());
+    _concurrent_workers->run_task(&task, num_workers);
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
@@ -1046,15 +1043,15 @@ void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
 void G1ConcurrentMark::mark_from_roots() {
   _restart_for_overflow = false;
 
-  _num_concurrent_workers = calc_active_marking_workers();
-
-  uint active_workers = MAX2(1U, _num_concurrent_workers);
+  uint active_workers = calc_active_marking_workers();
 
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
   active_workers = _concurrent_workers->set_active_workers(active_workers);
   log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->max_workers());
+
+  _num_concurrent_workers = active_workers;
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
