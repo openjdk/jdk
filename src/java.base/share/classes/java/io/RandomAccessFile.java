@@ -192,8 +192,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * called with the pathname of the {@code file} argument as its
      * argument to see if read access to the file is allowed.  If the mode
      * allows writing, the security manager's {@code checkWrite} method is
-     * also called with the path argument to see if write access to the file is
-     * allowed.
+     * also called with the pathname of the {@code file} argument to see if
+     * write access to the file is allowed.
      *
      * @param      file   the file object
      * @param      mode   the access mode, as described
