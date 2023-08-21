@@ -44,8 +44,8 @@
     _result = _cmd; \
   } while(((int)_result == OS_ERR) && (errno == EINTR))
 
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
+#define RESTARTABLE_RETURN_SSIZE_T(_cmd) do { \
+  ssize_t _result; \
   RESTARTABLE(_cmd, _result); \
   return _result; \
 } while(false)

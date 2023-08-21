@@ -2289,7 +2289,6 @@ bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
-  bool ret_value = true;
   switch (opcode) {
     case Op_OnSpinWait:
       return VM_Version::supports_on_spin_wait();
@@ -2297,18 +2296,26 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       if (!VM_Version::supports_data_cache_line_flush()) {
-        ret_value = false;
+        return false;
       }
       break;
     case Op_ExpandBits:
     case Op_CompressBits:
       if (!VM_Version::supports_svebitperm()) {
-        ret_value = false;
+        return false;
+      }
+      break;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      if (!UseFMA) {
+        return false;
       }
       break;
   }
 
-  return ret_value; // Per default match rules are supported.
+  return true; // Per default match rules are supported.
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -14305,12 +14312,12 @@ instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
 
 // src1 * src2 + src3
 instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF src3 (Binary src1 src2)));
 
   format %{ "fmadds   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadds(as_FloatRegister($dst$$reg),
              as_FloatRegister($src1$$reg),
              as_FloatRegister($src2$$reg),
@@ -14322,12 +14329,12 @@ instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
 
 // src1 * src2 + src3
 instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
 
   format %{ "fmaddd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmaddd(as_FloatRegister($dst$$reg),
              as_FloatRegister($src1$$reg),
              as_FloatRegister($src2$$reg),
@@ -14337,15 +14344,15 @@ instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "fmsubs   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubs(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),
@@ -14355,15 +14362,15 @@ instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "fmsubd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubd(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),
@@ -14373,15 +14380,15 @@ instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "fnmadds  $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadds(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14391,15 +14398,15 @@ instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "fnmaddd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmaddd(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14411,12 +14418,12 @@ instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
 
 // src1 * src2 - src3
 instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zero) %{
-  predicate(UseFMA);
   match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
   format %{ "fnmsubs  $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsubs(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14428,13 +14435,13 @@ instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zer
 
 // src1 * src2 - src3
 instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zero) %{
-  predicate(UseFMA);
   match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
   format %{ "fnmsubd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
-  // n.b. insn name should be fnmsubd
+    assert(UseFMA, "Needs FMA instructions support.");
+    // n.b. insn name should be fnmsubd
     __ fnmsub(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),

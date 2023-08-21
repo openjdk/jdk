@@ -716,6 +716,10 @@ typedef struct GtkApi {
                                gssize pos,
                                gssize len);
 
+    GString *(*g_string_set_size)(GString* string,
+                                  gsize len);
+
+
     gchar *(*g_string_free)(GString *string,
                             gboolean free_segment);
 

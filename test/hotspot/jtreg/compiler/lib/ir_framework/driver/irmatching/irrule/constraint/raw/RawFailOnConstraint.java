@@ -25,9 +25,12 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 
 /**
  * This class represents a raw constraint of a {@link IR#failOn()} attribute.
@@ -49,9 +52,9 @@ public class RawFailOnConstraint implements RawConstraint {
     }
 
     @Override
-    public Constraint parse(CompilePhase compilePhase, String compilationOutput) {
+    public Constraint parse(CompilePhase compilePhase, String compilationOutput, VMInfo vmInfo) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        return Constraint.createFailOn(rawIRNode.regex(compilePhase), constraintIndex, compilationOutput);
+        return Constraint.createFailOn(rawIRNode.regex(compilePhase, vmInfo, Comparison.Bound.UPPER), constraintIndex, compilationOutput);
     }
 }
 
