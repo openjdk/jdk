@@ -553,7 +553,7 @@ const int ObjectAlignmentInBytes = 8;
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  product(intx, HeapDumpGzipLevel, 0, MANAGEABLE,                           \
+  product(int, HeapDumpGzipLevel, 0, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is on, the gzip compression "    \
           "level of the dump file. 0 (the default) disables gzip "          \
           "compression. Otherwise the level must be between 1 and 9.")      \
@@ -1315,7 +1315,7 @@ const int ObjectAlignmentInBytes = 8;
           "max number of compiled code units to print in error log")        \
           range(0, VMError::max_error_log_print_code)                       \
                                                                             \
-  notproduct(intx, MaxElementPrintSize, 256,                                \
+  notproduct(int, MaxElementPrintSize, 256,                                 \
           "maximum number of elements to print")                            \
                                                                             \
   notproduct(intx, MaxSubklassPrintSize, 4,                                 \
@@ -1457,13 +1457,13 @@ const int ObjectAlignmentInBytes = 8;
           "The minimum expansion of Metaspace (in bytes)")                  \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxMetaspaceFreeRatio,    70,                              \
+  product(uint, MaxMetaspaceFreeRatio,    70,                               \
           "The maximum percentage of Metaspace free after GC to avoid "     \
           "shrinking")                                                      \
           range(0, 100)                                                     \
           constraint(MaxMetaspaceFreeRatioConstraintFunc,AfterErgo)         \
                                                                             \
-  product(uintx, MinMetaspaceFreeRatio,    40,                              \
+  product(uint, MinMetaspaceFreeRatio,    40,                               \
           "The minimum percentage of Metaspace free after GC to avoid "     \
           "expansion")                                                      \
           range(0, 99)                                                      \
