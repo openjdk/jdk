@@ -1566,6 +1566,8 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_FmaF:
+    case Op_FmaD:
     case Op_FmaVD:
     case Op_FmaVF:
       if (!UseFMA) {
@@ -3960,11 +3962,11 @@ instruct onspinwait() %{
 
 // a * b + c
 instruct fmaD_reg(regD a, regD b, regD c) %{
-  predicate(UseFMA);
   match(Set c (FmaD  c (Binary a b)));
   format %{ "fmasd $a,$b,$c\t# $c = $a * $b + $c" %}
   ins_cost(150);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmad($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -3972,11 +3974,11 @@ instruct fmaD_reg(regD a, regD b, regD c) %{
 
 // a * b + c
 instruct fmaF_reg(regF a, regF b, regF c) %{
-  predicate(UseFMA);
   match(Set c (FmaF  c (Binary a b)));
   format %{ "fmass $a,$b,$c\t# $c = $a * $b + $c" %}
   ins_cost(150);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmaf($c$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $c$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -9864,6 +9866,7 @@ instruct vfma_reg_masked(vec dst, vec src2, vec src3, kReg mask) %{
   match(Set dst (FmaVD (Binary dst src2) (Binary src3 mask)));
   format %{ "vfma_masked $dst, $src2, $src3, $mask \t! vfma masked operation" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();
@@ -9878,6 +9881,7 @@ instruct vfma_mem_masked(vec dst, vec src2, memory src3, kReg mask) %{
   match(Set dst (FmaVD (Binary dst src2) (Binary (LoadVector src3) mask)));
   format %{ "vfma_masked $dst, $src2, $src3, $mask \t! vfma masked operation" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
     int opc = this->ideal_Opcode();

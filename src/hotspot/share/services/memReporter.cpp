@@ -226,7 +226,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         const VirtualMemory* thread_stack_usage =
          _vm_snapshot->by_type(mtThreadStack);
         // report thread count
-        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
+        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", ThreadStackTracker::thread_count());
         out->print("%27s (stack: ", " ");
         print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
       } else {
@@ -234,7 +234,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         const char* scale = current_scale();
         // report thread count
         assert(ThreadStackTracker::thread_count() == 0, "Not used");
-        out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
+        out->print_cr("%27s (threads #" SIZE_FORMAT ")", " ", thread_stack_memory->malloc_count());
         out->print("%27s (Stack: " SIZE_FORMAT "%s", " ",
           amount_in_current_scale(thread_stack_memory->malloc_size()), scale);
       }
@@ -595,7 +595,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
 
     } else if (flag == mtThread) {
       // report thread count
-      out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
+      out->print("%27s (threads #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
       const ssize_t thread_count_diff = counter_diff(_current_baseline.thread_count(), _early_baseline.thread_count());
       if (thread_count_diff != 0) {
         out->print(" " SSIZE_PLUS_FORMAT, thread_count_diff);
