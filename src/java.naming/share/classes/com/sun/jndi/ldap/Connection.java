@@ -304,7 +304,7 @@ public final class Connection implements Runnable {
     private Socket createConnectionSocket(String host, int port,  int connectTimeout)throws Exception {
 
         if (connectTimeout <= 0) {
-            connectTimeout = 0; // the value of zero means never time out
+            connectTimeout = 0; // the value of zero means never time out or network timed out
         }
         Socket socket = new Socket();
         socket.connect(createInetSocketAddress(host, port), connectTimeout);
@@ -327,7 +327,7 @@ public final class Connection implements Runnable {
         Socket socket = null;
 
         if (connectTimeout <= 0) {
-            connectTimeout = 0; // the value of zero means never time out
+            connectTimeout = 0; // the value of zero means never time out or network timeout
         }
         // create unconnected socket
         socket = factory.createSocket();

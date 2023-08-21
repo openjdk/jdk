@@ -66,61 +66,58 @@ import jdk.test.lib.net.URIBuilder;
 
 public class LdapSSLHandshakeFailureTest {
     private static String SOCKET_CLOSED_MSG = "The socket has been closed.";
-    private static String SOCKET_NOT_CLOSED_MSG = "The socket was not closed.";
 
     public static void main(String args[]) throws Exception {
 
         // Set the keystores
         setKeyStore();
-        // start the test server first.
-        boolean serverSlowDown = false;
-        if(args.length ==2 ) {
+        boolean serverSlowDown = Boolean.valueOf(args[0]);
+        if (args.length == 2) {
             serverSlowDown = Boolean.valueOf(args[1]);
-        } else {
-            if(args.length ==1 ) {
-                serverSlowDown = Boolean.valueOf(args[0]);
-            }
-        }
-        TestServer server = new TestServer( serverSlowDown );
-        server.start();
-        Hashtable<String, Object> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, URIBuilder.newBuilder()
-                .scheme("ldaps")
-                .loopback()
-                .port(server.getPortNumber())
-                .buildUnchecked().toString());
-        if (args.length == 2 &&
-                args[0].contains("LdapSSLHandshakeFailureTest")) {
-            env.put("java.naming.ldap.factory.socket", args[0]);
-        }
-        env.put("java.naming.ldap.version", "3");
-        if (args.length == 2 ) {
-            if( args[0].contains("LdapSSLHandshakeFailureTest")) {
-                env.put("com.sun.jndi.ldap.connect.timeout", "1000");
-            } else {
-                env.put("com.sun.jndi.ldap.connect.timeout", args[0]);
-            }
         }
 
-        env.put(Context.SECURITY_PROTOCOL,"ssl");
-        env.put(Context.SECURITY_AUTHENTICATION, "Simple");
-        env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
-        env.put(Context.SECURITY_CREDENTIALS, "123456");
-        LdapContext ctx = null;
-        try {
-            ctx  = new InitialLdapContext(env, null);
-        } catch (Exception e) {
-            if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0
-                    && args[0].equals("LdapSSLHandshakeFailureTest$CustomSocketFactory")
-                    && Boolean.valueOf(args[1])) {
-                System.out.println(SOCKET_CLOSED_MSG);
-            } else {
-                throw e;
+        boolean hasCustomSocketFactory = args[0]
+                .equals("LdapSSLHandshakeFailureTest$CustomSocketFactory");
+        // start the test server first.
+        try (TestServer server = new TestServer(serverSlowDown)) {
+            server.start();
+            Hashtable<String, Object> env = new Hashtable<>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put("java.naming.ldap.version", "3");
+            env.put(Context.PROVIDER_URL, URIBuilder.newBuilder()
+                    .scheme("ldaps")
+                    .loopback()
+                    .port(server.getPortNumber())
+                    .buildUnchecked().toString());
+
+            if (hasCustomSocketFactory) {
+                env.put("java.naming.ldap.factory.socket", args[0]);
+                env.put("com.sun.jndi.ldap.connect.timeout", "1000");
             }
-        } finally {
-            if(ctx != null)
-                ctx.close();
+
+            if (args.length == 2 && !hasCustomSocketFactory) {
+                env.put("com.sun.jndi.ldap.connect.timeout", args[0]);
+            }
+
+            env.put(Context.SECURITY_PROTOCOL, "ssl");
+            env.put(Context.SECURITY_AUTHENTICATION, "Simple");
+            env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
+            env.put(Context.SECURITY_CREDENTIALS, "123456");
+            LdapContext ctx = null;
+            try {
+                ctx = new InitialLdapContext(env, null);
+            } catch (Exception e) {
+                if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0
+                        && hasCustomSocketFactory
+                        && Boolean.valueOf(args[1])) {
+                    System.out.println(SOCKET_CLOSED_MSG);
+                } else {
+                    throw e;
+                }
+            } finally {
+                if (ctx != null)
+                    ctx.close();
+            }
         }
     }
     public static class CustomSocketFactory extends SocketFactory {
@@ -175,7 +172,7 @@ public class LdapSSLHandshakeFailureTest {
         }
     }
 
-    private static void setKeyStore() throws Exception {
+    private static void setKeyStore() {
 
         String fileName = "ksWithSAN", dir = System.getProperty("test.src", ".") + File.separator;
 
@@ -208,12 +205,14 @@ public class LdapSSLHandshakeFailureTest {
 
         @Override
         public void run() {
-            try (Socket socket = serverSocket.accept(); InputStream in = socket.getInputStream();
+            try (Socket socket = serverSocket.accept();
+                 InputStream in = socket.getInputStream();
                  OutputStream out = socket.getOutputStream()) {
                 if (isForceToSleep) {
                     Thread.sleep(5000);
                 }
-                byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A, 0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
+                byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A,
+                        0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
                 // read the bindRequest
                 while (in.read() != -1) {
                     in.skip(in.available());
