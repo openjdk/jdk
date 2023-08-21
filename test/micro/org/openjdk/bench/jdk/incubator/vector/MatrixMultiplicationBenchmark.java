@@ -23,14 +23,13 @@
 //
 package org.openjdk.bench.jdk.incubator.vector;
 
-import java.util.Random;
+import java.util.random.RandomGenerator;
 
 import jdk.incubator.vector.*;
 
 import java.util.concurrent.TimeUnit;
-
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
+
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -173,10 +172,10 @@ public class MatrixMultiplicationBenchmark {
     }
 
     private static float[] newFloatRowMatrix(int size) {
-        Random rand = new Random();
         float[] matrix = new float[size];
+        var randomGenerator = RandomGenerator.getDefault();
         for (int i = 0; i < matrix.length; ++i) {
-            matrix[i] = rand.nextFloat();
+            matrix[i] = randomGenerator.nextFloat();
         }
         return matrix;
     }
