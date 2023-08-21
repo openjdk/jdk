@@ -407,7 +407,6 @@ public class VM {
   }
 
   private VM(TypeDataBase db, JVMDebugger debugger, boolean isBigEndian) {
-      System.out.println("VM()");
     this.db          = db;
     this.debugger    = debugger;
     this.isBigEndian = isBigEndian;
@@ -536,7 +535,6 @@ public class VM {
 
   /** This is used by the debugging system */
   public static void initialize(TypeDataBase db, JVMDebugger debugger) {
-      System.out.println("VM.initialize()");
     if (soleInstance != null) {
       // Using multiple SA Tool classes in the same process creates a call here.
       return;
@@ -554,7 +552,6 @@ public class VM {
 
   /** This is used by the debugging system */
   public static void shutdown() {
-      System.out.println("VM.shutdown()");
     soleInstance = null;
   }
 
@@ -946,20 +943,20 @@ public class VM {
   }
 
   public boolean isCompressedOopsEnabled() {
-      //if (compressedOopsEnabled == null) {
+    if (compressedOopsEnabled == null) {
         Flag flag = getCommandLineFlag("UseCompressedOops");
         compressedOopsEnabled = (flag == null) ? Boolean.FALSE:
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
-        //}
+    }
     return compressedOopsEnabled.booleanValue();
   }
 
   public boolean isCompressedKlassPointersEnabled() {
-      //if (compressedKlassPointersEnabled == null) {
+    if (compressedKlassPointersEnabled == null) {
         Flag flag = getCommandLineFlag("UseCompressedClassPointers");
         compressedKlassPointersEnabled = (flag == null) ? Boolean.FALSE:
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
-        //}
+    }
     return compressedKlassPointersEnabled.booleanValue();
   }
 
