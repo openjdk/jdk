@@ -2114,6 +2114,19 @@ void TemplateTable::_return(TosState state) {
     __ membar(MacroAssembler::StoreStore);
   }
 
+  if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    __ ld(t0, Address(xthread, JavaThread::polling_word_offset()));
+    __ test_bit(t0, t0, exact_log2(SafepointMechanism::poll_bit()));
+    __ beqz(t0, no_safepoint);
+    __ push(state);
+    __ push_cont_fastpath(xthread);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath(xthread);
+    __ pop(state);
+    __ bind(no_safepoint);
+  }
+
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
   // since compiled code callers expect the result to already be narrowed.
