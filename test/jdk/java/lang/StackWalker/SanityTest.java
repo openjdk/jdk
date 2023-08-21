@@ -93,6 +93,7 @@ public class SanityTest {
                 StackWalker.getInstance().forEach(StackWalker.StackFrame::getMethodType));
     }
 
+    @Test
     public void testNoMethodInfo() {
         StackWalker sw = StackWalker.getInstance(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO);
         assertThrows(UnsupportedOperationException.class, () ->
