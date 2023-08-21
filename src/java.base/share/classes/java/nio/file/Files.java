@@ -1570,8 +1570,10 @@ public final class Files {
      * {@code mismatch(f,f)} returns {@code -1L}). If the file system and files
      * remain static, then this method is <i>symmetric</i> (for two {@code Paths f}
      * and {@code g}, {@code mismatch(f,g)} will return the same value as
-     * {@code mismatch(g,f)}). The only case where there is no file system
-     * access is when the paths are equal.
+     * {@code mismatch(g,f)}).
+     *
+     * <p> If both {@code Path} objects are equal, then this method returns
+     * {@code true} without checking if the file exists.
      *
      * @param   path
      *          the path to the first file
