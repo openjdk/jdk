@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
  * @test
  * @key headful
  * @summary setExtendedFrame not executed immediately
- * @run main/manual MaximizeWindowTest
+ * @run main MaximizeWindowTest
  */
 @SuppressWarnings("serial")
 public class MaximizeWindowTest extends JFrame
