@@ -149,7 +149,7 @@ public class JMapHeapConfigTest {
         if (exitcode != 0) {
             throw new RuntimeException("Test FAILED jmap exits with non zero exit code " + exitcode);
         }
-        
+
         System.out.println("Jmap Output:");
         for (String line : tmt.getToolOutput()) {
             System.out.println(line);
