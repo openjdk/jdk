@@ -769,7 +769,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
 //     // inner_incr := AddI(inner_phi, intcon(stride))
 //     inner_incr = inner_phi + stride;
 //     if (inner_incr < inner_iters_actual) {
-//       ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+//       ... use phi=>(outer_phi+inner_phi) ...
 //       continue;
 //     }
 //     else break;
@@ -979,10 +979,6 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   // loop iv phi
   Node* iv_add = loop_nest_replace_iv(phi, inner_phi, outer_phi, head, bt);
 
-  // Replace inner loop long iv incr with inner loop int incr + outer
-  // loop iv phi
-  loop_nest_replace_iv(incr, inner_incr, outer_phi, head, bt);
-
   set_subtree_ctrl(inner_iters_actual_int, body_populated);
 
   LoopNode* inner_head = create_inner_head(loop, head, exit_test);
@@ -1031,7 +1027,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   //       back_control: fallthrough;
   //     else
   //       inner_exit_branch: break;  //exit_branch->clone()
-  //     ... use phi=>(outer_phi+inner_phi) and incr=>(outer_phi+inner_incr) ...
+  //     ... use phi=>(outer_phi+inner_phi) ...
   //     inner_phi = inner_phi + stride;  // inner_incr
   //   }
   //   outer_exit_test:  //exit_test->clone(), in(0):=inner_exit_branch
