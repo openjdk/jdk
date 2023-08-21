@@ -1478,12 +1478,38 @@ public final class ObjectStreamClass implements Serializable {
         return canonicalCtr;
     }
 
-    static Method getDeclaredMethod(Class<?> cl,
-            Class<?> returnType, String name, Class<?>... parameterTypes) {
-        for (Method m : cl.getDeclaredMethods()) {
-            if (m.getReturnType() == returnType
-                    && m.getName().equals(name)
-                    && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
+    /**
+     * {@return The field declared in {@code cls} with the specified
+     * {@code fieldType} and {@code name}}.
+     * @param cls the class in which the field is located
+     * @param fieldType the field's type
+     * @param name the field's name
+     * @throws NoSuchFieldError if the specific field is not declared in the class
+     */
+    static Field getDeclaredField(Class<?> cls,
+            Class<?> fieldType, String name) {
+        for (Field f : cls.getDeclaredFields()) {
+            if (f.getType() == fieldType && f.getName().equals(name)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@return The method declared in {@code cls} with the specified
+     * {@code returnType}, {@code name} and {@code parameterTypes}}
+     * @param cls the class in which the method is located
+     * @param returnType the method's return type
+     * @param name the method's name
+     * @param parameterTypes the method's parameter types
+     * @throws NoSuchMethodError if the specific method is not declared in the class
+     */
+    static Method getDeclaredMethod(Class<?> cls,
+        Class<?> returnType, String name, Class<?>... parameterTypes) {
+        for (Method m : cls.getDeclaredMethods()) {
+            if (m.getReturnType() == returnType && m.getName().equals(name)
+                && Arrays.equals(m.getParameterTypes(), parameterTypes)) {
                 return m;
             }
         }
@@ -1641,13 +1667,13 @@ public final class ObjectStreamClass implements Serializable {
     {
         ObjectStreamField[] serialPersistentFields = null;
         try {
-            Field f = cl.getDeclaredField("serialPersistentFields");
+            Field f = getDeclaredField(cl, ObjectStreamField[].class, "serialPersistentFields");
             int mask = Modifier.PRIVATE | Modifier.STATIC | Modifier.FINAL;
             if ((f.getModifiers() & mask) == mask) {
                 f.setAccessible(true);
                 serialPersistentFields = (ObjectStreamField[]) f.get(null);
             }
-        } catch (Exception ex) {
+        } catch (Exception ignored) {
         }
         if (serialPersistentFields == null) {
             return null;

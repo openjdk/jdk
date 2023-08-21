@@ -23,7 +23,9 @@
 
 /* @test
  * @bug 8313961
- * @summary Checks that the search for magic methods does not stop too soon.
+ * @summary Checks that the search for magic methods does not depend on the
+ * specification of Class.getDeclared[Field|Method]() when it chooses the
+ * reflective object to return.
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.constantpool
  */
@@ -42,8 +44,7 @@ import java.util.List;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.reflect.AccessFlag.PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.classfile.Classfile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MultiMagicTest {
@@ -52,12 +53,14 @@ public class MultiMagicTest {
      * This test class generated, loads, and instantiate a Serializable object
      * to check the fix explained in the JBS issue.
      *
-     * The generated classes cannot be described in Java, but the pseudo-Java
-     * equivalent is the following
+     * The generated classes cannot be described in Java, because it does not
+     * admit multiple fields with the same name but different types, nor does it
+     * admit multiple methods with the same name and same parameter types but
+     * different return types.
+     * The pseudo-Java classes are the following
      *
-     public class SuperMultiMagic implements Serializable {
+    public class SuperMultiMagic implements Serializable {
         public SuperMultiMagic() {
-            super();
         }
         public Integer writeReplace() {
             return null;
@@ -65,11 +68,14 @@ public class MultiMagicTest {
         public Object writeReplace() {
             return null;
         }
-     }
+    }
 
-     public class MultiMagic extends SuperMultiMagic {
+    public class MultiMagic extends SuperMultiMagic {
+        private static final int serialPersistentFields = 0;
+        private static final ObjectStreamField[] serialPersistentFields =
+            new ObjectStreamField[0];
+
         public MultiMagic() {
-            super();
         }
         private int writeObject(ObjectOutputStream oos) {
             return 0;
@@ -77,13 +83,14 @@ public class MultiMagicTest {
         private void writeObject(ObjectOutputStream oos) {
         }
         public Integer writeReplace() {
-            return 0;
+            return null;
         }
-     }
+    }
+     *
      */
 
-    private static final String SUPER_MULTI_MAGIC_CLASS_NAME = "SuperMultiMagic";
-    private static final String MULTI_MAGIC_CLASS_NAME = "MultiMagic";
+    private static final String SUPER_MULTI_MAGIC_CLS_NAME = "SuperMultiMagic";
+    private static final String MULTI_MAGIC_CLS_NAME = "MultiMagic";
 
     private static void addSuperConstructor(ClassBuilder cb) {
         cb.withMethod(INIT_NAME,
@@ -95,28 +102,66 @@ public class MultiMagicTest {
                     .return_()));
     }
 
+    private static void addClassInit(ClassBuilder cb) {
+        cb.withMethod(CLASS_INIT_NAME,
+            MTD_void,
+            ACC_STATIC,
+            mb -> mb.withCode(
+                b -> b.iconst_0()
+                    .putstatic(cb.constantPool().fieldRefEntry(
+                        ClassDesc.of("MultiMagic"),
+                        "serialPersistentFields",
+                        CD_int))
+
+                    .iconst_0()
+                    .anewarray(ClassDesc.ofDescriptor(
+                        ObjectStreamField.class.descriptorString()))
+                    .putstatic(cb.constantPool().fieldRefEntry(
+                        ClassDesc.of("MultiMagic"),
+                        "serialPersistentFields",
+                        ClassDesc.ofDescriptor(
+                            ObjectStreamField[].class.descriptorString())))
+
+                    .return_()));
+    }
+
     private static void addConstructor(ClassBuilder cb) {
         cb.withMethod(INIT_NAME,
             MTD_void,
             ACC_PUBLIC,
             mb -> mb.withCode(
                 b -> b.aload(0)
-                    .invokespecial(ClassDesc.of(SUPER_MULTI_MAGIC_CLASS_NAME), INIT_NAME, MTD_void)
+                    .invokespecial(ClassDesc.of(
+                        SUPER_MULTI_MAGIC_CLS_NAME), INIT_NAME, MTD_void)
                     .return_()));
+    }
+
+    private static void addOtherSerialPersistentFields(ClassBuilder cb) {
+        cb.withField("serialPersistentFields",
+            CD_int,
+            ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+    }
+
+    private static void addMagicSerialPersistentFields(ClassBuilder cb) {
+        cb.withField("serialPersistentFields",
+            ClassDesc.ofDescriptor(ObjectStreamField[].class.descriptorString()),
+            ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
     }
 
     private static void addOtherWriteObject(ClassBuilder cb) {
         cb.withMethod("writeObject",
-            MethodTypeDesc.of(CD_int, ClassDesc.of(ObjectOutputStream.class.getName())),
+            MethodTypeDesc.of(CD_int, ClassDesc.of(
+                ObjectOutputStream.class.getName())),
             ACC_PRIVATE,
             mb -> mb.withCode(
-                b -> b.bipush(0)
+                b -> b.iconst_0()
                     .returnInstruction(TypeKind.IntType)));
     }
 
     private static void addMagicWriteObject(ClassBuilder cb) {
         cb.withMethod("writeObject",
-            MethodTypeDesc.of(CD_void, ClassDesc.of(ObjectOutputStream.class.getName())),
+            MethodTypeDesc.of(CD_void, ClassDesc.of(
+                ObjectOutputStream.class.getName())),
             ACC_PRIVATE,
             mb -> mb.withCode(CodeBuilder::return_));
     }
@@ -139,19 +184,25 @@ public class MultiMagicTest {
                     .returnInstruction(TypeKind.ReferenceType)));
     }
 
-    private static Object generateLoadInstantiate() throws ReflectiveOperationException {
-        byte[] superClassFile = Classfile.of().build(ClassDesc.of(SUPER_MULTI_MAGIC_CLASS_NAME),
+    private static Object generateLoadInstantiate()
+        throws ReflectiveOperationException {
+        byte[] superClassFile = Classfile.of()
+            .build(ClassDesc.of(SUPER_MULTI_MAGIC_CLS_NAME),
             cb -> {
                 cb.withFlags(PUBLIC)
-                    .withInterfaceSymbols(List.of(ClassDesc.of(Serializable.class.getName())));
+                    .withInterfaceSymbols(List.of(ClassDesc.of(
+                        Serializable.class.getName())));
                 addSuperConstructor(cb);
                 addOtherWriteReplace(cb);
                 addMagicWriteReplace(cb);
             });
-        byte[] classFile = Classfile.of().build(ClassDesc.of(MULTI_MAGIC_CLASS_NAME),
+        byte[] classFile = Classfile.of().build(ClassDesc.of(MULTI_MAGIC_CLS_NAME),
             cb -> {
                 cb.withFlags(PUBLIC)
-                    .withSuperclass(ClassDesc.of(SUPER_MULTI_MAGIC_CLASS_NAME));
+                    .withSuperclass(ClassDesc.of(SUPER_MULTI_MAGIC_CLS_NAME));
+                addOtherSerialPersistentFields(cb);
+                addMagicSerialPersistentFields(cb);
+                addClassInit(cb);
                 addConstructor(cb);
                 addOtherWriteObject(cb);
                 addMagicWriteObject(cb);
@@ -161,16 +212,16 @@ public class MultiMagicTest {
         ClassLoader loader = new ClassLoader() {
             @Override
             protected Class<?> findClass(String name) {
-                if (SUPER_MULTI_MAGIC_CLASS_NAME.equals(name)) {
+                if (SUPER_MULTI_MAGIC_CLS_NAME.equals(name)) {
                     return super.defineClass(name, superClassFile, 0, superClassFile.length);
                 }
-                if (MULTI_MAGIC_CLASS_NAME.equals(name)) {
+                if (MULTI_MAGIC_CLS_NAME.equals(name)) {
                     return super.defineClass(name, classFile, 0, classFile.length);
                 }
                 throw new AssertionError();
             }
         };
-        return loader.loadClass(MULTI_MAGIC_CLASS_NAME)
+        return loader.loadClass(MULTI_MAGIC_CLS_NAME)
             .getConstructor(new Class<?>[0])
             .newInstance();
     }
@@ -180,6 +231,9 @@ public class MultiMagicTest {
         Object multiMagicInstance = generateLoadInstantiate();
         Class<?> multiMagicClass = multiMagicInstance.getClass();
         ObjectStreamClass osc = ObjectStreamClass.lookup(multiMagicClass);
+
+        assertEquals(ObjectStreamField[].class, osc.getFields().getClass());
+        assertEquals(0, osc.getFields().length);
         assertTrue(osc.hasWriteObjectMethod());
         assertTrue(osc.hasWriteReplaceMethod());
     }
