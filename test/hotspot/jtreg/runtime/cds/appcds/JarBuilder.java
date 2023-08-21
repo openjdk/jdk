@@ -262,7 +262,7 @@ public class JarBuilder {
     static final String keyTool = JDKToolFinder.getJDKTool("keytool");
     static final String jarSigner = JDKToolFinder.getJDKTool("jarsigner");
 
-    public static void signJarWithDisabledAlg(String jarName) throws Exception {
+    public static void signJarWithDisabledAlgorithm(String jarName) throws Exception {
         String keyName = "key_with_disabled_alg";
         executeProcess(keyTool,
             "-genkey", "-keystore", "./keystore", "-alias", keyName,

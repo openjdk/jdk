@@ -53,7 +53,6 @@ class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
     jar_entry,
-    signed_jar_entry,
     dir_entry,
     non_existent_entry,
     unknown_entry
@@ -90,10 +89,6 @@ public:
   bool is_dir()           const { return _type == dir_entry; }
   bool is_modules_image() const { return _type == modules_image_entry; }
   bool is_jar()           const { return _type == jar_entry; }
-  bool is_signed()        const { return _type == signed_jar_entry; }
-  void set_is_signed() {
-    _type = signed_jar_entry;
-  }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;

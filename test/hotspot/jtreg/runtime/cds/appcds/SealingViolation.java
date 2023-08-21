@@ -39,7 +39,6 @@
  * @run driver SealingViolation
  */
 
-import java.io.File;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -50,7 +49,7 @@ public class SealingViolation {
             ClassFileInstaller.Manifest.fromSourceFile("test-classes/pkg/package_seal.mf"),
             "GenericTestApp", "pkg/ClassInPackage", "pkg/C2");
 
-        JarBuilder.signJarWithDisabledAlg("pkg-classes-sealed");
+        JarBuilder.signJarWithDisabledAlgorithm("pkg-classes-sealed");
         String signedJar = TestCommon.getTestJar("pkg-classes-sealed.jar");
 
         // GenericTestApp requires WhiteBox
