@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
- * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class RISCV64Frame extends Frame {
   // Native frames
   private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
 
-  private static VMReg fp = new VMReg(8);
+  private static VMReg fp = new VMReg(8 << 1);
 
   static {
     VM.registerVMInitializedObserver(new Observer() {

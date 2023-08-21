@@ -357,24 +357,34 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+//------------------------------FmaNode--------------------------------------
+// fused-multiply-add
+class FmaNode : public Node {
+public:
+  FmaNode(Node* c, Node* in1, Node* in2, Node* in3) : Node(c, in1, in2, in3) {
+    assert(UseFMA, "Needs FMA instructions support.");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 //------------------------------FmaDNode--------------------------------------
 // fused-multiply-add double
-class FmaDNode : public Node {
+class FmaDNode : public FmaNode {
 public:
-  FmaDNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  FmaDNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
+  const Type* bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------FmaFNode--------------------------------------
 // fused-multiply-add float
-class FmaFNode : public Node {
+class FmaFNode : public FmaNode {
 public:
-  FmaFNode(Node *c, Node *in1, Node *in2, Node *in3) : Node(c, in1, in2, in3) {}
+  FmaFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
   virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::FLOAT; }
+  const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
 };

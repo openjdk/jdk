@@ -248,11 +248,11 @@ Deoptimization::UnrollBlock::~UnrollBlock() {
 
 int Deoptimization::UnrollBlock::size_of_frames() const {
   // Account first for the adjustment of the initial frame
-  int result = _caller_adjustment;
+  intptr_t result = _caller_adjustment;
   for (int index = 0; index < number_of_frames(); index++) {
     result += frame_sizes()[index];
   }
-  return result;
+  return checked_cast<int>(result);
 }
 
 void Deoptimization::UnrollBlock::print() {
@@ -1081,7 +1081,7 @@ protected:
       objArrayOop cache = CacheType::cache(ik);
       assert(cache->length() > 0, "Empty cache");
       _low = BoxType::value(cache->obj_at(0));
-      _high = _low + cache->length() - 1;
+      _high = checked_cast<PrimitiveType>(_low + cache->length() - 1);
       _cache = JNIHandles::make_global(Handle(thread, cache));
     }
   }
@@ -1100,7 +1100,7 @@ public:
   }
   oop lookup(PrimitiveType value) {
     if (_low <= value && value <= _high) {
-      int offset = value - _low;
+      int offset = checked_cast<int>(value - _low);
       return objArrayOop(JNIHandles::resolve_non_null(_cache))->obj_at(offset);
     }
     return nullptr;
@@ -1654,7 +1654,7 @@ vframeArray* Deoptimization::create_vframeArray(JavaThread* thread, frame fr, Re
   // stuff a C2I adapter we can properly fill in the callee-save
   // register locations.
   frame caller = fr.sender(reg_map);
-  int frame_size = caller.sp() - fr.sp();
+  int frame_size = pointer_delta_as_int(caller.sp(), fr.sp());
 
   frame sender = caller;
 
