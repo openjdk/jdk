@@ -159,15 +159,16 @@ int main(int argc, const char * argv[]) {
     int           nargc = 0;             /* new args array count */
     int           argi  = 0;             /* index into old array */
     size_t        alen  = 0;             /* length of new array */
-    int           error = 0;             /* getJavaPath error */
+
     /* Make sure we have something to work with */
     if ((argc < 1) || (argv == NULL)) {
         /* Shouldn't happen... */
         errorExit(CRAZY_EXEC, CRAZY_EXEC_MSG);
     }
+
     /* Get the path to the java binary, which is in a known position relative
      * to our current position, which is in argv[0]. */
-    error = getJavaPath(argv[argi++], java, RELATIVE_DEPTH);
+    int error = getJavaPath(argv[argi++], java, RELATIVE_DEPTH);
 #ifdef __linux__
     /* Try to read the symbolic link to the current binary
      * if the java path can not be resolved from argv[0]. */
