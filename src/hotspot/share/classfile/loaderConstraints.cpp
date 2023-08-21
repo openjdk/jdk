@@ -54,14 +54,14 @@
 //   ...
 //
 // If _klass_<m> is null, when the first loader_<m><n> resolves the name N to a class K,
-// we assign _klass_<m> = K;
+// we assign _klass_<m> = K.
 //
 // if _klass_<m> is non-null, when a loader loader_<m><n> tries to resolve the name N to a class K,
-// where _klass_<m> != K, a LinkageError is thrown, and the resolution fails;
+// where _klass_<m> != K, a LinkageError is thrown, and the resolution fails.
 //
 // Management of LoaderConstraints
 //
-// When the SyswtemDictionary decides that loader_x and loader_y must resolve the name N to the same class:
+// When the SystemDictionary decides that loader_x and loader_y must resolve the name N to the same class:
 // For the name N, find two LoaderConstraints such that:
 //
 //     - LoaderConstraint_x contains loader_x
@@ -71,12 +71,12 @@
 //        each name N, as enforced by the following steps).
 //
 // If neither LoaderConstraint_x nor LoaderConstraint_y exist, add a new LoaderConstraint that contains
-// both loader_x and loader_y;
+// both loader_x and loader_y.
 //
-// Otherwise if LoaderConstraint_x exists but LoaderConstraint_y doesn't exist, add loader_y to LoaderConstraint_x;
-// (and vice versa);
+// Otherwise if LoaderConstraint_x exists but LoaderConstraint_y doesn't exist, add loader_y to LoaderConstraint_x,
+// or vice versa.
 //
-// Otherwise if both LoaderConstraints have different values for _klass, a LinkageError is thrown;
+// Otherwise if both LoaderConstraints have different values for _klass, a LinkageError is thrown.
 //
 // Otherwise the two LoaderConstraints are merged into one.
 
