@@ -59,6 +59,7 @@ public class CodeCacheFullCountTest {
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         // Ignore adapter creation failures
         if (oa.getExitValue() != 0 && !oa.getStderr().contains("Out of space in CodeCache for adapters")) {
+            oa.reportDiagnosticSummary();
             throw new RuntimeException("VM finished with exit code " + oa.getExitValue());
         }
         String stdout = oa.getStdout();
