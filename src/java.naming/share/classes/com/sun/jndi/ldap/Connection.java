@@ -301,16 +301,28 @@ public final class Connection implements Runnable {
     }
 
     // create a connected socket without factory
-    private Socket createConnectionSocket(String host, int port,  int connectTimeout)throws Exception {
+    private Socket createConnectionSocket(String host, int port, int connectTimeout) throws Exception {
 
-        if (connectTimeout <= 0) {
-            connectTimeout = 0; // the value of zero means never time out or network timed out
+        Socket socket = null;
+        if (connectTimeout > 0) {
+
+            InetSocketAddress endpoint = createInetSocketAddress(host, port);
+            socket = new Socket();
+
+            socket.connect(endpoint, connectTimeout);
+            if (debug) {
+                System.err.println("Connection: creating socket with " +
+                        "a timeout");
+            }
         }
-        Socket socket = new Socket();
-        socket.connect(createInetSocketAddress(host, port), connectTimeout);
-        if (debug) {
-            System.err.println("Connection.createSocket: creating socket with " +
-                    "a timeout");
+
+        // continue (but ignore connectTimeout)
+        if (socket == null) {
+            // connected socket
+            socket = new Socket(host, port);
+            if (debug) {
+                System.err.println("Connection: creating socket");
+            }
         }
         return socket;
     }
@@ -326,16 +338,28 @@ public final class Connection implements Runnable {
         SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
         Socket socket = null;
 
-        if (connectTimeout <= 0) {
-            connectTimeout = 0; // the value of zero means never time out or network timeout
-        }
-        // create unconnected socket
-        socket = factory.createSocket();
-        socket.connect(createInetSocketAddress(host, port), connectTimeout);
-
-        if (debug) {
-            System.err.println("Connection.createSocket: creating socket with " +
-                    "a timeout using supplied socket factory");
+        // create the socket
+        if (connectTimeout > 0) {
+            InetSocketAddress endpoint =
+                    createInetSocketAddress(host, port);
+            // unconnected socket
+            socket = factory.createSocket();
+            // connected socket
+            socket.connect(endpoint, connectTimeout);
+            if (debug) {
+                System.err.println("Connection: creating socket with " +
+                        "a timeout using supplied socket factory");
+            }
+        } else {
+            // continue (but ignore connectTimeout)
+            if (socket == null) {
+                // connected socket
+                socket = factory.createSocket(host, port);
+                if (debug) {
+                    System.err.println("Connection: creating socket using " +
+                            "supplied socket factory");
+                }
+            }
         }
         return socket;
     }
@@ -695,7 +719,7 @@ public final class Connection implements Runnable {
     // close socket
     private void closeOpenedSocket(Socket socket) {
         try {
-            if(socket != null && !socket.isClosed())
+            if (socket != null && !socket.isClosed())
                 socket.close();
         } catch (IOException ioEx) {
             if (debug) {
