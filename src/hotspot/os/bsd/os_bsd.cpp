@@ -746,10 +746,6 @@ void os::free_thread(OSThread* osthread) {
   delete osthread;
 }
 
-void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
-  os::Bsd::current_stack_region(stack_base, stack_size);
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 double os::elapsedVTime() {

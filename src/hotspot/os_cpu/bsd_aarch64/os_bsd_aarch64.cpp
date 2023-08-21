@@ -354,8 +354,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
-
-void os::Bsd::current_stack_region(address* base, size_t* size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
   address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();

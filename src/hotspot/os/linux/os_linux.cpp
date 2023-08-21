@@ -5375,7 +5375,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //    threads created by the VM. We adjust bottom to be P1 and size accordingly.
 //
 #ifndef ZERO
-void os::Linux::current_stack_region(address* base, size_t* size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
   address bottom;
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
@@ -5420,10 +5420,6 @@ void os::Linux::current_stack_region(address* base, size_t* size) {
 }
 
 #endif
-
-void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
-  os::Linux::current_stack_region(stack_base, stack_size);
-}
 
 static inline struct timespec get_mtime(const char* filename) {
   struct stat st;
