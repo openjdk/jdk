@@ -671,7 +671,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         if (visible) {
                 /* Frame or Dialog should be set property WINDOW_FULLSCREENABLE to true if the
                 Frame or Dialog is resizable.
-                **/
+                */
             final boolean resizable = (target instanceof Frame) ? ((Frame)target).isResizable() :
                     ((target instanceof Dialog) ? ((Dialog)target).isResizable() : false);
             if (resizable) {
