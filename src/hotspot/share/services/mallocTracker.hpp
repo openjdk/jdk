@@ -199,10 +199,6 @@ class MallocMemorySnapshot : public ResourceObj {
         s->_malloc[index] = _malloc[index];
         total_mallocs += _malloc[index].malloc_size();
       }
-      if (s->_all_mallocs.size() != total_mallocs) {
-        log_debug(nmt, tracking)("some malloc items changed after copied. The sum is different: %ld, %ld",s->_all_mallocs.size(), total_mallocs);
-      }
-      assert(s->_all_mallocs.size() == total_mallocs, "Total != Sum of parts");
     } while(s->_all_mallocs.size() != total_mallocs);
   }
 

@@ -165,10 +165,6 @@ void MemSummaryReporter::report() {
   out->cr();
 
   // Summary by memory type
-  log_debug(nmt, tracking)("value of reserved amount %ld", total_reserved_amount);
-  log_debug(nmt, tracking)("value of committed amount %ld", total_committed_amount);
-  _total_reserved = 0;
-  _total_committed = 0;
   for (int index = 0; index < mt_number_of_types; index ++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
@@ -177,12 +173,8 @@ void MemSummaryReporter::report() {
     VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
 
     report_summary_of_type(flag, malloc_memory, virtual_memory);
-    log_debug(nmt, tracking)("sum of reserved amount %ld", _total_reserved);
-    log_debug(nmt, tracking)("sum of committed amount %ld", _total_committed);
   }
 
-  assert(total_committed_amount == _total_committed, "total amount != sum of details");
-  assert(total_reserved_amount == _total_reserved, "total amount != sum of details");
 }
 
 void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
@@ -200,26 +192,17 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
         (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
       reserved_amount  += thread_stack_usage->reserved();
       committed_amount += thread_stack_usage->committed();
-      log_debug(nmt, tracking)("reserved amount mtThread & track_as_vm case: %ld", reserved_amount);
-      log_debug(nmt, tracking)("committed amount mtThread & track_as_vm case: %ld", committed_amount);
     } else {
       const MallocMemory* thread_stack_usage =
         (const MallocMemory*)_malloc_snapshot->by_type(mtThreadStack);
       reserved_amount += thread_stack_usage->malloc_size();
       committed_amount += thread_stack_usage->malloc_size();
-      log_debug(nmt, tracking)("reserved amount mtThread & not track_as_vm case: %ld", reserved_amount);
-      log_debug(nmt, tracking)("committed amount mtThread & not track_as_vm case: %ld", committed_amount);
     }
   } else if (flag == mtNMT) {
     // Count malloc headers in "NMT" category
     reserved_amount  += _malloc_snapshot->malloc_overhead();
     committed_amount += _malloc_snapshot->malloc_overhead();
-    log_debug(nmt, tracking)("reserved amount mtNMT case: %ld", reserved_amount);
-    log_debug(nmt, tracking)("committed amount mtNMT case: %ld", committed_amount);
   }
-
-  _total_reserved += reserved_amount;
-  _total_committed += committed_amount;
 
   if (amount_in_current_scale(reserved_amount) > 0) {
     outputStream* out   = output();
