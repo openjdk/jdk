@@ -121,8 +121,8 @@ class PerfMemory : AllStatic {
     static char*  _top;
     static size_t _capacity;
     static PerfDataPrologue*  _prologue;
-    static int    _initialized;
-    static bool   _destroyed;
+    static volatile int _initialized;
+    static volatile int _destroyed;
 
     static void create_memory_region(size_t sizep);
     static void delete_memory_region();
@@ -134,7 +134,7 @@ class PerfMemory : AllStatic {
     static size_t used() { return (size_t) (_top - _start); }
     static size_t capacity() { return _capacity; }
     static bool is_initialized();
-    static bool is_destroyed() { return _destroyed; }
+    static bool is_destroyed();
     static bool is_usable() { return is_initialized() && !is_destroyed(); }
     static bool contains(char* addr) {
       return ((_start != nullptr) && (addr >= _start) && (addr < _end));
