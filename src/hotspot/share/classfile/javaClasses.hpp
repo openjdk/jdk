@@ -1602,7 +1602,7 @@ public:
   // Setters
   static void init_class(Handle stackFrame, const methodHandle& m);
   static void init_method(Handle stackFrame, const methodHandle& m, TRAPS);
-  
+
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
