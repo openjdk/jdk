@@ -200,4 +200,13 @@ public class FilterOutputStream extends OutputStream {
             }
         }
     }
+
+    /**
+     * Tells whether or not this stream is open.
+     *
+     * @return {@code true} if, and only if, this stream is open
+     */
+    protected boolean isOpen(){
+        return !closed;
+    }
 }

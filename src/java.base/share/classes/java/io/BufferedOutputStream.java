@@ -127,6 +127,12 @@ public class BufferedOutputStream extends FilterOutputStream {
         }
     }
 
+    /** Checks to make sure that the stream has not been closed */
+    private void ensureOpen() throws IOException {
+        if (out == null || !isOpen())
+            throw new IOException("Stream closed");
+    }
+
     /**
      * Grow buf to fit an additional len bytes if needed.
      * If possible, it grows by len+1 to avoid flushing when len bytes
@@ -194,6 +200,7 @@ public class BufferedOutputStream extends FilterOutputStream {
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        ensureOpen();
         if (lock != null) {
             lock.lock();
             try {
