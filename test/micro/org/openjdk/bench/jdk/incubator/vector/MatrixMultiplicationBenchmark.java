@@ -172,8 +172,9 @@ public class MatrixMultiplicationBenchmark {
     }
 
     private static float[] newFloatRowMatrix(int size) {
-        float[] matrix = new float[size];
         var randomGenerator = RandomGenerator.getDefault();
+        float[] matrix = new float[size];
+
         for (int i = 0; i < matrix.length; ++i) {
             matrix[i] = randomGenerator.nextFloat();
         }
