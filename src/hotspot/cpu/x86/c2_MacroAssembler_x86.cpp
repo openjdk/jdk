@@ -629,6 +629,8 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   bind(IsInflated);
   // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markWord::monitor_value
 
+  testptr(objReg, objReg);
+  jmp(DONE_LABEL);
 #if INCLUDE_RTM_OPT
   // Use the same RTM locking code in 32- and 64-bit VM.
   if (use_rtm) {
@@ -781,6 +783,10 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
     jcc(Assembler::zero, Stacked);
   }
+
+  // It's inflated, skip all this stuff
+  testptr(objReg, objReg);
+  jmp(DONE_LABEL);
 
   // It's inflated.
   if (LockingMode == LM_LIGHTWEIGHT) {
