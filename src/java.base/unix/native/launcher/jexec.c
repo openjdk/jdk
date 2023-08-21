@@ -157,22 +157,26 @@ int main(int argc, const char * argv[]) {
     char          java[PATH_MAX + 1];    /* path to java binary  */
     const char ** nargv = NULL;          /* new args array       */
     int           nargc = 0;             /* new args array count */
-    int           argi  = 1;             /* index into old array */
+    int           argi  = 0;             /* index into old array */
     size_t        alen  = 0;             /* length of new array */
-#ifdef __linux__
-    const char* executable = "/proc/self/exe";
-#else
-    const char* executable = argv[0];
-#endif
-
+    int           error = 0;             /* getJavaPath error */
     /* Make sure we have something to work with */
     if ((argc < 1) || (argv == NULL)) {
         /* Shouldn't happen... */
         errorExit(CRAZY_EXEC, CRAZY_EXEC_MSG);
     }
     /* Get the path to the java binary, which is in a known position relative
-     * to our current position, which is in executable. */
-    if (getJavaPath(executable, java, RELATIVE_DEPTH) != 0) {
+     * to our current position, which is in argv[0]. */
+    error = getJavaPath(argv[argi++], java, RELATIVE_DEPTH);
+#ifdef __linux__
+    /* Try to read the symbolic link to the current binary
+     * if the java path can not be resolved from argv[0]. */
+    if (error != 0) {
+        error = getJavaPath("/proc/self/exe", java, RELATIVE_DEPTH);
+    }
+#endif
+
+    if (error != 0) {
         errorExit(errno, MISSING_JAVA_MSG);
     }
     alen = (argc + 2) * (sizeof (const char *));
