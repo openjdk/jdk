@@ -635,9 +635,9 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               const TypeInt* val_t = gvn->type(val)->isa_int();
               if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
                 if (val_t->_lo == lo) {
-                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
+                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen)->is_int();
                 } else if (val_t->_hi == hi) {
-                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
+                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen)->is_int();
                 }
               }
               // Can't refine type
@@ -667,7 +667,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
             default:
               break;
             }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
+            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen)->is_int();
             return rtn_t;
           }
         }

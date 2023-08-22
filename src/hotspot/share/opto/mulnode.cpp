@@ -1316,7 +1316,7 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
     jint lo = (jint)r1->_lo >> (jint)shift;
     jint hi = (jint)r1->_hi >> (jint)shift;
     assert(lo <= hi, "must have valid bounds");
-    const TypeInt* ti = TypeInt::make(lo, hi, MAX2(r1->_widen,r2->_widen));
+    const TypeInt* ti = TypeInt::make(lo, hi, MAX2(r1->_widen,r2->_widen))->is_int();
 #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
     if (shift == BitsPerJavaInteger-1) {
@@ -1378,7 +1378,7 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     jlong lo = (jlong)r1->_lo >> (jlong)shift;
     jlong hi = (jlong)r1->_hi >> (jlong)shift;
     assert(lo <= hi, "must have valid bounds");
-    const TypeLong* tl = TypeLong::make(lo, hi, MAX2(r1->_widen,r2->_widen));
+    const TypeLong* tl = TypeLong::make(lo, hi, MAX2(r1->_widen,r2->_widen))->is_long();
     #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
     if (shift == (2*BitsPerJavaInteger)-1) {
@@ -1550,7 +1550,7 @@ const Type* URShiftINode::Value(PhaseGVN* phase) const {
       hi = MAX2(neg_hi, pos_hi);  // == -1 >>> shift;
     }
     assert(lo <= hi, "must have valid bounds");
-    const TypeInt* ti = TypeInt::make(lo, hi, MAX2(r1->_widen,r2->_widen));
+    const TypeInt* ti = TypeInt::make(lo, hi, MAX2(r1->_widen,r2->_widen))->is_int();
     #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
     if (shift == BitsPerJavaInteger-1) {
@@ -1697,7 +1697,7 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
       hi = neg_hi > pos_hi ? neg_hi : pos_hi;
     }
     assert(lo <= hi, "must have valid bounds");
-    const TypeLong* tl = TypeLong::make(lo, hi, MAX2(r1->_widen,r2->_widen));
+    const TypeLong* tl = TypeLong::make(lo, hi, MAX2(r1->_widen,r2->_widen))->is_long();
     #ifdef ASSERT
     // Make sure we get the sign-capture idiom correct.
     if (shift == BitsPerJavaLong - 1) {

@@ -549,7 +549,13 @@ public:
 
 class TypeInteger : public Type {
 protected:
-  TypeInteger(TYPES t, int w) : Type(t), _widen(w) {}
+  TypeInteger(TYPES t, int w, bool dual) : Type(t), _dual(dual), _widen(w) {}
+
+  // An integer type represents a set of values x that satisfy:
+  // x >= lo && x <= hi && x u>= ulo && x u<= uhi && (~x & ones) == 0 && (x & zeros) == 0
+  // A dual integer type represents a set of values x that satisfy:
+  // x < lo || x > hi || x u< ulo || x u> uhi || (~x & ones) != 0 || (x & zeros) != 0
+  const bool _dual;
 
 public:
   const short _widen;           // Limit on times we widen this sucker
@@ -560,7 +566,7 @@ public:
   bool is_con() const { return lo_as_long() == hi_as_long(); }
   virtual short widen_limit() const { return _widen; }
 
-  static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
+  static const Type* make(jlong lo, jlong hi, int w, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
   static const TypeInteger* zero(BasicType type);
@@ -574,33 +580,37 @@ public:
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
-  TypeInt( jint lo, jint hi, int w );
+  TypeInt(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual);
+  static const Type* make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual);
 protected:
-  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
+  virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
 public:
   typedef jint NativeType;
-  virtual bool eq( const Type *t ) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
   const jint _lo, _hi;          // Lower bound, upper bound
+  const juint _ulo, _uhi;
+  const juint _zeros, _ones;
 
-  static const TypeInt *make(jint lo);
+  static const TypeInt* make(jint lo);
   // must always specify w
-  static const TypeInt *make(jint lo, jint hi, int w);
+  static const Type* make(jint lo, jint hi, int w);
+  static const Type* make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w);
 
   // Check for single integer
-  bool is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo == _hi; }
   bool is_con(jint i) const { return is_con() && _lo == i; }
-  jint get_con() const { assert(is_con(), "" );  return _lo; }
+  jint get_con() const { assert(is_con(), "");  return _lo; }
 
-  virtual bool        is_finite() const;  // Has a finite value
+  virtual bool is_finite() const;  // Has a finite value
 
-  virtual const Type *xmeet( const Type *t ) const;
-  virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
-  virtual const Type *narrow( const Type *t ) const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  virtual const Type* widen(const Type* t, const Type* limit_type) const;
+  virtual const Type* narrow(const Type* t) const;
 
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
@@ -640,10 +650,11 @@ public:
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
 class TypeLong : public TypeInteger {
-  TypeLong( jlong lo, jlong hi, int w );
+  TypeLong(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual);
+  static const Type* make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual);
 protected:
   // Do not kill _widen bits.
-  virtual const Type *filter_helper(const Type *kills, bool include_speculative) const;
+  virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 public:
   typedef jlong NativeType;
   virtual bool eq( const Type *t ) const;
@@ -652,13 +663,16 @@ public:
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
   const jlong _lo, _hi;         // Lower bound, upper bound
+  const julong _ulo, _uhi;
+  const julong _zeros, _ones;
 
-  static const TypeLong *make(jlong lo);
+  static const TypeLong* make(jlong lo);
   // must always specify w
-  static const TypeLong *make(jlong lo, jlong hi, int w);
+  static const Type* make(jlong lo, jlong hi, int w);
+  static const Type* make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w);
 
   // Check for single integer
-  bool is_con() const { return _lo==_hi; }
+  bool is_con() const { return _lo == _hi; }
   bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
 
@@ -670,10 +684,10 @@ public:
   virtual jlong hi_as_long() const { return _hi; }
   virtual jlong lo_as_long() const { return _lo; }
 
-  virtual const Type *xmeet( const Type *t ) const;
-  virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
-  virtual const Type *narrow( const Type *t ) const;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
+  virtual const Type* widen(const Type* t, const Type* limit_type) const;
+  virtual const Type* narrow(const Type* t) const;
   // Convenience common pre-built types.
   static const TypeLong *MAX;
   static const TypeLong *MIN;

@@ -3820,8 +3820,10 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
     if (tilen != nullptr && tilen->_lo < 0) {
       // Add a manual constraint to a positive range.  Cf. array_element_address.
       jint size_max = fast_size_limit;
-      if (size_max > tilen->_hi)  size_max = tilen->_hi;
-      const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
+      if (size_max > tilen->_hi && tilen->_hi >= 0) {
+        size_max = tilen->_hi;
+      }
+      const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin)->is_int();
 
       // Only do a narrow I2L conversion if the range check passed.
       IfNode* iff = new IfNode(control(), initial_slow_test, PROB_MIN, COUNT_UNKNOWN);

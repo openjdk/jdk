@@ -597,8 +597,9 @@ static bool compute_updates_ranges(const TypeInteger* tx, const TypeInteger* ty,
   }
 
   int widen =  MAX2(tx->widen_limit(), ty->widen_limit());
-  rx = TypeInteger::make(rxlo, rxhi, widen, out_bt);
-  ry = TypeInteger::make(rylo, ryhi, widen, out_bt);
+  assert(rxlo <= rxhi && rylo <= ryhi, "");
+  rx = TypeInteger::make(rxlo, rxhi, widen, out_bt)->is_integer(out_bt);
+  ry = TypeInteger::make(rylo, ryhi, widen, out_bt)->is_integer(out_bt);
   return true;
 }
 
@@ -740,7 +741,7 @@ const Type* ConvL2INode::Value(PhaseGVN* phase) const {
     // Easy case.
     ti = TypeInt::make((jint)tl->get_con());
   } else if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
-    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen);
+    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen)->is_int();
   }
   return ti->filter(_type);
 }

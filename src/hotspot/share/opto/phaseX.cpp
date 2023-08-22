@@ -1756,6 +1756,27 @@ PhaseCCP::~PhaseCCP() {
 void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
   if (tnew->meet(told) != tnew->remove_speculative()) {
     n->dump(1);
+    tty->print("t1 = "); type(n->in(1))->dump(); tty->cr();
+    tty->print("t2 = "); type(n->in(2))->dump(); tty->cr();
+    
+    Node *r = n->in(0);
+    const Type *t = Type::TOP;        // Merged type starting value
+    for (uint i = 1; i < n->req(); ++i) {// For all paths in
+      // Reachable control path?
+      if (r->in(i) && type(r->in(i)) == Type::CONTROL) {
+        const Type* ti = type(n->in(i));
+        t = t->meet_speculative(ti);
+      }
+    }
+    t = t->filter_speculative(n->as_Type()->type());
+    t->dump(); tty->cr();
+    type(n)->dump(); tty->cr();
+    n->as_Type()->type()->dump(); tty->cr();
+    t = t->widen(type(n), n->as_Type()->type());
+    t->dump(); tty->cr();
+    TypeInt::make(2, 9, 2, 9, -8, 0, Type::WidenMax)->dump(); tty->cr();
+
+    tty->print("r val = "); type(n->in(0))->dump(); tty->cr();
     tty->print("told = "); told->dump(); tty->cr();
     tty->print("tnew = "); tnew->dump(); tty->cr();
     fatal("Not monotonic");

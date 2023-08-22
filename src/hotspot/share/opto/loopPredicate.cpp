@@ -826,7 +826,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scal
       ConINode* con_stride = _igvn.intcon(stride);
       set_ctrl(con_stride, C->root());
       max_idx_expr = new SubINode(limit, con_stride);
-      idx_type = TypeInt::make(limit_lo - stride, limit_hi - stride, limit_type->_widen);
+      idx_type = TypeInt::make(limit_lo - stride, limit_hi - stride, limit_type->_widen)->is_int();
     } else {
       // May overflow
       overflow = true;

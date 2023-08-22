@@ -938,8 +938,8 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
       (t2i->_lo >= 0) &&
       (t2i->_hi > 0)) {
     // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
+    const Type* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
+    const Type* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
     return t1x->meet(t2x);
   }
   return AddNode::Value(phase);
@@ -1023,8 +1023,8 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
       (t2l->_lo >= 0) &&
       (t2l->_hi > 0)) {
     // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
+    const Type* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
+    const Type* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
     return t1x->meet(t2x);
   }
   return AddNode::Value(phase);

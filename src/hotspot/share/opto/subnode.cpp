@@ -830,8 +830,8 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
       if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
         int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
-        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
-        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
+        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w)->is_int();
+        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w)->is_int();
         const TypeInt* cmp1 = sub(tr1, t2)->is_int();
         const TypeInt* cmp2 = sub(tr2, t2)->is_int();
         // Compute union, so that cmp handles all possible results from the two cases
@@ -1442,8 +1442,8 @@ Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
         // Overflow on one boundary, compute resulting type ranges:
         // tr1 [MIN_INT, hi_int] and tr2 [lo_int, MAX_INT]
         int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
-        const TypeInt* tr1 = TypeInt::make(min_jint, hi_int, w);
-        const TypeInt* tr2 = TypeInt::make(lo_int, max_jint, w);
+        const TypeInt* tr1 = TypeInt::make(min_jint, hi_int, w)->is_int();
+        const TypeInt* tr2 = TypeInt::make(lo_int, max_jint, w)->is_int();
         // Compare second input of cmp to both type ranges
         const Type* sub_tr1 = cmp->sub(tr1, cmp2_type);
         const Type* sub_tr2 = cmp->sub(tr2, cmp2_type);
