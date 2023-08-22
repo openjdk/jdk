@@ -101,7 +101,6 @@ import java.util.Arrays;
  * {@link MessageFormat} to produce accurate forms for singular and plural:
  * <blockquote>
  * {@snippet lang=java :
- * // Create the ChoiceFormat
  * double[] filelimits = {0,1,2};
  * String[] filepart = {"are no files","is one file","are {2} files"};
  * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
@@ -109,7 +108,6 @@ import java.util.Arrays;
  * MessageFormat pattform = new MessageFormat("There {0} on {1}");
  * pattform.setFormats(testFormats);
  * Object[] testArgs = {null, "ADisk", null};
- * // Iterate some values
  * for (int i = 0; i < 4; ++i) {
  *     testArgs[0] = Integer.valueOf(i);
  *     testArgs[2] = testArgs[0];
