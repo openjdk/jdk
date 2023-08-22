@@ -197,7 +197,7 @@ void PerfMemory::destroy() {
     delete_memory_region();
   }
 
-  Atomic::release_store(&_destroyed, 1);
+  _destroyed = 1;
 }
 
 // allocate an aligned block of memory from the PerfData memory
@@ -273,6 +273,5 @@ bool PerfMemory::is_initialized() {
 }
 
 bool PerfMemory::is_destroyed() {
-  return Atomic::load_acquire(&_destroyed) != 0;
+  return _destroyed != 0;
 }
-
