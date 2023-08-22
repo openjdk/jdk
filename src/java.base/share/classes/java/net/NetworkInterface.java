@@ -50,6 +50,17 @@ import java.util.stream.StreamSupport;
 public final class NetworkInterface {
 
     // Todo: Remove this
+    private String name;
+    private String displayName;
+    private int index;
+    private InetAddress addrs[];
+    private InterfaceAddress bindings[];
+    private NetworkInterface childs[];
+    private NetworkInterface parent = null;
+    private boolean virtual = false;
+
+
+    // Todo: Remove this
     static {
         jdk.internal.loader.BootLoader.loadLibrary("net");
         init();
