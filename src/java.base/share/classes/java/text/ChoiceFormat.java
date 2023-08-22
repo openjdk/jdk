@@ -391,7 +391,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Get the limits of the ChoiceFormat object.
+     * Get the limits of this ChoiceFormat.
      * @return the limits.
      */
     public double[] getLimits() {
@@ -400,7 +400,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Get the formats of the ChoiceFormat object.
+     * Get the formats of this ChoiceFormat.
      * @return the formats.
      */
     public Object[] getFormats() {
