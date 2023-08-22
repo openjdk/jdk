@@ -301,8 +301,7 @@ public class TestTrimNative {
                         new String[] { TestTrimNative.Tester.class.getName(), "0" }
                 );
                 long ms2 = System.currentTimeMillis();
-                long runtime_ms = ms2 - ms1;
-                long maxTrimsExpected = runtime_ms;
+                int maxTrimsExpected = (int)(ms2 - ms1); // 1ms trim interval
                 checkExpectedLogMessages(output, true, 1);
                 parseOutputAndLookForNegativeTrim(output, 1, (int)maxTrimsExpected, strictTesting);
             } break;
