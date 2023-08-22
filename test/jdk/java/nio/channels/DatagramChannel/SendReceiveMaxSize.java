@@ -131,6 +131,10 @@ public class SendReceiveMaxSize {
             throws IOException {
         try (var receiver = DatagramChannel.open()) {
             receiver.bind(new InetSocketAddress(host, 0));
+            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity, 
+                       receiver.getOption(SO_RCVBUF) +
+                       " for UDP receive buffer too small to hold capacity " +
+                       capacity);
             var port = receiver.socket().getLocalPort();
             var addr = new InetSocketAddress(host, port);
 
@@ -139,12 +143,6 @@ public class SendReceiveMaxSize {
                 if (!Platform.isOSX()) {
                     if (sender.getOption(SO_SNDBUF) < capacity)
                         sender.setOption(SO_SNDBUF, capacity);
-                    if (receiver.getOption(SO_RCVBUF) < capacity+28){
-                        throw new Error("system value " +
-                                        receiver.getOption(SO_RCVBUF) +
-                                        " for UDP receive buffer too small to hold capacity " +
-                                        capacity);
-                    }
                 }
                 byte[] testData = new byte[capacity];
                 random.nextBytes(testData);
