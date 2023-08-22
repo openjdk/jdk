@@ -31,6 +31,7 @@
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
+import static java.lang.StackWalker.Kind.*;
 import static java.lang.StackWalker.Option.*;
 
 import org.junit.jupiter.api.Test;
@@ -46,9 +47,11 @@ public class SanityTest {
         assertThrows(NullPointerException.class, () ->
                 StackWalker.getInstance((StackWalker.Option) null));
         assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance((StackWalker.Option[]) null));
+                StackWalker.getInstance(null, (StackWalker.Option[])null));
         assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance(new StackWalker.Option[] { null }));
+                StackWalker.getInstance(METHOD_INFO, (StackWalker.Option[])null));
+        assertThrows(NullPointerException.class, () ->
+                StackWalker.getInstance(METHOD_INFO, new StackWalker.Option[] { null }));
     }
 
     @Test
@@ -82,20 +85,19 @@ public class SanityTest {
                 StackWalker.getInstance().forEach(StackWalker.StackFrame::getDeclaringClass));
     }
 
-    private static Stream<StackWalker> noMethodTypeAccess() {
-        return Stream.of(StackWalker.getInstance(), StackWalker.getInstance(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO));
-    }
-
-    @ParameterizedTest
-    @MethodSource("noMethodTypeAccess")
+    @Test
     public void testUOEFromGetMethodType() {
         assertThrows(UnsupportedOperationException.class, () ->
                 StackWalker.getInstance().forEach(StackWalker.StackFrame::getMethodType));
     }
 
-    @Test
-    public void testNoMethodInfo() {
-        StackWalker sw = StackWalker.getInstance(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO);
+    private static Stream<StackWalker> noMethodInfo() {
+        return Stream.of(StackWalker.getInstance(CLASS_INFO), StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE));
+    }
+
+    @ParameterizedTest
+    @MethodSource("noMethodInfo")
+    public void testNoMethodInfo(StackWalker sw) {
         assertThrows(UnsupportedOperationException.class, () ->
                 sw.forEach(StackWalker.StackFrame::getMethodName));
         assertThrows(UnsupportedOperationException.class, () ->

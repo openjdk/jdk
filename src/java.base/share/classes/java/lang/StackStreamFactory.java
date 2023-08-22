@@ -46,6 +46,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import sun.security.action.GetPropertyAction;
 
+import static java.lang.StackWalker.Kind.*;
 import static java.lang.StackStreamFactory.WalkerState.*;
 
 /**
@@ -75,7 +76,7 @@ final class StackStreamFactory {
 
     // These flags must match the values maintained in the VM
     @Native private static final int DEFAULT_MODE              = 0x0;
-    @Native private static final int FILL_CLASS_REFS_ONLY      = 0x2;
+    @Native private static final int CLASS_INFO_ONLY           = 0x2;
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
     /*
@@ -111,10 +112,10 @@ final class StackStreamFactory {
 
     private static int toStackWalkMode(StackWalker walker, int mode) {
         int newMode = mode;
+        if (walker.kind() == CLASS_INFO)
+            newMode |= CLASS_INFO_ONLY;
         if (walker.hasOption(Option.SHOW_HIDDEN_FRAMES))
             newMode |= SHOW_HIDDEN_FRAMES;
-        if (walker.hasOption(Option.NO_METHOD_INFO))
-            newMode |= FILL_CLASS_REFS_ONLY;
         if (walker.hasLocalsOperandsOption())
             newMode |= FILL_LIVE_STACK_FRAMES;
         return newMode;
@@ -452,7 +453,7 @@ final class StackStreamFactory {
          * @param continuation the continuation to walk, or {@code null} if walking a thread.
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param frames      Either a Class<?> array, if mode is {@link #FILL_CLASS_REFS_ONLY}
+         * @param frames      Either a Class<?> array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          * @return            Result of AbstractStackWalker::doStackWalk
          */
@@ -468,7 +469,7 @@ final class StackStreamFactory {
          * @param anchor
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param frames      Either a Class<?> array, if mode is {@link #FILL_CLASS_REFS_ONLY}
+         * @param frames      Either a Class<?> array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          *
          * @return the end index to the frame buffers
@@ -527,7 +528,7 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = walker.hasOption(Option.NO_METHOD_INFO)
+            this.frameBuffer = walker.kind() == CLASS_INFO
                                     ? new ClassBuffer(getNextBatchSize())
                                     : new StackFrameBuffer(walker, getNextBatchSize());
         }
@@ -737,7 +738,7 @@ final class StackStreamFactory {
         private Class<?> caller;
 
         CallerClassFinder(StackWalker walker) {
-            super(walker, toStackWalkMode(walker, FILL_CLASS_REFS_ONLY));
+            super(walker, toStackWalkMode(walker, CLASS_INFO_ONLY));
         }
 
         Class<?> findCaller() {
@@ -898,7 +899,7 @@ final class StackStreamFactory {
          * when walking the stack.
          *
          * May be an array of {@code Class<?>} if the {@code AbstractStackWalker}
-         * mode is {@link #FILL_CLASS_REFS_ONLY}, or an array of
+         * mode is {@link #CLASS_INFO_ONLY}, or an array of
          * {@link StackFrameInfo} (or derivative) array otherwise.
          *
          * @return An array of frames that may be used to store frame objects

@@ -44,7 +44,7 @@
 JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
   (JNIEnv *env, jclass dummy)
 {
-   return JVM_STACKWALK_FILL_CLASS_REFS_ONLY == java_lang_StackStreamFactory_FILL_CLASS_REFS_ONLY &&
+   return JVM_STACKWALK_CLASS_INFO_ONLY == java_lang_StackStreamFactory_CLASS_INFO_ONLY &&
           JVM_STACKWALK_SHOW_HIDDEN_FRAMES == java_lang_StackStreamFactory_SHOW_HIDDEN_FRAMES &&
           JVM_STACKWALK_FILL_LIVE_STACK_FRAMES == java_lang_StackStreamFactory_FILL_LIVE_STACK_FRAMES;
 }

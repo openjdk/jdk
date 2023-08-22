@@ -37,7 +37,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import static java.lang.StackWalker.Option.*;
+import static java.lang.StackWalker.Kind.CLASS_INFO;
+import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
 
 /**
  * Benchmarks for java.lang.StackWalker
@@ -49,15 +50,15 @@ import static java.lang.StackWalker.Option.*;
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
 public class StackWalkBench {
-    private static final StackWalker WALKER_CLASS =
+    private static final StackWalker WALKER =
             StackWalker.getInstance(RETAIN_CLASS_REFERENCE);
-    private static final StackWalker WALKER_CLASS_NO_METHOD =
-            StackWalker.getInstance(RETAIN_CLASS_REFERENCE, NO_METHOD_INFO);
+    private static final StackWalker WALKER_CLASS_ONLY =
+            StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE);
 
     static StackWalker walker(String name) {
         return switch (name) {
-            case "default" -> WALKER_CLASS;
-            case "no_method" -> WALKER_CLASS_NO_METHOD;
+            case "default" -> WALKER;
+            case "class_only" -> WALKER_CLASS_ONLY;
             default -> throw new IllegalArgumentException(name);
         };
     }
@@ -74,7 +75,7 @@ public class StackWalkBench {
     // @Param({"4"})
     public int mark = 4;
 
-    @Param({"default", "no_method"})
+    @Param({"default", "class_info"})
     public String walker;
 
     /** Build a call stack of a given size, then run trigger code in it.
@@ -227,7 +228,7 @@ public class StackWalkBench {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
         final StackWalker sw = walker(walker);
-        if (sw != WALKER_CLASS) return;
+        if (sw == WALKER_CLASS_ONLY) return;
         new TestStack(depth, new Runnable() {
             public void run() {
                 sw.walk( s -> {
@@ -293,7 +294,7 @@ public class StackWalkBench {
         final Blackhole localBH = bh;
         final boolean[] done = {false};
         final StackWalker sw = walker(walker);
-        if (sw != WALKER_CLASS) return;
+        if (sw == WALKER_CLASS_ONLY) return;
 
         new TestStack(depth, new Runnable() {
             public void run() {

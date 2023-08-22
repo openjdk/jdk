@@ -72,7 +72,7 @@ final class JceSecurityManager {
         INSTANCE = dummySecurityManager;
 
         PrivilegedAction<StackWalker> paWalker =
-                () -> StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE, Option.NO_METHOD_INFO);
+                () -> StackWalker.getInstance(StackWalker.Kind.CLASS_INFO, Option.RETAIN_CLASS_REFERENCE);
         @SuppressWarnings("removal")
         StackWalker dummyWalker = AccessController.doPrivileged(paWalker);
 

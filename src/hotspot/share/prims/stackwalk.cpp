@@ -432,7 +432,6 @@ oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont
 
   // Setup traversal onto my stack.
   if (live_frame_info(mode)) {
-    assert(use_frames_array(mode), "Bad mode for get live frame");
     RegisterMap regMap = cont.is_null() ? RegisterMap(jt,
                                                       RegisterMap::UpdateMap::include,
                                                       RegisterMap::ProcessFrames::include,

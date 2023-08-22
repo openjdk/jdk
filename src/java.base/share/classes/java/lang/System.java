@@ -2659,7 +2659,7 @@ public final class System {
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                                       ContinuationScope contScope,
                                                       Continuation continuation) {
-                return StackWalker.newInstance(options, null, contScope, continuation);
+                return StackWalker.newInstance(StackWalker.Kind.METHOD_INFO, options, null, contScope, continuation);
             }
 
             public String getLoaderNameID(ClassLoader loader) {

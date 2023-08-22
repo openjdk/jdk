@@ -244,7 +244,7 @@ JVM_GetExtendedNPEMessage(JNIEnv *env, jthrowable throwable);
  * java.lang.StackWalker
  */
 enum {
-  JVM_STACKWALK_FILL_CLASS_REFS_ONLY       = 0x2,
+  JVM_STACKWALK_CLASS_INFO_ONLY            = 0x2,
   JVM_STACKWALK_SHOW_HIDDEN_FRAMES         = 0x20,
   JVM_STACKWALK_FILL_LIVE_STACK_FRAMES     = 0x100
 };

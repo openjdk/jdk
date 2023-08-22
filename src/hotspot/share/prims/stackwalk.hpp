@@ -156,11 +156,9 @@ private:
 
 public:
   static inline bool need_method_info(jlong mode) {
-    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
+    return (mode & JVM_STACKWALK_CLASS_INFO_ONLY) == 0;
   }
-  static inline bool use_frames_array(jlong mode) {
-    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
-  }
+
   static oop walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,
                   int frame_count, int start_index, objArrayHandle frames_array,
                   TRAPS);
