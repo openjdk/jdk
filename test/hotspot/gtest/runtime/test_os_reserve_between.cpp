@@ -145,7 +145,10 @@ public:
     for (int i = 56; _base == nullptr && i > 32; i--) {
       // We reserve at weird outlier addresses, in order to minimize the chance of concurrent mmaps grabbing
       // the hole.
-      _base = os::attempt_reserve_memory_at((char*)nth_bit(i), _len);
+      const uintptr_t candidate = nth_bit(i);
+      if ((candidate + _len) <= ARMB_constants::absolute_max) {
+        _base = os::attempt_reserve_memory_at((char*)candidate, _len);
+      }
     }
     if (_base == nullptr) {
       return false;
