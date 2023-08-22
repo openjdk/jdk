@@ -22,7 +22,9 @@
  */
 
 // no precompiled headers
+#ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
+#endif
 #include "ci/ciUtilities.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/oopMap.hpp"
@@ -43,7 +45,9 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
