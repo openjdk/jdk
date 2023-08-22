@@ -21,25 +21,22 @@
  * questions.
  */
 
+import jdk.test.lib.net.URIBuilder;
+
+import javax.naming.Context;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
-import javax.naming.Context;
 import java.net.SocketException;
-import java.security.KeyStore;
 import java.util.Hashtable;
-
-import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
@@ -120,6 +117,7 @@ public class LdapSSLHandshakeFailureTest {
             }
         }
     }
+
     public static class CustomSocketFactory extends SocketFactory {
         private static CustomSocket customSocket;
 
@@ -158,9 +156,11 @@ public class LdapSSLHandshakeFailureTest {
 
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
-        public CustomSocket () {
+
+        public CustomSocket() {
             closeMethodCalled = 0;
         }
+
         public int closeMethodCalledCount() {
             return closeMethodCalled;
         }
@@ -183,7 +183,7 @@ public class LdapSSLHandshakeFailureTest {
     }
 
     static class TestServer extends Thread implements AutoCloseable {
-        private boolean isForceToSleep = false;
+        private boolean isForceToSleep;
         private final ServerSocket serverSocket;
         private final int PORT;
 
