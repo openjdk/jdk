@@ -47,19 +47,19 @@ public class PBEKeyDestroyTest {
         SecretKey key1 = skf.generateSecret(keySpec);
         SecretKey key2 = skf.generateSecret(keySpec);
 
+        // should be equal
         Assert.assertFalse(key1.isDestroyed());
         Assert.assertFalse(key2.isDestroyed());
-
-        // check key1 equals key2
         Assert.assertTrue(key1.equals(key2));
         Assert.assertTrue(key2.equals(key1));
 
+        // destroy key1
         key1.destroy();
         Assert.assertTrue(key1.isDestroyed());
-
         Assert.assertFalse(key1.equals(key2));
         Assert.assertFalse(key2.equals(key1));
 
+        // also destroy key2
         key2.destroy();
         Assert.assertTrue(key2.isDestroyed());
         Assert.assertFalse(key1.equals(key2));
