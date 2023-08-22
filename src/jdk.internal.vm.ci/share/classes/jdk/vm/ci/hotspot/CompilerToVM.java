@@ -243,7 +243,7 @@ final class CompilerToVM {
      * @param accessingClass the class loader of this class is used for resolution. Must not be null.
      * @param resolve force resolution to a {@link ResolvedJavaType}. If true, this method will
      *            either return a {@link ResolvedJavaType} or throw an exception
-     * @return the type for {@code name} or 0 if resolution failed and {@code resolve == false}
+     * @return the type for {@code name} or {@code null} if resolution failed and {@code resolve == false}
      * @throws NoClassDefFoundError if {@code resolve == true} and the resolution failed
      */
     HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws NoClassDefFoundError {
