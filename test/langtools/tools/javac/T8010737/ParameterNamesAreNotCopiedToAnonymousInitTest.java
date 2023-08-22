@@ -26,7 +26,12 @@
  * @bug 8010737
  * @summary javac, known parameter's names should be copied to automatically
  * generated constructors for inner classes
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.tree
@@ -51,8 +56,6 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Attribute.Compound;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -63,6 +66,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Names;
+import jdk.internal.classfile.*;
 
 public class ParameterNamesAreNotCopiedToAnonymousInitTest {
 
@@ -112,10 +116,10 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
     }
 
     void checkClassFile(final File cfile, int numberOfParams) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = Classfile.of().parse(cfile.toPath());
         boolean methodFound = false;
-        for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals("<init>")) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString("<init>")) {
                 methodFound = true;
             }
         }
@@ -143,8 +147,12 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
                     Arrays.asList(new File(System.getProperty("test.src"),
                     this.getClass().getName() + ".java")));
             java.util.List<String> options = Arrays.asList(
-                "--add-modules", "jdk.jdeps",
-                "--add-exports", "jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+                "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",

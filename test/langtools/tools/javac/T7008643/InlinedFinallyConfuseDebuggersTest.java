@@ -26,7 +26,12 @@
  * @bug 7008643
  * @summary inlined finally clauses confuse debuggers
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -38,10 +43,8 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -97,22 +100,21 @@ public class InlinedFinallyConfuseDebuggersTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
+        ClassModel classFile = Classfile.of().parse(cfile.toPath());
         boolean methodFound = false;
-        for (Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(methodToFind)) {
+        for (MethodModel m : classFile.methods()) {
+            if (m.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                Code_attribute code = (Code_attribute) method.attributes.get("Code");
-                LineNumberTable_attribute lnt =
-                        (LineNumberTable_attribute) code.attributes.get("LineNumberTable");
-                Assert.check(lnt.line_number_table_length == expectedLNT.length,
+                CodeAttribute code = m.findAttribute(Attributes.CODE).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;
-                for (LineNumberTable_attribute.Entry entry: lnt.line_number_table) {
-                    Assert.check(entry.line_number == expectedLNT[i][0] &&
-                            entry.start_pc == expectedLNT[i][1],
+                for (LineNumberInfo entry: lnt.lineNumbers()) {
+                    Assert.check(entry.lineNumber() == expectedLNT[i][0] &&
+                            entry.startPc() == expectedLNT[i][1],
                             "LNT entry at pos " + i + " differ from expected." +
-                            "Found " + entry.line_number + ":" + entry.start_pc +
+                            "Found " + entry.lineNumber() + ":" + entry.startPc() +
                             ". Expected " + expectedLNT[i][0] + ":" + expectedLNT[i][1]);
                     i++;
                 }
