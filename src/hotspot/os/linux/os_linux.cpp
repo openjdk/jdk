@@ -401,7 +401,7 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 // Returns the kernel thread id of the currently running thread. Kernel
 // thread id is used to access /proc.
 pid_t os::Linux::gettid() {
-  int rslt = syscall(SYS_gettid);
+  long rslt = syscall(SYS_gettid);
   assert(rslt != -1, "must be."); // old linuxthreads implementation?
   return (pid_t)rslt;
 }
@@ -423,7 +423,7 @@ static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "environment on Linux when /proc filesystem is not mounted.";
 
 void os::Linux::initialize_system_info() {
-  set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
+  set_processor_count((int)sysconf(_SC_NPROCESSORS_CONF));
   if (processor_count() == 1) {
     pid_t pid = os::Linux::gettid();
     char fname[32];
@@ -742,7 +742,7 @@ static void *thread_native_entry(Thread *thread) {
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
 
-  osthread->set_thread_id(os::current_thread_id());
+  osthread->set_thread_id(checked_cast<OSThread::thread_id_t>(os::current_thread_id()));
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -1265,7 +1265,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // by email from Hans Boehm. /proc/self/stat begins with current pid,
     // followed by command name surrounded by parentheses, state, etc.
     char stat[2048];
-    int statlen;
+    size_t statlen;
 
     fp = os::fopen("/proc/self/stat", "r");
     if (fp) {
@@ -1474,7 +1474,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
-      if (offset != nullptr) *offset = addr - (address)dlinfo.dli_saddr;
+      if (offset != nullptr) *offset = pointer_delta_as_int(addr, (address)dlinfo.dli_saddr);
       return true;
     }
     // no matching symbol so try for just file info
@@ -1502,7 +1502,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
     if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
-      *offset = addr - (address)dlinfo.dli_fbase;
+      *offset = pointer_delta_as_int(addr, (address)dlinfo.dli_fbase);
     }
     return true;
   }
@@ -1601,14 +1601,14 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   Elf32_Ehdr elf_head;
-  int diag_msg_max_length=ebuflen-strlen(ebuf);
-  char* diag_msg_buf=ebuf+strlen(ebuf);
-
-  if (diag_msg_max_length==0) {
+  size_t prefix_len = strlen(ebuf);
+  ssize_t diag_msg_max_length = ebuflen - prefix_len;
+  if (diag_msg_max_length <= 0) {
     // No more space in ebuf for additional diagnostics message
     return nullptr;
   }
 
+  char* diag_msg_buf = ebuf + prefix_len;
 
   int file_descriptor= ::open(filename, O_RDONLY | O_NONBLOCK);
 
@@ -1891,7 +1891,7 @@ static bool _print_ascii_file(const char* filename, outputStream* st, unsigned* 
   }
 
   char buf[33];
-  int bytes;
+  ssize_t bytes;
   buf[32] = '\0';
   unsigned lines = 0;
   while ((bytes = ::read(fd, buf, sizeof(buf)-1)) > 0) {
@@ -2382,7 +2382,7 @@ void os::Linux::print_steal_info(outputStream* st) {
       uint64_t total_ticks_difference = pticks.total - initial_total_ticks;
       double steal_ticks_perc = 0.0;
       if (total_ticks_difference != 0) {
-        steal_ticks_perc = (double) steal_ticks_difference / total_ticks_difference;
+        steal_ticks_perc = (double) steal_ticks_difference / (double)total_ticks_difference;
       }
       st->print_cr("Steal ticks since vm start: " UINT64_FORMAT, steal_ticks_difference);
       st->print_cr("Steal ticks percentage since vm start:%7.3f", steal_ticks_perc);
@@ -2424,7 +2424,7 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
   if (fp) {
     bool model_name_printed = false;
     while (!feof(fp)) {
-      if (fgets(buf, buflen, fp)) {
+      if (fgets(buf, (int)buflen, fp)) {
         // Assume model name comes before flags
         if (strstr(buf, "model name") != nullptr) {
           if (!model_name_printed) {
@@ -2667,7 +2667,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
-        len = strlen(buf);
+        len = checked_cast<int>(strlen(buf));
         assert(len < buflen, "Ran out of buffer room");
         jrelib_p = buf + len;
         snprintf(jrelib_p, buflen-len, "/jre/lib");
@@ -2677,7 +2677,7 @@ void os::jvm_path(char *buf, jint buflen) {
 
         if (0 == access(buf, F_OK)) {
           // Use current module name "libjvm.so"
-          len = strlen(buf);
+          len = (int)strlen(buf);
           snprintf(buf + len, buflen-len, "/hotspot/libjvm.so");
         } else {
           // Go back to path of .so
@@ -2970,7 +2970,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected,
 
 int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;
-  int retval = -1;
+  long retval = -1;
 
 #if defined(IA32)
   #ifndef SYS_getcpu
@@ -2989,7 +2989,7 @@ int os::Linux::sched_getcpu_syscall(void) {
   retval = vgetcpu(&cpu, nullptr, nullptr);
 #endif
 
-  return (retval == -1) ? retval : cpu;
+  return (retval == -1) ? -1 : cpu;
 }
 
 void os::Linux::sched_getcpu_init() {
@@ -3142,30 +3142,30 @@ void os::Linux::rebuild_nindex_to_node_map() {
 // rebuild_cpu_to_node_map() constructs a table mapping cpud id to node id.
 // The table is later used in get_node_by_cpu().
 void os::Linux::rebuild_cpu_to_node_map() {
-  const size_t NCPUS = 32768; // Since the buffer size computation is very obscure
-                              // in libnuma (possible values are starting from 16,
-                              // and continuing up with every other power of 2, but less
-                              // than the maximum number of CPUs supported by kernel), and
-                              // is a subject to change (in libnuma version 2 the requirements
-                              // are more reasonable) we'll just hardcode the number they use
-                              // in the library.
-  const size_t BitsPerCLong = sizeof(long) * CHAR_BIT;
+  const int NCPUS = 32768; // Since the buffer size computation is very obscure
+                           // in libnuma (possible values are starting from 16,
+                           // and continuing up with every other power of 2, but less
+                           // than the maximum number of CPUs supported by kernel), and
+                           // is a subject to change (in libnuma version 2 the requirements
+                           // are more reasonable) we'll just hardcode the number they use
+                           // in the library.
+  constexpr int BitsPerCLong = (int)sizeof(long) * CHAR_BIT;
 
-  size_t cpu_num = processor_count();
-  size_t cpu_map_size = NCPUS / BitsPerCLong;
-  size_t cpu_map_valid_size =
+  int cpu_num = processor_count();
+  int cpu_map_size = NCPUS / BitsPerCLong;
+  int cpu_map_valid_size =
     MIN2((cpu_num + BitsPerCLong - 1) / BitsPerCLong, cpu_map_size);
 
   cpu_to_node()->clear();
   cpu_to_node()->at_grow(cpu_num - 1);
 
-  size_t node_num = get_existing_num_nodes();
+  int node_num = get_existing_num_nodes();
 
   int distance = 0;
   int closest_distance = INT_MAX;
   int closest_node = 0;
   unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size, mtInternal);
-  for (size_t i = 0; i < node_num; i++) {
+  for (int i = 0; i < node_num; i++) {
     // Check if node is configured (not a memory-less node). If it is not, find
     // the closest configured node. Check also if node is bound, i.e. it's allowed
     // to allocate memory from the node. If it's not allowed, map cpus in that node
@@ -3176,7 +3176,7 @@ void os::Linux::rebuild_cpu_to_node_map() {
       // Check distance from all remaining nodes in the system. Ignore distance
       // from itself, from another non-configured node, and from another non-bound
       // node.
-      for (size_t m = 0; m < node_num; m++) {
+      for (int m = 0; m < node_num; m++) {
         if (m != i &&
             is_node_in_configured_nodes(nindex_to_node()->at(m)) &&
             is_node_in_bound_nodes(nindex_to_node()->at(m))) {
@@ -3198,10 +3198,10 @@ void os::Linux::rebuild_cpu_to_node_map() {
     // Get cpus from the original node and map them to the closest node. If node
     // is a configured node (not a memory-less node), then original node and
     // closest node are the same.
-    if (numa_node_to_cpus(nindex_to_node()->at(i), cpu_map, cpu_map_size * sizeof(unsigned long)) != -1) {
-      for (size_t j = 0; j < cpu_map_valid_size; j++) {
+    if (numa_node_to_cpus(nindex_to_node()->at(i), cpu_map, cpu_map_size * (int)sizeof(unsigned long)) != -1) {
+      for (int j = 0; j < cpu_map_valid_size; j++) {
         if (cpu_map[j] != 0) {
-          for (size_t k = 0; k < BitsPerCLong; k++) {
+          for (int k = 0; k < BitsPerCLong; k++) {
             if (cpu_map[j] & (1UL << k)) {
               int cpu_index = j * BitsPerCLong + k;
 
@@ -3286,7 +3286,7 @@ static address get_stack_commited_bottom(address bottom, size_t size) {
   address ntop = bottom + size;
 
   size_t page_sz = os::vm_page_size();
-  unsigned pages = size / page_sz;
+  unsigned pages = checked_cast<unsigned>(size / page_sz);
 
   unsigned char vec[1];
   unsigned imin = 1, imax = pages + 1, imid;
@@ -3336,21 +3336,21 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
   vec[stripe] = 'X';
 
   const size_t page_sz = os::vm_page_size();
-  size_t pages = size / page_sz;
+  uintx pages = size / page_sz;
 
   assert(is_aligned(start, page_sz), "Start address must be page aligned");
   assert(is_aligned(size, page_sz), "Size must be page aligned");
 
   committed_start = nullptr;
 
-  int loops = (pages + stripe - 1) / stripe;
+  int loops = checked_cast<int>((pages + stripe - 1) / stripe);
   int committed_pages = 0;
   address loop_base = start;
   bool found_range = false;
 
   for (int index = 0; index < loops && !found_range; index ++) {
     assert(pages > 0, "Nothing to do");
-    int pages_to_query = (pages >= stripe) ? stripe : pages;
+    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
     pages -= pages_to_query;
 
     // Get stable read
@@ -3366,7 +3366,7 @@ bool os::committed_in_range(address start, size_t size, address& committed_start
     assert(vec[stripe] == 'X', "overflow guard");
     assert(mincore_return_value == 0, "Range must be valid");
     // Process this stripe
-    for (int vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
       if ((vec[vecIdx] & 0x01) == 0) { // not committed
         // End of current contiguous region
         if (committed_start != nullptr) {
@@ -3793,15 +3793,17 @@ void os::large_page_init() {
     return;
   }
 
-  // 2) check if large pages are configured
-  if ( ( UseTransparentHugePages && HugePages::supports_thp() == false) ||
-       (!UseTransparentHugePages && HugePages::supports_static_hugepages() == false) ) {
-    // No large pages configured, return.
+  // 2) check if the OS supports THPs resp. static hugepages.
+  if (UseTransparentHugePages && !HugePages::supports_thp()) {
+    if (!FLAG_IS_DEFAULT(UseTransparentHugePages)) {
+      log_warning(pagesize)("UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.");
+    }
+    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
+    return;
+  }
+  if (!UseTransparentHugePages && !HugePages::supports_static_hugepages()) {
     warn_no_large_pages_configured();
-    UseLargePages = false;
-    UseTransparentHugePages = false;
-    UseHugeTLBFS = false;
-    UseSHM = false;
+    UseLargePages = UseTransparentHugePages = UseHugeTLBFS = UseSHM = false;
     return;
   }
 
@@ -4393,13 +4395,13 @@ static void check_pax(void) {
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-  int sys_pg_size = sysconf(_SC_PAGESIZE);
+  clock_tics_per_sec = checked_cast<int>(sysconf(_SC_CLK_TCK));
+  int sys_pg_size = checked_cast<int>(sysconf(_SC_PAGESIZE));
   if (sys_pg_size < 0) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
   }
-  size_t page_size = (size_t) sys_pg_size;
+  size_t page_size = sys_pg_size;
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
   if (os::vm_page_size() == 0) {
@@ -4743,7 +4745,7 @@ static int get_active_processor_count() {
   // Note: keep this function, with its CPU_xx macros, *outside* the os namespace (see JDK-8289477).
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   cpu_set_t* cpus_p = &cpus;
-  int cpus_size = sizeof(cpu_set_t);
+  size_t cpus_size = sizeof(cpu_set_t);
 
   int configured_cpus = os::processor_count();  // upper bound on available cpus
   int cpu_count = 0;
@@ -4767,7 +4769,7 @@ static int get_active_processor_count() {
     }
     else {
        // failed to allocate so fallback to online cpus
-       int online_cpus = ::sysconf(_SC_NPROCESSORS_ONLN);
+       int online_cpus = checked_cast<int>(::sysconf(_SC_NPROCESSORS_ONLN));
        log_trace(os)("active_processor_count: "
                      "CPU_ALLOC failed (%s) - using "
                      "online processor count: %d",
@@ -4799,7 +4801,7 @@ static int get_active_processor_count() {
     log_trace(os)("active_processor_count: sched_getaffinity processor count: %d", cpu_count);
   }
   else {
-    cpu_count = ::sysconf(_SC_NPROCESSORS_ONLN);
+    cpu_count = checked_cast<int>(::sysconf(_SC_NPROCESSORS_ONLN));
     warning("sched_getaffinity failed (%s)- using online processor count (%d) "
             "which may exceed available processors", os::strerror(errno), cpu_count);
   }
@@ -5161,7 +5163,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   pid_t  tid = thread->osthread()->thread_id();
   char *s;
   char stat[2048];
-  int statlen;
+  size_t statlen;
   char proc_name[64];
   int count;
   long sys_time, user_time;
@@ -5307,7 +5309,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
     }
   }
 
-  return strlen(buffer);
+  return checked_cast<int>(strlen(buffer));
 }
 
 bool os::start_debugging(char *buf, int buflen) {
@@ -5442,9 +5444,9 @@ static inline struct timespec get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   struct timespec filetime1 = get_mtime(file1);
   struct timespec filetime2 = get_mtime(file2);
-  int diff = filetime1.tv_sec - filetime2.tv_sec;
+  int diff = primitive_compare(filetime1.tv_sec, filetime2.tv_sec);
   if (diff == 0) {
-    return filetime1.tv_nsec - filetime2.tv_nsec;
+    diff = primitive_compare(filetime1.tv_nsec, filetime2.tv_nsec);
   }
   return diff;
 }
