@@ -35,7 +35,7 @@ inline G1CardSetInlinePtr::ContainerPtr G1CardSetInlinePtr::merge(ContainerPtr o
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
   assert(card_in_region < ((uint)1 << bits_per_card), "Card %u too large to fit into card value field", card_in_region);
 
-  uint8_t card_pos = card_pos_for(idx, bits_per_card);
+  uint card_pos = card_pos_for(idx, bits_per_card);
   assert(card_pos + bits_per_card < BitsInValue, "Putting card at pos %u with %u bits would extend beyond pointer", card_pos, bits_per_card);
 
   // Check that we do not touch any fields we do not own.
@@ -144,7 +144,7 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
-  _data[0] = card_in_region;
+  _data[0] = checked_cast<EntryDataType>(card_in_region);
 }
 
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
@@ -195,7 +195,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
     return Overflow;
   }
 
-  _data[num_entries] = card_idx;
+  _data[num_entries] = checked_cast<EntryDataType>(card_idx);
 
   x.inc_num_entries();
 

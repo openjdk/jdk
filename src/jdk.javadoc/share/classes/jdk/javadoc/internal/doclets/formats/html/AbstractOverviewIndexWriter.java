@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
- * Abstract class to generate the overview files.
+ * Abstract class to generate the top-level "overview" files.
  */
 public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
 
@@ -46,9 +46,19 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
      * @param filename Name of the module index file to be generated.
      */
     public AbstractOverviewIndexWriter(HtmlConfiguration configuration,
-                                      DocPath filename) {
+                                       DocPath filename) {
         super(configuration, filename);
     }
+
+    /**
+     * {@return the page description, for the {@code <meta>} element}
+     */
+    protected abstract String getDescription();
+
+    /**
+     * {@return the title for the page}
+     */
+    protected abstract String getTitleKey();
 
     /**
      * Adds the overview summary comment for this documentation. Add one line
@@ -86,16 +96,10 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
         }
     }
 
-    /**
-     * Generate and prints the contents in the index file.
-     *
-     * @param title the title of the window
-     * @param description the content for the description META tag
-     * @throws DocFileIOException if there is a problem building the package index file
-     */
-    protected void buildOverviewIndexFile(String title, String description)
-            throws DocFileIOException {
-        String windowOverview = resources.getText(title);
+    @Override
+    public void buildPage() throws DocFileIOException {
+        var titleKey = getTitleKey();
+        String windowOverview = resources.getText(titleKey);
         Content body = getBody(getWindowTitle(windowOverview));
         Content main = new ContentBuilder();
         addOverviewHeader(main);
@@ -105,8 +109,8 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
                 .addMainContent(main)
                 .setFooter(getFooter()));
         printHtmlDocument(
-                configuration.metakeywords.getOverviewMetaKeywords(title, configuration.getOptions().docTitle()),
-                description, body);
+                configuration.metakeywords.getOverviewMetaKeywords(titleKey, configuration.getOptions().docTitle()),
+                getDescription(), body);
     }
 
     /**

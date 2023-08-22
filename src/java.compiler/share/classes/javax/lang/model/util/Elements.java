@@ -283,15 +283,34 @@ public interface Elements {
      * <p> A documentation comment of an element is a comment that
      * begins with "{@code /**}", ends with a separate
      * "<code>*&#47;</code>", and immediately precedes the element,
-     * ignoring white space.  Therefore, a documentation comment
+     * ignoring white space, annotations, end-of-line-comments ({@code
+     * "//"} comments), and intermediate traditional comments
+     * (<code>"/* ... *&#47;"</code> comments) that are not doc comments.
+     * Therefore, a documentation comment
      * contains at least three "{@code *}" characters.  The text
      * returned for the documentation comment is a processed form of
-     * the comment as it appears in source code.  The leading "{@code /**}"
-     * and trailing "<code>*&#47;</code>" are removed.  For lines
-     * of the comment starting after the initial "{@code /**}",
-     * leading white space characters are discarded as are any
+     * the comment as it appears in source code:
+     * <ul>
+     * <li>The leading "{@code /**}" is removed, as are any
+     * immediately following space characters on that line. If all the
+     * characters of the line are removed, it makes no contribution to
+     * the returned comment.
+     * <li>For subsequent lines
+     * of the doc comment starting after the initial "{@code /**}",
+     * if the lines start with <em>zero</em> or more whitespace characters followed by
+     * <em>one</em> or more "{@code *}" characters,
+     * those leading whitespace characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
-     * space or starting the line.  The processed lines are then
+     * space or starting the line.
+     * Otherwise, if a line does not have a prefix of the described
+     * form, the entire line is retained.
+     * <li> The trailing "<code>*&#47;</code>" is removed. The line
+     * with the trailing" <code>*&#47;</code>" also undergoes leading
+     * space and "{@code *}" character removal as described above. If all the characters
+     * of the line are removed, it makes no contribution to the
+     * returned comment.
+     * </ul>
+     * The processed lines are then
      * concatenated together (including line terminators) and
      * returned.
      *
@@ -299,6 +318,7 @@ public interface Elements {
      * @return the documentation comment of the element, or {@code null}
      *          if there is none
      * @jls 3.6 White Space
+     * @jls 3.7 Comments
      */
     String getDocComment(Element e);
 

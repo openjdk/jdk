@@ -25,28 +25,32 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.WeakHashMap;
+import java.util.stream.Collectors;
+
+import javax.lang.model.element.Element;
+
 import com.sun.source.doctree.DocTree;
+
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
-import javax.lang.model.element.Element;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.Map.Entry;
-
 import static java.util.stream.Collectors.groupingBy;
-import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 /**
  * Generates the file with the summary of all the system properties.
@@ -62,37 +66,22 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
      * Constructs SystemPropertiesWriter object.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
      */
-    public SystemPropertiesWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public SystemPropertiesWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.SYSTEM_PROPERTIES, false);
     }
 
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        generate(configuration, DocPaths.SYSTEM_PROPERTIES);
-    }
-
-    private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         boolean hasSystemProperties = configuration.mainIndex != null
                 && !configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (!hasSystemProperties) {
-            // Cannot defer this check any further, because of the super() call
-            // that prints out notices on creating files, etc.
-            //
-            // There is probably a better place for this kind of checks (see how
-            // this is achieved in other "optional" pages, like Constant Values
-            // and Serialized Form).
             return;
         }
-        SystemPropertiesWriter systemPropertiesGen = new SystemPropertiesWriter(configuration, fileName);
-        systemPropertiesGen.buildSystemPropertiesPage();
-        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
-    }
 
-    /**
-     * Prints all the system properties to the file.
-     */
-    protected void buildSystemPropertiesPage() throws DocFileIOException {
+        writeGenerating();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SYSTEM_PROPERTIES);
+
         String title = resources.getText("doclet.systemProperties");
         HtmlTree body = getBody(getWindowTitle(title));
         Content mainContent = new ContentBuilder();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,12 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                     !AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayout.macAppImage().resolveAt(appDir));
+                // We need to re-sign app image after adding ".package" to it.
+                // We only do this if app image was not signed which means it is
+                // signed with ad-hoc signature. App bundles with ad-hoc
+                // signature are sealed, but without a signing identity, so we
+                // need to re-sign it after modification.
+                MacAppImageBuilder.signAppBundle(params, appDir, "-", null, null);
             }
         } else {
             appDir = appImageBundler.execute(params, appImageRoot);

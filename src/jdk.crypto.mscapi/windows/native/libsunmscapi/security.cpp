@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -639,6 +639,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                         // Generate certificate from byte array and store into
                         // cert collection
                         env->CallVoidMethod(obj, mGenCert, byteArray, jArrayList);
+                        JNU_CHECK_EXCEPTION(env);
                     }
 
                     // Usually pszNameString should be non-NULL. It's either
@@ -659,6 +660,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                             env->CallVoidMethod(obj, mGenCertChain,
                                 name,
                                 jArrayList);
+                            JNU_CHECK_EXCEPTION(env);
                         }
                         else
                         {
@@ -681,6 +683,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) hUserKey,
                                             dwPublicKeyLength, jArrayList);
+                                    JNU_CHECK_EXCEPTION(env);
                                 }
                             } else {
                                 // Only accept EC for CNG
@@ -702,6 +705,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
+                                        JNU_CHECK_EXCEPTION(env);
                                     } else if (buffer[0] == 'R' && buffer[2] == 'S'
                                             && buffer[4] == 'A') {
                                         env->CallVoidMethod(obj, mGenKeyAndCertChain,
@@ -709,6 +713,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
                                             name,
                                             (jlong) hCryptProv, (jlong) 0,
                                             dwPublicKeyLength, jArrayList);
+                                        JNU_CHECK_EXCEPTION(env);
                                     } else {
                                         dump("Unknown NCRYPT_ALGORITHM_PROPERTY", buffer, len);
                                     }

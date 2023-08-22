@@ -81,7 +81,7 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
   jlong user_time = cur_user_time - prev_user_time;
   jlong system_time = cur_system_time - prev_system_time;
   jlong wallclock_time = cur_wallclock_time - prev_wallclock_time;
-  jlong total_available_time = wallclock_time * processor_count;
+  const float total_available_time = static_cast<float>(wallclock_time * processor_count);
 
   // Avoid reporting percentages above the theoretical max
   if (user_time + system_time > wallclock_time) {
@@ -97,8 +97,8 @@ bool JfrThreadCPULoadEvent::update_event(EventThreadCPULoad& event, JavaThread* 
       system_time -= excess;
     }
   }
-  event.set_user(total_available_time > 0 ? (double)user_time / total_available_time : 0);
-  event.set_system(total_available_time > 0 ? (double)system_time / total_available_time : 0);
+  event.set_user(total_available_time > 0 ? static_cast<float>(user_time) / total_available_time : 0);
+  event.set_system(total_available_time > 0 ? static_cast<float>(system_time) / total_available_time : 0);
   tl->set_user_time(cur_user_time);
   tl->set_cpu_time(cur_cpu_time);
   return true;

@@ -103,15 +103,11 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
     }
 
-    /**
-     * Build the serialized form.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-     void build() throws DocletException {
-        SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
-        rootclasses.addAll(configuration.getIncludedTypeElements());
-        if (!serialClassFoundToDocument(rootclasses)) {
+    @Override
+    public void buildPage() throws DocletException {
+        var rootClasses = new TreeSet<TypeElement>(utils.comparators.generalPurposeComparator());
+        rootClasses.addAll(configuration.getIncludedTypeElements());
+        if (!serialClassFoundToDocument(rootClasses)) {
             //Nothing to document.
             return;
         }
@@ -250,9 +246,9 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      */
     protected void buildSerializableMethods(Content target) {
         Content serializableMethodsHeader = methodWriter.getSerializableMethodsHeader();
-        for (var i = utils.serializationMethods(currentTypeElement).iterator(); i.hasNext(); ) {
-            currentMember = i.next();
-            Content methodsContent = methodWriter.getMethodsContentHeader(!i.hasNext());
+        for (var executableElement : utils.serializationMethods(currentTypeElement)) {
+            currentMember = executableElement;
+            Content methodsContent = methodWriter.getMethodsContentHeader();
 
             buildMethodSubHeader(methodsContent);
             buildDeprecatedMethodInfo(methodsContent);
@@ -360,7 +356,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
             // information to be printed.
             if (fieldWriter.shouldPrintOverview(ve)) {
                 Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
-                Content fieldsOverviewContent = fieldWriter.getFieldsContentHeader(true);
+                Content fieldsOverviewContent = fieldWriter.getFieldsContentHeader();
                 fieldWriter.addMemberDeprecatedInfo(ve, fieldsOverviewContent);
                 if (!options.noComment()) {
                     fieldWriter.addMemberDescription(ve, fieldsOverviewContent);
@@ -383,10 +379,10 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         Collection<VariableElement> members = utils.serializableFields(currentTypeElement);
         if (!members.isEmpty()) {
             Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
-            for (var i = members.iterator(); i.hasNext();) {
-                currentMember = i.next();
+            for (var member : members) {
+                currentMember = member;
                 if (!utils.definesSerializableFields(currentTypeElement)) {
-                    Content fieldsContent = fieldWriter.getFieldsContentHeader(!i.hasNext());
+                    Content fieldsContent = fieldWriter.getFieldsContentHeader();
 
                     buildFieldSubHeader(fieldsContent);
                     buildFieldDeprecationInfo(fieldsContent);
@@ -443,7 +439,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         // ObjectStreamFields. Print a member for each serialField tag.
         // (There should be one serialField tag per ObjectStreamField
         // element.)
-        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.makeSerialFieldTreeComparator());
+        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.serialFieldTreeComparator());
         // sort the elements
         tags.addAll(utils.getSerialFieldTrees(field));
 
@@ -451,7 +447,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         for (SerialFieldTree tag : tags) {
             if (tag.getName() == null || tag.getType() == null)  // ignore malformed @serialField tags
                 continue;
-            Content fieldsContent = fieldWriter.getFieldsContentHeader(tag.equals(tags.last()));
+            Content fieldsContent = fieldWriter.getFieldsContentHeader();
             TypeMirror type = ch.getReferencedType(tag);
             fieldWriter.addMemberHeader(type, tag.getName().getName().toString(), fieldsContent);
             fieldWriter.addMemberDescription(field, tag, fieldsContent);
@@ -531,10 +527,10 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         List<? extends SerialTree> serial = utils.getSerialTrees(element);
         if (!serial.isEmpty()) {
             // look for `@serial include|exclude`
-            String serialtext = Utils.toLowerCase(serial.get(0).toString());
-            if (serialtext.contains("exclude")) {
+            var serialText = Utils.toLowerCase(serial.get(0).toString());
+            if (serialText.contains("exclude")) {
                 return false;
-            } else if (serialtext.contains("include")) {
+            } else if (serialText.contains("include")) {
                 return true;
             }
         }

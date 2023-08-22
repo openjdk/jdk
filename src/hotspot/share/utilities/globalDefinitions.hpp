@@ -50,7 +50,7 @@ class oopDesc;
 #endif
 
 #ifndef ATTRIBUTE_ALIGNED
-#define ATTRIBUTE_ALIGNED(x)
+#define ATTRIBUTE_ALIGNED(x) alignas(x)
 #endif
 
 #ifndef ATTRIBUTE_FLATTEN
@@ -1332,6 +1332,10 @@ template<typename K> unsigned primitive_hash(const K& k) {
 
 template<typename K> bool primitive_equals(const K& k0, const K& k1) {
   return k0 == k1;
+}
+
+template<typename K> int primitive_compare(const K& k0, const K& k1) {
+  return ((k0 < k1) ? -1 : (k0 == k1) ? 0 : 1);
 }
 
 //----------------------------------------------------------------------------------------------------

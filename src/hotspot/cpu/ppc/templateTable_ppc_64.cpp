@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -116,13 +117,10 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
       // additional, required work.
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
-      __ get_cache_and_index_at_bcp(Rtemp /* dst = cache */, 1);
-      // ((*(cache+indices))>>((1+byte_no)*8))&0xFF:
-#if defined(VM_LITTLE_ENDIAN)
-      __ lbz(Rnew_bc, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 1 + byte_no, Rtemp);
-#else
-      __ lbz(Rnew_bc, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 7 - (1 + byte_no), Rtemp);
-#endif
+      __ load_field_entry(Rtemp, Rnew_bc);
+      int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                             : in_bytes(ResolvedFieldEntry::put_code_offset());
+      __ lbz(Rnew_bc, code_offset, Rtemp);
       __ cmpwi(CCR0, Rnew_bc, 0);
       __ li(Rnew_bc, (unsigned int)(unsigned char)new_bc);
       __ beq(CCR0, L_patch_done);
@@ -2247,6 +2245,68 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
   __ bind(Ldone);
 }
 
+void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
+                                            Register Rcache,
+                                            Register index) {
+  assert_different_registers(Rcache, index);
+
+  Label resolved;
+
+  Bytecodes::Code code = bytecode();
+  switch (code) {
+  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
+  }
+
+  assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
+  __ load_field_entry(Rcache, index);
+  int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                         : in_bytes(ResolvedFieldEntry::put_code_offset());
+  __ lbz(R0, code_offset, Rcache);
+  __ cmpwi(CCR0, R0, (int)code); // have we resolved this bytecode?
+  __ beq(CCR0, resolved);
+
+  // resolve first time through
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ li(R4_ARG2, (int)code);
+  __ call_VM(noreg, entry, R4_ARG2);
+
+  // Update registers with resolved info
+  __ load_field_entry(Rcache, index);
+  __ bind(resolved);
+
+  // Use acquire semantics for the bytecode (see ResolvedFieldEntry::fill_in()).
+  __ isync(); // Order load wrt. succeeding loads.
+}
+
+void TemplateTable::load_resolved_field_entry(Register obj,
+                                              Register cache,
+                                              Register tos_state,
+                                              Register offset,
+                                              Register flags,
+                                              bool is_static = false) {
+  assert_different_registers(cache, tos_state, flags, offset);
+
+  // Field offset
+  __ load_sized_value(offset, in_bytes(ResolvedFieldEntry::field_offset_offset()), cache, sizeof(int), true /*is_signed*/);
+
+  // Flags
+  __ lbz(flags, in_bytes(ResolvedFieldEntry::flags_offset()), cache);
+
+  if (tos_state != noreg) {
+    __ lbz(tos_state, in_bytes(ResolvedFieldEntry::type_offset()), cache);
+  }
+
+  // Klass overwrite register
+  if (is_static) {
+    __ ld(obj, in_bytes(ResolvedFieldEntry::field_holder_offset()), cache);
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+    __ ld(obj, mirror_offset, obj);
+    __ resolve_oop_handle(obj, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
+  }
+}
+
 // Load the constant pool cache entry at field accesses into registers.
 // The Rcache and Rindex registers must be set before call.
 // Input:
@@ -2432,7 +2492,6 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
   assert_different_registers(Rcache, Rscratch);
 
   if (JvmtiExport::can_post_field_access()) {
-    ByteSize cp_base_offset = ConstantPoolCache::base_offset();
     Label Lno_field_access_post;
 
     // Check if post field access in enabled.
@@ -2443,7 +2502,6 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
     __ beq(CCR0, Lno_field_access_post);
 
     // Post access enabled - do it!
-    __ addi(Rcache, Rcache, in_bytes(cp_base_offset));
     if (is_static) {
       __ li(R17_tos, 0);
     } else {
@@ -2467,7 +2525,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
       __ verify_oop(R17_tos);
     } else {
       // Cache is still needed to get class or obj.
-      __ get_cache_and_index_at_bcp(Rcache, 1);
+      __ load_field_entry(Rcache, Rscratch);
     }
 
     __ align(32, 12);
@@ -2493,9 +2551,10 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   Label Lacquire, Lisync;
 
   const Register Rcache        = R3_ARG1,
-                 Rclass_or_obj = R22_tmp2,
-                 Roffset       = R23_tmp3,
-                 Rflags        = R31,
+                 Rclass_or_obj = R22_tmp2, // Needs to survive C call.
+                 Roffset       = R23_tmp3, // Needs to survive C call.
+                 Rtos_state    = R30,      // Needs to survive C call.
+                 Rflags        = R31,      // Needs to survive C call.
                  Rbtable       = R5_ARG3,
                  Rbc           = R30,
                  Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
@@ -2507,37 +2566,34 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   address* branch_table = (is_static || rc == may_not_rewrite) ? static_branch_table : field_branch_table;
 
   // Get field offset.
-  resolve_cache_and_index(byte_no, Rcache, Rscratch, sizeof(u2));
+  resolve_cache_and_index_for_field(byte_no, Rcache, Rscratch);
 
   // JVMTI support
   jvmti_post_field_access(Rcache, Rscratch, is_static, false);
 
   // Load after possible GC.
-  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static); // Uses R11, R12
+  load_resolved_field_entry(Rclass_or_obj, Rcache, Rtos_state, Roffset, Rflags, is_static); // Uses R11, R12
 
   // Load pointer to branch table.
   __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
 
   // Get volatile flag.
-  __ rldicl(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // Extract volatile bit.
+  __ rldicl(Rscratch, Rflags, 64-ResolvedFieldEntry::is_volatile_shift, 63); // Extract volatile bit.
   // Note: sync is needed before volatile load on PPC64.
-
-  // Check field type.
-  __ rldicl(Rflags, Rflags, 64-ConstantPoolCacheEntry::tos_state_shift, 64-ConstantPoolCacheEntry::tos_state_bits);
 
 #ifdef ASSERT
   Label LFlagInvalid;
-  __ cmpldi(CCR0, Rflags, number_of_states);
+  __ cmpldi(CCR0, Rtos_state, number_of_states);
   __ bge(CCR0, LFlagInvalid);
 #endif
 
   // Load from branch table and dispatch (volatile case: one instruction ahead).
-  __ sldi(Rflags, Rflags, LogBytesPerWord);
+  __ sldi(Rtos_state, Rtos_state, LogBytesPerWord);
   __ cmpwi(CCR2, Rscratch, 1); // Volatile?
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // Volatile ? size of 1 instruction : 0.
   }
-  __ ldx(Rbtable, Rbtable, Rflags);
+  __ ldx(Rbtable, Rbtable, Rtos_state);
 
   // Get the obj from stack.
   if (!is_static) {
@@ -2753,10 +2809,8 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
     __ beq(CCR0, Lno_field_mod_post);
 
     // Do the post
-    ByteSize cp_base_offset = ConstantPoolCache::base_offset();
     const Register Robj = Rscratch;
 
-    __ addi(Rcache, Rcache, in_bytes(cp_base_offset));
     if (is_static) {
       // Life is simple. Null out the object pointer.
       __ li(Robj, 0);
@@ -2777,17 +2831,16 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
         default: {
           offs = 0;
           base = Robj;
-          const Register Rflags = Robj;
+          const Register Rtos_state = Robj;
           Label is_one_slot;
           // Life is harder. The stack holds the value on top, followed by the
           // object. We don't know the size of the value, though; it could be
           // one or two words depending on its type. As a result, we must find
           // the type to determine where the object is.
-          __ ld(Rflags, in_bytes(ConstantPoolCacheEntry::flags_offset()), Rcache); // Big Endian
-          __ rldicl(Rflags, Rflags, 64-ConstantPoolCacheEntry::tos_state_shift, 64-ConstantPoolCacheEntry::tos_state_bits);
+          __ lbz(Rtos_state, in_bytes(ResolvedFieldEntry::type_offset()), Rcache);
 
-          __ cmpwi(CCR0, Rflags, ltos);
-          __ cmpwi(CCR1, Rflags, dtos);
+          __ cmpwi(CCR0, Rtos_state, ltos);
+          __ cmpwi(CCR1, Rtos_state, dtos);
           __ addi(base, R15_esp, Interpreter::expr_offset_in_bytes(1));
           __ crnor(CCR0, Assembler::equal, CCR1, Assembler::equal);
           __ beq(CCR0, is_one_slot);
@@ -2802,7 +2855,7 @@ void TemplateTable::jvmti_post_field_mod(Register Rcache, Register Rscratch, boo
 
     __ addi(R6_ARG4, R15_esp, Interpreter::expr_offset_in_bytes(0));
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_modification), Robj, Rcache, R6_ARG4);
-    __ get_cache_and_index_at_bcp(Rcache, 1);
+    __ load_field_entry(Rcache, Rscratch);
 
     // In case of the fast versions, value lives in registers => put it back on tos.
     switch(bytecode()) {
@@ -2830,7 +2883,8 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register Rcache        = R5_ARG3,  // Do not use ARG1/2 (causes trouble in jvmti_post_field_mod).
                  Rclass_or_obj = R31,      // Needs to survive C call.
                  Roffset       = R22_tmp2, // Needs to survive C call.
-                 Rflags        = R30,
+                 Rtos_state    = R23_tmp3, // Needs to survive C call.
+                 Rflags        = R30,      // Needs to survive C call.
                  Rbtable       = R4_ARG2,
                  Rscratch      = R11_scratch1, // used by load_field_cp_cache_entry
                  Rscratch2     = R12_scratch2, // used by load_field_cp_cache_entry
@@ -2850,32 +2904,29 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   //  obj
 
   // Load the field offset.
-  resolve_cache_and_index(byte_no, Rcache, Rscratch, sizeof(u2));
+  resolve_cache_and_index_for_field(byte_no, Rcache, Rscratch);
   jvmti_post_field_mod(Rcache, Rscratch, is_static);
-  load_field_cp_cache_entry(Rclass_or_obj, Rcache, noreg, Roffset, Rflags, is_static); // Uses R11, R12
+  load_resolved_field_entry(Rclass_or_obj, Rcache, Rtos_state, Roffset, Rflags, is_static); // Uses R11, R12
 
   // Load pointer to branch table.
   __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
 
   // Get volatile flag.
-  __ rldicl(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // Extract volatile bit.
-
-  // Check the field type.
-  __ rldicl(Rflags, Rflags, 64-ConstantPoolCacheEntry::tos_state_shift, 64-ConstantPoolCacheEntry::tos_state_bits);
+  __ rldicl(Rscratch, Rflags, 64-ResolvedFieldEntry::is_volatile_shift, 63); // Extract volatile bit.
 
 #ifdef ASSERT
   Label LFlagInvalid;
-  __ cmpldi(CCR0, Rflags, number_of_states);
+  __ cmpldi(CCR0, Rtos_state, number_of_states);
   __ bge(CCR0, LFlagInvalid);
 #endif
 
   // Load from branch table and dispatch (volatile case: one instruction ahead).
-  __ sldi(Rflags, Rflags, LogBytesPerWord);
+  __ sldi(Rtos_state, Rtos_state, LogBytesPerWord);
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) {
     __ cmpwi(CR_is_vol, Rscratch, 1);  // Volatile?
   }
   __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // Volatile? size of instruction 1 : 0.
-  __ ldx(Rbtable, Rbtable, Rflags);
+  __ ldx(Rbtable, Rbtable, Rtos_state);
 
   __ subf(Rbtable, Rscratch, Rbtable); // Point to volatile/non-volatile entry point.
   __ mtctr(Rbtable);
@@ -3085,15 +3136,15 @@ void TemplateTable::fast_storefield(TosState state) {
   const ConditionRegister CR_is_vol = CCR2; // Non-volatile condition register (survives runtime call in do_oop_store).
 
   // Constant pool already resolved => Load flags and offset of field.
-  __ get_cache_and_index_at_bcp(Rcache, 1);
+  __ load_field_entry(Rcache, Rscratch);
   jvmti_post_field_mod(Rcache, Rscratch, false /* not static */);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
+  load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // Get the obj and the final store addr.
   pop_and_check_object(Rclass_or_obj); // Kills R11_scratch1.
 
   // Get volatile flag.
-  __ rldicl_(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // Extract volatile bit.
+  __ rldicl_(Rscratch, Rflags, 64-ResolvedFieldEntry::is_volatile_shift, 63); // Extract volatile bit.
   if (!support_IRIW_for_not_multiple_copy_atomic_cpu) { __ cmpdi(CR_is_vol, Rscratch, 1); }
   {
     Label LnotVolatile;
@@ -3166,8 +3217,8 @@ void TemplateTable::fast_accessfield(TosState state) {
                  // R12_scratch2 used by load_field_cp_cache_entry
 
   // Constant pool already resolved. Get the field offset.
-  __ get_cache_and_index_at_bcp(Rcache, 1);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
+  __ load_field_entry(Rcache, Rscratch);
+  load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support
   jvmti_post_field_access(Rcache, Rscratch, false, true);
@@ -3176,7 +3227,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ null_check_throw(Rclass_or_obj, -1, Rscratch);
 
   // Get volatile flag.
-  __ rldicl_(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // Extract volatile bit.
+  __ rldicl_(Rscratch, Rflags, 64-ResolvedFieldEntry::is_volatile_shift, 63); // Extract volatile bit.
   __ bne(CCR0, LisVolatile);
 
   switch(bytecode()) {
@@ -3305,8 +3356,8 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ ld(Rclass_or_obj, 0, R18_locals);
 
   // Constant pool already resolved. Get the field offset.
-  __ get_cache_and_index_at_bcp(Rcache, 2);
-  load_field_cp_cache_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
+  __ load_field_entry(Rcache, Rscratch, 2);
+  load_resolved_field_entry(noreg, Rcache, noreg, Roffset, Rflags, false); // Uses R11, R12
 
   // JVMTI support not needed, since we switch back to single bytecode as soon as debugger attaches.
 
@@ -3317,7 +3368,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ null_check_throw(Rclass_or_obj, -1, Rscratch);
 
   // Get volatile flag.
-  __ rldicl_(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // Extract volatile bit.
+  __ rldicl_(Rscratch, Rflags, 64-ResolvedFieldEntry::is_volatile_shift, 63); // Extract volatile bit.
   __ bne(CCR0, LisVolatile);
 
   switch(state) {

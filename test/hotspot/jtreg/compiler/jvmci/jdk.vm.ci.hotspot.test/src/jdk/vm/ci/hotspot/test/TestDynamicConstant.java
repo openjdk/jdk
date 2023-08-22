@@ -271,8 +271,8 @@ public class TestDynamicConstant implements Opcodes {
     private static void assertLookupBMIDoesNotInvokeBM(MetaAccessProvider metaAccess, Class<?> testClass) throws Exception {
         ResolvedJavaMethod shouldNotBeCalled = metaAccess.lookupJavaMethod(testClass.getDeclaredMethod("shouldNotBeCalled"));
         ConstantPool cp = shouldNotBeCalled.getConstantPool();
-        int cpi = getFirstInvokedynamicOperand(shouldNotBeCalled);
-        BootstrapMethodInvocation bmi = cp.lookupBootstrapMethodInvocation(cpi, INVOKEDYNAMIC);
+        int rawIndex = getFirstInvokedynamicOperand(shouldNotBeCalled);
+        BootstrapMethodInvocation bmi = cp.lookupBootstrapMethodInvocation(rawIndex, INVOKEDYNAMIC);
         Assert.assertEquals(bmi.getName(), "do_shouldNotBeCalled");
         Assert.assertEquals(bmi.getMethod().getName(), "shouldNotBeCalledBSM");
     }
@@ -408,8 +408,8 @@ public class TestDynamicConstant implements Opcodes {
      * Ensures that loadReferencedType for an invokedynamic call site does not throw an exception.
      */
     private static void testLoadReferencedType(ResolvedJavaMethod method, ConstantPool cp) {
-        int cpi = getFirstInvokedynamicOperand(method);
-        cp.loadReferencedType(cpi, INVOKEDYNAMIC, false);
+        int rawIndex = getFirstInvokedynamicOperand(method);
+        cp.loadReferencedType(rawIndex, INVOKEDYNAMIC, false);
     }
 
     // @formatter:off

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class FileLockTable {
      * FileLock (and FileChannel) alive.
      */
     private static class FileLockReference extends WeakReference<FileLock> {
-        private FileKey fileKey;
+        private final FileKey fileKey;
 
         FileLockReference(FileLock referent,
                           ReferenceQueue<FileLock> queue,
@@ -66,11 +66,11 @@ class FileLockTable {
     // The system-wide map is a ConcurrentHashMap that is keyed on the FileKey.
     // The map value is a list of file locks represented by FileLockReferences.
     // All access to the list must be synchronized on the list.
-    private static ConcurrentHashMap<FileKey, List<FileLockReference>> lockMap =
-        new ConcurrentHashMap<FileKey, List<FileLockReference>>();
+    private static final ConcurrentHashMap<FileKey, List<FileLockReference>> lockMap =
+        new ConcurrentHashMap<>();
 
     // reference queue for cleared refs
-    private static ReferenceQueue<FileLock> queue = new ReferenceQueue<FileLock>();
+    private static final ReferenceQueue<FileLock> queue = new ReferenceQueue<>();
 
     // The connection to which this table is connected
     private final Channel channel;
