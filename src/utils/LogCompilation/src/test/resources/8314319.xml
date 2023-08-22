@@ -4,55 +4,7 @@
 <name>
 OpenJDK 64-Bit Server VM
 </name>
-<release>
-22-internal-adhoc.xxinliu.jdk
-</release>
 </vm_version>
-<vm_arguments>
-<args>
--Dtest.vm.opts=-Xmx768m -XX:MaxRAMPercentage=1.25 -Dtest.boot.jdk=/home/xxinliu/Devel/jdk-21 -Djava.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp -ea -esa -Dtest.tool.vm.opts=-J-Xmx768m -J-XX:MaxRAMPercentage=1.25 -J-Dtest.boot.jdk=/home/xxinliu/Devel/jdk-21 -J-Djava.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp -J-ea -J-esa -Dtest.compiler.opts= -Dtest.java.opts=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -Dtest.jdk=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk -Dcompile.jdk=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk -Dtest.timeout.factor=4.0 -Dtest.nativepath=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/test/jdk/jtreg/native -Dtest.root=/local/home/xxinliu/Devel/jdk/test/jdk -Dtest.name=jdk/incubator/vector/ByteMaxVectorTests.java -Dtest.file=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector/ByteMaxVectorTests.java -Dtest.src=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector -Dtest.src.path=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector -Dtest.classes=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d -Dtest.class.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d -Dtest.class.path.prefix=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d:/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector -Dtest.modules=jdk.incubator.vector --add-modules=jdk.incubator.vector -Xmx768m -XX:MaxRAMPercentage=1.25 -Dtest.boot.jdk=/home/xxinliu/Devel/jdk-21 -Djava.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp -ea -esa -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -Djava.library.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/test/jdk/jtreg/native -ea -esa -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1 -XX:+LogCompilation -XX:LogFile=/tmp/jit.log </args>
-<command>
-com.sun.javatest.regtest.agent.MainWrapper /local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/jdk/incubator/vector/ByteMaxVectorTests.d/testng.0.jta jdk/incubator/vector/ByteMaxVectorTests.java false ByteMaxVectorTests
-</command>
-<launcher>
-SUN_STANDARD
-</launcher>
-<properties>
-java.vm.specification.name=Java Virtual Machine Specification
-java.vm.version=22-internal-adhoc.xxinliu.jdk
-java.vm.name=OpenJDK 64-Bit Server VM
-jdk.debug=slowdebug
-sun.boot.library.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk/lib
-java.library.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/test/jdk/jtreg/native
-java.home=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk
-java.class.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d:/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector:/local/home/xxinliu/Devel/jtreg-git/build/images/jtreg/lib/testng-7.3.0.jar:/local/home/xxinliu/Devel/jtreg-git/build/images/jtreg/lib/guice-5.1.0.jar:/local/home/xxinliu/Devel/jtreg-git/build/images/jtreg/lib/jcommander-1.82.jar:/local/home/xxinliu/Devel/jtreg-git/build/images/jtreg/lib/javatest.jar:/local/home/xxinliu/Devel/jtreg-git/build/images/jtreg/lib/jtreg.jar
-java.vm.info=mixed mode, sharing
-java.vm.specification.vendor=Oracle Corporation
-java.vm.specification.version=22
-java.vm.vendor=Oracle Corporation
-test.vm.opts=-Xmx768m -XX:MaxRAMPercentage=1.25 -Dtest.boot.jdk=/home/xxinliu/Devel/jdk-21 -Djava.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp -ea -esa
-test.tool.vm.opts=-J-Xmx768m -J-XX:MaxRAMPercentage=1.25 -J-Dtest.boot.jdk=/home/xxinliu/Devel/jdk-21 -J-Djava.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp -J-ea -J-esa
-test.compiler.opts=
-test.java.opts=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
-test.jdk=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk
-compile.jdk=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/jdk
-test.timeout.factor=4.0
-test.nativepath=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/images/test/jdk/jtreg/native
-test.root=/local/home/xxinliu/Devel/jdk/test/jdk
-test.name=jdk/incubator/vector/ByteMaxVectorTests.java
-test.file=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector/ByteMaxVectorTests.java
-test.src=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector
-test.src.path=/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector
-test.classes=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d
-test.class.path=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d
-test.class.path.prefix=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/classes/0/jdk/incubator/vector/ByteMaxVectorTests.d:/local/home/xxinliu/Devel/jdk/test/jdk/jdk/incubator/vector
-test.modules=jdk.incubator.vector
-test.boot.jdk=/home/xxinliu/Devel/jdk-21
-java.io.tmpdir=/local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/tmp
-sun.java.command=com.sun.javatest.regtest.agent.MainWrapper /local/home/xxinliu/Devel/jdk/build/linux-x86_64-server-slowdebug/test-support/jtreg_test_jdk_jdk_incubator_vector_ByteMaxVectorTests_java/jdk/incubator/vector/ByteMaxVectorTests.d/testng.0.jta jdk/incubator/vector/ByteMaxVectorTests.java false ByteMaxVectorTests
-sun.java.launcher=SUN_STANDARD
-</properties>
-</vm_arguments>
 <compilation_log thread='111900'>
 <start_compile_thread name='C2 CompilerThread0' thread='111900' process='111885' stamp='0.410'/>
 <task_queued compile_id='457' method='java.util.AbstractCollection addAll (Ljava/util/Collection;)Z' bytes='42' count='6656' backedge_count='7100' iicount='6656' decompiles='1' bimorphic_or_optimized_type_check_traps='4' blocking='1' stamp='11.681' comment='tiered' hot_count='6656'/>
