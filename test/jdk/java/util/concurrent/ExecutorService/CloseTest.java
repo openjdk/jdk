@@ -45,6 +45,35 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CloseTest {
 
+    // setup to ensure each test runs under a new thread, to preclude
+    // stale interrupts from changing expected close() behavior
+
+    static abstract class TestAction {
+        abstract void run() throws Exception;
+    }
+    static final class CheckedAction implements Runnable {
+        final TestAction action;
+        volatile Exception error;
+        CheckedAction(TestAction a) { action = a; }
+        public void run() {
+            try {
+                a.run();
+            } catch (Exception ex) {
+                error = ex;
+            }
+        }
+    }
+    static void testInNewThread(TestAction a) throws Throawble {
+        try {
+            Thread t = new Thread(new CheckedAction(a));
+            t.start();
+            t.join();
+        } finally {
+            Exception e = a.error;
+            if (e != null)
+                throw e;
+        }
+    }
     static Stream<ExecutorService> executors() {
         return Stream.of(
                 // ensures that default close method is tested
@@ -63,10 +92,12 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testCloseWithNoTasks(ExecutorService executor) throws Exception {
-        executor.close();
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+        testInNewThread(new TestAction() { void run() throws Exception {
+            executor.close();
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.isTerminated());
+            assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+        }});
     }
 
     /**
@@ -75,15 +106,17 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testCloseWithRunningTasks(ExecutorService executor) throws Exception {
-        Future<?> future = executor.submit(() -> {
-            Thread.sleep(Duration.ofMillis(100));
-            return "foo";
-        });
-        executor.close();  // waits for task to complete
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        assertEquals("foo", future.resultNow());
+        testInNewThread(new TestAction() { void run() throws Exception {
+            Future<?> future = executor.submit(() -> {
+                    Thread.sleep(Duration.ofMillis(100));
+                    return "foo";
+                });
+            executor.close();  // waits for task to complete
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.isTerminated());
+            assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+            assertEquals("foo", future.resultNow());
+        }});
     }
 
     /**
@@ -92,21 +125,21 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testShutdownBeforeClose(ExecutorService executor) throws Exception {
-        Phaser phaser = new Phaser(2);
-        Future<?> future = executor.submit(() -> {
-            phaser.arriveAndAwaitAdvance();
-            Thread.sleep(Duration.ofMillis(100));
-            return "foo";
-        });
-        phaser.arriveAndAwaitAdvance();   // wait for task to start
-
-        executor.shutdown();  // shutdown, will not immediately terminate
-
-        executor.close();
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-        assertEquals("foo", future.resultNow());
+         testInNewThread(new TestAction() { void run() throws Exception {
+             Phaser phaser = new Phaser(2);
+             Future<?> future = executor.submit(() -> {
+                     phaser.arriveAndAwaitAdvance();
+                     Thread.sleep(Duration.ofMillis(100));
+                     return "foo";
+                 });
+             phaser.arriveAndAwaitAdvance();   // wait for task to start
+             executor.shutdown();  // shutdown, will not immediately terminate
+             executor.close();
+             assertTrue(executor.isShutdown());
+             assertTrue(executor.isTerminated());
+             assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+             assertEquals("foo", future.resultNow());
+        }});
     }
 
     /**
@@ -115,13 +148,14 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testTerminateBeforeClose(ExecutorService executor) throws Exception {
-        executor.shutdown();
-        assertTrue(executor.isTerminated());
-
-        executor.close();
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+         testInNewThread(new TestAction() { void run() throws Exception {
+             executor.shutdown();
+             assertTrue(executor.isTerminated());
+             executor.close();
+             assertTrue(executor.isShutdown());
+             assertTrue(executor.isTerminated());
+             assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+        }});
     }
 
     /**
@@ -130,25 +164,26 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testInterruptBeforeClose(ExecutorService executor) throws Exception {
-        Phaser phaser = new Phaser(2);
-        Future<?> future = executor.submit(() -> {
-            phaser.arriveAndAwaitAdvance();
-            Thread.sleep(Duration.ofDays(1));
-            return null;
-        });
-        phaser.arriveAndAwaitAdvance();  // wait for task to start
-
-        Thread.currentThread().interrupt();
-        try {
-            executor.close();
-            assertTrue(Thread.currentThread().isInterrupted());
-        } finally {
-            Thread.interrupted();  // clear interrupt status
-        }
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
-        assertThrows(ExecutionException.class, future::get);
+        testInNewThread(new TestAction() { void run() throws Exception {
+            Phaser phaser = new Phaser(2);
+            Future<?> future = executor.submit(() -> {
+                    phaser.arriveAndAwaitAdvance();
+                    Thread.sleep(Duration.ofDays(1));
+                    return null;
+                });
+            phaser.arriveAndAwaitAdvance();  // wait for task to start
+            Thread.currentThread().interrupt();
+            try {
+                executor.close();
+                assertTrue(Thread.currentThread().isInterrupted());
+            } finally {
+                Thread.interrupted();  // clear interrupt status
+            }
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.isTerminated());
+            assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
+            assertThrows(ExecutionException.class, future::get);
+        }});
     }
 
     /**
@@ -157,30 +192,32 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testInterruptDuringClose(ExecutorService executor) throws Exception {
-        Phaser phaser = new Phaser(2);
-        Future<?> future = executor.submit(() -> {
-            phaser.arriveAndAwaitAdvance();
-            Thread.sleep(Duration.ofDays(1));
-            return null;
-        });
-        phaser.arriveAndAwaitAdvance();  // wait for task to start
-
-        // schedule main thread to be interrupted
-        Thread thread = Thread.currentThread();
-        new Thread(() -> {
-            try { Thread.sleep( Duration.ofMillis(100)); } catch (Exception ignore) { }
-            thread.interrupt();
-        }).start();
-
-        try {
-            executor.close();
-            assertTrue(Thread.currentThread().isInterrupted());
-        } finally {
-            Thread.interrupted();  // clear interrupt status
-        }
-        assertTrue(executor.isShutdown());
-        assertTrue(executor.isTerminated());
-        assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
-        assertThrows(ExecutionException.class, future::get);
+        testInNewThread(new TestAction() { void run() throws Exception {
+            Phaser phaser = new Phaser(2);
+            Future<?> future = executor.submit(() -> {
+                    phaser.arriveAndAwaitAdvance();
+                    Thread.sleep(Duration.ofDays(1));
+                    return null;
+                });
+            phaser.arriveAndAwaitAdvance();  // wait for task to start
+            // schedule main thread to be interrupted
+            Thread thread = Thread.currentThread();
+            new Thread(() -> {
+                    try {
+                        Thread.sleep( Duration.ofMillis(100));
+                    } catch (Exception ignore) { }
+                    thread.interrupt();
+            }).start();
+            try {
+                executor.close();
+                assertTrue(Thread.currentThread().isInterrupted());
+            } finally {
+                Thread.interrupted();  // clear interrupt status
+            }
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.isTerminated());
+            assertTrue(executor.awaitTermination(10, TimeUnit.MILLISECONDS));
+            assertThrows(ExecutionException.class, future::get);
+        }});
     }
 }
