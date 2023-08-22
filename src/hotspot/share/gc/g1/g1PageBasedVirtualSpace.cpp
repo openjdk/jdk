@@ -101,7 +101,7 @@ size_t G1PageBasedVirtualSpace::uncommitted_size()  const {
 }
 
 size_t G1PageBasedVirtualSpace::addr_to_page_index(char* addr) const {
-  return (addr - _low_boundary) / _page_size;
+  return pointer_delta(addr, _low_boundary, _page_size);
 }
 
 bool G1PageBasedVirtualSpace::is_area_committed(size_t start_page, size_t size_in_pages) const {
