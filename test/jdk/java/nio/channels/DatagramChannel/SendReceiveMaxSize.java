@@ -131,7 +131,7 @@ public class SendReceiveMaxSize {
             throws IOException {
         try (var receiver = DatagramChannel.open()) {
             receiver.bind(new InetSocketAddress(host, 0));
-            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity, 
+            assertTrue(receiver.getOption(SO_RCVBUF) >= capacity,
                        receiver.getOption(SO_RCVBUF) +
                        " for UDP receive buffer too small to hold capacity " +
                        capacity);
