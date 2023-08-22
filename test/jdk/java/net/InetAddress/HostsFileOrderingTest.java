@@ -88,18 +88,16 @@ public class HostsFileOrderingTest {
      */
     @Test
     public void testOrdering() throws Exception {
-        if (IPSupport.hasIPv6()) {
-            String [] resolvedAddresses = Arrays.stream(InetAddress.getAllByName("hostname.test.com"))
-                    .map(InetAddress::getHostAddress).toArray(String[]::new);
-            String [] expectedAddresses = getExpectedAddressesArray();
+        String [] resolvedAddresses = Arrays.stream(InetAddress.getAllByName("hostname.test.com"))
+                .map(InetAddress::getHostAddress).toArray(String[]::new);
+        String [] expectedAddresses = getExpectedAddressesArray();
 
-            if (Arrays.deepEquals(resolvedAddresses, expectedAddresses)) {
-                System.err.println("Test passed: The expected list of IP addresses is returned");
-            } else {
-                System.err.printf("Expected addresses:%n%s%n", Arrays.deepToString(expectedAddresses));
-                System.err.printf("Resolved addresses:%n%s%n", Arrays.deepToString(resolvedAddresses));
-                Assert.fail("Wrong host resolution result is returned");
-            }
+        if (Arrays.deepEquals(resolvedAddresses, expectedAddresses)) {
+            System.err.println("Test passed: The expected list of IP addresses is returned");
+        } else {
+            System.err.printf("Expected addresses:%n%s%n", Arrays.deepToString(expectedAddresses));
+            System.err.printf("Resolved addresses:%n%s%n", Arrays.deepToString(resolvedAddresses));
+            Assert.fail("Wrong host resolution result is returned");
         }
     }
 
@@ -110,6 +108,9 @@ public class HostsFileOrderingTest {
     static ExpectedOrder getExpectedOrderFromSystemProperties() {
         if (PREFER_IPV4_STACK_VALUE != null &&
             PREFER_IPV4_STACK_VALUE.equalsIgnoreCase("true")) {
+            return ExpectedOrder.IPV4_ONLY;
+        }
+        if (!IPSupport.hasIPv6()) {
             return ExpectedOrder.IPV4_ONLY;
         }
 
