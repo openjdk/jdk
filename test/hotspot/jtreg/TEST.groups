@@ -384,8 +384,6 @@ tier1_runtime = \
  -runtime/memory/ReserveMemory.java \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
- -runtime/Metaspace/elastic/TestMetaspaceAllocationMT1.java \
- -runtime/Metaspace/elastic/TestMetaspaceAllocationMT2.java \
  -runtime/MirrorFrame/Test8003720.java \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \

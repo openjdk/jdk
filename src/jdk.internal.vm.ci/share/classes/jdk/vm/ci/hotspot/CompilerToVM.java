@@ -560,14 +560,17 @@ final class CompilerToVM {
     private native int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, long constantPoolPointer, int cpci);
 
     /**
-     * Gets the appendix object (if any) associated with the entry at index {@code cpi} in
-     * {@code constantPool}.
+     * Gets the appendix object (if any) associated with the entry identified by {@code which}.
+     *
+     * @param which if negative, is treated as an encoded indy index for INVOKEDYNAMIC;
+     *              Otherwise, it's treated as a constant pool cache index (returned by HotSpotConstantPool::rawIndexToConstantPoolCacheIndex)
+     *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
-    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which) {
+        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which);
     }
 
-    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
 
     /**
      * Installs the result of a compilation into the code cache.
