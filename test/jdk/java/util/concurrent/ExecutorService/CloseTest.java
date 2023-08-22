@@ -57,23 +57,25 @@ class CloseTest {
         CheckedAction(TestAction a) { action = a; }
         public void run() {
             try {
-                a.run();
+                action.run();
             } catch (Exception ex) {
                 error = ex;
             }
         }
     }
-    static void testInNewThread(TestAction a) throws Throawble {
+    static void testInNewThread(TestAction a) throws Exception {
+        var wrapper =  new CheckedAction(a);
         try {
-            Thread t = new Thread(new CheckedAction(a));
+            Thread t = new Thread(wrapper);
             t.start();
             t.join();
         } finally {
-            Exception e = a.error;
+            Exception e = wrapper.error;
             if (e != null)
                 throw e;
         }
     }
+
     static Stream<ExecutorService> executors() {
         return Stream.of(
                 // ensures that default close method is tested
