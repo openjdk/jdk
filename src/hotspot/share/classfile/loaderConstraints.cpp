@@ -46,7 +46,8 @@
 // The details of the algorithm can be found in the OOPSLA'98 paper "Dynamic Class Loading in the Java
 // Virtual Machine" by Sheng Liang and Gilad Bracha.
 //
-// Each class name N is associated with one or more LoaderConstraints:
+// When a class name N is entered into the LoaderConstraintTable, it's mapped to a ConstraintSet which
+// contains one or more LoaderConstraints:
 //
 //   LoaderConstraint_a = { _klass_a, loader_a1, loader_a2, ...}
 //   LoaderConstraint_b = { _klass_b, loader_b1, loader_b2, ...}
