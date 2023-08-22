@@ -260,7 +260,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
     JVMCIObject vmIntrinsicMethod = JVMCIENV->new_VMIntrinsicMethod(kls_str, name_str, sig_str, (jint) vmIntrinsics::id, \
                                     (jboolean) vmIntrinsics::is_intrinsic_available(vmIntrinsics::id),                   \
                                     is_c1_supported(vmIntrinsics::id),                       \
-                                    is_c2_supported(vmIntrinsics::id), JVMCI_CHECK_NULL);  \
+                                    is_c2_supported(vmIntrinsics::id), JVMCI_CHECK_NULL);    \
     JVMCIENV->put_object_at(vmIntrinsics, index++, vmIntrinsicMethod);   \
   }
 
