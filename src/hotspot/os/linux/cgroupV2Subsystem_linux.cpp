@@ -89,6 +89,10 @@ int CgroupV2Subsystem::cpu_quota() {
   return limit;
 }
 
+bool CgroupV2Subsystem::is_containerized() {
+  return _unified->is_read_only();
+}
+
 char * CgroupV2Subsystem::cpu_cpuset_cpus() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/cpuset.cpus",
                      "cpuset.cpus is: %s", "%1023s", cpus, 1024);

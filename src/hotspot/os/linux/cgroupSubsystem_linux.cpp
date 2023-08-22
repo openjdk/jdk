@@ -63,7 +63,9 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     // Construct the subsystem, free resources and return
     // Note: any index in cg_infos will do as the path is the same for
     //       all controllers.
-    CgroupController* unified = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path, cg_infos[MEMORY_IDX]._cgroup_path);
+    CgroupController* unified = new CgroupV2Controller(cg_infos[MEMORY_IDX]._mount_path,
+                                                       cg_infos[MEMORY_IDX]._cgroup_path,
+                                                       cg_infos[MEMORY_IDX]._is_ro);
     log_debug(os, container)("Detected cgroups v2 unified hierarchy");
     cleanup(cg_infos);
     return new CgroupV2Subsystem(unified);
@@ -100,19 +102,19 @@ CgroupSubsystem* CgroupSubsystemFactory::create() {
     CgroupInfo info = cg_infos[i];
     if (info._data_complete) { // pids controller might have incomplete data
       if (strcmp(info._name, "memory") == 0) {
-        memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path);
+        memory = new CgroupV1MemoryController(info._root_mount_path, info._mount_path, info._is_ro);
         memory->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuset") == 0) {
-        cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path);
+        cpuset = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._is_ro);
         cpuset->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpu") == 0) {
-        cpu = new CgroupV1Controller(info._root_mount_path, info._mount_path);
+        cpu = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._is_ro);
         cpu->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "cpuacct") == 0) {
-        cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path);
+        cpuacct = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._is_ro);
         cpuacct->set_subsystem_path(info._cgroup_path);
       } else if (strcmp(info._name, "pids") == 0) {
-        pids = new CgroupV1Controller(info._root_mount_path, info._mount_path);
+        pids = new CgroupV1Controller(info._root_mount_path, info._mount_path, info._is_ro);
         pids->set_subsystem_path(info._cgroup_path);
       }
     } else {
@@ -127,7 +129,8 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
                                                   int controller,
                                                   const char* name,
                                                   char* mount_path,
-                                                  char* root_path) {
+                                                  char* root_path,
+                                                  bool is_read_only) {
   if (cg_infos[controller]._mount_path != nullptr) {
     // On some systems duplicate controllers get mounted in addition to
     // the main cgroup controllers most likely under /sys/fs/cgroup. In that
@@ -139,6 +142,7 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
       os::free(cg_infos[controller]._root_mount_path);
       cg_infos[controller]._mount_path = os::strdup(mount_path);
       cg_infos[controller]._root_mount_path = os::strdup(root_path);
+      cg_infos[controller]._is_ro = is_read_only;
     } else {
       log_debug(os, container)("Duplicate %s controllers detected. Picking %s, skipping %s.",
                                name, cg_infos[controller]._mount_path, mount_path);
@@ -146,6 +150,7 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
   } else {
     cg_infos[controller]._mount_path = os::strdup(mount_path);
     cg_infos[controller]._root_mount_path = os::strdup(root_path);
+    cg_infos[controller]._is_ro = is_read_only;
   }
 }
 
@@ -318,26 +323,34 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
     char tmproot[MAXPATHLEN+1];
     char tmpmount[MAXPATHLEN+1];
     char tmpcgroups[MAXPATHLEN+1];
+    char mount_opts[MAXPATHLEN+1];
     char *cptr = tmpcgroups;
     char *token;
 
     // Cgroup v2 relevant info. We only look for the _mount_path iff is_cgroupsV2 so
     // as to avoid memory stomping of the _mount_path pointer later on in the cgroup v1
     // block in the hybrid case.
-    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %*s", tmproot, tmpmount, tmp_fs_type) == 3) {
+    //
+    // We collect the read only mount option in the cgroup infos so as to have that
+    // info ready when determining is_containerized().
+    if (is_cgroupsV2 && sscanf(p, "%*d %*d %*d:%*d %s %s %s%*[^-]- %s %*s %*s", tmproot, tmpmount, mount_opts, tmp_fs_type) == 4) {
       // we likely have an early match return (e.g. cgroup fs match), be sure we have cgroup2 as fstype
       if (strcmp("cgroup2", tmp_fs_type) == 0) {
         cgroupv2_mount_point_found = true;
         any_cgroup_mounts_found = true;
+        // For unified we only have a single line with cgroup2 fs type.
+        // Therefore use that option for all CG info structs.
+        bool ro_opt = find_ro_opt(mount_opts);
         for (int i = 0; i < CG_INFO_LENGTH; i++) {
-          set_controller_paths(cg_infos, i, "(cg2, unified)", tmpmount, tmproot);
+          set_controller_paths(cg_infos, i, "(cg2, unified)", tmpmount, tmproot, ro_opt);
         }
       }
     }
 
     /* Cgroup v1 relevant info
      *
-     * Find the cgroup mount point for memory, cpuset, cpu, cpuacct, pids
+     * Find the cgroup mount point for memory, cpuset, cpu, cpuacct, pids. For each controller
+     * determine whether or not they show up as mounted read only or not.
      *
      * Example for docker:
      * 219 214 0:29 /docker/7208cebd00fa5f2e342b1094f7bed87fa25661471a4637118e65f1c995be8a34 /sys/fs/cgroup/memory ro,nosuid,nodev,noexec,relatime - cgroup cgroup rw,memory
@@ -347,7 +360,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
      *
      * 44 31 0:39 / /sys/fs/cgroup/pids rw,nosuid,nodev,noexec,relatime shared:23 - cgroup cgroup rw,pids
      */
-    if (sscanf(p, "%*d %*d %*d:%*d %s %s %*[^-]- %s %*s %s", tmproot, tmpmount, tmp_fs_type, tmpcgroups) == 4) {
+    if (sscanf(p, "%*d %*d %*d:%*d %s %s %s%*[^-]- %s %*s %s", tmproot, tmpmount, mount_opts, tmp_fs_type, tmpcgroups) == 5) {
       if (strcmp("cgroup", tmp_fs_type) != 0) {
         // Skip cgroup2 fs lines on hybrid or unified hierarchy.
         continue;
@@ -355,23 +368,28 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       while ((token = strsep(&cptr, ",")) != nullptr) {
         if (strcmp(token, "memory") == 0) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, MEMORY_IDX, token, tmpmount, tmproot);
+          bool ro_opt = find_ro_opt(mount_opts);
+          set_controller_paths(cg_infos, MEMORY_IDX, token, tmpmount, tmproot, ro_opt);
           cg_infos[MEMORY_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuset") == 0) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPUSET_IDX, token, tmpmount, tmproot);
+          bool ro_opt = find_ro_opt(mount_opts);
+          set_controller_paths(cg_infos, CPUSET_IDX, token, tmpmount, tmproot, ro_opt);
           cg_infos[CPUSET_IDX]._data_complete = true;
         } else if (strcmp(token, "cpu") == 0) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPU_IDX, token, tmpmount, tmproot);
+          bool ro_opt = find_ro_opt(mount_opts);
+          set_controller_paths(cg_infos, CPU_IDX, token, tmpmount, tmproot, ro_opt);
           cg_infos[CPU_IDX]._data_complete = true;
         } else if (strcmp(token, "cpuacct") == 0) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, CPUACCT_IDX, token, tmpmount, tmproot);
+          bool ro_opt = find_ro_opt(mount_opts);
+          set_controller_paths(cg_infos, CPUACCT_IDX, token, tmpmount, tmproot, ro_opt);
           cg_infos[CPUACCT_IDX]._data_complete = true;
         } else if (strcmp(token, "pids") == 0) {
           any_cgroup_mounts_found = true;
-          set_controller_paths(cg_infos, PIDS_IDX, token, tmpmount, tmproot);
+          bool ro_opt = find_ro_opt(mount_opts);
+          set_controller_paths(cg_infos, PIDS_IDX, token, tmpmount, tmproot, ro_opt);
           cg_infos[PIDS_IDX]._data_complete = true;
         }
       }
@@ -435,6 +453,22 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   *flags = CGROUPS_V1;
   return true;
 };
+
+/*
+ * Determine whether or not the mount options, which are comma separated,
+ * contain the 'ro' string.
+ */
+bool CgroupSubsystemFactory::find_ro_opt(char* mount_opts) {
+  char* token;
+  char* mo_ptr = mount_opts;
+  // mount options are comma-separated (man proc).
+  while ((token = strsep(&mo_ptr, ",")) != NULL) {
+    if (strcmp(token, "ro") == 0) {
+      return true;
+    }
+  }
+  return false;
+}
 
 void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
   assert(cg_infos != nullptr, "Invariant");

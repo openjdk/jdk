@@ -58,8 +58,7 @@ void OSContainer::init() {
   if (cgroup_subsystem == nullptr) {
     return; // Required subsystem files not found or other error
   }
-
-  _is_containerized = true;
+  _is_containerized = cgroup_subsystem->is_containerized();
 }
 
 const char * OSContainer::container_type() {

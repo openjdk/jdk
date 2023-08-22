@@ -199,6 +199,17 @@ jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
   }
 }
 
+bool CgroupV1Subsystem::is_containerized() {
+  // containerized iff all required controllers are mounted
+  // read-only (for now).
+  //
+  // TODO: Implement fallback of looking at cpu/mem limits
+  return _memory->controller()->is_read_only() &&
+	 _cpu->controller()->is_read_only() &&
+	 _cpuacct->is_read_only() &&
+	 _cpuset->is_read_only();
+}
+
 /* memory_usage_in_bytes
  *
  * Return the amount of used memory for this process.
