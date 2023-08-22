@@ -6,51 +6,55 @@ import java.net.SocketException;
 
 public final class NativeNetworkInterface {
 
-    private NativeNetworkInterface() {}
-
-    static NetworkInterface getByName(String name) throws SocketException {
-        return null;
+    private NativeNetworkInterface() {
     }
 
-    static NetworkInterface getByIndex(int index) throws SocketException {
-        return null;
+    public static NetworkInterface getByName(String name) throws SocketException {
+        throw unsupported();
     }
 
-    static NetworkInterface getByInetAddress(InetAddress addr) throws SocketException {
-        return null;
+    public static NetworkInterface getByIndex(int index) throws SocketException {
+        throw unsupported();
     }
 
-    static NetworkInterface[] getAll() throws SocketException {
-        return null;
+    public static NetworkInterface getByInetAddress(InetAddress address) throws SocketException {
+        throw unsupported();
     }
 
-    static boolean boundInetAddress(InetAddress addr) throws SocketException {
-        return false;
+    public static NetworkInterface[] getAll() throws SocketException {
+        throw unsupported();
     }
 
-    static boolean isUp(String name, int ind) throws SocketException {
-        return false;
+    public static boolean boundInetAddress(InetAddress address) throws SocketException {
+        throw unsupported();
     }
 
-    static boolean isLoopback(String name, int ind) throws SocketException {
-        return false;
+    public static boolean isUp(String name, int ind) throws SocketException {
+        throw unsupported();
     }
 
-    static boolean supportsMulticast(String name, int ind) throws SocketException {
-        return false;
+    public static boolean isLoopback(String name, int ind) throws SocketException {
+        throw unsupported();
     }
 
-    static boolean isP2P(String name, int ind) throws SocketException {
-        return false;
+    public static boolean supportsMulticast(String name, int ind) throws SocketException {
+        throw unsupported();
     }
 
-    static byte[] getMacAddr(byte[] inAddr, String name, int ind) throws SocketException {
-        return null;
+    public static boolean isP2P(String name, int ind) throws SocketException {
+        throw unsupported();
     }
 
-    static int getMTU(String name, int ind) throws SocketException {
-        return 0;
+    public static byte[] getMacAddr(byte[] inAddr, String name, int ind) throws SocketException {
+        throw unsupported();
     }
 
+    public static int getMTU(String name, int ind) throws SocketException {
+        throw unsupported();
+    }
+
+    private static UnsupportedOperationException unsupported() {
+        return new UnsupportedOperationException("Implement me!");
+    }
 
 }

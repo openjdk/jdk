@@ -29,7 +29,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 
-import static jdk.internal.foreign.support.DefaultNativeLookupUtil.downcall;
+import static jdk.internal.foreign.support.LookupUtil.downcall;
 import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 import static jdk.internal.natives.WindowsConstants.*;
 import static jdk.internal.natives.WindowsMethods.getFileType;

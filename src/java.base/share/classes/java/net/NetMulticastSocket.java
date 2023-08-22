@@ -705,7 +705,7 @@ final class NetMulticastSocket extends MulticastSocket {
          * required for some platforms where it's not possible to join
          * a group without setting the interface first.
          */
-        NetworkInterface defaultInterface = NetworkInterface.getDefault();
+        NetworkInterface defaultInterface = DefaultInterface.getDefault();
 
         if (!interfaceSet && defaultInterface != null) {
             setNetworkInterface(defaultInterface);

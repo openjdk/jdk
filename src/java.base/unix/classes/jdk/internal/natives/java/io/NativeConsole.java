@@ -28,7 +28,7 @@ package jdk.internal.natives.java.io;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static jdk.internal.foreign.support.DefaultNativeLookupUtil.*;
+import static jdk.internal.foreign.support.LookupUtil.*;
 import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 
 public final class NativeConsole {

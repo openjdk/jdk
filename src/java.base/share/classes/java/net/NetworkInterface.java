@@ -25,6 +25,8 @@
 
 package java.net;
 
+import jdk.internal.natives.java.net.NativeNetworkInterface;
+
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
@@ -46,6 +48,12 @@ import java.util.stream.StreamSupport;
  * @since 1.4
  */
 public final class NetworkInterface {
+
+    // Todo: Remove this
+    static {
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+        init();
+    }
 
     private final NetworkInterfaceDelegate delegate;
 
@@ -350,7 +358,7 @@ public final class NetworkInterface {
         if (index < 0) {
             throw new IllegalArgumentException("Interface index can't be negative");
         }
-        return NativeNetworkInterface.getByIndex(index);
+        return jdk.internal.natives.java.net.NativeNetworkInterface.getByIndex(index);
     }
 
     /**
@@ -430,16 +438,6 @@ public final class NetworkInterface {
     }
 
     /**
-     * Returns the default network interface of this system
-     *
-     * @return the default interface
-     */
-    /* package-private */
-    static NetworkInterface getDefault() {
-        return NetworkInterfaceDelegate.DEFAULT_INTERFACE;
-    }
-
-    /**
      * Checks if the given address is bound to any of the interfaces on this
      * machine.
      *
@@ -455,8 +453,6 @@ public final class NetworkInterface {
 
     private static final class NetworkInterfaceDelegate {
 
-        private static final NetworkInterface DEFAULT_INTERFACE;
-
         private String name;
         private String displayName;
         private int index;
@@ -465,13 +461,6 @@ public final class NetworkInterface {
         private NetworkInterface childs[];
         private NetworkInterface parent = null;
         private boolean virtual = false;
-
-        static {
-            jdk.internal.loader.BootLoader.loadLibrary("net");
-
-            init();
-            DEFAULT_INTERFACE = DefaultInterface.getDefault();
-        }
 
         /**
          * Returns an NetworkInterface object with index set to 0 and name to null.
@@ -819,79 +808,91 @@ public final class NetworkInterface {
     }
 
     // Todo: Use FFM and move to platform-specific location
-    private static final class NativeNetworkInterface {
 
-        static NetworkInterface getByName(String name) throws SocketException {
-            return getByName0(name);
-        }
-
-        static NetworkInterface getByIndex(int index) throws SocketException {
-            return getByIndex0(index);
-        }
-
-        static NetworkInterface getByInetAddress(InetAddress addr) throws SocketException {
-            return getByInetAddress0(addr);
-        }
-
-        static NetworkInterface[] getAll() throws SocketException {
-            return NetworkInterface.getAll();
-        }
-
-        static boolean boundInetAddress(InetAddress addr) throws SocketException {
-            return boundInetAddress0(addr);
-        }
-
-        static boolean isUp(String name, int ind) throws SocketException {
-            return isUp0(name, ind);
-        }
-
-        static boolean isLoopback(String name, int ind) throws SocketException {
-            return isLoopback0(name, ind);
-        }
-
-        static boolean supportsMulticast(String name, int ind) throws SocketException {
-            return supportsMulticast0(name, ind);
-        }
-
-        static boolean isP2P(String name, int ind) throws SocketException {
-            return isP2P0(name, ind);
-        }
-
-        static byte[] getMacAddr(byte[] inAddr, String name, int ind) throws SocketException {
-            return getMacAddr0(inAddr, name, ind);
-        }
-
-        static int getMTU(String name, int ind) throws SocketException {
-            return getMTU0(name, ind);
-        }
-
-    }
 
     // Native Methods to use FFM API
+    // These methods are temporarily public
 
-    private static native void init();
+    /**
+     * Remove
+     */
+    public static native void init();
 
-    private static native NetworkInterface[] getAll() throws SocketException;
+    /**
+     * {@return remove}
+     * @throws SocketException remove
+     */
+    public static native NetworkInterface[] getAll() throws SocketException;
 
-    private static native NetworkInterface getByName0(String name) throws SocketException;
+    /**
+     * {@return remove}
+     * @param name remove
+     * @throws SocketException remove
+     */
+    public static native NetworkInterface getByName0(String name) throws SocketException;
 
-    private static native NetworkInterface getByIndex0(int index) throws SocketException;
+    /**
+     * {@return remove}
+     * @param index remove
+     * @throws SocketException remove
+     */
+    public static native NetworkInterface getByIndex0(int index) throws SocketException;
 
-    private static native boolean boundInetAddress0(InetAddress addr) throws SocketException;
+    /**
+     * {@return remove}
+     * @param addr remove
+     * @throws SocketException remove
+     */
+    public static native boolean boundInetAddress0(InetAddress addr) throws SocketException;
 
-    private static native NetworkInterface getByInetAddress0(InetAddress addr) throws SocketException;
+    /**
+     * {@return remove}
+     * @param addr remove
+     * @throws SocketException remove
+     */
+    public static native NetworkInterface getByInetAddress0(InetAddress addr) throws SocketException;
 
-    private static native boolean isUp0(String name, int ind) throws SocketException;
+    /**
+     * {@return remove}
+     * @param name remove
+     * @param ind remove
+     * @throws SocketException remove
+     */
+    public static native boolean isUp0(String name, int ind) throws SocketException;
 
-    private static native boolean isLoopback0(String name, int ind) throws SocketException;
+    /**
+     * {@return remove}
+     * @param name remove
+     * @param ind remove
+     * @throws SocketException remove
+     */
+    public static native boolean isLoopback0(String name, int ind) throws SocketException;
 
-    private static native boolean supportsMulticast0(String name, int ind) throws SocketException;
+    /**
+     * {@return remove}
+     * @param name remove
+     * @param ind remove
+     * @throws SocketException remove
+     */
+    public static native boolean supportsMulticast0(String name, int ind) throws SocketException;
 
-    private static native boolean isP2P0(String name, int ind) throws SocketException;
+    /**
+     * {@return remove}
+     * @param name remove
+     * @param ind remove
+     * @throws SocketException remove
+     */
+    public static native boolean isP2P0(String name, int ind) throws SocketException;
 
-    private static native byte[] getMacAddr0(byte[] inAddr, String name, int ind) throws SocketException;
+    /**
+     * {@return remove}
+     * @param inAddr remove
+     * @param name remove
+     * @param ind remove
+     * @throws SocketException remove
+     */
+    public static native byte[] getMacAddr0(byte[] inAddr, String name, int ind) throws SocketException;
 
-    private static native int getMTU0(String name, int ind) throws SocketException;
-
+    //public static native int getMTU0(String name, int ind) throws SocketException;
 
 }

@@ -28,7 +28,7 @@ package jdk.internal.natives;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
-import static jdk.internal.foreign.support.DefaultNativeLookupUtil.downcall;
+import static jdk.internal.foreign.support.LookupUtil.downcall;
 import static jdk.internal.foreign.support.InvokeUtil.*;
 import static jdk.internal.natives.WindowsTypes.DWORD;
 import static jdk.internal.natives.WindowsTypes.HANDLE;
