@@ -81,7 +81,9 @@ public final class Arrays {
 
     /**
      * Sorts the specified array into ascending numerical order.
-     *
+     * While the intrinsic is free to choose its own sorting algorithm, the
+     * fallback implementation uses either mixed insertion sort or simple
+     * insertion sort.
      *
      * @param elemType the class of the elements of the array to be sorted
      * @param array the array to be sorted
@@ -90,17 +92,36 @@ public final class Arrays {
      * address pointing to the first element to sort from.
      * @param fromIndex the index of the first element, inclusive, to be sorted
      * @param toIndex the index of the last element, exclusive, to be sorted
+     * @param end the index of the last element for simple insertion sort (in
+     * the case of mixed insertion sort). In the fallback implementation,
+     * if end < 0, we use insertion sort else we use mixed insertion sort.
      */
     @IntrinsicCandidate
-    private static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
-        switch (array) {
-            case int[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
-            case long[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
-            case float[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
-            case double[] arr -> DualPivotQuicksort.sort(arr, 0, fromIndex, toIndex);
-            default -> throw new UnsupportedOperationException(
-                    "arraySort intrinsic not supported for this type: " + elemType);
-        }
+    static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex, int end) {
+        DualPivotQuicksort.smallArraySort(array, fromIndex, toIndex, end);
+    }
+
+    /**
+     * Partitions the specified array based on the pivot(s) provided.
+     *
+     * @param elemType the class of the array to be sorted
+     * @param array the array to be sorted
+     * @param offset the relative offset, in bytes, from the base address of
+     * the array to partition, otherwise if the array is {@code null},an absolute
+     * address pointing to the first element to partition from.
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
+     * @param pivotIndices the array containing the indices of the pivots. After
+     * partitioning, this array is updated with the new indices of the pivots.
+     * @param pivot_offset the offset in bytes pointing to the base address of
+     * the array used to store the indices of the pivots.
+     * @param isDualPivot a boolean value to choose between dual pivot
+     * partitioning and single pivot partitioning
+     */
+    @IntrinsicCandidate
+    static void arrayPartition(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex, int[] pivotIndices, long pivot_offset, boolean isDualPivot) {
+        if (isDualPivot) DualPivotQuicksort.partitionDualPivot(array, fromIndex, toIndex, pivotIndices);
+        else DualPivotQuicksort.partitionSinglePivot(array, fromIndex, toIndex, pivotIndices);
     }
 
     /*
@@ -122,8 +143,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        int offset = Unsafe.ARRAY_INT_BASE_OFFSET;
-        arraySort(int.class, a, offset, 0, a.length);
+        DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
@@ -147,8 +167,7 @@ public final class Arrays {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        int offset = Unsafe.ARRAY_INT_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
-        arraySort(int.class, a, offset, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 
     /**
@@ -162,8 +181,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        int offset = Unsafe.ARRAY_LONG_BASE_OFFSET;
-        arraySort(long.class, a, offset, 0, a.length);
+        DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
@@ -187,8 +205,7 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        int offset = Unsafe.ARRAY_LONG_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
-        arraySort(long.class, a, offset, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 
     /**
@@ -324,8 +341,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(float[] a) {
-        int offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET;
-        arraySort(float.class, a, offset, 0, a.length);
+        DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
@@ -357,8 +373,7 @@ public final class Arrays {
      */
     public static void sort(float[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        int offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
-        arraySort(float.class, a, offset, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 
     /**
@@ -380,8 +395,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-        int offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
-        arraySort(double.class, a, offset, 0, a.length);
+         DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
@@ -413,8 +427,7 @@ public final class Arrays {
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        int offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
-        arraySort(double.class, a, offset, fromIndex, toIndex);
+        DualPivotQuicksort.sort(a, 0, fromIndex, toIndex);
     }
 
     /**

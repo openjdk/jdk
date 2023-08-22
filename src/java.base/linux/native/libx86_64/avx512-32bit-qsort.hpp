@@ -61,6 +61,9 @@ struct zmm_vector<int32_t> {
     static opmask_t ge(zmm_t x, zmm_t y) {
         return _mm512_cmp_epi32_mask(x, y, _MM_CMPINT_NLT);
     }
+    static opmask_t gt(zmm_t x, zmm_t y) {
+        return _mm512_cmp_epi32_mask(x, y, _MM_CMPINT_GT);
+    }
     template <int scale>
     static ymm_t i64gather(__m512i index, void const *base) {
         return _mm512_i64gather_epi32(index, base, scale);
@@ -116,6 +119,9 @@ struct zmm_vector<float> {
     static opmask_t knot_opmask(opmask_t x) { return _mm512_knot(x); }
     static opmask_t ge(zmm_t x, zmm_t y) {
         return _mm512_cmp_ps_mask(x, y, _CMP_GE_OQ);
+    }
+    static opmask_t gt(zmm_t x, zmm_t y) {
+        return _mm512_cmp_ps_mask(x, y, _CMP_GT_OQ);
     }
     template <int scale>
     static ymm_t i64gather(__m512i index, void const *base) {
@@ -431,7 +437,7 @@ static void qsort_32bit_(type_t *arr, int64_t left, int64_t right,
     type_t smallest = vtype::type_max();
     type_t biggest = vtype::type_min();
     int64_t pivot_index = partition_avx512_unrolled<vtype, 2>(
-        arr, left, right + 1, pivot, &smallest, &biggest);
+        arr, left, right + 1, pivot, &smallest, &biggest, false);
     if (pivot != smallest)
         qsort_32bit_<vtype>(arr, left, pivot_index - 1, max_iters - 1);
     if (pivot != biggest)
@@ -439,19 +445,19 @@ static void qsort_32bit_(type_t *arr, int64_t left, int64_t right,
 }
 
 template <>
-void avx512_qsort<int32_t>(int32_t *arr, int64_t arrsize) {
+inline void avx512_qsort<int32_t>(int32_t *arr, int64_t fromIndex, int64_t toIndex) {
+    int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
-        qsort_32bit_<zmm_vector<int32_t>, int32_t>(arr, 0, arrsize - 1,
+        qsort_32bit_<zmm_vector<int32_t>, int32_t>(arr, fromIndex, toIndex - 1,
                                                    2 * (int64_t)log2(arrsize));
     }
 }
 
 template <>
-void avx512_qsort<float>(float *arr, int64_t arrsize) {
-    int64_t idx_last_elem_not_nan = move_nans_to_end_of_array(arr, arrsize);
-    arrsize = idx_last_elem_not_nan + 1;
+inline void avx512_qsort<float>(float *arr, int64_t fromIndex, int64_t toIndex) {
+    int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
-        qsort_32bit_<zmm_vector<float>, float>(arr, 0, idx_last_elem_not_nan,
+        qsort_32bit_<zmm_vector<float>, float>(arr, fromIndex, toIndex - 1,
                                                2 * (int64_t)log2(arrsize));
     }
 }

@@ -331,6 +331,10 @@
   static_field(StubRoutines,                _arraysort_long,                                  address)                               \
   static_field(StubRoutines,                _arraysort_float,                                 address)                               \
   static_field(StubRoutines,                _arraysort_double,                                address)                               \
+  static_field(StubRoutines,                _array_partition_int,                             address)                               \
+  static_field(StubRoutines,                _array_partition_long,                            address)                               \
+  static_field(StubRoutines,                _array_partition_float,                           address)                               \
+  static_field(StubRoutines,                _array_partition_double,                          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \

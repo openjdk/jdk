@@ -292,7 +292,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySort:               return inline_arraysort();
+  case vmIntrinsics::_arraySort:                return inline_arraysort();
+  case vmIntrinsics::_arrayPartition:           return inline_array_partition();
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5193,6 +5194,47 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   _gvn.hash_delete(uncommon_trap_call);
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }
+
+//------------------------------inline_array_partition-----------------------
+bool LibraryCallKit::inline_array_partition() {
+
+  address stubAddr = nullptr;
+  const char *stubName;
+  stubName = "array_partition_stub";
+
+  Node* elementType     = null_check(argument(0));
+  Node* obj             = argument(1);
+  Node* offset          = argument(2);
+  Node* fromIndex       = argument(4);
+  Node* toIndex         = argument(5);
+  Node* pivot_indices   = argument(6);
+  Node* pivot_offset    = argument(7);
+  Node* isDualPivot     = argument(9);
+
+  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  BasicType bt = elem_type->basic_type();
+  stubAddr = StubRoutines::select_array_partition_function(bt);
+  if (stubAddr == nullptr) return false;
+
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
+    return false; // failed input validation
+  }
+
+  Node* obj_adr = make_unsafe_address(obj, offset);
+
+  pivot_indices = must_be_not_null(pivot_indices, true);
+  Node* pivot_indices_adr = make_unsafe_address(pivot_indices, pivot_offset); //this offset is not same as array offset
+
+  // Call the stub.
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
+                    stubAddr, stubName, TypePtr::BOTTOM,
+                    obj_adr, fromIndex, toIndex, pivot_indices_adr, isDualPivot);
+
+  return true;
+}
+
 
 //------------------------------inline_arraysort-----------------------
 bool LibraryCallKit::inline_arraysort() {

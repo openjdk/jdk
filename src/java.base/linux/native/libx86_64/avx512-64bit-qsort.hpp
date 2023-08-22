@@ -746,7 +746,7 @@ static void qsort_64bit_(type_t *arr, int64_t left, int64_t right,
     type_t smallest = vtype::type_max();
     type_t biggest = vtype::type_min();
     int64_t pivot_index = partition_avx512_unrolled<vtype, 8>(
-        arr, left, right + 1, pivot, &smallest, &biggest);
+        arr, left, right + 1, pivot, &smallest, &biggest, false);
     if (pivot != smallest)
         qsort_64bit_<vtype>(arr, left, pivot_index - 1, max_iters - 1);
     if (pivot != biggest)
@@ -754,20 +754,21 @@ static void qsort_64bit_(type_t *arr, int64_t left, int64_t right,
 }
 
 template <>
-void avx512_qsort<int64_t>(int64_t *arr, int64_t arrsize) {
+inline void avx512_qsort<int64_t>(int64_t *arr, int64_t fromIndex, int64_t toIndex) {
+    int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
-        qsort_64bit_<zmm_vector<int64_t>, int64_t>(arr, 0, arrsize - 1,
+        qsort_64bit_<zmm_vector<int64_t>, int64_t>(arr, fromIndex, toIndex - 1,
                                                    2 * (int64_t)log2(arrsize));
     }
 }
 
 template <>
-void avx512_qsort<double>(double *arr, int64_t arrsize) {
-    int64_t idx_last_elem_not_nan = move_nans_to_end_of_array(arr, arrsize);
-    arrsize = idx_last_elem_not_nan + 1;
+inline void avx512_qsort<double>(double *arr, int64_t fromIndex, int64_t toIndex) {
+    int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
-        qsort_64bit_<zmm_vector<double>, double>(arr, 0, idx_last_elem_not_nan,
+        qsort_64bit_<zmm_vector<double>, double>(arr, fromIndex, toIndex - 1,
                                                  2 * (int64_t)log2(arrsize));
     }
 }
+
 #endif  // AVX512_QSORT_64BIT

@@ -4130,7 +4130,7 @@ void StubGenerator::generate_compiler_stubs() {
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
   }
 
-  // Get avx512 sort stub routine addresses
+  // Get addresses for avx512 sort and partition routines
   void *libx86_64 = nullptr;
   char ebuf_x86_64[1024];
   char dll_name_avx512[JVM_MAXPATHLEN];
@@ -4153,6 +4153,18 @@ void StubGenerator::generate_compiler_stubs() {
 
       snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_sort_double");
       StubRoutines::_arraysort_double = (address)os::dll_lookup(libx86_64, ebuf_x86_64);
+
+      snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_partition_int");
+      StubRoutines::_array_partition_int = (address)os::dll_lookup(libx86_64, ebuf_x86_64);
+
+      snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_partition_long");
+      StubRoutines::_array_partition_long = (address)os::dll_lookup(libx86_64, ebuf_x86_64);
+
+      snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_partition_float");
+      StubRoutines::_array_partition_float = (address)os::dll_lookup(libx86_64, ebuf_x86_64);
+
+      snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_partition_double");
+      StubRoutines::_array_partition_double = (address)os::dll_lookup(libx86_64, ebuf_x86_64);
     }
   }
 

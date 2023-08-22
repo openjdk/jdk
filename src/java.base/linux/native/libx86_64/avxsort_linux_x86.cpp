@@ -32,24 +32,36 @@
 
 extern "C" {
 
-    DLL_PUBLIC void avx512_sort_int(int32_t *array_fromIndex, int64_t fromIndex,
-                                    int64_t toIndex) {
-        avx512_qsort<int32_t>(array_fromIndex, toIndex - fromIndex);
+    DLL_PUBLIC void avx512_sort_int(int32_t *array, int64_t from_index, int64_t to_index) {
+        avx512_qsort<int32_t>(array, from_index, to_index);
     }
 
-    DLL_PUBLIC void avx512_sort_long(int64_t *array_fromIndex, int64_t fromIndex,
-                                    int64_t toIndex) {
-        avx512_qsort<int64_t>(array_fromIndex, toIndex - fromIndex);
+    DLL_PUBLIC void avx512_sort_long(int64_t *array, int64_t from_index, int64_t to_index) {
+        avx512_qsort<int64_t>(array, from_index, to_index);
     }
 
-    DLL_PUBLIC void avx512_sort_float(float *array_fromIndex, int64_t fromIndex,
-                                    int64_t toIndex) {
-        avx512_qsort<float>(array_fromIndex, toIndex - fromIndex);
+    DLL_PUBLIC void avx512_sort_float(float *array, int64_t from_index, int64_t to_index) {
+        avx512_qsort<float>(array, from_index, to_index);
     }
 
-    DLL_PUBLIC void avx512_sort_double(double *array_fromIndex, int64_t fromIndex,
-                                    int64_t toIndex) {
-        avx512_qsort<double>(array_fromIndex, toIndex - fromIndex);
+    DLL_PUBLIC void avx512_sort_double(double *array, int64_t from_index, int64_t to_index) {
+        avx512_qsort<double>(array, from_index, to_index);
+    }
+
+    DLL_PUBLIC void avx512_partition_int(int32_t *array, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pivot) {
+        avx512_partition<int32_t>(array, from_index, to_index, pivot_indices, is_dual_pivot);
+    }
+
+    DLL_PUBLIC void avx512_partition_long(int64_t *array, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pivot) {
+        avx512_partition<int64_t>(array, from_index, to_index, pivot_indices, is_dual_pivot);
+    }
+
+    DLL_PUBLIC void avx512_partition_float(float *array, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pivot) {
+        avx512_partition<float>(array, from_index, to_index, pivot_indices, is_dual_pivot);
+    }
+
+    DLL_PUBLIC void avx512_partition_double(double *array, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pivot) {
+        avx512_partition<double>(array, from_index, to_index, pivot_indices, is_dual_pivot);
     }
 
 }

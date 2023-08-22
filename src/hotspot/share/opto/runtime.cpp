@@ -857,6 +857,27 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::array_partition_Type() {
+  // create input type (domain)
+  int num_args = 5;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // array
+  fields[argp++] = TypeInt::INT;    // low
+  fields[argp++] = TypeInt::INT;    // end
+  fields[argp++] = TypePtr::NOTNULL;    // pivot_indices (int array)
+  fields[argp++] = TypeInt::BOOL;       // isDualPivot
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 const TypeFunc* OptoRuntime::array_sort_Type() {
   // create input type (domain)
   int num_args      = 3;

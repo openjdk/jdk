@@ -157,6 +157,10 @@ class StubRoutines: AllStatic {
   static address _arraysort_long;
   static address _arraysort_float;
   static address _arraysort_double;
+  static address _array_partition_int;
+  static address _array_partition_long;
+  static address _array_partition_float;
+  static address _array_partition_double;
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
   static address _jbyte_arraycopy;
@@ -378,6 +382,7 @@ class StubRoutines: AllStatic {
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
   static address select_arraysort_function(BasicType t);
+  static address select_array_partition_function(BasicType t);
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }

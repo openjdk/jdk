@@ -343,7 +343,12 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_arraySort,                java_util_Arrays,       arraySort_name, arraySort_signature,           F_S)   \
    do_name(     arraySort_name,                                  "arraySort")                                           \
-   do_signature(arraySort_signature,                             "(Ljava/lang/Class;Ljava/lang/Object;JII)V")           \
+   do_signature(arraySort_signature,                             "(Ljava/lang/Class;Ljava/lang/Object;JIII)V")          \
+                                                                                                                        \
+  do_intrinsic(_arrayPartition, java_util_Arrays, arrayPartition_name, arrayPartition_signature, F_S)                   \
+   do_name(arrayPartition_name, "arrayPartition")                                                                       \
+  do_signature(arrayPartition_signature, "(Ljava/lang/Class;Ljava/lang/Object;JII[IJZ)V")                               \
+                                                                                                                        \
                                                                                                                         \
   do_intrinsic(_copyOfRange,              java_util_Arrays,       copyOfRange_name, copyOfRange_signature,       F_S)   \
    do_name(     copyOfRange_name,                                "copyOfRange")                                         \

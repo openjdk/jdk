@@ -27,6 +27,9 @@ package java.util;
 
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
+import java.util.Arrays;
+import jdk.internal.misc.Unsafe;
+
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -138,6 +141,100 @@ final class DualPivotQuicksort {
     }
 
     /**
+     * Sorts the specified range of the array using either insertion sort
+     * or mixed insertion sort depending on the value of end. if end < 0,
+     * we use insertion sort else we use mixed insertion sort.
+     *
+     * @param array the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @param end the index of the last element for simple insertion sort (in
+     * the case of mixed insertion sort). If end < 0, we use insertion sort
+     * else we use mixed insertion sort.
+     */
+    static void smallArraySort(Object array, int low, int high, int end) {
+       if (end < 0) insertionSort(array, low, high);
+       else mixedInsertionSort(array, low, end, high);
+    }
+
+    /**
+     * Sorts the specified range of the array using insertion sort
+     *
+     * @param array the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     *
+     */
+    static void insertionSort(Object array, int low, int high) {
+        switch (array) {
+            case int[] arr -> insertionSort(arr, low, high);
+            case long[] arr -> insertionSort(arr, low, high);
+            case float[] arr -> insertionSort(arr, low, high);
+            case double[] arr -> insertionSort(arr, low, high);
+            default -> throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Sorts the specified range of the array using mixed insertion sort.
+     *
+     * @param array the array to be sorted
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @param end the index of the last element for simple insertion sort
+     *
+     */
+    static void mixedInsertionSort(Object array, int low, int end, int high) {
+        switch (array) {
+            case int[] arr -> mixedInsertionSort(arr, low, end, high);
+            case long[] arr ->  mixedInsertionSort(arr, low, end, high);
+            case float[] arr ->  mixedInsertionSort(arr, low, end, high);
+            case double[] arr ->  mixedInsertionSort(arr, low, end, high);
+            default -> throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Partitions the specified range of the array using the two pivots specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the two pivots to be used.
+     * After partitioning, the indices of the pivots is updated as well.
+     *
+     */
+    static void partitionDualPivot(Object array, int low, int high, int[] pivotIndices) {
+        switch(array) {
+            case int[] arr -> partitionDualPivot(arr, low, high, pivotIndices);
+            case long[] arr -> partitionDualPivot(arr, low, high, pivotIndices);
+            case float[] arr -> partitionDualPivot(arr, low, high, pivotIndices);
+            case double[] arr -> partitionDualPivot(arr, low, high, pivotIndices);
+            default -> throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Partitions the specified range of the array using a single pivot specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the pivot to be used.
+     * After partitioning, the indices of the pivots is updated as well.
+     *
+     */
+    static void partitionSinglePivot(Object array, int low, int high, int[] pivotIndices) {
+        switch(array) {
+            case int[] arr -> partitionSinglePivot(arr, low, high, pivotIndices);
+            case long[] arr -> partitionSinglePivot(arr, low, high, pivotIndices);
+            case float[] arr -> partitionSinglePivot(arr, low, high, pivotIndices);
+            case double[] arr -> partitionSinglePivot(arr, low, high, pivotIndices);
+            default -> throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Sorts the specified range of the array using parallel merge
      * sort and/or Dual-Pivot Quicksort.
      *
@@ -178,12 +275,14 @@ final class DualPivotQuicksort {
     static void sort(Sorter sorter, int[] a, int bits, int low, int high) {
         while (true) {
             int end = high - 1, size = high - low;
+            int[] pivotIndices;
+            int baseOffset = Unsafe.ARRAY_INT_BASE_OFFSET;
 
             /*
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSort(a, low, high - 3 * ((size >> 5) << 3), high);
+                Arrays.arraySort(int.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
                 return;
             }
 
@@ -191,7 +290,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSort(a, low, high);
+                Arrays.arraySort(int.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -271,78 +370,19 @@ final class DualPivotQuicksort {
             /*
              * Partitioning with 2 pivots in case of different elements.
              */
-            if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
-
+            boolean isDualPivot = (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]);
+            if (isDualPivot) {
                 /*
                  * Use the first and fifth of the five sorted elements as
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int pivot1 = a[e1];
-                int pivot2 = a[e5];
+                pivotIndices = new int[] {e1, e5};
+                Arrays.arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
 
-                /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
 
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    int ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
 
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
@@ -362,60 +402,10 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int pivot = a[e3];
-
-                /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    int ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
-
+                pivotIndices = new int[] {e3, e3};
+                Arrays.arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
@@ -429,6 +419,169 @@ final class DualPivotQuicksort {
             }
             high = lower; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using the two pivots specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the two pivots to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionDualPivot(int[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e1 = pivotIndices[0];
+        int e5 = pivotIndices[1];
+        int pivot1 = a[e1];
+        int pivot2 = a[e5];
+
+        /*
+        * The first and the last elements to be sorted are moved
+        * to the locations formerly occupied by the pivots. When
+        * partitioning is completed, the pivots are swapped back
+        * into their final positions, and excluded from the next
+        * subsequent sorting.
+        */
+        a[e1] = a[lower];
+        a[e5] = a[upper];
+
+        /*
+        * Skip elements, which are less or greater than the pivots.
+        */
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
+
+        /*
+        * Backward 3-interval partitioning
+        *
+        *   left part                 central part          right part
+        * +------------------------------------------------------------+
+                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+        * +------------------------------------------------------------+
+        *             ^       ^                            ^
+        *             |       |                            |
+        *           lower     k                          upper
+        *
+        * Invariants:
+        *
+        *              all in (low, lower] < pivot1
+        *    pivot1 <= all in (k, upper)  <= pivot2
+        *              all in [upper, end) > pivot2
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            int ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left side
+                while (lower < k) {
+                    if (a[++lower] >= pivot1) {
+                        if (a[lower] > pivot2) {
+                            a[k] = a[--upper];
+                            a[upper] = a[lower];
+                        } else {
+                            a[k] = a[lower];
+                        }
+                        a[lower] = ak;
+                        break;
+                    }
+                }
+            } else if (ak > pivot2) { // Move a[k] to the right side
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low] = a[lower]; a[lower] = pivot1;
+        a[end] = a[upper]; a[upper] = pivot2;
+
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
+    }
+
+
+
+    /**
+     * Partitions the specified range of the array using a single pivot specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the pivot to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionSinglePivot(int[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+
+        int e3 = pivotIndices[0];
+        int pivot = a[e3];
+
+        /*
+        * The first element to be sorted is moved to the
+        * location formerly occupied by the pivot. After
+        * completion of partitioning the pivot is swapped
+        * back into its final position, and excluded from
+        * the next subsequent sorting.
+        */
+        a[e3] = a[lower];
+
+        /*
+        * Traditional 3-way (Dutch National Flag) partitioning
+        *
+        *   left part                 central part    right part
+        * +------------------------------------------------------+
+        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+        * +------------------------------------------------------+
+        *              ^           ^                ^
+        *              |           |                |
+        *            lower         k              upper
+        *
+        * Invariants:
+        *
+        *   all in (low, lower] < pivot
+        *   all in (k, upper)  == pivot
+        *   all in [upper, end] > pivot
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int k = ++upper; --k > lower; ) {
+            int ak = a[k];
+
+            if (ak != pivot) {
+                a[k] = pivot;
+
+                if (ak < pivot) { // Move a[k] to the left side
+                    while (a[++lower] < pivot);
+
+                    if (a[lower] > pivot) {
+                        a[--upper] = a[lower];
+                    }
+                    a[lower] = ak;
+                } else { // ak > pivot - Move a[k] to the right side
+                    a[--upper] = ak;
+                }
+            }
+        }
+
+        /*
+        * Swap the pivot into its final position.
+        */
+        a[low] = a[lower]; a[lower] = pivot;
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
     }
 
     /**
@@ -932,12 +1085,14 @@ final class DualPivotQuicksort {
     static void sort(Sorter sorter, long[] a, int bits, int low, int high) {
         while (true) {
             int end = high - 1, size = high - low;
+            int[] pivotIndices;
+            int baseOffset = Unsafe.ARRAY_LONG_BASE_OFFSET;
 
             /*
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSort(a, low, high - 3 * ((size >> 5) << 3), high);
+                Arrays.arraySort(long.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
                 return;
             }
 
@@ -945,7 +1100,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSort(a, low, high);
+                Arrays.arraySort(long.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -1025,79 +1180,18 @@ final class DualPivotQuicksort {
             /*
              * Partitioning with 2 pivots in case of different elements.
              */
-            if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
+            boolean isDualPivot = (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]);
+            if(isDualPivot)  {
 
                 /*
                  * Use the first and fifth of the five sorted elements as
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                long pivot1 = a[e1];
-                long pivot2 = a[e5];
-
-                /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
-
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    long ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
-
+                pivotIndices = new int[] {e1, e5};
+                Arrays.arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
@@ -1116,60 +1210,10 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                long pivot = a[e3];
-
-                /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    long ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
-
+                pivotIndices = new int[] {e3, e3};
+                Arrays.arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
@@ -1183,6 +1227,167 @@ final class DualPivotQuicksort {
             }
             high = lower; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using the two pivots specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the two pivots to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionDualPivot(long[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e1 = pivotIndices[0];
+        int e5 = pivotIndices[1];
+        long pivot1 = a[e1];
+        long pivot2 = a[e5];
+
+        /*
+        * The first and the last elements to be sorted are moved
+        * to the locations formerly occupied by the pivots. When
+        * partitioning is completed, the pivots are swapped back
+        * into their final positions, and excluded from the next
+        * subsequent sorting.
+        */
+        a[e1] = a[lower];
+        a[e5] = a[upper];
+
+        /*
+        * Skip elements, which are less or greater than the pivots.
+        */
+        while (a[++lower] < pivot1);
+        while (a[--upper] > pivot2);
+
+        /*
+        * Backward 3-interval partitioning
+        *
+        *   left part                 central part          right part
+        * +------------------------------------------------------------+
+                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+        * +------------------------------------------------------------+
+        *             ^       ^                            ^
+        *             |       |                            |
+        *           lower     k                          upper
+        *
+        * Invariants:
+        *
+        *              all in (low, lower] < pivot1
+        *    pivot1 <= all in (k, upper)  <= pivot2
+        *              all in [upper, end) > pivot2
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            long ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left side
+                while (lower < k) {
+                    if (a[++lower] >= pivot1) {
+                        if (a[lower] > pivot2) {
+                            a[k] = a[--upper];
+                            a[upper] = a[lower];
+                        } else {
+                            a[k] = a[lower];
+                        }
+                        a[lower] = ak;
+                        break;
+                    }
+                }
+            } else if (ak > pivot2) { // Move a[k] to the right side
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low] = a[lower]; a[lower] = pivot1;
+        a[end] = a[upper]; a[upper] = pivot2;
+
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
+    }
+
+
+    /**
+     * Partitions the specified range of the array using a single pivot specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the pivot to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionSinglePivot(long[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e3 = pivotIndices[0];
+        long pivot = a[e3];
+
+        /*
+        * The first element to be sorted is moved to the
+        * location formerly occupied by the pivot. After
+        * completion of partitioning the pivot is swapped
+        * back into its final position, and excluded from
+        * the next subsequent sorting.
+        */
+        a[e3] = a[lower];
+
+        /*
+        * Traditional 3-way (Dutch National Flag) partitioning
+        *
+        *   left part                 central part    right part
+        * +------------------------------------------------------+
+        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+        * +------------------------------------------------------+
+        *              ^           ^                ^
+        *              |           |                |
+        *            lower         k              upper
+        *
+        * Invariants:
+        *
+        *   all in (low, lower] < pivot
+        *   all in (k, upper)  == pivot
+        *   all in [upper, end] > pivot
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int k = ++upper; --k > lower; ) {
+            long ak = a[k];
+
+            if (ak != pivot) {
+                a[k] = pivot;
+
+                if (ak < pivot) { // Move a[k] to the left side
+                    while (a[++lower] < pivot);
+
+                    if (a[lower] > pivot) {
+                        a[--upper] = a[lower];
+                    }
+                    a[lower] = ak;
+                } else { // ak > pivot - Move a[k] to the right side
+                    a[--upper] = ak;
+                }
+            }
+        }
+
+        /*
+            * Swap the pivot into its final position.
+            */
+        a[low] = a[lower]; a[lower] = pivot;
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
     }
 
     /**
@@ -2473,12 +2678,14 @@ final class DualPivotQuicksort {
     static void sort(Sorter sorter, float[] a, int bits, int low, int high) {
         while (true) {
             int end = high - 1, size = high - low;
+            int[] pivotIndices;
+            int baseOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET;
 
             /*
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSort(a, low, high - 3 * ((size >> 5) << 3), high);
+                Arrays.arraySort(float.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
                 return;
             }
 
@@ -2486,7 +2693,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSort(a, low, high);
+                Arrays.arraySort(float.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -2566,79 +2773,18 @@ final class DualPivotQuicksort {
             /*
              * Partitioning with 2 pivots in case of different elements.
              */
-            if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
+            boolean isDualPivot = (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]);
+            if(isDualPivot)  {
 
                 /*
                  * Use the first and fifth of the five sorted elements as
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                float pivot1 = a[e1];
-                float pivot2 = a[e5];
-
-                /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
-
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    float ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
-
+                pivotIndices = new int[] {e1, e5};
+                Arrays.arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
@@ -2657,60 +2803,10 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                float pivot = a[e3];
-
-                /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    float ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
-
+                pivotIndices = new int[] {e3, e3};
+                Arrays.arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort the right part (possibly in parallel), excluding
                  * known pivot. All elements from the central part are
@@ -2724,6 +2820,167 @@ final class DualPivotQuicksort {
             }
             high = lower; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using the two pivots specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the two pivots to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionDualPivot(float[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e1 = pivotIndices[0];
+        int e5 = pivotIndices[1];
+        float pivot1 = a[e1];
+        float pivot2 = a[e5];
+
+        /*
+        * The first and the last elements to be sorted are moved
+        * to the locations formerly occupied by the pivots. When
+        * partitioning is completed, the pivots are swapped back
+        * into their final positions, and excluded from the next
+        * subsequent sorting.
+        */
+        a[e1] = a[lower];
+        a[e5] = a[upper];
+
+        /*
+        * Skip elements, which are less or greater than the pivots.
+        */
+                while (a[++lower] < pivot1);
+                while (a[--upper] > pivot2);
+
+        /*
+        * Backward 3-interval partitioning
+        *
+        *   left part                 central part          right part
+        * +------------------------------------------------------------+
+                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+        * +------------------------------------------------------------+
+        *             ^       ^                            ^
+        *             |       |                            |
+        *           lower     k                          upper
+        *
+        * Invariants:
+        *
+        *              all in (low, lower] < pivot1
+        *    pivot1 <= all in (k, upper)  <= pivot2
+        *              all in [upper, end) > pivot2
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            float ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left side
+                while (lower < k) {
+                    if (a[++lower] >= pivot1) {
+                        if (a[lower] > pivot2) {
+                            a[k] = a[--upper];
+                            a[upper] = a[lower];
+                        } else {
+                            a[k] = a[lower];
+                        }
+                        a[lower] = ak;
+                        break;
+                    }
+                }
+            } else if (ak > pivot2) { // Move a[k] to the right side
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low] = a[lower]; a[lower] = pivot1;
+        a[end] = a[upper]; a[upper] = pivot2;
+
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
+    }
+
+
+    /**
+     * Partitions the specified range of the array using a single pivot specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the pivot to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionSinglePivot(float[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e3 = pivotIndices[0];
+        float pivot = a[e3];
+
+        /*
+        * The first element to be sorted is moved to the
+        * location formerly occupied by the pivot. After
+        * completion of partitioning the pivot is swapped
+        * back into its final position, and excluded from
+        * the next subsequent sorting.
+        */
+        a[e3] = a[lower];
+
+        /*
+        * Traditional 3-way (Dutch National Flag) partitioning
+        *
+        *   left part                 central part    right part
+        * +------------------------------------------------------+
+        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+        * +------------------------------------------------------+
+        *              ^           ^                ^
+        *              |           |                |
+        *            lower         k              upper
+        *
+        * Invariants:
+        *
+        *   all in (low, lower] < pivot
+        *   all in (k, upper)  == pivot
+        *   all in [upper, end] > pivot
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int k = ++upper; --k > lower; ) {
+            float ak = a[k];
+
+            if (ak != pivot) {
+                a[k] = pivot;
+
+                if (ak < pivot) { // Move a[k] to the left side
+                    while (a[++lower] < pivot);
+
+                    if (a[lower] > pivot) {
+                        a[--upper] = a[lower];
+                    }
+                    a[lower] = ak;
+                } else { // ak > pivot - Move a[k] to the right side
+                    a[--upper] = ak;
+                }
+            }
+        }
+
+        /*
+            * Swap the pivot into its final position.
+            */
+        a[low] = a[lower]; a[lower] = pivot;
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
     }
 
     /**
@@ -3279,12 +3536,14 @@ final class DualPivotQuicksort {
     static void sort(Sorter sorter, double[] a, int bits, int low, int high) {
         while (true) {
             int end = high - 1, size = high - low;
+            int[] pivotIndices;
+            int baseOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
 
             /*
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSort(a, low, high - 3 * ((size >> 5) << 3), high);
+                Arrays.arraySort(double.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
                 return;
             }
 
@@ -3292,7 +3551,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSort(a, low, high);
+                Arrays.arraySort(double.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -3372,79 +3631,18 @@ final class DualPivotQuicksort {
             /*
              * Partitioning with 2 pivots in case of different elements.
              */
-            if (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]) {
+            boolean isDualPivot = (a[e1] < a[e2] && a[e2] < a[e3] && a[e3] < a[e4] && a[e4] < a[e5]);
+            if(isDualPivot)  {
 
                 /*
-                 * Use the first and fifth of the five sorted elements as
-                 * the pivots. These values are inexpensive approximation
-                 * of tertiles. Note, that pivot1 < pivot2.
-                 */
-                double pivot1 = a[e1];
-                double pivot2 = a[e5];
-
-                /*
-                 * The first and the last elements to be sorted are moved
-                 * to the locations formerly occupied by the pivots. When
-                 * partitioning is completed, the pivots are swapped back
-                 * into their final positions, and excluded from the next
-                 * subsequent sorting.
-                 */
-                a[e1] = a[lower];
-                a[e5] = a[upper];
-
-                /*
-                 * Skip elements, which are less or greater than the pivots.
-                 */
-                while (a[++lower] < pivot1);
-                while (a[--upper] > pivot2);
-
-                /*
-                 * Backward 3-interval partitioning
-                 *
-                 *   left part                 central part          right part
-                 * +------------------------------------------------------------+
-                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-                 * +------------------------------------------------------------+
-                 *             ^       ^                            ^
-                 *             |       |                            |
-                 *           lower     k                          upper
-                 *
-                 * Invariants:
-                 *
-                 *              all in (low, lower] < pivot1
-                 *    pivot1 <= all in (k, upper)  <= pivot2
-                 *              all in [upper, end) > pivot2
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int unused = --lower, k = ++upper; --k > lower; ) {
-                    double ak = a[k];
-
-                    if (ak < pivot1) { // Move a[k] to the left side
-                        while (lower < k) {
-                            if (a[++lower] >= pivot1) {
-                                if (a[lower] > pivot2) {
-                                    a[k] = a[--upper];
-                                    a[upper] = a[lower];
-                                } else {
-                                    a[k] = a[lower];
-                                }
-                                a[lower] = ak;
-                                break;
-                            }
-                        }
-                    } else if (ak > pivot2) { // Move a[k] to the right side
-                        a[k] = a[--upper];
-                        a[upper] = ak;
-                    }
-                }
-
-                /*
-                 * Swap the pivots into their final positions.
-                 */
-                a[low] = a[lower]; a[lower] = pivot1;
-                a[end] = a[upper]; a[upper] = pivot2;
-
+                * Use the first and fifth of the five sorted elements as
+                * the pivots. These values are inexpensive approximation
+                * of tertiles. Note, that pivot1 < pivot2.
+                */
+                pivotIndices = new int[] {e1, e5};
+                Arrays.arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
                 /*
                  * Sort non-left parts recursively (possibly in parallel),
                  * excluding known pivots.
@@ -3463,59 +3661,10 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                double pivot = a[e3];
-
-                /*
-                 * The first element to be sorted is moved to the
-                 * location formerly occupied by the pivot. After
-                 * completion of partitioning the pivot is swapped
-                 * back into its final position, and excluded from
-                 * the next subsequent sorting.
-                 */
-                a[e3] = a[lower];
-
-                /*
-                 * Traditional 3-way (Dutch National Flag) partitioning
-                 *
-                 *   left part                 central part    right part
-                 * +------------------------------------------------------+
-                 * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-                 * +------------------------------------------------------+
-                 *              ^           ^                ^
-                 *              |           |                |
-                 *            lower         k              upper
-                 *
-                 * Invariants:
-                 *
-                 *   all in (low, lower] < pivot
-                 *   all in (k, upper)  == pivot
-                 *   all in [upper, end] > pivot
-                 *
-                 * Pointer k is the last index of ?-part
-                 */
-                for (int k = ++upper; --k > lower; ) {
-                    double ak = a[k];
-
-                    if (ak != pivot) {
-                        a[k] = pivot;
-
-                        if (ak < pivot) { // Move a[k] to the left side
-                            while (a[++lower] < pivot);
-
-                            if (a[lower] > pivot) {
-                                a[--upper] = a[lower];
-                            }
-                            a[lower] = ak;
-                        } else { // ak > pivot - Move a[k] to the right side
-                            a[--upper] = ak;
-                        }
-                    }
-                }
-
-                /*
-                 * Swap the pivot into its final position.
-                 */
-                a[low] = a[lower]; a[lower] = pivot;
+                pivotIndices = new int[] {e3, e3};
+                Arrays.arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                lower = pivotIndices[0];
+                upper = pivotIndices[1];
 
                 /*
                  * Sort the right part (possibly in parallel), excluding
@@ -3530,6 +3679,167 @@ final class DualPivotQuicksort {
             }
             high = lower; // Iterate along the left part
         }
+    }
+
+    /**
+     * Partitions the specified range of the array using the two pivots specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the two pivots to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     *
+     */
+    private static void partitionDualPivot(double[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e1 = pivotIndices[0];
+        int e5 = pivotIndices[1];
+        double pivot1 = a[e1];
+        double pivot2 = a[e5];
+
+        /*
+        * The first and the last elements to be sorted are moved
+        * to the locations formerly occupied by the pivots. When
+        * partitioning is completed, the pivots are swapped back
+        * into their final positions, and excluded from the next
+        * subsequent sorting.
+        */
+        a[e1] = a[lower];
+        a[e5] = a[upper];
+
+        /*
+        * Skip elements, which are less or greater than the pivots.
+        */
+                while (a[++lower] < pivot1);
+                while (a[--upper] > pivot2);
+
+        /*
+        * Backward 3-interval partitioning
+        *
+        *   left part                 central part          right part
+        * +------------------------------------------------------------+
+                 * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+        * +------------------------------------------------------------+
+        *             ^       ^                            ^
+        *             |       |                            |
+        *           lower     k                          upper
+        *
+        * Invariants:
+        *
+        *              all in (low, lower] < pivot1
+        *    pivot1 <= all in (k, upper)  <= pivot2
+        *              all in [upper, end) > pivot2
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int unused = --lower, k = ++upper; --k > lower; ) {
+            double ak = a[k];
+
+            if (ak < pivot1) { // Move a[k] to the left side
+                while (lower < k) {
+                    if (a[++lower] >= pivot1) {
+                        if (a[lower] > pivot2) {
+                            a[k] = a[--upper];
+                            a[upper] = a[lower];
+                        } else {
+                            a[k] = a[lower];
+                        }
+                        a[lower] = ak;
+                        break;
+                    }
+                }
+            } else if (ak > pivot2) { // Move a[k] to the right side
+                a[k] = a[--upper];
+                a[upper] = ak;
+            }
+        }
+
+        /*
+         * Swap the pivots into their final positions.
+         */
+        a[low] = a[lower]; a[lower] = pivot1;
+        a[end] = a[upper]; a[upper] = pivot2;
+
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
+    }
+
+
+
+    /**
+     * Partitions the specified range of the array using a single pivot specified.
+     *
+     * @param array the array to be partitioned
+     * @param low the index of the first element, inclusive, for partitioning
+     * @param high the index of the last element, exclusive, for partitioning
+     * @param pivotIndices an array containing the indices of the pivot to be used.
+     * After partitioning, this array the indices of the pivots is updated as well.
+     */
+    private static void partitionSinglePivot(double[] a, int low, int high, int[] pivotIndices) {
+        int end = high - 1;
+        int lower = low;
+        int upper = end;
+
+        int e3 = pivotIndices[0];
+        double pivot = a[e3];
+
+        /*
+        * The first element to be sorted is moved to the
+        * location formerly occupied by the pivot. After
+        * completion of partitioning the pivot is swapped
+        * back into its final position, and excluded from
+        * the next subsequent sorting.
+        */
+        a[e3] = a[lower];
+
+        /*
+        * Traditional 3-way (Dutch National Flag) partitioning
+        *
+        *   left part                 central part    right part
+        * +------------------------------------------------------+
+        * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+        * +------------------------------------------------------+
+        *              ^           ^                ^
+        *              |           |                |
+        *            lower         k              upper
+        *
+        * Invariants:
+        *
+        *   all in (low, lower] < pivot
+        *   all in (k, upper)  == pivot
+        *   all in [upper, end] > pivot
+        *
+        * Pointer k is the last index of ?-part
+        */
+        for (int k = ++upper; --k > lower; ) {
+            double ak = a[k];
+
+            if (ak != pivot) {
+                a[k] = pivot;
+
+                if (ak < pivot) { // Move a[k] to the left side
+                    while (a[++lower] < pivot);
+
+                    if (a[lower] > pivot) {
+                        a[--upper] = a[lower];
+                    }
+                    a[lower] = ak;
+                } else { // ak > pivot - Move a[k] to the right side
+                    a[--upper] = ak;
+                }
+            }
+        }
+
+        /*
+            * Swap the pivot into its final position.
+            */
+        a[low] = a[lower]; a[lower] = pivot;
+        pivotIndices[0] = lower;
+        pivotIndices[1] = upper;
     }
 
     /**

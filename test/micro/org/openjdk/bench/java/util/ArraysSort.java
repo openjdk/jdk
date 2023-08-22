@@ -47,11 +47,16 @@ import java.lang.reflect.Method;
 /**
  * Performance test of Arrays.sort() methods
  */
+@Fork(value=1, jvmArgsAppend={"-XX:CompileThreshold=1", "-XX:-TieredCompilation"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Fork(value = 1)
+@Warmup(iterations = 3, time=5)
+@Measurement(iterations = 3, time=3)
 public class ArraysSort {
+
+    @Param({"10","25","50","75","100", "1000", "10000", "100000", "1000000"})
+    private int size;
 
     private int[] ints_unsorted;
     private long[] longs_unsorted;
@@ -64,7 +69,7 @@ public class ArraysSort {
     private double[] doubles_sorted;
 
 
-    public void initialize(int size) {
+    public void initialize() {
         Random rnd = new Random(42);
 
         ints_unsorted = new int[size];
@@ -72,6 +77,8 @@ public class ArraysSort {
         floats_unsorted = new float[size];
         doubles_unsorted = new double[size];
 
+        int[] intSpecialCases = {Integer.MIN_VALUE, Integer.MAX_VALUE};
+        long[] longSpecialCases = {Long.MIN_VALUE, Long.MAX_VALUE};
         float[] floatSpecialCases = {+0.0f, -0.0f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NaN};
         double[] doubleSpecialCases = {+0.0, -0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN};
 
@@ -79,14 +86,22 @@ public class ArraysSort {
             ints_unsorted[i] = rnd.nextInt();
             longs_unsorted[i] = rnd.nextLong();
             if (i % 10 != 0) {
+                ints_unsorted[i] = rnd.nextInt();
+                longs_unsorted[i] = rnd.nextLong();
                 floats_unsorted[i] = rnd.nextFloat();
                 doubles_unsorted[i] = rnd.nextDouble();
             } else {
-                int rndIdx = rnd.nextInt(doubleSpecialCases.length);
-                floats_unsorted[i] = floatSpecialCases[rndIdx];
-                doubles_unsorted[i] = doubleSpecialCases[rndIdx];
+                ints_unsorted[i] = intSpecialCases[rnd.nextInt(intSpecialCases.length)];
+                longs_unsorted[i] = longSpecialCases[rnd.nextInt(longSpecialCases.length)];
+                floats_unsorted[i] = floatSpecialCases[rnd.nextInt(floatSpecialCases.length)];
+                doubles_unsorted[i] = doubleSpecialCases[rnd.nextInt(doubleSpecialCases.length)];
             }
         }
+    }
+
+    @Setup
+    public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
+        initialize();
     }
 
     @Setup(Level.Invocation)
@@ -119,54 +134,6 @@ public class ArraysSort {
     public double[] doubleSort() throws Throwable {
         Arrays.sort(doubles_sorted);
         return doubles_sorted;
-    }
-
-    @Warmup(iterations = 3, time=2)
-    @Measurement(iterations = 3, time=5)
-    public static class Small extends ArraysSort {
-        @Param({"10","25","50","75","100"})
-        private int size;
-
-        @Setup
-        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
-            initialize(size);
-        }
-    }
-
-    @Warmup(iterations = 3, time=2)
-    @Measurement(iterations = 3, time=5)
-    public static class Medium extends ArraysSort {
-        @Param({"1000", "10000"})
-        private int size;
-
-        @Setup
-        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
-            initialize(size);
-        }
-    }
-
-    @Warmup(iterations = 3, time=40)
-    @Measurement(iterations = 3, time=30)
-    public static class Large extends ArraysSort {
-        @Param({"50000", "100000"})
-        private int size;
-
-        @Setup
-        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
-            initialize(size);
-        }
-    }
-
-    @Warmup(iterations = 3, time=120)
-    @Measurement(iterations = 3, time=30)
-    public static class VeryLarge extends ArraysSort {
-        @Param({"1000000"})
-        private int size;
-
-        @Setup
-        public void setup() throws UnsupportedEncodingException, ClassNotFoundException, NoSuchMethodException, Throwable {
-            initialize(size);
-        }
     }
 
 }
