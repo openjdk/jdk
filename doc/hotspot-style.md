@@ -1086,6 +1086,9 @@ The following attributes are expressly forbidden:
 
 ### Additional Permitted Features
 
+* Rvalue references and move semantics
+([n1690](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1690.html))
+
 * `alignof`
 ([n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
 
@@ -1209,8 +1212,6 @@ features that have not yet been discussed.
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))
-
-* Rvalue references and move semantics
 
 [ADL]: https://en.cppreference.com/w/cpp/language/adl
   "Argument Dependent Lookup"
