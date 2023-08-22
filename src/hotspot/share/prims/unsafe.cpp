@@ -67,7 +67,7 @@
 
 
 #define MAX_OBJECT_SIZE \
-  ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
+  ( arrayOopDesc::base_offset_in_bytes(T_DOUBLE) \
     + ((julong)max_jint * sizeof(double)) )
 
 

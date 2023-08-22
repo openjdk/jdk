@@ -128,18 +128,7 @@ private:
     *length_addr_impl(mem) = length;
   }
 
-  // Should only be called with constants as argument
-  // (will not constant fold otherwise)
-  // Returns the header size in words aligned to the requirements of the
-  // array object type.
-  static int header_size(BasicType type) {
-    size_t typesize_in_bytes = header_size_in_bytes();
-    return (int)(element_type_should_be_aligned(type)
-      ? align_object_offset(typesize_in_bytes/HeapWordSize)
-      : align_up(typesize_in_bytes, HeapWordSize)/HeapWordSize);
-  }
-
-  // Return the maximum length of an array of BasicType.  The length can passed
+  // Return the maximum length of an array of BasicType.  The length can unpassed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
@@ -147,8 +136,13 @@ private:
     assert(type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
+    size_t hdr_size_in_bytes = header_size_in_bytes();
+    // This is rounded-up and may overlap with the first array elements.
+    size_t hdr_size_in_words = (element_type_should_be_aligned(type) ? align_object_offset(hdr_size_in_bytes/HeapWordSize)
+                                                                     : align_up(hdr_size_in_bytes, HeapWordSize)/HeapWordSize);
+
     const size_t max_element_words_per_size_t =
-      align_down((SIZE_MAX/HeapWordSize - header_size(type)), MinObjAlignment);
+      align_down((SIZE_MAX/HeapWordSize - hdr_size_in_words), MinObjAlignment);
     const size_t max_elements_per_size_t =
       HeapWordSize * max_element_words_per_size_t / type2aelembytes(type);
     if ((size_t)max_jint < max_elements_per_size_t) {
@@ -156,7 +150,7 @@ private:
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
       // passing around the size (in words) of an object. So, we need to avoid
       // overflowing an int when we add the header. See CRs 4718400 and 7110613.
-      return align_down(max_jint - header_size(type), MinObjAlignment);
+      return align_down(max_jint - hdr_size_in_words, MinObjAlignment);
     }
     return (int32_t)max_elements_per_size_t;
   }
