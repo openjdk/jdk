@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,30 @@
  * questions.
  */
 
-#ifndef CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
-#define CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-struct ABIDescriptor {
-  GrowableArray<Register> _integer_argument_registers;
-  GrowableArray<Register> _integer_return_registers;
-  GrowableArray<FloatRegister> _float_argument_registers;
-  GrowableArray<FloatRegister> _float_return_registers;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiSystem;
 
-  GrowableArray<Register> _integer_volatile_registers;
-  GrowableArray<FloatRegister> _float_additional_volatile_registers;
+/**
+ * @test
+ * @bug 8312535
+ * @summary MidiSystem.getSoundbank() throws unexpected SecurityException
+ * @run main/othervm/policy=security.policy GetSoundBankSecurityException
+ */
+public final class GetSoundBankSecurityException {
 
-  int32_t _stack_alignment_bytes;
-  int32_t _shadow_space_bytes;
-
-  VMStorage _scratch1;
-  VMStorage _scratch2;
-
-  bool is_volatile_reg(Register reg) const;
-  bool is_volatile_reg(FloatRegister reg) const;
-};
-
-#endif // CPU_S390_VM_FOREIGN_GLOBALS_S390_HPP
+    public static void main(String[] args) throws Exception {
+        File tempFile = new File("sound.bank");
+        tempFile.createNewFile();
+        try {
+            MidiSystem.getSoundbank(tempFile);
+            throw new RuntimeException("InvalidMidiDataException is expected");
+        } catch (InvalidMidiDataException ignore) {
+        } finally {
+            Files.delete(Paths.get(tempFile.getAbsolutePath()));
+        }
+    }
+}
