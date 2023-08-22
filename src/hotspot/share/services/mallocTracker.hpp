@@ -191,15 +191,18 @@ class MallocMemorySnapshot : public ResourceObj {
     // copy is going on, because their size is adjusted using this
     // buffer in make_adjustment().
     ThreadCritical tc;
-    size_t total_mallocs;
+    size_t total_size;
+    size_t loop_counter = 0;
+    const size_t loop_limit = 100;
     do {
-      total_mallocs = 0;
+      total_size = 0;
       s->_all_mallocs = _all_mallocs;
       for (int index = 0; index < mt_number_of_types; index ++) {
         s->_malloc[index] = _malloc[index];
-        total_mallocs += _malloc[index].malloc_size();
+        total_size += _malloc[index].malloc_size();
       }
-    } while(s->_all_mallocs.size() != total_mallocs);
+    } while(s->_all_mallocs.size() != total_size && ++loop_counter < loop_limit);
+    assert(s->_all_mallocs.size() == total_size, "Total != sum of parts");
   }
 
   // Make adjustment by subtracting chunks used by arenas
