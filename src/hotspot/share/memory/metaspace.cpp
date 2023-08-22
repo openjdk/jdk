@@ -620,6 +620,9 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     // well (e.g. by having to encode shorter immediates).
     // Therefore we try here for an address that, taken as encoding base, when
     // right-shifted by LogKlassAlignmentInBytes, has only 1s in the third 16-bit quadrant.
+    //
+    // Example: for shift=3, the address space searched would be
+    // [0x0080_0000_0000 - 0xFFF8_0000_0000].
 
     // Number of least significant bits that should be zero
     constexpr int lo_zero_bits = 32 + LogKlassAlignmentInBytes;
@@ -645,6 +648,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   // Wrap resulting range in ReservedSpace
   ReservedSpace rs;
   if (result != nullptr) {
+    assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
     rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
                                                       os::vm_page_size(), false, false);
   } else {

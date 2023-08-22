@@ -1780,7 +1780,7 @@ static void print_points(const char* s, unsigned* points, unsigned num) {
   for (unsigned i = 0; i < num; i ++) {
     ss.print("%u ", points[i]);
   }
-    log_trace(os, map)("%s, %u Points: %s", s, num, ss.base());
+  log_trace(os, map)("%s, %u Points: %s", s, num, ss.base());
 }
 #endif
 
@@ -1925,7 +1925,14 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     hemi_split(points, num_attempts);
   }
 
-  DEBUG_ONLY(print_points("before reserve", points, num_attempts);)
+#ifdef ASSERT
+  // Print + check all pre-calculated attach points
+  print_points("before reserve", points, num_attempts);
+  for (unsigned i = 0; i < num_attempts; i++) {
+    assert(points[i] < num_attach_points, "Candidate attach point %d out of range (%u, num_attach_points: %zu) " ARGSFMT,
+           i, points[i], num_attach_points, ARGSFMTARGS);
+  }
+#endif
 
   // Now reserve
   for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {

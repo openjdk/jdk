@@ -358,6 +358,9 @@ void ReservedSpace::release() {
 // Put a ReservedSpace over an existing range
 ReservedSpace ReservedSpace::space_for_range(char* base, size_t size, size_t alignment,
                                              size_t page_size, bool special, bool executable) {
+  assert(is_aligned(base, os::vm_allocation_granularity()), "Unaligned base");
+  assert(is_aligned(size, os::vm_page_size()), "Unaligned size");
+  assert(os::page_sizes().contains(page_size), "Invalid pagesize");
   ReservedSpace space;
   space.initialize_members(base, size, alignment, page_size, special, executable);
   return space;
