@@ -353,6 +353,7 @@ public:
 // Our adaption to C2.
 // https://gist.github.com/navyxliu/62a510a5c6b0245164569745d758935b
 //
+
 VirtualState::VirtualState(const TypeOopPtr* oop_type): _oop_type(oop_type), _lockcnt(0) {
   Compile* C = Compile::current();
   int nof = nfields();
@@ -586,6 +587,48 @@ static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
     }
   }
 }
+void PEAState::put_field(GraphKit* kit, ciField* field, Node* objx, Node* val) {
+  Compile* C = kit->C;
+  PartialEscapeAnalysis* pea = C->PEA();
+  int offset = field->offset_in_bytes();
+  Node* adr = kit->basic_plus_adr(objx, objx, offset);
+  const TypePtr* adr_type = C->alias_type(field)->adr_type();
+  DecoratorSet decorators = IN_HEAP;
+
+  BasicType bt = field->layout_type();
+  const Type* type = Type::get_const_basic_type(bt);
+  bool is_obj = is_reference_type(bt);
+
+  if (is_obj && pea->is_alias(val)) {
+    // recurse if val is a virtual object.
+    if (as_virtual(pea, val)) {
+      materialize(kit, val);
+    }
+    EscapedState* es = as_escaped(pea, val);
+    assert(es != nullptr, "the object of val is not Escaped");
+    val = es->merged_value();
+  }
+  // Store the value.
+  const Type* field_type;
+  if (!field->type()->is_loaded()) {
+    field_type = TypeInstPtr::BOTTOM;
+  } else {
+    if (is_obj) {
+      field_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
+    } else {
+      field_type = Type::BOTTOM;
+    }
+  }
+  decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
+
+#ifndef PRODUCT
+  if (PEAVerbose) {
+    val->dump();
+  }
+#endif
+  kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
+}
+
 
 // Because relevant objects may form a directed cyclic graph, materialization is a DFS process.
 // PEA clones the object and marks escaped in allocation state. PEA then iterates all fields
@@ -620,25 +663,25 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
 #endif
 
   if (oop_type->isa_instptr()) {
-    ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
+    // virt->_oop_type is an exact non-null pointer. oop_type may not be exact, or BOT
+    // We check that they both refer to the same java type.
+    assert(virt->_oop_type->is_instptr()->is_same_java_type_as(oop_type), "type of oopptr is inconsistent!");
 #ifndef PRODUCT
     if (PEAVerbose) {
+      ciInstanceKlass* ik = oop_type->is_instptr()->instance_klass();
       tty->print("ciInstanceKlass: ");
       ik->print_name_on(tty);
       tty->cr();
     }
 #endif
 
-    for (int i = 0; i < ik->nof_nonstatic_fields(); ++i) {
-      ciField* field = ik->nonstatic_field_at(i);
-      BasicType bt = field->layout_type();
-      const Type* type = Type::get_const_basic_type(bt);
-      bool is_obj = is_reference_type(bt);
-      Node* val = virt->get_field(i);
+    for (auto&& it = virt->field_iterator(); it.has_next(); ++it) {
+      ciField* field = it.field();
+      Node* val = it.value();
 
 #ifndef PRODUCT
       if (PEAVerbose) {
-        tty->print("flt#%2d: ", i);
+        tty->print("field: ");
         field->print_name_on(tty);
         tty->cr();
       }
@@ -646,41 +689,25 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
       // no initial value or is captured by InitializeNode
       if (val == nullptr) continue;
 
-      if (is_obj && pea->is_alias(val)) {
-        // recurse if val is a virtual object.
-        if (as_virtual(pea, val)) {
-          materialize(kit, val);
-        }
-        EscapedState* es = as_escaped(pea, val);
-        assert(es != nullptr, "the object of val is not Escaped");
-        val = es->merged_value();
-      }
-
-      int offset = field->offset_in_bytes();
-      Node* adr = kit->basic_plus_adr(objx, objx, offset);
-      const TypePtr* adr_type = C->alias_type(field)->adr_type();
-      DecoratorSet decorators = IN_HEAP;
-
-      // Store the value.
-      const Type* field_type;
-      if (!field->type()->is_loaded()) {
-        field_type = TypeInstPtr::BOTTOM;
-      } else {
-        if (is_obj) {
-          field_type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-        } else {
-          field_type = Type::BOTTOM;
-        }
-      }
-      decorators |= field->is_volatile() ? MO_SEQ_CST : MO_UNORDERED;
-
-#ifndef PRODUCT
-      if (PEAVerbose) {
-        val->dump();
-      }
-#endif
-      kit->access_store_at(objx, adr, adr_type, val, field_type, bt, decorators);
+      put_field(kit, field, objx, val);
     }
+
+    // back from DFS, we still need to check again for all virtual states.
+    // they may have a field 'var' which has committed to memory via prior putfield. We emit a store with updated objx.
+    // Hopefully, two consecutive stores coalesce.
+    _state.iterate([&](ObjID obj, ObjectState* os) {
+      if (os->is_virtual()) {
+        VirtualState* vs = static_cast<VirtualState*>(os);
+
+        for (auto&& i = vs->field_iterator(); i.has_next(); ++i) {
+          if (i.value() == var) {
+            vs->set_field(i.field(), objx);
+            put_field(kit, i.field(), get_java_oop(obj), objx);
+          }
+        }
+      }
+      return true;
+    });
     // if var is associated with MemBarRelease, copy it for objx
     for (DUIterator_Fast kmax, k = var->fast_outs(kmax); k < kmax; k++) {
       Node* use = var->fast_out(k);

@@ -81,15 +81,56 @@ class VirtualState: public ObjectState {
   int nfields() const;
   void set_field(ciField* field, Node* val);
   Node* get_field(ciField* field) const;
-  Node* get_field(int idx) const {
-    assert(idx >= 0 && idx < nfields(), "sanity check");
-    return _entries[idx];
-  }
 
   ObjectState& merge(ObjectState* newin, GraphKit* kit, RegionNode* region, int pnum) override;
+
 #ifndef PRODUCT
   void print_on(outputStream* os) const;
 #endif
+
+  class iterator {
+   private:
+    const VirtualState* _state;
+    int _end;
+    int _idx;
+
+   public:
+    iterator(const VirtualState* state): _state(state), _idx(0) {
+      const TypeInstPtr* instptr = _state->_oop_type->isa_instptr();
+      if (instptr != nullptr) {
+        ciInstanceKlass* holder = instptr->instance_klass();
+        _end = holder->nof_nonstatic_fields();
+      } else {
+        _end = 0;
+      }
+    }
+
+    bool has_next() const {
+      return _idx < _end;
+    }
+
+    void operator++() {
+      assert(has_next(), "out of range.");
+      ++_idx;
+    }
+
+    ciField* field() const {
+      assert(_idx < _end, "sanity");
+      ciInstanceKlass* ik = _state->_oop_type->is_instptr()->instance_klass();
+      return ik->nonstatic_field_at(_idx);
+    }
+
+    Node* value() const {
+      assert(_idx < _end, "sanity check");
+      assert(_idx >= 0 && _idx < _state->nfields(), "field is out of range");
+
+      return _state->_entries[_idx];
+    }
+  };
+
+  iterator field_iterator() {
+    return {this};
+  }
 };
 
 class EscapedState: public ObjectState {
@@ -221,7 +262,10 @@ class PEAState {
   EscapedState* escape(ObjID id, Node* p, bool materialized);
 
   void add_new_allocation(GraphKit* kit, Node* obj);
+
   Node* materialize(GraphKit* kit, Node* var);
+
+  void put_field(GraphKit* kit, ciField* field, Node* objx, Node* val);
 
   int objects(Unique_Node_List& nodes) const;
   int size() const {

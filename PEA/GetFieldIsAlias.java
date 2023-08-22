@@ -20,7 +20,6 @@ class GetFieldIsAlias {
         this.type.parent = this;
     }
 
-
     public static void main(String[] args) {
         for (int i = 0; i< 200_000; ++i) {
             var obj = new GetFieldIsAlias();
