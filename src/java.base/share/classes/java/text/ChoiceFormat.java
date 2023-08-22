@@ -129,11 +129,11 @@ import java.util.Arrays;
  * A {@code ChoiceFormat} pattern has the following syntax:
  * <blockquote><pre>
  * <i>Pattern:</i>
- *         SimplePattern *("|" SimplePattern)
- * <i>SimplePattern:</i>
+ *         SubPattern *("|" SubPattern)
+ * <i>SubPattern:</i>
  *         Limit Relation Format
  * <i>Limit:</i>
- *         {@code Double}
+ *         {@code String} that can be parsed as a {@code double} / "&infin;" / "-&infin;".
  * <i>Relation:</i>
  *         "#" / "&lt;" / "&le;"
  * <i>Format:</i>
