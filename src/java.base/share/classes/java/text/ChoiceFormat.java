@@ -140,7 +140,9 @@ import java.util.Arrays;
  *         {@code String}
  * </pre></blockquote>
  *
- * For example:
+ * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
+ *
+ * <p>Below is an example of constructing a ChoiceFormat with a pattern:
  * <blockquote>
  * {@snippet lang=java :
  * ChoiceFormat fmt = new ChoiceFormat(
