@@ -43,8 +43,10 @@
 // The LoaderConstraintTable controls whether two ClassLoaders can resolve the same class name N
 // to different InstanceKlasses.
 //
-// The details of the algorithm can be found in the OOPSLA'98 paper "Dynamic Class Loading in the Java
-// Virtual Machine" by Sheng Liang and Gilad Bracha.
+//     The design of the algorithm can be found in the OOPSLA'98 paper "Dynamic Class Loading in
+//     the Java Virtual Machine" by Sheng Liang and Gilad Bracha.
+//
+//     To understand the implementation, start with LoaderConstraintTable::{add_entry, check_or_update}
 //
 // When a class name N is entered into the LoaderConstraintTable, it's mapped to a ConstraintSet which
 // contains one or more LoaderConstraints:
