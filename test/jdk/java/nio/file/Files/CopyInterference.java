@@ -122,7 +122,7 @@ public class CopyInterference {
                                 new CopyOption[] {REPLACE_EXISTING});
             list.add(args);
 
-            // symblic link, not followed
+            // symbolic link, not followed
             args = Arguments.of(link, dir.resolve("linkNotFollowed"),
                                 new CopyOption[] {REPLACE_EXISTING,
                                                   NOFOLLOW_LINKS});
