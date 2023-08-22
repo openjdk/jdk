@@ -343,7 +343,7 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
 }
 
 void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
-  int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
+  int print_len = MIN2(ta->length(), MaxElementPrintSize);
   switch (element_type()) {
     case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
     case T_CHAR:    print_char_array(ta, print_len, st);    break;

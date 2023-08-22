@@ -350,12 +350,10 @@ inline frame frame::sender(RegisterMap* map) const {
   // update it accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
   if (_cb != nullptr) return sender_for_compiled_frame(map);
 
