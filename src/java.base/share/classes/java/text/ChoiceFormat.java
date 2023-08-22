@@ -102,28 +102,28 @@ import java.util.Arrays;
  * <blockquote>
  * {@snippet lang=java :
  * // Create the ChoiceFormat
- * double[] fileLimits = {0,1,2};
- * String[] filePart = {"are no files", "is one file", "are {2} files"};
- * ChoiceFormat fileFmt = new ChoiceFormat(fileLimits, filePart);
- * // Create the MessageFormat and set the sub formats
- * MessageFormat msgFmt = new MessageFormat("There {0} on {1}");
- * Format[] subFmts = {fileFmt, null, NumberFormat.getInstance()};
- * msgFmt.setFormats(subFmts);
- * Object[] values = {null, "the current disk", null};
+ * double[] filelimits = {0,1,2};
+ * String[] filepart = {"are no files","is one file","are {2} files"};
+ * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
+ * Format[] testFormats = {fileform, null, NumberFormat.getInstance()};
+ * MessageFormat pattform = new MessageFormat("There {0} on {1}");
+ * pattform.setFormats(testFormats);
+ * Object[] testArgs = {null, "ADisk", null};
  * // Iterate some values
  * for (int i = 0; i < 4; ++i) {
- *     values[0] = values[2] = i;
- *     System.out.println(msgFmt.format(values));
+ *     testArgs[0] = Integer.valueOf(i);
+ *     testArgs[2] = testArgs[0];
+ *     System.out.println(pattform.format(testArgs));
  * }
  * }
  * </blockquote>
  * Would output the following:
  * <blockquote>
  * <pre>{@code
- * There are no files on the current disk
- * There is one file on the current disk
- * There are 2 files on the current disk
- * There are 3 files on the current disk
+ * There are no files on ADisk
+ * There is one file on ADisk
+ * There are 2 files on ADisk
+ * There are 3 files on ADisk
  * }</pre>
  * </blockquote>
  *
