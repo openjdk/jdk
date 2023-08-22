@@ -25,15 +25,19 @@
  * @test
  * @bug 7153958 8073372
  * @summary add constant pool reference to class containing inlined constants
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile pkg/ClassToBeStaticallyImportedA.java pkg/ClassToBeStaticallyImportedB.java CPoolRefClassContainingInlinedCts.java
  * @run main CPoolRefClassContainingInlinedCts
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ConstantPoolException;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 
@@ -66,19 +70,19 @@ public class CPoolRefClassContainingInlinedCts {
         }
     }
 
-    void checkReferences() throws IOException, ConstantPoolException {
+    void checkReferences() throws IOException {
         File testClasses = new File(System.getProperty("test.classes"));
         File file = new File(testClasses,
                 CPoolRefClassContainingInlinedCts.class.getName() + ".class");
-        ClassFile classFile = ClassFile.read(file);
+        ClassModel classFile = Classfile.of().parse(file.toPath());
         int i = 1;
-        CPInfo cpInfo;
-        while (i < classFile.constant_pool.size()) {
-            cpInfo = classFile.constant_pool.get(i);
-            if (cpInfo instanceof CONSTANT_Class_info) {
-                checkClassName(((CONSTANT_Class_info)cpInfo).getName());
+        PoolEntry cpInfo;
+        while (i < classFile.constantPool().entryCount()) {
+            cpInfo = classFile.constantPool().entryByIndex(i);
+            if (cpInfo instanceof ClassEntry classEntry) {
+                checkClassName(classEntry.asInternalName());
             }
-            i += cpInfo.size();
+            i += cpInfo.width();
         }
         if (numberOfReferencedClassesToBeChecked != 16) {
             throw new AssertionError("Class reference missing in the constant pool");
