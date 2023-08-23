@@ -825,9 +825,18 @@ Node* OrLNode::Identity(PhaseGVN* phase) {
 
 template <class CT>
 static const Type* or_add_ring(const Type* t1, const Type* t2) {
+  using T = decltype(CT::_lo);
+  using U = decltype(CT::_ulo);
   const CT* i1 = CT::cast(t1);
   const CT* i2 = CT::cast(t2);
-  return CT::make_bits(i1->_zeros & i2->_zeros, i1->_ones | i2->_ones, MAX2(i1->_widen, i2->_widen));
+  T lo = std::numeric_limits<T>::min();
+  T hi = std::numeric_limits<T>::max();
+  U ulo = MAX2(i1->_ulo, i2->_ulo);
+  U uhi = std::numeric_limits<U>::max();
+  U zeros = i1->_zeros & i2->_zeros;
+  U ones = i1->_ones | i2->_ones;
+  int w = MAX2(i1->_widen, i2->_widen);
+  return CT::make(lo, hi, ulo, uhi, zeros, ones, w);
 }
 
 template <class CT>
