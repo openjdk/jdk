@@ -189,7 +189,7 @@ void os::current_stack_base_and_size(address* base, size_t* size)
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal("pthread_stackseg_np failed with error = %s", rslt);
+    fatal("pthread_stackseg_np failed with error = %d", rslt);
 
   *base = (address) ss.ss_sp;
   *size  = ss.ss_size;

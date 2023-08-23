@@ -5369,7 +5369,7 @@ bool os::start_debugging(char *buf, int buflen) {
 //
 // ** P1 (aka bottom) and size are the address and stack size
 //    returned from pthread_attr_getstack().
-// ** P2 (aka stack top or base) = P1 - size)
+// ** P2 (aka stack top or base) = P1 + size)
 // ** If adjustStackSizeForGuardPages() is true the guard pages have been taken
 //    out of the stack size given in pthread_attr. We work around this for
 //    threads created by the VM. We adjust bottom to be P1 and size accordingly.
