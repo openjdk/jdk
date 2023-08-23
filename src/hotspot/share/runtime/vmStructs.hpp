@@ -163,7 +163,7 @@ private:
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
  { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, &typeName::fieldName },
 
-// This macro generates a VMStructEntry line for a static pointer volatile field,
+// This macro generates a VMStructEntry line for a static volatile field,
 // e.g.: "static ObjectMonitor * volatile g_block_list;"
 #define GENERATE_VOLATILE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)    \
   { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, (type*)&typeName::fieldName },
@@ -205,7 +205,7 @@ private:
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
  {type* dummy = &typeName::fieldName; }
 
-// This macro checks the type of a static pointer volatile VMStructEntry by comparing pointer types,
+// This macro checks the type of a static volatile VMStructEntry by comparing pointer types,
 // e.g.: "static ObjectMonitor * volatile g_block_list;"
 #define CHECK_VOLATILE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)       \
  {type volatile * dummy = &typeName::fieldName; }
