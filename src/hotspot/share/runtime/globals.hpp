@@ -1979,7 +1979,7 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
+  product(int, LockingMode, LM_LIGHTWEIGHT, EXPERIMENTAL,                   \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
           "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \

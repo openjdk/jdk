@@ -1484,7 +1484,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   jint nWant = 0, nWait = 0;
   markWord mark = hobj->mark();
   if (mark.has_monitor()) {
-    mon = mark.monitor();
+    mon = ObjectSynchronizer::read_monitor(calling_thread, hobj());
     assert(mon != nullptr, "must have monitor");
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor

@@ -32,8 +32,9 @@ markWord markWord::displaced_mark_helper() const {
   assert(has_displaced_mark_helper(), "check");
   if (has_monitor()) {
     // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    return monitor->header();
+    //ObjectMonitor* monitor = this->monitor();
+    //return monitor->header();
+    return markWord(value());
   }
   if (has_locker()) {  // has a stack lock
     BasicLock* locker = this->locker();
@@ -48,8 +49,8 @@ void markWord::set_displaced_mark_helper(markWord m) const {
   assert(has_displaced_mark_helper(), "check");
   if (has_monitor()) {
     // Has an inflated monitor. Must be checked before has_locker().
-    ObjectMonitor* monitor = this->monitor();
-    monitor->set_header(m);
+    //ObjectMonitor* monitor = this->monitor();
+    //monitor->set_header(m);
     return;
   }
   if (has_locker()) {  // has a stack lock
@@ -67,6 +68,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     st->print(" monitor(" INTPTR_FORMAT ")=", value());
+#if 0
     if (print_monitor_info) {
       ObjectMonitor* mon = monitor();
       if (mon == nullptr) {
@@ -75,6 +77,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
         mon->print_on(st);
       }
     }
+#endif
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked
     st->print(" locked(" INTPTR_FORMAT ")", value());
