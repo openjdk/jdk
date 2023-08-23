@@ -185,16 +185,17 @@ public:
 // all the behavior of addition on a ring.
 class OrINode : public AddNode {
 public:
-  OrINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  OrINode(Node* in1, Node* in2) : AddNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring( const Type *, const Type * ) const;
-  virtual const Type *add_id() const { return TypeInt::ZERO; }
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* add_ring(const Type* t1, const Type* t2) const;
+  virtual const Type* add_id() const { return TypeInt::ZERO; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------OrLNode----------------------------------------
@@ -204,29 +205,30 @@ class OrLNode : public AddNode {
 public:
   OrLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_ring( const Type *, const Type * ) const;
-  virtual const Type *add_id() const { return TypeLong::ZERO; }
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* add_ring(const Type* t1, const Type* t2) const;
+  virtual const Type* add_id() const { return TypeLong::ZERO; }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
-  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegL; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------XorINode---------------------------------------
 // XOR'ing 2 integers
 class XorINode : public AddNode {
 public:
-  XorINode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  XorINode(Node* in1, Node* in2) : AddNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *add_ring( const Type *, const Type * ) const;
-  virtual const Type *add_id() const { return TypeInt::ZERO; }
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* add_ring(const Type* t1, const Type* t2) const;
+  virtual const Type* add_id() const { return TypeInt::ZERO; }
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -234,15 +236,15 @@ public:
 // XOR'ing 2 longs
 class XorLNode : public AddNode {
 public:
-  XorLNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  XorLNode(Node* in1, Node* in2) : AddNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *add_ring( const Type *, const Type * ) const;
-  virtual const Type *add_id() const { return TypeLong::ZERO; }
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* add_ring(const Type* t1, const Type* t2) const;
+  virtual const Type* add_id() const { return TypeLong::ZERO; }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
-  virtual const Type *Value(PhaseGVN *phase) const;
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

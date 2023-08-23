@@ -190,14 +190,14 @@ public:
 // all the behavior of multiplication on a ring.
 class AndINode : public MulINode {
 public:
-  AndINode( Node *in1, Node *in2 ) : MulINode(in1,in2) {}
+  AndINode(Node* in1, Node* in2) : MulINode(in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *mul_ring( const Type *, const Type * ) const;
-  const Type *mul_id() const { return TypeInt::MINUS_1; }
-  const Type *add_id() const { return TypeInt::ZERO; }
+  virtual const Type* mul_ring(const Type* t1, const Type* t2) const;
+  const Type* mul_id() const { return TypeInt::MINUS_1; }
+  const Type* add_id() const { return TypeInt::ZERO; }
   int add_opcode() const { return Op_OrI; }
   int mul_opcode() const { return Op_AndI; }
   int max_opcode() const { return Op_MaxI; }
@@ -210,14 +210,14 @@ public:
 // all the behavior of multiplication on a ring.
 class AndLNode : public MulLNode {
 public:
-  AndLNode( Node *in1, Node *in2 ) : MulLNode(in1,in2) {}
+  AndLNode(Node* in1, Node* in2 ) : MulLNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *mul_ring( const Type *, const Type * ) const;
-  const Type *mul_id() const { return TypeLong::MINUS_1; }
-  const Type *add_id() const { return TypeLong::ZERO; }
+  virtual const Type* mul_ring(const Type* t1, const Type* t2) const;
+  const Type* mul_id() const { return TypeLong::MINUS_1; }
+  const Type* add_id() const { return TypeLong::ZERO; }
   int add_opcode() const { return Op_OrL; }
   int mul_opcode() const { return Op_AndL; }
   int max_opcode() const { return Op_MaxL; }

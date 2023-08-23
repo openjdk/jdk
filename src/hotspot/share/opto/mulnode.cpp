@@ -525,84 +525,6 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
 }
 
 //=============================================================================
-//------------------------------mul_ring---------------------------------------
-// Supplied function returns the product of the inputs IN THE CURRENT RING.
-// For the logical operations the ring's MUL is really a logical AND function.
-// This also type-checks the inputs for sanity.  Guaranteed never to
-// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int widen = MAX2(r0->_widen,r1->_widen);
-
-  // If either input is a constant, might be able to trim cases
-  if( !r0->is_con() && !r1->is_con() )
-    return TypeInt::INT;        // No constants to be had
-
-  // Both constants?  Return bits
-  if( r0->is_con() && r1->is_con() )
-    return TypeInt::make( r0->get_con() & r1->get_con() );
-
-  if( r0->is_con() && r0->get_con() > 0 )
-    return TypeInt::make(0, r0->get_con(), widen);
-
-  if( r1->is_con() && r1->get_con() > 0 )
-    return TypeInt::make(0, r1->get_con(), widen);
-
-  if( r0 == TypeInt::BOOL || r1 == TypeInt::BOOL ) {
-    return TypeInt::BOOL;
-  }
-
-  return TypeInt::INT;          // No constants to be had
-}
-
-const Type* AndINode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_INT, true)) {
-    return TypeInt::ZERO;
-  }
-
-  return MulNode::Value(phase);
-}
-
-//------------------------------Identity---------------------------------------
-// Masking off the high bits of an unsigned load is not required
-Node* AndINode::Identity(PhaseGVN* phase) {
-
-  // x & x => x
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-
-  Node* in1 = in(1);
-  uint op = in1->Opcode();
-  const TypeInt* t2 = phase->type(in(2))->isa_int();
-  if (t2 && t2->is_con()) {
-    int con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeInt* t1 = phase->type(in(1))->isa_int();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      jint t1_support = right_n_bits(1 + log2i_graceful(t1->_hi));
-      if ((t1_support & con) == t1_support)
-        return in1;
-    }
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if (op == Op_URShiftI) {
-      const TypeInt* t12 = phase->type(in1->in(2))->isa_int();
-      if (t12 && t12->is_con()) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaInteger - 1;  // semantics of Java shifts
-        int mask = max_juint >> shift;
-        if ((mask & con) == mask)  // If AND is useless, skip it
-          return in1;
-      }
-    }
-  }
-  return MulNode::Identity(phase);
-}
-
-//------------------------------Ideal------------------------------------------
 Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
   Node* progress = AndIL_add_shift_and_mask(phase, T_INT);
@@ -667,82 +589,6 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return MulNode::Ideal(phase, can_reshape);
 }
 
-//=============================================================================
-//------------------------------mul_ring---------------------------------------
-// Supplied function returns the product of the inputs IN THE CURRENT RING.
-// For the logical operations the ring's MUL is really a logical AND function.
-// This also type-checks the inputs for sanity.  Guaranteed never to
-// be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
-  const TypeLong *r0 = t0->is_long(); // Handy access
-  const TypeLong *r1 = t1->is_long();
-  int widen = MAX2(r0->_widen,r1->_widen);
-
-  // If either input is a constant, might be able to trim cases
-  if( !r0->is_con() && !r1->is_con() )
-    return TypeLong::LONG;      // No constants to be had
-
-  // Both constants?  Return bits
-  if( r0->is_con() && r1->is_con() )
-    return TypeLong::make( r0->get_con() & r1->get_con() );
-
-  if( r0->is_con() && r0->get_con() > 0 )
-    return TypeLong::make(CONST64(0), r0->get_con(), widen);
-
-  if( r1->is_con() && r1->get_con() > 0 )
-    return TypeLong::make(CONST64(0), r1->get_con(), widen);
-
-  return TypeLong::LONG;        // No constants to be had
-}
-
-const Type* AndLNode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_shift_and_mask_is_always_zero(phase, in(1), in(2), T_LONG, true)) {
-    return TypeLong::ZERO;
-  }
-
-  return MulNode::Value(phase);
-}
-
-//------------------------------Identity---------------------------------------
-// Masking off the high bits of an unsigned load is not required
-Node* AndLNode::Identity(PhaseGVN* phase) {
-
-  // x & x => x
-  if (in(1) == in(2)) {
-    return in(1);
-  }
-
-  Node *usr = in(1);
-  const TypeLong *t2 = phase->type( in(2) )->isa_long();
-  if( t2 && t2->is_con() ) {
-    jlong con = t2->get_con();
-    // Masking off high bits which are always zero is useless.
-    const TypeLong* t1 = phase->type( in(1) )->isa_long();
-    if (t1 != nullptr && t1->_lo >= 0) {
-      int bit_count = log2i_graceful(t1->_hi) + 1;
-      jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
-      if ((t1_support & con) == t1_support)
-        return usr;
-    }
-    uint lop = usr->Opcode();
-    // Masking off the high bits of a unsigned-shift-right is not
-    // needed either.
-    if( lop == Op_URShiftL ) {
-      const TypeInt *t12 = phase->type( usr->in(2) )->isa_int();
-      if( t12 && t12->is_con() ) {  // Shift is by a constant
-        int shift = t12->get_con();
-        shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-        jlong mask = max_julong >> shift;
-        if( (mask&con) == mask )  // If AND is useless, skip it
-          return usr;
-      }
-    }
-  }
-  return MulNode::Identity(phase);
-}
-
-//------------------------------Ideal------------------------------------------
 Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
@@ -788,6 +634,76 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   return MulNode::Ideal(phase, can_reshape);
 }
+
+template <class CT>
+static Node* and_id(Node* n, PhaseGVN* phase) {
+  Node* in1 = n->in(1);
+  Node* in2 = n->in(2);
+
+  // x | x => x
+  if (in1 == in2) {
+    return in1;
+  }
+
+  const CT* i1 = CT::try_cast(phase->type(in1));
+  const CT* i2 = CT::try_cast(phase->type(in2));
+  if (i1 == nullptr || i2 == nullptr) {
+    return n;
+  }
+
+  // If all unset bits of x are unset in y then return y
+  if ((~i1->_ones & ~i2->_zeros) == 0) {
+    return in2;
+  }
+  if ((~i2->_ones & ~i1->_zeros) == 0) {
+    return in1;
+  }
+  return n;
+}
+
+Node* AndINode::Identity(PhaseGVN* phase) {
+  return and_id<TypeInt>(this, phase);
+}
+
+Node* AndLNode::Identity(PhaseGVN* phase) {
+  return and_id<TypeLong>(this, phase);
+}
+
+template <class CT>
+static const Type* and_mul_ring(const Type* t1, const Type* t2) {
+  const CT* i1 = CT::cast(t1);
+  const CT* i2 = CT::cast(t2);
+  return CT::make_bits(i1->_zeros | i2->_zeros, i1->_ones & i2->_ones, MAX2(i1->_widen, i2->_widen));
+}
+
+template <class CT>
+static const Type* and_value(Node* in1, Node* in2, PhaseGVN* phase) {
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  return and_mul_ring<CT>(t1, t2);
+}
+
+const Type* AndINode::mul_ring(const Type* t1, const Type* t2) const {
+  return and_mul_ring<TypeInt>(t1, t2);
+}
+
+const Type* AndLNode::mul_ring(const Type* t1, const Type* t2) const {
+  return and_mul_ring<TypeLong>(t1, t2);
+}
+
+const Type* AndINode::Value(PhaseGVN* phase) const {
+  return and_value<TypeInt>(in(1), in(2), phase);
+}
+
+const Type* AndLNode::Value(PhaseGVN* phase) const {
+  return and_value<TypeLong>(in(1), in(2), phase);
+}
+
+//------------------------------Ideal------------------------------------------
 
 LShiftNode* LShiftNode::make(Node* in1, Node* in2, BasicType bt) {
   switch (bt) {

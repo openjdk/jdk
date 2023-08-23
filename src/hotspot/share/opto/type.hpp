@@ -595,9 +595,12 @@ public:
   const juint _ulo, _uhi;
   const juint _zeros, _ones;
 
+  static const TypeInt* cast(const Type* t) { return t->is_int(); }
+  static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
   // must always specify w
   static const Type* make(jint lo, jint hi, int w);
+  static const Type* make_bits(juint zeros, juint ones, int w);
   static const Type* make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w);
 
   // Check for single integer
@@ -666,9 +669,12 @@ public:
   const julong _ulo, _uhi;
   const julong _zeros, _ones;
 
+  static const TypeLong* cast(const Type* t) { return t->is_long(); }
+  static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
   // must always specify w
   static const Type* make(jlong lo, jlong hi, int w);
+  static const Type* make_bits(julong zeros, julong ones, int w);
   static const Type* make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w);
 
   // Check for single integer

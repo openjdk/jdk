@@ -1803,7 +1803,7 @@ static bool int_type_subset(const CT* super, const CT* sub) {
          (super->_zeros &~ sub->_zeros) == 0 && (super->_ones &~ sub->_ones) == 0;
 }
 
-// Called in PhiNode::Value during CCP, monotically widen the value set, do so rigourousely
+// Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
 // first, after WidenMax attempts, if the type has still not converged we speed up the
 // convergence by abandoning the bounds
 template <class CT>
@@ -1954,6 +1954,10 @@ const TypeInt* TypeInt::make(jint lo) {
 
 const Type* TypeInt::make(jint lo, jint hi, int w) {
   return make(lo, hi, 0, max_juint, 0, 0, w);
+}
+
+const Type* TypeInt::make_bits(juint zeros, juint ones, int w) {
+  return make(min_jint, max_jint, 0, max_juint, zeros, ones, w);
 }
 
 const Type* TypeInt::make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w) {
@@ -2181,6 +2185,10 @@ const TypeLong* TypeLong::make(jlong lo ) {
 
 const Type* TypeLong::make(jlong lo, jlong hi, int w) {
   return make(lo, hi, 0, max_julong, 0, 0, w);
+}
+
+const Type* TypeLong::make_bits(julong zeros, julong ones, int w) {
+  return make(min_jlong, max_jlong, 0, max_julong, zeros, ones, w);
 }
 
 const Type* TypeLong::make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w) {
