@@ -119,7 +119,8 @@ public class SignedLoggerFinderTest {
                         .shouldHaveExitValue(0);
                 if (signJars) {
                     outputAnalyzer
-                            .shouldContain("TEST LOGGER:")
+                            .shouldContain("TEST LOGGER: [test_1, test]")
+                            .shouldContain("TEST LOGGER: [test_2, test]")
                             .shouldContain(DNAME);
                 }
 
@@ -150,16 +151,17 @@ public class SignedLoggerFinderTest {
             jf.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
             JarFile jf2 = new JarFile(jarPath2.toString(), true);
             jf2.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
-            Security.setProperty("test", "test");
+            Security.setProperty("test_1", "test");
 
             // some extra sanity checks
             assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
                     "loggerfinder.SimpleLoggerFinder");
-            Logger testLogger = Logger.getLogger("jdk.security.event");
+            Logger testLogger = Logger.getLogger("jdk.event.security");
             assertEquals(testLogger.getClass().getName(), "java.util.logging.Logger");
             testComplete = true;
-            Thread.sleep(5000);
-            Security.setProperty("test", "test");
+
+            // LoggerFinder should be initialized, trigger a simple log call
+            Security.setProperty("test_2", "test");
         }
     }
 
@@ -172,7 +174,7 @@ public class SignedLoggerFinderTest {
         JarUtils.createJarFile(jarPath1,
             classes,
             classes.resolve("loggerfinder/SimpleLoggerFinder.class"),
-            classes.resolve("loggerfinder/SimpleLoggerFinder$NoOpLogger.class"));
+            classes.resolve("loggerfinder/SimpleLoggerFinder$SimpleLogger.class"));
 
         JarUtils.updateJarFile(jarPath1, Path.of(System.getProperty("test.src")),
             Path.of("META-INF", "services", "java.lang.System$LoggerFinder"));

@@ -983,6 +983,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         } catch (IllegalAccessException e) {}
     }
 
+    // trigger class initialization outside of holding lock
     static void detectBackend() {
         if (isBooted()) {
             ensureClassInitialized(DetectBackend.class);
