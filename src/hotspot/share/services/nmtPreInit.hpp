@@ -162,7 +162,7 @@ class NMTPreInitAllocationTable {
   static index_t index_for_key(const void* p) {
     const uint64_t hash = calculate_hash(p);
     // "table_size" is a Mersenne prime, so "modulo" is all we need here.
-    return hash % table_size;
+    return checked_cast<index_t>(hash % table_size);
   }
 
   const NMTPreInitAllocation* const * find_entry(const void* p) const {

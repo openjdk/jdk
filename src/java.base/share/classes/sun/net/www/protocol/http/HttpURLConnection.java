@@ -162,15 +162,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 
     /* Should we enable buffering of error streams? */
-    private static boolean enableESBuffer = false;
+    private static final boolean enableESBuffer;
 
     /* timeout waiting for read for buffered error stream;
      */
-    private static int timeout4ESBuffer = 0;
+    private static final int timeout4ESBuffer;
 
     /* buffer size for buffered error stream;
      */
-    private static int bufSize4ES = 0;
+    private static final int bufSize4ES;
 
     /*
      * Restrict setting of request headers through the public api
@@ -264,17 +264,19 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         enableESBuffer = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.errorstream.enableBuffering"));
-        timeout4ESBuffer = GetIntegerAction.privilegedGetProperty(
+        int esBufferTimeout = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.timeout", 300);
-        if (timeout4ESBuffer <= 0) {
-            timeout4ESBuffer = 300; // use the default
+        if (esBufferTimeout <= 0) {
+            esBufferTimeout = 300; // use the default
         }
+        timeout4ESBuffer = esBufferTimeout;
 
-        bufSize4ES = GetIntegerAction.privilegedGetProperty(
+        int esBufSize = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.bufferSize", 4096);
-        if (bufSize4ES <= 0) {
-            bufSize4ES = 4096; // use the default
+        if (esBufSize <= 0) {
+            esBufSize = 4096; // use the default
         }
+        bufSize4ES = esBufSize;
 
         allowRestrictedHeaders = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.allowRestrictedHeaders"));
@@ -349,7 +351,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /* The headers actually set by the user are recorded here also
      */
-    private MessageHeader userHeaders;
+    private final MessageHeader userHeaders;
 
     /* Headers and request method cannot be changed
      * once this flag is set in :-
