@@ -361,20 +361,6 @@
           "Maximum bytecode size of a method to be analyzed by BC EA")      \
           range(0, max_jint)                                                \
                                                                             \
-  /* Vector API flags */                                                    \
-                                                                            \
-  product(bool, EnableVectorSupport, false, EXPERIMENTAL,                   \
-          "Enables VectorSupport intrinsics")                               \
-                                                                            \
-  product(bool, EnableVectorReboxing, false, EXPERIMENTAL,                  \
-          "Enables reboxing of vectors")                                    \
-                                                                            \
-  product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL,        \
-          "Enables aggressive reboxing of vectors")                         \
-                                                                            \
-  product(bool, UseVectorStubs, false, EXPERIMENTAL,                        \
-          "Use stubs for vector transcendental operations")                 \
-                                                                            \
   /* misc compiler flags */                                                 \
                                                                             \
   product(bool, AbortVMOnCompilationFailure, false, DIAGNOSTIC,             \
