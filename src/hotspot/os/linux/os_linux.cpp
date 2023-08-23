@@ -3482,16 +3482,16 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
 static char* anon_mmap(char* requested_addr, size_t bytes) {
   // If a requested address was given:
   //
-  // The POSIX-conform way is to *omit* MAP_FIXED. This will leave existing mappings intact.
+  // The POSIX-conforming way is to *omit* MAP_FIXED. This will leave existing mappings intact.
   // If the requested mapping area is blocked by a pre-existing mapping, the kernel will map
   // somewhere else. On Linux, that alternative address appears to have no relation to the
   // requested address.
-  // Unfortunately, this is not what we need - if we specified a request address, we'd want
+  // Unfortunately, this is not what we need - if we requested a specific address, we'd want
   // to map there and nowhere else. Therefore we will unmap the block again, which means we
   // just executed a needless mmap->munmap cycle.
   // Since Linux 4.17, the kernel offers MAP_FIXED_NOREPLACE. With this flag, if a pre-
   // existing mapping exists, the kernel will not map at an alternative point but instead
-  // return an error. We can therefore save that unnessassary mmap-munmap cycle.
+  // return an error. We can therefore save that unnecassary mmap-munmap cycle.
   //
   // Backward compatibility: Older kernels will ignore the unknown flag; so mmap will behave
   // as in mode (a).

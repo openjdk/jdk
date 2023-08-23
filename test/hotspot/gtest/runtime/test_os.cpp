@@ -929,9 +929,9 @@ TEST_VM(os, open_O_CLOEXEC) {
 
 TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
   char* p1 = os::reserve_memory(M, false, mtTest);
-  ASSERT_NE(p1, (char*)nullptr);
+  ASSERT_NE(p1, nullptr);
   char* p2 = os::attempt_reserve_memory_at(p1, M);
-  ASSERT_EQ(p2, (char*)nullptr); // should have failed
+  ASSERT_EQ(p2, nullptr); // should have failed
   os::release_memory(p1, M);
 }
 
@@ -939,9 +939,9 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
   if (UseLargePages && !os::can_commit_large_page_memory()) { // aka special
     const size_t lpsz = os::large_page_size();
     char* p1 = os::reserve_memory_aligned(lpsz, lpsz, false);
-    ASSERT_NE(p1, (char*)nullptr);
+    ASSERT_NE(p1, nullptr);
     char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
-    ASSERT_EQ(p2, (char*)nullptr); // should have failed
+    ASSERT_EQ(p2, nullptr); // should have failed
     os::release_memory(p1, M);
   } else {
     tty->print_cr("Skipped.");
