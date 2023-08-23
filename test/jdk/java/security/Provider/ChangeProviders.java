@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4856968 7054918 8130181
+ * @bug 4856968 7054918 8130181 8175874
  * @library ../testlibrary
  * @summary make sure add/insert/removeProvider() work correctly
  * @author Andreas Sterbenz
