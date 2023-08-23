@@ -128,7 +128,7 @@ private:
     *length_addr_impl(mem) = length;
   }
 
-  // Return the maximum length of an array of BasicType.  The length can unpassed
+  // Return the maximum length of an array of BasicType.  The length can be passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
@@ -138,8 +138,7 @@ private:
 
     size_t hdr_size_in_bytes = header_size_in_bytes();
     // This is rounded-up and may overlap with the first array elements.
-    size_t hdr_size_in_words = (element_type_should_be_aligned(type) ? align_object_offset(hdr_size_in_bytes/HeapWordSize)
-                                                                     : align_up(hdr_size_in_bytes, HeapWordSize)/HeapWordSize);
+    size_t hdr_size_in_words = align_up(hdr_size_in_bytes, HeapWordSize) / HeapWordSize;
 
     const size_t max_element_words_per_size_t =
       align_down((SIZE_MAX/HeapWordSize - hdr_size_in_words), MinObjAlignment);
