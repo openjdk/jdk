@@ -596,8 +596,7 @@ class os: AllStatic {
   static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
-  static address current_stack_base();
-  static size_t current_stack_size();
+  static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
