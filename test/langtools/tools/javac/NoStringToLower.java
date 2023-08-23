@@ -67,7 +67,7 @@ public class NoStringToLower {
                 "javax.lang.model",
                 "javax.tools",
                 "com.sun.source",
-                "com.sun.tools.classfile",
+                "jdk.internal.classfile",
                 "com.sun.tools.doclint",
                 "com.sun.tools.javac",
                 "com.sun.tools.javah",
