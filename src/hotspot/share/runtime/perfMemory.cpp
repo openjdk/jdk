@@ -53,7 +53,7 @@ char*                    PerfMemory::_top = nullptr;
 size_t                   PerfMemory::_capacity = 0;
 volatile int             PerfMemory::_initialized = 0;
 PerfDataPrologue*        PerfMemory::_prologue = nullptr;
-volatile int             PerfMemory::_destroyed = 0;
+volatile bool            PerfMemory::_destroyed = false;
 
 void perfMemory_init() {
 
@@ -197,7 +197,7 @@ void PerfMemory::destroy() {
     delete_memory_region();
   }
 
-  _destroyed = 1;
+  _destroyed = true;
 }
 
 // allocate an aligned block of memory from the PerfData memory
@@ -270,8 +270,4 @@ char* PerfMemory::get_perfdata_file_path() {
 
 bool PerfMemory::is_initialized() {
   return Atomic::load_acquire(&_initialized) != 0;
-}
-
-bool PerfMemory::is_destroyed() {
-  return _destroyed != 0;
 }
