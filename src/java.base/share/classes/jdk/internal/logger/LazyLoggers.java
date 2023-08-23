@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
@@ -423,6 +422,7 @@ public final class LazyLoggers {
      * @return  a (possibly lazy) Logger instance.
      */
     public static final Logger getLogger(String name, Module module) {
+        BootstrapLogger.detectBackend();
         if (DefaultLoggerFinder.isSystem(module)) {
             return getLazyLogger(name, module);
         } else {

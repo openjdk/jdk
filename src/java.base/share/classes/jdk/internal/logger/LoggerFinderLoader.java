@@ -154,7 +154,8 @@ public final class LoggerFinderLoader {
 
         @Override
         public Logger getLogger(String name, Module module) {
-            return new BootstrapLogger(LazyLoggerAccessor.makeAccessorFromSupplier(name,loggerSupplier, module));
+            return new BootstrapLogger(LazyLoggerAccessor.makeAccessorFromSupplier(
+                    name, loggerSupplier, module), isLoadingThread);
         }
     }
 
