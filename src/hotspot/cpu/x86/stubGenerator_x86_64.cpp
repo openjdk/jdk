@@ -3897,6 +3897,8 @@ address StubGenerator::generate_throw_exception(const char* name,
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked
   StubRoutines::x86::_mxcsr_std = 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked
+  StubRoutines::x86::_mxcsr_rz = 0x7F80;
 }
 
 // Initialization
