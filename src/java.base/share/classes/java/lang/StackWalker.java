@@ -805,10 +805,12 @@ public final class StackWalker {
         return newInstance(Kind.METHOD_INFO, options, extendedOption, null);
     }
 
+    static StackWalker newInstance(Set<Option> options, ContinuationScope contScope) {
+        return newInstance(Kind.METHOD_INFO, options, null, contScope);
+    }
+
     static StackWalker newInstance(Kind kind, Set<Option> options, ExtendedOption extendedOption, ContinuationScope contScope) {
-        EnumSet<Option> optionSet = toEnumSet(options);
-        checkPermission(optionSet);
-        return new StackWalker(kind, optionSet, 0, extendedOption, contScope, null);
+        return newInstance(kind, options, extendedOption, contScope, null);
     }
 
     static StackWalker newInstance(Kind kind, Set<Option> options, ExtendedOption extendedOption, ContinuationScope contScope, Continuation continuation) {
