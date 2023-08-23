@@ -2913,7 +2913,14 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides equals
+     * Compares the specified object with this {@code DecimalFormat} for equality.
+     * Returns true if the object is also a DecimalFormat and the two Formats
+     * represent the same formatting configuration. Obeys the general contract of
+     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     *
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)
@@ -2958,7 +2965,13 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides hashCode
+     * {@return the hash code for this {@code DecimalFormat} instance}
+     *
+     * The hash code value is based on the {@code positivePrefix} field and
+     * parent {@link NumberFormat#hashCode()} value.
+     *
+     * @see Object#hashCode()
+     * @see NumberFormat#hashCode()
      */
     @Override
     public int hashCode() {
