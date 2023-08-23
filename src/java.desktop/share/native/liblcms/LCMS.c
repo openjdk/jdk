@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,6 @@
 
 #define ERR_MSG_SIZE 256
 
-#ifdef _MSC_VER
-# ifndef snprintf
-#       define snprintf  _snprintf
-# endif
-#endif
-
 typedef struct lcmsProfile_s {
     cmsHPROFILE pf;
 } lcmsProfile_t, *lcmsProfile_p;
@@ -75,14 +69,9 @@ JavaVM *javaVM;
 void errorHandler(cmsContext ContextID, cmsUInt32Number errorCode,
                   const char *errorText) {
     JNIEnv *env;
-    char errMsg[ERR_MSG_SIZE];
+    char errMsg[ERR_MSG_SIZE] = {0};
 
-    int count = snprintf(errMsg, ERR_MSG_SIZE,
-                          "LCMS error %d: %s", errorCode, errorText);
-    if (count < 0 || count >= ERR_MSG_SIZE) {
-        count = ERR_MSG_SIZE - 1;
-    }
-    errMsg[count] = 0;
+    snprintf(errMsg, ERR_MSG_SIZE, "LCMS error %d: %s", errorCode, errorText);
 
     (*javaVM)->AttachCurrentThread(javaVM, (void**)&env, NULL);
     if (!(*env)->ExceptionCheck(env)) { // errorHandler may throw it before
