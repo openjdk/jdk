@@ -2343,13 +2343,13 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Checks if this {@code CompactNumberFormat} is equal to the
-     * specified {@code obj}. The objects of type {@code CompactNumberFormat}
-     * are compared, other types return false; obeys the general contract of
-     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     * Compares the specified object with this {@code CompactNumberFormat} for equality.
+     * Returns true if the object is also a {@code CompactNumberFormat} and the
+     * two formats represent the same formatting configuration.
      *
      * @param obj the object to compare with
      * @return true if this is equal to the other {@code CompactNumberFormat}
+     * @see Object#hashCode()
      */
     @Override
     public boolean equals(Object obj) {
@@ -2373,7 +2373,13 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@return the hash code for this {@code CompactNumberFormat} instance}
+     * {@return the hash code for this {@code CompactNumberFormat}}
+     *
+     * The hash code value is based on the formatting configuration, which
+     * is represented by a number of fields from this {@code CompactNumberFormat}
+     * object.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
