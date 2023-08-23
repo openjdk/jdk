@@ -50,7 +50,9 @@ public class MaximizeWindowTest extends JFrame {
 
                 }
             });
+
             robot.delay(1000);
+
         } finally {
             if (frame != null) {
                 SwingUtilities.invokeAndWait(() -> frame.dispose());
