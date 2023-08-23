@@ -206,7 +206,7 @@ public class FilterOutputStream extends OutputStream {
      *
      * @return {@code true} if, and only if, this stream is open
      */
-    protected boolean isOpen(){
+    boolean isOpen(){
         return !closed;
     }
 }

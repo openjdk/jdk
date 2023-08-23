@@ -37,13 +37,20 @@ import java.io.FileOutputStream;
 
 public class WriteAfterClose {
 
-    static void testWrite(OutputStream os) throws IOException{
+    static void testWrite(OutputStream os) throws IOException {
         // close the stream first
         os.close();
         byte[] buf = {'a', 'b', 'c', 'd'};
         try {
             os.write(buf);
-            throw new RuntimeException("Should not allow write on a closed stream");
+            throw new RuntimeException("Should not allow write(byte[]) on a closed stream");
+        } catch (IOException e) {
+            System.out.println("Caught the IOException as expected: " + e.getMessage());
+        }
+
+        try {
+            os.write(1);
+            throw new RuntimeException("Should not allow write(int) on a closed stream");
         } catch (IOException e) {
             System.out.println("Caught the IOException as expected: " + e.getMessage());
         }

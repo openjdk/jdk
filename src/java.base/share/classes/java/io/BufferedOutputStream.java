@@ -159,6 +159,7 @@ public class BufferedOutputStream extends FilterOutputStream {
      */
     @Override
     public void write(int b) throws IOException {
+        ensureOpen();
         if (lock != null) {
             lock.lock();
             try {
