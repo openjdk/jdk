@@ -1589,7 +1589,7 @@ public final class URL implements java.io.Serializable {
     /**
      * A table of protocol handlers.
      */
-    static final Hashtable<String,URLStreamHandler> handlers = new Hashtable<>();
+    private static final Hashtable<String, URLStreamHandler> handlers = new Hashtable<>();
     private static final Object streamHandlerLock = new Object();
 
     /**
