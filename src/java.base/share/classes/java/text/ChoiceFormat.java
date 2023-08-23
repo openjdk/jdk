@@ -497,8 +497,8 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * {@return the hash code for this {@code ChoiceFormat}}
      *
-     * The hash code value is based on the length of the {@code limits} and
-     * {@code formats} fields of this {@code ChoiceFormat}.
+     * The hash code value is based on the values returned by {@link #getLimits()} and
+     * {@link #getFormats()} of this {@code ChoiceFormat}.
      *
      * @see Object#hashCode()
      */
@@ -514,8 +514,8 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Compares the specified object with this {@code ChoiceFormat} for equality.
-     * Returns true if the object is also a ChoiceFormat and the {@code limits} and
-     * {@code formats} of the two {@code ChoiceFormat}s are equal. Obeys the
+     * Returns true if the object is also a ChoiceFormat and the values returned by {@link #getLimits()} and
+     * {@link #getFormats()} of the two {@code ChoiceFormat}s are equal. Obeys the
      * general contract of {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
      *
      * @param  obj object to be compared for equality
