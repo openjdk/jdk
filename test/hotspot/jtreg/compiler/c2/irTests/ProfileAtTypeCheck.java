@@ -24,7 +24,6 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import jdk.test.lib.Platform;
 import jdk.test.whitebox.gc.GC;
 import java.util.ArrayList;
 
@@ -41,20 +40,18 @@ import java.util.ArrayList;
 
 public class ProfileAtTypeCheck {
     public static void main(String[] args) {
-        ArrayList<String> flags1 = new ArrayList<>();
-        ArrayList<String> flags2 = new ArrayList<>();
-        flags1.add("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
-        if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
-            flags1.add("-XX:+UseParallelGC");
-        }
-        flags2.addAll(flags1);
-        flags1.add("-XX:-TieredCompilation");
-        flags2.add("-XX:-ProfileInterpreter");
-
         // Only interpreter collects profile
-        TestFramework.runWithFlags(flags1.toArray(new String[0]));
+        Scenario interpreterProfiling = new Scenario(0, "-XX:TypeProfileSubTypeCheckCommonThreshold=90", "-XX:-TieredCompilation");
         // Only c1 collects profile
-        TestFramework.runWithFlags(flags2.toArray(new String[0]));
+        Scenario c1Profiling = new Scenario(1, "-XX:TypeProfileSubTypeCheckCommonThreshold=90", "-XX:+TieredCompilation", "-XX:-ProfileInterpreter");
+        
+        if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
+            interpreterProfiling.addFlags("-XX:+UseParallelGC");
+            c1Profiling.addFlags("-XX:+UseParallelGC");
+        }
+
+        TestFramework framework = new TestFramework();
+        framework.addScenarios(interpreterProfiling, c1Profiling).start();
     }
 
     @DontInline
