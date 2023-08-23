@@ -465,10 +465,10 @@ public abstract class DatagramChannel
      * first cause the socket to be bound to an address that is assigned
      * automatically, as if by invoking the {@link #bind bind} method with a
      * parameter of {@code null}. </p>
-     * 
-     * <p>Note that the native implementation of receive can cause a hanging 
-     * situation if the size of UDP RCVBUF is not big enough to hold the 
-     * UDP datagram packet to receive. This buffer size needs to be set 
+     *
+     * <p>Note that the native implementation of receive can cause a hanging
+     * situation if the size of UDP RCVBUF is not big enough to hold the
+     * UDP datagram packet to receive. This buffer size needs to be set
      * accordingly on OS level.</p>
      *
      * @param  src
