@@ -2994,6 +2994,7 @@ static int get_flags(const methodHandle& m) {
   if (m->is_hidden()) {
     flags |= java_lang_invoke_MemberName::MN_HIDDEN_MEMBER;
   }
+  assert((flags & 0xFF000000) == 0, "unexpected flags");
   return flags;
 }
 
@@ -3001,15 +3002,23 @@ oop java_lang_ClassFrameInfo::classOrMemberName(oop obj) {
   return obj->obj_field(_classOrMemberName_offset);
 }
 
+int java_lang_ClassFrameInfo::flags(oop obj) {
+  return obj->int_field(_flags_offset);
+}
+
 void java_lang_ClassFrameInfo::init_class(Handle stackFrame, const methodHandle& m) {
   stackFrame->obj_field_put(_classOrMemberName_offset, m->method_holder()->java_mirror());
-  stackFrame->int_field_put(_flags_offset, get_flags(m));
+  // flags is initialized when ClassFrameInfo object is constructed and retain the value
+  int flags = java_lang_ClassFrameInfo::flags(stackFrame()) | get_flags(m);
+  stackFrame->int_field_put(_flags_offset, flags);
 }
 
 void java_lang_ClassFrameInfo::init_method(Handle stackFrame, const methodHandle& m, TRAPS) {
   oop rmethod_name = java_lang_invoke_ResolvedMethodName::find_resolved_method(m, CHECK);
   stackFrame->obj_field_put(_classOrMemberName_offset, rmethod_name);
-  stackFrame->int_field_put(_flags_offset, get_flags(m));
+  // flags is initialized when ClassFrameInfo object is constructed and retain the value
+  int flags = java_lang_ClassFrameInfo::flags(stackFrame()) | get_flags(m);
+  stackFrame->int_field_put(_flags_offset, flags);
 }
 
 

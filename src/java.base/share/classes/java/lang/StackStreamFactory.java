@@ -79,6 +79,7 @@ final class StackStreamFactory {
     @Native private static final int CLASS_INFO_ONLY           = 0x2;
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
+
     /*
      * For Throwable to use StackWalker, set useNewThrowable to true.
      * Performance work and extensive testing is needed to replace the
@@ -453,7 +454,7 @@ final class StackStreamFactory {
          * @param continuation the continuation to walk, or {@code null} if walking a thread.
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param frames      Either a Class<?> array, if mode is {@link #CLASS_INFO_ONLY}
+         * @param frames      Either a {@link ClassFrameInfo} array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          * @return            Result of AbstractStackWalker::doStackWalk
          */
@@ -469,7 +470,7 @@ final class StackStreamFactory {
          * @param anchor
          * @param batchSize   the batch size, max. number of elements to be filled in the frame buffers.
          * @param startIndex  start index of the frame buffers to be filled.
-         * @param frames      Either a Class<?> array, if mode is {@link #CLASS_INFO_ONLY}
+         * @param frames      Either a {@link ClassFrameInfo} array, if mode is {@link #CLASS_INFO_ONLY}
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          *
          * @return the end index to the frame buffers
@@ -529,7 +530,7 @@ final class StackStreamFactory {
         @Override
         protected void initFrameBuffer() {
             this.frameBuffer = walker.kind() == CLASS_INFO
-                                    ? new ClassBuffer(getNextBatchSize())
+                                    ? new ClassFrameBuffer(walker, getNextBatchSize())
                                     : new StackFrameBuffer(walker, getNextBatchSize());
         }
 
@@ -658,13 +659,15 @@ final class StackStreamFactory {
         }
     }
 
-    static final class ClassBuffer extends FrameBuffer<ClassFrameInfo> {
+    static final class ClassFrameBuffer extends FrameBuffer<ClassFrameInfo> {
+        final StackWalker walker;
         ClassFrameInfo[] classFrames;      // caller class for fast path
-        ClassBuffer(int batchSize) {
+        ClassFrameBuffer(StackWalker walker, int batchSize) {
             super(batchSize);
-            classFrames = new ClassFrameInfo[batchSize];
+            this.walker = walker;
+            this.classFrames = new ClassFrameInfo[batchSize];
             for (int i = START_POS; i < batchSize; i++) {
-                classFrames[i] = new ClassFrameInfo();
+                classFrames[i] = new ClassFrameInfo(walker);
             }
         }
 
@@ -717,10 +720,10 @@ final class StackStreamFactory {
                 ClassFrameInfo[] newFrames = new ClassFrameInfo[size];
                 // copy initial magic...
                 System.arraycopy(classFrames, 0, newFrames, 0, startIndex);
-                for (int i = startIndex; i < size; i++) {
-                    newFrames[i] = new ClassFrameInfo();
-                }
                 classFrames = newFrames;
+            }
+            for (int i = startIndex; i < size; i++) {
+                classFrames[i] = new ClassFrameInfo(walker);
             }
             currentBatchSize = size;
         }
@@ -759,7 +762,7 @@ final class StackStreamFactory {
                 caller = curFrame.declaringClass();
                 if (curFrame.isHidden() || isReflectionFrame(caller) || isMethodHandleFrame(caller)) {
                     if (isDebug)
-                        System.err.println("  skip: frame " + frameBuffer.getIndex() + " " + caller.getName());
+                        System.err.println("  skip: frame " + frameBuffer.getIndex() + " " + curFrame);
                     continue;
                 }
                 frames[n++] = curFrame;
@@ -769,7 +772,7 @@ final class StackStreamFactory {
                 System.err.println("1: " + frames[1]);
             }
             if (frames[1] == null) {
-                throw new IllegalCallerException("no caller frame");
+                throw new IllegalCallerException("no caller frame: " + Arrays.toString(frames));
             }
             if (frames[0].isCallerSensitive()) {
                 throw new UnsupportedOperationException("StackWalker::getCallerClass called from @CallerSensitive "
@@ -780,7 +783,7 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new ClassBuffer(getNextBatchSize());
+            this.frameBuffer = new ClassFrameBuffer(walker, getNextBatchSize());
         }
 
         @Override

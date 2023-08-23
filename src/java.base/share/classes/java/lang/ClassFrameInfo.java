@@ -25,12 +25,15 @@
 package java.lang;
 
 import jdk.internal.access.SharedSecrets;
-
 import java.lang.StackWalker.StackFrame;
 
 class ClassFrameInfo implements StackFrame {
     protected Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
     protected int flags;
+
+    ClassFrameInfo(StackWalker walker) {
+        this.flags = walker.retainClassRef ? RETAIN_CLASS_REF_BIT : 0;
+    }
 
     // package-private called by StackStreamFactory to skip
     // the capability check
@@ -39,10 +42,10 @@ class ClassFrameInfo implements StackFrame {
     }
 
     boolean isCallerSensitive() {
-        return SharedSecrets.getJavaLangInvokeAccess().isCallerSensitive(flags);
+        return SharedSecrets.getJavaLangInvokeAccess().isCallerSensitive(flags & MEMBER_INFO_FLAGS);
     }
     boolean isHidden() {
-        return SharedSecrets.getJavaLangInvokeAccess().isHiddenMember(flags);
+        return SharedSecrets.getJavaLangInvokeAccess().isHiddenMember(flags & MEMBER_INFO_FLAGS);
     }
 
     // ----- implementation of StackFrame methods
@@ -59,6 +62,7 @@ class ClassFrameInfo implements StackFrame {
 
     @Override
     public Class<?> getDeclaringClass() {
+        ensureRetainClassRefEnabled();
         return declaringClass();
     }
 
@@ -93,6 +97,19 @@ class ClassFrameInfo implements StackFrame {
         if (isCallerSensitive()) {
             tags += " caller sensitive";
         }
-        return declaringClass().getName() + tags;
+        return declaringClass().getName() + " " + tags;
+    }
+
+    private static final int MEMBER_INFO_FLAGS = 0x00FFFFFF;
+    private static final int RETAIN_CLASS_REF_BIT = 0x08000000; // retainClassRef
+
+    boolean retainClassRef() {
+        return (flags & RETAIN_CLASS_REF_BIT) == RETAIN_CLASS_REF_BIT;
+    }
+
+    void ensureRetainClassRefEnabled() {
+        if (!retainClassRef()) {
+            throw new UnsupportedOperationException("No access to RETAIN_CLASS_REFERENCE");
+        }
     }
 }

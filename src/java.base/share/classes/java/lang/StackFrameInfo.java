@@ -35,7 +35,6 @@ class StackFrameInfo extends ClassFrameInfo {
     private static final JavaLangInvokeAccess JLIA =
         SharedSecrets.getJavaLangInvokeAccess();
 
-    private final boolean retainClassRef;
     private String name;
     private Object type;          // String or MethodType
     private int bci;              // set by VM to >= 0
@@ -50,7 +49,7 @@ class StackFrameInfo extends ClassFrameInfo {
      * @see StackStreamFactory.AbstractStackWalker#fetchStackFrames
      */
     StackFrameInfo(StackWalker walker) {
-        this.retainClassRef = walker.retainClassRef;
+        super(walker);
     }
 
     // package-private called by StackStreamFactory to skip
@@ -64,12 +63,6 @@ class StackFrameInfo extends ClassFrameInfo {
     @Override
     public String getClassName() {
         return declaringClass().getName();
-    }
-
-    @Override
-    public Class<?> getDeclaringClass() {
-        ensureRetainClassRefEnabled();
-        return declaringClass();
     }
 
     @Override
@@ -166,11 +159,5 @@ class StackFrameInfo extends ClassFrameInfo {
             }
         }
         return s;
-    }
-
-    private void ensureRetainClassRefEnabled() {
-        if (!retainClassRef) {
-            throw new UnsupportedOperationException("No access to RETAIN_CLASS_REFERENCE");
-        }
     }
 }

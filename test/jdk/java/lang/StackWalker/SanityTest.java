@@ -54,10 +54,14 @@ public class SanityTest {
                 StackWalker.getInstance(METHOD_INFO, new StackWalker.Option[] { null }));
     }
 
-    @Test
-    public void testUOE() {
-        assertThrows(UnsupportedOperationException.class, () ->
-                StackWalker.getInstance().getCallerClass());
+    private static Stream<StackWalker> noRetainClassRef() {
+        return Stream.of(StackWalker.getInstance(), StackWalker.getInstance(CLASS_INFO));
+    }
+
+    @ParameterizedTest
+    @MethodSource("noRetainClassRef")
+    public void testUOE(StackWalker sw) {
+        assertThrows(UnsupportedOperationException.class, () -> sw.getCallerClass());
     }
 
     @Test
@@ -67,7 +71,7 @@ public class SanityTest {
     }
 
     @Test
-    public void testNullFuncation() {
+    public void testNullFunction() {
         assertThrows(NullPointerException.class, () ->
                 StackWalker.getInstance().walk(null));
     }
@@ -78,21 +82,23 @@ public class SanityTest {
                 StackWalker.getInstance().forEach(null));
     }
 
-
-    @Test
-    public void testUOEFromGetDeclaringClass() {
+    @ParameterizedTest
+    @MethodSource("noRetainClassRef")
+    public void testUOEFromGetDeclaringClass(StackWalker sw) {
         assertThrows(UnsupportedOperationException.class, () ->
-                StackWalker.getInstance().forEach(StackWalker.StackFrame::getDeclaringClass));
+                sw.forEach(StackWalker.StackFrame::getDeclaringClass));
     }
 
-    @Test
-    public void testUOEFromGetMethodType() {
+    @ParameterizedTest
+    @MethodSource("noRetainClassRef")
+    public void testUOEFromGetMethodType(StackWalker sw) {
         assertThrows(UnsupportedOperationException.class, () ->
-                StackWalker.getInstance().forEach(StackWalker.StackFrame::getMethodType));
+                sw.forEach(StackWalker.StackFrame::getMethodType));
     }
 
     private static Stream<StackWalker> noMethodInfo() {
-        return Stream.of(StackWalker.getInstance(CLASS_INFO), StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE));
+        return Stream.of(StackWalker.getInstance(CLASS_INFO),
+                         StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE));
     }
 
     @ParameterizedTest

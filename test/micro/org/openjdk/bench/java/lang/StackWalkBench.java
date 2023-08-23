@@ -75,7 +75,7 @@ public class StackWalkBench {
     // @Param({"4"})
     public int mark = 4;
 
-    @Param({"default", "class_info"})
+    @Param({"default", "class_only"})
     public String walker;
 
     /** Build a call stack of a given size, then run trigger code in it.
@@ -315,18 +315,9 @@ public class StackWalkBench {
      */
     @Benchmark
     public void getCallerClass(Blackhole bh) {
-        final Blackhole localBH = bh;
-        final boolean[] done = {false};
         final StackWalker sw = walker(walker);
-        new TestStack(depth, new Runnable() {
-            public void run() {
-                localBH.consume(sw.getCallerClass());
-                done[0] = true;
-            }
-        }).start();
-        if (!done[0]) {
-            throw new RuntimeException();
-        }
+        Class<?> c = sw.getCallerClass();
+        bh.consume(c);
     }
 
     /**
