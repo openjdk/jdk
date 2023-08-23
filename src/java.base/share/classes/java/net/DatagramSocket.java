@@ -694,6 +694,11 @@ public class DatagramSocket implements java.io.Closeable {
      * Datagrams that are not permitted by the security manager are silently
      * discarded.
      *
+     * <p>Note that the native implementation of receive can cause a hanging
+     * situation if the size of UDP RCVBUF is not big enough to hold the
+     * UDP datagram packet to receive. This buffer size needs to be set
+     * accordingly on OS level.</p>
+     *
      * @param      p   the {@code DatagramPacket} into which to place
      *                 the incoming data.
      * @throws     IOException  if an I/O error occurs.
