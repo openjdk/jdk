@@ -27,7 +27,6 @@ jio_printf
 jio_snprintf
 jio_vfprintf
 jio_vsnprintf
-dlopen_ext
 JNI_CreateJavaVM
 JNI_GetCreatedJavaVMs
 JNI_GetDefaultJavaVMInitArgs

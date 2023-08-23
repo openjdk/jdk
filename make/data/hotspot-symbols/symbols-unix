@@ -207,6 +207,7 @@ JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_WaitForReferencePendingList
 JVM_Yield
+dlopen_ext
 
 # Module related API's
 JVM_AddModuleExports
