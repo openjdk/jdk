@@ -56,12 +56,14 @@ import com.sun.jdi.request.BreakpointRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequestManager;
 
+import jdk.test.lib.Utils;
 
 /*
  * @test GetObjectLockCount.java
  * @bug 8036666
  * @summary verify jvm returns correct lock recursion count
  * @requires vm.jvmti
+ * @library /test/lib
  * @run compile -g RecursiveObjectLock.java
  * @run main/othervm GetObjectLockCount
  * @author axel.siebenborn@sap.com
@@ -71,8 +73,6 @@ public class GetObjectLockCount {
 
     public static final String CLASS_NAME  = "RecursiveObjectLock";
     public static final String METHOD_NAME = "breakpoint1";
-    public static final String ARGUMENTS = "";
-
 
     /**
      * Find a com.sun.jdi.CommandLineLaunch connector
@@ -119,7 +119,7 @@ public class GetObjectLockCount {
         if (optionsArg == null) {
             throw new Error("Bad launching connector");
         }
-        optionsArg.setValue(ARGUMENTS);
+        optionsArg.setValue(String.join(" ", Utils.getTestJavaOpts()));
         return arguments;
     }
 
