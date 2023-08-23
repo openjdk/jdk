@@ -2,7 +2,12 @@
  * @test /nodynamiccopyright/
  * @bug 8050993
  * @summary Verify that the condition in the conditional lexpression gets a LineNumberTable entry
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @compile -g T8050993.java
  * @run main T8050993
  */
@@ -14,21 +19,24 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 public class T8050993 {
-    public static void main(String[] args) throws IOException, ConstantPoolException {
-        ClassFile someTestIn = ClassFile.read(T8050993.class.getResourceAsStream("T8050993.class"));
+    public static void main(String[] args) throws IOException {
+        ClassModel someTestIn = Classfile.of().parse(T8050993.class.getResourceAsStream("T8050993.class").readAllBytes());
         Set<Integer> expectedLineNumbers = new HashSet<>(Arrays.asList(49, 50, 47, 48));
-        for (Method m : someTestIn.methods) {
-            if ("method".equals(m.getName(someTestIn.constant_pool))) {
-                Code_attribute code_attribute = (Code_attribute) m.attributes.get(Attribute.Code);
-                for (Attribute at : code_attribute.attributes) {
-                    if (Attribute.LineNumberTable.equals(at.getName(someTestIn.constant_pool))) {
-                        LineNumberTable_attribute att = (LineNumberTable_attribute) at;
-                        Set<Integer> actualLinesNumbers = Arrays.stream(att.line_number_table)
-                                                                .map(e -> e.line_number)
-                                                                .collect(Collectors.toSet());
+        for (MethodModel m : someTestIn.methods()) {
+            if (m.methodName().equalsString("method")) {
+                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                assert code_attribute != null;
+                for (Attribute<?> at : code_attribute.attributes()) {
+                    if (Attributes.LINE_NUMBER_TABLE.equals(at)) {
+                        assert at instanceof LineNumberTableAttribute;
+                        LineNumberTableAttribute att = (LineNumberTableAttribute) at;
+                        Set<Integer> actualLinesNumbers = Arrays.stream(att.lineNumbers().toArray(new LineNumberInfo[0]))
+                                .map(LineNumberInfo::lineNumber)
+                                .collect(Collectors.toSet());
                         if (!Objects.equals(expectedLineNumbers, actualLinesNumbers)) {
                             throw new AssertionError("Expected LineNumber entries not found;" +
                                                      "actual=" + actualLinesNumbers + ";" +

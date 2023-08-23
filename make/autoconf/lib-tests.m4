@@ -28,8 +28,8 @@
 ################################################################################
 
 # Minimum supported versions
-JTREG_MINIMUM_VERSION=7.2
-GTEST_MINIMUM_VERSION=1.13.0
+JTREG_MINIMUM_VERSION=7.3.1
+GTEST_MINIMUM_VERSION=1.14.0
 
 ###############################################################################
 #

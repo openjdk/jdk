@@ -1241,8 +1241,8 @@ Node* GraphKit::array_ideal_length(AllocateArrayNode* alloc,
 // the incoming address with null casted away.  You are allowed to use the
 // not-null value only if you are control dependent on the test.
 #ifndef PRODUCT
-extern int explicit_null_checks_inserted,
-           explicit_null_checks_elided;
+extern uint explicit_null_checks_inserted,
+            explicit_null_checks_elided;
 #endif
 Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   // optional arguments for variations:

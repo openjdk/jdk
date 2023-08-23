@@ -237,6 +237,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_setCurrentThread();
 
   bool inline_native_scopedValueCache();
+  const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
 
@@ -249,6 +250,7 @@ class LibraryCallKit : public GraphKit {
 #ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
   bool inline_native_getEventWriter();
+  bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);

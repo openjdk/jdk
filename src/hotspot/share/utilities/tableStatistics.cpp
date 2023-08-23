@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,11 @@ void TableRateStatistics::stamp() {
 }
 
 float TableRateStatistics::get_add_rate() {
-  return (float)((_added_items_stamp - _added_items_stamp_prev) / _seconds_stamp);
+  return (float)(((double)_added_items_stamp - (double)_added_items_stamp_prev) / _seconds_stamp);
 }
 
 float TableRateStatistics::get_remove_rate() {
-  return (float)((_removed_items_stamp - _removed_items_stamp_prev) / _seconds_stamp);
+  return (float)(_removed_items_stamp - _removed_items_stamp_prev) / (float)_seconds_stamp;
 }
 
 TableStatistics::TableStatistics() :
@@ -101,12 +101,12 @@ TableStatistics::TableStatistics(NumberSeq summary, size_t literal_bytes, size_t
   _add_rate(0), _remove_rate(0) {
 
   _number_of_buckets = summary.num();
-  _number_of_entries = summary.sum();
+  _number_of_entries = (size_t)summary.sum();
 
-  _maximum_bucket_size = summary.maximum();
-  _average_bucket_size = summary.avg();
-  _variance_of_bucket_size = summary.variance();
-  _stddev_of_bucket_size = summary.sd();
+  _maximum_bucket_size = (size_t)summary.maximum();
+  _average_bucket_size = (float)summary.avg();
+  _variance_of_bucket_size = (float)summary.variance();
+  _stddev_of_bucket_size = (float)summary.sd();
 
   _bucket_bytes = _number_of_buckets * bucket_bytes;
   _entry_bytes = _number_of_entries * node_bytes;
@@ -140,7 +140,7 @@ void TableStatistics::print(outputStream* st, const char *table_name) {
                " bytes, each " SIZE_FORMAT,
                _number_of_entries, _entry_bytes, _entry_size);
   if (_literal_bytes != 0) {
-    float literal_avg = (_number_of_entries <= 0) ? 0 : (_literal_bytes / _number_of_entries);
+    float literal_avg = (_number_of_entries <= 0) ? 0.0f : (float)(_literal_bytes / _number_of_entries);
     st->print_cr("Number of literals      : %9" PRIuPTR " = %9" PRIuPTR
                  " bytes, avg %7.3f",
                  _number_of_entries, _literal_bytes, literal_avg);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Blocker;
 import jdk.internal.ref.PhantomCleanable;
 
 /**
@@ -205,7 +206,17 @@ public final class FileDescriptor {
      *        buffers have been synchronized with physical media.
      * @since     1.1
      */
-    public native void sync() throws SyncFailedException;
+    public void sync() throws SyncFailedException {
+        long comp = Blocker.begin();
+        try {
+            sync0();
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    /* fsync/equivalent this file descriptor */
+    private native void sync0() throws SyncFailedException;
 
     /* This routine initializes JNI field offsets for the class */
     private static native void initIDs();
