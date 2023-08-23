@@ -694,7 +694,7 @@ void DirectivesStack::release(CompilerDirectives* dir) {
   }
 }
 
-bool DirectivesStack::hasMatchingDirectives(const methodHandle& method) {
+bool DirectivesStack::hasMatchingDirectives(const methodHandle& method, bool top_only) {
   assert(_depth > 0, "Must never be empty");
   bool match_found = false;
   {
@@ -706,6 +706,9 @@ bool DirectivesStack::hasMatchingDirectives(const methodHandle& method) {
     while (dir != nullptr) {
       if (!dir->is_default_directive() && dir->match(method)) {
         match_found = true;
+        break;
+      }
+      if (top_only) {
         break;
       }
       dir = dir->next();

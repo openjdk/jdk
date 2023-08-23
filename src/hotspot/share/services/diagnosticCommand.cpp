@@ -904,7 +904,7 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_force_update);
@@ -913,7 +913,7 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output(), true);
   if (_force_update.value()) {
-    CodeCache::mark_directives_matches();
+    CodeCache::mark_directives_matches(true);
     CodeCache::recompile_marked_directives_matches();
   }
 }
@@ -921,7 +921,7 @@ void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_force_update);
@@ -947,14 +947,14 @@ void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_option(&_force_update);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
   if (_force_update.value()) {
-    CodeCache::mark_directives_matches();
+    CodeCache::mark_directives_matches(true);
     DirectivesStack::pop(1);
     CodeCache::recompile_marked_directives_matches();
   }
@@ -965,7 +965,7 @@ void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _force_update("-r", "Force update of affected methods.", "BOOLEAN", false, "false") {
+  _force_update("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_option(&_force_update);
 }

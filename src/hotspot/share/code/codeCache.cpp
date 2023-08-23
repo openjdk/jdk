@@ -1367,7 +1367,7 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 
 #endif // INCLUDE_JVMTI
 
-void CodeCache::mark_directives_matches() {
+void CodeCache::mark_directives_matches(bool top_only) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   Thread *thread = Thread::current();
   HandleMark hm(thread);
@@ -1376,7 +1376,7 @@ void CodeCache::mark_directives_matches() {
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     methodHandle mh(thread, nm->method());
-    if (DirectivesStack::hasMatchingDirectives(mh)) {
+    if (DirectivesStack::hasMatchingDirectives(mh, top_only)) {
       ResourceMark rm;
       log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
       mh->set_has_matching_directives();
