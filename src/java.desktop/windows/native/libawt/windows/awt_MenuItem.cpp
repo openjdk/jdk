@@ -703,7 +703,7 @@ void AwtMenuItem::SetLabel()
     memset(&mii, 0, sizeof(MENUITEMINFO));
     mii.cbSize = sizeof(MENUITEMINFO);
     mii.fMask = MIIM_CHECKMARKS | MIIM_DATA | MIIM_ID
-              | MIIM_STATE | MIIM_SUBMENU | MIIM_TYPE;
+              | MIIM_STATE | MIIM_SUBMENU | MIIM_FTYPE;
 
     ::GetMenuItemInfo(hMenu, GetID(), FALSE, &mii);
 
@@ -795,10 +795,6 @@ ret:
         env->DeleteGlobalRef(self);
 
         delete sls;
-
-        if (badAlloc) {
-            throw std::bad_alloc();
-        }
     } else {
         AwtToolkit::GetInstance().InvokeFunction(AwtMenuItem::_SetLabel, param);
     }
@@ -980,7 +976,7 @@ Java_sun_awt_windows_WMenuItemPeer_initIDs(JNIEnv *env, jclass cls)
 /*
  * Class:     sun_awt_windows_WMenuItemPeer
  * Method:    _setLabel
- * Signature: (Ljava/lang/String;)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WMenuItemPeer__1setLabel(JNIEnv *env, jobject self)
