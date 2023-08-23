@@ -26,7 +26,6 @@
  */
 
 // This implementation is based on x86-simd-sort(https://github.com/intel/x86-simd-sort)
-#include <iostream>
 #ifndef AVX512_QSORT_COMMON
 #define AVX512_QSORT_COMMON
 
