@@ -27,9 +27,10 @@
  * @summary Test Elements.getEnumConstantBody
  * @library /tools/javac/lib
  * @build   JavacTestingAbstractProcessor TestGetEnumConstantBody
- * @compile -processor TestGetEnumConstantBody -proc:only TestGetEnumConstantBody.java
+ * @compile -processor TestGetEnumConstantBody -XDshould.stop-at=FLOW TestGetEnumConstantBody.java
  */
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 import java.util.function.*;
@@ -43,40 +44,85 @@ import javax.lang.model.type.*;
  */
 public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
     private Elements vacuousElements = new VacuousElements();
+    private Set<Element> allElements = new HashSet<>();
+    private int round;
 
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
-        if (!roundEnv.processingOver()) {
+
+        allElements.addAll(roundEnv.getRootElements());
+
+        // In the innermost loop, examine the fields defined by the the nested classes
+        for (TypeElement typeRoot : ElementFilter.typesIn(allElements) ) {
+            if (typeRoot.getQualifiedName().contentEquals("Gen")) {
+                continue;
+            }
+
             boolean elementSeen = false;
 
-            // In the innermost loop, examine the fields defined by the the nested classes
-            for (TypeElement typeRoot : ElementFilter.typesIn(roundEnv.getRootElements()) ) {
-                for (TypeElement typeElt : ElementFilter.typesIn(typeRoot.getEnclosedElements()) ) {
-                    boolean expectEnumConstantBody = computeExpectation(typeElt);
-                    System.out.println("Testing type " + typeElt + " " + expectEnumConstantBody);
+            for (TypeElement typeElt : ElementFilter.typesIn(typeRoot.getEnclosedElements()) ) {
+                System.out.println("Testing type " + typeElt);
 
-                    for (VariableElement field : ElementFilter.fieldsIn(typeElt.getEnclosedElements()) ) {
-                        elementSeen = true;
-                        System.out.println(field);
-                        switch (field.getKind()) {
-                        case FIELD         -> expectException(field);
-                        case ENUM_CONSTANT -> testEnumConstant(field, typeElt, expectEnumConstantBody);
-                        default            -> throw new RuntimeException("Unexpected field kind seen");
-                        }
+                for (VariableElement field : ElementFilter.fieldsIn(typeElt.getEnclosedElements()) ) {
+                    elementSeen = true;
+                    System.out.println(field);
+                    switch (field.getKind()) {
+                    case FIELD         -> expectException(field);
+                    case ENUM_CONSTANT -> testEnumConstant(field, typeElt);
+                    default            -> throw new RuntimeException("Unexpected field kind seen");
                     }
                 }
+            }
 
-                if (!elementSeen) {
-                    throw new RuntimeException("No elements seen.");
-                }
+            if (!elementSeen) {
+                throw new RuntimeException("No elements seen.");
             }
         }
+        switch (round++) {
+            case 0:
+                try (Writer w = processingEnv.getFiler().createSourceFile("Cleaned").openWriter()) {
+                    w.write("""
+                            class Enclosing {
+                                enum Cleaned {
+                                    @TestGetEnumConstantBody.ExpectedBinaryName("Enclosing$Cleaned$2")
+                                    A(new Object() {}) {
+                                        void test(Gen g) {
+                                            g.run();
+                                        }
+                                    },
+                                    B,
+                                    @TestGetEnumConstantBody.ExpectedBinaryName("Enclosing$Cleaned$4")
+                                    C(new Object() {}) {
+                                    };
+
+                                    private Cleaned() {}
+
+                                    private Cleaned(Object o) {}
+                                }
+                            }
+                            """);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                break;
+            case 1:
+                try (Writer w = processingEnv.getFiler().createSourceFile("Gen").openWriter()) {
+                    w.write("""
+                            public class Gen {
+                                public void run() {}
+                            }
+                            """);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                break;
+        } 
         return true;
     }
 
-    private boolean computeExpectation(Element e) {
-        ConstantBodies cb = e.getAnnotation(ConstantBodies.class);
-        return (cb == null) ? false : cb.value();
+    private String computeExpectedBinaryName(VariableElement e) {
+        ExpectedBinaryName ebn = e.getAnnotation(ExpectedBinaryName.class);
+        return (ebn == null) ? null : ebn.value();
     }
 
     private void expectException(VariableElement variable) {
@@ -97,8 +143,10 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
     }
 
     private void testEnumConstant(VariableElement field,
-                                  TypeElement enclosingClass,
-                                  boolean expectEnumConstantBody) {
+                                  TypeElement enclosingClass) {
+        String expectedBinaryName = computeExpectedBinaryName(field);
+        boolean expectEnumConstantBody = expectedBinaryName != null;
+
         System.out.println("\tTesting enum constant " + field + " expected " + expectEnumConstantBody);
         if (vacuousElements.getEnumConstantBody(field) != null) {
             messager.printError("Unexpected vacuous body returned", field);
@@ -111,7 +159,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         }
 
         if (enumConstantBody != null) {
-            testEnumConstantBody(enumConstantBody, enclosingClass);
+            testEnumConstantBody(enumConstantBody, expectedBinaryName, enclosingClass);
         }
 
         System.out.println("\t constant body " + enumConstantBody);
@@ -130,7 +178,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
      * only if they override accessible methods in the enclosing enum
      * class (8.4.8)."
      */
-    private void testEnumConstantBody(TypeElement enumConstBody, TypeElement enumClass) {
+    private void testEnumConstantBody(TypeElement enumConstBody, String expectedBinaryName, TypeElement enumClass) {
         if (enumConstBody.getNestingKind() != NestingKind.ANONYMOUS) {
             messager.printError("Class body not an anonymous class", enumConstBody);
         }
@@ -147,22 +195,28 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
             messager.printError("Modifier final missing on class body", enumConstBody);
         }
 
+        if (!elements.getBinaryName(enumConstBody).contentEquals(expectedBinaryName)) {
+            messager.printError("Unexpected binary name, expected: " + expectedBinaryName +
+                                                       ", but was: " + elements.getBinaryName(enumConstBody), enumConstBody);
+        }
+
         return;
     }
 
 
-    @interface ConstantBodies {
-        boolean value();
+    @interface ExpectedBinaryName {
+        String value();
     }
 
     // Nested classes hosting a variety of different kinds of fields.
 
-    @ConstantBodies(true)
     private static enum Body {
+        @ExpectedBinaryName("TestGetEnumConstantBody$Body$1")
         GOLGI(true) {
             public boolean isOrganelle() {return true;}
         },
 
+        @ExpectedBinaryName("TestGetEnumConstantBody$Body$2")
         HEAVENLY(true) {
             public boolean isCelestial() {return true;}
         };
@@ -178,7 +232,6 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         public void method() {return;}
     }
 
-    @ConstantBodies(false)
     private static enum MetaSyntaxVar {
         FOO("foo"),
         BAR("bar");
