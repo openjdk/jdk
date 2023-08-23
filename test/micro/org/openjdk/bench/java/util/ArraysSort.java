@@ -119,8 +119,20 @@ public class ArraysSort {
     }
 
     @Benchmark
+    public int[] intParallelSort() throws Throwable {
+        Arrays.parallelSort(ints_sorted);
+        return ints_sorted;
+    }
+
+    @Benchmark
     public long[] longSort() throws Throwable {
         Arrays.sort(longs_sorted);
+        return longs_sorted;
+    }
+
+    @Benchmark
+    public long[] longParallelSort() throws Throwable {
+        Arrays.parallelSort(longs_sorted);
         return longs_sorted;
     }
 
@@ -131,8 +143,20 @@ public class ArraysSort {
     }
 
     @Benchmark
+    public float[] floatParallelSort() throws Throwable {
+        Arrays.parallelSort(floats_sorted);
+        return floats_sorted;
+    }
+
+    @Benchmark
     public double[] doubleSort() throws Throwable {
         Arrays.sort(doubles_sorted);
+        return doubles_sorted;
+    }
+
+    @Benchmark
+    public double[] doubleParallelSort() throws Throwable {
+        Arrays.parallelSort(doubles_sorted);
         return doubles_sorted;
     }
 
