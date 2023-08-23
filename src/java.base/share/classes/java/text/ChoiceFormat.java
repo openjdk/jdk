@@ -495,7 +495,12 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Generates a hash code for the message format object.
+     * {@return the hash code for this {@code ChoiceFormat}}
+     *
+     * The hash code value is based on the length of the {@code limits} and
+     * {@code formats} of this {@code ChoiceFormat}.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -508,7 +513,14 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Equality comparison between two
+     * Compares the specified object with this {@code ChoiceFormat} for equality.
+     * Returns true if the object is also a ChoiceFormat and the {@code limits} and
+     * {@code formats} of the two {@code ChoiceFormat}s are equal. Obeys the
+     * general contract of {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     *
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code ChoiceFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
