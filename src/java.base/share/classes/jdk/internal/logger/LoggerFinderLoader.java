@@ -25,6 +25,8 @@
 package jdk.internal.logger;
 
 import java.io.FilePermission;
+import java.lang.System.Logger;
+import java.lang.System.LoggerFinder;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
@@ -32,6 +34,10 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
+
+import jdk.internal.logger.LazyLoggers.LazyLoggerAccessor;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
@@ -67,16 +73,30 @@ public final class LoggerFinderLoader {
 
 
     // Return the loaded LoggerFinder, or load it if not already loaded.
+    static volatile Thread loadingThread;
     private static System.LoggerFinder service() {
         if (service != null) return service;
         synchronized(lock) {
             if (service != null) return service;
-            service = loadLoggerFinder();
+            Thread currentThread = Thread.currentThread();
+            if (loadingThread == currentThread) {
+                return new TemporaryLoggerFinder();
+            }
+            loadingThread = currentThread;
+            try {
+                service = loadLoggerFinder();
+            } finally {
+                loadingThread = null;
+            }
         }
         // Since the LoggerFinder is already loaded - we can stop using
         // temporary loggers.
         BootstrapLogger.redirectTemporaryLoggers();
         return service;
+    }
+
+    static boolean isLoadingThread() {
+        return loadingThread != null && loadingThread == Thread.currentThread();
     }
 
     // Get configuration error policy
@@ -115,6 +135,27 @@ public final class LoggerFinderLoader {
                         READ_PERMISSION);
         }
         return iterator;
+    }
+
+    static class TemporaryLoggerFinder extends LoggerFinder {
+        private static final BiFunction<String, Module, Logger> loggerSupplier =
+                new BiFunction<>() {
+                    @Override
+                    public Logger apply(String name, Module module) {
+                        return LazyLoggers.getLoggerFromFinder(name, module);
+                    }
+                };
+        private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return LoggerFinderLoader.isLoadingThread();
+            }
+        };
+
+        @Override
+        public Logger getLogger(String name, Module module) {
+            return new BootstrapLogger(LazyLoggerAccessor.makeAccessorFromSupplier(name,loggerSupplier, module));
+        }
     }
 
     // Loads the LoggerFinder using ServiceLoader. If no LoggerFinder

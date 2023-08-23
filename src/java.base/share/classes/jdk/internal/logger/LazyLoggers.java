@@ -32,6 +32,8 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
+import java.util.function.Supplier;
+
 import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
 
@@ -73,6 +75,7 @@ public final class LazyLoggers {
         }
 
     }
+
 
     static interface LoggerAccessor {
         /**
@@ -291,6 +294,14 @@ public final class LazyLoggers {
         public static LazyLoggerAccessor makeAccessor(String name,
                 LazyLoggerFactories<? extends Logger> factories, Module module) {
                 return new LazyLoggerAccessor(name, factories, module);
+        }
+
+        public static <T extends Logger>
+        LazyLoggerAccessor makeAccessorFromSupplier(String name,
+                                                   BiFunction<String, Module, T> supplier,
+                                                   Module module) {
+            LazyLoggerFactories<T> factories = new LazyLoggerFactories<>(supplier);
+            return new LazyLoggerAccessor(name, factories, module);
         }
 
     }

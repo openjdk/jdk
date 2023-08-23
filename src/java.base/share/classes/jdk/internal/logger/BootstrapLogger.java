@@ -35,6 +35,7 @@ import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
@@ -227,9 +228,18 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
 
     // The accessor in which this logger is temporarily set.
     final LazyLoggerAccessor holder;
+    final BooleanSupplier isLoadingThread;
+
+    boolean isLoadingThread() {
+        return isLoadingThread != null && isLoadingThread.getAsBoolean();
+    }
 
     BootstrapLogger(LazyLoggerAccessor holder) {
+        this(holder, null);
+    }
+    BootstrapLogger(LazyLoggerAccessor holder, BooleanSupplier isLoadingThread) {
         this.holder = holder;
+        this.isLoadingThread = isLoadingThread;
     }
 
     // Temporary data object storing log events
@@ -559,7 +569,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
      * @return true if the VM is still bootstrapping.
      */
     boolean checkBootstrapping() {
-        if (isBooted()) {
+        if (isBooted() &&! isLoadingThread()) {
             BootstrapExecutors.flush();
             return false;
         }
