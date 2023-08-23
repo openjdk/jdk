@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ public class TestThrowsHead extends JavadocTester {
 
     @Test
     public void test() {
-        javadoc("-d", "out",
+        javadoc("-encoding", "UTF-8",
+                "-d", "out",
                 testSrc("C.java"));
         checkExit(Exit.OK);
 

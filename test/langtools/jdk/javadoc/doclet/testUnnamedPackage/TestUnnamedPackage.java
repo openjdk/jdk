@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ public class TestUnnamedPackage extends JavadocTester {
 
     @Test
     public void test() {
-        javadoc("-d", "out",
+        javadoc("-encoding", "UTF-8",
+                "-d", "out",
                 "-sourcepath", testSrc("src1"),
                 testSrc("src1/C.java"));
         checkExit(Exit.OK);
@@ -130,7 +131,8 @@ public class TestUnnamedPackage extends JavadocTester {
 
     @Test
     public void testUse() {
-        javadoc("-d", "out-use",
+        javadoc("-encoding", "UTF-8",
+                "-d", "out-use",
                 "-use",
                 testSrc("src2/A.java"),
                 testSrc("src2/B.java"));
