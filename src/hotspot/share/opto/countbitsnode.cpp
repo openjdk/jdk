@@ -23,97 +23,75 @@
  */
 
 #include "precompiled.hpp"
+#include <limits>
 #include "opto/countbitsnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
 
-//------------------------------Value------------------------------------------
+template <class CT>
+const Type* clz_value(const Node* in, PhaseGVN* phase) {
+  using U = decltype(CT::_ulo);
+  constexpr juint W = sizeof(U) * 8;
+
+  const Type* t = phase->type(in);
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const CT* i = CT::cast(t);
+  juint lo = (~i->_zeros) == 0 ? W : count_leading_zeros(~i->_zeros);
+  juint hi = i->_ones == 0 ? W : count_leading_zeros(i->_ones);
+  return TypeInt::make(lo, hi, i->_widen);
+}
+
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
-  const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeInt* ti = t->isa_int();
-  if (ti && ti->is_con()) {
-    jint i = ti->get_con();
-    // HD, Figure 5-6
-    if (i == 0)
-    return TypeInt::make(BitsPerInt);
-    int n = 1;
-    unsigned int x = i;
-    if (x >> 16 == 0) { n += 16; x <<= 16; }
-    if (x >> 24 == 0) { n +=  8; x <<=  8; }
-    if (x >> 28 == 0) { n +=  4; x <<=  4; }
-    if (x >> 30 == 0) { n +=  2; x <<=  2; }
-    n -= x >> 31;
-    return TypeInt::make(n);
-  }
-  return TypeInt::INT;
+  return clz_value<TypeInt>(in(1), phase);
 }
 
-//------------------------------Value------------------------------------------
 const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
-  const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeLong* tl = t->isa_long();
-  if (tl && tl->is_con()) {
-    jlong l = tl->get_con();
-    // HD, Figure 5-6
-    if (l == 0)
-    return TypeInt::make(BitsPerLong);
-    int n = 1;
-    unsigned int x = (((julong) l) >> 32);
-    if (x == 0) { n += 32; x = (int) l; }
-    if (x >> 16 == 0) { n += 16; x <<= 16; }
-    if (x >> 24 == 0) { n +=  8; x <<=  8; }
-    if (x >> 28 == 0) { n +=  4; x <<=  4; }
-    if (x >> 30 == 0) { n +=  2; x <<=  2; }
-    n -= x >> 31;
-    return TypeInt::make(n);
-  }
-  return TypeInt::INT;
+  return clz_value<TypeLong>(in(1), phase);
 }
 
-//------------------------------Value------------------------------------------
+template <class CT>
+const Type* ctz_value(const Node* in, PhaseGVN* phase) {
+  using U = decltype(CT::_ulo);
+  constexpr juint W = sizeof(U) * 8;
+
+  const Type* t = phase->type(in);
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+
+  const CT* i = CT::cast(t);
+  juint lo = (~i->_zeros) == 0 ? W : count_trailing_zeros(~i->_zeros);
+  juint hi = i->_ones == 0 ? W : count_trailing_zeros(i->_ones);
+  return TypeInt::make(lo, hi, i->_widen);
+}
+
 const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
-  const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeInt* ti = t->isa_int();
-  if (ti && ti->is_con()) {
-    jint i = ti->get_con();
-    // HD, Figure 5-14
-    int y;
-    if (i == 0)
-    return TypeInt::make(BitsPerInt);
-    int n = 31;
-    y = i << 16; if (y != 0) { n = n - 16; i = y; }
-    y = i <<  8; if (y != 0) { n = n -  8; i = y; }
-    y = i <<  4; if (y != 0) { n = n -  4; i = y; }
-    y = i <<  2; if (y != 0) { n = n -  2; i = y; }
-    y = i <<  1; if (y != 0) { n = n -  1; }
-    return TypeInt::make(n);
-  }
-  return TypeInt::INT;
+  return ctz_value<TypeInt>(in(1), phase);
 }
 
-//------------------------------Value------------------------------------------
 const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
-  const Type* t = phase->type(in(1));
-  if (t == Type::TOP) return Type::TOP;
-  const TypeLong* tl = t->isa_long();
-  if (tl && tl->is_con()) {
-    jlong l = tl->get_con();
-    // HD, Figure 5-14
-    int x, y;
-    if (l == 0)
-    return TypeInt::make(BitsPerLong);
-    int n = 63;
-    y = (int) l; if (y != 0) { n = n - 32; x = y; } else x = (((julong) l) >> 32);
-    y = x << 16; if (y != 0) { n = n - 16; x = y; }
-    y = x <<  8; if (y != 0) { n = n -  8; x = y; }
-    y = x <<  4; if (y != 0) { n = n -  4; x = y; }
-    y = x <<  2; if (y != 0) { n = n -  2; x = y; }
-    y = x <<  1; if (y != 0) { n = n -  1; }
-    return TypeInt::make(n);
+  return ctz_value<TypeLong>(in(1), phase);
+}
+
+template <class CT>
+const Type* popcnt_value(const Node* in, PhaseGVN* phase) {
+  const Type* t = phase->type(in);
+  if (t == Type::TOP) {
+    return Type::TOP;
   }
-  return TypeInt::INT;
+
+  const CT* i = CT::cast(t);
+  return TypeInt::make(population_count(i->_ones), population_count(~i->_zeros), i->_widen);
+}
+
+const Type* PopCountINode::Value(PhaseGVN* phase) const {
+  return popcnt_value<TypeInt>(in(1), phase);
+}
+
+const Type* PopCountLNode::Value(PhaseGVN* phase) const {
+  return popcnt_value<TypeLong>(in(1), phase);
 }
