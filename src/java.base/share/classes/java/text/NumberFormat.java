@@ -698,7 +698,12 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Overrides hashCode.
+     * {@return the hash code for this {@code NumberFormat}}
+     *
+     * The hash code value is based on the values returned by {@link #getMaximumIntegerDigits()}
+     * and {@link #getMaximumFractionDigits()} of this {@code NumberFormat}.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -707,7 +712,14 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Overrides equals.
+     * Compares the specified object with this {@code NumberFormat} for equality.
+     * Returns true if the object is also a {@code NumberFormat} and the two Formats
+     * represent the same formatting configuration. Obeys the general contract of
+     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     *
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code NumberFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
