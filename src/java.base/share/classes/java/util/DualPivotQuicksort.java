@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,11 @@ final class DualPivotQuicksort {
      * Max recursive partitioning depth before using heap sort.
      */
     private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
+
+    /**
+     * Min array size to call fast small array sort.
+     */
+    private static final int MIN_FAST_SMALL_ARRAY_SORT_SIZE = 16;
 
     /**
      * Calculates the double depth of parallel merging.
@@ -282,7 +287,9 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                Arrays.arraySort(int.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
+                int last  = high - 3 * ((size >> 5) << 3);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
+                else Arrays.arraySort(int.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -290,7 +297,8 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                Arrays.arraySort(int.class, a, baseOffset, low, high, -1);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
+                else Arrays.arraySort(int.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -1092,7 +1100,9 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                Arrays.arraySort(long.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
+                int last  = high - 3 * ((size >> 5) << 3);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
+                else Arrays.arraySort(long.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -1100,7 +1110,8 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                Arrays.arraySort(long.class, a, baseOffset, low, high, -1);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
+                else Arrays.arraySort(long.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -2685,7 +2696,9 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                Arrays.arraySort(float.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
+                int last  = high - 3 * ((size >> 5) << 3);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
+                else Arrays.arraySort(float.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -2693,7 +2706,8 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                Arrays.arraySort(float.class, a, baseOffset, low, high, -1);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
+                else Arrays.arraySort(float.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -3543,7 +3557,9 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                Arrays.arraySort(double.class, a, baseOffset, low, high, high - 3 * ((size >> 5) << 3));
+                int last  = high - 3 * ((size >> 5) << 3);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
+                else Arrays.arraySort(double.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -3551,7 +3567,8 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                Arrays.arraySort(double.class, a, baseOffset, low, high, -1);
+                if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
+                else Arrays.arraySort(double.class, a, baseOffset, low, high, -1);
                 return;
             }
 

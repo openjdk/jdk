@@ -392,28 +392,6 @@ X86_SIMD_SORT_INLINE void sort_128_32bit(type_t *arr, int32_t N) {
     vtype::mask_storeu(arr + 112, load_mask4, zmm[7]);
 }
 
-template <typename vtype, typename type_t>
-X86_SIMD_SORT_INLINE type_t get_pivot_32bit(type_t *arr, const int64_t left,
-                                            const int64_t right) {
-    // median of 16
-    int64_t size = (right - left) / 16;
-    using zmm_t = typename vtype::zmm_t;
-    using ymm_t = typename vtype::ymm_t;
-    __m512i rand_index1 = _mm512_set_epi64(
-        left + size, left + 2 * size, left + 3 * size, left + 4 * size,
-        left + 5 * size, left + 6 * size, left + 7 * size, left + 8 * size);
-    __m512i rand_index2 = _mm512_set_epi64(
-        left + 9 * size, left + 10 * size, left + 11 * size, left + 12 * size,
-        left + 13 * size, left + 14 * size, left + 15 * size, left + 16 * size);
-    ymm_t rand_vec1 =
-        vtype::template i64gather<sizeof(type_t)>(rand_index1, arr);
-    ymm_t rand_vec2 =
-        vtype::template i64gather<sizeof(type_t)>(rand_index2, arr);
-    zmm_t rand_vec = vtype::merge(rand_vec1, rand_vec2);
-    zmm_t sort = sort_zmm_32bit<vtype>(rand_vec);
-    // pivot will never be a nan, since there are no nan's!
-    return ((type_t *)&sort)[8];
-}
 
 template <typename vtype, typename type_t>
 static void qsort_32bit_(type_t *arr, int64_t left, int64_t right,
@@ -433,7 +411,7 @@ static void qsort_32bit_(type_t *arr, int64_t left, int64_t right,
         return;
     }
 
-    type_t pivot = get_pivot_32bit<vtype>(arr, left, right);
+    type_t pivot = get_pivot_scalar<type_t>(arr, left, right);
     type_t smallest = vtype::type_max();
     type_t biggest = vtype::type_min();
     int64_t pivot_index = partition_avx512_unrolled<vtype, 2>(

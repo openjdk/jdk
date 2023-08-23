@@ -132,25 +132,16 @@ bool is_a_nan(T elem) {
     return std::isnan(elem);
 }
 
-/*
- * Sort all the NAN's to end of the array and return the index of the last elem
- * in the array which is not a nan
- */
 template <typename T>
-int64_t move_nans_to_end_of_array(T *arr, int64_t arrsize) {
-    int64_t jj = arrsize - 1;
-    int64_t ii = 0;
-    int64_t count = 0;
-    while (ii <= jj) {
-        if (is_a_nan(arr[ii])) {
-            std::swap(arr[ii], arr[jj]);
-            jj -= 1;
-            count++;
-        } else {
-            ii += 1;
-        }
-    }
-    return arrsize - count - 1;
+X86_SIMD_SORT_INLINE T get_pivot_scalar(T *arr, const int64_t left, const int64_t right) {
+    // median of 8 equally spaced elements
+    int64_t NUM_ELEMENTS = 8;
+    int64_t MID = NUM_ELEMENTS / 2;
+    int64_t size = (right - left) / NUM_ELEMENTS;
+    T temp[NUM_ELEMENTS];
+    for (int64_t i = 0; i < NUM_ELEMENTS; i++) temp[i] = arr[left + (i * size)];
+    std::sort(temp, temp + NUM_ELEMENTS);
+    return temp[MID];
 }
 
 template <typename vtype, typename T = typename vtype::type_t>
