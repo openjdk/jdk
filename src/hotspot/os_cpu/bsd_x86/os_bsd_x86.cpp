@@ -711,7 +711,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //
 // ** P1 (aka bottom) and size are the address and stack size
 //    returned from pthread_attr_getstack().
-// ** P2 (aka stack top or base) = P1 + size)
+// ** P2 (aka stack top or base) = P1 + size
 
 void os::current_stack_base_and_size(address* base, size_t* size) {
   address bottom;
