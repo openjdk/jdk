@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Menu;
@@ -29,12 +28,11 @@ import java.awt.MenuBar;
 import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.PopupMenu;
-import java.awt.Rectangle;
 import java.awt.Robot;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
@@ -45,58 +43,32 @@ import javax.imageio.ImageIO;
  * @bug 4234266
  * @summary To test setLabel functionality on Windows.
  * @requires (os.family == "windows")
- * @run main/othervm -Dsun.java2d.uiScale=1 SetLabelTest
  */
 
-public class SetLabelTest implements ActionListener {
+public class SetLabelTest {
     private static Robot robot;
     private static Frame frame;
     private static MenuBar mb;
+    private static PopupMenu pm;
     private static Point frameLoc;
-    private static boolean passed = true;
-    private static final String[][] newLabels = {new String[]{"New Menu-1", "New MI-1"},
-                                                 new String[]{"New PM-1", "New PMI-1"}};
+    private static StringBuffer errorLog = new StringBuffer();
 
     public static void main(String[] args) throws Exception {
-        SetLabelTest obj = new SetLabelTest();
-        obj.start();
-    }
-
-    public void start() throws Exception {
         try {
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
             robot.setAutoDelay(50);
 
-            EventQueue.invokeAndWait(this::createTestUI);
+            EventQueue.invokeAndWait(() -> createTestUI());
             robot.delay(1000);
             EventQueue.invokeAndWait(() -> frameLoc = frame.getLocationOnScreen());
 
-            // First Menu
-            robot.mouseMove(frameLoc.x + 35, frameLoc.y + 35);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(300);
-            robot.mouseMove(frameLoc.x + 35, frameLoc.y + 90);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(500);
-            captureScreen("Img_1");
+            checkMenu();
+            checkPopupMenu();
 
-            //Second Menu
-            robot.mouseMove(frameLoc.x + 130, frameLoc.y + 35);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(300);
-            robot.mouseMove(frameLoc.x + 130, frameLoc.y + 90);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(500);
-            captureScreen("Img_2");
-
-            if(!checkLabels()) {
-                captureScreen("Img_Failed");
-                throw new RuntimeException("Test Failed! setLabel does not work");
+            if (!errorLog.isEmpty()) {
+                throw new RuntimeException("Before & After screenshots are same." +
+                        " Test fails for the following case(s):\n" + errorLog);
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -107,77 +79,95 @@ public class SetLabelTest implements ActionListener {
         }
     }
 
-    private void createTestUI() {
-        frame = new Frame("Menu & MenuItem SetLabel Test");
+    private static void createTestUI() {
+        frame = new Frame("Menu SetLabel Test");
+        frame.setUndecorated(true);
         mb = new MenuBar();
 
         //Menu 1
         Menu menu1 = new Menu("Menu1");
         MenuItem mi1 = new MenuItem("MI-1");
-        mi1.addActionListener(this);
         menu1.add(mi1);
         menu1.addSeparator();
-        MenuItem mi2 = new MenuItem("Change Menu1");
-        mi2.addActionListener(this);
+        MenuItem mi2 = new MenuItem("MI-2");
         menu1.add(mi2);
         mb.add(menu1);
 
         //Popup menu
-        PopupMenu pm = new PopupMenu("PopupMenu1");
+        pm = new PopupMenu();
         MenuItem pm1 = new MenuItem("PMI-1");
-        pm1.addActionListener(this);
         pm.add(pm1);
-        pm.addSeparator();
-        MenuItem pm2 = new MenuItem("Change Menu2");
-        pm2.addActionListener(this);
-        pm.add(pm2);
-        mb.add(pm);
+        frame.add(pm);
 
+        frame.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.getButton() != InputEvent.BUTTON1_DOWN_MASK) {
+                    showPopup(e);
+                }
+            }
+
+            private void showPopup(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    pm.show(e.getComponent(),
+                            e.getX(), e.getY());
+                }
+            }
+        });
         frame.setMenuBar(mb);
         frame.setSize(300, 200);
-        frame.setLocationRelativeTo(null);
+        frame.setLocation(500,500);
         frame.setVisible(true);
     }
 
-    private static void changeLabels(int menuIndex, String[] labels) {
-            Menu m1 = mb.getMenu(menuIndex);
-            m1.setLabel(labels[0]);
-            MenuItem mItem1 = m1.getItem(0);
-            mItem1.setLabel(labels[1]);
+    private static void checkMenu() throws IOException {
+        BufferedImage beforeImgMenu = robot.createScreenCapture(frame.getBounds());
+        Menu m1 = mb.getMenu(0);
+        m1.setLabel("New Menu");
+        MenuItem mItem1 = m1.getItem(0);
+        mItem1.setLabel("New Menu Item");
+        robot.delay(200);
+        BufferedImage afterImgMenu = robot.createScreenCapture(frame.getBounds());
+
+        if (compareImages(beforeImgMenu, afterImgMenu)) {
+            ImageIO.write(beforeImgMenu, "png", new File("MenuBefore.png"));
+            ImageIO.write(afterImgMenu, "png", new File("MenuAfter.png"));
+            errorLog.append("Menu case\n");
+        }
     }
 
-    private static boolean checkLabels() {
-        for (int i = 0; i < 2; i++) {
-            Menu m1 = mb.getMenu(i);
-            String menuLabel = m1.getLabel();
-            String menuItemLabel = m1.getItem(0).getLabel();
-            if (!(menuLabel.equals(newLabels[i][0])
-                    && menuItemLabel.equals(newLabels[i][1]))) {
-                passed = false;
-                break;
+    private static void checkPopupMenu() throws IOException {
+        BufferedImage beforeImgPopup = robot.createScreenCapture(frame.getBounds());
+        robot.mouseMove(frameLoc.x + (frame.getWidth() / 2),
+                frameLoc.y + (frame.getHeight() /2));
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+        robot.delay(200);
+        pm.getItem(0).setLabel("Changed Label");
+        BufferedImage afterImgPopup = robot.createScreenCapture(frame.getBounds());
+        robot.delay(300);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (compareImages(beforeImgPopup, afterImgPopup)) {
+            ImageIO.write(beforeImgPopup, "png", new File("PopupBefore.png"));
+            ImageIO.write(afterImgPopup, "png", new File("PopupAfter.png"));
+            errorLog.append("Popup case\n");
+        }
+    }
+
+    private static boolean compareImages(BufferedImage beforeImg, BufferedImage afterImg) {
+        for (int x = 0; x < beforeImg.getWidth(); x++) {
+            for (int y = 0; y < beforeImg.getHeight(); y++) {
+                if (beforeImg.getRGB(x, y) != afterImg.getRGB(x, y)) {
+                    return false;
+                }
             }
         }
-        return passed;
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand().equals("Change Menu1")) {
-            changeLabels(0, newLabels[0]);
-        } else {
-            changeLabels(1, newLabels[1]);
-        }
-    }
-
-    private static void captureScreen(String filename) {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        try {
-            ImageIO.write(
-                    robot.createScreenCapture(new Rectangle(0, 0, screenSize.width, screenSize.height)),
-                    "png",
-                    new File(filename + ".png")
-            );
-        } catch (IOException ignored) {
-        }
+        return true;
     }
 }
