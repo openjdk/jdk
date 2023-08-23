@@ -116,7 +116,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
                     throw new RuntimeException(ex);
                 }
                 break;
-        } 
+        }
         return true;
     }
 
