@@ -1595,7 +1595,7 @@ class java_lang_ClassFrameInfo: AllStatic {
 private:
   static int _classOrMemberName_offset;
   static int _flags_offset;
-  
+
 public:
   static oop  classOrMemberName(oop info);
   static int  flags(oop info);
