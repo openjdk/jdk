@@ -769,8 +769,8 @@ public abstract class DateFormat extends Format {
     /**
      * {@return the hash code for this {@code DateFormat}}
      *
-     * The hash code value is based on the {@code numberFormat} field that belongs
-     * to this {@code DateFormat}.
+     * The hash code value is based on the value returned by {@link #getNumberFormat()}
+     * of this {@code DateFormat}.
      *
      * @see Object#hashCode()
      * @see NumberFormat#hashCode()

@@ -659,7 +659,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@return the hash code for this {@code DateFormatSymbols}}
      *
      * The hash code value is based on the date-time formatting data, which is
-     * composed by a number of fields from this {@code DateFormatSymbols}.
+     * composed of a number of fields from this {@code DateFormatSymbols}.
      *
      * @see Object#hashCode()
      */

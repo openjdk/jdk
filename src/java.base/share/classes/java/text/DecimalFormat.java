@@ -2965,10 +2965,10 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * {@return the hash code for this {@code DecimalFormat} instance}
+     * {@return the hash code for this {@code DecimalFormat}}
      *
-     * The hash code value is based on the {@code positivePrefix} field and
-     * parent {@link NumberFormat#hashCode()} value.
+     * The hash code value is based on the value returned by {@link #getPositivePrefix()}
+     * and {@link NumberFormat#hashCode()}.
      *
      * @see Object#hashCode()
      * @see NumberFormat#hashCode()

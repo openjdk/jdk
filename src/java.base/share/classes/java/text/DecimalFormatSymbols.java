@@ -778,7 +778,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@return the hash code for this {@code DecimalFormatSymbols}}
      *
      * The hash code value is based on the set of symbols, which is
-     * composed by a number of fields from this {@code DecimalFormatSymbols}.
+     * composed of a number of fields from this {@code DecimalFormatSymbols}.
      *
      * @see Object#hashCode()
      */
