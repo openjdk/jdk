@@ -498,7 +498,7 @@ public class ChoiceFormat extends NumberFormat {
      * {@return the hash code for this {@code ChoiceFormat}}
      *
      * The hash code value is based on the length of the {@code limits} and
-     * {@code formats} of this {@code ChoiceFormat}.
+     * {@code formats} fields of this {@code ChoiceFormat}.
      *
      * @see Object#hashCode()
      */
