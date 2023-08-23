@@ -44,7 +44,7 @@ public class ProfileAtTypeCheck {
         Scenario interpreterProfiling = new Scenario(0, "-XX:TypeProfileSubTypeCheckCommonThreshold=90", "-XX:-TieredCompilation");
         // Only c1 collects profile
         Scenario c1Profiling = new Scenario(1, "-XX:TypeProfileSubTypeCheckCommonThreshold=90", "-XX:+TieredCompilation", "-XX:-ProfileInterpreter");
-        
+
         if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
             interpreterProfiling.addFlags("-XX:+UseParallelGC");
             c1Profiling.addFlags("-XX:+UseParallelGC");
