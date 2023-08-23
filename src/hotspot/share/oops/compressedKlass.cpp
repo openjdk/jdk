@@ -39,7 +39,7 @@ uint64_t CompressedKlassPointers::_combo = (uint64_t)-1;
 void CompressedKlassPointers::init_combo() {
   assert(UseCompressedClassPointers, "Why are we here?");
   const uint64_t base_i = (uint64_t)_base;
-  assert((base_i & ~mask_base) == 0, "Base not page aligned?");
+  assert((base_i & ~mask_base) == 0, "Base not aligned?");
   assert(_shift <= 63, "Sanity");
 
   _combo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);

@@ -57,12 +57,16 @@ class CompressedKlassPointers : public AllStatic {
   static size_t _range;
 
   // Reduce the number of loads generated to decode an nKlass by packing all
-  // relevant information (flag, base, shift) into a single 64-bit word.
+  // relevant information (flag, base, shift) into a single 64-bit word. The
+  // encoding base is aligned to metaspace reserve alignment (16Mb), so enough
+  // space to hide additional info away in low bytes. It even allows us the luxury
+  // to use 8 bits for shift and flag each, resulting in 8-bit moves used by the
+  // compiler.
   // - Bit  [0-7]   shift
   // - Bit  8       UseCompressedOops
-  // - Bits [12-64] the base.
+  // - Bits [16-64] the base.
   static uint64_t _combo;
-  static constexpr int base_alignment = 12; // 4Kb
+  static constexpr int base_alignment = 16;
   static constexpr uint64_t mask_base = ~right_n_bits(base_alignment);
   static constexpr int shift_bitlen = 8; // read with a mov8
   static constexpr int bitpos_useccp = shift_bitlen;
