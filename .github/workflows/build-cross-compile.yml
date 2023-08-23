@@ -31,12 +31,6 @@ on:
       gcc-major-version:
         required: true
         type: string
-      apt-gcc-version:
-        required: true
-        type: string
-      apt-gcc-cross-version:
-        required: true
-        type: string
       extra-conf-options:
         required: false
         type: string
@@ -113,10 +107,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
           sudo apt-get install \
-              gcc-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
-              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
-              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-cross-version }} \
+              gcc-${{ inputs.gcc-major-version }} \
+              g++-${{ inputs.gcc-major-version }} \
+              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
+              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
               libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
               debian-ports-archive-keyring
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
