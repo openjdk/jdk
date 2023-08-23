@@ -100,6 +100,7 @@ public class HttpInputStreamAvailableTest {
                 HttpResponse.BodyHandlers.ofInputStream());
         try ( InputStream in = response.body()) {
             in.readNBytes(2);
+            // this is not guaranteed, but a failure here would be surprising
             assertEquals(TEST_MESSAGE.length() - 2, in.available());
             //read the remaining data
             in.readAllBytes();
