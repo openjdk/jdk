@@ -282,7 +282,7 @@ public final class JstatdTest {
     private ProcessThread tryToSetupJstatdProcess() throws Throwable {
         portInUse = false;
         ProcessThread jstatdThread = new ProcessThread("Jstatd-Thread",
-                JstatdTest::isJstadReady, getJstatdCmd());
+                JstatdTest::isJstatdReady, getJstatdCmd());
         try {
             jstatdThread.start();
             // Make sure jstatd is up and running
@@ -302,8 +302,8 @@ public final class JstatdTest {
         return jstatdThread;
     }
 
-    private static boolean isJstadReady(String line) {
-        if (line.contains("Port already in use")) {
+    private static boolean isJstatdReady(String line) {
+        if (line.contains("Port already in use") || line.contains("Could not bind")) {
             portInUse = true;
             return true;
         }
@@ -322,8 +322,9 @@ public final class JstatdTest {
         }
 
         ProcessThread jstatdThread = null;
+        int tries = 0;
         try {
-            while (jstatdThread == null) {
+            while (jstatdThread == null && ++tries <= 10) {
                 if (!useDefaultPort) {
                     port = String.valueOf(Utils.getFreePort());
                 }
@@ -339,10 +340,11 @@ public final class JstatdTest {
                         continue;
                     }
                 }
-
                 jstatdThread = tryToSetupJstatdProcess();
             }
-
+            if (jstatdThread == null) {
+                throw new RuntimeException("Cannot start jstatd.  No free port found.");
+            }
             runToolsAndVerify();
         } finally {
             cleanUpThread(jstatdThread);
