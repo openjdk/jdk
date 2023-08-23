@@ -45,7 +45,6 @@ public class MaximizeWindowTest extends JFrame {
                     });
 
                     splitPane.setDividerLocation(1000);
-
                     frame.setVisible(true);
 
                 }
