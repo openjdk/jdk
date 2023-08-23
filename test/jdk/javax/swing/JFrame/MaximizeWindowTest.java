@@ -35,7 +35,7 @@ public class MaximizeWindowTest extends JFrame {
                     @Override
                     public void componentResized(ComponentEvent e) {
                         System.out.println("Component size: " + e.getComponent().getSize());
-                        if (e.getComponent().getSize().equals(ORIGINAL_SIZE) {
+                        if (e.getComponent().getSize().equals(ORIGINAL_SIZE)) {
                             throw new RuntimeException("Test Failed! " +
                                     "Frame was visible at original size before maximizing");
                         }
