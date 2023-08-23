@@ -634,9 +634,10 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     // (the OS already assigned it for something else), go to the next position, wrapping
     // around if necessary, until we exhaust all the items.
     os::init_random((int)os::javaTimeNanos());
-    r = ABS(os::random() % len);
+    r = ABS(os::random()) % len;
+    assert(r >= 0, "must be");
     log_info(metaspace)("Randomizing compressed class space: start from %d out of %d locations",
-                        r % len, len);
+                        r, len);
   }
   for (int i = 0; i < len; i++) {
     assert((i + r) >= 0, "should never underflow because len is small integer");
