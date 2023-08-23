@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.internal.classfile.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -28,17 +29,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.annotation.*;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.TypeAnnotation;
-import com.sun.tools.classfile.TypeAnnotation.TargetType;
+import java.util.*;
 
 import static java.lang.String.format;
 
@@ -53,7 +46,7 @@ public class Driver {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length == 0 || args.length > 1)
+        if (args.length != 1)
             throw new IllegalArgumentException("Usage: java Driver <test-name>");
         String name = args[0];
         new Driver(Class.forName(name)).runDriver();
@@ -74,7 +67,7 @@ public class Driver {
         // Find methods
         for (Method method : clazz.getMethods()) {
             try {
-                Map<String, TypeAnnotation.Position> expected = expectedOf(method);
+                Map<String, TypeAnnotation> expected = expectedOf(method);
                 if (expected == null)
                     continue;
                 if (method.getReturnType() != String.class)
@@ -84,15 +77,15 @@ public class Driver {
                 for (String retentionPolicy : retentionPolicies) {
                     String testClassName = getTestClassName(method, retentionPolicy);
                     String testClass = testClassOf(method, testClassName);
-                    String fullFile = wrap(compact, new HashMap<String, String>() {{
+                    String fullFile = wrap(compact, new HashMap<>() {{
                         put("%RETENTION_POLICY%", retentionPolicy);
                         put("%TEST_CLASS_NAME%", testClassName);
                     }});
                     for (String[] extraParams : extraParamsCombinations) {
                         try {
-                            ClassFile cf = compileAndReturn(fullFile, testClass, extraParams);
-                            List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cf);
-                            ReferenceInfoUtil.compare(expected, actual, cf);
+                            ClassModel cm = compileAndReturn(fullFile, testClass, extraParams);
+                            List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cm);
+                            ReferenceInfoUtil.compare(expected, actual);
                             out.format("PASSED:  %s %s%n", testClassName, Arrays.toString(extraParams));
                             ++passed;
                         } catch (Throwable e) {
@@ -106,7 +99,7 @@ public class Driver {
                 }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 out.println("FAILED:  " + method.getName());
-                out.println("    " + e.toString());
+                out.println("    " + e);
                 e.printStackTrace(out);
                 ++failed;
             }
@@ -122,14 +115,14 @@ public class Driver {
             throw new RuntimeException(failed + " tests failed");
     }
 
-    private Map<String, TypeAnnotation.Position> expectedOf(Method m) {
+    private Map<String, TypeAnnotation> expectedOf(Method m) {
         TADescription ta = m.getAnnotation(TADescription.class);
         TADescriptions tas = m.getAnnotation(TADescriptions.class);
 
         if (ta == null && tas == null)
             return null;
 
-        Map<String, TypeAnnotation.Position> result =
+        Map<String, TypeAnnotation> result =
             new HashMap<>();
 
         if (ta != null)
@@ -144,32 +137,98 @@ public class Driver {
         return result;
     }
 
-    private Map<String, TypeAnnotation.Position> expectedOf(TADescription d) {
+    private Map<String, TypeAnnotation> expectedOf(TADescription d) {
         String annoName = d.annotation();
-
-        TypeAnnotation.Position p = new TypeAnnotation.Position();
-        p.type = d.type();
-        if (d.offset() != NOT_SET)
-            p.offset = d.offset();
-        if (d.lvarOffset().length != 0)
-            p.lvarOffset = d.lvarOffset();
-        if (d.lvarLength().length != 0)
-            p.lvarLength = d.lvarLength();
-        if (d.lvarIndex().length != 0)
-            p.lvarIndex = d.lvarIndex();
-        if (d.boundIndex() != NOT_SET)
-            p.bound_index = d.boundIndex();
-        if (d.paramIndex() != NOT_SET)
-            p.parameter_index = d.paramIndex();
-        if (d.typeIndex() != NOT_SET)
-            p.type_index = d.typeIndex();
-        if (d.exceptionIndex() != NOT_SET)
-            p.exception_index = d.exceptionIndex();
-        if (d.genericLocation().length != 0) {
-            p.location = TypeAnnotation.Position.getTypePathFromBinary(wrapIntArray(d.genericLocation()));
+        TypeAnnotation.TargetInfo p = null;
+        Label label = null;
+        switch (d.type()) {
+            case CAST -> {
+                p = TypeAnnotation.TargetInfo.ofCastExpr(null, d.typeIndex());
+            }
+            case CLASS_EXTENDS -> {
+                p = TypeAnnotation.TargetInfo.ofClassExtends(d.typeIndex());
+            }
+            case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT -> {
+                p = TypeAnnotation.TargetInfo.ofConstructorInvocationTypeArgument(null, d.typeIndex());
+            }
+            case CLASS_TYPE_PARAMETER -> {
+                p = TypeAnnotation.TargetInfo.ofClassTypeParameter(d.paramIndex());
+            }
+            case CLASS_TYPE_PARAMETER_BOUND -> {
+                p = TypeAnnotation.TargetInfo.ofClassTypeParameterBound(d.paramIndex(), d.boundIndex());
+            }
+            case EXCEPTION_PARAMETER -> {
+                p = TypeAnnotation.TargetInfo.ofExceptionParameter(d.exceptionIndex());
+            }
+            case FIELD -> {
+                p = TypeAnnotation.TargetInfo.ofField();
+            }
+            case INSTANCEOF -> {
+                p = TypeAnnotation.TargetInfo.ofInstanceofExpr(null);
+            }
+            case LOCAL_VARIABLE -> {
+                List<TypeAnnotation.LocalVarTargetInfo> table = new ArrayList<>();
+                for (int idx = 0; idx < d.lvarOffset().length; ++idx)
+                    table.add(TypeAnnotation.LocalVarTargetInfo.of(null, null, d.lvarIndex()[idx]));
+                p = TypeAnnotation.TargetInfo.ofLocalVariable(table);
+            }
+            case METHOD_FORMAL_PARAMETER -> {
+                p = TypeAnnotation.TargetInfo.ofMethodFormalParameter(d.paramIndex());
+            }
+            case METHOD_INVOCATION_TYPE_ARGUMENT -> {
+                p = TypeAnnotation.TargetInfo.ofMethodInvocationTypeArgument(null, d.typeIndex());
+            }
+            case METHOD_RECEIVER -> {
+                p = TypeAnnotation.TargetInfo.ofMethodReceiver();
+            }
+            case METHOD_RETURN -> {
+                p = TypeAnnotation.TargetInfo.ofMethodReturn();
+            }
+            case METHOD_TYPE_PARAMETER -> {
+                p = TypeAnnotation.TargetInfo.ofMethodTypeParameter(d.paramIndex());
+            }
+            case METHOD_TYPE_PARAMETER_BOUND -> {
+                p = TypeAnnotation.TargetInfo.ofMethodTypeParameterBound(d.paramIndex(), d.boundIndex());
+            }
+            case NEW -> {
+                p = TypeAnnotation.TargetInfo.ofNewExpr(null);
+            }
+            case RESOURCE_VARIABLE -> {
+                List<TypeAnnotation.LocalVarTargetInfo> table = new ArrayList<>();
+                for (int idx = 0; idx < d.lvarOffset().length; ++idx)
+                    table.add(TypeAnnotation.LocalVarTargetInfo.of(null, null, d.lvarIndex()[idx]));
+                p = TypeAnnotation.TargetInfo.ofResourceVariable(table);
+            }
+            case THROWS -> {
+                p = TypeAnnotation.TargetInfo.ofThrows(d.typeIndex());
+            }
+            case CONSTRUCTOR_REFERENCE, CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, METHOD_REFERENCE, METHOD_REFERENCE_TYPE_ARGUMENT -> {
+            }
         }
+        List<Integer> numPaths = wrapIntArray(d.genericLocation());
+        List<TypeAnnotation.TypePathComponent> targetPaths = new ArrayList<>(numPaths.size()/2);
+        int idx = 0;
+        while (idx < numPaths.size()) {
+            if (idx + 1 == numPaths.size()) throw new AssertionError("Could not decode type path: " + numPaths);
+            targetPaths.add(fromBinary(numPaths.get(idx), numPaths.get(idx + 1)));
+            idx += 2;
+        }
+        TypeAnnotation t = TypeAnnotation.of(p, targetPaths, ClassDesc.of(d.annotation()), AnnotationElement.ofInt("annotation", 0));
+        return Collections.singletonMap(annoName, t);
+    }
 
-        return Collections.singletonMap(annoName, p);
+    private TypeAnnotation.TypePathComponent fromBinary(int tag, int arg) {
+        if (arg != 0 && tag != 3) {
+            throw new AssertionError("Invalid TypePathEntry tag/arg: " + tag + "/" + arg);
+        } else {
+            return switch (tag) {
+                case 0 -> TypeAnnotation.TypePathComponent.ARRAY;
+                case 1 -> TypeAnnotation.TypePathComponent.INNER_TYPE;
+                case 2 -> TypeAnnotation.TypePathComponent.WILDCARD;
+                case 3 -> TypeAnnotation.TypePathComponent.of(TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT, arg);
+                default -> throw new AssertionError("Invalid TypePathEntryKind tag: " + tag);
+            };
+        }
     }
 
     private List<Integer> wrapIntArray(int[] ints) {
@@ -193,10 +252,10 @@ public class Driver {
         }
     }
 
-    private ClassFile compileAndReturn(String fullFile, String testClass, String... extraParams) throws Exception {
+    private ClassModel compileAndReturn(String fullFile, String testClass, String... extraParams) throws Exception {
         File source = writeTestFile(fullFile, testClass);
         File clazzFile = compileTestFile(source, testClass, extraParams);
-        return ClassFile.read(clazzFile);
+        return Classfile.of().parse(clazzFile.toPath());
     }
 
     protected File writeTestFile(String fullFile, String testClass) throws IOException {
@@ -208,7 +267,7 @@ public class Driver {
     }
 
     private String getClassDir() {
-        return System.getProperty("test.classes", Driver.class.getResource(".").getPath());
+        return System.getProperty("test.classes", Objects.requireNonNull(Driver.class.getResource(".")).getPath());
     }
 
     protected File compileTestFile(File f, String testClass, String... extraParams) {
@@ -352,7 +411,7 @@ public class Driver {
         return src;
     }
 
-    public static final int NOT_SET = -888;
+    public static final int NOT_SET = Integer.MIN_VALUE;
 
 }
 
@@ -362,7 +421,7 @@ public class Driver {
 @interface TADescription {
     String annotation();
 
-    TargetType type();
+    TypeAnnotation.TargetType type();
     int offset() default Driver.NOT_SET;
     int[] lvarOffset() default { };
     int[] lvarLength() default { };
