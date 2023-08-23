@@ -324,6 +324,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

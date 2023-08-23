@@ -107,10 +107,10 @@ public class ByteCodeRewriter
           return cpIndex;
        } else if (fmt.contains("JJ")) {
           // change byte-ordering and go via cache
-          return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();
+          return (short) cpool.to_cp_index(0xFFFF & bytes.swapShort((short)cpCacheIndex), rawcode);
        } else if (fmt.contains("j")) {
           // go via cache
-          return (short) cpCache.getEntryAt((int) (0xFF & cpCacheIndex)).getConstantPoolIndex();
+          return (short) cpool.to_cp_index(0xFF & cpCacheIndex, rawcode);
        } else {
           return (short) cpCacheIndex;
        }
@@ -157,7 +157,7 @@ public class ByteCodeRewriter
                 case Bytecodes._invokespecial:
                 case Bytecodes._invokestatic:
                 case Bytecodes._invokeinterface: {
-                    cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                    cpoolIndex = getConstantPoolIndex(bytecode, bci + 1);
                     writeShort(code, bci + 1, cpoolIndex);
                     break;
                 }

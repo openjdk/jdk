@@ -42,6 +42,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -493,10 +494,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-    __ ldr(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andr(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
-
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
     __ add(esp, esp, cache, Assembler::LSL, 3);
   }
 

@@ -44,10 +44,9 @@ TEST_VM(ConstantPoolCache, print_on) {
   const char* output = ss.freeze();
   static const char* const expected_strings[] = {
     // Method entry tests:
-    "this", "bytecode 1:", "bytecode 2:", "cp index:", "F1:", "F2:",
-    "method:", "flag values:", "tos:", "local signature:", "has appendix:",
-    "forced virtual:", "final:", "virtual final:", "resolution failed:",
-    "num parameters:",
+    "Klass:", "Method:", "CP Index:", "Resolved References Index:", "Table Index:",
+    "TOS:", "Number of Parameters:", "Is Virtual Final:", "Is Final", "Is Forced Virtual",
+    "Has Appendix:", "Has Local Signature", "Bytecode 1:", "Bytecode 2:",
 
     // field entry test
     "Offset:", "Field Index:", "CP Index:", "TOS:", "Is Final:", "Is Volatile:",

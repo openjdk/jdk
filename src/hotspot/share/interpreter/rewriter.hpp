@@ -29,6 +29,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "utilities/growableArray.hpp"
 
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
@@ -40,6 +41,7 @@ class Rewriter: public StackObj {
   constantPoolHandle  _pool;
   Array<Method*>*     _methods;
   GrowableArray<int>  _cp_map;
+  GrowableArray<int>  _cpi_to_method_index_map;
   GrowableArray<int>  _cp_cache_map;  // for Methodref, Fieldref,
                                       // InterfaceMethodref and InvokeDynamic
   GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
@@ -49,11 +51,15 @@ class Rewriter: public StackObj {
   int                 _resolved_reference_limit;
   int                 _invokedynamic_index;
   int                 _field_entry_index;
+  int                 _method_entry_index;
 
-  // For collecting information about invokedynamic bytecodes before resolution
-  // With this, we can know how many indy calls there are and resolve them later
+  // For collecting initialization information for field, method, and invokedynamic
+  // constant pool cache entries. The number of entries of each type will be known
+  // at the end of rewriting and these arrays will be used to build the proper arrays
+  // in the Constant Pool Cache.
   GrowableArray<ResolvedIndyEntry> _initialized_indy_entries;
   GrowableArray<ResolvedFieldEntry> _initialized_field_entries;
+  GrowableArray<ResolvedMethodEntry> _initialized_method_entries;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);
@@ -167,6 +173,7 @@ class Rewriter: public StackObj {
   void scan_method(Thread* thread, Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(const methodHandle& m, TRAPS);
   void rewrite_field_reference(address bcp, int offset, bool reverse);
+  void rewrite_method_reference(address bcp, int offset, bool reverse);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);

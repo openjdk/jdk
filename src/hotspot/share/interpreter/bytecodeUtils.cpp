@@ -1003,7 +1003,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       if (code == Bytecodes::_invokedynamic) {
         cp_index = ((int) Bytes::get_native_u4(code_base + pos));
       } else {
-        cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        cp_index = Bytes::get_native_u2(code_base + pos);
       }
 
       int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
@@ -1143,7 +1143,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base+ pos);
         ConstantPool* cp = _method->constants();
         int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
@@ -1346,7 +1346,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
     case Bytecodes::_invokeinterface: {
-      int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+      int cp_index = Bytes::get_native_u2(code_base + pos);
       if (max_detail == _max_cause_detail && !inner_expr) {
         os->print(" because the return value of \"");
       }
@@ -1428,7 +1428,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
-        int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
+        int cp_index = Bytes::get_native_u2(code_base+ pos);
         os->print("Cannot invoke \"");
         print_method_name(os, _method, cp_index, code);
         os->print("\"");

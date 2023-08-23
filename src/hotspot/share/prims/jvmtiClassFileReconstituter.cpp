@@ -1046,15 +1046,13 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
 
         int cpci = Bytes::get_native_u2(bcp+1);
         bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
-        ConstantPoolCacheEntry* entry;
         int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
           pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->constant_pool_index();
         } else {
-        // cache cannot be pre-fetched since some classes won't have it yet
-          entry = mh->constants()->cache()->entry_at(cpci);
-          pool_index = entry->constant_pool_index();
+          // cache cannot be pre-fetched since some classes won't have it yet
+          pool_index = mh->constants()->resolved_method_entry_at(cpci)->constant_pool_index();
         }
         assert(pool_index < mh->constants()->length(), "sanity check");
         Bytes::put_Java_u2((address)(p+1), (u2)pool_index);     // java byte ordering

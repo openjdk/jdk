@@ -643,16 +643,12 @@ class ConstantPool : public Metadata {
   // name_and_type_ref_index_at) all expect to be passed indices obtained
   // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
-  // actually rewritten constant pool cache indices.
-  // The routine remap_instruction_operand_from_cache manages the adjustment
+  // actually rewritten indices that point to entries in their respective structures
+  // i.e. ResolvedMethodEntries or ResolvedFieldEntries.
+  // The routine to_cp_index manages the adjustment
   // of these values back to constant pool indices.
 
   // There are also "uncached" versions which do not adjust the operand index; see below.
-
-  // FIXME: Consider renaming these with a prefix "cached_" to make the distinction clear.
-  // In a few cases (the verifier) there are uses before a cpcache has been built,
-  // which are handled by a dynamic check in remap_instruction_operand_from_cache.
-  // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
@@ -668,8 +664,6 @@ class ConstantPool : public Metadata {
 
   u2 klass_ref_index_at(int which, Bytecodes::Code code);
   u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
-
-  int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
   constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
 
@@ -793,19 +787,6 @@ class ConstantPool : public Metadata {
   // Debugging
   const char* printable_name_at(int cp_index) PRODUCT_RETURN0;
 
-#ifdef ASSERT
-  enum { CPCACHE_INDEX_TAG = 0x10000 };  // helps keep CP cache indices distinct from CP indices
-#else
-  enum { CPCACHE_INDEX_TAG = 0 };        // in product mode, this zero value is a no-op
-#endif //ASSERT
-
-  static int decode_cpcache_index(int raw_index, bool invokedynamic_ok = false) {
-    if (invokedynamic_ok && is_invokedynamic_index(raw_index))
-      return decode_invokedynamic_index(raw_index);
-    else
-      return raw_index - CPCACHE_INDEX_TAG;
-  }
-
  private:
 
   void set_resolved_references(OopHandle s) { _cache->set_resolved_references(s); }
@@ -923,10 +904,16 @@ class ConstantPool : public Metadata {
   inline ResolvedFieldEntry* resolved_field_entry_at(int field_index);
   inline int resolved_field_entries_length() const;
 
+  // ResolvedMethodEntry getters
+  inline ResolvedMethodEntry* resolved_method_entry_at(int method_index);
+  inline int resolved_method_entries_length() const;
+  inline oop appendix_if_resolved(int method_index) const;
+
   // ResolvedIndyEntry getters
   inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
   inline int resolved_indy_entries_length() const;
   inline oop resolved_reference_from_indy(int index) const;
+  inline oop resolved_reference_from_method(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP
