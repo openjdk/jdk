@@ -1142,9 +1142,8 @@ public class MessageFormat extends Format {
 
     /**
      * Compares the specified object with this {@code MessageFormat} for equality.
-     * Returns true if the object is also a {@code MessageFormat} and the two Formats
-     * represent the same formatting configuration. Obeys the general contract of
-     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     * Returns true if the object is also a {@code MessageFormat} and the two formats
+     * represent the same formatting configuration.
      *
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code MessageFormat}

@@ -769,8 +769,7 @@ public abstract class DateFormat extends Format {
     /**
      * {@return the hash code for this {@code DateFormat}}
      *
-     * The hash code value is based on the value returned by {@link #getNumberFormat()}
-     * of this {@code DateFormat}.
+     * The hash code value is based on the value returned by {@link #getNumberFormat()}.
      *
      * @see Object#hashCode()
      * @see NumberFormat#hashCode()
@@ -782,9 +781,8 @@ public abstract class DateFormat extends Format {
 
     /**
      * Compares the specified object with this {@code DateFormat} for equality.
-     * Returns true if the object is also a {@code DateFormat} and the two Formats
-     * represent the same formatting configuration. Obeys the general contract of
-     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     * Returns true if the object is also a {@code DateFormat} and the two formats
+     * represent the same formatting configuration.
      *
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DateFormat}

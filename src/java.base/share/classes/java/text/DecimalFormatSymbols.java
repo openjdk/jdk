@@ -740,8 +740,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Compares the specified object with this {@code DecimalFormatSymbols} for equality.
      * Returns true if the object is also a {@code DecimalFormatSymbols} and the two
      * {@code DecimalFormatSymbols} objects represent the same set of symbols.
-     * Obeys the general contract of {@link java.lang.Object#equals(java.lang.Object)
-     * Object.equals}.
      *
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DecimalFormatSymbols}
@@ -777,8 +775,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * {@return the hash code for this {@code DecimalFormatSymbols}}
      *
-     * The hash code value is based on the set of symbols, which is
-     * composed of a number of fields from this {@code DecimalFormatSymbols}.
+     * The hash code value is based on the set of symbols, which is represented
+     * by a number of fields from this {@code DecimalFormatSymbols} object.
      *
      * @see Object#hashCode()
      */
