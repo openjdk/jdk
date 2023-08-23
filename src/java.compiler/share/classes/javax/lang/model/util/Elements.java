@@ -764,9 +764,10 @@ public interface Elements {
      * class body, {@code null} otherwise}
      *
      * @implSpec
-     * The default implementation of this method returns {@code null}
-     * if the argument is an {@code enum} constant and throws an
-     * {@code IllegalArgumentException}  if it is not.
+     * The default implementation of this method throws {@code
+     * UnsupportedOperationException} if the argument is an {@code
+     * enum} constant and throws an {@code IllegalArgumentException}
+     * if it is not.
      *
      * @throws IllegalArgumentException if the argument is not an {@code enum} constant
      * @param enumConstant an enum constant
@@ -775,7 +776,7 @@ public interface Elements {
      */
     default TypeElement getEnumConstantBody(VariableElement enumConstant) {
         if (enumConstant.getKind() == ElementKind.ENUM_CONSTANT) {
-            return null;
+            throw new UnsupportedOperationException();
         } else {
             throw new IllegalArgumentException("Argument not an enum constant");
         }

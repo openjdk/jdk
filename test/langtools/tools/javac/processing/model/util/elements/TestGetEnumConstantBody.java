@@ -67,7 +67,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
                     elementSeen = true;
                     System.out.println(field);
                     switch (field.getKind()) {
-                    case FIELD         -> expectException(field);
+                    case FIELD         -> expectIAE(field);
                     case ENUM_CONSTANT -> testEnumConstant(field, typeElt);
                     default            -> throw new RuntimeException("Unexpected field kind seen");
                     }
@@ -125,7 +125,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         return (ebn == null) ? null : ebn.value();
     }
 
-    private void expectException(VariableElement variable) {
+    private void expectIAE(VariableElement variable) {
         expectException0(() ->  elements.getEnumConstantBody(variable),
                          "Expected exception not thrown");
 
@@ -142,15 +142,23 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         }
     }
 
+    void expectUOE(VariableElement field) {
+        try {
+            var result = vacuousElements.getEnumConstantBody(field);
+            messager.printError("Unexpected non-exceptional result returned", field);
+
+        } catch(UnsupportedOperationException uoe) {
+            ; // Expected
+        }
+    }
+
     private void testEnumConstant(VariableElement field,
                                   TypeElement enclosingClass) {
         String expectedBinaryName = computeExpectedBinaryName(field);
         boolean expectEnumConstantBody = expectedBinaryName != null;
 
         System.out.println("\tTesting enum constant " + field + " expected " + expectEnumConstantBody);
-        if (vacuousElements.getEnumConstantBody(field) != null) {
-            messager.printError("Unexpected vacuous body returned", field);
-        }
+        expectUOE(field);
 
         TypeElement enumConstantBody = elements.getEnumConstantBody(field);
 
