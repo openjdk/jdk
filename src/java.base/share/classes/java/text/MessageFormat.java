@@ -1141,7 +1141,14 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * Equality comparison between two message format objects
+     * Compares the specified object with this {@code MessageFormat} for equality.
+     * Returns true if the object is also a {@code MessageFormat} and the two Formats
+     * represent the same formatting configuration. Obeys the general contract of
+     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     *
+     * @param  obj object to be compared for equality with this {@code MessageFormat}
+     * @return {@code true} if the specified object is equal to this {@code MessageFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj) {
@@ -1159,7 +1166,13 @@ public class MessageFormat extends Format {
     }
 
     /**
-     * Generates a hash code for the message format object.
+     * {@return the hash code value for this {@code MessageFormat}}
+     *
+     * The hash code value is based on the String pattern supplied to this
+     * {@code MessageFormat} either during construction or set by
+     * {@link #applyPattern(String)}.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {

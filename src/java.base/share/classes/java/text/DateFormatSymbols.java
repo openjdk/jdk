@@ -656,8 +656,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     }
 
     /**
-     * Override hashCode.
-     * Generates a hash code for the DateFormatSymbols object.
+     * {@return the hash code for this {@code DateFormatSymbols}}
+     *
+     * The hash code value is based on the date-time formatting data, which is
+     * composed by a number of fields from this {@code DateFormatSymbols}.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {
@@ -681,7 +685,15 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     }
 
     /**
-     * Override equals
+     * Compares the specified object with this {@code DateFormatSymbols} for equality.
+     * Returns true if the object is also a {@code DateFormatSymbols} and the two
+     * {@code DateFormatSymbols} objects represent the same date-time formatting data.
+     * Obeys the general contract of {@link java.lang.Object#equals(java.lang.Object)
+     * Object.equals}.
+     *
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DateFormatSymbols}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)

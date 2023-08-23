@@ -2409,7 +2409,12 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * {@return the hash code value for this {@code SimpleDateFormat} object}
+     * {@return the hash code value for this {@code SimpleDateFormat}}
+     *
+     * The hash code value is based on the value returned by {@link #toPattern()}
+     * of this {@code SimpleDateFormat}.
+     *
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode()
@@ -2419,11 +2424,15 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Compares the given object with this {@code SimpleDateFormat} for
-     * equality.
+     * Compares the specified object with this {@code SimpleDateFormat} for equality.
+     * Returns true if the object is also a {@code SimpleDateFormat} and the values
+     * returned by {@link #toPattern()} and {@link #getDateFormatSymbols()} of the
+     * two {@code SimpleDateFormat}s are equal. Obeys the general contract of
+     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
      *
-     * @return true if the given object is equal to this
-     * {@code SimpleDateFormat}
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code SimpleDateFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)
