@@ -32,7 +32,7 @@
 address CompressedKlassPointers::_base = nullptr;
 int CompressedKlassPointers::_shift = 0;
 size_t CompressedKlassPointers::_range = 0;
-uint64_t CompressedKlassPointers::_combo = (uint64_t)-1;
+uint64_t CompressedKlassPointers::_combo = 0;
 
 #ifdef _LP64
 
