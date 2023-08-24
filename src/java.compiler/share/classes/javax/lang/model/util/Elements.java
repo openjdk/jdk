@@ -775,10 +775,9 @@ public interface Elements {
      * @since 22
      */
     default TypeElement getEnumConstantBody(VariableElement enumConstant) {
-        if (enumConstant.getKind() == ElementKind.ENUM_CONSTANT) {
-            throw new UnsupportedOperationException();
-        } else {
-            throw new IllegalArgumentException("Argument not an enum constant");
+        switch(enumConstant.getKind()) {
+        case ENUM_CONSTANT -> throw new UnsupportedOperationException();
+        default            -> throw new IllegalArgumentException("Argument not an enum constant");
         }
     }
 
