@@ -65,6 +65,8 @@ public final class JstatdTest {
     private static final int JSTAT_GCUTIL_INTERVAL_MS = 250;
     private static final String JPS_OUTPUT_REGEX = "^\\d+\\s*.*";
 
+    private static final int MAX_JSTATD_TRIES = 10;
+
     private boolean useDefaultPort = true;
     private boolean useDefaultRmiPort = true;
     private String port;
@@ -324,7 +326,7 @@ public final class JstatdTest {
         ProcessThread jstatdThread = null;
         int tries = 0;
         try {
-            while (jstatdThread == null && ++tries <= 10) {
+            while (jstatdThread == null && ++tries <= MAX_JSTATD_TRIES) {
                 if (!useDefaultPort) {
                     port = String.valueOf(Utils.getFreePort());
                 }
