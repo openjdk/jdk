@@ -33,9 +33,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@snippet lang = java:
  *    for (int i = 0; i < s.length(); i++) {
  *        char c = s.charAt(i);
- *        if (UTF8EncodeUtils.isSingleByte(c)) {
+ *        if (c <= UTF8EncodeUtils.MAX_SINGLE_BYTE_CHAR) {
  *            // handle single byte
- *        } else if (UTF8EncodeUtils.isDoubleBytes(c)) {
+ *        } else if (c <= UTF8EncodeUtils.MAX_DULBLE_BYTES_CHAR) {
  *            byte[] bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
  *            // handle double bytes
  *        } else if (Character.isSurrogate(c)) {
@@ -65,15 +65,9 @@ public final class UTF8EncodeUtils {
     private UTF8EncodeUtils() {
     }
 
-    @ForceInline
-    public static boolean isSingleByte(char c) {
-        return c < 0x80;
-    }
+    public static final char MAX_SINGLE_BYTE_CHAR = 0x7f;
 
-    @ForceInline
-    public static boolean isDoubleBytes(char c) {
-        return c < 0x800;
-    }
+    public static final char MAX_DULBLE_BYTES_CHAR = 0x7ff;
 
     @ForceInline
     public static byte[] encodeDoubleBytes(char c) {

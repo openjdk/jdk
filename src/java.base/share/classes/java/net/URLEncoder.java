@@ -271,7 +271,7 @@ public class URLEncoder {
 
         for (int i = suffixOffset; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (UTF8EncodeUtils.isSingleByte(c)) {
+            if (c <= UTF8EncodeUtils.MAX_SINGLE_BYTE_CHAR) {
                 if (DONT_NEED_ENCODING[c]) {
                     if (c == ' ') {
                         c = '+';
@@ -280,7 +280,7 @@ public class URLEncoder {
                 } else {
                     encodeByte(out, (byte) c);
                 }
-            } else if (UTF8EncodeUtils.isDoubleBytes(c)) {
+            } else if (c <= UTF8EncodeUtils.MAX_DULBLE_BYTES_CHAR) {
                 byte[] bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
                 encodeByte(out, bytes[0]);
                 encodeByte(out, bytes[1]);
