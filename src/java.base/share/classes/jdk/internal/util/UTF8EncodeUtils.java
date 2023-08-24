@@ -36,20 +36,14 @@ import jdk.internal.vm.annotation.ForceInline;
  *        if (UTF8EncodeUtils.isSingleByte(c)) {
  *            // handle single byte
  *        } else if (UTF8EncodeUtils.isDoubleBytes(c)) {
- *            int bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
- *            byte b0 = (byte) (bytes >>> 8);
- *            byte b1 = (byte) (bytes & 0xff);
+ *            byte[] bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
  *            // handle double bytes
  *        } else if (Character.isSurrogate(c)) {
  *            if (i < s.length() - 1) {
  *                char d = s.charAt(i + 1);
  *                if (Character.isLowSurrogate(d)) {
  *                    int uc = Character.toCodePoint(c, d);
- *                    int bytes = UTF8EncodeUtils.encodeCodePoint(uc);
- *                    byte b0 = (byte) ((bytes >>> 24) & 0xff);
- *                    byte b1 = (byte) ((bytes >>> 16) & 0xff);
- *                    byte b2 = (byte) ((bytes >>> 8) & 0xff);
- *                    byte b3 = (byte) ((bytes) & 0xff);
+ *                    byte[] bytes = UTF8EncodeUtils.encodeCodePoint(uc);
  *
  *                    // handle four bytes
  *
@@ -59,10 +53,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *            }
  *            // handle unmappable char
  *        } else {
- *            int bytes = UTF8EncodeUtils.encodeThreeBytes(c);
- *            byte b0 = (byte) ((bytes >>> 16) & 0xff);
- *            byte b1 = (byte) ((bytes >>> 8) & 0xff);
- *            byte b2 = (byte) ((bytes) & 0xff);
+ *            byte[] bytes = UTF8EncodeUtils.encodeThreeBytes(c);
  *            // handle three bytes
  *        }
  *    }
@@ -80,26 +71,26 @@ public class UTF8EncodeUtils {
     }
 
     @ForceInline
-    public static int encodeDoubleBytes(char c) {
+    public static byte[] encodeDoubleBytes(char c) {
         byte b0 = (byte) (0xc0 | (c >> 6));
         byte b1 = (byte) (0x80 | (c & 0x3f));
-        return (b0 << 8) | (b1 & 0xff);
+        return new byte[]{b0, b1};
     }
 
     @ForceInline
-    public static int encodeThreeBytes(char c) {
-        byte b0 = (byte) (0xe0 | c >> 12);
-        byte b1 = (byte) (0x80 | c >> 6 & 0x3f);
-        byte b2 = (byte) (0x80 | c & 0x3f);
-        return (b0 << 16) | ((b1 & 0xff) << 8) | (b2 & 0xff);
+    public static byte[] encodeThreeBytes(char c) {
+        byte b0 = (byte) (0xe0 | (c >> 12));
+        byte b1 = (byte) (0x80 | ((c >> 6) & 0x3f));
+        byte b2 = (byte) (0x80 | (c & 0x3f));
+        return new byte[]{b0, b1, b2};
     }
 
     @ForceInline
-    public static int encodeCodePoint(int uc) {
+    public static byte[] encodeCodePoint(int uc) {
         byte b0 = (byte) (0xf0 | ((uc >> 18)));
         byte b1 = (byte) (0x80 | ((uc >> 12) & 0x3f));
         byte b2 = (byte) (0x80 | ((uc >> 6) & 0x3f));
         byte b3 = (byte) (0x80 | (uc & 0x3f));
-        return (b0 << 24) | ((b1 & 0xff) << 16) | ((b2 & 0xff) << 8) | (b3 & 0xff);
+        return new byte[]{b0, b1, b2, b3};
     }
 }

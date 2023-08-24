@@ -271,7 +271,7 @@ public class URLEncoder {
 
         for (int i = suffixOffset; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c < 0x80) {
+            if (UTF8EncodeUtils.isSingleByte(c)) {
                 if (DONT_NEED_ENCODING[c]) {
                     if (c == ' ') {
                         c = '+';
@@ -280,20 +280,20 @@ public class URLEncoder {
                 } else {
                     encodeByte(out, (byte) c);
                 }
-            } else if (c < 0x800) {
-                int bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
-                encodeByte(out, (byte) (bytes >>> 8));
-                encodeByte(out, (byte) (bytes & 0xff));
-            } else if (Character.isHighSurrogate(c)) {
-                if (i < s.length() - 1) {
+            } else if (UTF8EncodeUtils.isDoubleBytes(c)) {
+                byte[] bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
+                encodeByte(out, bytes[0]);
+                encodeByte(out, bytes[1]);
+            } else if (Character.isSurrogate(c)) {
+                if (Character.isHighSurrogate(c) && i < s.length() - 1) {
                     char d = s.charAt(i + 1);
                     if (Character.isLowSurrogate(d)) {
                         int uc = Character.toCodePoint(c, d);
-                        int bytes = UTF8EncodeUtils.encodeCodePoint(uc);
-                        encodeByte(out, (byte) ((bytes >>> 24) & 0xff));
-                        encodeByte(out, (byte) ((bytes >>> 16) & 0xff));
-                        encodeByte(out, (byte) ((bytes >>> 8) & 0xff));
-                        encodeByte(out, (byte) ((bytes) & 0xff));
+                        byte[] bytes = UTF8EncodeUtils.encodeCodePoint(uc);
+                        encodeByte(out, bytes[0]);
+                        encodeByte(out, bytes[1]);
+                        encodeByte(out, bytes[2]);
+                        encodeByte(out, bytes[3]);
                         i++;
                         continue;
                     }
@@ -302,10 +302,10 @@ public class URLEncoder {
                 // Unmappable Char
                 encodeByte(out, (byte) '?');
             } else {
-                int bytes = UTF8EncodeUtils.encodeThreeBytes(c);
-                encodeByte(out, (byte) ((bytes >>> 16) & 0xff));
-                encodeByte(out, (byte) ((bytes >>> 8) & 0xff));
-                encodeByte(out, (byte) ((bytes) & 0xff));
+                byte[] bytes = UTF8EncodeUtils.encodeThreeBytes(c);
+                encodeByte(out, bytes[0]);
+                encodeByte(out, bytes[1]);
+                encodeByte(out, bytes[2]);
             }
         }
 
