@@ -59,64 +59,64 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.sasl.SaslException;
 
 /**
- * A thread that creates a connection to an LDAP server.
- * After the connection, the thread reads from the connection.
- * A caller can invoke methods on the instance to read LDAP responses
- * and to send LDAP requests.
- * <p>
- * There is a one-to-one correspondence between an LdapClient and
- * a Connection. Access to Connection and its methods is only via
- * LdapClient with two exceptions: SASL authentication and StartTLS.
- * SASL needs to access Connection's socket IO streams (in order to do encryption
- * of the security layer). StartTLS needs to do replace IO streams
- * and close the IO  streams on nonfatal close. The code for SASL
- * authentication can be treated as being the same as from LdapClient
- * because the SASL code is only ever called from LdapClient, from
- * inside LdapClient's synchronized authenticate() method. StartTLS is called
- * directly by the application but should only occur when the underlying
- * connection is quiet.
- * <p>
- * In terms of synchronization, worry about data structures
- * used by the Connection thread because that usage might contend
- * with calls by the main threads (i.e., those that call LdapClient).
- * Main threads need to worry about contention with each other.
- * Fields that Connection thread uses:
- *     inStream - synced access and update; initialized in constructor;
- *           referenced outside class unsync'ed (by LdapSasl) only
- *           when connection is quiet
- *     traceFile, traceTagIn, traceTagOut - no sync; debugging only
- *     parent - no sync; initialized in constructor; no updates
- *     pendingRequests - sync
- *     pauseLock - per-instance lock;
- *     paused - sync via pauseLock (pauseReader())
- * Members used by main threads (LdapClient):
- *     host, port - unsync; read-only access for StartTLS and debug messages
- *     setBound(), setV3() - no sync; called only by LdapClient.authenticate(),
- *             which is a sync method called only when connection is "quiet"
- *     getMsgId() - sync
- *     writeRequest(), removeRequest(),findRequest(), abandonOutstandingReqs() -
- *             access to shared pendingRequests is sync
- *     writeRequest(),  abandonRequest(), ldapUnbind() - access to outStream sync
- *     cleanup() - sync
- *     readReply() - access to sock sync
- *     unpauseReader() - (indirectly via writeRequest) sync on pauseLock
- * Members used by SASL auth (main thread):
- *     inStream, outStream - no sync; used to construct new stream; accessed
- *             only when conn is "quiet" and not shared
- *     replaceStreams() - sync method
- * Members used by StartTLS:
- *     inStream, outStream - no sync; used to record the existing streams;
- *             accessed only when conn is "quiet" and not shared
- *     replaceStreams() - sync method
- * <p>
- * Handles anonymous, simple, and SASL bind for v3; anonymous and simple
- * for v2.
- * %%% made public for access by LdapSasl %%%
- *
- * @author Vincent Ryan
- * @author Rosanna Lee
- * @author Jagane Sundar
- */
+  * A thread that creates a connection to an LDAP server.
+  * After the connection, the thread reads from the connection.
+  * A caller can invoke methods on the instance to read LDAP responses
+  * and to send LDAP requests.
+  * <p>
+  * There is a one-to-one correspondence between an LdapClient and
+  * a Connection. Access to Connection and its methods is only via
+  * LdapClient with two exceptions: SASL authentication and StartTLS.
+  * SASL needs to access Connection's socket IO streams (in order to do encryption
+  * of the security layer). StartTLS needs to do replace IO streams
+  * and close the IO  streams on nonfatal close. The code for SASL
+  * authentication can be treated as being the same as from LdapClient
+  * because the SASL code is only ever called from LdapClient, from
+  * inside LdapClient's synchronized authenticate() method. StartTLS is called
+  * directly by the application but should only occur when the underlying
+  * connection is quiet.
+  * <p>
+  * In terms of synchronization, worry about data structures
+  * used by the Connection thread because that usage might contend
+  * with calls by the main threads (i.e., those that call LdapClient).
+  * Main threads need to worry about contention with each other.
+  * Fields that Connection thread uses:
+  *     inStream - synced access and update; initialized in constructor;
+  *           referenced outside class unsync'ed (by LdapSasl) only
+  *           when connection is quiet
+  *     traceFile, traceTagIn, traceTagOut - no sync; debugging only
+  *     parent - no sync; initialized in constructor; no updates
+  *     pendingRequests - sync
+  *     pauseLock - per-instance lock;
+  *     paused - sync via pauseLock (pauseReader())
+  * Members used by main threads (LdapClient):
+  *     host, port - unsync; read-only access for StartTLS and debug messages
+  *     setBound(), setV3() - no sync; called only by LdapClient.authenticate(),
+  *             which is a sync method called only when connection is "quiet"
+  *     getMsgId() - sync
+  *     writeRequest(), removeRequest(),findRequest(), abandonOutstandingReqs() -
+  *             access to shared pendingRequests is sync
+  *     writeRequest(),  abandonRequest(), ldapUnbind() - access to outStream sync
+  *     cleanup() - sync
+  *     readReply() - access to sock sync
+  *     unpauseReader() - (indirectly via writeRequest) sync on pauseLock
+  * Members used by SASL auth (main thread):
+  *     inStream, outStream - no sync; used to construct new stream; accessed
+  *             only when conn is "quiet" and not shared
+  *     replaceStreams() - sync method
+  * Members used by StartTLS:
+  *     inStream, outStream - no sync; used to record the existing streams;
+  *             accessed only when conn is "quiet" and not shared
+  *     replaceStreams() - sync method
+  * <p>
+  * Handles anonymous, simple, and SASL bind for v3; anonymous and simple
+  * for v2.
+  * %%% made public for access by LdapSasl %%%
+  *
+  * @author Vincent Ryan
+  * @author Rosanna Lee
+  * @author Jagane Sundar
+  */
 public final class Connection implements Runnable {
 
     private static final boolean debug = false;
@@ -128,9 +128,9 @@ public final class Connection implements Runnable {
     private boolean v3 = true;       // Set in setV3()
 
     public final String host;  // used by LdapClient for generating exception messages
-    // used by StartTlsResponse when creating an SSL socket
+                         // used by StartTlsResponse when creating an SSL socket
     public final int port;     // used by LdapClient for generating exception messages
-    // used by StartTlsResponse when creating an SSL socket
+                         // used by StartTlsResponse when creating an SSL socket
 
     private boolean bound = false;   // Set in setBound()
 
@@ -211,7 +211,7 @@ public final class Connection implements Runnable {
     ////////////////////////////////////////////////////////////////////////////
 
     Connection(LdapClient parent, String host, int port, String socketFactory,
-               int connectTimeout, int readTimeout, OutputStream trace) throws NamingException {
+        int connectTimeout, int readTimeout, OutputStream trace) throws NamingException {
 
         this.host = host;
         this.port = port;
@@ -243,7 +243,7 @@ public final class Connection implements Runnable {
             // realException.printStackTrace();
 
             CommunicationException ce =
-                    new CommunicationException(host + ":" + port);
+                new CommunicationException(host + ":" + port);
             ce.setRootCause(realException);
             throw ce;
         } catch (Exception e) {
@@ -251,7 +251,7 @@ public final class Connection implements Runnable {
             // ignore generic exceptions.
             // Also catches all IO errors generated by socket creation.
             CommunicationException ce =
-                    new CommunicationException(host + ":" + port);
+                new CommunicationException(host + ":" + port);
             ce.setRootCause(e);
             throw ce;
         }
@@ -265,7 +265,7 @@ public final class Connection implements Runnable {
      * Create an InetSocketAddress using the specified hostname and port number.
      */
     private InetSocketAddress createInetSocketAddress(String host, int port) {
-        return new InetSocketAddress(host, port);
+            return new InetSocketAddress(host, port);
     }
 
     /*
@@ -278,7 +278,7 @@ public final class Connection implements Runnable {
      * is created.
      */
     private Socket createSocket(String host, int port, String socketFactory,
-                                int connectTimeout) throws Exception {
+            int connectTimeout) throws Exception {
 
         SocketFactory factory = getSocketFactory(socketFactory);
         assert factory != null;
@@ -383,15 +383,15 @@ public final class Connection implements Runnable {
     }
 
     LdapRequest writeRequest(BerEncoder ber, int msgId,
-                             boolean pauseAfterReceipt) throws IOException {
+        boolean pauseAfterReceipt) throws IOException {
         return writeRequest(ber, msgId, pauseAfterReceipt, -1);
     }
 
     LdapRequest writeRequest(BerEncoder ber, int msgId,
-                             boolean pauseAfterReceipt, int replyQueueCapacity) throws IOException {
+        boolean pauseAfterReceipt, int replyQueueCapacity) throws IOException {
 
         LdapRequest req =
-                new LdapRequest(msgId, pauseAfterReceipt, replyQueueCapacity);
+            new LdapRequest(msgId, pauseAfterReceipt, replyQueueCapacity);
         addRequest(req);
 
         if (traceFile != null) {
@@ -431,7 +431,7 @@ public final class Connection implements Runnable {
         synchronized (this) {
             if (sock == null) {
                 throw new ServiceUnavailableException(host + ":" + port +
-                        "; socket closed");
+                    "; socket closed");
             }
         }
 
@@ -443,7 +443,7 @@ public final class Connection implements Runnable {
             rber = ldr.getReplyBer(readTimeout);
         } catch (InterruptedException ex) {
             throw new InterruptedNamingException(
-                    "Interrupted during LDAP operation");
+                "Interrupted during LDAP operation");
         } catch (IOException ioe) {
             // Connection is timed out OR closed/cancelled
             // getReplyBer throws IOException when the requests needs to be abandoned
@@ -534,17 +534,17 @@ public final class Connection implements Runnable {
         //
         try {
             ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
-            ber.encodeInt(abandonMsgId);
-            ber.encodeInt(ldr.msgId, LdapClient.LDAP_REQ_ABANDON);
+                ber.encodeInt(abandonMsgId);
+                ber.encodeInt(ldr.msgId, LdapClient.LDAP_REQ_ABANDON);
 
-            if (v3) {
-                LdapClient.encodeControls(ber, reqCtls);
-            }
+                if (v3) {
+                    LdapClient.encodeControls(ber, reqCtls);
+                }
             ber.endSeq();
 
             if (traceFile != null) {
                 Ber.dumpBER(traceFile, traceTagOut, ber.getBuf(), 0,
-                        ber.getDataLen());
+                    ber.getDataLen());
             }
 
             synchronized (this) {
@@ -587,19 +587,19 @@ public final class Connection implements Runnable {
         try {
 
             ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
-            ber.encodeInt(unbindMsgId);
-            // IMPLICIT TAGS
-            ber.encodeByte(LdapClient.LDAP_REQ_UNBIND);
-            ber.encodeByte(0);
+                ber.encodeInt(unbindMsgId);
+                // IMPLICIT TAGS
+                ber.encodeByte(LdapClient.LDAP_REQ_UNBIND);
+                ber.encodeByte(0);
 
-            if (v3) {
-                LdapClient.encodeControls(ber, reqCtls);
-            }
+                if (v3) {
+                    LdapClient.encodeControls(ber, reqCtls);
+                }
             ber.endSeq();
 
             if (traceFile != null) {
                 Ber.dumpBER(traceFile, traceTagOut, ber.getBuf(),
-                        0, ber.getDataLen());
+                    0, ber.getDataLen());
             }
 
             synchronized (this) {
@@ -672,10 +672,10 @@ public final class Connection implements Runnable {
                 LdapRequest ldr = pendingRequests;
                 while (ldr != null) {
                     ldr.close();
-                    ldr = ldr.next;
+                        ldr = ldr.next;
+                    }
                 }
             }
-        }
         if (nparent) {
             parent.processConnectionClosure();
         }
@@ -829,7 +829,7 @@ public final class Connection implements Runnable {
             if (paused) {
                 if (debug) {
                     System.err.println("Unpausing reader; read from: " +
-                            inStream);
+                                        inStream);
                 }
                 paused = false;
                 pauseLock.notify();
@@ -837,7 +837,7 @@ public final class Connection implements Runnable {
         }
     }
 
-    /*
+     /*
      * Pauses reader so that it stops reading from the input stream.
      * Reader blocks on pauseLock instead of read().
      * MUST be called from within synchronized (pauseLock) clause.
@@ -845,7 +845,7 @@ public final class Connection implements Runnable {
     private void pauseReader() throws IOException {
         if (debug) {
             System.err.println("Pausing reader;  was reading from: " +
-                    inStream);
+                                inStream);
         }
         paused = true;
         try {
@@ -927,7 +927,7 @@ public final class Connection implements Runnable {
                         // Read all length bytes
                         while (bytesread < seqlenlen) {
                             br = in.read(inbuf, offset+bytesread,
-                                    seqlenlen-bytesread);
+                                seqlenlen-bytesread);
                             if (br < 0) {
                                 eos = true;
                                 break; // EOF
@@ -1026,7 +1026,7 @@ public final class Connection implements Runnable {
 
             if (debug) {
                 System.err.println("Connection: end-of-stream detected: "
-                        + in);
+                    + in);
             }
         } catch (IOException ex) {
             if (debug) {
@@ -1042,7 +1042,7 @@ public final class Connection implements Runnable {
     }
 
     private static byte[] readFully(InputStream is, int length)
-            throws IOException
+        throws IOException
     {
         byte[] buf = new byte[Math.min(length, 8192)];
         int nread = 0;
@@ -1087,7 +1087,7 @@ public final class Connection implements Runnable {
     }
 
     public X509Certificate getTlsServerCertificate()
-            throws SaslException {
+        throws SaslException {
         try {
             if (isTlsConnection() && tlsHandshakeListener != null)
                 return tlsHandshakeListener.tlsHandshakeCompleted.get();
