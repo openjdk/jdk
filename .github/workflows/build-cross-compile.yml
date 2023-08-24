@@ -111,8 +111,7 @@ jobs:
               g++-${{ inputs.gcc-major-version }} \
               gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
               g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}} \
-              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
-              debian-ports-archive-keyring
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Check cache for sysroot'
@@ -134,7 +133,6 @@ jobs:
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype-dev,libpng-dev
           --resolve-deps
           --variant=minbase
-          $(test -n "${{ matrix.debian-keyring }}" && echo "--keyring=${{ matrix.debian-keyring }}")
           ${{ matrix.debian-version }}
           sysroot
           ${{ matrix.debian-repository }}
