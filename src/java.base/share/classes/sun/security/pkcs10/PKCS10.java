@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.math.BigInteger;
 
 import java.security.*;
 
+import java.util.Arrays;
 import java.util.Base64;
 
 import sun.security.util.*;
@@ -324,41 +325,37 @@ public class PKCS10 {
 
     /**
      * Compares this object for equality with the specified
-     * object. If the <code>other</code> object is an
+     * object. If the <code>obj</code> object is an
      * <code>instanceof</code> <code>PKCS10</code>, then
      * its encoded form is retrieved and compared with the
      * encoded form of this certificate request.
      *
-     * @param other the object to test for equality with this object.
+     * @param obj the object to test for equality with this object.
      * @return true iff the encoded forms of the two certificate
      * requests match, false otherwise.
      */
-    public boolean equals(Object other) {
-        if (this == other)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
             return true;
-        if (!(other instanceof PKCS10))
+        if (!(obj instanceof PKCS10 other))
             return false;
         if (encoded == null) // not signed yet
             return false;
-        byte[] otherEncoded = ((PKCS10)other).getEncoded();
+        byte[] otherEncoded = other.getEncoded();
         if (otherEncoded == null)
             return false;
 
-        return java.util.Arrays.equals(encoded, otherEncoded);
+        return Arrays.equals(encoded, otherEncoded);
     }
 
     /**
-     * Returns a hashcode value for this certificate request from its
-     * encoded form.
-     *
-     * @return the hashcode value.
+     * {@return the hashcode value for this certificate request from its
+     * encoded form}
      */
+    @Override
     public int hashCode() {
-        int     retval = 0;
-        if (encoded != null)
-            for (int i = 1; i < encoded.length; i++)
-             retval += encoded[i] * i;
-        return(retval);
+        return Arrays.hashCode(encoded);
     }
 
     private X500Name                subject;

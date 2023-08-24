@@ -47,6 +47,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
@@ -429,7 +430,7 @@ void MetaspaceGC::compute_new_size() {
   // Including the chunk free lists in the definition of "in use" is therefore
   // necessary. Not including the chunk free lists can cause capacity_until_GC to
   // shrink below committed_bytes() and this has caused serious bugs in the past.
-  const size_t used_after_gc = MetaspaceUtils::committed_bytes();
+  const double used_after_gc = (double)MetaspaceUtils::committed_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
@@ -463,10 +464,10 @@ void MetaspaceGC::compute_new_size() {
                                                new_capacity_until_GC,
                                                MetaspaceGCThresholdUpdater::ComputeNewSize);
       log_trace(gc, metaspace)("    expanding:  minimum_desired_capacity: %6.1fKB  expand_bytes: %6.1fKB  MinMetaspaceExpansion: %6.1fKB  new metaspace HWM:  %6.1fKB",
-                               minimum_desired_capacity / (double) K,
-                               expand_bytes / (double) K,
-                               MinMetaspaceExpansion / (double) K,
-                               new_capacity_until_GC / (double) K);
+                               (double) minimum_desired_capacity / (double) K,
+                               (double) expand_bytes / (double) K,
+                               (double) MinMetaspaceExpansion / (double) K,
+                               (double) new_capacity_until_GC / (double) K);
     }
     return;
   }
@@ -489,7 +490,7 @@ void MetaspaceGC::compute_new_size() {
     log_trace(gc, metaspace)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
                              maximum_free_percentage, minimum_used_percentage);
     log_trace(gc, metaspace)("    minimum_desired_capacity: %6.1fKB  maximum_desired_capacity: %6.1fKB",
-                             minimum_desired_capacity / (double) K, maximum_desired_capacity / (double) K);
+                             (double) minimum_desired_capacity / (double) K, (double) maximum_desired_capacity / (double) K);
 
     assert(minimum_desired_capacity <= maximum_desired_capacity,
            "sanity check");
@@ -516,9 +517,9 @@ void MetaspaceGC::compute_new_size() {
         _shrink_factor = MIN2(current_shrink_factor * 4, (uint) 100);
       }
       log_trace(gc, metaspace)("    shrinking:  initThreshold: %.1fK  maximum_desired_capacity: %.1fK",
-                               MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
+                               (double) MetaspaceSize / (double) K, (double) maximum_desired_capacity / (double) K);
       log_trace(gc, metaspace)("    shrink_bytes: %.1fK  current_shrink_factor: %d  new shrink factor: %d  MinMetaspaceExpansion: %.1fK",
-                               shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, MinMetaspaceExpansion / (double) K);
+                               (double) shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, (double) MinMetaspaceExpansion / (double) K);
     }
   }
 
@@ -591,8 +592,8 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
 #if defined(AARCH64) || defined(PPC64)
   const size_t alignment = Metaspace::reserve_alignment();
 
-  // AArch64: Try to align metaspace so that we can decode a compressed
-  // klass with a single MOVK instruction. We can do this iff the
+  // AArch64: Try to align metaspace class space so that we can decode a
+  // compressed klass with a single MOVK instruction. We can do this iff the
   // compressed class base is a multiple of 4G.
   // Additionally, above 32G, ensure the lower LogKlassAlignmentInBytes bits
   // of the upper 32-bits of the address are zero so we can handle a shift
@@ -615,17 +616,37 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     {  nullptr, nullptr, 0 }
   };
 
+  // Calculate a list of all possible values for the starting address for the
+  // compressed class space.
+  ResourceMark rm;
+  GrowableArray<address> list(36);
   for (int i = 0; search_ranges[i].from != nullptr; i ++) {
     address a = search_ranges[i].from;
     assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
     while (a < search_ranges[i].to) {
-      ReservedSpace rs(size, Metaspace::reserve_alignment(),
-                       os::vm_page_size(), (char*)a);
-      if (rs.is_reserved()) {
-        assert(a == (address)rs.base(), "Sanity");
-        return rs;
-      }
+      list.append(a);
       a +=  search_ranges[i].increment;
+    }
+  }
+
+  int len = list.length();
+  int r = 0;
+  if (!DumpSharedSpaces) {
+    // Starting from a random position in the list. If the address cannot be reserved
+    // (the OS already assigned it for something else), go to the next position, wrapping
+    // around if necessary, until we exhaust all the items.
+    os::init_random((int)os::javaTimeNanos());
+    r = os::random();
+    log_info(metaspace)("Randomizing compressed class space: start from %d out of %d locations",
+                        r % len, len);
+  }
+  for (int i = 0; i < len; i++) {
+    address a = list.at((i + r) % len);
+    ReservedSpace rs(size, Metaspace::reserve_alignment(),
+                     os::vm_page_size(), (char*)a);
+    if (rs.is_reserved()) {
+      assert(a == (address)rs.base(), "Sanity");
+      return rs;
     }
   }
 #endif // defined(AARCH64) || defined(PPC64)
@@ -687,7 +708,7 @@ void Metaspace::ergo_initialize() {
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = MaxMetaspaceSize * 0.8;
+    size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
     size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
 
     // CCS must be aligned to root chunk size, and be at least the size of one

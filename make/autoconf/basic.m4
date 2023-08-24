@@ -406,9 +406,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # WARNING: This might be a bad thing to do. You need to be sure you want to
     # have a configuration in this directory. Do some sanity checks!
 
-    if test ! -e "$OUTPUTDIR/spec.gmk"; then
-      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
-      # other files
+    if test ! -e "$OUTPUTDIR/spec.gmk" && test ! -e "$OUTPUTDIR/configure-support/generated-configure.sh"; then
+      # If we have a spec.gmk or configure-support/generated-configure.sh,
+      # we have run here before and we are OK. Otherwise, check for other files
       files_present=`$LS $OUTPUTDIR`
       # Configure has already touched config.log and confdefs.h in the current dir when this check
       # is performed.
@@ -423,8 +423,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
         AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
         AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
         AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
-        AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
-        AC_MSG_NOTICE([seriously mess up just about everything.])
+        AC_MSG_NOTICE([However, this directory is not empty, additionally to some allowed files])
+        AC_MSG_NOTICE([it contains $filtered_files.])
+        AC_MSG_NOTICE([This is not allowed, since it could seriously mess up just about everything.])
         AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
         AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
         AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])

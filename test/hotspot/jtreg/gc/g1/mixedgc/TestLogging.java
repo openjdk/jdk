@@ -101,4 +101,3 @@ class RunMixedGC {
         MixedGCProvoker.allocateAndProvokeMixedGC(MB);
     }
 }
-
