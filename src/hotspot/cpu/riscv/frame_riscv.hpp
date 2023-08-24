@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -232,8 +232,5 @@
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
-
-  // Additional interface for interpreter frames:
-  static int interpreter_frame_monitor_size_in_bytes();
 
 #endif // CPU_RISCV_FRAME_RISCV_HPP

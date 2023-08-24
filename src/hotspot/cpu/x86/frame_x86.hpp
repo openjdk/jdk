@@ -190,7 +190,4 @@
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;
 
-  // Additional interface for interpreter frames:
-  static int interpreter_frame_monitor_size_in_bytes();
-
 #endif // CPU_X86_FRAME_X86_HPP

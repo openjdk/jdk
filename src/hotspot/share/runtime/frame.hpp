@@ -489,6 +489,9 @@ class frame {
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 
+  // Additional interface for interpreter frames:
+  static int interpreter_frame_monitor_size_in_bytes();
+
 #include CPU_HEADER(frame)
 
 };
