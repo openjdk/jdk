@@ -1426,7 +1426,8 @@ static const Type* urshift_value(const Node* in1, const Node* in2, PhaseGVN* pha
   i2 = and_mul_ring<TypeInt>(i2, TypeInt::make(W - 1))->is_int();
 
   T lo = (i1->_lo < 0 && i2->_ulo == 0) ? i1->_lo : (i1->_ulo >> i2->_uhi);
-  T hi = (i2->_uhi == 0) ? i1->_hi : (i1->_uhi >> i2->_ulo);
+  T hi = (i2->_uhi == 0) ? i1->_hi
+                         : ((i2->_ulo == 0) ? MAX2<T>(i1->_hi, i1->_uhi >> 1) : (i1->_uhi >> i2->_ulo));
 
   U ulo = i1->_ulo >> i2->_uhi;
   U uhi = i1->_uhi >> i2->_ulo;
