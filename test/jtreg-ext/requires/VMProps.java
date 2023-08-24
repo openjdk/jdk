@@ -130,7 +130,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
-        map.put("docker.support", this::dockerSupport);
+        map.put("docker.support", this::containerSupport);
         map.put("vm.musl", this::isMusl);
         map.put("release.implementor", this::implementor);
         map.put("jdk.containerized", this::jdkContainerized);
@@ -528,16 +528,16 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * A simple check for docker support
+     * A simple check for container support
      *
-     * @return true if docker is supported in a given environment
+     * @return true if container subsystem is supported in a given environment
      */
-    protected String dockerSupport() {
-        log("Entering dockerSupport()");
+    protected String containerSupport() {
+        log("Entering containerSupport()");
 
         boolean isSupported = true;
         if (Platform.isLinux()) {
-           // currently docker testing is only supported for Linux,
+           // currently container testing is only supported for Linux,
            // on certain platforms
 
            String arch = System.getProperty("os.arch");
@@ -553,7 +553,7 @@ public class VMProps implements Callable<Map<String, String>> {
            }
         }
 
-        log("dockerSupport(): platform check: isSupported = " + isSupported);
+        log("containerSupport(): platform check: isSupported = " + isSupported);
 
         if (isSupported) {
            try {
@@ -563,7 +563,7 @@ public class VMProps implements Callable<Map<String, String>> {
            }
          }
 
-        log("dockerSupport(): returning isSupported = " + isSupported);
+        log("containerSupport(): returning isSupported = " + isSupported);
         return "" + isSupported;
     }
 
