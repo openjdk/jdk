@@ -119,12 +119,11 @@ void GrowableCache::recache() {
   _listener_fun(_this_obj,_cache);
 }
 
-bool GrowableCache::equals(void* v, GrowableElement *e2) {
-  GrowableElement *e1 = (GrowableElement *) v;
-  assert(e1 != nullptr, "e1 != nullptr");
+bool GrowableCache::equals(GrowableElement* v, GrowableElement *e2) {
+  assert(v != nullptr, "v != nullptr");
   assert(e2 != nullptr, "e2 != nullptr");
 
-  return e1->equals(e2);
+  return v->equals(e2);
 }
 
 //

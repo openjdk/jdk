@@ -88,7 +88,7 @@ private:
   // (but NOT when cached elements are recomputed).
   void (*_listener_fun)(void *, address*);
 
-  static bool equals(void *, GrowableElement *);
+  static bool equals(GrowableElement *, GrowableElement *);
 
   // recache all elements after size change, notify listener
   void recache();

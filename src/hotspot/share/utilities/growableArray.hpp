@@ -209,13 +209,13 @@ public:
     return -1;
   }
 
-  int  find(void* token, bool f(void*, E)) const {
+  template<typename T>
+  int  find(T* token, bool f(T*, E)) const {
     for (int i = 0; i < _len; i++) {
       if (f(token, _data[i])) return i;
     }
     return -1;
   }
-
   int  find_from_end(void* token, bool f(void*, E)) const {
     // start at the end of the array
     for (int i = _len-1; i >= 0; i--) {
