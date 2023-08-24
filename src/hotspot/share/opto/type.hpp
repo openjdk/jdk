@@ -607,6 +607,7 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jint i) const { return is_con() && _lo == i; }
   jint get_con() const { assert(is_con(), "");  return _lo; }
+  bool contains(jint i) const;
 
   virtual bool is_finite() const;  // Has a finite value
 
@@ -620,27 +621,29 @@ public:
 
   // Do not kill _widen bits.
   // Convenience common pre-built types.
-  static const TypeInt *MAX;
-  static const TypeInt *MIN;
-  static const TypeInt *MINUS_1;
-  static const TypeInt *ZERO;
-  static const TypeInt *ONE;
-  static const TypeInt *BOOL;
-  static const TypeInt *CC;
-  static const TypeInt *CC_LT;  // [-1]  == MINUS_1
-  static const TypeInt *CC_GT;  // [1]   == ONE
-  static const TypeInt *CC_EQ;  // [0]   == ZERO
-  static const TypeInt *CC_LE;  // [-1,0]
-  static const TypeInt *CC_GE;  // [0,1] == BOOL (!)
-  static const TypeInt *BYTE;
-  static const TypeInt *UBYTE;
-  static const TypeInt *CHAR;
-  static const TypeInt *SHORT;
-  static const TypeInt *POS;
-  static const TypeInt *POS1;
-  static const TypeInt *INT;
-  static const TypeInt *SYMINT; // symmetric range [-max_jint..max_jint]
-  static const TypeInt *TYPE_DOMAIN; // alias for TypeInt::INT
+  static const TypeInt* MAX;
+  static const TypeInt* MIN;
+  static const TypeInt* MINUS_1;
+  static const TypeInt* ZERO;
+  static const TypeInt* ONE;
+  static const TypeInt* BOOL;
+  static const TypeInt* CC;
+  static const TypeInt* CC_LT;  // [-1]  == MINUS_1
+  static const TypeInt* CC_GT;  // [1]   == ONE
+  static const TypeInt* CC_EQ;  // [0]   == ZERO
+  static const TypeInt* CC_NE;  // [-1, 1]
+  static const TypeInt* CC_LE;  // [-1,0]
+  static const TypeInt* CC_GE;  // [0,1] == BOOL (!)
+  static const TypeInt* BYTE;
+  static const TypeInt* UBYTE;
+  static const TypeInt* CHAR;
+  static const TypeInt* SHORT;
+  static const TypeInt* NON_ZERO;
+  static const TypeInt* POS;
+  static const TypeInt* POS1;
+  static const TypeInt* INT;
+  static const TypeInt* SYMINT; // symmetric range [-max_jint..max_jint]
+  static const TypeInt* TYPE_DOMAIN; // alias for TypeInt::INT
 
   static const TypeInt *as_self(const Type *t) { return t->is_int(); }
 #ifndef PRODUCT
@@ -681,6 +684,7 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
+  bool contains(jlong i) const;
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
@@ -695,16 +699,17 @@ public:
   virtual const Type* widen(const Type* t, const Type* limit_type) const;
   virtual const Type* narrow(const Type* t) const;
   // Convenience common pre-built types.
-  static const TypeLong *MAX;
-  static const TypeLong *MIN;
-  static const TypeLong *MINUS_1;
-  static const TypeLong *ZERO;
-  static const TypeLong *ONE;
-  static const TypeLong *POS;
-  static const TypeLong *LONG;
-  static const TypeLong *INT;    // 32-bit subrange [min_jint..max_jint]
-  static const TypeLong *UINT;   // 32-bit unsigned [0..max_juint]
-  static const TypeLong *TYPE_DOMAIN; // alias for TypeLong::LONG
+  static const TypeLong* MAX;
+  static const TypeLong* MIN;
+  static const TypeLong* MINUS_1;
+  static const TypeLong* ZERO;
+  static const TypeLong* ONE;
+  static const TypeLong* NON_ZERO;
+  static const TypeLong* POS;
+  static const TypeLong* LONG;
+  static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
+  static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
+  static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
   static const TypeLong *as_self(const Type *t) { return t->is_long(); }

@@ -466,22 +466,24 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::MINUS_1 = TypeInt::make(-1);  // -1
   TypeInt::ZERO    = TypeInt::make( 0);  //  0
   TypeInt::ONE     = TypeInt::make( 1);  //  1
-  TypeInt::BOOL    = TypeInt::make(0,1,   WidenMin)->is_int();  // 0 or 1, FALSE or TRUE.
+  TypeInt::BOOL    = TypeInt::make( 0, 1, WidenMin)->is_int();  // 0 or 1, FALSE or TRUE.
   TypeInt::CC      = TypeInt::make(-1, 1, WidenMin)->is_int();  // -1, 0 or 1, condition codes
   TypeInt::CC_LT   = TypeInt::make(-1,-1, WidenMin)->is_int();  // == TypeInt::MINUS_1
   TypeInt::CC_GT   = TypeInt::make( 1, 1, WidenMin)->is_int();  // == TypeInt::ONE
   TypeInt::CC_EQ   = TypeInt::make( 0, 0, WidenMin)->is_int();  // == TypeInt::ZERO
+  TypeInt::CC_NE   = TypeInt::make(-1, 1, 1, -1, 0, 1, WidenMin)->is_int();
   TypeInt::CC_LE   = TypeInt::make(-1, 0, WidenMin)->is_int();
   TypeInt::CC_GE   = TypeInt::make( 0, 1, WidenMin)->is_int();  // == TypeInt::BOOL
-  TypeInt::BYTE    = TypeInt::make(-128,127,     WidenMin)->is_int(); // Bytes
+  TypeInt::BYTE    = TypeInt::make(-128, 127,    WidenMin)->is_int(); // Bytes
   TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin)->is_int(); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin)->is_int(); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin)->is_int(); // Java shorts
+  TypeInt::NON_ZERO= TypeInt::make(min_jint, max_jint, 1, -1, 0, 0, WidenMax)->is_int();
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin)->is_int(); // Non-neg values
   TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin)->is_int(); // Positive values
-  TypeInt::INT     = TypeInt::make(min_jint,max_jint, WidenMax)->is_int(); // 32-bit integers
-  TypeInt::SYMINT  = TypeInt::make(-max_jint,max_jint,WidenMin)->is_int(); // symmetric range
-  TypeInt::TYPE_DOMAIN  = TypeInt::INT;
+  TypeInt::INT     = TypeInt::make(min_jint, max_jint, WidenMax)->is_int(); // 32-bit integers
+  TypeInt::SYMINT  = TypeInt::make(-max_jint, max_jint, WidenMin)->is_int(); // symmetric range
+  TypeInt::TYPE_DOMAIN = TypeInt::INT;
   // CmpL is overloaded both as the bytecode computation returning
   // a trinary (-1,0,+1) integer result AND as an efficient long
   // compare returning optimizer ideal-type flags.
@@ -496,6 +498,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
+  TypeLong::NON_ZERO= TypeLong::make(min_jlong, max_jlong, 1, -1, 0, 0, WidenMax)->is_long();
   TypeLong::POS     = TypeLong::make(0,max_jlong, WidenMin)->is_long(); // Non-neg values
   TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax)->is_long(); // 64-bit integers
   TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin)->is_long();
@@ -1911,27 +1914,29 @@ static const Type* int_type_narrow(const CT* nt, const CT* ot, const CT* bot) {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeInt *TypeInt::MAX;    // INT_MAX
-const TypeInt *TypeInt::MIN;    // INT_MIN
-const TypeInt *TypeInt::MINUS_1;// -1
-const TypeInt *TypeInt::ZERO;   // 0
-const TypeInt *TypeInt::ONE;    // 1
-const TypeInt *TypeInt::BOOL;   // 0 or 1, FALSE or TRUE.
-const TypeInt *TypeInt::CC;     // -1,0 or 1, condition codes
-const TypeInt *TypeInt::CC_LT;  // [-1]  == MINUS_1
-const TypeInt *TypeInt::CC_GT;  // [1]   == ONE
-const TypeInt *TypeInt::CC_EQ;  // [0]   == ZERO
-const TypeInt *TypeInt::CC_LE;  // [-1,0]
-const TypeInt *TypeInt::CC_GE;  // [0,1] == BOOL (!)
-const TypeInt *TypeInt::BYTE;   // Bytes, -128 to 127
-const TypeInt *TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
-const TypeInt *TypeInt::CHAR;   // Java chars, 0-65535
-const TypeInt *TypeInt::SHORT;  // Java shorts, -32768-32767
-const TypeInt *TypeInt::POS;    // Positive 32-bit integers or zero
-const TypeInt *TypeInt::POS1;   // Positive 32-bit integers
-const TypeInt *TypeInt::INT;    // 32-bit integers
-const TypeInt *TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
-const TypeInt *TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
+const TypeInt* TypeInt::MAX;    // INT_MAX
+const TypeInt* TypeInt::MIN;    // INT_MIN
+const TypeInt* TypeInt::MINUS_1;// -1
+const TypeInt* TypeInt::ZERO;   // 0
+const TypeInt* TypeInt::ONE;    // 1
+const TypeInt* TypeInt::BOOL;   // 0 or 1, FALSE or TRUE.
+const TypeInt* TypeInt::CC;     // -1,0 or 1, condition codes
+const TypeInt* TypeInt::CC_LT;  // [-1]  == MINUS_1
+const TypeInt* TypeInt::CC_GT;  // [1]   == ONE
+const TypeInt* TypeInt::CC_EQ;  // [0]   == ZERO
+const TypeInt* TypeInt::CC_NE;
+const TypeInt* TypeInt::CC_LE;  // [-1,0]
+const TypeInt* TypeInt::CC_GE;  // [0,1] == BOOL (!)
+const TypeInt* TypeInt::BYTE;   // Bytes, -128 to 127
+const TypeInt* TypeInt::UBYTE;  // Unsigned Bytes, 0 to 255
+const TypeInt* TypeInt::CHAR;   // Java chars, 0-65535
+const TypeInt* TypeInt::SHORT;  // Java shorts, -32768-32767
+const TypeInt* TypeInt::NON_ZERO;
+const TypeInt* TypeInt::POS;    // Positive 32-bit integers or zero
+const TypeInt* TypeInt::POS1;   // Positive 32-bit integers
+const TypeInt* TypeInt::INT;    // 32-bit integers
+const TypeInt* TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
+const TypeInt* TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 TypeInt::TypeInt(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual)
   : TypeInteger(Int, w, dual), _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
@@ -1962,6 +1967,12 @@ const Type* TypeInt::make_bits(juint zeros, juint ones, int w) {
 
 const Type* TypeInt::make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w) {
   return make(lo, hi, ulo, uhi, zeros, ones, w, false);
+}
+
+bool TypeInt::contains(jint i) const {
+  juint u = i;
+  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
+         (u & _zeros) == 0 && (~u & _ones) == 0;
 }
 
 //------------------------------meet-------------------------------------------
@@ -2153,16 +2164,17 @@ bool TypeInt::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeLong *TypeLong::MAX;
-const TypeLong *TypeLong::MIN;
-const TypeLong *TypeLong::MINUS_1;// -1
-const TypeLong *TypeLong::ZERO; // 0
-const TypeLong *TypeLong::ONE;  // 1
-const TypeLong *TypeLong::POS;  // >=0
-const TypeLong *TypeLong::LONG; // 64-bit integers
-const TypeLong *TypeLong::INT;  // 32-bit subrange
-const TypeLong *TypeLong::UINT; // 32-bit unsigned subrange
-const TypeLong *TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
+const TypeLong* TypeLong::MAX;
+const TypeLong* TypeLong::MIN;
+const TypeLong* TypeLong::MINUS_1;// -1
+const TypeLong* TypeLong::ZERO; // 0
+const TypeLong* TypeLong::ONE;  // 1
+const TypeLong* TypeLong::NON_ZERO;
+const TypeLong* TypeLong::POS;  // >=0
+const TypeLong* TypeLong::LONG; // 64-bit integers
+const TypeLong* TypeLong::INT;  // 32-bit subrange
+const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
+const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 TypeLong::TypeLong(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual)
   : TypeInteger(Long, w, dual), _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
@@ -2195,6 +2207,11 @@ const Type* TypeLong::make(jlong lo, jlong hi, julong ulo, julong uhi, julong ze
   return make(lo, hi, ulo, uhi, zeros, ones, w, false);
 }
 
+bool TypeLong::contains(jlong i) const {
+  julong u = i;
+  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
+         (u & _zeros) == 0 && (~u & _ones) == 0;
+}
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type representation object

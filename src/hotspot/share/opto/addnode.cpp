@@ -963,8 +963,13 @@ template <class CT>
 static const Type* xor_add_ring(const Type* t1, const Type* t2) {
   const CT* i1 = CT::cast(t1);
   const CT* i2 = CT::cast(t2);
-  return CT::make_bits((i1->_zeros & i2->_zeros) | (i1->_ones & i2->_ones),
-                       (i1->_zeros & i2->_ones) | (i1->_ones & i2->_zeros), MAX2(i1->_widen, i2->_widen));
+  const Type* res = CT::make_bits((i1->_zeros & i2->_zeros) | (i1->_ones & i2->_ones),
+                                  (i1->_zeros & i2->_ones) | (i1->_ones & i2->_zeros), MAX2(i1->_widen, i2->_widen));
+  // If inputs do not overlap, result cannot be 0
+  if (CT::cast(res)->contains(0) && i1->join(i2) == Type::TOP) {
+    res = res->join(CT::NON_ZERO);
+  }
+  return res;
 }
 
 template <class CT>
