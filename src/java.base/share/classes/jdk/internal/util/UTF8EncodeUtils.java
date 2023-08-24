@@ -62,10 +62,12 @@ import jdk.internal.vm.annotation.ForceInline;
  */
 public class UTF8EncodeUtils {
 
+    @ForceInline
     public static boolean isSingleByte(char c) {
         return c < 0x80;
     }
 
+    @ForceInline
     public static boolean isDoubleBytes(char c) {
         return c < 0x800;
     }
