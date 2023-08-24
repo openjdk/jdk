@@ -99,7 +99,7 @@ using MacroAssembler::null_check;
   // header_size: size of object header in words
   // f          : element scale factor
   // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int header_size, int f, Register klass, Label& slow_case);
+  void allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int base_offset_in_bytes, int f, Register klass, Label& slow_case);
 
   int  rsp_offset() const { return _rsp_offset; }
 
