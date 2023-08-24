@@ -1778,7 +1778,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   if (i > 0) {
     int length = i;
     assert(length == fields_sorted.length(), "duh");
-    // _sort_Fn is defined in growableArray.hpp.
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
       fd.reinitialize(this, fields_sorted.at(i).second);

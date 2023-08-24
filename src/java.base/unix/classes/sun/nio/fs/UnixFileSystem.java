@@ -32,6 +32,7 @@ import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemException;
 import java.nio.file.LinkOption;
 import java.nio.file.LinkPermission;
 import java.nio.file.Path;
@@ -519,6 +520,8 @@ abstract class UnixFileSystem
         try {
             mkdir(target, attrs.mode());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
 
@@ -665,6 +668,8 @@ abstract class UnixFileSystem
                             O_EXCL),
                            attrs.mode());
             } catch (UnixException x) {
+                if (x.errno() == EEXIST && flags.replaceExisting)
+                    throw new FileSystemException(target.toString());
                 x.rethrowAsIOException(target);
             }
 
@@ -783,6 +788,8 @@ abstract class UnixFileSystem
                 }
             }
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
     }
@@ -797,6 +804,8 @@ abstract class UnixFileSystem
         try {
             mknod(target, attrs.mode(), attrs.rdev());
         } catch (UnixException x) {
+            if (x.errno() == EEXIST && flags.replaceExisting)
+                throw new FileSystemException(target.toString());
             x.rethrowAsIOException(target);
         }
         boolean done = false;

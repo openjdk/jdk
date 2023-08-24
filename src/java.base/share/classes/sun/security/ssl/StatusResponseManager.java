@@ -106,74 +106,6 @@ final class StatusResponseManager {
     }
 
     /**
-     * Get the current cache lifetime setting
-     *
-     * @return the current cache lifetime value
-     */
-    int getCacheLifetime() {
-        return cacheLifetime;
-    }
-
-    /**
-     * Get the current maximum cache size.
-     *
-     * @return the current maximum cache size
-     */
-    int getCacheCapacity() {
-        return cacheCapacity;
-    }
-
-    /**
-     * Get the default OCSP responder URI, if previously set.
-     *
-     * @return the current default OCSP responder URI, or {@code null} if
-     *      it has not been set.
-     */
-    URI getDefaultResponder() {
-        return defaultResponder;
-    }
-
-    /**
-     * Get the URI override setting
-     *
-     * @return {@code true} if URI override has been set, {@code false}
-     * otherwise.
-     */
-    boolean getURIOverride() {
-        return respOverride;
-    }
-
-    /**
-     * Get the ignore extensions setting.
-     *
-     * @return {@code true} if the {@code StatusResponseManager} will not
-     * pass OCSP Extensions in the TLS {@code status_request[_v2]}
-     * extensions, {@code false} if extensions will be passed (the default).
-     */
-    boolean getIgnoreExtensions() {
-        return ignoreExtensions;
-    }
-
-    /**
-     * Clear the status response cache
-     */
-    void clear() {
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
-            SSLLogger.fine("Clearing response cache");
-        }
-        responseCache.clear();
-    }
-
-    /**
-     * Returns the number of currently valid objects in the response cache.
-     *
-     * @return the number of valid objects in the response cache.
-     */
-    int size() {
-        return responseCache.size();
-    }
-
-    /**
      * Obtain the URI use by the {@code StatusResponseManager} during
      * lookups.
      *
@@ -209,17 +141,6 @@ final class StatusResponseManager {
             URI certURI = OCSP.getResponderURI(cert);
             return (certURI != null ? certURI : defaultResponder);
         }
-    }
-
-    /**
-     * Shutdown the thread pool
-     */
-    void shutdown() {
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
-            SSLLogger.fine("Shutting down " + threadMgr.getActiveCount() +
-                    " active threads");
-        }
-        threadMgr.shutdown();
     }
 
     /**
@@ -448,20 +369,6 @@ final class StatusResponseManager {
         ResponseCacheEntry responseData;
 
         /**
-         * Create a StatusInfo object from certificate data.
-         *
-         * @param subjectCert the certificate to be checked for revocation
-         * @param issuerCert the issuer of the {@code subjectCert}
-         *
-         * @throws IOException if CertId creation from the certificate fails
-         */
-        StatusInfo(X509Certificate subjectCert, X509Certificate issuerCert)
-                throws IOException {
-            this(subjectCert, new CertId(issuerCert,
-                    new SerialNumber(subjectCert.getSerialNumber())));
-        }
-
-        /**
          * Create a StatusInfo object from an existing subject certificate
          * and its corresponding CertId.
          *
@@ -473,21 +380,6 @@ final class StatusResponseManager {
             cid = certId;
             responder = getURI(cert);
             responseData = null;
-        }
-
-        /**
-         * Copy constructor (used primarily for rescheduling).
-         * This will do a member-wise copy except for the
-         * responseData and extensions fields, which should not persist
-         * in a rescheduled fetch.
-         *
-         * @param orig the original {@code StatusInfo}
-         */
-        StatusInfo(StatusInfo orig) {
-            this.cert = orig.cert;
-            this.cid = orig.cid;
-            this.responder = orig.responder;
-            this.responseData = null;
         }
 
         /**
@@ -687,38 +579,6 @@ final class StatusResponseManager {
             }
         }
 
-        /**
-         * Determine the delay to use when scheduling the task that will
-         * update the OCSP response.  This is the shorter time between the
-         * cache lifetime and the nextUpdate.  If no nextUpdate is present
-         * in the response, then only the cache lifetime is used.
-         * If cache timeouts are disabled (a zero value) and there's no
-         * nextUpdate, then the entry is not cached and no rescheduling
-         * will take place.
-         *
-         * @param nextUpdate a {@code Date} object corresponding to the
-         *      next update time from a SingleResponse.
-         *
-         * @return the number of seconds of delay before the next fetch
-         *      should be executed.  A zero value means that the fetch
-         *      should happen immediately, while a value less than zero
-         *      indicates no rescheduling should be done.
-         */
-        private long getNextTaskDelay(Date nextUpdate) {
-            long delaySec;
-            int lifetime = getCacheLifetime();
-
-            if (nextUpdate != null) {
-                long nuDiffSec = (nextUpdate.getTime() -
-                        System.currentTimeMillis()) / 1000;
-                delaySec = lifetime > 0 ? Long.min(nuDiffSec, lifetime) :
-                        nuDiffSec;
-            } else {
-                delaySec = lifetime > 0 ? lifetime : -1;
-            }
-
-            return delaySec;
-        }
     }
 
     static final StaplingParameters processStapling(
@@ -884,7 +744,7 @@ final class StatusResponseManager {
                 // response cannot be zero length
                 if (type == CertStatusRequestType.OCSP) {
                     byte[] respDER = responses.get(certs[0]);
-                    if (respDER == null || respDER.length <= 0) {
+                    if (respDER == null || respDER.length == 0) {
                         if (SSLLogger.isOn &&
                                 SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.finest("Warning: Null or zero-length " +
@@ -909,7 +769,6 @@ final class StatusResponseManager {
                         "of the StatusResponseManager failed.  " +
                         "Stapling is disabled.");
             }
-            params = null;
         }
 
         return params;
@@ -934,4 +793,3 @@ final class StatusResponseManager {
         }
     }
 }
-

@@ -26,7 +26,12 @@
  * @bug 8044411
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
  *          Checks that the attribute is generated for bridge method.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
@@ -68,9 +73,9 @@ public class RuntimeParameterAnnotationsForGenericMethodTest extends RuntimePara
             // generate: public class Test extends java.util.ArrayList<Integer>
             TestCase testCase = new TestCase();
             TestCase.TestClassInfo clazz = testCase.addClassInfo("java.util.ArrayList<Integer>", ClassType.CLASS, "Test");
-            TestCase.TestParameterInfo parameter = clazz.addMethodInfo("add(java.lang.Integer)", "public").addParameter("Integer", "i");
+            TestCase.TestParameterInfo parameter = clazz.addMethodInfo("add(Integer)", "public").addParameter("Integer", "i");
             annotations.annotate(parameter);
-            TestCase.TestParameterInfo synParameter = clazz.addMethodInfo("add(java.lang.Object)", true, "public").addParameter("Object", "i");
+            TestCase.TestParameterInfo synParameter = clazz.addMethodInfo("add(Object)", true, "public").addParameter("Object", "i");
             annotations.annotate(synParameter);
             testCases.add(testCase);
         }

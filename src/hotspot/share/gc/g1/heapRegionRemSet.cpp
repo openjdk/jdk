@@ -73,13 +73,17 @@ void HeapRegionRemSet::clear(bool only_cardset) {
   clear_locked(only_cardset);
 }
 
-void HeapRegionRemSet::clear_locked(bool only_cardset) {
+void HeapRegionRemSet::clear_locked(bool only_cardset, bool keep_tracked) {
   if (!only_cardset) {
     _code_roots.clear();
   }
   clear_fcc();
   _card_set.clear();
-  set_state_untracked();
+  if (!keep_tracked) {
+    set_state_untracked();
+  } else {
+    assert(is_tracked(), "must be");
+  }
   assert(occupied() == 0, "Should be clear.");
 }
 

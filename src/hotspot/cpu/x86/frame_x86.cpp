@@ -352,7 +352,9 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
 
 // Used by template based interpreter deoptimization
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
-    *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized last_sp
+  ptr_at_put(interpreter_frame_last_sp_offset, sp != nullptr ? (sp - fp()) : 0);
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
@@ -496,7 +498,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // do some validation of frame elements
   // first the method
 
-  Method* m = *interpreter_frame_method_addr();
+  Method* m = safe_interpreter_frame_method();
 
   // validate the method we'd find in this potential sender
   if (!Method::is_valid_method(m)) return false;
