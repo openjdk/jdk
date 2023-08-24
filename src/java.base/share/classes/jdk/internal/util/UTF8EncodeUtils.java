@@ -60,7 +60,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * }
  * @since 22
  */
-public class UTF8EncodeUtils {
+public final class UTF8EncodeUtils {
+
+    private UTF8EncodeUtils() {
+    }
 
     @ForceInline
     public static boolean isSingleByte(char c) {
