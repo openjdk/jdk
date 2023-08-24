@@ -3491,7 +3491,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
   // just executed a needless mmap->munmap cycle.
   // Since Linux 4.17, the kernel offers MAP_FIXED_NOREPLACE. With this flag, if a pre-
   // existing mapping exists, the kernel will not map at an alternative point but instead
-  // return an error. We can therefore save that unnecassary mmap-munmap cycle.
+  // return an error. We can therefore save that unnecessary mmap-munmap cycle.
   //
   // Backward compatibility: Older kernels will ignore the unknown flag; so mmap will behave
   // as in mode (a).
