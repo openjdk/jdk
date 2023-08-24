@@ -53,8 +53,8 @@ private:
     return reinterpret_cast<int*>(ptr + length_offset_in_bytes());
   }
 
-  // Check whether an element of a typeArrayOop with the given type must be
-  // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
+  // Check whether an element of an arrayOop with the given type must be
+  // aligned 0 mod 8.  The arrayOop itself must be aligned at least this
   // strongly.
   static bool element_type_should_be_aligned(BasicType type) {
 #ifdef _LP64

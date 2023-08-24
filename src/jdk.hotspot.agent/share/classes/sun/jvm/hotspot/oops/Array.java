@@ -57,8 +57,8 @@ public class Array extends Oop {
   private static long lengthOffsetInBytes=0;
   private static long typeSize;
 
-  // Check whether an element of a typeArrayOop with the given type must be
-  // aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
+  // Check whether an element of a arrayOop with the given type must be
+  // aligned 0 mod 8.  The arrayOop itself must be aligned at least this
   // strongly.
   private static boolean elementTypeShouldBeAligned(BasicType type) {
     if (VM.getVM().isLP64()) {
