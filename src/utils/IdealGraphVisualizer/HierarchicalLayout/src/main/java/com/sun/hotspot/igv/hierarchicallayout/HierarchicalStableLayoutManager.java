@@ -116,7 +116,6 @@ public class HierarchicalStableLayoutManager {
     /**
      * Adjust the X-coordinates of the nodes in the given layer, as a new node has
      * been inserted at that layer
-     *
      */
     private void adjustXCoordinates(int layer) {
         List<LayoutNode> nodes = layers.get(layer);
@@ -597,7 +596,6 @@ public class HierarchicalStableLayoutManager {
             updateNodeObjects();
             storeNodeLayers();
             updateLayersXCoords();
-            sanityCheckNodesAndLayerNodes();
         }
     }
 
@@ -605,7 +603,6 @@ public class HierarchicalStableLayoutManager {
         /**
          * Find the optimal position within the given layer to insert the given node.
          * The optimum is given by the least amount of edge crossings.
-         *
          */
         private int optimalPosition(LayoutNode node, int layer) {
             assert layers.containsKey(layer);
@@ -711,7 +708,6 @@ public class HierarchicalStableLayoutManager {
         /**
          * Insert node at the assigned layer, updating the positions of the nodes within
          * the layer
-         *
          */
         private void insertNode(LayoutNode node, int layer) {
             assert layers.containsKey(layer) || layer == 0;
@@ -741,8 +737,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             adjustXCoordinates(layer);
-
-            sanityCheckNodesAndLayerNodes();
         }
 
         private void processSingleEdge(LayoutEdge e) {
@@ -877,8 +871,6 @@ public class HierarchicalStableLayoutManager {
             for (LayoutEdge edge : List.copyOf(node.succs)) {
                 processSingleEdge(edge);
             }
-
-            sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
@@ -904,8 +896,6 @@ public class HierarchicalStableLayoutManager {
             for (LayoutEdge edge : List.copyOf(node.preds)) {
                 processSingleEdge(edge);
             }
-
-            sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
@@ -918,18 +908,15 @@ public class HierarchicalStableLayoutManager {
                 expandNewLayerBeneath(to);
             }
 
-            sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
         /**
          * Create a new layer at node.layer + 1 and move the given node there. Adjust
          * remaining layers numbers
-         *
          */
         private void expandNewLayerBeneath(LayoutNode node) {
             sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
             int layer = node.layer + 1;
 
             // Move all necessary layers down one step
@@ -946,7 +933,6 @@ public class HierarchicalStableLayoutManager {
             List<LayoutNode> l = new ArrayList<>();
             layers.put(layer, l);
 
-            sanityCheckNodesAndLayerNodes();
             assert layers.get(layer).isEmpty();
             for (LayoutNode n : nodes) {
                 assert n.layer != layer;
@@ -998,7 +984,6 @@ public class HierarchicalStableLayoutManager {
             assert layers.get(layer).contains(node);
             assert node.layer == layer;
 
-            sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
@@ -1054,7 +1039,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
         }
 
         /**
@@ -1161,7 +1145,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
         }
 
         private void applyRemoveLinkAction(Link l) {
@@ -1233,7 +1216,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
         }
 
         private void removeNodeWithoutRemovingLayer(LayoutNode node) {
@@ -1310,7 +1292,6 @@ public class HierarchicalStableLayoutManager {
 
             removeNode(node);
 
-            sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
@@ -1341,7 +1322,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             sanityCheckEdges();
-            sanityCheckNodesAndLayerNodes();
 
             // Add or remove wrongful links
             Set<Link> layoutedLinks = new HashSet<>();
