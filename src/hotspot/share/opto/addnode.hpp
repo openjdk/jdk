@@ -172,6 +172,12 @@ public:
                                      // second return value:
                                      intptr_t& offset);
 
+  // Helper methods roughly modeled after GraphKit:
+  static Node* make(PhaseIterGVN* igvn, Node* base, int offset);
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, int offset);
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* offset);
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, Node* offset);
+
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.
   int unpack_offsets(Node* elements[], int length);

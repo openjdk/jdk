@@ -699,8 +699,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = AddPNode::make(&macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = AddPNode::make(&macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //
@@ -712,7 +712,9 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node* tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  const TypePtr* adr_type = tlab_end_adr->bottom_type()->is_ptr();
+  Node* tlab_end = LoadNode::make(macro->igvn(), toobig_false, mem, tlab_end_adr, adr_type, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
+  macro->transform_later(tlab_end);
 
   // Load the TLAB top.
   Node* old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);
@@ -765,8 +767,8 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  Node* payload_src = phase->basic_plus_adr(src, src_offset);
-  Node* payload_dst = phase->basic_plus_adr(dest, dest_offset);
+  Node* payload_src = AddPNode::make(&phase->igvn(), src, src_offset);
+  Node* payload_dst = AddPNode::make(&phase->igvn(), dest, dest_offset);
 
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, nullptr, nullptr, true, copyfunc_name, true);

@@ -330,6 +330,7 @@ public:
 
   // Make an idealized constant, i.e., one of ConINode, ConPNode, ConFNode, etc.
   // Same as transform(ConNode::make(t)).
+  ConNode* makecon(int value);
   ConNode* makecon(const Type* t);
   ConNode* uncached_makecon(const Type* t);
 

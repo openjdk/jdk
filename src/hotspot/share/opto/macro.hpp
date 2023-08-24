@@ -39,29 +39,11 @@ private:
   PhaseIterGVN &_igvn;
 
 public:
-  // Helper methods roughly modeled after GraphKit:
-  Node* basic_plus_adr(Node* base, int offset) {
-    return (offset == 0)? base: basic_plus_adr(base, MakeConX(offset));
-  }
-  Node* basic_plus_adr(Node* base, Node* ptr, int offset) {
-    return (offset == 0)? ptr: basic_plus_adr(base, ptr, MakeConX(offset));
-  }
-  Node* basic_plus_adr(Node* base, Node* offset) {
-    return basic_plus_adr(base, base, offset);
-  }
-  Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new AddPNode(base, ptr, offset);
-    return transform_later(adr);
-  }
   Node* transform_later(Node* n) {
     // equivalent to _gvn.transform in GraphKit, Ideal, etc.
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
-                   const Type* value_type, BasicType bt);
-  Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
-                   Node* value, BasicType bt);
 
   Node* make_leaf_call(Node* ctrl, Node* mem,
                        const TypeFunc* call_type, address call_addr,

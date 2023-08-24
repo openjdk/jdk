@@ -664,6 +664,24 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
   return p1->add_offset(p2offset);
 }
 
+//----------------------- Utilities for constructing AddPNode -----------------
+Node* AddPNode::make(PhaseIterGVN* igvn, Node* base, int offset) {
+  return (offset == 0) ? base : make(igvn, base, base, igvn->makecon(offset));
+}
+
+Node* AddPNode::make(PhaseIterGVN* igvn, Node* base, Node* ptr, int offset) {
+  return (offset == 0) ? ptr : make(igvn, base, ptr, igvn->makecon(offset));
+}
+
+Node* AddPNode::make(PhaseIterGVN* igvn, Node* base, Node* offset) {
+  return make(igvn, base, base, offset);
+}
+
+Node* AddPNode::make(PhaseIterGVN* igvn, Node* base, Node* ptr, Node* offset) {
+  Node* adr = new AddPNode(base, ptr, offset);
+  return igvn->register_new_node_with_optimizer(adr);
+}
+
 //------------------------Ideal_base_and_offset--------------------------------
 // Split an oop pointer into a base and offset.
 // (The offset might be Type::OffsetBot in the case of an array.)
