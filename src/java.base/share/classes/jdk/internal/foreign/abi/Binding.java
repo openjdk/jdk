@@ -276,6 +276,10 @@ public sealed interface Binding {
         return Dup.INSTANCE;
     }
 
+    static ShiftLeft shiftLeft(int shiftAmount, Class<?> type ) {
+        return new ShiftLeft(shiftAmount, type);
+    }
+
     static Binding cast(Class<?> fromType, Class<?> toType) {
         if (fromType == int.class) {
             if (toType == boolean.class) {
@@ -384,6 +388,18 @@ public sealed interface Binding {
 
         public Binding.Builder dup() {
             bindings.add(Binding.dup());
+            return this;
+        }
+
+        public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
+            if (shiftAmount > 0 && isSubIntType(type)) {
+                bindings.add(Binding.cast(type, int.class));
+                type = int.class;
+            }
+            bindings.add(Binding.shiftLeft(shiftAmount, type));
+            if (shiftAmount < 0 && isSubIntType(type)) {
+                bindings.add(Binding.cast(int.class, type));
+            }
             return this;
         }
 
@@ -667,6 +683,55 @@ public sealed interface Binding {
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
             stack.push(stack.peekLast());
+        }
+    }
+
+    /**
+     * ShiftLeft([shiftAmount])
+     *   Shifts the Bytes on the top of the operand stack (unsigned).
+     *   Positive [shiftAmount] converts to long if needed and shifts left.
+     *   Negative [shiftAmount] shifts right and converts to int if needed.
+     */
+    record ShiftLeft(int shiftAmount, Class<?> type) implements Binding {
+
+        @Override
+        public void verify(Deque<Class<?>> stack) {
+            Class<?> last = stack.pop();
+            if (shiftAmount > 0) {
+                if (last != ((type == long.class) ? long.class : int.class))
+                    throw new IllegalArgumentException(
+                        String.format("Invalid operand type: %s. integral type expected", last));
+                stack.push(long.class);
+            } else if (shiftAmount < 0) {
+                if (last != long.class)
+                    throw new IllegalArgumentException(
+                        String.format("Invalid operand type: %s. long expected", last));
+                stack.push(type == long.class ? long.class : int.class);
+            } else
+                throw new IllegalArgumentException("shiftAmount 0 not supported");
+        }
+
+        @Override
+        public void interpret(Deque<Object> stack, StoreFunc storeFunc,
+                              LoadFunc loadFunc, SegmentAllocator allocator) {
+            if (shiftAmount > 0) {
+                long l;
+                if (type == long.class) {
+                    l = (long) stack.pop();
+                } else {
+                    l = (long)(int) stack.pop();
+                }
+                l <<= (shiftAmount * Byte.SIZE);
+                stack.push(l);
+            } else {
+                long l = (long) stack.pop();
+                l >>>= (-shiftAmount * Byte.SIZE);
+                if (type == long.class) {
+                    stack.push(l);
+                } else {
+                    stack.push((int) l);
+                }
+            }
         }
     }
 

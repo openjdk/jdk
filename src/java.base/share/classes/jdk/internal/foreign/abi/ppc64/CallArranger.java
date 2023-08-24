@@ -90,6 +90,7 @@ public abstract class CallArranger {
 
     protected CallArranger() {}
 
+    public static final CallArranger ABIv1 = new ABIv1CallArranger();
     public static final CallArranger ABIv2 = new ABIv2CallArranger();
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
@@ -216,9 +217,6 @@ public abstract class CallArranger {
 
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
-            // TODO: Big Endian can't pass partially used slots correctly in some cases with:
-            // !useABIv2 && layout.byteSize() > 8 && layout.byteSize() % 8 != 0
-
             // Allocate enough gp slots (regs and stack) such that the struct fits in them.
             int numChunks = (int) Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
             VMStorage[] result = new VMStorage[numChunks];
@@ -332,16 +330,26 @@ public abstract class CallArranger {
                 case STRUCT_REGISTER -> {
                     assert carrier == MemorySegment.class;
                     VMStorage[] regs = storageCalculator.structAlloc(layout);
+                    final boolean isLargeABIv1Struct = !useABIv2 && layout.byteSize() > MAX_COPY_SIZE;
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
                         final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                        int shiftAmount = 0;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
                         if (offset + size < layout.byteSize()) {
                             bindings.dup();
+                        } else if (isLargeABIv1Struct) {
+                            // Last slot requires shift.
+                            shiftAmount = MAX_COPY_SIZE - (int) size;
                         }
-                        bindings.bufferLoad(offset, type, (int) size)
-                                .vmStore(storage, type);
+                        bindings.bufferLoad(offset, type, (int) size);
+                        if (shiftAmount != 0) {
+                            bindings.shiftLeft(shiftAmount, type)
+                                    .vmStore(storage, long.class);
+                        } else {
+                            bindings.vmStore(storage, type);
+                        }
                         offset += size;
                     }
                 }
@@ -410,14 +418,25 @@ public abstract class CallArranger {
                     assert carrier == MemorySegment.class;
                     bindings.allocate(layout);
                     VMStorage[] regs = storageCalculator.structAlloc(layout);
+                    final boolean isLargeABIv1Struct = !useABIv2 && layout.byteSize() > MAX_COPY_SIZE;
                     long offset = 0;
                     for (VMStorage storage : regs) {
                         // Last slot may be partly used.
                         final long size = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);
+                        int shiftAmount = 0;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(size, false);
-                        bindings.dup()
-                                .vmLoad(storage, type)
-                                .bufferStore(offset, type, (int) size);
+                        if (isLargeABIv1Struct && offset + size >= layout.byteSize()) {
+                            // Last slot requires shift.
+                            shiftAmount = MAX_COPY_SIZE - (int) size;
+                        }
+                        bindings.dup();
+                        if (shiftAmount != 0) {
+                            bindings.vmLoad(storage, long.class)
+                                    .shiftLeft(-shiftAmount, type);
+                        } else {
+                            bindings.vmLoad(storage, type);
+                        }
+                        bindings.bufferStore(offset, type, (int) size);
                         offset += size;
                     }
                 }
