@@ -58,16 +58,16 @@ import jdk.internal.ref.CleanerFactory;
 final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
     @java.io.Serial
-    static final long serialVersionUID = -2234868909660948157L;
+    private static final long serialVersionUID = -2234868909660948157L;
 
-    private char[] passwd;
-    private byte[] salt;
-    private int iterCount;
-    private byte[] key;
+    private final char[] passwd;
+    private final byte[] salt;
+    private final int iterCount;
+    private final byte[] key;
 
     // The following fields are not Serializable. See writeReplace method.
-    private transient Mac prf;
-    private transient Cleaner.Cleanable cleaner;
+    private final transient Mac prf;
+    private final transient Cleaner.Cleanable cleaner;
 
     private static byte[] getPasswordBytes(char[] passwd) {
         CharBuffer cb = CharBuffer.wrap(passwd);
@@ -93,6 +93,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         // Convert the password from char[] to byte[]
         byte[] passwdBytes = getPasswordBytes(this.passwd);
 
+        byte[] key = null;
         try {
             this.salt = keySpec.getSalt();
             if (salt == null) {
@@ -111,7 +112,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                 throw new InvalidKeySpecException("Key length is negative");
             }
             this.prf = Mac.getInstance(prfAlgo, SunJCE.getInstance());
-            this.key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
+            key = deriveKey(prf, passwdBytes, salt, iterCount, keyLength);
         } catch (NoSuchAlgorithmException nsae) {
             // not gonna happen; re-throw just in case
             throw new InvalidKeySpecException(nsae);
@@ -122,7 +123,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
             }
         }
         // Use the cleaner to zero the key when no longer referenced
-        final byte[] k = this.key;
+        final byte[] k = this.key = key;
         final char[] p = this.passwd;
         cleaner = CleanerFactory.cleaner().register(this,
                 () -> {

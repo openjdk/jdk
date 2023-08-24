@@ -45,11 +45,11 @@ import jdk.internal.ref.CleanerFactory;
 final class PBEKey implements SecretKey {
 
     @java.io.Serial
-    static final long serialVersionUID = -2234768909660948176L;
+    private static final long serialVersionUID = -2234768909660948176L;
 
     private byte[] key;
 
-    private String type;
+    private final String type;
 
     /**
      * Creates a PBE key from a given PBE key specification.

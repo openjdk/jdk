@@ -49,28 +49,28 @@ final class DHPrivateKey implements PrivateKey,
         javax.crypto.interfaces.DHPrivateKey, Serializable {
 
     @java.io.Serial
-    static final long serialVersionUID = 7565477590005668886L;
+    private static final long serialVersionUID = 7565477590005668886L;
 
     // only supported version of PKCS#8 PrivateKeyInfo
     private static final BigInteger PKCS8_VERSION = BigInteger.ZERO;
 
     // the private key
-    private BigInteger x;
+    private final BigInteger x;
 
     // the key bytes, without the algorithm information
-    private byte[] key;
+    private final byte[] key;
 
     // the encoded key
     private byte[] encodedKey;
 
     // the prime modulus
-    private BigInteger p;
+    private final BigInteger p;
 
     // the base generator
-    private BigInteger g;
+    private final BigInteger g;
 
     // the private-value length (optional)
-    private int l;
+    private final int l;
 
     /**
      * Make a DH private key out of a private value <code>x</code>, a prime
@@ -163,6 +163,8 @@ final class DHPrivateKey implements PrivateKey,
             // Private-value length is OPTIONAL
             if (params.data.available() != 0) {
                 this.l = params.data.getInteger();
+            } else {
+                this.l = 0;
             }
             if (params.data.available() != 0) {
                 throw new InvalidKeyException("Extra parameter data");
@@ -172,7 +174,7 @@ final class DHPrivateKey implements PrivateKey,
             // privateKey
             //
             this.key = val.data.getOctetString();
-            parseKeyBits();
+            this.x = parseKeyBits();
 
             this.encodedKey = encodedKey.clone();
         } catch (IOException | NumberFormatException e) {
@@ -273,10 +275,10 @@ final class DHPrivateKey implements PrivateKey,
         }
     }
 
-    private void parseKeyBits() throws InvalidKeyException {
+    private BigInteger parseKeyBits() throws InvalidKeyException {
         try {
             DerInputStream in = new DerInputStream(this.key);
-            this.x = in.getBigInteger();
+            return in.getBigInteger();
         } catch (IOException e) {
             throw new InvalidKeyException(
                 "Error parsing key encoding: " + e.getMessage(), e);

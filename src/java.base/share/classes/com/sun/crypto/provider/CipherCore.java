@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,12 @@ final class CipherCore {
     /*
      * internal buffer
      */
-    private byte[] buffer = null;
+    private final byte[] buffer;
 
     /*
      * block size of cipher in bytes
      */
-    private int blockSize = 0;
+    private final int blockSize;
 
     /*
      * unit size (number of input bytes that can be processed at a time)
