@@ -55,11 +55,19 @@ public class EquivMapsGenerator {
 
     public static void main(String[] args) throws Exception {
         int i = 0;
-        if (args.length == 5 && "-jdk-header-template".equals(args[i])) {
-            jdkHeaderTemplate = new String(Files.readAllBytes(Paths.get(args[++i])),
-                    StandardCharsets.UTF_8);
-            i++;
-        } else if (args.length != 3) {
+        boolean valid = true;
+        if (args.length != 5 && args.length !=3) {
+            valid = false;
+        } else if (args.length == 5) {
+            if ("-jdk-header-template".equals(args[i])) {
+                jdkHeaderTemplate = new String(Files.readAllBytes(Paths.get(args[++i])),
+                                               StandardCharsets.UTF_8);
+                i++;
+            } else {
+                valid = false;
+            }
+        }
+        if (!valid) {
             System.err.println("Usage: java EquivMapsGenerator"
                     + " [-jdk-header-template <file>]"
                     + " language-subtag-registry.txt LocaleEquivalentMaps.java copyrightYear");
