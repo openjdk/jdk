@@ -494,8 +494,8 @@ public class ResponsePublisher implements HttpServerAdapters {
 
     // Wait for the client to be garbage collected.
     // we use the ReferenceTracker API rather than HttpClient::close here,
-    // because these tests inject faults by throwing inside callbacks, which
-    // is more likely to get HttpClient::close wedged until jtreg times out.
+    // because we want to get some diagnosis if a client doesn't release
+    // its resources and terminates as expected
     // By using the ReferenceTracker, we will get some diagnosis about what
     // is keeping the client alive if it doesn't get GC'ed within the
     // expected time frame.
