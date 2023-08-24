@@ -2704,10 +2704,10 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
     MutexLocker ml(MultiArray_lock);
-    Klass* bk = array_klasses()->bottom_klass();
+    assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    array_klasses()->restore_unshareable_info(bk->class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize @ValueBased class annotation
