@@ -35,7 +35,6 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import jdk.internal.util.StaticProperty;
-import jdk.internal.util.UTF8EncodeUtils;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -143,6 +142,24 @@ public class URLEncoder {
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
+    private static void encodeByte(StringBuilder out, byte b) {
+        out.append('%');
+
+        int n0 = (b >> 4) & 0xF;
+        if (n0 < 10) {
+            out.append((char) ('0' + n0));
+        } else {
+            out.append((char) ('A' - 10 + n0));
+        }
+
+        int n1 = b & 0xF;
+        if (n1 < 10) {
+            out.append((char) ('0' + n1));
+        } else {
+            out.append((char) ('A' - 10 + n1));
+        }
+    }
+
     /**
      * You can't call the constructor.
      */
@@ -238,88 +255,13 @@ public class URLEncoder {
             return s;
         }
 
-        if (charset == StandardCharsets.UTF_8) {
-            return encodeUTF8(s, i);
-        } else {
-            return encodeSlow(s, charset, i);
-        }
-    }
-
-    private static void encodeByte(StringBuilder out, byte b) {
-        out.append('%');
-
-        int n0 = (b >> 4) & 0xF;
-        if (n0 < 10) {
-            out.append((char) ('0' + n0));
-        } else {
-            out.append((char) ('A' - 10 + n0));
-        }
-
-        int n1 = b & 0xF;
-        if (n1 < 10) {
-            out.append((char) ('0' + n1));
-        } else {
-            out.append((char) ('A' - 10 + n1));
-        }
-    }
-
-    private static String encodeUTF8(String s, int suffixOffset) {
-        StringBuilder out = new StringBuilder(s.length() << 1);
-        if (suffixOffset > 0) {
-            out.append(s, 0, suffixOffset);
-        }
-
-        for (int i = suffixOffset; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c <= UTF8EncodeUtils.MAX_SINGLE_BYTE_CHAR) {
-                if (DONT_NEED_ENCODING[c]) {
-                    if (c == ' ') {
-                        c = '+';
-                    }
-                    out.append(c);
-                } else {
-                    encodeByte(out, (byte) c);
-                }
-            } else if (c <= UTF8EncodeUtils.MAX_DULBLE_BYTES_CHAR) {
-                byte[] bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
-                encodeByte(out, bytes[0]);
-                encodeByte(out, bytes[1]);
-            } else if (Character.isSurrogate(c)) {
-                if (Character.isHighSurrogate(c) && i < s.length() - 1) {
-                    char d = s.charAt(i + 1);
-                    if (Character.isLowSurrogate(d)) {
-                        int uc = Character.toCodePoint(c, d);
-                        byte[] bytes = UTF8EncodeUtils.encodeCodePoint(uc);
-                        encodeByte(out, bytes[0]);
-                        encodeByte(out, bytes[1]);
-                        encodeByte(out, bytes[2]);
-                        encodeByte(out, bytes[3]);
-                        i++;
-                        continue;
-                    }
-                }
-
-                // Unmappable Char
-                encodeByte(out, (byte) '?');
-            } else {
-                byte[] bytes = UTF8EncodeUtils.encodeThreeBytes(c);
-                encodeByte(out, bytes[0]);
-                encodeByte(out, bytes[1]);
-                encodeByte(out, bytes[2]);
-            }
-        }
-
-        return out.toString();
-    }
-
-    private static String encodeSlow(String s, Charset charset, int suffixOffset) {
         StringBuilder out = new StringBuilder(s.length() << 1);
         CharArrayWriter charArrayWriter = new CharArrayWriter();
-        if (suffixOffset > 0) {
-            out.append(s, 0, suffixOffset);
+        if (i > 0) {
+            out.append(s, 0, i);
         }
 
-        for (int i = suffixOffset; i < s.length(); ) {
+        while (i < s.length()) {
             char c = s.charAt(i);
             if (c < 128 && DONT_NEED_ENCODING[c]) {
                 if (c == ' ') {
