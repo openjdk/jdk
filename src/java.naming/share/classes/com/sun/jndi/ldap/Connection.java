@@ -285,8 +285,7 @@ public final class Connection implements Runnable {
         Socket socket = createConnectionSocket(host, port, factory, connectTimeout);
 
         // the handshake for SSL connection with server and reset timeout for the socket
-        if (socket instanceof SSLSocket) {
-            SSLSocket sslSocket = (SSLSocket) socket;
+        if (socket instanceof SSLSocket sslSocket) {
             try {
                 initialSSLHandshake(sslSocket, connectTimeout);
             } catch (Exception e) {
