@@ -7619,6 +7619,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* outOfs  = argument(6);
   Node* gctr_object = argument(7);
   Node* ghash_object = argument(8);
+  Node* isEncrypt = argument(9);
 
   // (1) in, ct and out are arrays.
   const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
@@ -7675,7 +7676,7 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* gcmCrypt = make_runtime_call(RC_LEAF|RC_NO_FP,
                                OptoRuntime::galoisCounterMode_aescrypt_Type(),
                                stubAddr, stubName, TypePtr::BOTTOM,
-                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start);
+                               in_start, len, ct_start, out_start, k_start, state_start, subkeyHtbl_start, cnt_start, isEncrypt);
 
   // return cipher length (int)
   Node* retvalue = _gvn.transform(new ProjNode(gcmCrypt, TypeFunc::Parms));

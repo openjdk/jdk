@@ -587,7 +587,7 @@ abstract class GaloisCounterMode extends CipherSpi {
      */
     private static int implGCMCrypt(byte[] in, int inOfs, int inLen, byte[] ct,
                                     int ctOfs, byte[] out, int outOfs,
-                                    GCTR gctr, GHASH ghash) {
+                                    GCTR gctr, GHASH ghash, boolean encryption) {
 
         int len = 0;
         // Loop if input length is greater than the SPLIT_LEN
@@ -595,7 +595,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             int partlen;
             while (inLen >= SPLIT_LEN) {
                 partlen = implGCMCrypt0(in, inOfs + len, SPLIT_LEN, ct,
-                    ctOfs + len, out, outOfs + len, gctr, ghash);
+                    ctOfs + len, out, outOfs + len, gctr, ghash, encryption);
                 len += partlen;
                 inLen -= partlen;
             }
@@ -608,7 +608,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 len += gctr.update(in, inOfs + len, inLen, out, outOfs);
             } else {
                 len += implGCMCrypt0(in, inOfs + len, inLen, ct,
-                    ctOfs + len, out, outOfs + len, gctr, ghash);
+                    ctOfs + len, out, outOfs + len, gctr, ghash, encryption);
             }
         }
         return len;
@@ -642,7 +642,7 @@ abstract class GaloisCounterMode extends CipherSpi {
     @IntrinsicCandidate
     private static int implGCMCrypt0(byte[] in, int inOfs, int inLen,
         byte[] ct, int ctOfs, byte[] out, int outOfs,
-        GCTR gctr, GHASH ghash) {
+        GCTR gctr, GHASH ghash, boolean isEncrypt) {
 
         inLen -= (inLen % PARALLEL_LEN);
 
@@ -750,7 +750,7 @@ abstract class GaloisCounterMode extends CipherSpi {
          *  on 768 byte blocks and let the calling method operate on smaller
          *  sizes.
          */
-        int implGCMCrypt(ByteBuffer src, ByteBuffer dst) {
+        int implGCMCrypt(ByteBuffer src, ByteBuffer dst, boolean encryption) {
             int srcLen = src.remaining() - (src.remaining() % PARALLEL_LEN);
 
             if (srcLen < PARALLEL_LEN) {
@@ -766,7 +766,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                     inPlaceArray ? null : ct.array(),
                     ct.arrayOffset() + ct.position(),
                     dst.array(), dst.arrayOffset() + dst.position(),
-                    gctr, ghash);
+                    gctr, ghash, encryption);
                 src.position(src.position() + len);
                 dst.position(dst.position() + len);
                 return len;
@@ -780,7 +780,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 do {
                     src.get(bin, 0, PARALLEL_LEN);
                     len -= GaloisCounterMode.implGCMCrypt(bin, 0, PARALLEL_LEN,
-                        ct, 0, bout, 0, gctr, ghash);
+                        ct, 0, bout, 0, gctr, ghash, encryption);
                     dst.put(bout, 0, PARALLEL_LEN);
                 } while (len >= PARALLEL_LEN);
 
@@ -889,7 +889,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             if (bLen > 0) {
                 // en/decrypt any PARALLEL_LEN sized data in the buffer
                 if (bLen >= PARALLEL_LEN) {
-                    len = implGCMCrypt(buffer, dst);
+                    len = implGCMCrypt(buffer, dst, encryption);
                     bLen -= len;
                 }
 
@@ -928,7 +928,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // en/decrypt whatever remains in src.
             // If src has been consumed, this will be a no-op
             if (src.remaining() >= PARALLEL_LEN) {
-                len += implGCMCrypt(src, dst);
+                len += implGCMCrypt(src, dst, encryption);
             }
 
             return len + op.doFinal(src, dst);
@@ -1170,7 +1170,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             // Encrypt the remaining blocks inside of 'in'
             if (inLen >= PARALLEL_LEN) {
                 int r = GaloisCounterMode.implGCMCrypt(in, inOfs, inLen, out,
-                    outOfs, out, outOfs, gctr, ghash);
+                    outOfs, out, outOfs, gctr, ghash, encryption);
                 len += r;
                 inOfs += r;
                 inLen -= r;
@@ -1236,7 +1236,7 @@ abstract class GaloisCounterMode extends CipherSpi {
             int resultLen;
             // encrypt any PARALLEL_LEN sized data in 'src'
             if (srcLen >= PARALLEL_LEN) {
-                resultLen = implGCMCrypt(src, dst);
+                resultLen = implGCMCrypt(src, dst, encryption);
                 srcLen -= resultLen;
                 len += resultLen;
             }
@@ -1688,7 +1688,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
                 if (bLen >= PARALLEL_LEN) {
                     len = GaloisCounterMode.implGCMCrypt(buffer, 0, bLen,
-                        buffer, 0, out, outOfs, gctr, ghash);
+                        buffer, 0, out, outOfs, gctr, ghash, encryption);
                     outOfs += len;
                     // Use len as it becomes the ibuffer offset, if
                     // needed, in the next op
@@ -1800,7 +1800,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             if (inLen >= PARALLEL_LEN) {
                 len = implGCMCrypt(in, inOfs, inLen, out, outOfs, out, outOfs,
-                    gctr, ghash);
+                    gctr, ghash, true);
                 inLen -= len;
                 outOfs += len;
             }
@@ -1862,7 +1862,7 @@ abstract class GaloisCounterMode extends CipherSpi {
                 // 'in' and 'out' are the same.  All other in-place situations
                 // have been resolved by overlapDetection()
                 len += implGCMCrypt(in, inOfs, inLen, (in == out ? null : in),
-                    inOfs, out, outOfs, gctr, ghash);
+                    inOfs, out, outOfs, gctr, ghash, false);
             }
             ghash.doFinal(in, inOfs + len, inLen - len);
             return len + gctr.doFinal(in, inOfs + len, inLen - len, out,

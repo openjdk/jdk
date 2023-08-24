@@ -327,6 +327,10 @@ class StubGenerator: public StubCodeGenerator {
   void aesgcm_encrypt(Register in, Register len, Register ct, Register out, Register key,
                       Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
 
+  // AVX2 AES Galois Counter Mode implementation
+  address generate_avx2_galoisCounterMode_AESCrypt();
+  void aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
+                   Register state, Register subkeyHtbl, Register counter, Register enc_dec);
 
  // Vector AES Counter implementation
   address generate_counterMode_VectorAESCrypt();
@@ -353,6 +357,15 @@ class StubGenerator: public StubCodeGenerator {
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
+  // AVX2 AES-GCM related functions
+  void initial_blocks(XMMRegister ctr, Register rounds, Register key, Register len,
+                      Register in, Register out, Register subkeyHtbl, Register isEncrypt, Register pos);
+  void gfmul_avx2(XMMRegister GH, XMMRegister HK);
+  void generateHtbl_8_block_avx2(Register htbl, Register rscratch);
+  void ghash8_encrypt8_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
+                                Register in, Register out, Register pos, bool out_order, Register isEncrypt, Register rounds);
+  void ghash_last_8(Register subkeyHtbl);
+
   // Load key and shuffle operation
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch);
