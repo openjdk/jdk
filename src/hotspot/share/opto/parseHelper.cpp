@@ -412,6 +412,7 @@ Node* VirtualState::get_field(ciField* field) const {
   }
 
   ShouldNotReachHere();
+  return nullptr;
 }
 
 static void ensure_phi(PhiNode* phi, uint pnum) {
