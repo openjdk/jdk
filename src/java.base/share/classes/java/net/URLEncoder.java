@@ -35,6 +35,7 @@ import java.util.BitSet;
 import java.util.Objects;
 
 import jdk.internal.util.StaticProperty;
+import jdk.internal.util.UTF8EncodeUtils;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -280,28 +281,31 @@ public class URLEncoder {
                     encodeByte(out, (byte) c);
                 }
             } else if (c < 0x800) {
-                encodeByte(out, (byte) (0xc0 | (c >> 6)));
-                encodeByte(out, (byte) (0x80 | (c & 0x3f)));
-            } else if (Character.isSurrogate(c)) {
-                if (Character.isHighSurrogate(c) && i < s.length() - 1) {
+                int bytes = UTF8EncodeUtils.encodeDoubleBytes(c);
+                encodeByte(out, (byte) (bytes >>> 8));
+                encodeByte(out, (byte) (bytes & 0xff));
+            } else if (Character.isHighSurrogate(c)) {
+                if (i < s.length() - 1) {
                     char d = s.charAt(i + 1);
                     if (Character.isLowSurrogate(d)) {
                         int uc = Character.toCodePoint(c, d);
-                        encodeByte(out, (byte) (0xf0 | ((uc >> 18))));
-                        encodeByte(out, (byte) (0x80 | ((uc >> 12) & 0x3f)));
-                        encodeByte(out, (byte) (0x80 | ((uc >> 6) & 0x3f)));
-                        encodeByte(out, (byte) (0x80 | (uc & 0x3f)));
+                        int bytes = UTF8EncodeUtils.encodeCodePoint(uc);
+                        encodeByte(out, (byte) ((bytes >>> 24) & 0xff));
+                        encodeByte(out, (byte) ((bytes >>> 16) & 0xff));
+                        encodeByte(out, (byte) ((bytes >>> 8) & 0xff));
+                        encodeByte(out, (byte) ((bytes) & 0xff));
                         i++;
                         continue;
                     }
                 }
 
-                // Replace unmappable characters
+                // Unmappable Char
                 encodeByte(out, (byte) '?');
             } else {
-                encodeByte(out, (byte) (0xe0 | ((c >> 12))));
-                encodeByte(out, (byte) (0x80 | ((c >> 6) & 0x3f)));
-                encodeByte(out, (byte) (0x80 | (c & 0x3f)));
+                int bytes = UTF8EncodeUtils.encodeThreeBytes(c);
+                encodeByte(out, (byte) ((bytes >>> 16) & 0xff));
+                encodeByte(out, (byte) ((bytes >>> 8) & 0xff));
+                encodeByte(out, (byte) ((bytes) & 0xff));
             }
         }
 
