@@ -829,6 +829,15 @@ static const Type* or_add_ring(const Type* t1, const Type* t2) {
   using U = decltype(CT::_ulo);
   const CT* i1 = CT::cast(t1);
   const CT* i2 = CT::cast(t2);
+
+  // Identity, if all set bits of x are set in y then return y
+  if ((~i1->_zeros & ~i2->_ones) == 0) {
+    return i2;
+  }
+  if ((~i2->_zeros & ~i1->_ones) == 0) {
+    return i1;
+  }
+
   T lo = std::numeric_limits<T>::min();
   T hi = std::numeric_limits<T>::max();
   U ulo = MAX2(i1->_ulo, i2->_ulo);

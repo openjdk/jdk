@@ -675,6 +675,15 @@ static const Type* and_mul_ring(const Type* t1, const Type* t2) {
   using U = decltype(CT::_ulo);
   const CT* i1 = CT::cast(t1);
   const CT* i2 = CT::cast(t2);
+
+  // Identity, if all unset bits of x are unset in y then return y
+  if ((~i1->_ones & ~i2->_zeros) == 0) {
+    return i2;
+  }
+  if ((~i2->_ones & ~i1->_zeros) == 0) {
+    return i1;
+  }
+
   T lo = std::numeric_limits<T>::min();
   T hi = std::numeric_limits<T>::max();
   U ulo = 0;
