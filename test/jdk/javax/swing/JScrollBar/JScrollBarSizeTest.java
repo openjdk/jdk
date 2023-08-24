@@ -23,26 +23,31 @@
 /*
  * @test
  * @bug 6510914
- * @key headful
  * @summary  Verifies if JScrollBar.getMinimumSize() honours setMinimumSize()
- * @run main JScrollBarMinSizeTest
+ * @run main JScrollBarSizeTest
  */
-
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import java.awt.Dimension;
 
-public class JScrollBarMinSizeTest {
-    private static volatile Dimension dim;
+public class JScrollBarSizeTest {
+    private static volatile Dimension min;
+    private static volatile Dimension max;
+
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             JScrollBar bar = new JScrollBar(SwingConstants.HORIZONTAL);
             bar.setMinimumSize(new Dimension(75, 0));
-            dim = bar.getMinimumSize();
+            min = bar.getMinimumSize();
+            bar.setMaximumSize(new Dimension(375, 0));
+            max = bar.getMaximumSize();
         });
-        if (dim.width != 75) {
+        if (min.width != 75) {
             throw new RuntimeException("Minimum width not same as previously set");
+        }
+        if (max.width != 375) {
+            throw new RuntimeException("Maximum width not same as previously set");
         }
     }
 }
