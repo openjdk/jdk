@@ -29,7 +29,7 @@ import java.lang.StackWalker.StackFrame;
 
 class ClassFrameInfo implements StackFrame {
     protected Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
-    protected int flags;
+    protected int flags;                   // updated by VM to set hidden and caller-sensitive bits
 
     ClassFrameInfo(StackWalker walker) {
         this.flags = walker.retainClassRef ? RETAIN_CLASS_REF_BIT : 0;
@@ -56,14 +56,14 @@ class ClassFrameInfo implements StackFrame {
     }
 
     @Override
-    public String getMethodName() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Class<?> getDeclaringClass() {
         ensureRetainClassRefEnabled();
         return declaringClass();
+    }
+
+    @Override
+    public String getMethodName() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

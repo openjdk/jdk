@@ -39,14 +39,12 @@ import jdk.internal.vm.ContinuationScope;
 /**
  * A stack walker.
  *
- * <p> The {@link Kind} specifies the information
- * of the stack frames to be collected.  A {@code StackWalker} of
- * {@link Kind#METHOD_INFO METHOD_INFO} kind collects the method information
- * of stack frames.  If the method information is not needed, a {@code StackWalker}
- * of {@link Kind#CLASS_INFO CLASS_INFO} kind can be used instead and that
- * only collects the class information.  The {@link #getInstance() getInstance}
- * factory methods produce a {@code StackWalker} that collects the method information
- * of stack frames by default.
+ * <p> The {@link Kind} specifies the information of the stack frames to be collected.
+ * The {@link #getInstance() getInstance} factory methods return a {@code StackWalker}
+ * that collects the {@linkplain Kind#METHOD_INFO method information}
+ * from the stack frames by default.  If the method information is not needed,
+ * a {@code StackWalker} collecting {@linkplain Kind#CLASS_INFO class only information}
+ * can be used instead via the {@link #getInstance(Kind, Option...)} method.
  *
  * <p> The {@linkplain Option <em>stack walking option</em>} specifies the stack
  * frames to be returned. By default, stack frames of the reflection API
@@ -103,11 +101,14 @@ public final class StackWalker {
      * {@link StackWalker}.
      *
      * <p> The information of a {@code StackFrame} available is determined by the
-     * {@linkplain Kind kind} of the stack walker.  A {@code StackWalker} of
-     * {@link Kind#METHOD_INFO METHOD_INFO} kind collects the method information
-     * including the method name and descriptor, bytecode index, line number, etc.
-     * A {@code StackWalker} of {@link Kind#CLASS_INFO CLASS_INFO} kind collects
-     * only class information.
+     * {@linkplain Kind kind} of the stack walker.  Method information such as
+     * the {@linkplain StackFrame#getMethodName() method name},
+     * the {@linkplain StackFrame#getLineNumber() line number},
+     * the {@linkplain StackFrame#getByteCodeIndex() bytecode index},
+     * etc is not available on {@code StackFrame}s produced by {@code StackWalker}
+     * that collects only {@linkplain Kind#CLASS_INFO class information}.
+     * {@code UnsupportedOperationException} will be thrown if unavailable
+     * information is being accessed.
      *
      * <p> To access the {@link #getDeclaringClass() Class} object and
      * {@link #getMethodType() MethodType}, the {@code StackWalker} needs to be
@@ -128,8 +129,8 @@ public final class StackWalker {
         /**
          * {@return the name of the method represented by this stack frame}
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          */
         public String getMethodName();
 
@@ -151,8 +152,8 @@ public final class StackWalker {
          *
          * @return the {@code MethodType} for this stack frame
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind or configured without
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information} or configured without
          *         {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE}
          *
          * @since 10
@@ -172,8 +173,8 @@ public final class StackWalker {
          * @return the descriptor of the method represented by
          *         this stack frame
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          *
          * @see MethodType#fromMethodDescriptorString(String, ClassLoader)
          * @see MethodType#toMethodDescriptorString()
@@ -196,8 +197,8 @@ public final class StackWalker {
          *         containing the execution point represented by this stack frame,
          *         or a negative number if the method is native.
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          *
          * @jvms 4.7.3 The {@code Code} Attribute
          */
@@ -215,8 +216,8 @@ public final class StackWalker {
          *         represented by this stack frame, or {@code null} if
          *         this information is unavailable.
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          *
          * @jvms 4.7.10 The {@code SourceFile} Attribute
          */
@@ -233,8 +234,8 @@ public final class StackWalker {
          *         point represented by this stack frame, or a negative number if
          *         this information is unavailable.
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          *
          * @jvms 4.7.12 The {@code LineNumberTable} Attribute
          */
@@ -252,8 +253,8 @@ public final class StackWalker {
         /**
          * {@return {@code StackTraceElement} for this stack frame}
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          */
         public StackTraceElement toStackTraceElement();
     }
@@ -314,11 +315,11 @@ public final class StackWalker {
      */
     public enum Kind {
         /**
-         * Class information.
+         * Class only information.
          *
          * <p> A {@code StackWalker} of this kind will collect only the class information
-         * of the stack frames.  Only {@link StackFrame#getClassName() StackFrame::getClassName}
-         * and the {@link StackFrame#getDeclaringClass() StackFrame::getDeclaringClass}
+         * from the stack frames.  Only {@link StackFrame#getClassName() StackFrame::getClassName}
+         * and {@link StackFrame#getDeclaringClass() StackFrame::getDeclaringClass}
          * can be called.
          */
         CLASS_INFO,
@@ -326,11 +327,14 @@ public final class StackWalker {
          * Method information.
          *
          * <p> A {@code StackWalker} of this kind will collect the method information
-         * of the stack frames which includes
-         * {@linkplain StackFrame#getMethodName() method name},
-         * {@linkplain StackFrame#getMethodType() method type},
-         * {@linkplain StackFrame#getLineNumber() line number} and
-         * {@linkplain StackFrame#getByteCodeIndex() bytecode index}.
+         * from the stack frames which includes
+         * the {@linkplain StackFrame#getClassName() class name},
+         * the {@linkplain StackFrame#getMethodName() method name},
+         * the {@linkplain StackFrame#getMethodType() method type},
+         * the {@linkplain StackFrame#getLineNumber() line number},
+         * the {@linkplain StackFrame#getByteCodeIndex() bytecode index},
+         * the {@linkplain StackFrame#getFileName() source file name} and
+         * {@linkplain StackFrame#isNativeMethod() native method or not},
          */
         METHOD_INFO
     }
