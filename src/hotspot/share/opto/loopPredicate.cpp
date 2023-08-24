@@ -445,9 +445,8 @@ void PhaseIdealLoop::clone_loop_predication_predicates_to_unswitched_loop(IdealL
                                                                           Deoptimization::DeoptReason reason,
                                                                           IfProjNode*& iffast_pred,
                                                                           IfProjNode*& ifslow_pred) {
-  if (predicate_block->is_non_empty()) {
+  if (predicate_block->has_parse_predicate()) {
     clone_parse_predicate_to_unswitched_loops(predicate_block, reason, iffast_pred, ifslow_pred);
-
     clone_assertion_predicates_to_unswitched_loop(loop, old_new, reason, predicate_block->parse_predicate_success_proj(),
                                                   iffast_pred, ifslow_pred);
   }
@@ -456,6 +455,7 @@ void PhaseIdealLoop::clone_loop_predication_predicates_to_unswitched_loop(IdealL
 void PhaseIdealLoop::clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block,
                                                                Deoptimization::DeoptReason reason,
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred) {
+  assert(predicate_block->has_parse_predicate(), "must have parse predicate");
   ParsePredicateSuccessProj* parse_predicate_proj = predicate_block->parse_predicate_success_proj();
   iffast_pred = clone_parse_predicate_to_unswitched_loop(parse_predicate_proj, iffast_pred, reason, false);
   check_cloned_parse_predicate_for_unswitching(iffast_pred, true);
