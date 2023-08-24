@@ -391,7 +391,7 @@ public class Figure extends Properties.Entity implements Vertex {
         }
         return getInputNode().equals(((Figure) o).getInputNode());
     }
-    
+
     @Override
     public int hashCode() {
         return getInputNode().hashCode();
