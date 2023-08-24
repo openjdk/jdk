@@ -769,8 +769,8 @@ public interface Elements {
      * enum} constant and throws an {@code IllegalArgumentException}
      * if it is not.
      *
-     * @throws IllegalArgumentException if the argument is not an {@code enum} constant
      * @param enumConstant an enum constant
+     * @throws IllegalArgumentException if the argument is not an {@code enum} constant
      * @jls 8.9.1 Enum Constants
      * @since 22
      */
