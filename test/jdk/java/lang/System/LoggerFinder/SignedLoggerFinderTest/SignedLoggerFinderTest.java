@@ -33,7 +33,6 @@
  * @compile SignedLoggerFinderTest.java SimpleLoggerFinder.java
  * @run main SignedLoggerFinderTest init
  * @run main SignedLoggerFinderTest init sign
- * @run main SignedLoggerFinderTest init sign multi
  */
 
 import java.io.File;
@@ -41,7 +40,6 @@ import java.nio.file.*;
 import java.security.*;
 import java.util.*;
 import java.util.jar.*;
-import java.util.logging.*;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDKToolLauncher;
@@ -71,11 +69,19 @@ public class SignedLoggerFinderTest {
     private static boolean mutliThreadLoad = false;
     private static volatile boolean testComplete = false;
 
-    private static final String KEYSTORE = "keystore.jks";
+    private static final String KEYSTORE = "8314263.keystore";
     private static final String ALIAS = "JavaTest";
     private static final String STOREPASS = "changeit";
     private static final String KEYPASS = "changeit";
     private static final String DNAME = "CN=sample";
+    private static final String CUSTOM_LOGGER_FINDER_NAME =
+            "loggerfinder.SimpleLoggerFinder";
+    private static final String CUSTOM_LOGGER_NAME =
+            "loggerfinder.SimpleLoggerFinder$SimpleLogger";
+    private static final String INTERNAL_LOGGER_FINDER_NAME =
+            "sun.util.logging.internal.LoggingProviderImpl";
+    private static final String INTERNAL_LOGGER_NAME =
+            "sun.util.logging.internal.LoggingProviderImpl$JULWrapper";
     private static final Path jarPath1 =
         Path.of(System.getProperty("test.classes", "."), "SimpleLoggerFinder.jar");
     private static final Path jarPath2 =
@@ -84,52 +90,24 @@ public class SignedLoggerFinderTest {
     public static void main(String[] args) throws Throwable {
         init = args.length >=1 && args[0].equals("init");
         signJars = args.length >=2 && args[1].equals("sign");
-        mutliThreadLoad = args.length >=3 && args[2].equals("multi");
 
-
+        // init only passed in by jtreg test run, initialize the environment
+        // for the subsequent test run
         if (init) {
             initialize();
-            List<String> cmds = new ArrayList<>();
-            cmds.add(JDKToolFinder.getJDKTool("java"));
-            cmds.addAll(asList(Utils.getTestJavaOpts()));
-            cmds.addAll(List.of(
-                "-classpath",
-                System.getProperty("test.classes") + File.pathSeparator +
-                    jarPath1.toString() + File.pathSeparator + jarPath2.toString(),
-                "-Dtest.classes=" + System.getProperty("test.classes"),
-                // following debug property seems useful to tickle the issue
-                "-Dsun.misc.URLClassPath.debug=true",
-                // console logger level to capture event output
-                "-Djdk.system.logger.level=DEBUG",
-                // useful for debug purposes
-                "-Djdk.logger.finder.error=DEBUG",
-                // enable logging to verify correct output
-                "-Djava.util.logging.config.file=" +
-                    Path.of(System.getProperty("test.src", "."), "logging.properties"),
-                "SignedLoggerFinderTest",
-                "no-init"));
-            if (mutliThreadLoad) {
-                cmds.add("multi");
-            }
+            launchTest(false, false);
+            launchTest(false, true);
+            launchTest(true, false);
+            launchTest(true, true);
 
-            try {
-                OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(cmds.stream()
-                                .filter(t -> !t.isEmpty())
-                                .toArray(String[]::new))
-                        .shouldHaveExitValue(0);
-                if (signJars) {
-                    outputAnalyzer
-                            .shouldContain("TEST LOGGER: [test_1, test]")
-                            .shouldContain("TEST LOGGER: [test_2, test]")
-                            .shouldContain(DNAME);
-                }
-
-            } catch (Throwable t) {
-                throw new RuntimeException("Unexpected fail.", t);
-            }
         } else {
             // set up complete. Run the code to trigger the recursion
-            mutliThreadLoad = args.length >=2 && args[1].equals("multi");
+            // We're in the JVM launched by ProcessTools.executeCommand
+            boolean mutliThreadLoad =
+                Boolean.parseBoolean(System.getProperty("mutliThreadLoad", "false"));
+            boolean withCustomLoggerFinder =
+                Boolean.parseBoolean(System.getProperty("withCustomLoggerFinder", "false"));
+
             if (mutliThreadLoad) {
                 long sleep = new Random().nextLong(100L) + 1L;
                 System.out.println("multi thread load sleep value: " + sleep);
@@ -137,7 +115,7 @@ public class SignedLoggerFinderTest {
                     while(!testComplete) {
                         // random logger call to exercise System.getLogger
                         System.out.println("System.getLogger type:" +
-                            System.getLogger("random" + System.currentTimeMillis()).getClass().getName());
+                            System.getLogger("random" + System.currentTimeMillis()));
                         try {
                             Thread.sleep(sleep);
                         } catch (InterruptedException e) {
@@ -147,17 +125,38 @@ public class SignedLoggerFinderTest {
                 };
                 new Thread(t).start();
             }
-            JarFile jf = new JarFile(jarPath1.toString(), true);
-            jf.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
-            JarFile jf2 = new JarFile(jarPath2.toString(), true);
-            jf2.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
+
+            if (withCustomLoggerFinder) {
+                JarFile jf = new JarFile(jarPath1.toString(), true);
+                jf.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
+                JarFile jf2 = new JarFile(jarPath2.toString(), true);
+                jf2.getInputStream(jf.getJarEntry("loggerfinder/SimpleLoggerFinder.class"));
+            } else {
+                // some other call to prod LoggerFinder loading
+                System.getLogger("random" + System.currentTimeMillis());
+                System.LoggerFinder.getLoggerFinder();
+            }
             Security.setProperty("test_1", "test");
 
             // some extra sanity checks
-            assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
-                    "loggerfinder.SimpleLoggerFinder");
-            Logger testLogger = Logger.getLogger("jdk.event.security");
-            assertEquals(testLogger.getClass().getName(), "java.util.logging.Logger");
+            if (withCustomLoggerFinder) {
+                assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
+                        CUSTOM_LOGGER_FINDER_NAME);
+                System.Logger testLogger = System.getLogger("jdk.event.security");
+                assertEquals(testLogger.getClass().getName(), CUSTOM_LOGGER_NAME);
+            } else {
+                if (signJars) {
+                    assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
+                            INTERNAL_LOGGER_FINDER_NAME);
+                    System.Logger testLogger = System.getLogger("jdk.event.security");
+                    assertEquals(testLogger.getClass().getName(), INTERNAL_LOGGER_FINDER_NAME);
+                } else {
+                    assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
+                            INTERNAL_LOGGER_FINDER_NAME);
+                    System.Logger testLogger = System.getLogger("jdk.event.security");
+                    assertEquals(testLogger.getClass().getName(), INTERNAL_LOGGER_NAME);
+                }
+            }
             testComplete = true;
 
             // LoggerFinder should be initialized, trigger a simple log call
@@ -165,7 +164,67 @@ public class SignedLoggerFinderTest {
         }
     }
 
-    public static void initialize() throws Throwable {
+    // helper to create the inner test. Run config variations with the LoggerFinder jars
+    // on the classpath and with other threads running System.Logger calls during load
+    private static void launchTest(boolean mutliThreadLoad, boolean withCustomLoggerFinder) {
+        List<String> cmds = new ArrayList<>();
+        cmds.add(JDKToolFinder.getJDKTool("java"));
+        cmds.addAll(asList(Utils.getTestJavaOpts()));
+        if (withCustomLoggerFinder) {
+            cmds.addAll(List.of("-classpath",
+                System.getProperty("test.classes") + File.pathSeparator +
+                jarPath1.toString() + File.pathSeparator + jarPath2.toString(),
+                "-Dtest.classes=" + System.getProperty("test.classes")));
+        } else {
+            cmds.addAll(List.of("-classpath",
+                System.getProperty("test.classes")));
+        }
+        cmds.addAll(List.of(
+            // following debug property seems useful to tickle the issue
+            "-Dsun.misc.URLClassPath.debug=true",
+            // console logger level to capture event output
+            "-Djdk.system.logger.level=DEBUG",
+            // useful for debug purposes
+            "-Djdk.logger.finder.error=DEBUG",
+            // enable logging to verify correct output
+            "-Djava.util.logging.config.file=" +
+                    Path.of(System.getProperty("test.src", "."), "logging.properties")));
+        if (mutliThreadLoad) {
+            cmds.add("-DmutliThreadLoad=true");
+        }
+        if (withCustomLoggerFinder) {
+            cmds.add("-DwithCustomLoggerFinder=true");
+        }
+        cmds.addAll(List.of(
+            "SignedLoggerFinderTest",
+            "no-init"));
+
+        try {
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(cmds.stream()
+                    .filter(t -> !t.isEmpty())
+                    .toArray(String[]::new))
+                    .shouldHaveExitValue(0);
+            if (withCustomLoggerFinder) {
+                outputAnalyzer
+                    .shouldContain("TEST LOGGER: [test_1, test]")
+                    .shouldContain("TEST LOGGER: [test_2, test]");
+            } else {
+                outputAnalyzer
+                    .shouldContain("SecurityPropertyModification: key:test_1")
+                    .shouldContain("SecurityPropertyModification: key:test_2");
+            }
+            if (withCustomLoggerFinder && signJars) {
+                // X509 cert generated during verification of signed jar file
+                outputAnalyzer
+                    .shouldContain(DNAME);
+            }
+
+        } catch (Throwable t) {
+            throw new RuntimeException("Unexpected fail.", t);
+        }
+    }
+
+    private static void initialize() throws Throwable {
         if (signJars) {
             genKey();
         }
