@@ -25,28 +25,25 @@
 
 package com.sun.jndi.ldap;
 
-import javax.naming.CommunicationException;
-import javax.naming.InterruptedNamingException;
-import javax.naming.NamingException;
-import javax.naming.ServiceUnavailableException;
-import javax.naming.ldap.Control;
-import javax.net.SocketFactory;
-import javax.net.ssl.HandshakeCompletedEvent;
-import javax.net.ssl.HandshakeCompletedListener;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSocket;
-import javax.security.sasl.SaslException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import javax.net.ssl.SSLSocket;
+
+import javax.naming.CommunicationException;
+import javax.naming.ServiceUnavailableException;
+import javax.naming.NamingException;
+import javax.naming.InterruptedNamingException;
+
+import javax.naming.ldap.Control;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
@@ -54,6 +51,12 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.security.sasl.SaslException;
 
 /**
  * A thread that creates a connection to an LDAP server.
@@ -78,33 +81,33 @@ import java.util.concurrent.ExecutionException;
  * with calls by the main threads (i.e., those that call LdapClient).
  * Main threads need to worry about contention with each other.
  * Fields that Connection thread uses:
- * inStream - synced access and update; initialized in constructor;
- * referenced outside class unsync'ed (by LdapSasl) only
- * when connection is quiet
- * traceFile, traceTagIn, traceTagOut - no sync; debugging only
- * parent - no sync; initialized in constructor; no updates
- * pendingRequests - sync
- * pauseLock - per-instance lock;
- * paused - sync via pauseLock (pauseReader())
+ *     inStream - synced access and update; initialized in constructor;
+ *           referenced outside class unsync'ed (by LdapSasl) only
+ *           when connection is quiet
+ *     traceFile, traceTagIn, traceTagOut - no sync; debugging only
+ *     parent - no sync; initialized in constructor; no updates
+ *     pendingRequests - sync
+ *     pauseLock - per-instance lock;
+ *     paused - sync via pauseLock (pauseReader())
  * Members used by main threads (LdapClient):
- * host, port - unsync; read-only access for StartTLS and debug messages
- * setBound(), setV3() - no sync; called only by LdapClient.authenticate(),
- * which is a sync method called only when connection is "quiet"
- * getMsgId() - sync
- * writeRequest(), removeRequest(),findRequest(), abandonOutstandingReqs() -
- * access to shared pendingRequests is sync
- * writeRequest(),  abandonRequest(), ldapUnbind() - access to outStream sync
- * cleanup() - sync
- * readReply() - access to sock sync
- * unpauseReader() - (indirectly via writeRequest) sync on pauseLock
+ *     host, port - unsync; read-only access for StartTLS and debug messages
+ *     setBound(), setV3() - no sync; called only by LdapClient.authenticate(),
+ *             which is a sync method called only when connection is "quiet"
+ *     getMsgId() - sync
+ *     writeRequest(), removeRequest(),findRequest(), abandonOutstandingReqs() -
+ *             access to shared pendingRequests is sync
+ *     writeRequest(),  abandonRequest(), ldapUnbind() - access to outStream sync
+ *     cleanup() - sync
+ *     readReply() - access to sock sync
+ *     unpauseReader() - (indirectly via writeRequest) sync on pauseLock
  * Members used by SASL auth (main thread):
- * inStream, outStream - no sync; used to construct new stream; accessed
- * only when conn is "quiet" and not shared
- * replaceStreams() - sync method
+ *     inStream, outStream - no sync; used to construct new stream; accessed
+ *             only when conn is "quiet" and not shared
+ *     replaceStreams() - sync method
  * Members used by StartTLS:
- * inStream, outStream - no sync; used to record the existing streams;
- * accessed only when conn is "quiet" and not shared
- * replaceStreams() - sync method
+ *     inStream, outStream - no sync; used to record the existing streams;
+ *             accessed only when conn is "quiet" and not shared
+ *     replaceStreams() - sync method
  * <p>
  * Handles anonymous, simple, and SASL bind for v3; anonymous and simple
  * for v2.
@@ -186,7 +189,6 @@ public final class Connection implements Runnable {
         }
         return prop.isEmpty() ? true : Boolean.parseBoolean(prop);
     }
-
     // true means v3; false means v2
     // Called in LdapClient.authenticate() (which is synchronized)
     // when connection is "quiet" and not shared; no need to synchronize
@@ -280,22 +282,23 @@ public final class Connection implements Runnable {
 
         SocketFactory factory = getSocketFactory(socketFactory);
         assert factory != null;
-        //create the socket with default socket factory or custom factory
         Socket socket = createConnectionSocket(host, port, factory, connectTimeout);
 
         // the handshake for SSL connection with server and reset timeout for the socket
-        try {
-            initialSSLHandshake(socket, connectTimeout);
-        } catch (Exception e) {
-            // 8314063 the socket is not closed after the failure of handshake
-            // close the socket while the error happened
-            closeOpenedSocket(socket);
-            throw e;
+        if (socket instanceof SSLSocket) {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            try {
+                initialSSLHandshake(sslSocket, connectTimeout);
+            } catch (Exception e) {
+                // 8314063 the socket is not closed after the failure of handshake
+                // close the socket while the error happened
+                closeOpenedSocket(socket);
+                throw e;
+            }
         }
         return socket;
     }
 
-    // get the socket factory, either default or custom
     private SocketFactory getSocketFactory(String socketFactoryName) throws Exception {
         if (socketFactoryName == null) {
             if (debug) {
@@ -349,10 +352,8 @@ public final class Connection implements Runnable {
     // the SSL handshake following socket connection as part of the timeout.
     // So explicitly set a socket read timeout, trigger the SSL handshake,
     // then reset the timeout.
-    private void initialSSLHandshake(Socket socket, int connectTimeout) throws Exception {
+    private void initialSSLHandshake(SSLSocket sslSocket , int connectTimeout) throws Exception {
 
-        if (socket instanceof SSLSocket) {
-            SSLSocket sslSocket = (SSLSocket) socket;
             if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
                 SSLParameters param = sslSocket.getSSLParameters();
                 param.setEndpointIdentificationAlgorithm("LDAPS");
@@ -365,7 +366,6 @@ public final class Connection implements Runnable {
                 sslSocket.startHandshake();
                 sslSocket.setSoTimeout(socketTimeout);
             }
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -615,14 +615,14 @@ public final class Connection implements Runnable {
     }
 
     /**
-     * @param reqCtls      Possibly null request controls that accompanies the
-     *                     abandon and unbind LDAP request.
+     * @param reqCtls Possibly null request controls that accompanies the
+     *    abandon and unbind LDAP request.
      * @param notifyParent true means to call parent LdapClient back, notifying
-     *                     it that the connection has been closed; false means not to notify
-     *                     parent. If LdapClient invokes cleanup(), notifyParent should be set to
-     *                     false because LdapClient already knows that it is closing
-     *                     the connection. If Connection invokes cleanup(), notifyParent should be
-     *                     set to true because LdapClient needs to know about the closure.
+     *    it that the connection has been closed; false means not to notify
+     *    parent. If LdapClient invokes cleanup(), notifyParent should be set to
+     *    false because LdapClient already knows that it is closing
+     *    the connection. If Connection invokes cleanup(), notifyParent should be
+     *    set to true because LdapClient needs to know about the closure.
      */
     void cleanup(Control[] reqCtls, boolean notifyParent) {
         boolean nparent = false;
@@ -926,8 +926,8 @@ public final class Connection implements Runnable {
 
                         // Read all length bytes
                         while (bytesread < seqlenlen) {
-                            br = in.read(inbuf, offset + bytesread,
-                                    seqlenlen - bytesread);
+                            br = in.read(inbuf, offset+bytesread,
+                                    seqlenlen-bytesread);
                             if (br < 0) {
                                 eos = true;
                                 break; // EOF
@@ -941,8 +941,8 @@ public final class Connection implements Runnable {
 
                         // Add contents of length bytes to determine length
                         seqlen = 0;
-                        for (int i = 0; i < seqlenlen; i++) {
-                            seqlen = (seqlen << 8) + (inbuf[offset + i] & 0xff);
+                        for( int i = 0; i < seqlenlen; i++) {
+                            seqlen = (seqlen << 8) + (inbuf[offset+i] & 0xff);
                         }
                         offset += bytesread;
                     }
@@ -1042,7 +1042,8 @@ public final class Connection implements Runnable {
     }
 
     private static byte[] readFully(InputStream is, int length)
-            throws IOException {
+            throws IOException
+    {
         byte[] buf = new byte[Math.min(length, 8192)];
         int nread = 0;
         while (nread < length) {
@@ -1102,7 +1103,6 @@ public final class Connection implements Runnable {
 
         private final CompletableFuture<X509Certificate> tlsHandshakeCompleted =
                 new CompletableFuture<>();
-
         @Override
         public void handshakeCompleted(HandshakeCompletedEvent event) {
             try {

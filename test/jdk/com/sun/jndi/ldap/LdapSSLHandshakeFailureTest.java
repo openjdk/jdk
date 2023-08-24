@@ -51,18 +51,20 @@ import java.util.Hashtable;
  * timed out. Before this fix, the socket is kept opened. Right now the exception will be
  * caught and the socket will be closed.
  *
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true
- * @run main/othervm LdapSSLHandshakeFailureTest -1000 true
- * @run main/othervm LdapSSLHandshakeFailureTest -1000 false
- * @run main/othervm LdapSSLHandshakeFailureTest 2000 false
- * @run main/othervm LdapSSLHandshakeFailureTest 0 true
- * @run main/othervm LdapSSLHandshakeFailureTest 0 false
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true 6000
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000 true 6000
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000 false 6000
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000 false 6000
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 true 6000
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 false 6000
  * @run main/othervm LdapSSLHandshakeFailureTest true
  * @run main/othervm LdapSSLHandshakeFailureTest false
  */
 
 public class LdapSSLHandshakeFailureTest {
     private static String SOCKET_CLOSED_MSG = "The socket has been closed.";
+
+    private static int serverSleepingTime = 5000;
 
     public static void main(String args[]) throws Exception {
 
@@ -73,10 +75,14 @@ public class LdapSSLHandshakeFailureTest {
             serverSlowDown = Boolean.valueOf(args[1]);
         }
 
+        if (args.length == 3) {
+            serverSleepingTime = Integer.valueOf(args[2]);
+        }
+
         boolean hasCustomSocketFactory = args[0]
                 .equals("LdapSSLHandshakeFailureTest$CustomSocketFactory");
         // start the test server first.
-        try (TestServer server = new TestServer(serverSlowDown)) {
+        try (TestServer server = new TestServer(serverSlowDown, serverSleepingTime)) {
             server.start();
             Hashtable<String, Object> env = new Hashtable<>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -184,11 +190,13 @@ public class LdapSSLHandshakeFailureTest {
 
     static class TestServer extends Thread implements AutoCloseable {
         private boolean isForceToSleep;
+        private int sleepingTime;
         private final ServerSocket serverSocket;
         private final int PORT;
 
-        TestServer(boolean isForceToSleep) {
+        private TestServer(boolean isForceToSleep, int sleepingTime) {
             this.isForceToSleep = isForceToSleep;
+            this.sleepingTime = sleepingTime;
             try {
                 SSLServerSocketFactory socketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
                 serverSocket = socketFactory.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
@@ -209,7 +217,7 @@ public class LdapSSLHandshakeFailureTest {
                  InputStream in = socket.getInputStream();
                  OutputStream out = socket.getOutputStream()) {
                 if (isForceToSleep) {
-                    Thread.sleep(5000);
+                    Thread.sleep(sleepingTime);
                 }
                 byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A,
                         0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
