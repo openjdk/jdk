@@ -1,8 +1,0 @@
-[
-  {
-    match: "serviceability.dcmd.compiler.DirectivesForceUpdateTest::callable",
-    c2: {
-      Exclude: true
-    }
-  }
-]

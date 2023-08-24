@@ -23,7 +23,7 @@
  */
 
 /**
- * @test DirectivesForceUpdateTest
+ * @test DirectivesRefreshTest
  * @summary Test of forced recompile after compiler directives changes by diagnostic command
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @library /test/lib /
@@ -34,7 +34,7 @@
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation
- *                   serviceability.dcmd.compiler.DirectivesForceUpdateTest
+ *                   serviceability.dcmd.compiler.DirectivesRefreshTest
  */
 
 package serviceability.dcmd.compiler;
@@ -56,9 +56,9 @@ import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_NONE;
 import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE;
 import static compiler.whitebox.CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION;
 
-public class DirectivesForceUpdateTest {
+public class DirectivesRefreshTest {
 
-    static Path cmdPath = Paths.get(System.getProperty("test.src", "."), "force_update_control.txt");
+    static Path cmdPath = Paths.get(System.getProperty("test.src", "."), "refresh_control.txt");
     static WhiteBox wb = WhiteBox.getWhiteBox();
     static Random random = new Random();
 
@@ -78,7 +78,7 @@ public class DirectivesForceUpdateTest {
     }
     
     static void setup() throws Exception {
-        method = DirectivesForceUpdateTest.class.getDeclaredMethod("callable");
+        method = DirectivesRefreshTest.class.getDeclaredMethod("callable");
         executor = new JMXExecutor();
 
         System.out.println("Compilation with C2");
@@ -88,7 +88,7 @@ public class DirectivesForceUpdateTest {
         checkCompilationLevel(method, COMP_LEVEL_FULL_OPTIMIZATION);
     }
 
-    static void testDirectivesAddForce() {
+    static void testDirectivesAddRefresh() {
         System.out.println("Force forbid C2 via directive, method deoptimized");
 
         var output = executor.execute("Compiler.directives_add -r " + cmdPath.toString());
@@ -107,7 +107,7 @@ public class DirectivesForceUpdateTest {
         checkCompilationLevel(method, COMP_LEVEL_SIMPLE);
     }
 
-    static void testDirectivesClearForce() {
+    static void testDirectivesClearRefresh() {
         System.out.println("Re-compilation with C2 due to removed restriction");
 
         var output = executor.execute("Compiler.directives_clear -r");
@@ -131,8 +131,8 @@ public class DirectivesForceUpdateTest {
 
     public static void main(String[] args) throws Exception {
         setup();
-        testDirectivesAddForce();
-        testDirectivesClearForce();
+        testDirectivesAddRefresh();
+        testDirectivesClearRefresh();
         testDirectivesAddRegular();
     }
 }
