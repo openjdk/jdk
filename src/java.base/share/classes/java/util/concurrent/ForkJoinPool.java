@@ -1830,7 +1830,9 @@ public class ForkJoinPool extends AbstractExecutorService {
             int stop = lockRunState() & STOP;
             try {
                 WorkQueue[] qs; int n;
-                if ((qs = queues) != null && (n = qs.length) > 0) {
+                if (stop != 0 || (qs = queues) == null || (n = qs.length) <= 0)
+                    w.owner = null;             // terminating
+                else {
                     for (int k = n, m = n - 1;  ; id += 2) {
                         if (qs[id &= m] == null)
                             break;
@@ -1839,21 +1841,21 @@ public class ForkJoinPool extends AbstractExecutorService {
                             break;
                         }
                     }
-                    w.phase =  id;                // now publishable
+                    w.phase = id;               // now publishable
                     if (id < n)
                         qs[id] = w;
-                    else if (stop == 0)  {        // expand unless stopping
+                    else {                      // expand
                         int an = n << 1, am = an - 1;
                         WorkQueue[] as = new WorkQueue[an];
                         as[id & am] = w;
                         for (int j = 1; j < n; j += 2)
                             as[j] = qs[j];
                         for (int j = 0; j < n; j += 2) {
-                            WorkQueue q;           // shared queues may move
+                            WorkQueue q;        // shared queues may move
                             if ((q = qs[j]) != null)
                                 as[q.phase & EXTERNAL_ID_MASK & am] = q;
                         }
-                        U.storeFence();            // fill before publish
+                        U.storeFence();         // fill before publish
                         queues = as;
                     }
                 }
@@ -2786,10 +2788,12 @@ public class ForkJoinPool extends AbstractExecutorService {
             int r = ThreadLocalRandom.nextSecondarySeed(); // stagger traversals
             WorkQueue[] qs = queues;
             int n = (qs == null) ? 0 : qs.length;
+            boolean active = false;
             for (int l = n; l > 0; --l, ++r) {
-                int j; WorkQueue q; Thread o; // cancel tasks; interrupt workers
-                if ((q = qs[j = r & SMASK & (n - 1)]) != null) {
+                WorkQueue q; Thread o; // cancel tasks; interrupt workers
+                if ((q = qs[r & SMASK & (n - 1)]) != null) {
                     if ((o = q.owner) != null) {
+                        active = true;
                         try {
                             o.interrupt();
                         } catch (Throwable ignore) {
@@ -2803,7 +2807,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                 }
             }
-            if (((e = runState) & TERMINATED) == 0 && ctl == 0L) {
+            if (((e = runState) & TERMINATED) == 0 && !active && ctl == 0L) {
                 if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0) {
                     CountDownLatch done; SharedThreadContainer ctr;
                     if ((done = termination) != null)
