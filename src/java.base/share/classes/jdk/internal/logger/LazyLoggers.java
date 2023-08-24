@@ -422,6 +422,7 @@ public final class LazyLoggers {
      * @return  a (possibly lazy) Logger instance.
      */
     public static final Logger getLogger(String name, Module module) {
+        // triggers detection of the backend
         BootstrapLogger.detectBackend();
         if (DefaultLoggerFinder.isSystem(module)) {
             return getLazyLogger(name, module);

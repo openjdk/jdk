@@ -227,8 +227,12 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
 
     // The accessor in which this logger is temporarily set.
     final LazyLoggerAccessor holder;
+    // tests whether the logger is invoked by the loading thread before
+    // the LoggerFinder is loaded; can be null;
     final BooleanSupplier isLoadingThread;
 
+    // returns true if the logger is invoked by the loading thread before the
+    // LoggerFinder service is loaded
     boolean isLoadingThread() {
         return isLoadingThread != null && isLoadingThread.getAsBoolean();
     }
@@ -945,6 +949,8 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     //    - the logging backend is JUL, there is no custom config,
     //      and the LogManager has not been initialized yet.
     public static boolean useLazyLoggers() {
+        // Note: avoid triggering the initialization of the DetectBackend class
+        // while holding the BotstrapLogger class monitor
         if (!BootstrapLogger.isBooted() ||
                 DetectBackend.detectedBackend == LoggingBackend.CUSTOM) {
             return true;

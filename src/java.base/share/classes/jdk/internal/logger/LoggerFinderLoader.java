@@ -71,16 +71,19 @@ public final class LoggerFinderLoader {
         throw new InternalError("LoggerFinderLoader cannot be instantiated");
     }
 
-
-    // Return the loaded LoggerFinder, or load it if not already loaded.
+    // record the loadingThread while loading the backend
     static volatile Thread loadingThread;
+    // Return the loaded LoggerFinder, or load it if not already loaded.
     private static System.LoggerFinder service() {
         if (service != null) return service;
         synchronized(lock) {
             if (service != null) return service;
             Thread currentThread = Thread.currentThread();
             if (loadingThread == currentThread) {
-                return new TemporaryLoggerFinder();
+                // recursive attempt to load the backend while loading the backend
+                // use a temporary logger finder that returns special BootstrapLogger
+                // which will wait until loading is finished
+                return TemporaryLoggerFinder.INSTANCE;
             }
             loadingThread = currentThread;
             try {
@@ -95,6 +98,8 @@ public final class LoggerFinderLoader {
         return service;
     }
 
+    // returns true if called by the thread that loads the LoggerFinder, while
+    // loading the LoggerFinder.
     static boolean isLoadingThread() {
         return loadingThread != null && loadingThread == Thread.currentThread();
     }
@@ -137,12 +142,12 @@ public final class LoggerFinderLoader {
         return iterator;
     }
 
-    static class TemporaryLoggerFinder extends LoggerFinder {
+    private static final class TemporaryLoggerFinder extends LoggerFinder {
         private static final BiFunction<String, Module, Logger> loggerSupplier =
                 new BiFunction<>() {
                     @Override
                     public Logger apply(String name, Module module) {
-                        return LazyLoggers.getLoggerFromFinder(name, module);
+                        return LazyLoggers.getLogger(name, module);
                     }
                 };
         private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
@@ -151,6 +156,7 @@ public final class LoggerFinderLoader {
                 return LoggerFinderLoader.isLoadingThread();
             }
         };
+        private static final TemporaryLoggerFinder INSTANCE = new TemporaryLoggerFinder();
 
         @Override
         public Logger getLogger(String name, Module module) {
