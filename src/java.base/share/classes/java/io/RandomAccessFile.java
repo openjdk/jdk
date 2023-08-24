@@ -129,7 +129,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityException
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
-     * @revised 1.4
      */
     public RandomAccessFile(String name, String mode)
         throws FileNotFoundException
@@ -215,7 +214,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.SecurityManager#checkRead(java.lang.String)
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @see        java.nio.channels.FileChannel#force(boolean)
-     * @revised 1.4
      */
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
@@ -703,8 +701,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * this method should be prepared to handle possible reentrant invocation.
      *
      * @throws     IOException  if an I/O error occurs.
-     *
-     * @revised 1.4
      */
     public void close() throws IOException {
         if (closed) {

@@ -762,13 +762,8 @@ jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x6
 
 # jdk_foreign
 
-java/foreign/TestByteBuffer.java 8309475 aix-ppc64
-
 ############################################################################
 # Client manual tests
-
-javax/swing/JFileChooser/FileSystemView/SystemIconTest.java 8313902 windows-all
-sanity/client/SwingSet/src/FileChooserDemoTest.java 8313903 windows-all
 
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
