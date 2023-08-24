@@ -206,7 +206,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 #endif // _LP64
 
   // Restore stack bottom in case i2c adjusted stack
-  __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
@@ -1616,6 +1617,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 #ifndef _LP64
   __ mov(rax, rsp);
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rbx, Address(rbp, rbx, Address::times_ptr));
   __ get_thread(thread);
   // PC must point into interpreter here
   __ set_last_Java_frame(thread, noreg, rbp, __ pc(), noreg);
@@ -1624,6 +1626,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 #else
   __ mov(c_rarg1, rsp);
   __ movptr(c_rarg2, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(c_rarg2, Address(rbp, c_rarg2, Address::times_ptr));
   // PC must point into interpreter here
   __ set_last_Java_frame(noreg, rbp, __ pc(), rscratch1);
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
@@ -1631,7 +1634,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ reset_last_Java_frame(thread, true);
 
   // Restore the last_sp and null it out
-  __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
   __ restore_bcp();

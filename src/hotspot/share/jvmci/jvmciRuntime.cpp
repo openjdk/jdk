@@ -174,7 +174,6 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     RetryableAllocationMark ram(current, null_on_fail);
     obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   }
-  current->set_vm_result(obj);
   // This is pretty rare but this runtime patch is stressful to deoptimization
   // if we deoptimize here so force a deopt to stress the path.
   if (DeoptimizeALot) {
@@ -182,7 +181,8 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
     // Alternate between deoptimizing and raising an error (which will also cause a deopt)
     if (deopts++ % 2 == 0) {
       if (null_on_fail) {
-        return;
+        // Drop the allocation
+        obj = nullptr;
       } else {
         ResourceMark rm(current);
         THROW(vmSymbols::java_lang_OutOfMemoryError());
@@ -191,6 +191,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array_common(JavaThread* current, Klass*
       deopt_caller();
     }
   }
+  current->set_vm_result(obj);
   JRT_BLOCK_END;
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
@@ -1246,11 +1247,13 @@ JNIEnv* JVMCIRuntime::init_shared_library_javavm(int* create_JavaVM_err) {
   MutexLocker locker(_lock);
   JavaVM* javaVM = _shared_library_javavm;
   if (javaVM == nullptr) {
+#ifdef ASSERT
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceEnomemOnLibjvmciInit");
     if (val != nullptr && strcmp(val, "true") == 0) {
       *create_JavaVM_err = JNI_ENOMEM;
       return nullptr;
     }
+#endif
 
     char* sl_path;
     void* sl_handle = JVMCI::get_shared_library(sl_path, true);
@@ -2061,12 +2064,14 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
 
   JVMCIObject result_object = JVMCIENV->call_HotSpotJVMCIRuntime_compileMethod(receiver, jvmci_method, entry_bci,
                                                                      (jlong) compile_state, compile_state->task()->compile_id());
+#ifdef ASSERT
   if (JVMCIENV->has_pending_exception()) {
     const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.compileMethodExceptionIsFatal");
     if (val != nullptr && strcmp(val, "true") == 0) {
       fatal_exception(JVMCIENV, "testing JVMCI fatal exception handling");
     }
   }
+#endif
 
   if (after_compiler_upcall(JVMCIENV, compiler, method, "call_HotSpotJVMCIRuntime_compileMethod")) {
     return;

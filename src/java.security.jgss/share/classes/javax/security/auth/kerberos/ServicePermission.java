@@ -240,9 +240,7 @@ public final class ServicePermission extends Permission
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
