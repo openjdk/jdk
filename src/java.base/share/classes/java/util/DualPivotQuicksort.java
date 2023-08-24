@@ -372,8 +372,8 @@ final class DualPivotQuicksort {
             }
 
             // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            int lower; // The index of the last element of the left part
+            int upper; // The index of the first element of the right part
 
             /*
              * Partitioning with 2 pivots in case of different elements.
@@ -1185,8 +1185,8 @@ final class DualPivotQuicksort {
             }
 
             // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            int lower; // The index of the last element of the left part
+            int upper; // The index of the first element of the right part
 
             /*
              * Partitioning with 2 pivots in case of different elements.
@@ -2781,8 +2781,8 @@ final class DualPivotQuicksort {
             }
 
             // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            int lower; // The index of the last element of the left part
+            int upper; // The index of the first element of the right part
 
             /*
              * Partitioning with 2 pivots in case of different elements.
@@ -3642,8 +3642,8 @@ final class DualPivotQuicksort {
             }
 
             // Pointers
-            int lower = low; // The index of the last element of the left part
-            int upper = end; // The index of the first element of the right part
+            int lower; // The index of the last element of the left part
+            int upper; // The index of the first element of the right part
 
             /*
              * Partitioning with 2 pivots in case of different elements.

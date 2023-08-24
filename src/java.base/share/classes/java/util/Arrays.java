@@ -395,7 +395,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-         DualPivotQuicksort.sort(a, 0, 0, a.length);
+        DualPivotQuicksort.sort(a, 0, 0, a.length);
     }
 
     /**
