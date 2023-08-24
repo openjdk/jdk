@@ -343,7 +343,7 @@ public final class JstatdTest {
                 jstatdThread = tryToSetupJstatdProcess();
             }
             if (jstatdThread == null) {
-                throw new RuntimeException("Cannot start jstatd.  No free port found.");
+                throw new RuntimeException("Cannot start jstatd.");
             }
             runToolsAndVerify();
         } finally {
