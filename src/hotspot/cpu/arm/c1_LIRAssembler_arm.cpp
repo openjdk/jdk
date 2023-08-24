@@ -971,7 +971,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       op->tmp1()->as_register(),
                       op->tmp2()->as_register(),
                       op->tmp3()->as_register(),
-                      arrayOopDesc::header_size(op->type()),
+                      align_up(arrayOopDesc::header_size_in_bytes(), HeapWordSize) / HeapWordSize,
                       type2aelembytes(op->type()),
                       op->klass()->as_register(),
                       *op->stub()->entry());
