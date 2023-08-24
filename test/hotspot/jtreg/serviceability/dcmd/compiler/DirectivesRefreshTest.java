@@ -76,7 +76,7 @@ public class DirectivesRefreshTest {
     static void checkCompilationLevel(Method method, int level) {
         assertEQ(wb.getMethodCompilationLevel(method), level, "Compilation level");
     }
-    
+
     static void setup() throws Exception {
         method = DirectivesRefreshTest.class.getDeclaredMethod("callable");
         executor = new JMXExecutor();
