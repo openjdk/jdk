@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.hierarchicallayout;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.util.Statistics;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
@@ -36,12 +37,11 @@ public class HierarchicalStableLayoutManager {
     public static final int DUMMY_WIDTH = 1;
     public static final int X_OFFSET = 8;
     public static final int LAYER_OFFSET = 8;
-    // Algorithm global datastructures
+    // Algorithm global data structures
     private HashSet<? extends Vertex> currentVertices;
     private HashSet<? extends Link> currentLinks;
     private Set<Link> reversedLinks;
     private List<LayoutNode> nodes;
-    private final List<LayoutNode> oldNodes;
     private final HashMap<Vertex, LayoutNode> vertexToLayoutNode;
     private final HashMap<Vertex, LayoutNode> oldVertexToLayoutNode;
     private HashMap<Link, List<Point>> reversedLinkStartPoints;
@@ -56,14 +56,13 @@ public class HierarchicalStableLayoutManager {
     private HashSet<? extends Link> oldLinks;
     private boolean shouldRedrawLayout = true;
     private boolean shouldRemoveEmptyLayers = true;
-    private final boolean shouldComputeLayoutScore = false;
 
     enum Action {
         ADD,
         REMOVE
     }
 
-    private class VertexAction {
+    private static class VertexAction {
         public Vertex vertex;
         public List<LinkAction> linkActions = new LinkedList<>();
         public Action action;
@@ -74,7 +73,7 @@ public class HierarchicalStableLayoutManager {
         }
     }
 
-    private class LinkAction {
+    private static class LinkAction {
         public Link link;
         public Action action;
 
@@ -91,11 +90,10 @@ public class HierarchicalStableLayoutManager {
         vertexToLayoutNode = new HashMap<>();
         nodes = new ArrayList<>();
         oldVertexToLayoutNode = new HashMap<>();
-        oldNodes = new ArrayList<>();
     }
 
     private int calculateOptimalBoth(LayoutNode n) {
-        if (n.preds.size() == 0 && n.succs.size() == 0) {
+        if (n.preds.isEmpty() && n.succs.isEmpty()) {
             return n.x;
         }
 
@@ -112,23 +110,13 @@ public class HierarchicalStableLayoutManager {
             i++;
         }
 
-        return median(values);
-    }
-
-    private int median(int[] values) {
-        Arrays.sort(values);
-        if (values.length % 2 == 0) {
-            return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
-        } else {
-            return values[values.length / 2];
-        }
+        return Statistics.median(values);
     }
 
     /**
      * Adjust the X-coordinates of the nodes in the given layer, as a new node has
      * been inserted at that layer
      *
-     * @param layer
      */
     private void adjustXCoordinates(int layer) {
         List<LayoutNode> nodes = layers.get(layer);
@@ -153,7 +141,7 @@ public class HierarchicalStableLayoutManager {
     }
 
     /**
-     * Ensure that the datastructures nodes and layerNodes are consistent
+     * Ensure that the data structures nodes and layerNodes are consistent
      */
     private void sanityCheckNodesAndLayerNodes() {
         int nodeCount = 0;
@@ -448,24 +436,6 @@ public class HierarchicalStableLayoutManager {
     }
 
     /**
-     * Used to compare nodes across consecutive graphs
-     */
-    private void copyOldNodes() {
-        oldNodes.clear();
-        oldVertexToLayoutNode.clear();
-        for (LayoutNode node : nodes) {
-            if (node.vertex != null) {
-                LayoutNode nodeCopy = new LayoutNode();
-                nodeCopy.x = node.x;
-                nodeCopy.y = node.y;
-                nodeCopy.xOffset = node.xOffset;
-                nodeCopy.yOffset = node.yOffset;
-                oldVertexToLayoutNode.put(node.vertex, nodeCopy);
-            }
-        }
-    }
-
-    /**
      * Indicate that the layout should be redrawn with a static algorithm
      */
     public void setShouldRedrawLayout(boolean shouldRedrawLayout) {
@@ -506,15 +476,10 @@ public class HierarchicalStableLayoutManager {
 
             new WriteResult().run();
 
-            if (shouldComputeLayoutScore) {
-                new ComputeLayoutScore().run();
-            }
-
             sanityCheckNodesAndLayerNodes();
             sanityCheckEdges();
         }
 
-        copyOldNodes();
         oldVertices = new HashSet<>(currentVertices);
         oldLinks = new HashSet<>(currentLinks);
     }
@@ -539,7 +504,7 @@ public class HierarchicalStableLayoutManager {
 
     private class BuildDatastructure {
 
-        // In case there are changes in the node size, it's layer must be updated
+        // In case there are changes in the node size, its layer must be updated
         Set<Integer> layersToUpdate = new HashSet<>();
 
         /**
@@ -641,12 +606,9 @@ public class HierarchicalStableLayoutManager {
          * Find the optimal position within the given layer to insert the given node.
          * The optimum is given by the least amount of edge crossings.
          *
-         * @param node
-         * @param layer
-         * @return The optimal position within given layer
          */
         private int optimalPosition(LayoutNode node, int layer) {
-            assert layers.keySet().contains(layer);
+            assert layers.containsKey(layer);
 
             List<LayoutNode> layerNodes = layers.get(layer);
             layerNodes.sort(nodePositionComparator);
@@ -664,9 +626,9 @@ public class HierarchicalStableLayoutManager {
 
                 int currentCrossings = 0;
 
-                if (layers.keySet().contains(layer - 1)) {
+                if (layers.containsKey(layer - 1)) {
                     List<LayoutNode> predNodes = layers.get(layer - 1);
-                    // For each link with an end point in vertex, check how many edges crosses it
+                    // For each link with an end point in vertex, check how many edges cross it
                     for (LayoutEdge edge : node.preds) {
                         if (edge.from.layer == layer - 1) {
                             int fromNodeXCoord = edge.from.x;
@@ -701,9 +663,9 @@ public class HierarchicalStableLayoutManager {
                     }
                 }
                 // Edge crossings across current layer and layer below
-                if (layers.keySet().contains(layer + 1)) {
+                if (layers.containsKey(layer + 1)) {
                     List<LayoutNode> succsNodes = layers.get(layer + 1);
-                    // For each link with an end point in vertex, check how many edges crosses it
+                    // For each link with an end point in vertex, check how many edges cross it
                     for (LayoutEdge edge : node.succs) {
                         if (edge.to.layer == layer + 1) {
                             int toNodeXCoord = edge.to.x;
@@ -750,16 +712,14 @@ public class HierarchicalStableLayoutManager {
          * Insert node at the assigned layer, updating the positions of the nodes within
          * the layer
          *
-         * @param node
-         * @param layer
          */
         private void insertNode(LayoutNode node, int layer) {
-            assert layers.keySet().contains(layer) || layer == 0;
+            assert layers.containsKey(layer) || layer == 0;
 
             node.layer = layer;
             List<LayoutNode> layerNodes = layers.getOrDefault(layer, new ArrayList<LayoutNode>());
 
-            if (layerNodes.size() == 0) {
+            if (layerNodes.isEmpty()) {
                 node.pos = 0;
             } else {
                 node.pos = optimalPosition(node, layer);
@@ -966,7 +926,6 @@ public class HierarchicalStableLayoutManager {
          * Create a new layer at node.layer + 1 and move the given node there. Adjust
          * remaining layers numbers
          *
-         * @param node
          */
         private void expandNewLayerBeneath(LayoutNode node) {
             sanityCheckEdges();
@@ -988,7 +947,7 @@ public class HierarchicalStableLayoutManager {
             layers.put(layer, l);
 
             sanityCheckNodesAndLayerNodes();
-            assert layers.get(layer).size() == 0;
+            assert layers.get(layer).isEmpty();
             for (LayoutNode n : nodes) {
                 assert n.layer != layer;
             }
@@ -1000,7 +959,7 @@ public class HierarchicalStableLayoutManager {
                 HashMap<Integer, List<LayoutEdge>> portHashes = new HashMap<>();
 
                 for (LayoutEdge e : n.succs) {
-                    if (!portHashes.keySet().contains(e.relativeFrom)) {
+                    if (!portHashes.containsKey(e.relativeFrom)) {
                         portHashes.put(e.relativeFrom, new ArrayList<>());
                     }
                     portHashes.get(e.relativeFrom).add(e);
@@ -1101,16 +1060,14 @@ public class HierarchicalStableLayoutManager {
         /**
          * Calculate which layer the given vertex should be inserted at to minimize
          * reversed edges and edge lengths
-         * If there are multiple options, choose the bottom most layer
+         * If there are multiple options, choose the bottom-most layer
          *
-         * @param vertex
-         * @param links
          * @return the optimal layer to insert the given vertex
          */
         private int optimalLayer(Vertex vertex, List<Link> links) {
             if (vertex.isRoot()) {
                 return 0;
-            } else if (layers.keySet().size() == 0) {
+            } else if (layers.keySet().isEmpty()) {
                 return 0;
             }
 
@@ -1119,7 +1076,6 @@ public class HierarchicalStableLayoutManager {
             int neighborsOnSameLayer = Integer.MAX_VALUE;
             int layer = -1;
             for (int i = 0; i < layers.keySet().size(); i++) {
-                // System.out.println("Testing layer " + i);
                 int curReversedEdges = 0;
                 int curTotalEdgeLength = 0;
                 int curNeighborsOnSameLayer = 0;
@@ -1525,259 +1481,6 @@ public class HierarchicalStableLayoutManager {
                 curY += maxHeight + baseLine + bottomBaseLine;
                 curY += LAYER_OFFSET + ((int) (Math.sqrt(maxXOffset) * 1.5));
             }
-        }
-    }
-
-    private class ComputeLayoutScore {
-        /**
-         * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         *
-         * @param p
-         * @param q
-         * @param r
-         * @return true if point q lies on line segment 'pr'
-         */
-        private boolean onSegment(Point p, Point q, Point r) {
-            return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
-                    q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
-        }
-
-        /**
-         * To find orientation of ordered triplet (p, q, r).
-         * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         *
-         * @return 0 --> p, q and r are collinear, 1 --> Clockwise, 2 -->
-         *         Counterclockwise
-         */
-        private int orientation(Point p, Point q, Point r) {
-            int val = (q.y - p.y) * (r.x - q.x) -
-                    (q.x - p.x) * (r.y - q.y);
-
-            if (val == 0) {
-                return 0; // collinear
-            }
-
-            return (val > 0) ? 1 : 2; // clock or counterclock wise
-        }
-
-        /**
-         * https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-         *
-         * @return true if line segment 'p1q1' and 'p2q2' intersect.
-         */
-        private boolean doIntersect(Point p1, Point q1, Point p2, Point q2) {
-            // Share the same port
-            if (p1.equals(p2) || q1.equals(q2) || p1.equals(q2) || q1.equals(p2)) {
-                return false;
-            }
-
-            // Find the four orientations needed for general and
-            // special cases
-            int o1 = orientation(p1, q1, p2);
-            int o2 = orientation(p1, q1, q2);
-            int o3 = orientation(p2, q2, p1);
-            int o4 = orientation(p2, q2, q1);
-
-            // General case
-            if (o1 != o2 && o3 != o4) {
-                return true;
-            }
-
-            // Special Cases
-            // p1, q1 and p2 are collinear and p2 lies on segment p1q1
-            if (o1 == 0 && onSegment(p1, p2, q1)) {
-                return true;
-            }
-
-            // p1, q1 and q2 are collinear and q2 lies on segment p1q1
-            if (o2 == 0 && onSegment(p1, q2, q1)) {
-                return true;
-            }
-
-            // p2, q2 and p1 are collinear and p1 lies on segment p2q2
-            if (o3 == 0 && onSegment(p2, p1, q2)) {
-                return true;
-            }
-
-            // p2, q2 and q1 are collinear and q1 lies on segment p2q2
-            if (o4 == 0 && onSegment(p2, q1, q2)) {
-                return true;
-            }
-
-            return false; // Doesn't fall in any of the above cases
-        }
-
-        private int totalEdgeCrossings() {
-            HashMap<Link, List<Point>> linkPositions = new HashMap<>();
-            for (LayoutNode node : nodes) {
-                if (node.vertex == null) {
-                    continue;
-                }
-                for (LayoutEdge e : node.preds) {
-                    if (e.link != null && !linkPositions.keySet().contains(e.link)) {
-                        List<Point> points = new WriteResult().edgePoints(e);
-
-                        // Merged edges creates duplicate edge segments
-                        for (Link l : linkPositions.keySet()) {
-                            // Exists edge from same vertex, same port
-                            if (l.getFrom().getVertex().equals(e.link.getFrom().getVertex())
-                                    && l.getFrom().getRelativePosition().x == e.link.getFrom()
-                                    .getRelativePosition().x) {
-                                List<Point> duplicatePoints = new ArrayList<>();
-                                for (Point p : points) {
-                                    if (linkPositions.get(l).contains(p)) {
-                                        duplicatePoints.add(p);
-                                    }
-                                }
-                                if (duplicatePoints.size() > 1) {
-                                    // Should not remove anchor point
-                                    duplicatePoints.remove(duplicatePoints.size() - 1);
-                                    points.removeAll(duplicatePoints);
-                                }
-                            }
-                        }
-
-                        linkPositions.put(e.link, points);
-                    }
-                }
-            }
-
-            int crossings = 0;
-
-            for (Link l1 : linkPositions.keySet()) {
-                for (Link l2 : linkPositions.keySet()) {
-                    if (l1.equals(l2) || (l1.getFrom().getVertex().equals(l2.getFrom().getVertex())
-                            && l1.getFrom().getRelativePosition().x == l2.getFrom().getRelativePosition().x)) {
-                        continue;
-                    }
-
-                    List<Point> pointsLink1 = linkPositions.get(l1);
-                    List<Point> pointsLink2 = linkPositions.get(l2);
-
-                    for (int i = 1; i < pointsLink1.size(); i++) {
-                        Point p1 = pointsLink1.get(i - 1);
-                        Point q1 = pointsLink1.get(i);
-                        for (int j = 1; j < pointsLink2.size(); j++) {
-                            Point p2 = pointsLink2.get(j - 1);
-                            Point q2 = pointsLink2.get(j);
-
-                            if (doIntersect(p1, q1, p2, q2)) {
-                                crossings += 1;
-                            }
-                        }
-                    }
-                }
-            }
-            // Double counting every crossing
-            return crossings / 2;
-        }
-
-        private float averageEdgeLength() {
-            float totLength = 0;
-            int edgeCount = 0;
-
-            for (LayoutNode node : nodes) {
-                if (node.vertex == null)
-                    continue;
-                for (LayoutEdge e : node.preds) {
-                    if (e.link == null)
-                        continue;
-                    List<Point> points = new WriteResult().edgePoints(e);
-                    float edgeLength = 0;
-                    Point prevPoint = points.get(0);
-                    for (int i = 1; i < points.size(); i++) {
-                        Point point = points.get(i);
-                        edgeLength += prevPoint.distance(point);
-                        prevPoint = point;
-                    }
-                    totLength += edgeLength;
-                    edgeCount += 1;
-                }
-            }
-
-            if (edgeCount > 0) {
-                return totLength / edgeCount;
-            } else {
-                return 0;
-            }
-        }
-
-        /**
-         * Computes how much the bends in an edge deviates from being straight, on
-         * average
-         */
-        private float averageEdgeBendDegrees() {
-            float totDegree = 0;
-            int edgeCount = 0;
-
-            for (LayoutNode node : nodes) {
-                if (node.vertex == null)
-                    continue;
-                for (LayoutEdge e : node.preds) {
-                    if (e.link == null)
-                        continue;
-                    List<Point> points = new WriteResult().edgePoints(e);
-                    Point prevPoint = points.get(0);
-                    Point curPoint = points.get(1);
-                    for (int i = 2; i < points.size(); i++) {
-                        Point nextPoint = points.get(i);
-
-                        double x1 = prevPoint.getX() - curPoint.getX();
-                        double y1 = prevPoint.getY() - curPoint.getY();
-                        double x2 = nextPoint.getX() - curPoint.getX();
-                        double y2 = nextPoint.getY() - curPoint.getY();
-
-                        double dotProduct = x1 * x2 + y1 * y2;
-                        double prevMagnitude = Math.sqrt(Math.pow(x1, 2) + Math.pow(y1, 2));
-                        double nextMagnitude = Math.sqrt(Math.pow(x2, 2) + Math.pow(y2, 2));
-                        double cos = dotProduct / (prevMagnitude * nextMagnitude);
-                        double angle = Math.acos(cos);
-
-                        if (angle < Math.PI) {
-                            totDegree += Math.abs(Math.PI - angle);
-                        }
-
-                        prevPoint = curPoint;
-                        curPoint = nextPoint;
-                    }
-                    edgeCount += 1;
-                }
-            }
-
-            if (edgeCount > 0) {
-                return totDegree / edgeCount;
-            } else {
-                return 0;
-            }
-        }
-
-        private int reversedEdges() {
-            return reversedLinks.size();
-        }
-
-        private float averageNodeDisplacement() {
-            HashSet<Vertex> commonVertices = new HashSet<>(oldVertices);
-            commonVertices.retainAll(currentVertices);
-
-            float totalDisplacement = 0;
-            for (Vertex vertex : commonVertices) {
-                LayoutNode node = vertexToLayoutNode.get(vertex);
-                int x1 = node.x + node.xOffset;
-                int y1 = node.y + node.yOffset;
-                LayoutNode oldNode = oldVertexToLayoutNode.get(vertex);
-                int x2 = oldNode.x + oldNode.xOffset;
-                int y2 = oldNode.y + oldNode.yOffset;
-                totalDisplacement += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-            }
-            return totalDisplacement / commonVertices.size();
-        }
-
-        public void run() {
-            int edgeCrossings = totalEdgeCrossings();
-            float edgeBendsDeg = averageEdgeBendDegrees();
-            float edgeLength = averageEdgeLength();
-            float nodeDisplacement = averageNodeDisplacement();
-            int reversedEdges = reversedEdges();
         }
     }
 

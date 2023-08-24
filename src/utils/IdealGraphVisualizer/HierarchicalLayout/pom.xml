@@ -51,6 +51,11 @@
             <artifactId>Layout</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.hotspot.igv</groupId>
+            <artifactId>Util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

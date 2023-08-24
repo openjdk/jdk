@@ -197,7 +197,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(cfgLayoutButton);
 
         diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            // HierarchicalStableLayoutManager is not stable for difference graphs
+            // HierarchicalStableLayoutManager is not reliable for difference graphs
             boolean isDiffGraph = model.getGraph().isDiffGraph();
             // deactivate HierarchicalStableLayoutManager for difference graphs
             stableSeaLayoutButton.setEnabled(!isDiffGraph);

@@ -389,8 +389,9 @@ public class Figure extends Properties.Entity implements Vertex {
         if (!(o instanceof Figure)) {
             return false;
         }
-        return getInputNode().equals(((Figure)o).getInputNode());
+        return getInputNode().equals(((Figure) o).getInputNode());
     }
+    
     @Override
     public int hashCode() {
         return getInputNode().hashCode();

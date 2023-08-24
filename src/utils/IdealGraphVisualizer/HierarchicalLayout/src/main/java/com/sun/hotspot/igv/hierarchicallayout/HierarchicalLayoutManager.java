@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.LayoutManager;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.util.Statistics;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
@@ -618,7 +619,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     LayoutEdge e = n.preds.get(i);
                     values[i] = e.from.x + e.relativeFrom - e.relativeTo;
                 }
-                return median(values);
+                return Statistics.median(values);
             } else {
                 int z = 0;
                 int[] values = new int[vipCount];
@@ -628,7 +629,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                         values[z++] = e.from.x + e.relativeFrom - e.relativeTo;
                     }
                 }
-                return median(values);
+                return Statistics.median(values);
             }
         }
 
@@ -650,7 +651,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 i++;
             }
 
-            return median(values);
+            return Statistics.median(values);
         }
 
         private int calculateOptimalUp(LayoutNode n) {
@@ -666,16 +667,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     return values[i];
                 }
             }
-            return median(values);
-        }
-
-        private int median(int[] values) {
-            Arrays.sort(values);
-            if (values.length % 2 == 0) {
-                return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
-            } else {
-                return values[values.length / 2];
-            }
+            return Statistics.median(values);
         }
 
         private void sweepUp() {
