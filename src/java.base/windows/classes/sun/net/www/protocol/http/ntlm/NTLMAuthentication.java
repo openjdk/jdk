@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.net.UnknownHostException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import sun.net.NetProperties;
@@ -95,7 +96,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
             public String run() {
                 String localhost;
                 try {
-                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase();
+                    localhost = InetAddress.getLocalHost().getHostName().toUpperCase(Locale.ROOT);
                 } catch (UnknownHostException e) {
                      localhost = "localhost";
                 }
@@ -136,7 +137,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
                 username = s;
                 ntdomain = defaultDomain;
             } else {
-                ntdomain = s.substring (0, i).toUpperCase();
+                ntdomain = s.substring (0, i).toUpperCase(Locale.ROOT);
                 username = s.substring (i+1);
             }
             password = new String (pw.getPassword());

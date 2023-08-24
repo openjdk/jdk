@@ -229,7 +229,7 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   st->print_cr("Malloc allocation site table:");
   st->print_cr("\tTotal entries: %d", total_entries);
   st->print_cr("\tEmpty entries (no outstanding mallocs): %d (%2.2f%%)",
-                  empty_entries, ((float)empty_entries * 100) / total_entries);
+                  empty_entries, ((float)empty_entries * 100) / (float)total_entries);
   st->cr();
 
   qsort(lengths, table_size, sizeof(uint16_t), qsort_helper);

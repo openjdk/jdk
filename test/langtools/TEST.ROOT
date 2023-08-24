@@ -15,7 +15,7 @@ keys=intermittent randomness needs-src needs-src-jdk_javadoc
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.3+1
+requiredVersion=7.3.1+1
 
 # Use new module options
 useNewOptions=true

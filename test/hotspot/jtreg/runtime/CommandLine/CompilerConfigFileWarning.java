@@ -25,6 +25,7 @@
  * @test
  * @bug 7167142
  * @summary Warn if unused .hotspot_compiler file is present
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

@@ -28,6 +28,7 @@
 #include <cstdint>
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 
 // keep in sync with jdk/internal/foreign/abi/ppc64/PPC64Architecture
 enum class StorageType : int8_t {

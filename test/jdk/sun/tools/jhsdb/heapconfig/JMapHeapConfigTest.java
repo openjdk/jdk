@@ -57,8 +57,7 @@ public class JMapHeapConfigTest {
         "NewRatio",
         "SurvivorRatio",
         "MetaspaceSize",
-        "CompressedClassSpaceSize",
-        "G1HeapRegionSize"};
+        "CompressedClassSpaceSize"};
 
     // Test can't deal with negative jlongs:
     //  ignoring MaxMetaspaceSize
