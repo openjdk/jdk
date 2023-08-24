@@ -512,6 +512,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
+  address generate_string_indexof();
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();

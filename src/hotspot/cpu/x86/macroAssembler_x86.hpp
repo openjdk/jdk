@@ -911,6 +911,40 @@ public:
   // contained in the location described by entry (not the address of entry)
   void jump(ArrayAddress entry, Register rscratch);
 
+  // Adding more natural conditional jump instructions
+  void ALWAYSINLINE jo(Label& L, bool maybe_short = true) { jcc(Assembler::overflow, L, maybe_short); }
+  void ALWAYSINLINE jno(Label& L, bool maybe_short = true) { jcc(Assembler::noOverflow, L, maybe_short); }
+  void ALWAYSINLINE js(Label& L, bool maybe_short = true) { jcc(Assembler::positive, L, maybe_short); }
+  void ALWAYSINLINE jns(Label& L, bool maybe_short = true) { jcc(Assembler::negative, L, maybe_short); }
+  void ALWAYSINLINE je(Label& L, bool maybe_short = true) { jcc(Assembler::equal, L, maybe_short); }
+  void ALWAYSINLINE jz(Label& L, bool maybe_short = true) { jcc(Assembler::zero, L, maybe_short); }
+  void ALWAYSINLINE jne(Label& L, bool maybe_short = true) { jcc(Assembler::notEqual, L, maybe_short); }
+  void ALWAYSINLINE jnz(Label& L, bool maybe_short = true) { jcc(Assembler::notZero, L, maybe_short); }
+  void ALWAYSINLINE jb(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jnae(Label& L, bool maybe_short = true) { jcc(Assembler::below, L, maybe_short); }
+  void ALWAYSINLINE jc(Label& L, bool maybe_short = true) { jcc(Assembler::carrySet, L, maybe_short); }
+  void ALWAYSINLINE jnb(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jae(Label& L, bool maybe_short = true) { jcc(Assembler::aboveEqual, L, maybe_short); }
+  void ALWAYSINLINE jnc(Label& L, bool maybe_short = true) { jcc(Assembler::carryClear, L, maybe_short); }
+  void ALWAYSINLINE jbe(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE jna(Label& L, bool maybe_short = true) { jcc(Assembler::belowEqual, L, maybe_short); }
+  void ALWAYSINLINE ja(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jnbe(Label& L, bool maybe_short = true) { jcc(Assembler::above, L, maybe_short); }
+  void ALWAYSINLINE jl(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jnge(Label& L, bool maybe_short = true) { jcc(Assembler::less, L, maybe_short); }
+  void ALWAYSINLINE jge(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jnl(Label& L, bool maybe_short = true) { jcc(Assembler::greaterEqual, L, maybe_short); }
+  void ALWAYSINLINE jle(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jng(Label& L, bool maybe_short = true) { jcc(Assembler::lessEqual, L, maybe_short); }
+  void ALWAYSINLINE jg(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jnle(Label& L, bool maybe_short = true) { jcc(Assembler::greater, L, maybe_short); }
+  void ALWAYSINLINE jp(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jpe(Label& L, bool maybe_short = true) { jcc(Assembler::parity, L, maybe_short); }
+  void ALWAYSINLINE jnp(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+  void ALWAYSINLINE jpo(Label& L, bool maybe_short = true) { jcc(Assembler::noParity, L, maybe_short); }
+// * No condition for this *  void ALWAYSINLINE jcxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+// * No condition for this *  void ALWAYSINLINE jecxz(Label& L, bool maybe_short = true) { jcc(Assembler::cxz, L, maybe_short); }
+
   // Floating
 
   void push_f(XMMRegister r);

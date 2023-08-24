@@ -4090,6 +4090,8 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
+  generate_string_indexof(); // ASGASG
+
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
