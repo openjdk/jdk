@@ -83,7 +83,7 @@ public class UTF8EncodeUtils {
     public static int encodeDoubleBytes(char c) {
         byte b0 = (byte) (0xc0 | (c >> 6));
         byte b1 = (byte) (0x80 | (c & 0x3f));
-        return ((b0 & 0xff) << 8) | b1;
+        return (b0 << 8) | (b1 & 0xff);
     }
 
     @ForceInline
@@ -91,7 +91,7 @@ public class UTF8EncodeUtils {
         byte b0 = (byte) (0xe0 | c >> 12);
         byte b1 = (byte) (0x80 | c >> 6 & 0x3f);
         byte b2 = (byte) (0x80 | c & 0x3f);
-        return ((b0 & 0xff) << 16) | ((b1 & 0xff) << 8) | b2;
+        return (b0 << 16) | ((b1 & 0xff) << 8) | (b2 & 0xff);
     }
 
     @ForceInline
@@ -100,6 +100,6 @@ public class UTF8EncodeUtils {
         byte b1 = (byte) (0x80 | ((uc >> 12) & 0x3f));
         byte b2 = (byte) (0x80 | ((uc >> 6) & 0x3f));
         byte b3 = (byte) (0x80 | (uc & 0x3f));
-        return ((b0 & 0xff) << 24) | ((b1 & 0xff) << 16) | ((b2 & 0xff) << 8) | b3;
+        return (b0 << 24) | ((b1 & 0xff) << 16) | ((b2 & 0xff) << 8) | (b3 & 0xff);
     }
 }
