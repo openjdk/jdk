@@ -379,7 +379,7 @@ public class Krb5LoginModule implements LoginModule {
     @SuppressWarnings("removal")
     private static final boolean skipLogin = AccessController.doPrivileged(
             (PrivilegedAction<Boolean>)
-                () -> Boolean.getBoolean("sun.security.auth.skipLogin"));
+                () -> Boolean.getBoolean("sun.security.auth.krb5.doNotLogin"));
 
     // initial state
     private Subject subject;
