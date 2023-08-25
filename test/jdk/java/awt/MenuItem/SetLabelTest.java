@@ -56,8 +56,6 @@ public class SetLabelTest {
     public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(50);
 
             EventQueue.invokeAndWait(() -> createTestUI());
             robot.delay(1000);
@@ -65,7 +63,7 @@ public class SetLabelTest {
 
             checkMenu();
             checkPopupMenu();
-
+            robot.delay(200);
             if (!errorLog.isEmpty()) {
                 throw new RuntimeException("Before & After screenshots are same." +
                         " Test fails for the following case(s):\n" + errorLog);
@@ -85,30 +83,32 @@ public class SetLabelTest {
         mb = new MenuBar();
 
         //Menu 1
-        Menu menu1 = new Menu("Menu1");
-        MenuItem mi1 = new MenuItem("MI-1");
+        Menu menu1 = new Menu("Menu");
+        MenuItem mi1 = new MenuItem("Item-1");
         menu1.add(mi1);
         menu1.addSeparator();
-        MenuItem mi2 = new MenuItem("MI-2");
+        MenuItem mi2 = new MenuItem("Item-2");
         menu1.add(mi2);
         mb.add(menu1);
 
         //Popup menu
-        pm = new PopupMenu();
-        MenuItem pm1 = new MenuItem("PMI-1");
+        pm = new PopupMenu("Popup");
+        MenuItem pm1 = new MenuItem("Item-1");
         pm.add(pm1);
+        pm.addSeparator();
+        MenuItem pm2 = new MenuItem("Item-2");
+        pm.add(pm2);
         frame.add(pm);
 
         frame.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                showPopup(e);
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                if (e.getButton() != InputEvent.BUTTON1_DOWN_MASK) {
-                    showPopup(e);
-                }
+                showPopup(e);
             }
 
             private void showPopup(MouseEvent e) {
@@ -124,39 +124,52 @@ public class SetLabelTest {
         frame.setVisible(true);
     }
 
-    private static void checkMenu() throws IOException {
+    private static void checkMenu() throws Exception {
+        robot.mouseMove(frameLoc.x + 8, frameLoc.y + 8);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.delay(200);
         BufferedImage beforeImgMenu = robot.createScreenCapture(frame.getBounds());
+
+        //Change Menu & MenuItem label
         Menu m1 = mb.getMenu(0);
         m1.setLabel("New Menu");
-        MenuItem mItem1 = m1.getItem(0);
-        mItem1.setLabel("New Menu Item");
+        m1.getItem(0).setLabel("New Item-1");
+        m1.getItem(2).setLabel("New Item-2");
         robot.delay(200);
         BufferedImage afterImgMenu = robot.createScreenCapture(frame.getBounds());
 
         if (compareImages(beforeImgMenu, afterImgMenu)) {
+            errorLog.append("Menu case\n");
             ImageIO.write(beforeImgMenu, "png", new File("MenuBefore.png"));
             ImageIO.write(afterImgMenu, "png", new File("MenuAfter.png"));
-            errorLog.append("Menu case\n");
         }
     }
 
     private static void checkPopupMenu() throws IOException {
-        BufferedImage beforeImgPopup = robot.createScreenCapture(frame.getBounds());
         robot.mouseMove(frameLoc.x + (frame.getWidth() / 2),
                 frameLoc.y + (frame.getHeight() /2));
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
         robot.delay(200);
-        pm.getItem(0).setLabel("Changed Label");
+        BufferedImage beforeImgPopup = robot.createScreenCapture(frame.getBounds());
+
+        //Change popup menu label
+        pm.setLabel("Changed Popup");
+        pm.getItem(0).setLabel("New Item-1");
+        pm.getItem(2).setLabel("New Item-2");
+        robot.delay(200);
         BufferedImage afterImgPopup = robot.createScreenCapture(frame.getBounds());
-        robot.delay(300);
+        robot.mouseMove(frameLoc.x + (frame.getWidth() - 10),
+                frameLoc.y + (frame.getHeight() - 10));
+        robot.delay(100);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (compareImages(beforeImgPopup, afterImgPopup)) {
+            errorLog.append("Popup case\n");
             ImageIO.write(beforeImgPopup, "png", new File("PopupBefore.png"));
             ImageIO.write(afterImgPopup, "png", new File("PopupAfter.png"));
-            errorLog.append("Popup case\n");
         }
     }
 
