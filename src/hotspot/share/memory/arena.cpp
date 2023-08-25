@@ -30,6 +30,7 @@
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "utilities/ostream.hpp"
 
 //--------------------------------------------------------------------------------------
@@ -136,6 +137,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
   }
 
   static void clean() {
+    NativeHeapTrimmer::SuspendMark sm("chunk pool cleaner");
     enum { BlocksToKeep = 5 };
      _tiny_pool->free_all_but(BlocksToKeep);
      _small_pool->free_all_but(BlocksToKeep);
