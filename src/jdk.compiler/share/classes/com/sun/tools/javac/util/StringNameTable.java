@@ -48,7 +48,7 @@ public class StringNameTable extends Name.Table {
 // Constructors
 
     public StringNameTable(Names names) {
-        this(names, 8000);
+        this(names, 0x8000);
     }
 
     public StringNameTable(Names names, int initialCapacity) {
