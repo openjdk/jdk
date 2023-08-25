@@ -62,7 +62,7 @@ import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
  * public constants CallArranger.ABIv1/2.
  */
 public abstract class CallArranger {
-    final boolean useABIv2 = (this instanceof ABIv2CallArranger);
+    final boolean useABIv2 = useABIv2();
 
     private static final int STACK_SLOT_SIZE = 8;
     private static final int MAX_COPY_SIZE = 8;
@@ -92,6 +92,11 @@ public abstract class CallArranger {
 
     public static final CallArranger ABIv1 = new ABIv1CallArranger();
     public static final CallArranger ABIv2 = new ABIv2CallArranger();
+
+    /**
+     * Select ABI version
+     */
+    protected abstract boolean useABIv2();
 
     public Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall) {
         return getBindings(mt, cDesc, forUpcall, LinkerOptions.empty());
