@@ -399,4 +399,3 @@ void FreeRegionList::NodeInfo::add(NodeInfo* info) {
     _length_of_node[i] += info->_length_of_node[i];
   }
 }
-

@@ -52,6 +52,8 @@ public class ClassWriter implements /* imports */ ClassConstants
 
     protected short  _sourceFileIndex;
     protected short  _innerClassesIndex;
+    protected short  _nestHostIndex;
+    protected short  _nestMembersIndex;
     protected short  _syntheticIndex;
     protected short  _deprecatedIndex;
     protected short  _constantValueIndex;
@@ -61,6 +63,7 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _lineNumberTableIndex;
     protected short  _localVariableTableIndex;
     protected short  _signatureIndex;
+    protected short  _bootstrapMethodsIndex;
 
     protected static int extractHighShortFromInt(int val) {
         // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
@@ -142,6 +145,16 @@ public class ClassWriter implements /* imports */ ClassConstants
         _innerClassesIndex = (innerClassesIndex != null)? innerClassesIndex.shortValue() : 0;
         if (DEBUG) debugMessage("InnerClasses index = " + _innerClassesIndex);
 
+        Short nestHostIndex = utf8ToIndex.get("NestHost");
+        _nestHostIndex = (nestHostIndex != null)? nestHostIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("NestHost index = " + _nestHostIndex);
+
+        Short nestMembersIndex = utf8ToIndex.get("NestMembers");
+        _nestMembersIndex = (nestMembersIndex != null)? nestMembersIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("NestMembers index = " + _nestMembersIndex);
+
+        Short bootstrapMethodsIndex = utf8ToIndex.get("BootstrapMethods");
+        _bootstrapMethodsIndex = (bootstrapMethodsIndex != null) ? bootstrapMethodsIndex.shortValue() : 0;
         // field attributes
         Short constantValueIndex = utf8ToIndex.get("ConstantValue");
         _constantValueIndex = (constantValueIndex != null)?
@@ -403,6 +416,16 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (genSigIndex != 0)
                 fieldAttributeCount++;
 
+            U1Array fieldAnnotations = klass.getFieldAnnotations(index);
+            if (fieldAnnotations != null) {
+                fieldAttributeCount++;
+            }
+
+            U1Array fieldTypeAnnotations = klass.getFieldTypeAnnotations(index);
+            if (fieldTypeAnnotations != null) {
+                fieldAttributeCount++;
+            }
+
             dos.writeShort(fieldAttributeCount);
 
             // write synthetic, if applicable
@@ -421,6 +444,14 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeInt(2);
                 dos.writeShort(genSigIndex);
                 if (DEBUG) debugMessage("\tfield generic signature index " + genSigIndex);
+            }
+
+            if (fieldAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleAnnotations", fieldAnnotations);
+            }
+
+            if (fieldTypeAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", fieldTypeAnnotations);
             }
         }
     }
@@ -488,6 +519,26 @@ public class ClassWriter implements /* imports */ ClassConstants
         final boolean isGeneric = (m.getGenericSignature() != null);
         if (isGeneric)
             methodAttributeCount++;
+
+        final U1Array annotations = m.getAnnotations();
+        if (annotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array parameterAnnotations = m.getParameterAnnotations();
+        if (parameterAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array typeAnnotations = m.getTypeAnnotations();
+        if (typeAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array annotationDefault = m.getAnnotationDefault();
+        if (annotationDefault != null) {
+            methodAttributeCount++;
+        }
 
         dos.writeShort(methodAttributeCount);
         if (DEBUG) debugMessage("\tmethod attribute count = " + methodAttributeCount);
@@ -684,6 +735,22 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (isGeneric) {
            writeGenericSignature(m.getGenericSignature().asString());
         }
+
+        if (annotationDefault != null) {
+           writeAnnotationAttribute("AnnotationDefault", annotationDefault);
+        }
+
+        if (annotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", annotations);
+        }
+
+        if (parameterAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleParameterAnnotations", parameterAnnotations);
+        }
+
+        if (typeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", typeAnnotations);
+        }
     }
 
     protected void rewriteByteCode(Method m, byte[] code) {
@@ -722,6 +789,32 @@ public class ClassWriter implements /* imports */ ClassConstants
         final int numInnerClasses = innerClasses.length() / 4;
         if (numInnerClasses != 0)
             classAttributeCount++;
+
+        short nestHost = klass.getNestHostIndex();
+        if (nestHost != 0) {
+            classAttributeCount++;
+        }
+
+        U2Array nestMembers = klass.getNestMembers();
+        final int numNestMembers = nestMembers.length();
+        if (numNestMembers != 0) {
+            classAttributeCount++;
+        }
+
+        int bsmCount = klass.getConstants().getBootstrapMethodsCount();
+        if (bsmCount != 0) {
+            classAttributeCount++;
+        }
+
+        U1Array classAnnotations = klass.getClassAnnotations();
+        if (classAnnotations != null) {
+            classAttributeCount++;
+        }
+
+        U1Array classTypeAnnotations = klass.getClassTypeAnnotations();
+        if (classTypeAnnotations != null) {
+            classAttributeCount++;
+        }
 
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);
@@ -762,5 +855,65 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeShort(innerClasses.at(index));
             }
         }
+
+        if (nestHost != 0) {
+            writeIndex(_nestHostIndex);
+            final int nestHostAttrLen = 2;
+            dos.writeInt(nestHostAttrLen);
+            dos.writeShort(nestHost);
+        }
+
+        if (numNestMembers != 0) {
+           writeIndex(_nestMembersIndex);
+           final int nestMembersAttrLen = 2 + numNestMembers * 2;
+           dos.writeInt(nestMembersAttrLen);
+           dos.writeShort(numNestMembers);
+           for (int index = 0; index < numNestMembers; index++) {
+               dos.writeShort(nestMembers.at(index));
+           }
+        }
+
+        // write bootstrap method attribute, if any
+        if (bsmCount != 0) {
+            ConstantPool cpool = klass.getConstants();
+            writeIndex(_bootstrapMethodsIndex);
+            if (DEBUG) debugMessage("bootstrap methods attribute = " + _bootstrapMethodsIndex);
+            int attrLen = 2; // num_bootstrap_methods
+            for (int index = 0; index < bsmCount; index++) {
+                int bsmArgsCount = cpool.getBootstrapMethodArgsCount(index);
+                attrLen += 2 // bootstrap_method_ref
+                           + 2 // num_bootstrap_arguments
+                           + bsmArgsCount * 2;
+            }
+            dos.writeInt(attrLen);
+            dos.writeShort(bsmCount);
+            for (int index = 0; index < bsmCount; index++) {
+                short value[] = cpool.getBootstrapMethodAt(index);
+                for (int i = 0; i < value.length; i++) {
+                    dos.writeShort(value[i]);
+                }
+            }
+        }
+
+        if (classAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", classAnnotations);
+        }
+
+        if (classTypeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", classTypeAnnotations);
+        }
+    }
+
+    protected void writeAnnotationAttribute(String annotationName, U1Array annotation) throws IOException {
+      int length = annotation.length();
+      Short annotationNameIndex = utf8ToIndex.get(annotationName);
+      if (Assert.ASSERTS_ENABLED) {
+        Assert.that(annotationNameIndex != null, "should not be null");
+      }
+      writeIndex(annotationNameIndex.shortValue());
+      dos.writeInt(length);
+      for (int index = 0; index < length; index++) {
+        dos.writeByte(annotation.at(index));
+      }
     }
 }

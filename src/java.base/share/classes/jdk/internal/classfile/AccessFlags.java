@@ -30,9 +30,8 @@ import java.lang.reflect.AccessFlag;
 
 /**
  * Models the access flags for a class, method, or field.  Delivered as a
- *  {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement}, or
- *  {@link jdk.internal.classfile.MethodElement} when traversing
- *  the corresponding model type.
+ * {@link ClassElement}, {@link FieldElement}, or {@link MethodElement}
+ * when traversing the corresponding model type.
  */
 public sealed interface AccessFlags
         extends ClassElement, MethodElement, FieldElement

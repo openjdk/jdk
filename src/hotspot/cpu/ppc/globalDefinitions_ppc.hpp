@@ -31,6 +31,12 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
+#ifdef AIX
+const size_t pd_segfault_address = -1;
+#else
+const size_t pd_segfault_address = 1024;
+#endif
+
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = true;

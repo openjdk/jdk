@@ -25,11 +25,28 @@
 
 package jdk.javadoc.internal.doclets.toolkit;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
+
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
+
+import com.sun.source.doctree.DocCommentTree;
+
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.PROPERTIES;
 
 /**
  * This class provides basic JavaFX property related utility methods.
@@ -167,6 +184,94 @@ public class PropertyUtils {
             // Apply strict checks since JavaFX references are available
             returnType = typeUtils.erasure(propertyMethod.getReturnType());
             return typeUtils.isAssignable(returnType, jbObservableType);
+        }
+    }
+
+
+    /**
+     * A utility class to manage the property-related methods that should be
+     * synthesized or updated.
+     *
+     * A property may comprise a field (that is typically private, if present),
+     * a {@code fooProperty()} method (which is the defining characteristic for
+     * a property), a {@code getFoo()} method and/or a {@code setFoo(Foo foo)} method.
+     *
+     * Either the field (if present) or the {@code fooProperty()} method should have a
+     * comment. If there is no field, or no comment on the field, the description for
+     * the property will be derived from the description of the {@code fooProperty()}
+     * method. If any method does not have a comment, one will be provided.
+     */
+    public static class PropertyHelper {
+        private final BaseConfiguration configuration;
+        private final Utils utils;
+        private final TypeElement typeElement;
+
+        private final Map<Element, Element> classPropertiesMap = new HashMap<>();
+
+        public PropertyHelper(BaseConfiguration configuration, TypeElement typeElement) {
+            this.configuration = configuration;
+            this.utils = configuration.utils;
+            this.typeElement = typeElement;
+            computeProperties();
+        }
+
+        private void computeProperties() {
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+            List<ExecutableElement> props = ElementFilter.methodsIn(vmt.getVisibleMembers(PROPERTIES));
+            for (ExecutableElement propertyMethod : props) {
+                ExecutableElement getter = vmt.getPropertyGetter(propertyMethod);
+                ExecutableElement setter = vmt.getPropertySetter(propertyMethod);
+                VariableElement field = vmt.getPropertyField(propertyMethod);
+
+                addToPropertiesMap(propertyMethod, field, getter, setter);
+            }
+        }
+
+        private void addToPropertiesMap(ExecutableElement propertyMethod,
+                                        VariableElement field,
+                                        ExecutableElement getter,
+                                        ExecutableElement setter) {
+            // determine the preferred element from which to derive the property description
+            Element e = field == null || !utils.hasDocCommentTree(field)
+                    ? propertyMethod : field;
+
+            if (e == field && utils.hasDocCommentTree(propertyMethod)) {
+                configuration.getReporter().print(Diagnostic.Kind.WARNING,
+                        propertyMethod, configuration.getDocResources().getText("doclet.duplicate.comment.for.property"));
+            }
+
+            addToPropertiesMap(propertyMethod, e);
+            addToPropertiesMap(getter, e);
+            addToPropertiesMap(setter, e);
+        }
+
+        private void addToPropertiesMap(Element propertyMethod,
+                                        Element commentSource) {
+            Objects.requireNonNull(commentSource);
+            if (propertyMethod == null) {
+                return;
+            }
+
+            DocCommentTree docTree = utils.hasDocCommentTree(propertyMethod)
+                    ? utils.getDocCommentTree(propertyMethod)
+                    : null;
+
+            /* The second condition is required for the property buckets. In
+             * this case the comment is at the property method (not at the field)
+             * and it needs to be listed in the map.
+             */
+            if ((docTree == null) || propertyMethod.equals(commentSource)) {
+                classPropertiesMap.put(propertyMethod, commentSource);
+            }
+        }
+
+        /**
+         * Returns the element for the property documentation belonging to the given member.
+         * @param element the member for which the property documentation is needed.
+         * @return the element for the property documentation, null if there is none.
+         */
+        public Element getPropertyElement(Element element) {
+            return classPropertiesMap.get(element);
         }
     }
 }

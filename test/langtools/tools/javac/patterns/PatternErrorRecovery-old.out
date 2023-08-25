@@ -1,3 +1,5 @@
 PatternErrorRecovery.java:12:18: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.pattern.switch), 20, 21
+PatternErrorRecovery.java:17:19: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.deconstruction.patterns), 20, 21
+PatternErrorRecovery.java:17:27: compiler.err.illegal.start.of.type
 PatternErrorRecovery.java:11:18: compiler.err.pattern.expected
-2 errors
+4 errors

@@ -26,6 +26,7 @@
 
 #include "libperfstat_aix.hpp"
 #include "misc_aix.hpp"
+#include "runtime/os.hpp"
 
 #include <dlfcn.h>
 
@@ -71,11 +72,11 @@ static fun_perfstat_reset_t           g_fun_perfstat_reset           = nullptr;
 static fun_wpar_getcid_t              g_fun_wpar_getcid              = nullptr;
 
 bool libperfstat::init() {
-
-  // Dynamically load the libperfstat porting library.
-  g_libhandle = dlopen("/usr/lib/libperfstat.a(shr_64.o)", RTLD_MEMBER | RTLD_NOW);
+  const char* libperfstat = "/usr/lib/libperfstat.a(shr_64.o)";
+  char ebuf[512];
+  g_libhandle = os::dll_load(libperfstat, ebuf, sizeof(ebuf));
   if (!g_libhandle) {
-    trcVerbose("Cannot load libperfstat.a (dlerror: %s)", dlerror());
+    trcVerbose("Cannot load %s (error: %s)", libperfstat, ebuf);
     return false;
   }
 

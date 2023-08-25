@@ -239,10 +239,10 @@ public:
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
-  const int inst_mem_id() const { return _inst_mem_id; }
-  const int inst_id()     const { return _inst_id; }
-  const int inst_index()  const { return _inst_index; }
-  const int inst_offset() const { return _inst_offset; }
+  int inst_mem_id() const { return _inst_mem_id; }
+  int inst_id()     const { return _inst_id; }
+  int inst_index()  const { return _inst_index; }
+  int inst_offset() const { return _inst_offset; }
   bool is_same_inst_field(const Type* tp, int mem_id, int id, int index, int offset) {
     return type()->basic_type() == tp->basic_type() &&
            inst_mem_id() == mem_id &&
@@ -453,8 +453,9 @@ public:
 };
 
 // Special node that denotes a Parse Predicate added during parsing. A Parse Predicate serves as placeholder to later
-// create Runtime Predicates above it. They all share the same uncommon trap. The Parse Predicate will follow the
-// Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
+// create Regular Predicates (Runtime Predicates with possible Assertion Predicates) above it. Together they form a
+// Predicate Block. The Parse Predicate and Regular Predicates share the same uncommon trap.
+// There are three kinds of Parse Predicates:
 // Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
 // Predicate (used for integer overflow checks when creating a counted loop).
 // More information about predicates can be found in loopPredicate.cpp.
@@ -468,6 +469,8 @@ class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason deopt_reason() const {
     return _deopt_reason;
   }
+
+  Node* uncommon_trap() const;
 
   NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };

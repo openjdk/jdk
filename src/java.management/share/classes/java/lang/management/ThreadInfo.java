@@ -885,8 +885,6 @@ public class ThreadInfo {
      * @return a {@code ThreadInfo} object represented
      *         by {@code cd} if {@code cd} is not {@code null};
      *         {@code null} otherwise.
-     *
-     * @revised 9
      */
     public static ThreadInfo from(CompositeData cd) {
         if (cd == null) {
