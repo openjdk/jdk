@@ -478,7 +478,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin)->is_int(); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin)->is_int(); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin)->is_int(); // Java shorts
-  TypeInt::NON_ZERO= TypeInt::make(min_jint, max_jint, 1, -1, 0, 0, WidenMax)->is_int();
+  TypeInt::NON_ZERO= TypeInt::make(min_jint, max_jint, 1, -1, 0, 0, WidenMin)->is_int();
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin)->is_int(); // Non-neg values
   TypeInt::POS1    = TypeInt::make(1,max_jint,   WidenMin)->is_int(); // Positive values
   TypeInt::INT     = TypeInt::make(min_jint, max_jint, WidenMax)->is_int(); // 32-bit integers
@@ -498,8 +498,9 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::MINUS_1 = TypeLong::make(-1);        // -1
   TypeLong::ZERO    = TypeLong::make( 0);        //  0
   TypeLong::ONE     = TypeLong::make( 1);        //  1
-  TypeLong::NON_ZERO= TypeLong::make(min_jlong, max_jlong, 1, -1, 0, 0, WidenMax)->is_long();
+  TypeLong::NON_ZERO= TypeLong::make(min_jlong, max_jlong, 1, -1, 0, 0, WidenMin)->is_long();
   TypeLong::POS     = TypeLong::make(0,max_jlong, WidenMin)->is_long(); // Non-neg values
+  TypeLong::NEG     = TypeLong::make(min_jlong, -1, WidenMin)->is_long();
   TypeLong::LONG    = TypeLong::make(min_jlong,max_jlong,WidenMax)->is_long(); // 64-bit integers
   TypeLong::INT     = TypeLong::make((jlong)min_jint,(jlong)max_jint,WidenMin)->is_long();
   TypeLong::UINT    = TypeLong::make(0,(jlong)max_juint,WidenMin)->is_long();
@@ -2171,6 +2172,7 @@ const TypeLong* TypeLong::ZERO; // 0
 const TypeLong* TypeLong::ONE;  // 1
 const TypeLong* TypeLong::NON_ZERO;
 const TypeLong* TypeLong::POS;  // >=0
+const TypeLong* TypeLong::NEG;
 const TypeLong* TypeLong::LONG; // 64-bit integers
 const TypeLong* TypeLong::INT;  // 32-bit subrange
 const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange

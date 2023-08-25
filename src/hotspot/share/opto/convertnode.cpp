@@ -304,48 +304,42 @@ Node* ConvI2FNode::Identity(PhaseGVN* phase) {
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
-  const Type *t = phase->type( in(1) );
-  if (t == Type::TOP) {
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
     return Type::TOP;
   }
-  const TypeInt *ti = t->is_int();
-  const Type* tl = TypeLong::make(ti->_lo, ti->_hi, ti->_widen);
+  const TypeInt* i1 = t1->is_int();
+  const TypeLong* before = TypeLong::make(i1->_lo, i1->_hi, jlong(jint(i1->_ulo)), jlong(jint(i1->_uhi)),
+                                          i1->_zeros, i1->_ones, i1->_widen)->is_long();;
   // Join my declared type against my incoming type.
-  tl = tl->filter(_type);
-  if (!tl->isa_long()) {
-    return tl;
+  const Type* t = before->filter(_type);
+  const TypeLong* after = t->isa_long();
+  if (after == nullptr) {
+    return t;
   }
-  const TypeLong* this_type = tl->is_long();
+
   // Do NOT remove this node's type assertion until no more loop ops can happen.
-  if (phase->C->post_loop_opts_phase()) {
-    const TypeInt* in_type = phase->type(in(1))->isa_int();
-    if (in_type != nullptr &&
-        (in_type->_lo != this_type->_lo ||
-         in_type->_hi != this_type->_hi)) {
-      // Although this WORSENS the type, it increases GVN opportunities,
-      // because I2L nodes with the same input will common up, regardless
-      // of slightly differing type assertions.  Such slight differences
-      // arise routinely as a result of loop unrolling, so this is a
-      // post-unrolling graph cleanup.  Choose a type which depends only
-      // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
-      jlong lo1 = this_type->_lo;
-      jlong hi1 = this_type->_hi;
-      int   w1  = this_type->_widen;
-      if (lo1 >= 0) {
-        // Keep a range assertion of >=0.
-        lo1 = 0;        hi1 = max_jint;
-      } else if (hi1 < 0) {
-        // Keep a range assertion of <0.
-        lo1 = min_jint; hi1 = -1;
-      } else {
-        lo1 = min_jint; hi1 = max_jint;
-      }
-      return TypeLong::make(MAX2((jlong)in_type->_lo, lo1),
-                            MIN2((jlong)in_type->_hi, hi1),
-                            MAX2((int)in_type->_widen, w1));
-    }
+  if (!phase->C->post_loop_opts_phase()) {
+    return after;
   }
-  return this_type;
+
+  if (before->_lo != after->_lo || before->_hi != after->_hi || before->_ulo != after->_ulo ||
+      before->_uhi != after->_uhi || before->_zeros != after->_zeros || before->_ones != after->_ones) {
+    // Although this WORSENS the type, it increases GVN opportunities,
+    // because I2L nodes with the same input will common up, regardless
+    // of slightly differing type assertions.  Such slight differences
+    // arise routinely as a result of loop unrolling, so this is a
+    // post-unrolling graph cleanup.  Choose a type which depends only
+    // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
+    if (before->_lo < 0 && after->_lo >= 0) {
+      return before->filter(TypeLong::POS);
+    } else if (before->_hi >= 0 && after->_hi < 0) {
+      return before->filter(TypeLong::NEG);
+    }
+    return before;
+  }
+
+  return after;
 }
 
 Node* ConvI2LNode::Identity(PhaseGVN* phase) {
@@ -733,17 +727,51 @@ Node* ConvL2INode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 const Type* ConvL2INode::Value(PhaseGVN* phase) const {
-  const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
-  const TypeLong *tl = t->is_long();
-  const TypeInt* ti = TypeInt::INT;
-  if (tl->is_con()) {
-    // Easy case.
-    ti = TypeInt::make((jint)tl->get_con());
-  } else if (tl->_lo >= min_jint && tl->_hi <= max_jint) {
-    ti = TypeInt::make((jint)tl->_lo, (jint)tl->_hi, tl->_widen)->is_int();
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) {
+    return Type::TOP;
   }
-  return ti->filter(_type);
+  const TypeLong* i1 = t1->is_long();
+
+  auto cast_range = [](jint& lo, jint& hi, juint& ulo, juint& uhi, julong min, julong max) {
+    lo = min;
+    hi = max;
+    ulo = min;
+    uhi = max;
+    if (julong(jlong(lo)) - min != julong(jlong(hi)) - max) {
+      lo = min_jint;
+      hi = max_jint;
+    }
+    if (julong(ulo) - min != julong(uhi) - max) {
+      ulo = 0;
+      uhi = max_juint;
+    }
+  };
+
+  jint lo;
+  jint hi;
+  juint ulo;
+  juint uhi;
+  if (i1->_lo == jlong(i1->_ulo)) {
+    cast_range(lo, hi, ulo, uhi, i1->_ulo, i1->_uhi);
+  } else {
+    // Analyze 2 intervals [lo, uhi] and [ulo, hi] separately and union the results
+    jint lo1, hi1;
+    juint ulo1, uhi1;
+    cast_range(lo1, hi1, ulo1, uhi1, i1->_lo, i1->_uhi);
+
+    jint lo2, hi2;
+    juint ulo2, uhi2;
+    cast_range(lo2, hi2, ulo2, uhi2, i1->_ulo, i1->_hi);
+
+    lo = MIN2(lo1, lo2);
+    hi = MAX2(hi1, hi2);
+    ulo = MIN2(ulo1, ulo2);
+    uhi = MAX2(uhi1, uhi2);
+  }
+
+  const Type* t = TypeInt::make(lo, hi, ulo, uhi, i1->_zeros, i1->_ones, i1->_widen);
+  return t->filter(_type);
 }
 
 //------------------------------Ideal------------------------------------------

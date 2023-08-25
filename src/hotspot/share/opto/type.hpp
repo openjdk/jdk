@@ -706,6 +706,7 @@ public:
   static const TypeLong* ONE;
   static const TypeLong* NON_ZERO;
   static const TypeLong* POS;
+  static const TypeLong* NEG;
   static const TypeLong* LONG;
   static const TypeLong* INT;    // 32-bit subrange [min_jint..max_jint]
   static const TypeLong* UINT;   // 32-bit unsigned [0..max_juint]
