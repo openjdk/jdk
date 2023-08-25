@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.Arrays.NaturalOrder;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
