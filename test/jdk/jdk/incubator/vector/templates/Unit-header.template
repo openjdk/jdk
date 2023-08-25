@@ -92,6 +92,10 @@ public class $vectorteststype$ extends AbstractVectorTest {
 #if[BITWISE]
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
+#if[FP]
+    // for floating point reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR = ($type$)0.01;
+#end[FP]
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
 
@@ -162,6 +166,23 @@ public class $vectorteststype$ extends AbstractVectorTest {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
         }
     }
+#if[FP]
+
+    static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
+                                            FReductionOp f, FReductionAllOp fa,
+                                            $type$ relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+        }
+    }
+#end[FP]
 
     interface FReductionMaskedOp {
         $type$ apply($type$[] a, int idx, boolean[] mask);
@@ -184,6 +205,24 @@ public class $vectorteststype$ extends AbstractVectorTest {
             Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
         }
     }
+#if[FP]
+
+    static void assertReductionArraysEqualsMasked($type$[] r, $type$ rc, $type$[] a, boolean[] mask,
+                                            FReductionMaskedOp f, FReductionAllMaskedOp fa,
+                                            $type$ relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
+        }
+    }
+#end[FP]
 
 #if[!Long]
     interface FReductionOpLong {
@@ -1147,6 +1186,12 @@ public class $vectorteststype$ extends AbstractVectorTest {
                 return fill(s * BUFFER_REPS,
                             i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
             }),
+#if[FP]
+            withToString("$type$[i / 10.0 + 0.1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> ($type$)(i / ($type$) 10.0 + 0.1));
+            }),
+#end[FP]
             withToString("$type$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> cornerCaseValue(i));

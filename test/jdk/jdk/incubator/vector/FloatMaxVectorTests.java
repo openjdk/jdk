@@ -65,6 +65,8 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
+    // for floating point reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR = (float)0.01;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
 
@@ -136,6 +138,21 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertReductionArraysEquals(float[] r, float rc, float[] a,
+                                            FReductionOp f, FReductionAllOp fa,
+                                            float relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+        }
+    }
+
     interface FReductionMaskedOp {
         float apply(float[] a, int idx, boolean[] mask);
     }
@@ -155,6 +172,22 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         } catch (AssertionError e) {
             Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
             Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
+        }
+    }
+
+    static void assertReductionArraysEqualsMasked(float[] r, float rc, float[] a, boolean[] mask,
+                                            FReductionMaskedOp f, FReductionAllMaskedOp fa,
+                                            float relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
         }
     }
 
@@ -1093,6 +1126,10 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
             withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
+            }),
+            withToString("float[i / 10.0 + 0.1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(i / (float) 10.0 + 0.1));
             }),
             withToString("float[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -2184,7 +2221,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll);
+                FloatMaxVectorTests::ADDReduce, FloatMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2230,7 +2267,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked);
+                FloatMaxVectorTests::ADDReduceMasked, FloatMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
     }
 
     static float MULReduce(float[] a, int idx) {
@@ -2273,7 +2310,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll);
+                FloatMaxVectorTests::MULReduce, FloatMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2319,7 +2356,7 @@ public class FloatMaxVectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked);
+                FloatMaxVectorTests::MULReduceMasked, FloatMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
     }
 
     static float MINReduce(float[] a, int idx) {

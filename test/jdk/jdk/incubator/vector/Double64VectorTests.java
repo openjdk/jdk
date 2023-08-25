@@ -60,6 +60,8 @@ public class Double64VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
+    // for floating point reduction ops that may introduce rounding errors
+    private static final double RELATIVE_ROUNDING_ERROR = (double)0.01;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
 
@@ -131,6 +133,21 @@ public class Double64VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertReductionArraysEquals(double[] r, double rc, double[] a,
+                                            FReductionOp f, FReductionAllOp fa,
+                                            double relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+        }
+    }
+
     interface FReductionMaskedOp {
         double apply(double[] a, int idx, boolean[] mask);
     }
@@ -150,6 +167,22 @@ public class Double64VectorTests extends AbstractVectorTest {
         } catch (AssertionError e) {
             Assert.assertEquals(rc, fa.apply(a, mask), "Final result is incorrect!");
             Assert.assertEquals(r[i], f.apply(a, i, mask), "at index #" + i);
+        }
+    }
+
+    static void assertReductionArraysEqualsMasked(double[] r, double rc, double[] a, boolean[] mask,
+                                            FReductionMaskedOp f, FReductionAllMaskedOp fa,
+                                            double relativeError) {
+        int i = 0;
+        try {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError));
+            for (; i < a.length; i += SPECIES.length()) {
+                Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] *
+relativeError));
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(rc, fa.apply(a, mask), Math.abs(rc * relativeError), "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i, mask), Math.abs(r[i] * relativeError), "at index #" + i);
         }
     }
 
@@ -1077,6 +1110,10 @@ public class Double64VectorTests extends AbstractVectorTest {
             withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
+            }),
+            withToString("double[i / 10.0 + 0.1]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (double)(i / (double) 10.0 + 0.1));
             }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -2168,7 +2205,7 @@ public class Double64VectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Double64VectorTests::ADDReduce, Double64VectorTests::ADDReduceAll);
+                Double64VectorTests::ADDReduce, Double64VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
     }
 
     static double ADDReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2214,7 +2251,7 @@ public class Double64VectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Double64VectorTests::ADDReduceMasked, Double64VectorTests::ADDReduceAllMasked);
+                Double64VectorTests::ADDReduceMasked, Double64VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
     }
 
     static double MULReduce(double[] a, int idx) {
@@ -2257,7 +2294,7 @@ public class Double64VectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Double64VectorTests::MULReduce, Double64VectorTests::MULReduceAll);
+                Double64VectorTests::MULReduce, Double64VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
     }
 
     static double MULReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2303,7 +2340,7 @@ public class Double64VectorTests extends AbstractVectorTest {
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Double64VectorTests::MULReduceMasked, Double64VectorTests::MULReduceAllMasked);
+                Double64VectorTests::MULReduceMasked, Double64VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
     }
 
     static double MINReduce(double[] a, int idx) {
