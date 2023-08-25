@@ -490,7 +490,6 @@ class frame {
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 
-
 #include CPU_HEADER(frame)
 
 };
