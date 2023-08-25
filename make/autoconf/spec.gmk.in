@@ -984,6 +984,7 @@ DOCS_JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
 STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
+STATIC_LIBS_GRAAL_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs-graal$(DEBUG_PART).tar.gz
 JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
 
 JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_BUNDLE_NAME)
