@@ -516,6 +516,42 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                         pool = p;
                         p.execute(f);
                     }
+                    assertFalse(Thread.interrupted());
+                    checkCompletedNormally(f);
+                    assertTrue(pool != null && pool.isTerminated());
+                }});
+        awaitTermination(t);
+    }
+
+    /**
+     * Explicitly closing a new pool terminates it
+     */
+    public void testClose2() {
+        Thread t = newStartedThread(new CheckedRunnable() {
+                public void realRun() throws InterruptedException {
+                    ForkJoinPool pool = new ForkJoinPool();
+                    ForkJoinTask f = new FibAction(8);
+                    pool.execute(f);
+                    pool.close();
+                    assertFalse(Thread.interrupted());
+                    checkCompletedNormally(f);
+                    assertTrue(pool != null && pool.isTerminated());
+                }});
+        awaitTermination(t);
+    }
+
+    /**
+     * Explicitly closing a shutdown pool awaits termination
+     */
+    public void testClose3() {
+        Thread t = newStartedThread(new CheckedRunnable() {
+                public void realRun() throws InterruptedException {
+                    ForkJoinPool pool = new ForkJoinPool();
+                    ForkJoinTask f = new FibAction(8);
+                    pool.execute(f);
+                    pool.shutdown();
+                    pool.close();
+                    assertFalse(Thread.interrupted());
                     checkCompletedNormally(f);
                     assertTrue(pool != null && pool.isTerminated());
                 }});

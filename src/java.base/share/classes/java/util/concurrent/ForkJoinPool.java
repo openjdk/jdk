@@ -1881,7 +1881,10 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (wt != null && (w = wt.workQueue) != null) {
             phase = w.phase;
             src = w.source;
+            Thread o = w.owner;
             w.owner = null;               // disable signals
+            if (o == Thread.currentThread())
+                Thread.interrupted();     // clear
             if (phase != 0) {             // else failed to start
                 replaceable = true;
                 if ((phase & IDLE) != 0)
@@ -2773,8 +2776,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState (possibly only its status bits) on exit
      */
     private int tryTerminate(boolean now, boolean enable) {
-        int e, isShutdown;
-        if (((e = runState) & STOP) == 0) {
+        int e = runState, wasStopping = e & STOP, isShutdown;
+        if (wasStopping == 0) {
             if (now)
                 getAndBitwiseOrRunState(e = STOP | SHUTDOWN);
             else {
@@ -2792,11 +2795,13 @@ public class ForkJoinPool extends AbstractExecutorService {
             for (int l = n; l > 0; --l, ++r) {
                 WorkQueue q; Thread o; // cancel tasks; interrupt workers
                 if ((q = qs[r & SMASK & (n - 1)]) != null) {
-                    if ((o = q.owner) != null) {
+                    if ((o = q.owner) != null && o != Thread.currentThread()) {
                         active = true;
-                        try {
-                            o.interrupt();
-                        } catch (Throwable ignore) {
+                        if (wasStopping == 0 || !o.isInterrupted()) {
+                            try {
+                                o.interrupt();
+                            } catch (Throwable ignore) {
+                            }
                         }
                     }
                     for (ForkJoinTask<?> t; (t = q.poll(null)) != null; ) {
@@ -3825,7 +3830,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 else {
                     try {
                         done.await();
-                        break;
                     } catch (InterruptedException ex) {
                         interrupted = true;
                     }
