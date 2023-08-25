@@ -24,10 +24,13 @@
  */
 package java.lang;
 
+import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import java.lang.StackWalker.StackFrame;
 
 class ClassFrameInfo implements StackFrame {
+    static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+
     protected Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
     protected int flags;                   // updated by VM to set hidden and caller-sensitive bits
 
@@ -42,10 +45,10 @@ class ClassFrameInfo implements StackFrame {
     }
 
     boolean isCallerSensitive() {
-        return SharedSecrets.getJavaLangInvokeAccess().isCallerSensitive(flags & MEMBER_INFO_FLAGS);
+        return JLIA.isCallerSensitive(flags & MEMBER_INFO_FLAGS);
     }
     boolean isHidden() {
-        return SharedSecrets.getJavaLangInvokeAccess().isHiddenMember(flags & MEMBER_INFO_FLAGS);
+        return JLIA.isHiddenMember(flags & MEMBER_INFO_FLAGS);
     }
 
     // ----- implementation of StackFrame methods

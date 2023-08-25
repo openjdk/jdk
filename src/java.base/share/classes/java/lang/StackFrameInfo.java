@@ -24,17 +24,12 @@
  */
 package java.lang;
 
-import jdk.internal.access.JavaLangInvokeAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.ContinuationScope;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
 
 class StackFrameInfo extends ClassFrameInfo {
-    private static final JavaLangInvokeAccess JLIA =
-        SharedSecrets.getJavaLangInvokeAccess();
-
     private String name;
     private Object type;          // String or MethodType
     private int bci;              // set by VM to >= 0
