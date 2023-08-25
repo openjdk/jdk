@@ -89,7 +89,7 @@ public class PrintingProcessor extends AbstractProcessor {
      * Used for the -Xprint option and called by Elements.printElements
      */
     public static class PrintingElementVisitor
-        extends SimpleElementVisitor14<PrintingElementVisitor, Boolean> {
+        extends SimpleElementVisitorNext<PrintingElementVisitor, Boolean> {
         int indentation; // Indentation level;
         final PrintWriter writer;
         final Elements elementUtils;
@@ -131,14 +131,14 @@ public class PrintingProcessor extends AbstractProcessor {
                     enclosing != null &&
                     (NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
-                    (new SimpleElementVisitor14<NestingKind, Void>() {
+                    (new SimpleElementVisitorNext<NestingKind, Void>() {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();
                         }
                     }).visit(enclosing)
                     || // Don't print the constructor of an unnamed class
-                    (new SimpleElementVisitor14<Boolean, Void>(false) {
+                    (new SimpleElementVisitorNext<Boolean, Void>(false) {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Boolean visitType(TypeElement e, Void p) {
                             return e.isUnnamed();
@@ -595,7 +595,7 @@ public class PrintingProcessor extends AbstractProcessor {
                                 // contained annotations as expected
                                 // and false otherwise
 
-                                return (new SimpleAnnotationValueVisitor14<Boolean, Void>(false) {
+                                return (new SimpleAnnotationValueVisitorNext<Boolean, Void>(false) {
                                     @Override
                                     public Boolean visitArray(List<? extends AnnotationValue> vals, Void p) {
                                         if (vals.size() < 2) {
