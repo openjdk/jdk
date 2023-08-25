@@ -488,10 +488,10 @@ static const Type* sub_sub(const Type* t1, const Type* t2) {
 
   T lo = U(i1->_lo) - U(i2->_hi);
   T hi = U(i1->_hi) - U(i2->_lo);
-  bool lo_novf = i1->_lo < 0 && i2->_hi > 0 && lo >= 0;
-  bool hi_novf = i1->_hi < 0 && i2->_hi > 0 && hi >= 0;
-  bool lo_povf = i1->_lo >= 0 && i2->_hi < 0 && lo < 0;
-  bool hi_povf = i1->_hi >= 0 && i2->_lo < 0 && hi < 0;
+  bool lo_novf = i2->_hi > 0 && lo >= i1->_lo;
+  bool hi_novf = i2->_lo > 0 && hi >= i1->_hi;
+  bool lo_povf = i2->_hi < 0 && lo <= i1->_lo;
+  bool hi_povf = i2->_lo < 0 && hi <= i1->_hi;
   if ((lo_novf && !hi_novf) || (hi_povf && !lo_povf)) {
     lo = std::numeric_limits<T>::min();
     hi = std::numeric_limits<T>::max();
