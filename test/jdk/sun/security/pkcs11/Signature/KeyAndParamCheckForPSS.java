@@ -114,6 +114,8 @@ public class KeyAndParamCheckForPSS extends PKCS11Test {
                 // confirmed to be unsupported; skip the rest of the test
                 System.out.println("=> Skip; no PSS support");
                 return;
+            } else {
+                throw new RuntimeException("Unexpected Exception", ex);
             }
         }
 

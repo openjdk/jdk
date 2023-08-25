@@ -20,9 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Signature;
 
 public class PSSUtil {
 
@@ -31,10 +34,6 @@ public class PSSUtil {
      */
     private static final String KEYALG = "RSA";
     private static final String SIGALG = "RSASSA-PSS";
-    private static final String[] DIGESTS = {
-           "SHA-224", "SHA-256", "SHA-384" , "SHA-512",
-           "SHA3-224", "SHA3-256", "SHA3-384" , "SHA3-512",
-    };
 
     public static enum AlgoSupport {
         NO, MAYBE, YES
@@ -55,8 +54,8 @@ public class PSSUtil {
 
         AlgoSupport status = AlgoSupport.YES;
         for (String h : hashAlgs) {
-            String sigAlg = (h.startsWith("SHA3-")?
-                    h : h.replace("-","")) + "with" + SIGALG;
+            String sigAlg = (h.startsWith("SHA3-") ?
+                    h : h.replace("-", "")) + "with" + SIGALG;
             try {
                 Signature.getInstance(sigAlg, p);
                 // Yes, proceed to check next hash algorithm
