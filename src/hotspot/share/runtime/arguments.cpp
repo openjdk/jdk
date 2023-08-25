@@ -60,6 +60,7 @@
 #include "services/management.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"

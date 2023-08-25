@@ -3728,7 +3728,10 @@ Node* GraphKit::new_instance(Node* klass_node,
 //-------------------------------new_array-------------------------------------
 // helper for both newarray and anewarray
 // The 'length' parameter is (obviously) the length of the array.
-// See comments on new_instance for the meaning of the other arguments.
+// The optional arguments are for specialized use by intrinsics:
+//  - If 'return_size_val', report the non-padded array size (sum of header size
+//    and array body) to the caller.
+//  - deoptimize_on_exception controls how Java exceptions are handled (rethrow vs deoptimize)
 Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
                           Node* length,         // number of array elements
                           int   nargs,          // number of arguments to push back for uncommon trap
@@ -3779,25 +3782,21 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   // The rounding mask is strength-reduced, if possible.
   int round_mask = MinObjAlignmentInBytes - 1;
   Node* header_size = nullptr;
-  int   header_size_min  = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   // (T_BYTE has the weakest alignment and size restrictions...)
   if (layout_is_con) {
     int       hsize  = Klass::layout_helper_header_size(layout_con);
     int       eshift = Klass::layout_helper_log2_element_size(layout_con);
-    BasicType etype  = Klass::layout_helper_element_type(layout_con);
     if ((round_mask & ~right_n_bits(eshift)) == 0)
       round_mask = 0;  // strength-reduce it if it goes away completely
     assert((hsize & right_n_bits(eshift)) == 0, "hsize is pre-rounded");
+    int header_size_min = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     assert(header_size_min <= hsize, "generic minimum is smallest");
-    header_size_min = hsize;
-    header_size = intcon(hsize + round_mask);
+    header_size = intcon(hsize);
   } else {
     Node* hss   = intcon(Klass::_lh_header_size_shift);
     Node* hsm   = intcon(Klass::_lh_header_size_mask);
-    Node* hsize = _gvn.transform( new URShiftINode(layout_val, hss) );
-    hsize       = _gvn.transform( new AndINode(hsize, hsm) );
-    Node* mask  = intcon(round_mask);
-    header_size = _gvn.transform( new AddINode(hsize, mask) );
+    header_size = _gvn.transform(new URShiftINode(layout_val, hss));
+    header_size = _gvn.transform(new AndINode(header_size, hsm));
   }
 
   Node* elem_shift = nullptr;
@@ -3849,24 +3848,29 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
   }
 #endif
 
-  // Combine header size (plus rounding) and body size.  Then round down.
-  // This computation cannot overflow, because it is used only in two
-  // places, one where the length is sharply limited, and the other
-  // after a successful allocation.
+  // Combine header size and body size for the array copy part, then align (if
+  // necessary) for the allocation part. This computation cannot overflow,
+  // because it is used only in two places, one where the length is sharply
+  // limited, and the other after a successful allocation.
   Node* abody = lengthx;
-  if (elem_shift != nullptr)
-    abody     = _gvn.transform( new LShiftXNode(lengthx, elem_shift) );
-  Node* size  = _gvn.transform( new AddXNode(headerx, abody) );
-  if (round_mask != 0) {
-    Node* mask = MakeConX(~round_mask);
-    size       = _gvn.transform( new AndXNode(size, mask) );
+  if (elem_shift != nullptr) {
+    abody = _gvn.transform(new LShiftXNode(lengthx, elem_shift));
   }
-  // else if round_mask == 0, the size computation is self-rounding
+  Node* non_rounded_size = _gvn.transform(new AddXNode(headerx, abody));
 
   if (return_size_val != nullptr) {
     // This is the size
-    (*return_size_val) = size;
+    (*return_size_val) = non_rounded_size;
   }
+
+  Node* size = non_rounded_size;
+  if (round_mask != 0) {
+    Node* mask1 = MakeConX(round_mask);
+    size = _gvn.transform(new AddXNode(size, mask1));
+    Node* mask2 = MakeConX(~round_mask);
+    size = _gvn.transform(new AndXNode(size, mask2));
+  }
+  // else if round_mask == 0, the size computation is self-rounding
 
   // Now generate allocation code
 

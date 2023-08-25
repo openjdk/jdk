@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package java.net;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
+
 import sun.security.util.SecurityConstants;
 
 /**
@@ -210,7 +212,7 @@ public abstract class ProxySelector {
 
         @Override
         public synchronized List<Proxy> select(URI uri) {
-            String scheme = uri.getScheme().toLowerCase();
+            String scheme = uri.getScheme().toLowerCase(Locale.ROOT);
             if (scheme.equals("http") || scheme.equals("https")) {
                 return list;
             } else {
