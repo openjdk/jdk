@@ -58,7 +58,6 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
-#include "utilities/concurrentHashTable.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -93,9 +92,17 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
   public:
     Lookup(oop obj) : _obj(obj) {}
     uintx get_hash() const {
-      return _obj->mark().hash();
+      uintx hash = _obj->mark().hash();
+      assert(hash != 0, "should have a hash");
+      return hash;
     }
     bool equals(Entry** value, bool* is_dead) {
+      // Hasn't been cleaned out yet.
+      if ((*value)->mon->is_deflated()) {
+        *is_dead = true;
+        return false;
+      }
+      // This is an unsafe way to ask the same thing.
       if ((*value)->obj->is_null()) {
         *is_dead = true;
         return false;
@@ -109,10 +116,24 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
     }
   };
 
+  class LookupMonitor : public StackObj {
+    ObjectMonitor* _monitor;
+  public:
+    LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
+    uintx get_hash() const {
+      return _monitor->header().hash();
+    }
+    bool equals(Entry** value, bool* is_dead) {
+      return (*value)->mon == _monitor;
+    }
+  };
+
 public:
   ObjectMonitorWorld() : _table(new ConcurrentTable()) {}
   ObjectMonitor* monitor_for(Thread* current, oop obj);
   void monitor_put(Thread* current, ObjectMonitor* monitor, oop obj);
+  void clean_dead_entries(Thread* current);
+  void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
 };
 
 ObjectMonitorWorld* _omworld = nullptr;
@@ -127,15 +148,20 @@ ObjectMonitor* ObjectMonitorWorld::monitor_for(Thread* current, oop obj) {
   return result;
 }
 
+// Add the hashcode to the monitor to match the object and put it in the hashtable.
 void ObjectMonitorWorld::monitor_put(Thread* current, ObjectMonitor* monitor, oop obj) {
-  assert(obj->mark().has_monitor(), "this object must have a monitor");
-  assert(obj == monitor->object(), "must be");
+  // Enter the monitor into the concurrent hashtable.
   Entry* e = new Entry(monitor, monitor->whandle());
   Lookup l(obj);
   bool b = _table->insert(current, l, e);
   assert(b == true, "also a must");
 }
 
+void ObjectMonitorWorld::remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
+  LookupMonitor lm(monitor);
+  bool removed = _table->remove(current, lm);
+  assert(removed, "we should have found this one");
+}
 
 // The thread that wins the CAS to set has_monitor() gets to add the monitor to the CHT.
 // Reading the monitor can only be done by another thread if has_monitor() is true, but the
@@ -151,6 +177,18 @@ ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
 }
 
 static void add_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+  assert(obj->mark().has_monitor(), "this object must have a monitor");
+  assert(obj == monitor->object(), "must be");
+
+  // The thread that is inflating the Monitor owns it and can set the hash.
+  markWord mark = monitor->header();
+  assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
+  intptr_t hash = obj->mark().hash();
+  assert(hash != 0, "must be set when claiming the object monitor");
+
+  markWord temp = mark.copy_set_hash(hash);  // merge the hash into header
+  monitor->set_header(temp);
+
   _omworld->monitor_put(current, monitor, obj);
 }
 
@@ -1108,30 +1146,15 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
     mark = monitor->header();
     assert(mark.is_neutral(), "invariant: header=" INTPTR_FORMAT, mark.value());
     hash = mark.hash();
-    if (hash == 0) {                       // if it does not have a hash
-      hash = get_next_hash(current, obj);  // get a new hash
-      temp = mark.copy_set_hash(hash)   ;  // merge the hash into header
-      assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-      uintptr_t v = Atomic::cmpxchg((volatile uintptr_t*)monitor->header_addr(), mark.value(), temp.value());
-      test = markWord(v);
-      if (test != mark) {
-        // The attempt to update the ObjectMonitor's header/dmw field
-        // did not work. This can happen if another thread managed to
-        // merge in the hash just before our cmpxchg().
-        // If we add any new usages of the header/dmw field, this code
-        // will need to be updated.
-        hash = test.hash();
-        assert(test.is_neutral(), "invariant: header=" INTPTR_FORMAT, test.value());
-        assert(hash != 0, "should only have lost the race to a thread that set a non-zero hash");
-      }
-      if (monitor->is_being_async_deflated()) {
-        // If we detect that async deflation has occurred, then we
-        // attempt to restore the header/dmw to the object's header
-        // so that we only retry once if the deflater thread happens
-        // to be slow.
-        monitor->install_displaced_markword_in_object(obj);
-        continue;
-      }
+    assert(hash != 0 && read_stable_mark(obj).hash(), "inflate should install the hash code everywhere");
+    // This is probably wrong.
+    if (monitor->is_being_async_deflated()) {
+      // If we detect that async deflation has occurred, then we
+      // attempt to restore the header/dmw to the object's header
+      // so that we only retry once if the deflater thread happens
+      // to be slow.
+      monitor->install_displaced_markword_in_object(obj);
+      continue;
     }
     // We finally get the hash.
     return hash;
@@ -1417,6 +1440,18 @@ void ObjectSynchronizer::inflate_helper(oop obj) {
   (void)inflate(current, obj, inflate_cause_vm_internal);
 }
 
+// Need to have a hash code for all the objects that have inflated monitors.
+static markWord set_hash_and_has_monitor(Thread* current, markWord mark, oop obj) {
+  intptr_t hash = mark.hash();
+  if (hash != 0) {                     // if it has a hash, just return it with monitor set
+    return mark.set_has_monitor();
+  }
+  hash = get_next_hash(current, obj);         // get a new hash
+  markWord temp = mark.copy_set_hash(hash);   // merge the hash into header
+
+  return temp.set_has_monitor();              // now claim the monitor
+}
+
 static void log_inflate(Thread* current, oop object, const ObjectSynchronizer::InflateCause cause) {
   if (log_is_enabled(Info, monitorinflation)) {
     ResourceMark rm(current);
@@ -1493,7 +1528,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
         // Owned by somebody else.
         monitor->set_owner_anonymous();
       }
-      markWord old_mark = object->cas_set_mark(mark.set_has_monitor(), mark);
+      markWord old_mark = object->cas_set_mark(set_hash_and_has_monitor(current, mark, object), mark);
       if (old_mark == mark) {
         // Success! Return inflated monitor.
         add_monitor(current, monitor, object);
@@ -1592,7 +1627,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // be stable at the time of publishing the monitor address.
       guarantee(object->mark() == markWord::INFLATING(), "invariant");
       // Release semantics so that above set_object() is seen first.
-      object->release_set_mark(mark.set_has_monitor());
+      object->release_set_mark(set_hash_and_has_monitor(current, mark, object));
       add_monitor(current, m, object);
 
       // Once ObjectMonitor is configured and the object is associated
@@ -1625,7 +1660,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // prepare m for installation - set monitor to initial state
     m->set_header(mark);
 
-    if (object->cas_set_mark(mark.set_has_monitor(), mark) != mark) {
+    if (object->cas_set_mark(set_hash_and_has_monitor(current, mark, object), mark) != mark) {
       delete m;
       m = nullptr;
       continue;
@@ -1747,10 +1782,11 @@ public:
   };
 };
 
-static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+static size_t delete_monitors(Thread* current, GrowableArray<ObjectMonitor*>* delete_list) {
   NativeHeapTrimmer::SuspendMark sm("monitor deletion");
   size_t count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
+    _omworld->remove_monitor_entry(current, monitor);
     delete monitor;
     count++;
   }
@@ -1850,11 +1886,11 @@ size_t ObjectSynchronizer::deflate_idle_monitors(ObjectMonitorsHashtable* table)
                      in_use_list_ceiling(), _in_use_list.count(), _in_use_list.max());
         timer.start();
       }
-      deleted_count = delete_monitors(&delete_list);
+      deleted_count = delete_monitors(current, &delete_list);
       // ThreadBlockInVM is destroyed here
     } else {
       // A non-JavaThread can just free the ObjectMonitors:
-      deleted_count = delete_monitors(&delete_list);
+      deleted_count = delete_monitors(current, &delete_list);
     }
     assert(unlinked_count == deleted_count, "must be");
   }

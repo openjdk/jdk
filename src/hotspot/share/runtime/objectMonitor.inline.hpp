@@ -88,8 +88,14 @@ inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
 }
 
 // Returns true if 'this' is being async deflated and false otherwise.
-inline bool ObjectMonitor::is_being_async_deflated() {
+inline bool ObjectMonitor::is_being_async_deflated() const {
   return contentions() < 0;
+}
+
+// I might want both of these, I don't know.
+// The function returns true if we need to ignore or remove this monitor from the table.
+inline bool ObjectMonitor::is_deflated() const {
+  return is_being_async_deflated() || owner_is_DEFLATER_MARKER();
 }
 
 // Return number of threads contending for this monitor.

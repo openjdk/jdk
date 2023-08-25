@@ -267,7 +267,9 @@ private:
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
-  bool      is_being_async_deflated();
+  bool      is_being_async_deflated() const;
+  // Returns true if 'this' is being async deflated or is already deflated.
+  inline bool is_deflated() const;
   // Clear _owner field; current value must match old_value.
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
