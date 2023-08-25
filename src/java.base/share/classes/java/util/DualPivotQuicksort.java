@@ -29,6 +29,7 @@ import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import java.util.Arrays;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 
 /**
@@ -129,6 +130,52 @@ final class DualPivotQuicksort {
     private static final int MIN_FAST_SMALL_ARRAY_SORT_SIZE = 16;
 
     /**
+     * Sorts the specified array into ascending numerical order.
+     * While the intrinsic is free to choose its own sorting algorithm, the
+     * fallback implementation uses either mixed insertion sort or simple
+     * insertion sort.
+     *
+     * @param elemType the class of the elements of the array to be sorted
+     * @param array the array to be sorted
+     * @param offset the relative offset, in bytes, from the base address of
+     * the array to sort, otherwise if the array is {@code null},an absolute
+     * address pointing to the first element to sort from.
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @param end the index of the last element for simple insertion sort (in
+     * the case of mixed insertion sort). In the fallback implementation,
+     * if end < 0, we use insertion sort else we use mixed insertion sort.
+     */
+    @IntrinsicCandidate
+    static void arraySort(Class<?> elemType, Object array, long offset, int low, int high, int end) {
+       if (end < 0) insertionSort(array, low, high);
+       else mixedInsertionSort(array, low, end, high);
+    }
+
+    /**
+     * Partitions the specified array based on the pivot(s) provided.
+     *
+     * @param elemType the class of the array to be sorted
+     * @param array the array to be sorted
+     * @param offset the relative offset, in bytes, from the base address of
+     * the array to partition, otherwise if the array is {@code null},an absolute
+     * address pointing to the first element to partition from.
+     * @param low the index of the first element, inclusive, to be sorted
+     * @param high the index of the last element, exclusive, to be sorted
+     * @param pivotIndices the array containing the indices of the pivots. After
+     * partitioning, this array is updated with the new indices of the pivots.
+     * @param pivot_offset the offset in bytes pointing to the base address of
+     * the array used to store the indices of the pivots.
+     * @param isDualPivot a boolean value to choose between dual pivot
+     * partitioning and single pivot partitioning
+     */
+    @IntrinsicCandidate
+    static void arrayPartition(Class<?> elemType, Object array, long offset, int low, int high, int[] pivotIndices, long pivot_offset, boolean isDualPivot) {
+        if (isDualPivot) partitionDualPivot(array, low, high, pivotIndices);
+        else partitionSinglePivot(array, low, high, pivotIndices);
+    }
+
+    /**
      * Calculates the double depth of parallel merging.
      * Depth is negative, if tasks split before sorting.
      *
@@ -143,23 +190,6 @@ final class DualPivotQuicksort {
             depth -= 2;
         }
         return depth;
-    }
-
-    /**
-     * Sorts the specified range of the array using either insertion sort
-     * or mixed insertion sort depending on the value of end. if end < 0,
-     * we use insertion sort else we use mixed insertion sort.
-     *
-     * @param array the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     * @param end the index of the last element for simple insertion sort (in
-     * the case of mixed insertion sort). If end < 0, we use insertion sort
-     * else we use mixed insertion sort.
-     */
-    static void smallArraySort(Object array, int low, int high, int end) {
-       if (end < 0) insertionSort(array, low, high);
-       else mixedInsertionSort(array, low, end, high);
     }
 
     /**
@@ -289,7 +319,7 @@ final class DualPivotQuicksort {
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
                 int last  = high - 3 * ((size >> 5) << 3);
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
-                else Arrays.arraySort(int.class, a, baseOffset, low, high, last);
+                else arraySort(int.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -298,7 +328,7 @@ final class DualPivotQuicksort {
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
-                else Arrays.arraySort(int.class, a, baseOffset, low, high, -1);
+                else arraySort(int.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -386,7 +416,7 @@ final class DualPivotQuicksort {
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
                 pivotIndices = new int[] {e1, e5};
-                Arrays.arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -411,7 +441,7 @@ final class DualPivotQuicksort {
                  * This value is inexpensive approximation of the median.
                  */
                 pivotIndices = new int[] {e3, e3};
-                Arrays.arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(int.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1102,7 +1132,7 @@ final class DualPivotQuicksort {
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
                 int last  = high - 3 * ((size >> 5) << 3);
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
-                else Arrays.arraySort(long.class, a, baseOffset, low, high, last);
+                else arraySort(long.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -1111,7 +1141,7 @@ final class DualPivotQuicksort {
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
-                else Arrays.arraySort(long.class, a, baseOffset, low, high, -1);
+                else arraySort(long.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -1200,7 +1230,7 @@ final class DualPivotQuicksort {
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
                 pivotIndices = new int[] {e1, e5};
-                Arrays.arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1222,7 +1252,7 @@ final class DualPivotQuicksort {
                  * This value is inexpensive approximation of the median.
                  */
                 pivotIndices = new int[] {e3, e3};
-                Arrays.arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(long.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2698,7 +2728,7 @@ final class DualPivotQuicksort {
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
                 int last  = high - 3 * ((size >> 5) << 3);
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
-                else Arrays.arraySort(float.class, a, baseOffset, low, high, last);
+                else arraySort(float.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -2707,7 +2737,7 @@ final class DualPivotQuicksort {
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
-                else Arrays.arraySort(float.class, a, baseOffset, low, high, -1);
+                else arraySort(float.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -2796,7 +2826,7 @@ final class DualPivotQuicksort {
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
                 pivotIndices = new int[] {e1, e5};
-                Arrays.arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2818,7 +2848,7 @@ final class DualPivotQuicksort {
                  * This value is inexpensive approximation of the median.
                  */
                 pivotIndices = new int[] {e3, e3};
-                Arrays.arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(float.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3559,7 +3589,7 @@ final class DualPivotQuicksort {
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
                 int last  = high - 3 * ((size >> 5) << 3);
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) mixedInsertionSort(a, low, last , high);
-                else Arrays.arraySort(double.class, a, baseOffset, low, high, last);
+                else arraySort(double.class, a, baseOffset, low, high, last);
                 return;
             }
 
@@ -3568,7 +3598,7 @@ final class DualPivotQuicksort {
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
                 if (size < MIN_FAST_SMALL_ARRAY_SORT_SIZE) insertionSort(a, low, high);
-                else Arrays.arraySort(double.class, a, baseOffset, low, high, -1);
+                else arraySort(double.class, a, baseOffset, low, high, -1);
                 return;
             }
 
@@ -3657,7 +3687,7 @@ final class DualPivotQuicksort {
                 * of tertiles. Note, that pivot1 < pivot2.
                 */
                 pivotIndices = new int[] {e1, e5};
-                Arrays.arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3679,7 +3709,7 @@ final class DualPivotQuicksort {
                  * This value is inexpensive approximation of the median.
                  */
                 pivotIndices = new int[] {e3, e3};
-                Arrays.arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
+                arrayPartition(double.class, a, baseOffset, low, high, pivotIndices, Unsafe.ARRAY_INT_BASE_OFFSET, isDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 

@@ -47,7 +47,6 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 
 /**
  * This class contains various methods for manipulating arrays (such as
@@ -78,51 +77,6 @@ public final class Arrays {
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}
-
-    /**
-     * Sorts the specified array into ascending numerical order.
-     * While the intrinsic is free to choose its own sorting algorithm, the
-     * fallback implementation uses either mixed insertion sort or simple
-     * insertion sort.
-     *
-     * @param elemType the class of the elements of the array to be sorted
-     * @param array the array to be sorted
-     * @param offset the relative offset, in bytes, from the base address of
-     * the array to sort, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to sort from.
-     * @param fromIndex the index of the first element, inclusive, to be sorted
-     * @param toIndex the index of the last element, exclusive, to be sorted
-     * @param end the index of the last element for simple insertion sort (in
-     * the case of mixed insertion sort). In the fallback implementation,
-     * if end < 0, we use insertion sort else we use mixed insertion sort.
-     */
-    @IntrinsicCandidate
-    static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex, int end) {
-        DualPivotQuicksort.smallArraySort(array, fromIndex, toIndex, end);
-    }
-
-    /**
-     * Partitions the specified array based on the pivot(s) provided.
-     *
-     * @param elemType the class of the array to be sorted
-     * @param array the array to be sorted
-     * @param offset the relative offset, in bytes, from the base address of
-     * the array to partition, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to partition from.
-     * @param fromIndex the index of the first element, inclusive, to be sorted
-     * @param toIndex the index of the last element, exclusive, to be sorted
-     * @param pivotIndices the array containing the indices of the pivots. After
-     * partitioning, this array is updated with the new indices of the pivots.
-     * @param pivot_offset the offset in bytes pointing to the base address of
-     * the array used to store the indices of the pivots.
-     * @param isDualPivot a boolean value to choose between dual pivot
-     * partitioning and single pivot partitioning
-     */
-    @IntrinsicCandidate
-    static void arrayPartition(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex, int[] pivotIndices, long pivot_offset, boolean isDualPivot) {
-        if (isDualPivot) DualPivotQuicksort.partitionDualPivot(array, fromIndex, toIndex, pivotIndices);
-        else DualPivotQuicksort.partitionSinglePivot(array, fromIndex, toIndex, pivotIndices);
-    }
 
     /*
      * Sorting methods. Note that all public "sort" methods take the
