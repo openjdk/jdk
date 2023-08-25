@@ -43,7 +43,6 @@ public class HierarchicalStableLayoutManager {
     private Set<Link> reversedLinks;
     private List<LayoutNode> nodes;
     private final HashMap<Vertex, LayoutNode> vertexToLayoutNode;
-    private final HashMap<Vertex, LayoutNode> oldVertexToLayoutNode;
     private HashMap<Link, List<Point>> reversedLinkStartPoints;
     private HashMap<Link, List<Point>> reversedLinkEndPoints;
     private HashMap<Integer, List<LayoutNode>> layers;
@@ -89,7 +88,6 @@ public class HierarchicalStableLayoutManager {
         manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
         vertexToLayoutNode = new HashMap<>();
         nodes = new ArrayList<>();
-        oldVertexToLayoutNode = new HashMap<>();
     }
 
     private int calculateOptimalBoth(LayoutNode n) {
@@ -1190,7 +1188,7 @@ public class HierarchicalStableLayoutManager {
                     while (n.vertex == null && found) {
                         found = false;
 
-                        if (n.vertex == null && n.succs.size() <= 1 && n.preds.size() <= 1) {
+                        if (n.succs.size() <= 1 && n.preds.size() <= 1) {
                             // Dummy node used only for this link, remove if not already removed
                             if (nodes.contains(n)) {
                                 removeNode(n);
