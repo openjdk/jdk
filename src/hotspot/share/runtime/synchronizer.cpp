@@ -97,12 +97,7 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
       return hash;
     }
     bool equals(Entry** value, bool* is_dead) {
-      // Hasn't been cleaned out yet.
-      if ((*value)->mon->is_deflated()) {
-        *is_dead = true;
-        return false;
-      }
-      // This is an unsafe way to ask the same thing.
+      // The entry is going to be removed soon.
       if ((*value)->obj->is_null()) {
         *is_dead = true;
         return false;
@@ -168,12 +163,15 @@ void ObjectMonitorWorld::remove_monitor_entry(Thread* current, ObjectMonitor* mo
 // second thread might have to wait for the monitor to be added to the hashtable.
 // Will we need a yield?
 ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
-  while (true) {
+  int count = 0;
+  while (count < 100) {
     ObjectMonitor* monitor = _omworld->monitor_for(current, obj);
     if (monitor != nullptr) {
       return monitor;
     }
+    count++;
   }
+  fatal("OM not found for " PTR_FORMAT, p2i(obj));
 }
 
 static void add_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {

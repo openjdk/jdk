@@ -227,7 +227,7 @@ class markWord {
   }
 
   markWord set_has_monitor() const {
-    return markWord(value() | monitor_value);
+    return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
 
   // used to encode pointers during GC
