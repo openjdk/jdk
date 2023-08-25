@@ -1142,8 +1142,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private void checkUnknownTag(DocTree tree, String tagName) {
         // if it were a standard tag, this method wouldn't be called:
         // a standard tag is never represented by Unknown{Block,Inline}TagTree
-        assert tree instanceof UnknownBlockTagTree
-                || tree instanceof UnknownInlineTagTree;
+        var k = tree.getKind();
+        assert k == DocTree.Kind.UNKNOWN_BLOCK_TAG
+                || k == DocTree.Kind.UNKNOWN_INLINE_TAG;
         assert !getStandardTags().contains(tagName);
         // report an unknown tag only if custom tags are set, see 8314213
         if (env.customTags != null && !env.customTags.contains(tagName))

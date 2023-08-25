@@ -74,6 +74,7 @@
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -2947,29 +2948,22 @@ void os::Aix::initialize_libperfstat() {
 /////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-// Get the current stack base from the OS (actually, the pthread library).
-// Note: usually not page aligned.
-address os::current_stack_base() {
-  AixMisc::stackbounds_t bounds;
-  bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
-  guarantee(rc, "Unable to retrieve stack bounds.");
-  return bounds.base;
-}
-
-// Get the current stack size from the OS (actually, the pthread library).
+// Get the current stack base and size from the OS (actually, the pthread library).
+// Note: base usually not page aligned.
 // Returned size is such that (base - size) is always aligned to page size.
-size_t os::current_stack_size() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   AixMisc::stackbounds_t bounds;
   bool rc = AixMisc::query_stack_bounds_for_current_thread(&bounds);
   guarantee(rc, "Unable to retrieve stack bounds.");
-  // Align the returned stack size such that the stack low address
+  *stack_base = bounds.base;
+
+  // Align the reported stack size such that the stack low address
   // is aligned to page size (Note: base is usually not and we do not care).
   // We need to do this because caller code will assume stack low address is
   // page aligned and will place guard pages without checking.
   address low = bounds.base - bounds.size;
   address low_aligned = (address)align_up(low, os::vm_page_size());
-  size_t s = bounds.base - low_aligned;
-  return s;
+  *stack_size = bounds.base - low_aligned;
 }
 
 // Get the default path to the core file

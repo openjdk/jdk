@@ -1642,7 +1642,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             // Find control for 'x' next to use but not inside inner loops.
             x_ctrl = place_outside_loop(x_ctrl, n_loop);
             // Replace all uses
-            if (u->is_ConstraintCast() && u->bottom_type()->higher_equal(_igvn.type(n)) && u->in(0) == x_ctrl) {
+            if (u->is_ConstraintCast() && _igvn.type(n)->higher_equal(u->bottom_type()) && u->in(0) == x_ctrl) {
               // If we're sinking a chain of data nodes, we might have inserted a cast to pin the use which is not necessary
               // anymore now that we're going to pin n as well
               _igvn.replace_node(u, x);

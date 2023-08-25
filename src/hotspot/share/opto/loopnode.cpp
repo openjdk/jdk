@@ -47,6 +47,7 @@
 #include "opto/runtime.hpp"
 #include "opto/superword.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
