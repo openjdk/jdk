@@ -144,7 +144,7 @@ inline G1CardSetArray::G1CardSetArray(uint card_in_region, EntryCountType num_ca
   _num_entries(1) {
   assert(_size > 0, "CardSetArray of size 0 not supported.");
   assert(_size < LockBitMask, "Only support CardSetArray of size %u or smaller.", LockBitMask - 1);
-  _data[0] = card_in_region;
+  _data[0] = checked_cast<EntryDataType>(card_in_region);
 }
 
 inline G1CardSetArray::G1CardSetArrayLocker::G1CardSetArrayLocker(EntryCountType volatile* num_entries_addr) :
@@ -195,7 +195,7 @@ inline G1AddCardResult G1CardSetArray::add(uint card_idx) {
     return Overflow;
   }
 
-  _data[num_entries] = card_idx;
+  _data[num_entries] = checked_cast<EntryDataType>(card_idx);
 
   x.inc_num_entries();
 
