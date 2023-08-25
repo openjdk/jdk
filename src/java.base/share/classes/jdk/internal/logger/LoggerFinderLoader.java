@@ -34,10 +34,8 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
-import jdk.internal.logger.LazyLoggers.LazyLoggerAccessor;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
@@ -143,13 +141,6 @@ public final class LoggerFinderLoader {
     }
 
     private static final class TemporaryLoggerFinder extends LoggerFinder {
-        private static final BiFunction<String, Module, Logger> loggerSupplier =
-                new BiFunction<>() {
-                    @Override
-                    public Logger apply(String name, Module module) {
-                        return LazyLoggers.getLogger(name, module);
-                    }
-                };
         private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
             @Override
             public boolean getAsBoolean() {
@@ -160,8 +151,7 @@ public final class LoggerFinderLoader {
 
         @Override
         public Logger getLogger(String name, Module module) {
-            return new BootstrapLogger(LazyLoggerAccessor.makeAccessorFromSupplier(
-                    name, loggerSupplier, module), isLoadingThread);
+            return LazyLoggers.makeLazyLogger(name, module, isLoadingThread);
         }
     }
 
