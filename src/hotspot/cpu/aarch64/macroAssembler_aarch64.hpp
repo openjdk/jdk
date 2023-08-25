@@ -949,7 +949,6 @@ public:
                                     Register method_result,
                                     Register temp_reg,
                                     Register temp_reg2,
-                                    Register temp_reg3,
                                     int itable_index,
                                     Label& L_no_such_interface);
 

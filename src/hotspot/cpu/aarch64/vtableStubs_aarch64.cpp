@@ -175,10 +175,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = r10;
   const Register holder_klass_reg   = r16; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = rmethod; // resolved interface klass (REFC)
+  const Register resolved_klass_reg = r17; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
   const Register temp_reg2          = r15;
-  const Register temp_reg3          = r17;
   const Register icholder_reg       = rscratch2;
 
   Label L_no_such_interface;
@@ -195,7 +194,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Receiver subtype check against REFC.
   // Get selected method from declaring class and itable index
   __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, rmethod,
-                                  temp_reg, temp_reg2, temp_reg3, itable_index, L_no_such_interface);
+                                  temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 124;

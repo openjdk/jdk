@@ -1209,11 +1209,12 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
                                                   Register method_result,
                                                   Register temp_itbl_klass,
                                                   Register scan_temp,
-                                                  Register holder_offset,
                                                   int itable_index,
                                                   Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
   assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
-  assert_different_registers(method_result, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
 
   int vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   int itable_offset_entry_size = itableOffsetEntry::size() * wordSize;
@@ -1225,12 +1226,12 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
 
   ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
   add(recv_klass, recv_klass, vtable_start_offset + ioffset);
-  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + recv_klass->_vtable_len;
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
   // temp_itbl_klass = itable[0]._interface;
-  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(3)));
+  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtableEntry::size_in_bytes()))));
   mov(holder_offset, zr);
   // scan_temp = &(itable[0]._interface)
-  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtableEntry::size_in_bytes()))));
 
   // Initial checks:
   //   - if (holder_klass != resolved_klass), go to "scan for resolved"
@@ -1293,7 +1294,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   // Finally, scan_temp contains holder_klass vtable offset
   bind(L_holder_found);
   ldrw(method_result, Address(scan_temp, ooffset - ioffset));
-  add(recv_klass, recv_klass, (itable_index << 3) + in_bytes(itableMethodEntry::method_offset()) - vtable_start_offset - ioffset);
+  add(recv_klass, recv_klass, (itable_index << LogBytesPerWord) + in_bytes(itableMethodEntry::method_offset()) - vtable_start_offset - ioffset);
   ldr(method_result, Address(recv_klass, method_result, Address::uxtw(0)));
 }
 
