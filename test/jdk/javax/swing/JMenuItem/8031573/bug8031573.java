@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -59,6 +60,7 @@ public class bug8031573 {
             + "1. Run the test on HiDPI Display.\n"
             + "2. Open the Menu.\n"
             + "3. Check that the icon on the JCheckBoxMenuItem is smooth.\n"
+            + "4. Check that the icon on the JRadioButtonMenuItem is smooth.\n"
             + "   If so, press PASS, else press FAIL.\n";
 
     public static void main(String args[]) throws Exception {
@@ -88,6 +90,9 @@ public class bug8031573 {
         JCheckBoxMenuItem checkBoxMenuItem = new JCheckBoxMenuItem("JCheckBoxMenuItem");
         checkBoxMenuItem.setSelected(true);
         menu.add(checkBoxMenuItem);
+        JRadioButtonMenuItem radioButtonMenuItem = new JRadioButtonMenuItem("JRadioButtonMenuItem");
+        radioButtonMenuItem.setSelected(true);
+        menu.add(radioButtonMenuItem);
         bar.add(menu);
         frame.setJMenuBar(bar);
 
