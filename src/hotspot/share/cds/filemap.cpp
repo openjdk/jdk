@@ -1689,13 +1689,11 @@ void FileMapInfo::close() {
 char* map_memory(int fd, const char* file_name, size_t file_offset,
                  char *addr, size_t bytes, bool read_only,
                  bool allow_exec, MEMFLAGS flags = mtNone) {
-  if (AlwaysPreTouch) {
-    read_only = false;
-  }
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             read_only, allow_exec, flags);
+                             AlwaysPreTouch ? false : read_only,
+                             allow_exec, flags);
   if (mem != nullptr && AlwaysPreTouch) {
-    os::pretouch_memory(mem, mem + bytes, os::vm_page_size());
+    os::pretouch_memory(mem, mem + bytes);
   }
   return mem;
 }
