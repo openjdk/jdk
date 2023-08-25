@@ -51,7 +51,7 @@ import jdk.internal.vm.ContinuationScope;
  * and implementation classes are {@linkplain Option#SHOW_HIDDEN_FRAMES hidden}.
  * In addition, {@code StackFrame}s have the class name and method name
  * available but not the {@link StackFrame#getDeclaringClass() Class reference}.
- * The {@code Class} reference can be accessed if {@link Option#RETAIN_CLASS_REFERENCE}
+ * The {@code Class} reference can be accessed if {@link Option#RETAIN_CLASS_REFERENCE
  * RETAIN_CLASS_REFERENCE} option is set.
  *
  * <p> The {@link StackWalker#walk walk} method opens a sequential stream
@@ -245,8 +245,8 @@ public final class StackWalker {
          * {@return {@code true} if the method containing the execution point
          * represented by this stack frame is a native method}
          *
-         * @throws UnsupportedOperationException if the {@code StackWalker} is of
-         *         {@link Kind#CLASS_INFO CLASS_INFO} kind
+         * @throws UnsupportedOperationException if the {@code StackWalker} collects
+         *         {@linkplain Kind#CLASS_INFO class only information}
          */
         public boolean isNativeMethod();
 
