@@ -188,7 +188,7 @@ TEST_VM(LogFileOutput, invalid_file) {
   EXPECT_FALSE(bad_file.initialize("", &ss))
     << "file was initialized when there was an existing directory with the same name";
   char* logger_output = ss.as_string();
-  EXPECT_TRUE(string_contains_substring(logger_output, expected_output_substring))
+  EXPECT_THAT(logger_output, testing::HasSubstr(expected_output_substring))
     << "missing expected error message, received msg: %s" << logger_output;
   delete_empty_directory(path);
 }
