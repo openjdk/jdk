@@ -424,12 +424,14 @@ public abstract class JavadocTester {
         String charsetArg = null;
         String docencodingArg = null;
         String encodingArg = null;
+        boolean haveSourcePath = false;
         for (int i = 0; i < args.length - 2; i++) {
             switch (args[i]) {
                 case "-d" -> outputDir = Path.of(args[++i]);
                 case "-charset" -> charsetArg = args[++i];
                 case "-docencoding" -> docencodingArg = args[++i];
                 case "-encoding" -> encodingArg = args[++i];
+                case "-sourcepath", "--source-path", "--module-source-path" -> haveSourcePath = true;
             }
         }
 
@@ -449,6 +451,16 @@ public abstract class JavadocTester {
             charset = Charset.forName(cs);
         } catch (UnsupportedCharsetException e) {
             charset = Charset.defaultCharset();
+        }
+
+        // explicitly set the source path if none specified
+        // to override the javadoc tool default to use the classpath
+        if (!haveSourcePath) {
+            var newArgs = new String[args.length + 2];
+            newArgs[0] = "-sourcepath";
+            newArgs[1] = testSrc;
+            System.arraycopy(args, 0, newArgs, 2, args.length);
+            args = newArgs;
         }
 
         out.println("args: " + Arrays.toString(args));
