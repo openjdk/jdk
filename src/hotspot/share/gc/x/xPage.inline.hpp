@@ -35,6 +35,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 
 inline uint8_t XPage::type_from_size(size_t size) const {

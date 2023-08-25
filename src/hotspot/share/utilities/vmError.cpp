@@ -178,7 +178,10 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
 }
 
 static bool stack_has_headroom(size_t headroom) {
-  const size_t stack_size = os::current_stack_size();
+  size_t stack_size = 0;
+  address stack_base = nullptr;
+  os::current_stack_base_and_size(&stack_base, &stack_size);
+
   const size_t guard_size = StackOverflow::stack_guard_zone_size();
   const size_t unguarded_stack_size = stack_size - guard_size;
 
@@ -186,7 +189,6 @@ static bool stack_has_headroom(size_t headroom) {
     return false;
   }
 
-  const address stack_base          = os::current_stack_base();
   const address unguarded_stack_end = stack_base - unguarded_stack_size;
   const address stack_pointer       = os::current_stack_pointer();
 
@@ -199,9 +201,11 @@ PRAGMA_INFINITE_RECURSION_IGNORED
 void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
   if (stack_has_headroom(_reattempt_required_stack_headroom)) {
     // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
-    const size_t stack_size     = os::current_stack_size();
+    size_t stack_size = 0;
+    address stack_base = nullptr;
+    os::current_stack_base_and_size(&stack_base, &stack_size);
+
     const size_t guard_size     = StackOverflow::stack_guard_zone_size();
-    const address stack_base    = os::current_stack_base();
     const address stack_pointer = os::current_stack_pointer();
 
     const size_t unguarded_stack_size = stack_size - guard_size;
@@ -450,7 +454,7 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
   // see if it's a valid frame
   if (fr.pc()) {
     st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-    const int limit = max_frames == -1 ? StackPrintLimit : MIN2(max_frames, (int)StackPrintLimit);
+    const int limit = max_frames == -1 ? StackPrintLimit : MIN2(max_frames, StackPrintLimit);
     int count = 0;
     while (count++ < limit) {
       fr.print_on_error(st, buf, buf_size);
@@ -975,8 +979,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       stack_top = _thread->stack_base();
       stack_size = _thread->stack_size();
     } else {
-      stack_top = os::current_stack_base();
-      stack_size = os::current_stack_size();
+      os::current_stack_base_and_size(&stack_top, &stack_size);
     }
 
     address stack_bottom = stack_top - stack_size;

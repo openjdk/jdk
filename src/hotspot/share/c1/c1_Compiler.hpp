@@ -56,6 +56,9 @@ class Compiler: public AbstractCompiler {
   // Check if the C1 compiler supports an intrinsic for 'method'.
   virtual bool is_intrinsic_supported(const methodHandle& method);
 
+  // Return true if the intrinsic `id` is supported by C1
+  static bool is_intrinsic_supported(vmIntrinsics::ID id);
+
   // Size of the code buffer
   static int code_buffer_size();
 };
