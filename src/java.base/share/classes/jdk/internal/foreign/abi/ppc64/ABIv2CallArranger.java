@@ -25,8 +25,6 @@
  */
 package jdk.internal.foreign.abi.ppc64;
 
-import jdk.internal.foreign.abi.ppc64.CallArranger;
-
 /**
  * PPC64 CallArranger specialized for ABI v2.
  */

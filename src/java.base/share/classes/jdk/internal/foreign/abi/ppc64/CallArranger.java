@@ -35,7 +35,6 @@ import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
-import jdk.internal.foreign.abi.ppc64.ABIv2CallArranger;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.FunctionDescriptor;
