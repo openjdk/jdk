@@ -27,7 +27,6 @@ package build.tools.generatelsrequivmaps;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -60,8 +59,7 @@ public class EquivMapsGenerator {
             valid = false;
         } else if (args.length == 5) {
             if ("-jdk-header-template".equals(args[i])) {
-                jdkHeaderTemplate = new String(Files.readAllBytes(Paths.get(args[++i])),
-                                               StandardCharsets.UTF_8);
+                jdkHeaderTemplate = Files.readString(Paths.get(args[++i]));
                 i++;
             } else {
                 valid = false;

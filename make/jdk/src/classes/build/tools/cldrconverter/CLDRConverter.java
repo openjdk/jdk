@@ -29,7 +29,6 @@ import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.text.MessageFormat;
 import java.time.*;
@@ -232,9 +231,7 @@ public class CLDRConverter {
                         break;
 
                     case "-jdk-header-template":
-                        jdkHeaderTemplate = new String(
-                            Files.readAllBytes(Paths.get(args[++i])),
-                            StandardCharsets.UTF_8);
+                        jdkHeaderTemplate = Files.readString(Paths.get(args[++i]));
                         break;
 
                     case "-help":
