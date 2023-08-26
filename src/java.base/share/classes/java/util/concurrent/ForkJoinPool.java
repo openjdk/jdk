@@ -1495,13 +1495,22 @@ public class ForkJoinPool extends AbstractExecutorService {
          * remaining local tasks and/or others available from the
          * given queue, if any.
          */
-        final void topLevelExec(ForkJoinTask<?> task, WorkQueue src, int srcId) {
+        final void topLevelExec(ForkJoinTask<?> task, ForkJoinPool pool,
+                                WorkQueue src, int srcId) {
             int cfg = config, fifo = cfg & FIFO, nstolen = nsteals + 1;
             if ((srcId & 1) != 0) // don't record external sources
                 source = srcId;
             if ((cfg & CLEAR_TLS) != 0)
                 ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
             while (task != null) {
+                Thread.interrupted();
+                if (poolIsStopping(pool)) {
+                    try {
+                        task.cancel(false);
+                    } catch (Throwable ignore) {
+                    }
+                    break;
+                }
                 task.doExec();
                 if ((task = nextLocalTask(fifo)) == null && src != null &&
                     (task = src.tryPoll()) != null)
@@ -2119,7 +2128,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 signalWork();     // propagate at most twice/run
                             next = (window & LMASK) | RESCAN;
                             if (w != null)        // always true
-                                w.topLevelExec(t, q, j);
+                                w.topLevelExec(t, this, q, j);
                             break outer;
                         }
                         else if (o == null) {     // contended; limit rescans
