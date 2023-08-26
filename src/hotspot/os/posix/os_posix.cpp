@@ -42,6 +42,7 @@
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"

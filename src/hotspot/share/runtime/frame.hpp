@@ -30,6 +30,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO

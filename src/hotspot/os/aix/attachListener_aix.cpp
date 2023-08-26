@@ -29,6 +29,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "services/attachListener.hpp"
+#include "utilities/checkedCast.hpp"
 
 #include <signal.h>
 #include <sys/socket.h>
