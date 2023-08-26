@@ -83,7 +83,7 @@ public class ElementKindVisitorNext<R, P> extends ElementKindVisitor14<R, P> {
     }
 
     /**
-     * {inheritDoc ElementKindVisitor6}
+     * {@inheritDoc ElementKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
