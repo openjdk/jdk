@@ -2304,12 +2304,12 @@ static const char* intnamenear(T origin, const char* xname, char* buf, size_t bu
 }
 
 static const char* intname(char* buf, size_t buf_size, jint n) {
-  const char* str = intnamenear<jint>(max_jint, "max", buf, buf_size, n);
+  const char* str = intnamenear<jint>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jint>(min_jint, "max", buf, buf_size, n);
+  str = intnamenear<jint>(min_jint, "minint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -2319,7 +2319,7 @@ static const char* intname(char* buf, size_t buf_size, jint n) {
 }
 
 static const char* uintname(char* buf, size_t buf_size, juint n) {
-  const char* str = intnamenear<juint>(max_juint, "max", buf, buf_size, n);
+  const char* str = intnamenear<juint>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -2334,12 +2334,12 @@ static const char* uintname(char* buf, size_t buf_size, juint n) {
 }
 
 static const char* longname(char* buf, size_t buf_size, jlong n) {
-  const char* str = intnamenear<jlong>(max_jlong, "max", buf, buf_size, n);
+  const char* str = intnamenear<jlong>(max_jlong, "maxlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jlong>(min_jlong, "min", buf, buf_size, n);
+  str = intnamenear<jlong>(min_jlong, "minlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -2364,7 +2364,7 @@ static const char* longname(char* buf, size_t buf_size, jlong n) {
 }
 
 static const char* ulongname(char* buf, size_t buf_size, julong n) {
-  const char* str = intnamenear<julong>(max_julong, "max", buf, buf_size, n);
+  const char* str = intnamenear<julong>(max_julong, "maxulong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
