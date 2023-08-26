@@ -390,9 +390,9 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (t != Type::TOP && t_in != Type::TOP) {
       const TypeLong* tl = t->is_long();
       const TypeLong* t_in_l = t_in->is_long();
-      assert(tl->_lo >= t_in_l->_lo && tl->_hi <= t_in_l->_hi, "CastLL type should be narrower than or equal to the type of its input");
-      assert((tl != t_in_l) == (tl->_lo > t_in_l->_lo || tl->_hi < t_in_l->_hi), "if type differs then this nodes's type must be narrower");
+      assert(t_in_l->contains(tl), "CastLL type should be narrower than or equal to the type of its input");
       if (tl != t_in_l) {
+        assert(t_in_l->strictly_contains(tl), "if type differs then this nodes's type must be narrower");
         const TypeInt* ti = TypeInt::make(checked_cast<jint>(tl->_lo), checked_cast<jint>(tl->_hi), tl->_widen)->is_int();
         Node* castii = phase->transform(new CastIINode(in(0), in1->in(1), ti));
         Node* convi2l = in1->clone();

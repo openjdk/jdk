@@ -417,7 +417,7 @@ int Type::uhash( const Type *const t ) {
   return (int)t->hash();
 }
 
-#define SMALLINT ((juint)3)  // a value too insignificant to consider widening
+constexpr juint SMALLINT = 3;  // a value too insignificant to consider widening
 #define POSITIVE_INFINITE_F 0x7f800000 // hex representation for IEEE 754 single precision positive infinite
 #define POSITIVE_INFINITE_D 0x7ff0000000000000 // hex representation for IEEE 754 double precision positive infinite
 
@@ -1763,13 +1763,15 @@ static void verify_constraints(T lo, T hi, U ulo, U uhi, U zeros, U ones) {
 }
 #endif
 
+// The result is tuned down by one since we do not have empty type
+// and this is not required to be accurate
 template <class T, class U>
 static U cardinality_from_bounds(T lo, T hi, U ulo, U uhi) {
   if (U(lo) == ulo) {
     return uhi - ulo;
   }
 
-  return uhi - U(lo) + U(hi) - ulo;
+  return uhi - U(lo) + U(hi) - ulo + 1;
 }
 
 template <class T, class U>
@@ -1941,7 +1943,8 @@ const TypeInt* TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt* TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 TypeInt::TypeInt(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual)
-  : TypeInteger(Int, w, dual), _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
+  : TypeInteger(Int, normalize_widen(lo, hi, ulo, uhi, zeros, ones, w), dual),
+    _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
   DEBUG_ONLY(verify_constraints(lo, hi, ulo, uhi, zeros, ones));
 }
 
@@ -1951,7 +1954,6 @@ const Type* TypeInt::make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, j
   if (empty) {
     return dual ? Type::BOTTOM : Type::TOP;
   }
-  w = normalize_widen(lo, hi, ulo, uhi, zeros, ones, w);
   return (new TypeInt(lo, hi, ulo, uhi, zeros, ones, w, dual))->hashcons()->is_int();
 }
 
@@ -1975,6 +1977,14 @@ bool TypeInt::contains(jint i) const {
   juint u = i;
   return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
          (u & _zeros) == 0 && (~u & _ones) == 0;
+}
+
+bool TypeInt::contains(const TypeInt* t) const {
+  return int_type_subset(this, t);
+}
+
+bool TypeInt::strictly_contains(const TypeInt* t) const {
+  return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
 //------------------------------meet-------------------------------------------
@@ -2059,8 +2069,8 @@ const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) 
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    return make(ft->_lo, ft->_hi, ft->_ulo, ft->_uhi,
-                ft->_zeros, ft->_ones, this->_widen);
+    return (new TypeInt(ft->_lo, ft->_hi, ft->_ulo, ft->_uhi,
+                        ft->_zeros, ft->_ones, this->_widen, false))->hashcons();
   }
   return ft;
 }
@@ -2084,74 +2094,6 @@ uint TypeInt::hash(void) const {
 bool TypeInt::is_finite() const {
   return true;
 }
-
-//------------------------------dump2------------------------------------------
-// Dump TypeInt
-#ifndef PRODUCT
-static const char* intname(char* buf, size_t buf_size, jint n) {
-  if (n == min_jint)
-    return "min";
-  else if (n < min_jint + 10000)
-    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
-  else if (n == max_jint)
-    return "max";
-  else if (n > max_jint - 10000)
-    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
-  else
-    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
-  return buf;
-}
-
-static const char* uintname(char* buf, size_t buf_size, juint n) {
-  if (n == max_juint) {
-    return "max";
-  } else if (n > max_juint - 10000) {
-    os::snprintf_checked(buf, buf_size, "max-" UINT32_FORMAT, max_juint - n);
-  } else {
-    os::snprintf_checked(buf, buf_size, UINT32_FORMAT, n);
-  }
-  return buf;
-}
-
-static const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones) {
-  for (int i = 0; i < 32; i++) {
-    if ((zeros & (1 << (31 - i))) != 0) {
-      buf[i] = '0';
-    } else if ((ones & (1 << (31 - i))) != 0) {
-      buf[i] = '1';
-    } else {
-      buf[i] = '*';
-    }
-  }
-  buf[32] = 0;
-  return buf;
-}
-
-void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
-  char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
-  if (int_type_equal(this, TypeInt::INT)) {
-    st->print("int");
-  } else if (is_con()) {
-    st->print("int:%s", intname(buf1, sizeof(buf1), get_con()));
-  } else if (int_type_equal(this, TypeInt::BOOL)) {
-    st->print("bool");
-  } else if (int_type_equal(this, TypeInt::BYTE)) {
-    st->print("byte");
-  } else if (int_type_equal(this, TypeInt::CHAR)) {
-    st->print("char");
-  } else if (int_type_equal(this, TypeInt::SHORT)) {
-    st->print("short");
-  } else {
-    st->print("int:%s..%s ^ %su..%su, bits:%s",
-              intname(buf1, sizeof(buf1), _lo), intname(buf2, sizeof(buf2), _hi),
-              uintname(buf3, sizeof(buf3), _ulo), uintname(buf4, sizeof(buf4), _uhi),
-              bitname(buf5, sizeof(buf5), _zeros, _ones));
-  }
-
-  if (_widen != 0 && this != TypeInt::INT)
-    st->print(":%.*s", _widen, "wwww");
-}
-#endif
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
@@ -2180,7 +2122,8 @@ const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 TypeLong::TypeLong(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual)
-  : TypeInteger(Long, w, dual), _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
+  : TypeInteger(Long, normalize_widen(lo, hi, ulo, uhi, zeros, ones, w), dual),
+    _lo(lo), _hi(hi), _ulo(ulo), _uhi(uhi), _zeros(zeros), _ones(ones) {
   DEBUG_ONLY(verify_constraints(lo, hi, ulo, uhi, zeros, ones));
 }
 
@@ -2190,7 +2133,6 @@ const Type* TypeLong::make(jlong lo, jlong hi, julong ulo, julong uhi, julong ze
   if (empty) {
     return dual ? Type::BOTTOM : Type::TOP;
   }
-  w = normalize_widen(lo, hi, ulo, uhi, zeros, ones, w);
   return (new TypeLong(lo, hi, ulo, uhi, zeros, ones, w, dual))->hashcons()->is_long();
 }
 
@@ -2214,6 +2156,14 @@ bool TypeLong::contains(jlong i) const {
   julong u = i;
   return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
          (u & _zeros) == 0 && (~u & _ones) == 0;
+}
+
+bool TypeLong::contains(const TypeLong* t) const {
+  return int_type_subset(this, t);
+}
+
+bool TypeLong::strictly_contains(const TypeLong* t) const {
+  return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
 //------------------------------meet-------------------------------------------
@@ -2296,8 +2246,8 @@ const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative)
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    return make(ft->_lo, ft->_hi, ft->_ulo, ft->_uhi,
-                ft->_zeros, ft->_ones, this->_widen);
+    return (new TypeLong(ft->_lo, ft->_hi, ft->_ulo, ft->_uhi,
+                         ft->_zeros, ft->_ones, this->_widen, false))->hashcons();
   }
   return ft;
 }
@@ -2322,9 +2272,83 @@ bool TypeLong::is_finite() const {
   return true;
 }
 
+//------------------------------singleton--------------------------------------
+// TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
+// constants
+bool TypeLong::singleton(void) const {
+  return _lo == _hi;
+}
+
+bool TypeLong::empty(void) const {
+  return false;
+}
+
 //------------------------------dump2------------------------------------------
 // Dump TypeLong
 #ifndef PRODUCT
+static const char* intname(char* buf, size_t buf_size, jint n) {
+  if (n == min_jint)
+    return "min";
+  else if (n < min_jint + 10000)
+    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
+  else if (n == max_jint)
+    return "max";
+  else if (n > max_jint - 10000)
+    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
+  else
+    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
+  return buf;
+}
+
+static const char* uintname(char* buf, size_t buf_size, juint n) {
+  if (n == max_juint) {
+    return "max";
+  } else if (n > max_juint - 10000) {
+    os::snprintf_checked(buf, buf_size, "max-" UINT32_FORMAT, max_juint - n);
+  } else {
+    os::snprintf_checked(buf, buf_size, UINT32_FORMAT, n);
+  }
+  return buf;
+}
+
+static const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones) {
+  for (int i = 0; i < 32; i++) {
+    if ((zeros & (1 << (31 - i))) != 0) {
+      buf[i] = '0';
+    } else if ((ones & (1 << (31 - i))) != 0) {
+      buf[i] = '1';
+    } else {
+      buf[i] = '*';
+    }
+  }
+  buf[32] = 0;
+  return buf;
+}
+
+void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
+  char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
+  if (int_type_equal(this, TypeInt::INT)) {
+    st->print("int");
+  } else if (is_con()) {
+    st->print("int:%s", intname(buf1, sizeof(buf1), get_con()));
+  } else if (int_type_equal(this, TypeInt::BOOL)) {
+    st->print("bool");
+  } else if (int_type_equal(this, TypeInt::BYTE)) {
+    st->print("byte");
+  } else if (int_type_equal(this, TypeInt::CHAR)) {
+    st->print("char");
+  } else if (int_type_equal(this, TypeInt::SHORT)) {
+    st->print("short");
+  } else {
+    st->print("int:%s..%s ^ %su..%su, bits:%s",
+              intname(buf1, sizeof(buf1), _lo), intname(buf2, sizeof(buf2), _hi),
+              uintname(buf3, sizeof(buf3), _ulo), uintname(buf4, sizeof(buf4), _uhi),
+              bitname(buf5, sizeof(buf5), _zeros, _ones));
+  }
+
+  st->print(", widen: %d", _widen);
+}
+
 static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
   if (n > x) {
     if (n >= x + 10000)  return nullptr;
@@ -2376,17 +2400,6 @@ void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
     st->print(":%.*s", _widen, "wwww");
 }
 #endif
-
-//------------------------------singleton--------------------------------------
-// TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
-// constants
-bool TypeLong::singleton(void) const {
-  return _lo == _hi;
-}
-
-bool TypeLong::empty(void) const {
-  return false;
-}
 
 //=============================================================================
 // Convenience common pre-built types.

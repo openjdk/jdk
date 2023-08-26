@@ -1012,6 +1012,16 @@ public class IRNode {
         trapNodes(NULL_CHECK_TRAP,"null_check");
     }
 
+    public static final String OR_I = PREFIX + "OR_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OR_I, "OrI");
+    }
+
+    public static final String OR_L = PREFIX + "OR_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OR_L, "OrL");
+    }
+
     public static final String OR_VB = VECTOR_PREFIX + "OR_VB" + POSTFIX;
     static {
         vectorNode(OR_VB, "OrV", TYPE_BYTE);

@@ -43,7 +43,10 @@ public class SubLNodeIdealizationTests {
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
                  "test16", "test17", "test18",
-                 "test19", "test20", "test21"})
+                 "test19", "test20", "test21",
+                 "test22", "test23", "test24",
+                 "test25", "test26", "test27",
+                 "test28"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -81,6 +84,13 @@ public class SubLNodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
+        Asserts.assertEQ(1L               , test22(a, b));
+        Asserts.assertEQ((a | Long.MIN_VALUE) - (b >>> 1) < 0 ? 1L : 0L, test23(a, b));
+        Asserts.assertEQ(1L               , test24(a, b));
+        Asserts.assertEQ(1L               , test25(a, b));
+        Asserts.assertEQ(Long.compareUnsigned((a >>> 1) - (b >>> 1), Long.MIN_VALUE) < 0 ? 1L : 0L, test26(a, b));
+        Asserts.assertEQ(1L               , test27(a, b));
+        Asserts.assertEQ(0L               , test28(a, b));
     }
 
     @Test
@@ -248,5 +258,60 @@ public class SubLNodeIdealizationTests {
     // Checks a*b-c*a => a*(b-c)
     public long test21(long a, long b, long c) {
         return a*b - c*a;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB_L, IRNode.RSHIFT_L})
+    // Signed bounds
+    public long test22(long a, long b) {
+        long sum = (a >> 2) - (b >> 2);
+        return sum > Long.MIN_VALUE >> 1 && sum <= Long.MAX_VALUE >> 1 ? 1 : 0;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_L, "1"})
+    // Signed bounds cannot be inferred if overflow
+    public long test23(long a, long b) {
+        long sum = (a | Long.MIN_VALUE) - (b >>> 1);
+        return sum < 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB_L, IRNode.URSHIFT_L})
+    // Signed bounds, both lo and hi overflow
+    public long test24(long a, long b) {
+        long sum = ((a | Long.MIN_VALUE) >>> 1) - ((b >>> 2)| Long.MIN_VALUE);
+        return sum < 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB_L, IRNode.URSHIFT_L})
+    // Unsigned bounds
+    public long test25(long a, long b) {
+        long sum = (a | (Long.MIN_VALUE >> 1)) - (b >>> 1);
+        return Long.compareUnsigned(sum, Long.MIN_VALUE >>> 1) > 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_L, "1"})
+    // Unsigned bounds cannot be inferred if overflow
+    public long test26(long a, long b) {
+        long sum = (a >>> 1) - (b >>> 1);
+        return Long.compareUnsigned(sum, Long.MIN_VALUE) < 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB_L, IRNode.URSHIFT_L})
+    // Unsigned bounds, both ulo and uhi overflow
+    public long test27(long a, long b) {
+        long sum = (a >>> 1) - (b | (Long.MIN_VALUE >> 1));
+        return Long.compareUnsigned(sum, Long.MIN_VALUE >> 1) <= 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.SUB_L, IRNode.LSHIFT_L})
+    // Bits
+    public long test28(long a, long b) {
+        return ((a << 5) - (b << 5)) & 31;
     }
 }

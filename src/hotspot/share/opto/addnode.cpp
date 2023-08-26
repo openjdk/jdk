@@ -960,12 +960,13 @@ Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 template <class CT>
 static const Type* xor_add_ring(const Type* t1, const Type* t2) {
+  using T = decltype(CT::_lo);
   const CT* i1 = CT::cast(t1);
   const CT* i2 = CT::cast(t2);
   const Type* res = CT::make_bits((i1->_zeros & i2->_zeros) | (i1->_ones & i2->_ones),
                                   (i1->_zeros & i2->_ones) | (i1->_ones & i2->_zeros), MAX2(i1->_widen, i2->_widen));
   // If inputs do not overlap, result cannot be 0
-  if (CT::cast(res)->contains(0) && i1->filter(i2) == Type::TOP) {
+  if (CT::cast(res)->contains(T(0)) && i1->filter(i2) == Type::TOP) {
     res = res->filter(CT::NON_ZERO);
   }
   return res;
@@ -977,6 +978,10 @@ static const Type* xor_value(const Node* in1, const Node* in2, PhaseGVN* phase) 
   const Type* t2 = phase->type(in2);
   if (t1 == Type::TOP || t2 == Type::TOP) {
     return Type::TOP;
+  }
+
+  if (in1->eqv_uncast(in2)) {
+    return CT::ZERO;
   }
 
   return xor_add_ring<CT>(t1, t2);

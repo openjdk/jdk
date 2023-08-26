@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265
+ * @bug 8267265 8315066
  * @summary Test that Ideal transformations of AddINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.AddINodeIdealizationTests
@@ -45,7 +45,10 @@ public class AddINodeIdealizationTests {
                  "test14", "test15", "test16",
                  "test17", "test18", "test19",
                  "test20", "test21", "test22",
-                 "test23", "test24", "test25"})
+                 "test23", "test24", "test25",
+                 "test26", "test27", "test28",
+                 "test29", "test30", "test31",
+                 "test32"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -90,6 +93,13 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ((a - b) + 190                  , test23(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
+        Asserts.assertEQ(1                              , test26(a, b));
+        Asserts.assertEQ((a >>> 1) + (b >>> 1) >= 0 ? 1 : 0, test27(a, b));
+        Asserts.assertEQ(1                              , test28(a, b));
+        Asserts.assertEQ(1                              , test29(a, b));
+        Asserts.assertEQ(Integer.compareUnsigned((a | (Integer.MIN_VALUE >>> 2)) + (b | (Integer.MIN_VALUE >>> 2)), Integer.MIN_VALUE >>> 1) >= 0 ? 1 : 0, test30(a, b));
+        Asserts.assertEQ(1                              , test31(a, b));
+        Asserts.assertEQ(0                              , test32(a, b));
     }
 
     @Test
@@ -310,5 +320,61 @@ public class AddINodeIdealizationTests {
     // Checks Math.min(a, b) + Math.max(a, b) => a + b
     public int test25(int a, int b) {
         return Math.min(a, b) + Math.max(a, b);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.RSHIFT_I})
+    // Signed bounds
+    public int test26(int a, int b) {
+        int sum = (a >> 2) + (b >> 2);
+        return sum >= Integer.MIN_VALUE >> 1 && sum < Integer.MAX_VALUE >> 1 ? 1 : 0;
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_I, "1", IRNode.URSHIFT_I, "2"})
+    // Signed bounds cannot be inferred if overflow
+    public int test27(int a, int b) {
+        int sum = (a >>> 1) + (b >>> 1);
+        return sum >= 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.URSHIFT_I})
+    // Signed bounds, both lo and hi overflow
+    public int test28(int a, int b) {
+        int sum = ((a | Integer.MIN_VALUE) >>> 1) + ((b | Integer.MIN_VALUE) >>> 1);
+        return sum < -1 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.URSHIFT_I})
+    // Unsigned bounds
+    public int test29(int a, int b) {
+        int sum = (a >>> 2) + (b >>> 2) + 1000;
+        return (Integer.compareUnsigned(sum, 1000) >= 0 &&
+                Integer.compareUnsigned(sum, Integer.MIN_VALUE + 1000) < 0) ? 1 : 0;
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_I, "1"})
+    // Unsigned bounds cannot be inferred if overflow
+    public int test30(int a, int b) {
+        int sum = (a | (Integer.MIN_VALUE >>> 2)) + (b | (Integer.MIN_VALUE >>> 2));
+        return Integer.compareUnsigned(sum, Integer.MIN_VALUE >>> 1) >= 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.URSHIFT_I})
+    // Unsigned bounds, both ulo and uhi overflow
+    public int test31(int a, int b) {
+        int sum = (a | Integer.MIN_VALUE) + ((b >>> 2) | Integer.MIN_VALUE);
+        return Integer.compareUnsigned(sum, Integer.MIN_VALUE >> 1) < 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_I, IRNode.LSHIFT_I})
+    // Bits
+    public int test32(int a, int b) {
+        return ((a << 5) + (b << 5)) & 31;
     }
 }
