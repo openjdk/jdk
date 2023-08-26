@@ -356,7 +356,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     String readErrorMessage(InputStream in) throws IOException {
         String s;
         StringBuilder message = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(in,"UTF-8"));
         while ((s = br.readLine()) != null) {
             message.append(s);
         }
