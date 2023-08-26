@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,14 @@ public enum ElementKind {
      * A binding variable in a pattern.
      * @since 16
      */
-    BINDING_VARIABLE;
+    BINDING_VARIABLE,
+
+    /**
+     * A matcher executable.
+     */
+    // TODO: preview annotation
+    MATCHER;
+
 
     // Maintenance note: check if the default implementation of
     // Elements.getOutermostTypeElement needs updating when new kind
@@ -171,14 +178,14 @@ public enum ElementKind {
     /**
      * Returns {@code true} if this is a kind of executable: either
      * {@code METHOD} or {@code CONSTRUCTOR} or {@code STATIC_INIT} or
-     * {@code INSTANCE_INIT}.
+     * {@code INSTANCE_INIT} or {@code MATCHER}.
      *
      * @return {@code true} if this is a kind of executable
      * @since 19
      */
     public boolean isExecutable() {
         return switch(this) {
-        case METHOD, CONSTRUCTOR, STATIC_INIT, INSTANCE_INIT -> true;
+        case METHOD, CONSTRUCTOR, STATIC_INIT, INSTANCE_INIT, MATCHER -> true;
         default -> false;
         };
     }

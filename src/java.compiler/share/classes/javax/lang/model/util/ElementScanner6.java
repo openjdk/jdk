@@ -215,7 +215,9 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * {@inheritDoc ElementVisitor}
      *
-     * @implSpec This implementation scans the parameters.
+     * @implSpec This implementation scans the parameters, unless the
+     * element is a {@code MATCHER} in which case {@code visitUnknown}
+     * is called.
      * Note that type parameters are <em>not</em> scanned by this
      * implementation.
      *
@@ -225,7 +227,11 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
      */
     @Override
     public R visitExecutable(ExecutableElement e, P p) {
-        return scan(e.getParameters(), p);
+        if (e.getKind() != ElementKind.MATCHER) {
+            return scan(e.getParameters(), p);
+        } else {
+            return visitUnknown(e, p);
+        }
     }
 
     /**

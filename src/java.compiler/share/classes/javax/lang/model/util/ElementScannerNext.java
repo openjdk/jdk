@@ -98,4 +98,19 @@ public class ElementScannerNext<R, P> extends ElementScanner14<R, P> {
     protected ElementScannerNext(R defaultValue){
         super(defaultValue);
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation first scans the type parameters,
+     * if any, and then the parameters.
+     *
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return the result of scanning
+     */
+    @Override
+    public R visitExecutable(ExecutableElement e, P p) {
+        return scan(createScanningList(e, e.getParameters()), p);
+    }
 }

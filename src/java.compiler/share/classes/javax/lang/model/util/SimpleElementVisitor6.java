@@ -176,7 +176,9 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
     /**
      * {@inheritDoc ElementVisitor}
      *
-     * @implSpec This implementation calls {@code defaultAction}.
+     * @implSpec This implementation calls {@code defaultAction},
+     * unless the element is a {@code MATCHER} in which case {@code
+     * visitUnknown} is called.
      *
      * @param e {@inheritDoc ElementVisitor}
      * @param p {@inheritDoc ElementVisitor}
@@ -184,7 +186,11 @@ public class SimpleElementVisitor6<R, P> extends AbstractElementVisitor6<R, P> {
      */
     @Override
     public R visitExecutable(ExecutableElement e, P p) {
-        return defaultAction(e, p);
+        if (e.getKind() != ElementKind.MATCHER) {
+            return defaultAction(e, p);
+        } else {
+            return visitUnknown(e, p);
+        }
     }
 
     /**

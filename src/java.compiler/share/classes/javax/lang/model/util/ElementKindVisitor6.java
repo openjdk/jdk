@@ -369,8 +369,8 @@ public class ElementKindVisitor6<R, P>
      *
      * @implSpec This implementation dispatches to the visit method
      * for the specific {@linkplain ElementKind kind} of executable,
-     * {@code CONSTRUCTOR}, {@code INSTANCE_INIT}, {@code METHOD}, or
-     * {@code STATIC_INIT}.
+     * {@code CONSTRUCTOR}, {@code INSTANCE_INIT}, {@code METHOD},
+     * {@code STATIC_INIT}, or {@code MATCHER}.
      *
      * @param e {@inheritDoc ElementVisitor}
      * @param p {@inheritDoc ElementVisitor}
@@ -391,6 +391,9 @@ public class ElementKindVisitor6<R, P>
 
         case STATIC_INIT:
             return visitExecutableAsStaticInit(e, p);
+
+        case MATCHER:
+            return visitExecutableAsMatcher(e, p);
 
         default:
             throw new AssertionError("Bad kind " + k + " for ExecutableElement" + e);
@@ -447,6 +450,20 @@ public class ElementKindVisitor6<R, P>
      */
     public R visitExecutableAsStaticInit(ExecutableElement e, P p) {
         return defaultAction(e, p);
+    }
+
+    /**
+     * Visits a {@code MATCHER} executable element.
+     *
+     * @implSpec This implementation calls {@code visitUnknown}.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code visitUnknown}
+     * @since 22
+     */
+    public R visitExecutableAsMatcher(ExecutableElement e, P p) {
+        return visitUnknown(e, p);
     }
 
     /**

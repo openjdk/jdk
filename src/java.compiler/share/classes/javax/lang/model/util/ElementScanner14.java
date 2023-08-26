@@ -117,8 +117,9 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
     /**
      * {@inheritDoc ElementVisitor}
      *
-     * @implSpec This implementation first scans the type parameters, if any, and then
-     * the parameters.
+     * @implSpec This implementation first scans the type parameters,
+     * if any, and then the parameters, unless the element is a {@code
+     * MATCHER} in which case {@code visitUnknown} is called.
      *
      * @param e  {@inheritDoc ElementVisitor}
      * @param p  {@inheritDoc ElementVisitor}
@@ -126,11 +127,15 @@ public class ElementScanner14<R, P> extends ElementScanner9<R, P> {
      */
     @Override
     public R visitExecutable(ExecutableElement e, P p) {
-        return scan(createScanningList(e, e.getParameters()), p);
+        if (e.getKind() != ElementKind.MATCHER) {
+            return scan(createScanningList(e, e.getParameters()), p);
+        } else {
+            return visitUnknown(e, p);
+        }
     }
 
-    private List<? extends Element> createScanningList(Parameterizable element,
-                                                       List<? extends Element> toBeScanned) {
+    /* package */ List<? extends Element> createScanningList(Parameterizable element,
+                                                             List<? extends Element> toBeScanned) {
         var typeParameters = element.getTypeParameters();
         if (typeParameters.isEmpty()) {
             return toBeScanned;
