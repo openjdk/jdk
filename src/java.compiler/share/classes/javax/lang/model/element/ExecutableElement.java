@@ -147,4 +147,7 @@ public interface ExecutableElement extends Element, Parameterizable {
      */
     @Override
     Name getSimpleName();
+
+    // TODO
+    // List<? extends VariableElement> getBindings() ?
 }

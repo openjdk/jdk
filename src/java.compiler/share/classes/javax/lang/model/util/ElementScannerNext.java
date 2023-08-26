@@ -111,6 +111,7 @@ public class ElementScannerNext<R, P> extends ElementScanner14<R, P> {
      */
     @Override
     public R visitExecutable(ExecutableElement e, P p) {
+        // TOOD: What about bindings?
         return scan(createScanningList(e, e.getParameters()), p);
     }
 }

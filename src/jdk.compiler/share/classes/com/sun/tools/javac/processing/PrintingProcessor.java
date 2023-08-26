@@ -161,6 +161,11 @@ public class PrintingProcessor extends AbstractProcessor {
                     writer.print(" ");
                     writer.print(e.getSimpleName().toString());
                     break;
+
+                    // TODO:
+                    // case MATCHER:
+                    // break;
+                    // May require other handling too
                 }
 
                 writer.print("(");
