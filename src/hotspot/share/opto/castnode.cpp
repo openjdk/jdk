@@ -212,6 +212,33 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
 }
 #endif
 
+// Although this WORSENS the type, it increases GVN opportunities,
+// because I2L nodes with the same input will common up, regardless
+// of slightly differing type assertions. Choose a type which depends
+// only on my input. (Exception: Keep a range assertion of >=0 or <0.)
+template <class CT>
+static const Type* widen_type_after_loop_opts(const Type* t, const Type* t1, const PhaseGVN* phase) {
+  if (!phase->C->post_loop_opts_phase()) {
+    return t;
+  }
+
+  const CT* i = CT::cast(t);
+  const CT* i1 = CT::cast(t1);
+
+  assert(i1->contains(i), "");
+  assert(i1->_widen == i->_widen, "ConstraintCastNode::Value preserves widen");
+  if (i1->strictly_contains(i)) {
+    if (i1->_lo < 0 && i->_lo >= 0) {
+      return i1->filter(TypeLong::POS);
+    } else if (i1->_hi >= 0 && i->_hi < 0) {
+      return i1->filter(TypeLong::NEG);
+    }
+    return i1;
+  }
+
+  return i;
+}
+
 const Type* CastIINode::Value(PhaseGVN* phase) const {
   const Type *res = ConstraintCastNode::Value(phase);
   if (res == Type::TOP) {
@@ -226,7 +253,7 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   // avoid corruption of the graph if a CastII is replaced by TOP but
   // the corresponding range check is not removed.
   if (!_range_check_dependency) {
-    res = widen_type(phase, res, T_INT);
+    res = widen_type_after_loop_opts<TypeInt>(res, phase->type(in(1)), phase);
   }
 
   // Try to improve the type of the CastII if we recognize a CmpI/If pattern.
@@ -369,7 +396,7 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
   }
   assert(res->isa_long(), "res must be long");
 
-  return widen_type(phase, res, T_LONG);
+  return widen_type_after_loop_opts<TypeLong>(res, phase->type(in(1)), phase);
 }
 
 Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -575,32 +602,4 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
     return nullptr;
   }
   return nullptr;
-}
-
-const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const {
-  if (!phase->C->post_loop_opts_phase()) {
-    return res;
-  }
-  const TypeInteger* this_type = res->is_integer(bt);
-  const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
-  if (in_type != nullptr &&
-      (in_type->lo_as_long() != this_type->lo_as_long() ||
-       in_type->hi_as_long() != this_type->hi_as_long())) {
-    jlong lo1 = this_type->lo_as_long();
-    jlong hi1 = this_type->hi_as_long();
-    int w1 = this_type->_widen;
-    if (lo1 >= 0) {
-      // Keep a range assertion of >=0.
-      lo1 = 0;        hi1 = max_signed_integer(bt);
-    } else if (hi1 < 0) {
-      // Keep a range assertion of <0.
-      lo1 = min_signed_integer(bt); hi1 = -1;
-    } else {
-      lo1 = min_signed_integer(bt); hi1 = max_signed_integer(bt);
-    }
-    return TypeInteger::make(MAX2(in_type->lo_as_long(), lo1),
-                             MIN2(in_type->hi_as_long(), hi1),
-                             MAX2((int)in_type->_widen, w1), bt);
-  }
-  return res;
 }

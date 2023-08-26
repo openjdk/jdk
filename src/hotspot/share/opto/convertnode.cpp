@@ -324,8 +324,8 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
     return after;
   }
 
-  if (before->_lo != after->_lo || before->_hi != after->_hi || before->_ulo != after->_ulo ||
-      before->_uhi != after->_uhi || before->_zeros != after->_zeros || before->_ones != after->_ones) {
+  assert(before->contains(after), "");
+  if (before->strictly_contains(after)) {
     // Although this WORSENS the type, it increases GVN opportunities,
     // because I2L nodes with the same input will common up, regardless
     // of slightly differing type assertions.  Such slight differences

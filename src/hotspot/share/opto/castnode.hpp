@@ -43,7 +43,6 @@ public:
   const DependencyType _dependency;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
-  const Type* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
 
   public:
   ConstraintCastNode(Node *n, const Type *t, DependencyType dependency)

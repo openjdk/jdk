@@ -1792,20 +1792,12 @@ static int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w) {
 
 template <class CT>
 static bool int_type_equal(const CT* t1, const CT* t2) {
-  if (t1->empty()) {
-    return t2->empty();
-  }
   return t1->_lo == t2->_lo && t1->_hi == t2->_hi && t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
          t1->_zeros == t2->_zeros && t1->_ones == t2->_ones;
 }
 
 template <class CT>
 static bool int_type_subset(const CT* super, const CT* sub) {
-  if (sub->empty()) {
-    return true;
-  } else if (super->empty()) {
-    return false;
-  }
   return super->_lo <= sub->_lo && super->_hi >= sub->_hi && super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
          (super->_zeros &~ sub->_zeros) == 0 && (super->_ones &~ sub->_ones) == 0;
 }
