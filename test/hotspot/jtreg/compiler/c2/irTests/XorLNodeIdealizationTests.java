@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8281453
+ * @bug 8281453 8315066
  * @summary Convert ~x into -1-x when ~x is used in an arithmetic expression
  * @library /test/lib /
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
@@ -42,7 +42,8 @@ public class XorLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17"})
+                 "test16", "test17", "test18",
+                 "test19"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -77,6 +78,8 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
         Asserts.assertEQ(-2023 - a          , test17(a));
+        Asserts.assertEQ(0b0110L            , test18(a, b));
+        Asserts.assertEQ(1L                 , test19(a, b));
     }
 
     @Test
@@ -216,5 +219,19 @@ public class XorLNodeIdealizationTests {
     // Checks ~(x + c) => (-c-1) - x
     public long test17(long x) {
         return ~(x + 2022);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_L, IRNode.AND_L, IRNode.OR_L})
+    // Bits known in both inputs are known in the result
+    public long test18(long x, long y) {
+        return (((x & -4) | 12) ^ ((y & -6) | 10)) & 15;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR_L, IRNode.AND_L, IRNode.OR_L, IRNode.CMP_L})
+    // Inputs do not overlap, results cannot be 0
+    public long test19(long x, long y) {
+        return ((x & -2) ^ (y | 1)) != 0 ? 1 : 0;
     }
 }

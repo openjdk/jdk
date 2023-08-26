@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8267265 8272735
+ * @bug 8267265 8272735 8315066
  * @summary Test that Ideal transformations of SubLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.SubLNodeIdealizationTests
@@ -84,13 +84,17 @@ public class SubLNodeIdealizationTests {
         Asserts.assertEQ(a*b - b*c        , test19(a, b, c));
         Asserts.assertEQ(a*c - b*c        , test20(a, b, c));
         Asserts.assertEQ(a*b - c*a        , test21(a, b, c));
-        Asserts.assertEQ(1L               , test22(a, b));
+        Asserts.assertEQ((a >> 2) - (b >> 2) > Long.MIN_VALUE >> 1 &&
+                (a >> 2) - (b >> 2) <= Long.MAX_VALUE >> 1 ? 1L : 0L, test22(a, b));
         Asserts.assertEQ((a | Long.MIN_VALUE) - (b >>> 1) < 0 ? 1L : 0L, test23(a, b));
-        Asserts.assertEQ(1L               , test24(a, b));
-        Asserts.assertEQ(1L               , test25(a, b));
+        Asserts.assertEQ(((a | Long.MIN_VALUE) >>> 1) -
+                ((b >>> 2)| Long.MIN_VALUE) < 0 ? 1L : 0L, test24(a, b));
+        Asserts.assertEQ(Long.compareUnsigned((a | (Long.MIN_VALUE >> 1)) -
+                (b >>> 1), Long.MIN_VALUE >>> 1) > 0 ? 1L : 0L, test25(a, b));
         Asserts.assertEQ(Long.compareUnsigned((a >>> 1) - (b >>> 1), Long.MIN_VALUE) < 0 ? 1L : 0L, test26(a, b));
-        Asserts.assertEQ(1L               , test27(a, b));
-        Asserts.assertEQ(0L               , test28(a, b));
+        Asserts.assertEQ(Long.compareUnsigned((a >>> 1) -
+                (b | (Long.MIN_VALUE >> 1)), Long.MIN_VALUE >> 1) <= 0 ? 1L : 0L, test27(a, b));
+        Asserts.assertEQ(((a << 5) - (b << 5)) & 31, test28(a, b));
     }
 
     @Test

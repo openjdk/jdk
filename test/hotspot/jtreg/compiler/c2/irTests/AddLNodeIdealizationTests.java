@@ -91,13 +91,17 @@ public class AddLNodeIdealizationTests {
         Asserts.assertEQ((a - b) + -123_456_788_877L    , test22(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test23(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test24(a, b));
-        Asserts.assertEQ(1L                             , test25(a, b));
+        Asserts.assertEQ((a >> 2) + (b >> 2) >= Long.MIN_VALUE >> 1 &&
+                (a >> 2) + (b >> 2) < Long.MAX_VALUE >> 1 ? 1L : 0L, test25(a, b));
         Asserts.assertEQ((a >>> 1) + (b >>> 1) >= 0 ? 1L : 0L, test26(a, b));
-        Asserts.assertEQ(1L                             , test27(a, b));
-        Asserts.assertEQ(1L                             , test28(a, b));
+        Asserts.assertEQ(((a | Long.MIN_VALUE) >>> 1) +
+                ((b | Long.MIN_VALUE) >>> 1) < -1 ? 1L : 0L, test27(a, b));
+        Asserts.assertEQ((Long.compareUnsigned((a >>> 2) + (b >>> 2) + 1000, 1000) >= 0 &&
+                Long.compareUnsigned((a >>> 2) + (b >>> 2) + 1000, Long.MIN_VALUE + 1000) < 0) ? 1L : 0L, test28(a, b));
         Asserts.assertEQ(Long.compareUnsigned((a | (Long.MIN_VALUE >>> 2)) + (b | (Long.MIN_VALUE >>> 2)), Long.MIN_VALUE >>> 1) >= 0 ? 1L : 0L, test29(a, b));
-        Asserts.assertEQ(1L                             , test30(a, b));
-        Asserts.assertEQ(0L                             , test31(a, b));
+        Asserts.assertEQ(Long.compareUnsigned((a | Long.MIN_VALUE) + ((b >>> 2) | Long.MIN_VALUE),
+                Long.MIN_VALUE >> 1) < 0 ? 1L : 0L, test30(a, b));
+        Asserts.assertEQ(((a << 5) + (b << 5)) & 31     , test31(a, b));
     }
 
     @Test

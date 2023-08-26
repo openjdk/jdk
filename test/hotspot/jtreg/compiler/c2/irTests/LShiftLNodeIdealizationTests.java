@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8303238
+ * @bug 8303238 8315066
  * @summary Test that Ideal transformations of LShiftLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.LShiftLNodeIdealizationTests
@@ -37,33 +37,33 @@ public class LShiftLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test3", "test4", "test5", "test6", "test7", "test8" })
+    @Run(test = {"test3", "test4", "test5",
+                 "test6", "test7", "test8",
+                 "test9", "test10", "test11"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
-        long c = RunInfo.getRandom().nextLong();
-        long d = RunInfo.getRandom().nextLong();
 
         long min = Long.MIN_VALUE;
         long max = Long.MAX_VALUE;
 
-        assertResult(0);
-        assertResult(a);
-        assertResult(b);
-        assertResult(c);
-        assertResult(d);
-        assertResult(min);
-        assertResult(max);
+        assertResult(0, 0);
+        assertResult(a, b);
+        assertResult(min, min);
+        assertResult(max, max);
     }
 
     @DontCompile
-    public void assertResult(long a) {
+    public void assertResult(long a, long b) {
         Asserts.assertEQ((a >> 4L) << 8L, test3(a));
         Asserts.assertEQ((a >>> 4L) << 8L, test4(a));
         Asserts.assertEQ((a >> 8L) << 4L, test5(a));
         Asserts.assertEQ((a >>> 8L) << 4L, test6(a));
         Asserts.assertEQ(((a >> 4L) & 0xFFL) << 8L, test7(a));
         Asserts.assertEQ(((a >>> 4L) & 0xFFL) << 8L, test8(a));
+        Asserts.assertEQ(1L, test9(a, b));
+        Asserts.assertEQ(1L, test10(a, b));
+        Asserts.assertEQ(0L, test11(a, b));
     }
 
     @Test
@@ -112,5 +112,26 @@ public class LShiftLNodeIdealizationTests {
     // Checks ((x >>> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
     public long test8(long x) {
         return ((x >>> 4L) & 0xFFL) << 8L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_L, IRNode.CMP_L})
+    // Signed bounds
+    public long test9(long x, long y) {
+        return ((long)Math.max(Math.min((int)x, 100), -100) << (y & 8)) <= (100 << 8) ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_L, IRNode.CMP_UL})
+    // Unsigned bounds
+    public long test10(long x, long y) {
+        return Long.compareUnsigned((long)Math.max(Math.min((int)x, 100), 0) << (y & 8), 100 << 8) <= 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_L, IRNode.AND_L})
+    // Bits
+    public long test11(long x, long y) {
+        return (x << (y | 3)) & 7;
     }
 }

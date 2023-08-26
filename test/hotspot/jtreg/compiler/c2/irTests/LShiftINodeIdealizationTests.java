@@ -27,7 +27,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8297384 8303238
+ * @bug 8297384 8303238 8315066
  * @summary Test that Ideal transformations of LShiftINode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.LShiftINodeIdealizationTests
@@ -37,27 +37,25 @@ public class LShiftINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8" })
+    @Run(test = {"test1", "test2", "test3",
+                 "test4", "test5", "test6",
+                 "test7", "test8", "test9",
+                 "test10", "test11"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
-        int c = RunInfo.getRandom().nextInt();
-        int d = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(0);
-        assertResult(a);
-        assertResult(b);
-        assertResult(c);
-        assertResult(d);
-        assertResult(min);
-        assertResult(max);
+        assertResult(0, 0);
+        assertResult(a, b);
+        assertResult(min, min);
+        assertResult(max, max);
     }
 
     @DontCompile
-    public void assertResult(int a) {
+    public void assertResult(int a, int b) {
         Asserts.assertEQ((a >> 2022) << 2022, test1(a));
         Asserts.assertEQ((a >>> 2022) << 2022, test2(a));
         Asserts.assertEQ((a >> 4) << 8, test3(a));
@@ -66,6 +64,9 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a >>> 8) << 4, test6(a));
         Asserts.assertEQ(((a >> 4) & 0xFF) << 8, test7(a));
         Asserts.assertEQ(((a >>> 4) & 0xFF) << 8, test8(a));
+        Asserts.assertEQ(1, test9(a, b));
+        Asserts.assertEQ(1, test10(a, b));
+        Asserts.assertEQ(0, test11(a, b));
     }
 
     @Test
@@ -130,5 +131,26 @@ public class LShiftINodeIdealizationTests {
     // Checks ((x >>> 4) & 0xFF) << 8 => (x << 4) & 0xFF00
     public int test8(int x) {
         return ((x >>> 4) & 0xFF) << 8;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_I, IRNode.CMP_I})
+    // Signed bounds
+    public int test9(int x, int y) {
+        return (Math.max(Math.min(x, 100), -100) << (y & 8)) <= (100 << 8) ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_I, IRNode.CMP_U})
+    // Unsigned bounds
+    public int test10(int x, int y) {
+        return Integer.compareUnsigned(Math.max(Math.min(x, 100), 0) << (y & 8), 100 << 8) <= 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.LSHIFT_I, IRNode.AND_I})
+    // Bits
+    public int test11(int x, int y) {
+        return (x << (y | 3)) & 7;
     }
 }

@@ -2284,44 +2284,129 @@ bool TypeLong::empty(void) const {
 }
 
 //------------------------------dump2------------------------------------------
-// Dump TypeLong
 #ifndef PRODUCT
-static const char* intname(char* buf, size_t buf_size, jint n) {
-  if (n == min_jint)
-    return "min";
-  else if (n < min_jint + 10000)
-    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
-  else if (n == max_jint)
-    return "max";
-  else if (n > max_jint - 10000)
-    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
-  else
-    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
-  return buf;
-}
-
-static const char* uintname(char* buf, size_t buf_size, juint n) {
-  if (n == max_juint) {
-    return "max";
-  } else if (n > max_juint - 10000) {
-    os::snprintf_checked(buf, buf_size, "max-" UINT32_FORMAT, max_juint - n);
+template <class T>
+static const char* intnamenear(T origin, const char* xname, char* buf, size_t buf_size, T n) {
+  if (n < origin) {
+    if (n <= origin - 10000) {
+      return nullptr;
+    }
+    os::snprintf_checked(buf, buf_size, "%s+" INT32_FORMAT, xname, jint(origin - n));
+  } else if (n > origin) {
+    if (n >= origin + 10000) {
+      return nullptr;
+    }
+    os::snprintf_checked(buf, buf_size, "%s-" INT32_FORMAT, xname, jint(n - origin));
   } else {
-    os::snprintf_checked(buf, buf_size, UINT32_FORMAT, n);
+    return xname;
   }
   return buf;
 }
 
-static const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones) {
-  for (int i = 0; i < 32; i++) {
-    if ((zeros & (1 << (31 - i))) != 0) {
+static const char* intname(char* buf, size_t buf_size, jint n) {
+  const char* str = intnamenear<jint>(max_jint, "max", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<jint>(min_jint, "max", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
+  return buf;
+}
+
+static const char* uintname(char* buf, size_t buf_size, juint n) {
+  const char* str = intnamenear<juint>(max_juint, "max", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<juint>(max_jint, "maxint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  os::snprintf_checked(buf, buf_size, UINT32_FORMAT"u", n);
+  return buf;
+}
+
+static const char* longname(char* buf, size_t buf_size, jlong n) {
+  const char* str = intnamenear<jlong>(max_jlong, "max", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<jlong>(min_jlong, "min", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+  
+  str = intnamenear<jlong>(max_juint, "maxuint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<jlong>(max_jint, "maxint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<jlong>(min_jint, "minint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
+  return buf;
+}
+
+static const char* ulongname(char* buf, size_t buf_size, julong n) {
+  const char* str = intnamenear<julong>(max_julong, "max", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<julong>(max_jlong, "maxlong", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+  
+  str = intnamenear<julong>(max_juint, "maxuint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  str = intnamenear<julong>(max_jint, "maxint", buf, buf_size, n);
+  if (str != nullptr) {
+    return str;
+  }
+
+  os::snprintf_checked(buf, buf_size, JULONG_FORMAT"u", n);
+  return buf;
+}
+
+template <class U>
+static const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
+  constexpr juint W = sizeof(U) * 8;
+  
+  if (buf_size < W + 1) {
+    return "#####";
+  }
+  
+  for (juint i = 0; i < W; i++) {
+    U mask = U(1) << (W - 1 - i);
+    if ((zeros & mask) != 0) {
       buf[i] = '0';
-    } else if ((ones & (1 << (31 - i))) != 0) {
+    } else if ((ones & mask) != 0) {
       buf[i] = '1';
     } else {
       buf[i] = '*';
     }
   }
-  buf[32] = 0;
+  buf[W] = 0;
   return buf;
 }
 
@@ -2340,64 +2425,33 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   } else if (int_type_equal(this, TypeInt::SHORT)) {
     st->print("short");
   } else {
-    st->print("int:%s..%s ^ %su..%su, bits:%s",
+    st->print("int:%s..%s ^ %s..%s, bits:%s",
               intname(buf1, sizeof(buf1), _lo), intname(buf2, sizeof(buf2), _hi),
               uintname(buf3, sizeof(buf3), _ulo), uintname(buf4, sizeof(buf4), _uhi),
               bitname(buf5, sizeof(buf5), _zeros, _ones));
   }
 
-  st->print(", widen: %d", _widen);
-}
-
-static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
-  if (n > x) {
-    if (n >= x + 10000)  return nullptr;
-    os::snprintf_checked(buf, buf_size, "%s+" JLONG_FORMAT, xname, n - x);
-  } else if (n < x) {
-    if (n <= x - 10000)  return nullptr;
-    os::snprintf_checked(buf, buf_size, "%s-" JLONG_FORMAT, xname, x - n);
-  } else {
-    return xname;
+  if (_widen > 0 && this != TypeInt::INT) {
+    st->print(", widen: %d", _widen);
   }
-  return buf;
-}
-
-static const char* longname(char* buf, size_t buf_size, jlong n) {
-  const char* str;
-  if (n == min_jlong)
-    return "min";
-  else if (n < min_jlong + 10000)
-    os::snprintf_checked(buf, buf_size, "min+" JLONG_FORMAT, n - min_jlong);
-  else if (n == max_jlong)
-    return "max";
-  else if (n > max_jlong - 10000)
-    os::snprintf_checked(buf, buf_size, "max-" JLONG_FORMAT, max_jlong - n);
-  else if ((str = longnamenear(max_juint, "maxuint", buf, buf_size, n)) != nullptr)
-    return str;
-  else if ((str = longnamenear(max_jint, "maxint", buf, buf_size, n)) != nullptr)
-    return str;
-  else if ((str = longnamenear(min_jint, "minint", buf, buf_size, n)) != nullptr)
-    return str;
-  else
-    os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
-  return buf;
 }
 
 void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
-  char buf[80], buf2[80];
-  if (_lo == min_jlong && _hi == max_jlong)
+  char buf1[80], buf2[80], buf3[80], buf4[80], buf5[80];
+  if (int_type_equal(this, TypeLong::LONG)) {
     st->print("long");
-  else if (is_con())
-    st->print("long:%s", longname(buf, sizeof(buf), get_con()));
-  else if (_hi == max_jlong)
-    st->print("long:>=%s", longname(buf, sizeof(buf), _lo));
-  else if (_lo == min_jlong)
-    st->print("long:<=%s", longname(buf, sizeof(buf), _hi));
-  else
-    st->print("long:%s..%s", longname(buf, sizeof(buf), _lo), longname(buf2,sizeof(buf2),  _hi));
+  } else if (is_con()) {
+    st->print("long:%s", longname(buf1, sizeof(buf1), get_con()));
+  } else {
+    st->print("long:%s..%s ^ %s..%s, bits:%s",
+              longname(buf1, sizeof(buf1), _lo), longname(buf2,sizeof(buf2),  _hi),
+              ulongname(buf3, sizeof(buf3), _ulo), ulongname(buf4, sizeof(buf4), _uhi),
+              bitname(buf5, sizeof(buf5), _zeros, _ones));
+  }
 
-  if (_widen != 0 && this != TypeLong::LONG)
-    st->print(":%.*s", _widen, "wwww");
+  if (_widen > 0 && this != TypeLong::LONG) {
+    st->print(", widen: %d", _widen);
+  }
 }
 #endif
 

@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8290248 8312547
+ * @bug 8290248 8312547 8315066
  * @summary Test that Ideal transformations of MaxINode and MinINode are
  * being performed as expected.
  * @library /test/lib /
@@ -289,5 +289,54 @@ public class MaxMinINodeIdealizationTests {
         return Math.max((i >> 1) + 10, (i >> 1) + c1);
     }
 
+    @Run(test = {"testMaxSigned",
+                 "testMaxBits",
+                 "testMinSigned",
+                 "testMinBits"})
+    public void runConstantPropagation() {
+        int a = RunInfo.getRandom().nextInt();
+        int b = RunInfo.getRandom().nextInt();
+        int min = Integer.MIN_VALUE;
+        int max = Integer.MAX_VALUE;
 
+        assertConstantPropagation(a, b);
+        assertConstantPropagation(0, a);
+        assertConstantPropagation(a, 0);
+        assertConstantPropagation(a, min);
+        assertConstantPropagation(min, a);
+        assertConstantPropagation(a, max);
+        assertConstantPropagation(max, a);
+    }
+
+    @DontCompile
+    public void assertConstantPropagation(int a, int b) {
+        Asserts.assertEQ(1, testMaxSigned(a, b));
+        Asserts.assertEQ(1, testMaxBits(a, b));
+        Asserts.assertEQ(1, testMinSigned(a, b));
+        Asserts.assertEQ(1, testMinBits(a, b));
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX_I, IRNode.CMP_I})
+    public int testMaxSigned(int x, int y) {
+        return Math.max((x >>> 1) | 19, y) >= 19 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MAX_I, IRNode.CMP_I})
+    public int testMaxBits(int x, int y) {
+        return Math.max(x | 1, y | 17) & 1;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MIN_I, IRNode.CMP_I})
+    public int testMinSigned(int x, int y) {
+        return Math.min(x | Integer.MIN_VALUE, y) < 0 ? 1 : 0;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MIN_I, IRNode.CMP_I})
+    public int testMinBits(int x, int y) {
+        return Math.min(x | 1, y | 17) & 1;
+    }
 }

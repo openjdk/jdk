@@ -93,13 +93,18 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ((a - b) + 190                  , test23(a, b));
         Asserts.assertEQ(Math.max(a, b) + Math.min(a, b), test24(a, b));
         Asserts.assertEQ(Math.min(a, b) + Math.max(a, b), test25(a, b));
-        Asserts.assertEQ(1                              , test26(a, b));
+        Asserts.assertEQ((a >> 2) + (b >> 2) >= Integer.MIN_VALUE >> 1 &&
+                (a >> 2) + (b >> 2) < Integer.MAX_VALUE >> 1 ? 1 : 0, test26(a, b));
         Asserts.assertEQ((a >>> 1) + (b >>> 1) >= 0 ? 1 : 0, test27(a, b));
-        Asserts.assertEQ(1                              , test28(a, b));
-        Asserts.assertEQ(1                              , test29(a, b));
-        Asserts.assertEQ(Integer.compareUnsigned((a | (Integer.MIN_VALUE >>> 2)) + (b | (Integer.MIN_VALUE >>> 2)), Integer.MIN_VALUE >>> 1) >= 0 ? 1 : 0, test30(a, b));
-        Asserts.assertEQ(1                              , test31(a, b));
-        Asserts.assertEQ(0                              , test32(a, b));
+        Asserts.assertEQ(((a | Integer.MIN_VALUE) >>> 1) +
+                ((b | Integer.MIN_VALUE) >>> 1) < -1 ? 1 : 0, test28(a, b));
+        Asserts.assertEQ((Integer.compareUnsigned((a >>> 2) + (b >>> 2) + 1000, 1000) >= 0 &&
+                          Integer.compareUnsigned((a >>> 2) + (b >>> 2) + 1000, Integer.MIN_VALUE + 1000) < 0) ? 1 : 0, test29(a, b));
+        Asserts.assertEQ(Integer.compareUnsigned((a | (Integer.MIN_VALUE >>> 2)) +
+                (b | (Integer.MIN_VALUE >>> 2)), Integer.MIN_VALUE >>> 1) >= 0 ? 1 : 0, test30(a, b));
+        Asserts.assertEQ(Integer.compareUnsigned((a | Integer.MIN_VALUE) + ((b >>> 2) | Integer.MIN_VALUE),
+                Integer.MIN_VALUE >> 1) < 0 ? 1 : 0, test31(a, b));
+        Asserts.assertEQ(((a << 5) + (b << 5)) & 31     , test32(a, b));
     }
 
     @Test
