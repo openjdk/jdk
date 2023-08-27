@@ -551,10 +551,7 @@ class TypeInteger : public Type {
 protected:
   TypeInteger(TYPES t, int w, bool dual) : Type(t), _dual(dual), _widen(w) {}
 
-  // An integer type represents a set of values x that satisfy:
-  // x >= lo && x <= hi && x u>= ulo && x u<= uhi && (~x & ones) == 0 && (x & zeros) == 0
-  // A dual integer type represents a set of values x that satisfy:
-  // x < lo || x > hi || x u< ulo || x u> uhi || (~x & ones) != 0 || (x & zeros) != 0
+  // Use to compute join of 2 sets
   const bool _dual;
 
 public:
