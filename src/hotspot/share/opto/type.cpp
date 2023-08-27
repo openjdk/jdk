@@ -2283,12 +2283,12 @@ static const char* intnamenear(T origin, const char* xname, char* buf, size_t bu
     if (n <= origin - 10000) {
       return nullptr;
     }
-    os::snprintf_checked(buf, buf_size, "%s+" INT32_FORMAT, xname, jint(origin - n));
+    os::snprintf_checked(buf, buf_size, "%s-" INT32_FORMAT, xname, jint(origin - n));
   } else if (n > origin) {
     if (n >= origin + 10000) {
       return nullptr;
     }
-    os::snprintf_checked(buf, buf_size, "%s-" INT32_FORMAT, xname, jint(n - origin));
+    os::snprintf_checked(buf, buf_size, "%s+" INT32_FORMAT, xname, jint(n - origin));
   } else {
     return xname;
   }
