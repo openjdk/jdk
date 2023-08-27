@@ -63,10 +63,13 @@ class CloseTest {
             }
         }
     }
+    // Avoids unwanted interrupts when run inder jtreg
+    static final ThreadGroup closeTestThreadGroup =
+        new ThreadGroup("closeTestThreadGroup");
     static void testInNewThread(TestAction a) throws Exception {
         var wrapper =  new CheckedAction(a);
         try {
-            Thread t = new Thread(wrapper);
+            Thread t = new Thread(closeTestThreadGroup, wrapper);
             t.start();
             t.join();
         } finally {
@@ -148,25 +151,23 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testCloseWith2RunningTasks(ExecutorService executor) throws Exception {
-        if (executor instanceof ForkJoinPool) {
-            testInNewThread(new TestAction() { void run() throws Exception {
-                Future<?> f1 = executor.submit(() -> {
-                        Thread.sleep(Duration.ofMillis(100));
-                        return "foo";
-                    });
-                Future<?> f2 = executor.submit(() -> {
-                        Thread.sleep(Duration.ofMillis(100));
-                        return "bar";
-                    });
-                executor.close();  // waits for task to complete
-                assertFalse(Thread.interrupted());
-                assertTrue(executor.isShutdown());
-                assertTrue(executor.isTerminated());
-                assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
-                assertEquals("foo", f1.resultNow());
-                assertEquals("bar", f2.resultNow());
-            }});
-        }
+        testInNewThread(new TestAction() { void run() throws Exception {
+            Future<?> f1 = executor.submit(() -> {
+                    Thread.sleep(Duration.ofMillis(100));
+                    return "foo";
+                });
+            Future<?> f2 = executor.submit(() -> {
+                    Thread.sleep(Duration.ofMillis(100));
+                    return "bar";
+                });
+            executor.close();  // waits for task to complete
+            assertFalse(Thread.interrupted());
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.isTerminated());
+            assertTrue(executor.awaitTermination(10,  TimeUnit.MILLISECONDS));
+            assertEquals("foo", f1.resultNow());
+            assertEquals("bar", f2.resultNow());
+        }});
     }
 
     /**
@@ -175,25 +176,23 @@ class CloseTest {
     @ParameterizedTest
     @MethodSource("executors")
     void testShutdownWith2RunningTasks(ExecutorService executor) throws Exception {
-        if (executor instanceof ForkJoinPool) {
-            testInNewThread(new TestAction() { void run() throws Exception {
-                Future<?> f1 = executor.submit(() -> {
-                        Thread.sleep(Duration.ofMillis(100));
-                        return "foo";
-                    });
-                Future<?> f2 = executor.submit(() -> {
-                        Thread.sleep(Duration.ofMillis(100));
-                        return "bar";
-                    });
-                executor.shutdown();
-                assertFalse(Thread.interrupted());
-                assertTrue(executor.isShutdown());
-                assertTrue(executor.awaitTermination(200,  TimeUnit.MILLISECONDS));
-                assertTrue(executor.isTerminated());
-                assertEquals("foo", f1.resultNow());
-                assertEquals("bar", f2.resultNow());
-            }});
-        }
+        testInNewThread(new TestAction() { void run() throws Exception {
+            Future<?> f1 = executor.submit(() -> {
+                    Thread.sleep(Duration.ofMillis(100));
+                    return "foo";
+                });
+            Future<?> f2 = executor.submit(() -> {
+                    Thread.sleep(Duration.ofMillis(100));
+                    return "bar";
+                });
+            executor.shutdown();
+            assertFalse(Thread.interrupted());
+            assertTrue(executor.isShutdown());
+            assertTrue(executor.awaitTermination(200,  TimeUnit.MILLISECONDS));
+            assertTrue(executor.isTerminated());
+            assertEquals("foo", f1.resultNow());
+            assertEquals("bar", f2.resultNow());
+        }});
     }
 
     /**

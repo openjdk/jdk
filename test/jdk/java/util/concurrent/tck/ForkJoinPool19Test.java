@@ -516,9 +516,9 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                         pool = p;
                         p.execute(f);
                     }
+                    assertTrue(pool != null && pool.isTerminated());
                     assertFalse(Thread.interrupted());
                     checkCompletedNormally(f);
-                    assertTrue(pool != null && pool.isTerminated());
                 }});
         awaitTermination(t);
     }
@@ -533,9 +533,9 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                     ForkJoinTask f = new FibAction(8);
                     pool.execute(f);
                     pool.close();
+                    assertTrue(pool.isTerminated());
                     assertFalse(Thread.interrupted());
                     checkCompletedNormally(f);
-                    assertTrue(pool != null && pool.isTerminated());
                 }});
         awaitTermination(t);
     }
@@ -551,9 +551,9 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                     pool.execute(f);
                     pool.shutdown();
                     pool.close();
+                    assertTrue(pool.isTerminated());
                     assertFalse(Thread.interrupted());
                     checkCompletedNormally(f);
-                    assertTrue(pool != null && pool.isTerminated());
                 }});
         awaitTermination(t);
     }

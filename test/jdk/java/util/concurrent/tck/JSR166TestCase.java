@@ -1647,11 +1647,15 @@ public class JSR166TestCase extends TestCase {
         checkTimedGet(f, expectedValue, LONG_DELAY_MS);
     }
 
+    // Avoids unwanted interrupts when run inder jtreg
+    static final ThreadGroup jsr166TestThreadGroup =
+        new ThreadGroup("jsr1666TestThreadGroup");
+
     /**
      * Returns a new started daemon Thread running the given runnable.
      */
     Thread newStartedThread(Runnable runnable) {
-        Thread t = new Thread(runnable);
+        Thread t = new Thread(jsr166TestThreadGroup, runnable);
         t.setDaemon(true);
         t.start();
         return t;

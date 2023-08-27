@@ -1495,22 +1495,13 @@ public class ForkJoinPool extends AbstractExecutorService {
          * remaining local tasks and/or others available from the
          * given queue, if any.
          */
-        final void topLevelExec(ForkJoinTask<?> task, ForkJoinPool pool,
-                                WorkQueue src, int srcId) {
+        final void topLevelExec(ForkJoinTask<?> task, WorkQueue src, int srcId) {
             int cfg = config, fifo = cfg & FIFO, nstolen = nsteals + 1;
             if ((srcId & 1) != 0) // don't record external sources
                 source = srcId;
             if ((cfg & CLEAR_TLS) != 0)
                 ThreadLocalRandom.eraseThreadLocals(Thread.currentThread());
             while (task != null) {
-                Thread.interrupted();
-                if (poolIsStopping(pool)) {
-                    try {
-                        task.cancel(false);
-                    } catch (Throwable ignore) {
-                    }
-                    break;
-                }
                 task.doExec();
                 if ((task = nextLocalTask(fifo)) == null && src != null &&
                     (task = src.tryPoll()) != null)
@@ -1739,8 +1730,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     private int getParallelismOpaque() {
         return U.getIntOpaque(this, PARALLELISM);
     }
-    private boolean casTerminationSignal(CountDownLatch x) {
-        return U.compareAndSetReference(this, TERMINATION, null, x);
+    private CountDownLatch cmpExTerminationSignal(CountDownLatch x) {
+        return (CountDownLatch)
+            U.compareAndExchangeReference(this, TERMINATION, null, x);
     }
 
     // runState operations
@@ -1890,10 +1882,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (wt != null && (w = wt.workQueue) != null) {
             phase = w.phase;
             src = w.source;
-            Thread o = w.owner;
             w.owner = null;               // disable signals
-            if (o == Thread.currentThread())
-                Thread.interrupted();     // clear
             if (phase != 0) {             // else failed to start
                 replaceable = true;
                 if ((phase & IDLE) != 0)
@@ -2128,7 +2117,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 signalWork();     // propagate at most twice/run
                             next = (window & LMASK) | RESCAN;
                             if (w != null)        // always true
-                                w.topLevelExec(t, this, q, j);
+                                w.topLevelExec(t, q, j);
                             break outer;
                         }
                         else if (o == null) {     // contended; limit rescans
@@ -2785,8 +2774,8 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState (possibly only its status bits) on exit
      */
     private int tryTerminate(boolean now, boolean enable) {
-        int e = runState, wasStopping = e & STOP, isShutdown;
-        if (wasStopping == 0) {
+        int e, isShutdown;
+        if (((e = runState) & STOP) == 0) {
             if (now)
                 getAndBitwiseOrRunState(e = STOP | SHUTDOWN);
             else {
@@ -2797,16 +2786,16 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
         }
         if ((e & (STOP | TERMINATED)) == STOP) {
+            boolean alive = false;
             int r = ThreadLocalRandom.nextSecondarySeed(); // stagger traversals
             WorkQueue[] qs = queues;
             int n = (qs == null) ? 0 : qs.length;
-            boolean active = false;
             for (int l = n; l > 0; --l, ++r) {
                 WorkQueue q; Thread o; // cancel tasks; interrupt workers
                 if ((q = qs[r & SMASK & (n - 1)]) != null) {
-                    if ((o = q.owner) != null && o != Thread.currentThread()) {
-                        active = true;
-                        if (wasStopping == 0 || !o.isInterrupted()) {
+                    if ((o = q.owner) != null) {
+                        alive = true;
+                        if (o != Thread.currentThread()) {
                             try {
                                 o.interrupt();
                             } catch (Throwable ignore) {
@@ -2821,7 +2810,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     }
                 }
             }
-            if (((e = runState) & TERMINATED) == 0 && !active && ctl == 0L) {
+            if (((e = runState) & TERMINATED) == 0 && !alive && ctl == 0L) {
                 if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0) {
                     CountDownLatch done; SharedThreadContainer ctr;
                     if ((done = termination) != null)
@@ -2836,14 +2825,13 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Lazily constructs termination signal
+     * Returns termination signal, constructing if necessary
      */
     private CountDownLatch terminationSignal() {
-        CountDownLatch signal;
-        do {
-            signal = termination;
-        } while (signal == null && // OK to throw away if CAS failure
-                 !casTerminationSignal(signal = new CountDownLatch(1)));
+        CountDownLatch signal, s, u;
+        if ((signal = termination) == null)
+            signal = ((u = cmpExTerminationSignal(
+                           s = new CountDownLatch(1))) == null) ? s : u;
         return signal;
     }
 
@@ -3832,13 +3820,14 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (workerNamePrefix != null && (runState & TERMINATED) == 0) {
             checkPermission();
             CountDownLatch done = null;
-            boolean interrupted = Thread.interrupted();
+            boolean interrupted = false; // Thread.interrupted();
             while ((tryTerminate(interrupted, true) & TERMINATED) == 0) {
                 if (done == null)
                     done = terminationSignal();
                 else {
                     try {
                         done.await();
+                        break;
                     } catch (InterruptedException ex) {
                         interrupted = true;
                     }
