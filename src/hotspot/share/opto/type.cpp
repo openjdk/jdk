@@ -2335,7 +2335,7 @@ static const char* longname(char* buf, size_t buf_size, jlong n) {
   if (str != nullptr) {
     return str;
   }
-  
+
   str = intnamenear<jlong>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -2365,7 +2365,7 @@ static const char* ulongname(char* buf, size_t buf_size, julong n) {
   if (str != nullptr) {
     return str;
   }
-  
+
   str = intnamenear<julong>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -2383,11 +2383,11 @@ static const char* ulongname(char* buf, size_t buf_size, julong n) {
 template <class U>
 static const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
   constexpr juint W = sizeof(U) * 8;
-  
+
   if (buf_size < W + 1) {
     return "#####";
   }
-  
+
   for (juint i = 0; i < W; i++) {
     U mask = U(1) << (W - 1 - i);
     if ((zeros & mask) != 0) {
