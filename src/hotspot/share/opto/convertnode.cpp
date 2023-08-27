@@ -325,7 +325,7 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   }
 
   assert(before->contains(after), "");
-  if (before->strictly_contains(after)) {
+  if (before->properly_contains(after)) {
     // Although this WORSENS the type, it increases GVN opportunities,
     // because I2L nodes with the same input will common up, regardless
     // of slightly differing type assertions.  Such slight differences

@@ -1975,7 +1975,7 @@ bool TypeInt::contains(const TypeInt* t) const {
   return int_type_subset(this, t);
 }
 
-bool TypeInt::strictly_contains(const TypeInt* t) const {
+bool TypeInt::properly_contains(const TypeInt* t) const {
   return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
@@ -2054,7 +2054,7 @@ const Type* TypeInt::narrow(const Type* old) const {
 const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) const {
   assert(!_dual, "");
   const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
-  if (ft == nullptr || ft->empty()) {
+  if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
   }
   assert(!ft->_dual, "");
@@ -2154,7 +2154,7 @@ bool TypeLong::contains(const TypeLong* t) const {
   return int_type_subset(this, t);
 }
 
-bool TypeLong::strictly_contains(const TypeLong* t) const {
+bool TypeLong::properly_contains(const TypeLong* t) const {
   return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
@@ -2231,7 +2231,7 @@ const Type* TypeLong::narrow(const Type* old) const {
 const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative) const {
   assert(!_dual, "");
   const TypeLong* ft = join_helper(kills, include_speculative)->isa_long();
-  if (ft == nullptr || ft->empty()) {
+  if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
   }
   assert(!ft->_dual, "");

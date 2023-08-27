@@ -223,7 +223,7 @@ static const Type* widen_type_after_loop_opts(const CT* t, const CT* t1, const P
   }
 
   assert(t1->contains(t), "");
-  if (t1->strictly_contains(t)) {
+  if (t1->properly_contains(t)) {
     T lo1 = std::numeric_limits<T>::min();
     T hi1 = std::numeric_limits<T>::max();
     if (t->_lo >= 0) {
@@ -419,7 +419,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       const TypeLong* t_in_l = t_in->is_long();
       assert(t_in_l->contains(tl), "CastLL type should be narrower than or equal to the type of its input");
       if (tl != t_in_l) {
-        assert(t_in_l->strictly_contains(tl), "if type differs then this nodes's type must be narrower");
+        assert(t_in_l->properly_contains(tl), "if type differs then this nodes's type must be narrower");
         const TypeInt* ti = TypeInt::make(checked_cast<jint>(tl->_lo), checked_cast<jint>(tl->_hi), tl->_widen)->is_int();
         Node* castii = phase->transform(new CastIINode(in(0), in1->in(1), ti));
         Node* convi2l = in1->clone();

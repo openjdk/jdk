@@ -609,7 +609,7 @@ public:
   jint get_con() const { assert(is_con(), "");  return _lo; }
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
-  bool strictly_contains(const TypeInt* t) const;
+  bool properly_contains(const TypeInt* t) const;
 
   virtual bool is_finite() const;  // Has a finite value
 
@@ -688,7 +688,7 @@ public:
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
-  bool strictly_contains(const TypeLong* t) const;
+  bool properly_contains(const TypeLong* t) const;
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }
