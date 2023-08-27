@@ -125,7 +125,7 @@ public class LShiftLNodeIdealizationTests {
     @IR(failOn = {IRNode.LSHIFT_L, IRNode.CMP_UL})
     // Unsigned bounds
     public long test10(long x, long y) {
-        return Long.compareUnsigned((long)Math.max(Math.min((int)x, 100), 0) << (y & 8), 100 << 8) <= 0 ? 1 : 0;
+        return Long.compareUnsigned((long)Math.max(Math.min((int)x, 100), 0) << (y & 8), (100 << 8) + 1) < 0 ? 1 : 0;
     }
 
     @Test

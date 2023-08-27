@@ -87,7 +87,7 @@ public class URShiftLNodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.URSHIFT_L})
     public long test4(long x, long y) {
-        return Long.compareUnsigned(x >>> (y | 8), -1L >>> 8) <= 0 ? 1 : 0;
+        return Long.compareUnsigned(x >>> (y | 8), (-1L >>> 8) + 1) < 0 ? 1 : 0;
     }
 
     @Test

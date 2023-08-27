@@ -67,7 +67,7 @@ public class RShiftLNodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.RSHIFT_L})
     public long test2(long x, long y) {
-        return Long.compareUnsigned((x >>> 1) >> (y | 8), Long.MAX_VALUE >> 8) <= 0 ? 1 : 0;
+        return Long.compareUnsigned((x >>> 1) >> (y | 8), (Long.MAX_VALUE >> 8) + 1) < 0 ? 1 : 0;
     }
 
     @Test
