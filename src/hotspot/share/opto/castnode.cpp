@@ -224,17 +224,10 @@ static const Type* widen_type_after_loop_opts(const CT* t, const CT* t1, const P
 
   assert(t1->contains(t), "");
   if (t1->properly_contains(t)) {
-    T lo1 = std::numeric_limits<T>::min();
-    T hi1 = std::numeric_limits<T>::max();
-    if (t->_lo >= 0) {
-      // Keep a range assertion of >=0.
-      lo1 = 0;
-    } else if (t->_hi < 0) {
-      // Keep a range assertion of <0.
-      hi1 = -1;
-    }
-    return CT::make(MAX2(t1->_lo, lo1),
-                    MIN2(t1->_hi, hi1),
+    T lo = t->_lo >= 0 ? 0 : std::numeric_limits<T>::min();
+    T hi = t->_hi < 0 ? -1 : std::numeric_limits<T>::max();
+    return CT::make(MAX2(t1->_lo, lo),
+                    MIN2(t1->_hi, hi),
                     t1->_ulo, t1->_uhi, t1->_zeros, t1->_ones,
                     MAX2(t1->_widen, t->_widen));
   }

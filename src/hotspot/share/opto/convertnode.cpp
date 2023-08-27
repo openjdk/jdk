@@ -332,12 +332,10 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
     // arise routinely as a result of loop unrolling, so this is a
     // post-unrolling graph cleanup.  Choose a type which depends only
     // on my input.  (Exception:  Keep a range assertion of >=0 or <0.)
-    if (before->_lo < 0 && after->_lo >= 0) {
-      return before->filter(TypeLong::POS);
-    } else if (before->_hi >= 0 && after->_hi < 0) {
-      return before->filter(TypeLong::NEG);
-    }
-    return before;
+    jlong lo = (after->_lo >= 0) ? 0 : min_jint;
+    jlong hi = (after->_hi < 0) ? -1 : max_jint;
+    return TypeLong::make(MAX2(lo, before->_lo), MIN2(hi, before->_hi), before->_ulo, before->_uhi,
+                          before->_zeros, before->_ones, MAX2(before->_widen, after->_widen));
   }
 
   return after;
