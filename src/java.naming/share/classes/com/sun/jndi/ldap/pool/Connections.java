@@ -318,9 +318,14 @@ final class Connections implements PoolCallback {
      * and leave indicator so that any in-use connections will be closed upon
      * their return.
      */
-    synchronized void close() {
-        expire(System.currentTimeMillis());     // Expire idle connections
-        closed = true;   // Close in-use connections when they are returned
+    void close() {
+        lock.lock();
+        try {
+            expire(System.currentTimeMillis());     // Expire idle connections
+            closed = true;   // Close in-use connections when they are returned
+        } finally {
+            lock.unlock();
+        }
     }
 
     String getStats() {
@@ -330,7 +335,8 @@ final class Connections implements PoolCallback {
         long use = 0;
         int len;
 
-        synchronized (this) {
+        lock.lock();
+        try {
             len = conns.size();
 
             ConnectionDesc entry;
@@ -348,6 +354,8 @@ final class Connections implements PoolCallback {
                     ++expired;
                 }
             }
+        } finally {
+          lock.unlock();
         }
         return "size=" + len + "; use=" + use + "; busy=" + busy
             + "; idle=" + idle + "; expired=" + expired;

@@ -27,6 +27,8 @@ package com.sun.jndi.ldap;
 
 import java.util.Vector;
 import java.util.EventObject;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.event.NamingEvent;
 import javax.naming.event.NamingExceptionEvent;
@@ -46,6 +48,10 @@ import javax.naming.ldap.UnsolicitedNotificationListener;
  */
 final class EventQueue implements Runnable {
     private static final boolean debug = false;
+
+    // EventQueue instance lock
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     private static class QueueElement {
         QueueElement next = null;
@@ -86,18 +92,23 @@ final class EventQueue implements Runnable {
      * are notified.
      * @param vector List of NamingListeners that will be notified of event.
      */
-    synchronized void enqueue(EventObject event, Vector<NamingListener> vector) {
-        QueueElement newElt = new QueueElement(event, vector);
+    void enqueue(EventObject event, Vector<NamingListener> vector) {
+        lock.lock();
+        try {
+            QueueElement newElt = new QueueElement(event, vector);
 
-        if (head == null) {
-            head = newElt;
-            tail = newElt;
-        } else {
-            newElt.next = head;
-            head.prev = newElt;
-            head = newElt;
+            if (head == null) {
+                head = newElt;
+                tail = newElt;
+            } else {
+                newElt.next = head;
+                head.prev = newElt;
+                head = newElt;
+            }
+            condition.signal();
+        } finally {
+            lock.unlock();
         }
-        notify();
     }
 
     /**
@@ -108,19 +119,24 @@ final class EventQueue implements Runnable {
      * @exception java.lang.InterruptedException if any thread has
      *              interrupted this thread.
      */
-    private synchronized QueueElement dequeue()
+    private QueueElement dequeue()
                                 throws InterruptedException {
-        while (tail == null)
-            wait();
-        QueueElement elt = tail;
-        tail = elt.prev;
-        if (tail == null) {
-            head = null;
-        } else {
-            tail.next = null;
+        lock.lock();
+        try {
+            while (tail == null)
+                condition.await();
+            QueueElement elt = tail;
+            tail = elt.prev;
+            if (tail == null) {
+                head = null;
+            } else {
+                tail.next = null;
+            }
+            elt.prev = elt.next = null;
+            return elt;
+        } finally {
+            lock.unlock();
         }
-        elt.prev = elt.next = null;
-        return elt;
     }
 
     /**

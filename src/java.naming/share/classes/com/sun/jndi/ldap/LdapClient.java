@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -125,6 +126,8 @@ public final class LdapClient implements PooledConnection {
     private final PoolCallback pcb;
     private final boolean pooled;
     private boolean authenticateCalled = false;
+    // LdapClient instance lock, used by LdapCtx
+    final ReentrantLock lock = new ReentrantLock();
 
     ////////////////////////////////////////////////////////////////////////////
     //
@@ -145,18 +148,22 @@ public final class LdapClient implements PooledConnection {
         pooled = (pcb != null);
     }
 
-    synchronized boolean authenticateCalled() {
-        return authenticateCalled;
+    boolean authenticateCalled() {
+        lock.lock();
+        try {
+            return authenticateCalled;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    synchronized LdapResult
-    authenticate(boolean initial, String name, Object pw, int version,
+    LdapResult authenticate(boolean initial, String name, Object pw, int version,
         String authMechanism, Control[] ctls,  Hashtable<?,?> env)
         throws NamingException {
-
+        lock.lock();
         int readTimeout = conn.readTimeout;
         conn.readTimeout = conn.connectTimeout;
-        LdapResult res = null;
+        LdapResult res;
 
         try {
             authenticateCalled = true;
@@ -302,6 +309,7 @@ public final class LdapClient implements PooledConnection {
             return res;
         } finally {
             conn.readTimeout = readTimeout;
+            lock.unlock();
         }
     }
 
@@ -313,81 +321,86 @@ public final class LdapClient implements PooledConnection {
      * @param auth The authentication mechanism
      *
      */
-    public synchronized LdapResult ldapBind(String dn, byte[]toServer,
+    public LdapResult ldapBind(String dn, byte[]toServer,
         Control[] bindCtls, String auth, boolean pauseAfterReceipt)
-        throws java.io.IOException, NamingException {
+            throws IOException, NamingException {
 
-        ensureOpen();
+        lock.lock();
+        try {
+            ensureOpen();
 
-        // flush outstanding requests
-        conn.abandonOutstandingReqs(null);
+            // flush outstanding requests
+            conn.abandonOutstandingReqs(null);
 
-        BerEncoder ber = new BerEncoder();
-        int curMsgId = conn.getMsgId();
-        LdapResult res = new LdapResult();
-        res.status = LDAP_OPERATIONS_ERROR;
+            BerEncoder ber = new BerEncoder();
+            int curMsgId = conn.getMsgId();
+            LdapResult res = new LdapResult();
+            res.status = LDAP_OPERATIONS_ERROR;
 
-        //
-        // build the bind request.
-        //
-        ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
+            //
+            // build the bind request.
+            //
+            ber.beginSeq(Ber.ASN_SEQUENCE | Ber.ASN_CONSTRUCTOR);
             ber.encodeInt(curMsgId);
             ber.beginSeq(LdapClient.LDAP_REQ_BIND);
-                ber.encodeInt(isLdapv3 ? LDAP_VERSION3 : LDAP_VERSION2);
-                ber.encodeString(dn, isLdapv3);
+            ber.encodeInt(isLdapv3 ? LDAP_VERSION3 : LDAP_VERSION2);
+            ber.encodeString(dn, isLdapv3);
 
-                // if authentication mechanism specified, it is SASL
-                if (auth != null) {
-                    ber.beginSeq(Ber.ASN_CONTEXT | Ber.ASN_CONSTRUCTOR | 3);
-                        ber.encodeString(auth, isLdapv3);    // SASL mechanism
-                        if (toServer != null) {
-                            ber.encodeOctetString(toServer,
-                                Ber.ASN_OCTET_STR);
-                        }
-                    ber.endSeq();
-                } else {
-                    if (toServer != null) {
-                        ber.encodeOctetString(toServer, Ber.ASN_CONTEXT);
-                    } else {
-                        ber.encodeOctetString(null, Ber.ASN_CONTEXT, 0, 0);
-                    }
+            // if authentication mechanism specified, it is SASL
+            if (auth != null) {
+                ber.beginSeq(Ber.ASN_CONTEXT | Ber.ASN_CONSTRUCTOR | 3);
+                ber.encodeString(auth, isLdapv3);    // SASL mechanism
+                if (toServer != null) {
+                    ber.encodeOctetString(toServer,
+                            Ber.ASN_OCTET_STR);
                 }
+                ber.endSeq();
+            } else {
+                if (toServer != null) {
+                    ber.encodeOctetString(toServer, Ber.ASN_CONTEXT);
+                } else {
+                    ber.encodeOctetString(null, Ber.ASN_CONTEXT, 0, 0);
+                }
+            }
             ber.endSeq();
 
             // Encode controls
             if (isLdapv3) {
                 encodeControls(ber, bindCtls);
             }
-        ber.endSeq();
+            ber.endSeq();
 
-        LdapRequest req = conn.writeRequest(ber, curMsgId, pauseAfterReceipt);
-        if (toServer != null) {
-            ber.reset();        // clear internally-stored password
-        }
+            LdapRequest req = conn.writeRequest(ber, curMsgId, pauseAfterReceipt);
+            if (toServer != null) {
+                ber.reset();        // clear internally-stored password
+            }
 
-        // Read reply
-        BerDecoder rber = conn.readReply(req);
+            // Read reply
+            BerDecoder rber = conn.readReply(req);
 
-        rber.parseSeq(null);    // init seq
-        rber.parseInt();        // msg id
-        if (rber.parseByte() !=  LDAP_REP_BIND) {
+            rber.parseSeq(null);    // init seq
+            rber.parseInt();        // msg id
+            if (rber.parseByte() != LDAP_REP_BIND) {
+                return res;
+            }
+
+            rber.parseLength();
+            parseResult(rber, res, isLdapv3);
+
+            // handle server's credentials (if present)
+            if (isLdapv3 &&
+                    (rber.bytesLeft() > 0) &&
+                    (rber.peekByte() == (Ber.ASN_CONTEXT | 7))) {
+                res.serverCreds = rber.parseOctetString((Ber.ASN_CONTEXT | 7), null);
+            }
+
+            res.resControls = isLdapv3 ? parseControls(rber) : null;
+
+            conn.removeRequest(req);
             return res;
+        } finally {
+            lock.unlock();
         }
-
-        rber.parseLength();
-        parseResult(rber, res, isLdapv3);
-
-        // handle server's credentials (if present)
-        if (isLdapv3 &&
-            (rber.bytesLeft() > 0) &&
-            (rber.peekByte() == (Ber.ASN_CONTEXT | 7))) {
-            res.serverCreds = rber.parseOctetString((Ber.ASN_CONTEXT | 7), null);
-        }
-
-        res.resControls = isLdapv3 ? parseControls(rber) : null;
-
-        conn.removeRequest(req);
-        return res;
     }
 
     /**
@@ -406,12 +419,16 @@ public final class LdapClient implements PooledConnection {
         return conn.isUpgradedToStartTls();
     }
 
-    synchronized void incRefCount() {
-        ++referenceCount;
-        if (debug > 1) {
-            System.err.println("LdapClient.incRefCount: " + referenceCount + " " + this);
+    void incRefCount() {
+        lock.lock();
+        try {
+            ++referenceCount;
+            if (debug > 1) {
+                System.err.println("LdapClient.incRefCount: " + referenceCount + " " + this);
+            }
+        } finally {
+            lock.unlock();
         }
-
     }
 
     /**
@@ -434,30 +451,35 @@ public final class LdapClient implements PooledConnection {
         }
     }
 
-    synchronized void close(Control[] reqCtls, boolean hardClose) {
-        --referenceCount;
+    void close(Control[] reqCtls, boolean hardClose) {
+        lock.lock();
+        try {
+            --referenceCount;
 
-        if (debug > 1) {
-            System.err.println("LdapClient: " + this);
-            System.err.println("LdapClient: close() called: " + referenceCount);
-            (new Throwable()).printStackTrace();
-        }
+            if (debug > 1) {
+                System.err.println("LdapClient: " + this);
+                System.err.println("LdapClient: close() called: " + referenceCount);
+                (new Throwable()).printStackTrace();
+            }
 
-        if (referenceCount <= 0) {
-            if (debug > 0) System.err.println("LdapClient: closed connection " + this);
-            if (!pooled) {
-                // Not being pooled; continue with closing
-                conn.cleanup(reqCtls, false);
-            } else {
-                // Pooled
-                // Is this a real close or a request to return conn to pool
-                if (hardClose) {
+            if (referenceCount <= 0) {
+                if (debug > 0) System.err.println("LdapClient: closed connection " + this);
+                if (!pooled) {
+                    // Not being pooled; continue with closing
                     conn.cleanup(reqCtls, false);
-                    pcb.removePooledConnection(this);
                 } else {
-                    pcb.releasePooledConnection(this);
+                    // Pooled
+                    // Is this a real close or a request to return conn to pool
+                    if (hardClose) {
+                        conn.cleanup(reqCtls, false);
+                        pcb.removePooledConnection(this);
+                    } else {
+                        pcb.releasePooledConnection(this);
+                    }
                 }
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -487,8 +509,13 @@ public final class LdapClient implements PooledConnection {
     /*
      * Used by connection pooling to close physical connection.
      */
-    public synchronized void closeConnection() {
-        forceClose(false); // this is a pool callback so no need to clean pool
+    public void closeConnection() {
+        lock.lock();
+        try {
+            forceClose(false); // this is a pool callback so no need to clean pool
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -1491,7 +1518,8 @@ public final class LdapClient implements PooledConnection {
     // removeUnsolicited() is invoked to remove an LdapCtx from this client.
     //
     ////////////////////////////////////////////////////////////////////////////
-    private Vector<LdapCtx> unsolicited = new Vector<>(3);
+    private final Vector<LdapCtx> unsolicited = new Vector<>(3);
+    private final ReentrantLock unsolicitedLock = new ReentrantLock();
     void addUnsolicited(LdapCtx ctx) {
         if (debug > 0) {
             System.err.println("LdapClient.addUnsolicited" + ctx);
@@ -1533,7 +1561,8 @@ public final class LdapClient implements PooledConnection {
             LdapCtx first = null;
             UnsolicitedNotification notice = null;
 
-            synchronized (unsolicited) {
+            unsolicitedLock.lock();
+            try {
                 if (unsolicited.size() > 0) {
                     first = unsolicited.elementAt(0);
 
@@ -1551,6 +1580,8 @@ public final class LdapClient implements PooledConnection {
                         first.convertControls(res.resControls) :
                         null);
                 }
+            } finally {
+                unsolicitedLock.unlock();
             }
 
             if (notice != null) {
@@ -1579,11 +1610,14 @@ public final class LdapClient implements PooledConnection {
 
     private void notifyUnsolicited(Object e) {
         ArrayList<LdapCtx> unsolicitedCopy;
-        synchronized (unsolicited) {
+        unsolicitedLock.lock();
+        try {
             unsolicitedCopy = new ArrayList<>(unsolicited);
             if (e instanceof NamingException) {
                 unsolicited.setSize(0);  // no more listeners after exception
             }
+        } finally {
+            unsolicitedLock.unlock();
         }
         for (int i = 0; i < unsolicitedCopy.size(); i++) {
             unsolicitedCopy.get(i).fireUnsolicited(e);
