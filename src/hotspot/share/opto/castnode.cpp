@@ -212,31 +212,34 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-// Although this WORSENS the type, it increases GVN opportunities,
-// because I2L nodes with the same input will common up, regardless
-// of slightly differing type assertions. Choose a type which depends
-// only on my input. (Exception: Keep a range assertion of >=0 or <0.)
+// Similar to ConvI2LNode::Value() for the same reasons
+// see if we can remove type assertion after loop opts
 template <class CT>
-static const Type* widen_type_after_loop_opts(const Type* t, const Type* t1, const PhaseGVN* phase) {
+static const Type* widen_type_after_loop_opts(const CT* t, const CT* t1, const PhaseGVN* phase) {
+  using T = std::remove_const_t<decltype(CT::_lo)>;
+
   if (!phase->C->post_loop_opts_phase()) {
     return t;
   }
 
-  const CT* i = CT::cast(t);
-  const CT* i1 = CT::cast(t1);
-
-  assert(i1->contains(i), "");
-  assert(i1->_widen == i->_widen, "ConstraintCastNode::Value preserves widen");
-  if (i1->strictly_contains(i)) {
-    if (i1->_lo < 0 && i->_lo >= 0) {
-      return i1->filter(TypeLong::POS);
-    } else if (i1->_hi >= 0 && i->_hi < 0) {
-      return i1->filter(TypeLong::NEG);
+  assert(t1->contains(t), "");
+  if (t1->strictly_contains(t)) {
+    T lo1 = std::numeric_limits<T>::min();
+    T hi1 = std::numeric_limits<T>::max();
+    if (t->_lo >= 0) {
+      // Keep a range assertion of >=0.
+      lo1 = 0;
+    } else if (t->_hi < 0) {
+      // Keep a range assertion of <0.
+      hi1 = -1;
     }
-    return i1;
+    return CT::make(MAX2(t1->_lo, lo1),
+                    MIN2(t1->_hi, hi1),
+                    t1->_ulo, t1->_uhi, t1->_zeros, t1->_ones,
+                    MAX2(t1->_widen, t->_widen));
   }
 
-  return i;
+  return t;
 }
 
 const Type* CastIINode::Value(PhaseGVN* phase) const {
@@ -246,14 +249,11 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
   }
   assert(res->isa_int(), "res must be int");
 
-  // Similar to ConvI2LNode::Value() for the same reasons
-  // see if we can remove type assertion after loop opts
-  // But here we have to pay extra attention:
   // Do not narrow the type of range check dependent CastIINodes to
   // avoid corruption of the graph if a CastII is replaced by TOP but
   // the corresponding range check is not removed.
   if (!_range_check_dependency) {
-    res = widen_type_after_loop_opts<TypeInt>(res, phase->type(in(1)), phase);
+    res = widen_type_after_loop_opts(res->is_int(), phase->type(in(1))->is_int(), phase);
   }
 
   // Try to improve the type of the CastII if we recognize a CmpI/If pattern.
@@ -396,7 +396,7 @@ const Type* CastLLNode::Value(PhaseGVN* phase) const {
   }
   assert(res->isa_long(), "res must be long");
 
-  return widen_type_after_loop_opts<TypeLong>(res, phase->type(in(1)), phase);
+  return res = widen_type_after_loop_opts(res->is_long(), phase->type(in(1))->is_long(), phase);
 }
 
 Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
