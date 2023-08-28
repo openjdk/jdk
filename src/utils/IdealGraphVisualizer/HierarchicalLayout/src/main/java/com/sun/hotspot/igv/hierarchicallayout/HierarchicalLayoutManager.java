@@ -484,8 +484,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
         }
     }
 
-    private static final Comparator<LayoutNode> nodePositionComparator = Comparator.comparingInt(n -> n.pos);
-    private static final Comparator<LayoutNode> nodeProcessingDownComparator = (n1, n2) -> {
+    public static final Comparator<LayoutNode> nodePositionComparator = Comparator.comparingInt(n -> n.pos);
+    public static final Comparator<LayoutNode> nodeProcessingDownComparator = (n1, n2) -> {
         int n1VIP = 0;
         for (LayoutEdge e : n1.preds) {
             if (e.vip) {
@@ -512,7 +512,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         }
         return n1.preds.size() - n2.preds.size();
     };
-    private static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
+    public static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
         int n1VIP = 0;
         for (LayoutEdge e : n1.succs) {
             if (e.vip) {
@@ -691,7 +691,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         }
     }
 
-    private static class NodeRow {
+    public static class NodeRow {
 
         private final TreeSet<LayoutNode> treeSet;
         private final ArrayList<Integer> space;

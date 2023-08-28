@@ -120,7 +120,7 @@ public class HierarchicalStableLayoutManager {
         ArrayList<Integer> space = new ArrayList<>();
         List<LayoutNode> nodeProcessingOrder = new ArrayList<>();
 
-        nodes.sort(nodePositionComparator);
+        nodes.sort(HierarchicalLayoutManager.nodePositionComparator);
 
         int curX = 0;
         for (LayoutNode n : nodes) {
@@ -129,8 +129,8 @@ public class HierarchicalStableLayoutManager {
             nodeProcessingOrder.add(n);
         }
 
-        nodeProcessingOrder.sort(nodeProcessingUpComparator);
-        NodeRow r = new NodeRow(space);
+        nodeProcessingOrder.sort(HierarchicalLayoutManager.nodeProcessingUpComparator);
+        HierarchicalLayoutManager.NodeRow r = new HierarchicalLayoutManager.NodeRow(space);
         for (LayoutNode n : nodeProcessingOrder) {
             int optimal = calculateOptimalBoth(n);
             r.insert(n, optimal);
@@ -144,7 +144,7 @@ public class HierarchicalStableLayoutManager {
         int nodeCount = 0;
         for (int i = 0; i < layers.keySet().size(); i++) {
             assert layers.containsKey(i);
-            layers.get(i).sort(nodePositionComparator);
+            layers.get(i).sort(HierarchicalLayoutManager.nodePositionComparator);
             int nodePos = 0;
             for (LayoutNode n : layers.get(i)) {
                 assert n.layer == i;
@@ -606,7 +606,7 @@ public class HierarchicalStableLayoutManager {
             assert layers.containsKey(layer);
 
             List<LayoutNode> layerNodes = layers.get(layer);
-            layerNodes.sort(nodePositionComparator);
+            layerNodes.sort(HierarchicalLayoutManager.nodePositionComparator);
             int edgeCrossings = Integer.MAX_VALUE;
             int optimalPos = -1;
 
@@ -1348,68 +1348,6 @@ public class HierarchicalStableLayoutManager {
             }
             assert currentVertices.size() == layoutedNodes.size();
             assert currentLinks.size() == layoutedLinks.size();
-        }
-    }
-
-    private static final Comparator<LayoutNode> nodePositionComparator = Comparator.comparingInt(n -> n.pos);
-    private static final Comparator<LayoutNode> nodeProcessingUpComparator = (n1, n2) -> {
-        if (n1.vertex == null) {
-            if (n2.vertex == null) {
-                return 0;
-            }
-            return -1;
-        }
-        if (n2.vertex == null) {
-            return 1;
-        }
-        return n1.succs.size() - n2.succs.size();
-    };
-
-    private static class NodeRow {
-
-        private final TreeSet<LayoutNode> treeSet;
-        private final ArrayList<Integer> space;
-
-        public NodeRow(ArrayList<Integer> space) {
-            treeSet = new TreeSet<>(nodePositionComparator);
-            this.space = space;
-        }
-
-        public int offset(LayoutNode n1, LayoutNode n2) {
-            int v1 = space.get(n1.pos) + n1.width;
-            int v2 = space.get(n2.pos);
-            return v2 - v1;
-        }
-
-        public void insert(LayoutNode n, int pos) {
-
-            SortedSet<LayoutNode> headSet = treeSet.headSet(n);
-
-            LayoutNode leftNeighbor;
-            int minX = Integer.MIN_VALUE;
-            if (!headSet.isEmpty()) {
-                leftNeighbor = headSet.last();
-                minX = leftNeighbor.x + leftNeighbor.width + offset(leftNeighbor, n);
-            }
-
-            if (pos < minX) {
-                n.x = minX;
-            } else {
-
-                LayoutNode rightNeighbor;
-                SortedSet<LayoutNode> tailSet = treeSet.tailSet(n);
-                int maxX = Integer.MAX_VALUE;
-                if (!tailSet.isEmpty()) {
-                    rightNeighbor = tailSet.first();
-                    maxX = rightNeighbor.x - offset(n, rightNeighbor) - n.width;
-                }
-
-                n.x = Math.min(pos, maxX);
-
-                assert minX <= maxX : minX + " vs " + maxX;
-            }
-
-            treeSet.add(n);
         }
     }
 
