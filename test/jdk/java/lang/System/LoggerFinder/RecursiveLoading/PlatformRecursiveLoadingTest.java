@@ -59,10 +59,9 @@ public class PlatformRecursiveLoadingTest {
     public static void main(String[] args) throws Throwable {
         PlatformLogger.getLogger("main").info("in main");
         List<Object> logs = loggerfinder.SimpleLoggerFinder.LOGS;
-	/*
         logs.stream().map(SimpleLogRecord::of).forEach(System.out::println);
         logs.stream().map(SimpleLogRecord::of).forEach(SimpleLogRecord::check);
-        assertEquals(String.valueOf(logs.size()), String.valueOf(2));*/
+        assertEquals(String.valueOf(logs.size()), String.valueOf(2));
     }
 
     static List<Object> asList(Object[] params) {

@@ -104,10 +104,8 @@ public class SignedLoggerFinderTest {
         } else {
             // set up complete. Run the code to trigger the recursion
             // We're in the JVM launched by ProcessTools.executeCommand
-            boolean mutliThreadLoad =
-                Boolean.parseBoolean(System.getProperty("mutliThreadLoad", "false"));
-            boolean withCustomLoggerFinder =
-                Boolean.parseBoolean(System.getProperty("withCustomLoggerFinder", "false"));
+            boolean mutliThreadLoad = Boolean.getBoolean("mutliThreadLoad");
+            boolean withCustomLoggerFinder = Boolean.getBoolean("withCustomLoggerFinder");
 
             if (mutliThreadLoad) {
                 long sleep = new Random().nextLong(100L) + 1L;
