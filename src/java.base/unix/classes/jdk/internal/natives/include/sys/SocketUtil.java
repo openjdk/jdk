@@ -8,9 +8,9 @@ import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 import static jdk.internal.natives.CLayouts.C_INT;
 
 // Generated partly via: jextract --source -t jdk.internal.natives.include.sys -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/socket.h /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/socket.h
-public final class Socket {
+public final class SocketUtil {
 
-    private Socket() {
+    private SocketUtil() {
     }
 
     // AF
@@ -83,15 +83,32 @@ public final class Socket {
 
     private static final MethodHandle SOCKET = downcallCapturingError("socket", C_INT, C_INT, C_INT, C_INT);
 
+    private static final MethodHandle SOCKET_IGNORING_ERRNO = downcall("socket", C_INT, C_INT, C_INT, C_INT);
+
     /**
      * {@snippet :
      * int socket(int, int, int);
      *}
      */
     // https://man7.org/linux/man-pages/man2/socket.2.html
-    public static int socket(MemorySegment errorSegment, int domain, int type, int protocol) {
+    public static ErrNo.Fd socket(MemorySegment errorSegment, int domain, int type, int protocol) {
         try {
-            return (int) SOCKET.invokeExact(errorSegment, domain, type, protocol);
+            int result = (int) SOCKET.invokeExact(errorSegment, domain, type, protocol);
+            return ErrNo.Fd.of(result, errorSegment);
+        } catch (Throwable ex$) {
+            throw newInternalError(SOCKET, ex$);
+        }
+    }
+
+    /**
+     * {@snippet :
+     * int socket(int, int, int);
+     *}
+     */
+    // https://man7.org/linux/man-pages/man2/socket.2.html
+    public static int socket(int domain, int type, int protocol) {
+        try {
+            return (int) SOCKET_IGNORING_ERRNO.invokeExact(domain, type, protocol);
         } catch (Throwable ex$) {
             throw newInternalError(SOCKET, ex$);
         }

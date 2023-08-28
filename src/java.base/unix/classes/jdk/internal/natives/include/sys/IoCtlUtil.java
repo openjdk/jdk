@@ -1,6 +1,7 @@
 package jdk.internal.natives.include.sys;
 
 import jdk.internal.foreign.support.LookupUtil;
+import jdk.internal.natives.HasSegment;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
@@ -12,9 +13,9 @@ import static jdk.internal.natives.CLayouts.*;
 // Generated partly via: jextract --source -t jdk.internal.natives.include.sys \
 //                       -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/ioctl.h \
 //                       /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/ioctl.h
-public final class IoCtl {
+public final class IoCtlUtil {
 
-    private IoCtl() {
+    private IoCtlUtil() {
     }
 
     private static final FunctionDescriptor IOCTL_FUNC = FunctionDescriptor.of(C_INT,C_INT, C_LONG_LONG);
@@ -27,6 +28,15 @@ public final class IoCtl {
     private static final MethodHandle IOCTL_NO_ARG = downcallCapturingError("close", C_INT, C_INT, C_LONG);
     private static final MethodHandle IOCTL_NO_ARG_IGNORING_ERRNO = downcall("close", C_INT, C_INT, C_LONG);
 */
+
+
+    public static int ioctl(int fd, long request, HasSegment hasSegment) {
+        try {
+            return (int) IOCTL_IGNORING_ERRNO.invokeExact(fd, request, new MemorySegment[]{hasSegment.segment()});
+        } catch (Throwable ex$) {
+            throw newInternalError(IOCTL_IGNORING_ERRNO, ex$);
+        }
+    }
 
     /**
      * {@snippet :

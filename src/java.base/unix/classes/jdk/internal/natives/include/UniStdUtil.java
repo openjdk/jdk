@@ -1,5 +1,7 @@
 package jdk.internal.natives.include;
 
+import jdk.internal.natives.include.sys.ErrNo;
+
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -8,9 +10,9 @@ import static jdk.internal.foreign.support.LookupUtil.downcallCapturingError;
 import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
 import static jdk.internal.natives.CLayouts.C_INT;
 
-public final class UniStd {
+public final class UniStdUtil {
 
-    private UniStd() {
+    private UniStdUtil() {
     }
 
     private static final MethodHandle CLOSE = downcallCapturingError("close", C_INT, C_INT);
@@ -42,6 +44,10 @@ public final class UniStd {
         } catch (Throwable ex$) {
             throw newInternalError(CLOSE_IGNORING_ERRNO, ex$);
         }
+    }
+
+    public static int close(ErrNo.Fd fd) {
+        return close(fd.fd());
     }
 
 }

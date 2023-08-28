@@ -17,18 +17,14 @@ import java.util.NoSuchElementException;
 
 import static java.lang.foreign.ValueLayout.*;
 import static jdk.internal.foreign.abi.SharedUtils.THROWING_ALLOCATOR;
+import static jdk.internal.natives.include.sys.ErrNo.CSS_ERROR_NAME;
 
 public final class LookupUtil {
 
     private LookupUtil() {}
 
-    public static final StructLayout CAPTURE_STATE_LAYOUT = Linker.Option.captureStateLayout();
-
     private static final MethodHandle INT_IS_ONE;
-
-    private static final String CSS_ERROR_NAME = "errno";
     private static final Linker.Option CSS_ERROR = Linker.Option.captureCallState(CSS_ERROR_NAME);
-    private static final VarHandle ERROR_HANDLE = CAPTURE_STATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(CSS_ERROR_NAME));
 
     static {
         try {
@@ -60,10 +56,6 @@ public final class LookupUtil {
     public static MethodHandle downcallVararg(String name, FunctionDescriptor fDesc) {
         var symbol = findOrThrow(name);
         return VarargsInvoker.make(symbol, fDesc);
-    }
-
-    public static int error(MemorySegment segment) {
-        return (int)ERROR_HANDLE.get(segment);
     }
 
     public static MethodHandle intIsOne(MethodHandle original) {

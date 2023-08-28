@@ -1,5 +1,6 @@
 package jdk.internal.natives.include.sys;
 
+import jdk.internal.natives.include.IfConf;
 import jdk.internal.natives.include.IfReq;
 
 import java.lang.foreign.MemoryLayout;
@@ -11,9 +12,9 @@ import java.lang.foreign.MemoryLayout;
            /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/sys/sockio.h
 
  */
-public final class SockIo {
+public final class SockIoUtil {
 
-    public SockIo() {
+    private SockIoUtil() {
     }
 
     /**
@@ -53,7 +54,11 @@ public final class SockIo {
 
     // Macros
 
-    public static int SIOCGIFMTU = _IOWR('i', 51, IfReq.LAYOUT);    /* get IF mtu */
+    public static int SIOCGIFFLAGS   = _IOWR('i', 17, IfReq.LAYOUT);    /* get ifnet flags */
+    public static int SIOCGIFBRDADDR = _IOWR('i', 35, IfReq.LAYOUT);    /* get broadcast addr */
+    public static int SIOCGIFCONF    = _IOWR('i', 36, IfConf.LAYOUT);   /* get ifnet list */
+    public static int SIOCGIFNETMASK = _IOWR('i', 37, IfConf.LAYOUT);   /* get net addr mask */
+    public static int SIOCGIFMTU     = _IOWR('i', 51, IfReq.LAYOUT);    /* get IF mtu */
 
 
     private static int _IOWR(char type, int number, MemoryLayout data_type) {

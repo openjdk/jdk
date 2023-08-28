@@ -1,19 +1,23 @@
 package jdk.internal.natives.include;
 
-import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.layout.ValueLayouts;
+import jdk.internal.natives.HasSegment;
+import jdk.internal.natives.StructMapper;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.UnionLayout;
-import java.lang.invoke.VarHandle;
-import java.nio.charset.StandardCharsets;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static jdk.internal.natives.CLayouts.*;
 
-// Generated partly via: jextract --source -t jdk.internal.natives.include -I /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/net/if.h
+/*
+
+Generated partly via:
+jextract --source -t jdk.internal.natives.include -I \
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/ \
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/net/if.h
+
+*/
 
 /**
  * {@snippet :
@@ -23,32 +27,23 @@ import static jdk.internal.natives.CLayouts.*;
  * };
  * }
  */
-public final class IfReq {
+public interface IfReq extends HasSegment {
 
-    private IfReq() {}
-
-    private static final long SIZEOF_NAME = 16;
-
-    public static final StructLayout LAYOUT = MemoryLayout.structLayout(
-            MemoryLayout.sequenceLayout(SIZEOF_NAME, C_CHAR).withName("ifr_name"),
-            Ifru.LAYOUT
+    StructLayout LAYOUT = MemoryLayout.structLayout(
+            MemoryLayout.sequenceLayout(16, C_CHAR).withName("ifr_name"),
+            IfrU.LAYOUT.withName("ifr_ifru")
     ).withName("ifreq");
 
-    public static String getName(MemorySegment segment) {
-        return sliceName(segment).getUtf8String(0);
-    }
+    StructMapper<IfReq> MAPPER = IfReqImpl.mapper();
 
-    public static void setName(MemorySegment segment, String name) {
-        Utils.copy(sliceName(segment), name.getBytes(StandardCharsets.UTF_8));
-    }
+    String ifr_name();
 
-    // Consider dropping this
-    public static MemorySegment sliceName(MemorySegment seg) {
-        return seg.asSlice(0, SIZEOF_NAME);
-    }
+    void ifr_name(String name);
 
-    public static MemorySegment sliceUnion(MemorySegment seg) {
-        return seg.asSlice(SIZEOF_NAME, Ifru.LAYOUT);
+    IfrU ifr_ifru();
+
+    static IfReq of(MemorySegment segment) {
+        return MAPPER.of(segment);
     }
 
     /**
@@ -73,26 +68,12 @@ public final class IfReq {
      * };
      * }
      */
-    public static final class Ifru {
+    interface IfrU {
 
-        private Ifru() {}
-
-        public static final UnionLayout LAYOUT = MemoryLayout.unionLayout(
-                MemoryLayout.structLayout(
-                        C_CHAR.withName("sa_len"),
-                        C_CHAR.withName("sa_family"),
-                        MemoryLayout.sequenceLayout(14, C_CHAR).withName("sa_data")
-                ).withName("ifru_addr"),
-                MemoryLayout.structLayout(
-                        C_CHAR.withName("sa_len"),
-                        C_CHAR.withName("sa_family"),
-                        MemoryLayout.sequenceLayout(14, C_CHAR).withName("sa_data")
-                ).withName("ifru_dstaddr"),
-                MemoryLayout.structLayout(
-                        C_CHAR.withName("sa_len"),
-                        C_CHAR.withName("sa_family"),
-                        MemoryLayout.sequenceLayout(14, C_CHAR).withName("sa_data")
-                ).withName("ifru_broadaddr"),
+        UnionLayout LAYOUT = MemoryLayout.unionLayout(
+                SockAddr.LAYOUT.withName("ifru_addr"),
+                SockAddr.LAYOUT.withName("ifru_dstaddr"),
+                SockAddr.LAYOUT.withName("ifru_broadaddr"),
                 C_SHORT.withName("ifru_flags"),
                 C_INT.withName("ifru_metric"),
                 C_INT.withName("ifru_mtu"),
@@ -119,34 +100,27 @@ public final class IfReq {
                 C_INT.withName("ifru_functional_type")
         ).withName("ifr_ifru");
 
-        private static final VarHandle INT_ACCESS = ((ValueLayouts.OfIntImpl) JAVA_INT).accessHandle();
+        StructMapper<IfrU> MAPPER = IfReqImpl.IfrUImpl.mapper();
 
-        public static int mtu(MemorySegment segment) {
-            return (int)INT_ACCESS.get(segment);
+        /**
+         * {@return the segment that backs this instance}
+         */
+        MemorySegment segment();
+
+        SockAddr ifru_addr();
+
+        SockAddr ifru_dstaddr();
+
+        SockAddr ifru_broadaddr();
+
+        short ifru_flags();
+
+        int ifru_mtu();
+
+        static IfrU of(MemorySegment segment) {
+            return MAPPER.of(segment);
         }
 
-
-    }
-
-
-
-
-
-    public record ifruAddr(byte sa_len, byte sa_family, byte[] sa_data) {
-        private static final StructLayout LAYOUT = MemoryLayout.structLayout(
-                C_CHAR.withName("sa_len"),
-                C_CHAR.withName("sa_family"),
-                MemoryLayout.sequenceLayout(14, C_CHAR).withName("sa_data")
-        ).withName("ifru_addr");
-
-        private static final long SA_FAMILY_OFFSET = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("sa_family"));
-        private static final long SA_DATA_OFFSET = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("sa_data"));
-
-        public ifruAddr(MemorySegment segment) {
-            this(segment.get(C_CHAR, 0),
-                    segment.get(C_CHAR, SA_FAMILY_OFFSET),
-                    segment.asSlice(SA_DATA_OFFSET).toArray(C_CHAR));
-        }
     }
 
 }
