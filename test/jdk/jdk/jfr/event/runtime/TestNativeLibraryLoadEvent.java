@@ -54,43 +54,17 @@ public class TestNativeLibraryLoadEvent {
             System.loadLibrary("instrument");
             recording.stop();
 
-            List<String> expectedLibs = getExpectedLibs();
+            String expectedLib = Platform.buildSharedLibraryName("instrument");
+            boolean expectedLibFound = false;
             for (RecordedEvent event : Events.fromRecording(recording)) {
                 System.out.println("Event:" + event);
                 String lib = Events.assertField(event, "name").notEmpty().getValue();
                 Events.assertField(event, "success");
-                for (String expectedLib : new ArrayList<>(expectedLibs)) {
-                    if (lib.contains(expectedLib)) {
-                        expectedLibs.remove(expectedLib);
-                    }
+                if (lib.contains(expectedLib)) {
+                    expectedLibFound = true;
                 }
             }
-            assertTrue(expectedLibs.isEmpty(), "Missing libraries:" + expectedLibs.stream().collect(Collectors.joining(", ")));
+            assertTrue(expectedLibFound, "Missing library " + expectedLib);
         }
     }
-
-    private static List<String> getExpectedLibs() throws Throwable {
-        String libTemplate = null;
-        if (Platform.isWindows()) {
-            libTemplate = "%s.dll";
-        } else if (Platform.isOSX()) {
-            libTemplate = "lib%s.dylib";
-        } else if (Platform.isLinux()) {
-            libTemplate = "lib%s.so";
-        } else if (Platform.isAix()) {
-            libTemplate = "lib%s.so";
-        }
-
-        if (libTemplate == null) {
-            throw new Exception("Unsupported OS");
-        }
-
-        List<String> libs = new ArrayList<String>();
-        String[] names = { "instrument" };
-        for (String name : names) {
-            libs.add(String.format(libTemplate, name));
-        }
-        return libs;
-    }
-
 }

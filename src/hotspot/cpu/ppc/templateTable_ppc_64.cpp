@@ -4198,7 +4198,7 @@ void TemplateTable::monitorenter() {
 
     // Pre-load topmost slot.
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
-    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
+    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size_in_bytes());
     // The search loop.
     __ bind(Lloop);
     // Found free slot?
@@ -4212,7 +4212,7 @@ void TemplateTable::monitorenter() {
     __ bgt(reached_limit, Lallocate_new);
     // Check if last allocated BasicLockObj reached.
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
-    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
+    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size_in_bytes());
     // Next iteration if unchecked BasicObjectLocks exist on the stack.
     __ b(Lloop);
   }
@@ -4221,8 +4221,8 @@ void TemplateTable::monitorenter() {
   // Check if we found a free slot.
   __ bind(Lexit);
 
-  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
-  __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, - frame::interpreter_frame_monitor_size() * wordSize);
+  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size_in_bytes()) - in_bytes(BasicObjectLock::obj_offset()));
+  __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, - frame::interpreter_frame_monitor_size_in_bytes());
   __ b(Lfound);
 
   // We didn't find a free BasicObjLock => allocate one.
@@ -4280,7 +4280,7 @@ void TemplateTable::monitorexit() {
     __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
     __ addi(Rlimit, Rlimit, in_bytes(BasicObjectLock::obj_offset()));
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
-    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
+    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size_in_bytes());
 
     __ bind(Lloop);
     // Is this entry for same obj?
@@ -4291,7 +4291,7 @@ void TemplateTable::monitorexit() {
 
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
     __ cmpld(CCR0, Rcurrent_obj_addr, Rlimit);
-    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
+    __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size_in_bytes());
 
     // Next iteration if unchecked BasicObjectLocks exist on the stack.
     __ ble(CCR0, Lloop);
@@ -4305,7 +4305,7 @@ void TemplateTable::monitorexit() {
   __ align(32, 12);
   __ bind(Lfound);
   __ addi(Rcurrent_monitor, Rcurrent_obj_addr,
-          -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
+          -(frame::interpreter_frame_monitor_size_in_bytes()) - in_bytes(BasicObjectLock::obj_offset()));
   __ unlock_object(Rcurrent_monitor);
 }
 
