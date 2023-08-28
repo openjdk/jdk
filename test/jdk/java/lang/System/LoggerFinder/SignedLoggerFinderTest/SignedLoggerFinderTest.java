@@ -111,11 +111,11 @@ public class SignedLoggerFinderTest {
             if (mutliThreadLoad) {
                 long sleep = new Random().nextLong(100L) + 1L;
                 System.out.println("multi thread load sleep value: " + sleep);
-                Runnable t = () -> {
+                Runnable t1 = () -> {
                     while(!testComplete) {
                         // random logger call to exercise System.getLogger
                         System.out.println("System.getLogger type:" +
-                            System.getLogger("random" + System.currentTimeMillis()));
+                            System.getLogger("random" + System.currentTimeMillis()).getClass().getName());
                         try {
                             Thread.sleep(sleep);
                         } catch (InterruptedException e) {
@@ -123,7 +123,19 @@ public class SignedLoggerFinderTest {
                         }
                     }
                 };
-                new Thread(t).start();
+                Runnable t2 = () -> {
+                    while(!testComplete) {
+                        // random logger call to exercise System.LoggerFinder
+                        System.out.println("System.getLoggerFinder" + System.LoggerFinder.getLoggerFinder().getClass().getName());
+                        try {
+                            Thread.sleep(sleep);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                };
+                new Thread(t1).start();
+                new Thread(t2).start();
             }
 
             if (withCustomLoggerFinder) {

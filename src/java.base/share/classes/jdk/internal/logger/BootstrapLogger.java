@@ -948,7 +948,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     //      and the LogManager has not been initialized yet.
     public static boolean useLazyLoggers() {
         // Note: avoid triggering the initialization of the DetectBackend class
-        // while holding the BotstrapLogger class monitor
+        // while holding the BootstrapLogger class monitor
         if (!BootstrapLogger.isBooted() ||
                 DetectBackend.detectedBackend == LoggingBackend.CUSTOM) {
             return true;
@@ -982,7 +982,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     }
 
     // trigger class initialization outside of holding lock
-    static void detectBackend() {
+    static void ensureBackendDetected() {
         assert VM.isBooted() : "VM is not booted";
         // triggers detection of the backend
         var backend = DetectBackend.detectedBackend;

@@ -36,6 +36,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.BooleanSupplier;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
@@ -74,6 +75,8 @@ public final class LoggerFinderLoader {
     // Return the loaded LoggerFinder, or load it if not already loaded.
     private static System.LoggerFinder service() {
         if (service != null) return service;
+        // ensure backend is detected before attempting to load the finder
+        BootstrapLogger.ensureBackendDetected();
         synchronized(lock) {
             if (service != null) return service;
             Thread currentThread = Thread.currentThread();
@@ -140,7 +143,11 @@ public final class LoggerFinderLoader {
         return iterator;
     }
 
-    private static final class TemporaryLoggerFinder extends LoggerFinder {
+    public static final class TemporaryLoggerFinder extends LoggerFinder {
+        private TemporaryLoggerFinder() {}
+        @Stable
+        private LoggerFinder loadedService;
+
         private static final BooleanSupplier isLoadingThread = new BooleanSupplier() {
             @Override
             public boolean getAsBoolean() {
@@ -151,7 +158,16 @@ public final class LoggerFinderLoader {
 
         @Override
         public Logger getLogger(String name, Module module) {
-            return LazyLoggers.makeLazyLogger(name, module, isLoadingThread);
+            if (loadedService == null) {
+                loadedService = service;
+                if (loadedService == null) {
+                    return LazyLoggers.makeLazyLogger(name, module, isLoadingThread);
+                }
+            }
+            assert loadedService != null;
+            assert !LoggerFinderLoader.isLoadingThread();
+            assert loadedService != this;
+            return LazyLoggers.getLogger(name, module);
         }
     }
 

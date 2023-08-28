@@ -34,6 +34,7 @@ import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
+import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.VM;
 import sun.util.logging.PlatformLogger;
 
@@ -345,9 +346,6 @@ public final class LazyLoggers {
     private static LoggerFinder accessLoggerFinder() {
         LoggerFinder prov = provider;
         if (prov == null) {
-            // ensure backend is detected before attempting to load the finder
-            BootstrapLogger.detectBackend();
-
             // no need to lock: it doesn't matter if we call
             // getLoggerFinder() twice - since LoggerFinder already caches
             // the result.
@@ -357,6 +355,7 @@ public final class LazyLoggers {
             prov = sm == null ? LoggerFinder.getLoggerFinder() :
                 AccessController.doPrivileged(
                         (PrivilegedAction<LoggerFinder>)LoggerFinder::getLoggerFinder);
+            if (prov instanceof TemporaryLoggerFinder) return prov;
             provider = prov;
         }
         return prov;
