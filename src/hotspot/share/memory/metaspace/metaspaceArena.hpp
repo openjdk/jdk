@@ -28,11 +28,8 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
-#include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
-#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
-#include "memory/metaspace/metaspaceCommon.hpp"
 
 class outputStream;
 class Mutex;
@@ -40,6 +37,8 @@ class Mutex;
 namespace metaspace {
 
 class ArenaGrowthPolicy;
+class ChunkManager;
+class Metachunk;
 class FreeBlocks;
 
 struct ArenaStats;
