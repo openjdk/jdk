@@ -137,53 +137,10 @@ public class HierarchicalStableLayoutManager {
         }
     }
 
-    /**
-     * Ensure that the data structures nodes and layerNodes are consistent
-     */
-    private void sanityCheckNodesAndLayerNodes() {
-        int nodeCount = 0;
-        for (int i = 0; i < layers.keySet().size(); i++) {
-            assert layers.containsKey(i);
-            layers.get(i).sort(HierarchicalLayoutManager.nodePositionComparator);
-            int nodePos = 0;
-            for (LayoutNode n : layers.get(i)) {
-                assert n.layer == i;
-                assert nodes.contains(n);
-                assert n.pos == nodePos;
-                nodePos += 1;
-                nodeCount += 1;
-            }
-        }
+    private void ensureNeighborEdgeConsistency() {
         for (LayoutNode n : nodes) {
-            assert n.vertex == null || vertexToLayoutNode.get(n.vertex).equals(n);
-            assert n.layer < layers.keySet().size();
-            assert layers.get(n.layer).contains(n);
-        }
-        assert nodeCount == nodes.size();
-    }
-
-    private void sanityCheckEdges() {
-        for (LayoutNode n : nodes) {
-            for (LayoutEdge e : List.copyOf(n.succs)) {
-                assert e.from.equals(n);
-                if (nodes.contains(e.to)) {
-                    assert e.to.preds.contains(e);
-                    assert layers.get(n.layer + 1).contains(e.to);
-                    assert e.to.layer == n.layer + 1;
-                } else {
-                    n.succs.remove(e);
-                }
-            }
-            for (LayoutEdge e : List.copyOf(n.preds)) {
-                assert e.to.equals(n);
-                if (nodes.contains(e.from)) {
-                    assert e.from.succs.contains(e);
-                    assert layers.get(n.layer - 1).contains(e.from);
-                    assert e.from.layer == n.layer - 1;
-                } else {
-                    n.preds.remove(e);
-                }
-            }
+            n.succs.removeIf(e -> !nodes.contains(e.to));
+            n.preds.removeIf(e -> !nodes.contains(e.from));
         }
     }
 
@@ -901,7 +858,7 @@ public class HierarchicalStableLayoutManager {
                 expandNewLayerBeneath(to);
             }
 
-            sanityCheckEdges();
+            ensureNeighborEdgeConsistency();
         }
 
         /**
@@ -1028,7 +985,7 @@ public class HierarchicalStableLayoutManager {
                 insertDummyNodes(edge);
             }
 
-            sanityCheckEdges();
+            ensureNeighborEdgeConsistency();
         }
 
         /**
@@ -1203,7 +1160,7 @@ public class HierarchicalStableLayoutManager {
                 break;
             }
 
-            sanityCheckEdges();
+            ensureNeighborEdgeConsistency();
         }
 
         private void removeNodeWithoutRemovingLayer(LayoutNode node) {
