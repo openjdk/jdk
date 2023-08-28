@@ -194,6 +194,11 @@ $(foreach m, $(JAVA_MODULES), $(eval $(call DeclareCompileJavaRecipe,$m)))
 
 ALL_TARGETS += $(JAVA_TARGETS)
 
+$(eval $(call SetupTarget, generate-ctsym, \
+    MAKEFILE := GenSymbols, \
+    DEPS := $(JAVA_TARGETS), \
+))
+
 ################################################################################
 # Targets for compiling native libraries
 $(eval $(call DeclareRecipesForPhase, LIBS, \
@@ -1120,7 +1125,7 @@ $(foreach v, $(JVM_VARIANTS), \
 
 gensrc: $(GENSRC_TARGETS)
 
-gendata: $(GENDATA_TARGETS)
+gendata: $(GENDATA_TARGETS) generate-ctsym
 
 copy: $(ALL_COPY_TARGETS)
 
