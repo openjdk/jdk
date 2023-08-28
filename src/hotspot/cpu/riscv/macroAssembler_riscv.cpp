@@ -4246,67 +4246,6 @@ FCMP(double, d);
 
 #undef FCMP
 
-// According to Java SE specification, for floating-point round operations, if
-// the input is NaN, +/-infinity, or +/-0, the same input is returned as the
-// rounded result; this differs from behavior of RISC-V fcvt instructions (which
-// round out-of-range values to the nearest max or min value), therefore special
-// handling is needed by NaN, +/-Infinity, +/-0.
-void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register tmp1, Register tmp2, Register tmp3)
-{
-
-  assert_different_registers(dst, src);
-  assert_different_registers(tmp1, tmp2, tmp3);
-
-  // setting roundig mode to conversions
-  // here we use similar modes to double->long and long->double conversions
-  // different mode for long->double conversion matter only if long value was not representable as double
-  // we got long value as a result of double->long conversion so it is defenitely representable
-  RoundingMode rm;
-  switch (round_mode) {
-    case Round_double_mode::rmode_ceil:
-      rm = RoundingMode::rup;
-      break;
-    case Round_double_mode::rmode_floor:
-      rm = RoundingMode::rdn;
-      break;
-    case Round_double_mode::rmode_rint:
-      rm = RoundingMode::rne;
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-
-  // tmp1 - is a register to store double converted to long int
-  // tmp2 - is a register to create constant for comparsion
-  // tmp3 - is a register were we store modidfied result of double -> long int comparison
-  Label done, bad_val;
-
-  // generating constant (tmp2)
-  // tmp2 = 100...0000
-  addi(tmp2, zr, 1);
-  slli(tmp2, tmp2, 63);
-  // conversion from double to long
-  fcvt_l_d(tmp1, src, rm);
-
-  // preparing converted long (tmp1)
-  // as a result when conversion overflow we got:
-  // tmp1 = 011...1111 or 100...0000
-  // converting to: tmp3 = 100...0000
-  addi(tmp3, tmp1, 1);
-  andi(tmp3, tmp3, -2);
-  beq(tmp3, tmp2, bad_val);
-  // conversion from long to double
-  fcvt_d_l(dst, tmp1, rm);
-  // add sign of input value to result for +/- 0 cases
-  fsgnj_d(dst, dst, src);
-  j(done);
-  // if got conversion overflow return src
-  bind(bad_val);
-  fmv_d(dst, src);
-
-  bind(done);
-}
-
 // Zero words; len is in bytes
 // Destroys all registers except addr
 // len must be a nonzero multiple of wordSize

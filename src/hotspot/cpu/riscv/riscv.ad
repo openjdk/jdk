@@ -7697,22 +7697,8 @@ instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp 
 
   format %{ "RoundDoubleMode $src, $rmode" %}
   ins_encode %{
-  switch ($rmode$$constant) {
-      case RoundDoubleModeNode::rmode_rint:
-        __ round_double_mode(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_rint, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-        break;
-      case RoundDoubleModeNode::rmode_floor:
-        __ round_double_mode(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_floor, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-        break;
-      case RoundDoubleModeNode::rmode_ceil:
-        __ round_double_mode(as_FloatRegister($dst$$reg),
-               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_ceil, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
+    __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
