@@ -1228,10 +1228,12 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   add(recv_klass, recv_klass, vtable_start_offset + ioffset);
   // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
   // temp_itbl_klass = itable[0]._interface;
-  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtableEntry::size_in_bytes()))));
+  int vtblEntrySize = vtableEntry::size_in_bytes();
+  guarantee(vtblEntrySize == wordSize, "ldr shift amount must be lsl#3");
+  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
   mov(holder_offset, zr);
   // scan_temp = &(itable[0]._interface)
-  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtableEntry::size_in_bytes()))));
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
 
   // Initial checks:
   //   - if (holder_klass != resolved_klass), go to "scan for resolved"
@@ -1294,7 +1296,8 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   // Finally, scan_temp contains holder_klass vtable offset
   bind(L_holder_found);
   ldrw(method_result, Address(scan_temp, ooffset - ioffset));
-  add(recv_klass, recv_klass, (itable_index << LogBytesPerWord) + in_bytes(itableMethodEntry::method_offset()) - vtable_start_offset - ioffset);
+  add(recv_klass, recv_klass, itable_index * wordSize + in_bytes(itableMethodEntry::method_offset())
+    - vtable_start_offset - ioffset); // substract offsets to restore the original value of recv_klass
   ldr(method_result, Address(recv_klass, method_result, Address::uxtw(0)));
 }
 
