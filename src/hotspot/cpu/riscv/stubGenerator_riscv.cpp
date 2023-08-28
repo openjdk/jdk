@@ -2275,24 +2275,21 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
-  void compare_string_8_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
-                              Label &DIFF2) {
-    const Register strU = x12, curU = x7, strL = x29, tmp = x30;
-    __ ld(tmpL, Address(strL));
-    __ addi(strL, strL, 8);
+  void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
+    const Register tmp = x30, tmpLval = x12;
+    __ ld(tmpLval, Address(strL));
+    __ addi(strL, strL, wordSize);
     __ ld(tmpU, Address(strU));
-    __ addi(strU, strU, 8);
-    __ inflate_lo32(tmp, tmpL);
-    __ mv(t0, tmp);
-    __ xorr(tmp, curU, t0);
-    __ bnez(tmp, DIFF2);
+    __ addi(strU, strU, wordSize);
+    __ inflate_lo32(tmpL, tmpLval);
+    __ xorr(tmp, tmpU, tmpL);
+    __ bnez(tmp, DIFF);
 
-    __ ld(curU, Address(strU));
-    __ addi(strU, strU, 8);
-    __ inflate_hi32(tmp, tmpL);
-    __ mv(t0, tmp);
-    __ xorr(tmp, tmpU, t0);
-    __ bnez(tmp, DIFF1);
+    __ ld(tmpU, Address(strU));
+    __ addi(strU, strU, wordSize);
+    __ inflate_hi32(tmpL, tmpLval);
+    __ xorr(tmp, tmpU, tmpL);
+    __ bnez(tmp, DIFF);
   }
 
   // x10  = result
@@ -2307,11 +2304,9 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isLU ? "compare_long_string_different_encoding LU" : "compare_long_string_different_encoding UL");
     address entry = __ pc();
-    Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
-          DONE, CALCULATE_DIFFERENCE;
-    const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, cnt2 = x14,
-                   tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x7, tmp5 = x31;
-    RegSet spilled_regs = RegSet::of(tmp4, tmp5);
+    Label SMALL_LOOP, TAIL, LOAD_LAST, DONE, CALCULATE_DIFFERENCE;
+    const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
+                   tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
     // cnt2 == amount of characters left to compare
     // Check already loaded first 4 symbols
@@ -2319,77 +2314,81 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(isLU ? tmp1 : tmp2, tmp3);
     __ addi(str1, str1, isLU ? wordSize / 2 : wordSize);
     __ addi(str2, str2, isLU ? wordSize : wordSize / 2);
-    __ sub(cnt2, cnt2, 8); // Already loaded 4 symbols. Last 4 is special case.
-    __ push_reg(spilled_regs, sp);
+    __ sub(cnt2, cnt2, wordSize / 2); // Already loaded 4 symbols
 
-    if (isLU) {
-      __ add(str1, str1, cnt2);
-      __ shadd(str2, cnt2, str2, t0, 1);
-    } else {
-      __ shadd(str1, cnt2, str1, t0, 1);
-      __ add(str2, str2, cnt2);
-    }
     __ xorr(tmp3, tmp1, tmp2);
-    __ mv(tmp5, tmp2);
     __ bnez(tmp3, CALCULATE_DIFFERENCE);
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
-             tmpU = isLU ? tmp5 : tmp1, // where to keep U for comparison
-             tmpL = isLU ? tmp1 : tmp5; // where to keep L for comparison
+             tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
+             tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    __ sub(tmp2, strL, cnt2); // strL pointer to load from
-    __ slli(t0, cnt2, 1);
-    __ sub(cnt1, strU, t0); // strU pointer to load from
+    // make sure main loop is 8 byte-aligned, we should load another 4 bytes from strL
+    // cnt2 is >= 68 here, no need to check it for >= 0
+    __ lwu(tmpL, Address(strL));
+    __ addi(strL, strL, wordSize / 2);
+    __ ld(tmpU, Address(strU));
+    __ addi(strU, strU, wordSize);
+    __ inflate_lo32(tmp3, tmpL);
+    __ mv(tmpL, tmp3);
+    __ xorr(tmp3, tmpU, tmpL);
+    __ bnez(tmp3, CALCULATE_DIFFERENCE);
+    __ addi(cnt2, cnt2, -wordSize / 2);
 
-    __ ld(tmp4, Address(cnt1));
-    __ addi(cnt1, cnt1, 8);
-    __ beqz(cnt2, LOAD_LAST); // no characters left except last load
-    __ sub(cnt2, cnt2, 16);
+    // we are now 8-bytes aligned on strL
+    __ sub(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
-      __ sub(cnt2, cnt2, 16);
-      compare_string_8_x_LU(tmpL, tmpU, DIFF1, DIFF2);
-      compare_string_8_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+      __ sub(cnt2, cnt2, wordSize * 2);
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
       __ bgez(cnt2, SMALL_LOOP);
-      __ addi(t0, cnt2, 16);
-      __ beqz(t0, LOAD_LAST);
-    __ bind(TAIL); // 1..15 characters left until last load (last 4 characters)
-      // Address of 8 bytes before last 4 characters in UTF-16 string
-      __ shadd(cnt1, cnt2, cnt1, t0, 1);
-      // Address of 16 bytes before last 4 characters in Latin1 string
-      __ add(tmp2, tmp2, cnt2);
-      __ ld(tmp4, Address(cnt1, -8));
-      // last 16 characters before last load
-      compare_string_8_x_LU(tmpL, tmpU, DIFF1, DIFF2);
-      compare_string_8_x_LU(tmpL, tmpU, DIFF1, DIFF2);
-      __ j(LOAD_LAST);
-    __ bind(DIFF2);
-      __ mv(tmpU, tmp4);
-    __ bind(DIFF1);
-      __ mv(tmpL, t0);
-      __ j(CALCULATE_DIFFERENCE);
-    __ bind(LOAD_LAST);
-      // Last 4 UTF-16 characters are already pre-loaded into tmp4 by compare_string_8_x_LU.
-      // No need to load it again
-      __ mv(tmpU, tmp4);
-      __ ld(tmpL, Address(strL));
+      __ addi(t0, cnt2, wordSize * 2);
+      __ beqz(t0, DONE);
+    __ bind(TAIL);  // 1..15 characters left
+      // Aligned access. Load bytes in portions - 4, 2, 1.
+
+      __ addi(t0, cnt2, wordSize);
+      __ addi(cnt2, cnt2, wordSize * 2); // amount of characters left to process
+      __ bltz(t0, LOAD_LAST);
+      // remaining characters are greater than or equals to 8, we can do one compare_string_8_x_LU
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
+      __ addi(cnt2, cnt2, -wordSize);
+      __ beqz(cnt2, DONE);  // no character left
+      __ bind(LOAD_LAST);   // cnt2 = 1..7 characters left
+
+      __ addi(cnt2, cnt2, -wordSize); // cnt2 is now an offset in strL which points to last 8 bytes
+      __ slli(t0, cnt2, 1);     // t0 is now an offset in strU which points to last 16 bytes
+      __ add(strL, strL, cnt2); // Address of last 8 bytes in Latin1 string
+      __ add(strU, strU, t0);   // Address of last 16 bytes in UTF-16 string
+      __ load_int_misaligned(tmpL, Address(strL), t0, false);
+      __ load_long_misaligned(tmpU, Address(strU), t0, 2);
       __ inflate_lo32(tmp3, tmpL);
       __ mv(tmpL, tmp3);
       __ xorr(tmp3, tmpU, tmpL);
-      __ beqz(tmp3, DONE);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
+
+      __ addi(strL, strL, wordSize / 2); // Address of last 4 bytes in Latin1 string
+      __ addi(strU, strU, wordSize);   // Address of last 8 bytes in UTF-16 string
+      __ load_int_misaligned(tmpL, Address(strL), t0, false);
+      __ load_long_misaligned(tmpU, Address(strU), t0, 2);
+      __ inflate_lo32(tmp3, tmpL);
+      __ mv(tmpL, tmp3);
+      __ xorr(tmp3, tmpU, tmpL);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
+      __ j(DONE); // no character left
 
       // Find the first different characters in the longwords and
       // compute their difference.
     __ bind(CALCULATE_DIFFERENCE);
       __ ctzc_bit(tmp4, tmp3);
       __ srl(tmp1, tmp1, tmp4);
-      __ srl(tmp5, tmp5, tmp4);
+      __ srl(tmp2, tmp2, tmp4);
       __ andi(tmp1, tmp1, 0xFFFF);
-      __ andi(tmp5, tmp5, 0xFFFF);
-      __ sub(result, tmp1, tmp5);
+      __ andi(tmp2, tmp2, 0xFFFF);
+      __ sub(result, tmp1, tmp2);
     __ bind(DONE);
-      __ pop_reg(spilled_regs, sp);
       __ ret();
     return entry;
   }
@@ -2502,9 +2501,9 @@ class StubGenerator: public StubCodeGenerator {
       __ xorr(tmp4, tmp1, tmp2);
       __ bnez(tmp4, DIFF);
       __ add(str1, str1, cnt2);
-      __ ld(tmp5, Address(str1));
+      __ load_long_misaligned(tmp5, Address(str1), tmp3, isLL ? 1 : 2);
       __ add(str2, str2, cnt2);
-      __ ld(cnt1, Address(str2));
+      __ load_long_misaligned(cnt1, Address(str2), tmp3, isLL ? 1 : 2);
       __ xorr(tmp4, tmp5, cnt1);
       __ beqz(tmp4, LENGTH_DIFF);
       // Find the first different characters in the longwords and
@@ -3914,6 +3913,370 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Set of L registers that correspond to a contiguous memory area.
+  // Each 64-bit register typically corresponds to 2 32-bit integers.
+  template <uint L>
+  class RegCache {
+  private:
+    MacroAssembler *_masm;
+    Register _regs[L];
+
+  public:
+    RegCache(MacroAssembler *masm, RegSet rs): _masm(masm) {
+      assert(rs.size() == L, "%u registers are used to cache %u 4-byte data", rs.size(), 2 * L);
+      auto it = rs.begin();
+      for (auto &r: _regs) {
+        r = *it;
+        ++it;
+      }
+    }
+
+    void gen_loads(Register base) {
+      for (uint i = 0; i < L; i += 1) {
+        __ ld(_regs[i], Address(base, 8 * i));
+      }
+    }
+
+    // Generate code extracting i-th unsigned word (4 bytes).
+    void get_u32(Register dest, uint i, Register rmask32) {
+      assert(i < 2 * L, "invalid i: %u", i);
+
+      if (i % 2 == 0) {
+        __ andr(dest, _regs[i / 2], rmask32);
+      } else {
+        __ srli(dest, _regs[i / 2], 32);
+      }
+    }
+  };
+
+  typedef RegCache<8> BufRegCache;
+
+  // a += rtmp1 + x + ac;
+  // a = Integer.rotateLeft(a, s) + b;
+  void m5_FF_GG_HH_II_epilogue(BufRegCache& reg_cache,
+                               Register a, Register b, Register c, Register d,
+                               int k, int s, int t,
+                               Register rtmp1, Register rtmp2, Register rmask32) {
+    // rtmp1 = rtmp1 + x + ac
+    reg_cache.get_u32(rtmp2, k, rmask32);
+    __ addw(rtmp1, rtmp1, rtmp2);
+    __ mv(rtmp2, t);
+    __ addw(rtmp1, rtmp1, rtmp2);
+
+    // a += rtmp1 + x + ac
+    __ addw(a, a, rtmp1);
+
+    // a = Integer.rotateLeft(a, s) + b;
+    __ rolw_imm(a, a, s, rtmp1);
+    __ addw(a, a, b);
+  }
+
+  // a += ((b & c) | ((~b) & d)) + x + ac;
+  // a = Integer.rotateLeft(a, s) + b;
+  void md5_FF(BufRegCache& reg_cache,
+              Register a, Register b, Register c, Register d,
+              int k, int s, int t,
+              Register rtmp1, Register rtmp2, Register rmask32) {
+    // rtmp1 = b & c
+    __ andr(rtmp1, b, c);
+
+    // rtmp2 = (~b) & d
+    __ andn(rtmp2, d, b);
+
+    // rtmp1 = (b & c) | ((~b) & d)
+    __ orr(rtmp1, rtmp1, rtmp2);
+
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
+                            rtmp1, rtmp2, rmask32);
+  }
+
+  // a += ((b & d) | (c & (~d))) + x + ac;
+  // a = Integer.rotateLeft(a, s) + b;
+  void md5_GG(BufRegCache& reg_cache,
+              Register a, Register b, Register c, Register d,
+              int k, int s, int t,
+              Register rtmp1, Register rtmp2, Register rmask32) {
+    // rtmp1 = b & d
+    __ andr(rtmp1, b, d);
+
+    // rtmp2 = c & (~d)
+    __ andn(rtmp2, c, d);
+
+    // rtmp1 = (b & d) | (c & (~d))
+    __ orr(rtmp1, rtmp1, rtmp2);
+
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
+                            rtmp1, rtmp2, rmask32);
+  }
+
+  // a += ((b ^ c) ^ d) + x + ac;
+  // a = Integer.rotateLeft(a, s) + b;
+  void md5_HH(BufRegCache& reg_cache,
+              Register a, Register b, Register c, Register d,
+              int k, int s, int t,
+              Register rtmp1, Register rtmp2, Register rmask32) {
+    // rtmp1 = (b ^ c) ^ d
+    __ xorr(rtmp1, b, c);
+    __ xorr(rtmp1, rtmp1, d);
+
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
+                            rtmp1, rtmp2, rmask32);
+  }
+
+  // a += (c ^ (b | (~d))) + x + ac;
+  // a = Integer.rotateLeft(a, s) + b;
+  void md5_II(BufRegCache& reg_cache,
+              Register a, Register b, Register c, Register d,
+              int k, int s, int t,
+              Register rtmp1, Register rtmp2, Register rmask32) {
+    // rtmp1 = c ^ (b | (~d))
+    __ orn(rtmp1, b, d);
+    __ xorr(rtmp1, c, rtmp1);
+
+    m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t,
+                            rtmp1, rtmp2, rmask32);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset  (multi_block == True)
+  //   c_rarg3   - int     limit   (multi_block == True)
+  //
+  // Registers:
+  //    x0   zero  (zero)
+  //    x1     ra  (return address)
+  //    x2     sp  (stack pointer)
+  //    x3     gp  (global pointer)
+  //    x4     tp  (thread pointer)
+  //    x5     t0  state0
+  //    x6     t1  state1
+  //    x7     t2  state2
+  //    x8  f0/s0  (frame pointer)
+  //    x9     s1  state3  [saved-reg]
+  //   x10     a0  rtmp1 / c_rarg0
+  //   x11     a1  rtmp2 / c_rarg1
+  //   x12     a2  a     / c_rarg2
+  //   x13     a3  b     / c_rarg3
+  //   x14     a4  c
+  //   x15     a5  d
+  //   x16     a6  buf
+  //   x17     a7  state
+  //   x18     s2  ofs     [saved-reg]  (multi_block == True)
+  //   x19     s3  limit   [saved-reg]  (multi_block == True)
+  //   x20     s4
+  //   x21     s5
+  //   x22     s6  mask32  [saved-reg]
+  //   x23     s7
+  //   x24     s8  buf0    [saved-reg]
+  //   x25     s9  buf1    [saved-reg]
+  //   x26    s10  buf2    [saved-reg]
+  //   x27    s11  buf3    [saved-reg]
+  //   x28     t3  buf4
+  //   x29     t4  buf5
+  //   x30     t5  buf6
+  //   x31     t6  buf7
+  address generate_md5_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    // rotation constants
+    const int S11 = 7;
+    const int S12 = 12;
+    const int S13 = 17;
+    const int S14 = 22;
+    const int S21 = 5;
+    const int S22 = 9;
+    const int S23 = 14;
+    const int S24 = 20;
+    const int S31 = 4;
+    const int S32 = 11;
+    const int S33 = 16;
+    const int S34 = 23;
+    const int S41 = 6;
+    const int S42 = 10;
+    const int S43 = 15;
+    const int S44 = 21;
+
+    Register buf_arg   = c_rarg0; // a0
+    Register state_arg = c_rarg1; // a1
+    Register ofs_arg   = c_rarg2; // a2
+    Register limit_arg = c_rarg3; // a3
+
+    // we'll copy the args to these registers to free up a0-a3
+    // to use for other values manipulated by instructions
+    // that can be compressed
+    Register buf       = x16; // a6
+    Register state     = x17; // a7
+    Register ofs       = x18; // s2
+    Register limit     = x19; // s3
+
+    // using x12->15 to allow compressed instructions
+    Register a         = x12; // a2
+    Register b         = x13; // a3
+    Register c         = x14; // a4
+    Register d         = x15; // a5
+
+    Register state0    =  x5; // t0
+    Register state1    =  x6; // t1
+    Register state2    =  x7; // t2
+    Register state3    =  x9; // s1
+
+    // using x9->x11 to allow compressed instructions
+    Register rtmp1     = x10; // a0
+    Register rtmp2     = x11; // a1
+
+    const int64_t MASK_32 = 0xffffffff;
+    Register rmask32   = x22; // s6
+
+    RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
+    RegSet reg_cache_regs;
+    reg_cache_regs += reg_cache_saved_regs;
+    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    BufRegCache reg_cache(_masm, reg_cache_regs);
+
+    RegSet saved_regs;
+    if (multi_block) {
+      saved_regs += RegSet::of(ofs, limit);
+    }
+    saved_regs += RegSet::of(state3, rmask32);
+    saved_regs += reg_cache_saved_regs;
+
+    __ push_reg(saved_regs, sp);
+
+    __ mv(buf, buf_arg);
+    __ mv(state, state_arg);
+    if (multi_block) {
+      __ mv(ofs, ofs_arg);
+      __ mv(limit, limit_arg);
+    }
+    __ mv(rmask32, MASK_32);
+
+    // to minimize the number of memory operations:
+    // read the 4 state 4-byte values in pairs, with a single ld,
+    // and split them into 2 registers
+    __ ld(state0, Address(state));
+    __ srli(state1, state0, 32);
+    __ andr(state0, state0, rmask32);
+    __ ld(state2, Address(state, 8));
+    __ srli(state3, state2, 32);
+    __ andr(state2, state2, rmask32);
+
+    Label md5_loop;
+    __ BIND(md5_loop);
+
+    reg_cache.gen_loads(buf);
+
+    __ mv(a, state0);
+    __ mv(b, state1);
+    __ mv(c, state2);
+    __ mv(d, state3);
+
+    // Round 1
+    md5_FF(reg_cache, a, b, c, d,  0, S11, 0xd76aa478, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, d, a, b, c,  1, S12, 0xe8c7b756, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, c, d, a, b,  2, S13, 0x242070db, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, b, c, d, a,  3, S14, 0xc1bdceee, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, a, b, c, d,  4, S11, 0xf57c0faf, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, d, a, b, c,  5, S12, 0x4787c62a, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, c, d, a, b,  6, S13, 0xa8304613, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, b, c, d, a,  7, S14, 0xfd469501, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, a, b, c, d,  8, S11, 0x698098d8, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, d, a, b, c,  9, S12, 0x8b44f7af, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, c, d, a, b, 10, S13, 0xffff5bb1, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, b, c, d, a, 11, S14, 0x895cd7be, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, a, b, c, d, 12, S11, 0x6b901122, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, d, a, b, c, 13, S12, 0xfd987193, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, c, d, a, b, 14, S13, 0xa679438e, rtmp1, rtmp2, rmask32);
+    md5_FF(reg_cache, b, c, d, a, 15, S14, 0x49b40821, rtmp1, rtmp2, rmask32);
+
+    // Round 2
+    md5_GG(reg_cache, a, b, c, d,  1, S21, 0xf61e2562, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, d, a, b, c,  6, S22, 0xc040b340, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, c, d, a, b, 11, S23, 0x265e5a51, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, b, c, d, a,  0, S24, 0xe9b6c7aa, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, a, b, c, d,  5, S21, 0xd62f105d, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, d, a, b, c, 10, S22, 0x02441453, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, c, d, a, b, 15, S23, 0xd8a1e681, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, b, c, d, a,  4, S24, 0xe7d3fbc8, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, a, b, c, d,  9, S21, 0x21e1cde6, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, d, a, b, c, 14, S22, 0xc33707d6, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, c, d, a, b,  3, S23, 0xf4d50d87, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, b, c, d, a,  8, S24, 0x455a14ed, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, a, b, c, d, 13, S21, 0xa9e3e905, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, d, a, b, c,  2, S22, 0xfcefa3f8, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, c, d, a, b,  7, S23, 0x676f02d9, rtmp1, rtmp2, rmask32);
+    md5_GG(reg_cache, b, c, d, a, 12, S24, 0x8d2a4c8a, rtmp1, rtmp2, rmask32);
+
+    // Round 3
+    md5_HH(reg_cache, a, b, c, d,  5, S31, 0xfffa3942, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, d, a, b, c,  8, S32, 0x8771f681, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, c, d, a, b, 11, S33, 0x6d9d6122, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, b, c, d, a, 14, S34, 0xfde5380c, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, a, b, c, d,  1, S31, 0xa4beea44, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, d, a, b, c,  4, S32, 0x4bdecfa9, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, c, d, a, b,  7, S33, 0xf6bb4b60, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, b, c, d, a, 10, S34, 0xbebfbc70, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, a, b, c, d, 13, S31, 0x289b7ec6, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, d, a, b, c,  0, S32, 0xeaa127fa, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, c, d, a, b,  3, S33, 0xd4ef3085, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, b, c, d, a,  6, S34, 0x04881d05, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, a, b, c, d,  9, S31, 0xd9d4d039, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, d, a, b, c, 12, S32, 0xe6db99e5, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, c, d, a, b, 15, S33, 0x1fa27cf8, rtmp1, rtmp2, rmask32);
+    md5_HH(reg_cache, b, c, d, a,  2, S34, 0xc4ac5665, rtmp1, rtmp2, rmask32);
+
+    // Round 4
+    md5_II(reg_cache, a, b, c, d,  0, S41, 0xf4292244, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, d, a, b, c,  7, S42, 0x432aff97, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, c, d, a, b, 14, S43, 0xab9423a7, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, b, c, d, a,  5, S44, 0xfc93a039, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, a, b, c, d, 12, S41, 0x655b59c3, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, d, a, b, c,  3, S42, 0x8f0ccc92, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, c, d, a, b, 10, S43, 0xffeff47d, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, b, c, d, a,  1, S44, 0x85845dd1, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, a, b, c, d,  8, S41, 0x6fa87e4f, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, d, a, b, c, 15, S42, 0xfe2ce6e0, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, c, d, a, b,  6, S43, 0xa3014314, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, b, c, d, a, 13, S44, 0x4e0811a1, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, a, b, c, d,  4, S41, 0xf7537e82, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, d, a, b, c, 11, S42, 0xbd3af235, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, c, d, a, b,  2, S43, 0x2ad7d2bb, rtmp1, rtmp2, rmask32);
+    md5_II(reg_cache, b, c, d, a,  9, S44, 0xeb86d391, rtmp1, rtmp2, rmask32);
+
+    __ addw(state0, state0, a);
+    __ addw(state1, state1, b);
+    __ addw(state2, state2, c);
+    __ addw(state3, state3, d);
+
+    if (multi_block) {
+      __ addi(buf, buf, 64);
+      __ addi(ofs, ofs, 64);
+      // if (ofs <= limit) goto m5_loop
+      __ bge(limit, ofs, md5_loop);
+      __ mv(c_rarg0, ofs); // return ofs
+    }
+
+    // to minimize the number of memory operations:
+    // write back the 4 state 4-byte values in pairs, with a single sd
+    __ andr(state0, state0, rmask32);
+    __ slli(state1, state1, 32);
+    __ orr(state0, state0, state1);
+    __ sd(state0, Address(state));
+    __ andr(state2, state2, rmask32);
+    __ slli(state3, state3, 32);
+    __ orr(state2, state2, state3);
+    __ sd(state2, Address(state, 8));
+
+    __ pop_reg(saved_regs, sp);
+    __ ret();
+
+    return (address) start;
+  }
+
 #if INCLUDE_JFR
 
   static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
@@ -4128,6 +4491,11 @@ class StubGenerator: public StubCodeGenerator {
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
+
+    if (UseMD5Intrinsics) {
+      StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
+      StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true,  "md5_implCompressMB");
+    }
 #endif // COMPILER2_OR_JVMCI
   }
 

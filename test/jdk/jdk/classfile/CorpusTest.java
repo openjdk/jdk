@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @test
  * @summary Testing Classfile on small Corpus.
  * @build helpers.* testdata.*
- * @run junit/othervm -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
+ * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;

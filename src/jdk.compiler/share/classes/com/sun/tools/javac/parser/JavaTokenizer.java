@@ -425,9 +425,10 @@ public class JavaTokenizer extends UnicodeReader {
      * escape character. Actual conversion of escape sequences takes place
      * during at the end of readToken.
      *
-     * @param pos          position of the first character in literal.
+     * @param pos       position of the first character in literal.
+     * @param isString  true if is a string literal
      */
-    private void scanLitChar(int pos) {
+    private void scanLitChar(int pos, boolean isString) {
         int backslash = position();
         if (acceptThenPut('\\')) {
             hasEscapeSequences = true;
@@ -480,9 +481,13 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
 
                 case '{':
-                    scanEmbeddedExpression(pos, backslash);
-                    if (hasStringTemplateErrors) {
-                        return;
+                    if (isString) {
+                        scanEmbeddedExpression(pos, backslash);
+                        if (hasStringTemplateErrors) {
+                            return;
+                        }
+                    } else {
+                        lexError(position(), Errors.IllegalEscChar);
                     }
                     break;
 
@@ -546,7 +551,7 @@ public class JavaTokenizer extends UnicodeReader {
                     }
                 } else {
                     // Add character to string buffer.
-                    scanLitChar(pos);
+                    scanLitChar(pos, true);
                 }
             }
         } else {
@@ -570,7 +575,7 @@ public class JavaTokenizer extends UnicodeReader {
                     break;
                 } else {
                     // Add character to string buffer.
-                    scanLitChar(pos);
+                    scanLitChar(pos, true);
                 }
             }
         }
@@ -1115,10 +1120,17 @@ public class JavaTokenizer extends UnicodeReader {
                             lexError(pos, Errors.IllegalLineEndInCharLit);
                         }
 
-                        int errorPos = position();
-                        scanLitChar(pos);
+                        scanLitChar(pos, false);
 
-                        if (accept('\'')) {
+                        if (tk == TokenKind.ERROR) {
+                            while (isAvailable() && !is('\'')) {
+                                if (is('\\')) {
+                                    next();
+                                }
+                                next();
+                            }
+                            accept('\'');
+                        } else if (accept('\'')) {
                             tk = TokenKind.CHARLITERAL;
                         } else {
                             lexError(pos, Errors.UnclosedCharLit);

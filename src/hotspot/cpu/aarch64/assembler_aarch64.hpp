@@ -28,6 +28,7 @@
 
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -654,7 +655,8 @@ class Address {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
       int64_t sve_offset = offset / vl;
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int32_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }
