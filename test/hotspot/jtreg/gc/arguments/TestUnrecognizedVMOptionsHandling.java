@@ -40,7 +40,7 @@ public class TestUnrecognizedVMOptionsHandling {
 
   public static void main(String args[]) throws Exception {
     // The first two JAVA processes are expected to fail, but with a correct VM option suggestion
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:+UseDynamicNumberOfGcThreads",
       "-version"
       );
@@ -50,7 +50,7 @@ public class TestUnrecognizedVMOptionsHandling {
       throw new RuntimeException("Not expected to get exit value 0");
     }
 
-    pb = GCArguments.createJavaProcessBuilder(
+    pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:MaxiumHeapSize=500m",
       "-version"
       );
@@ -61,7 +61,7 @@ public class TestUnrecognizedVMOptionsHandling {
     }
 
     // The last JAVA process should run successfully for the purpose of sanity check
-    pb = GCArguments.createJavaProcessBuilder(
+    pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:+UseDynamicNumberOfGCThreads",
       "-version"
       );

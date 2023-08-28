@@ -41,7 +41,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestInitialTenuringThreshold {
 
   public static void runWithThresholds(int initial, int max, boolean shouldfail) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:+UseParallelGC",
       "-XX:InitialTenuringThreshold=" + String.valueOf(initial),
       "-XX:MaxTenuringThreshold=" + String.valueOf(max),
@@ -58,7 +58,7 @@ public class TestInitialTenuringThreshold {
 
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
       // some value below the default value of InitialTenuringThreshold of 7
       "-XX:MaxTenuringThreshold=1",
       "-version"

@@ -218,7 +218,7 @@ public class TestGCLogMessages {
 
     private void testNormalLogs() throws Exception {
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   GCTest.class.getName());
 
@@ -226,7 +226,7 @@ public class TestGCLogMessages {
         checkMessagesAtLevel(output, allLogMessages, Level.OFF);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=debug",
                                                    GCTest.class.getName());
@@ -234,7 +234,7 @@ public class TestGCLogMessages {
         output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, allLogMessages, Level.DEBUG);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                    "-Xmx10M",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTest.class.getName());
@@ -253,7 +253,7 @@ public class TestGCLogMessages {
     };
 
     private void testConcurrentRefinementLogs() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   "-Xlog:gc+refine+stats=debug",
                                                                   GCTest.class.getName());
@@ -271,7 +271,7 @@ public class TestGCLogMessages {
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
                                                                   "-XX:+G1EvacuationFailureALot",
@@ -285,7 +285,7 @@ public class TestGCLogMessages {
         checkMessagesAtLevel(output, exhFailureMessages, Level.DEBUG);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                    "-Xmx32M",
                                                    "-Xmn16M",
                                                    "-Xms32M",
@@ -304,7 +304,7 @@ public class TestGCLogMessages {
     };
 
     private void testWithConcurrentStart() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xlog:gc*=debug",
@@ -318,7 +318,7 @@ public class TestGCLogMessages {
     }
 
     private void testExpandHeap() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx10M",
                                                                   "-Xbootclasspath/a:.",
                                                                   "-Xlog:gc+ergo+heap=debug",

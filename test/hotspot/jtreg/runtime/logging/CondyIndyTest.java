@@ -40,7 +40,7 @@ public class CondyIndyTest {
     public static void main(String... args) throws Exception {
 
         // (1) methodhandles should turn on, no indy, no condy
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:methodhandles",
                                                                   "CondyIndy");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
@@ -49,7 +49,7 @@ public class CondyIndyTest {
         o.shouldNotContain("[debug][methodhandles,condy");
 
         // (2) methodhandles+condy=debug only
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles+condy=debug",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:methodhandles+condy=debug",
                                                    "CondyIndy");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
@@ -58,7 +58,7 @@ public class CondyIndyTest {
         o.shouldContain("[debug][methodhandles,condy");
 
         // (3) methodhandles+indy=debug only
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles+indy=debug",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:methodhandles+indy=debug",
                                                    "CondyIndy");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
@@ -67,7 +67,7 @@ public class CondyIndyTest {
         o.shouldNotContain("[debug][methodhandles,condy");
 
         // (4) methodhandles, condy, indy all on
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:methodhandles=info",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:methodhandles=info",
                                                    "-Xlog:methodhandles+condy=debug",
                                                    "-Xlog:methodhandles+indy=debug",
                                                    "CondyIndy");

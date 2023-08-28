@@ -91,7 +91,7 @@ public class TestSelectiveBarrierFlags {
 
             pool.submit(() -> {
                 try {
-                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(conf.toArray(new String[0]));
+                    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(conf.toArray(new String[0]));
                     OutputAnalyzer output = new OutputAnalyzer(pb.start());
                     output.shouldHaveExitValue(0);
                 } catch (Exception e) {

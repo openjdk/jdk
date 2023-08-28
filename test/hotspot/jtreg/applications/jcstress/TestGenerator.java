@@ -109,7 +109,7 @@ public class TestGenerator {
         Path output;
         try {
             output = Files.createTempFile("jcstress", ".out");
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                     "-jar",
                     path.toAbsolutePath().toString(),
                     "-l");

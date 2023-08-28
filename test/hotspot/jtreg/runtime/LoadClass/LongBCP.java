@@ -70,7 +70,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         String bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             bootCP, "Hello");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -82,7 +82,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -97,7 +97,7 @@ public class LongBCP {
 
         // run with long bootclasspath to hello.jar
         bootCP = "-Xbootclasspath/a:" + helloJar;
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -122,7 +122,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
@@ -139,7 +139,7 @@ public class LongBCP {
         Path jarPath = jarDir.resolve("hello.jar");
         Files.copy(Paths.get(helloJar), jarPath);
         bootCP = "-Xbootclasspath/a:" + jarPath.toString();
-        pb = ProcessTools.createJavaProcessBuilder(bootCP, "Hello");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Hello World")
@@ -151,7 +151,7 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             bootCP, "Hello");
 
         output = new OutputAnalyzer(pb.start());

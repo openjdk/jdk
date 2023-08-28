@@ -102,7 +102,7 @@ public class NonSerializableTest {
                                           Paths.get(System.getProperty("user.dir")));
         assertTrue(b, "Compilation failed");
         String params[] = Arrays.copyOfRange(args, 1, args.length);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(params);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(params);
         Process p = ProcessTools.startProcess("Serializable Test", pb);
         int exitValue = p.waitFor();
         assertEquals(exitValue, 0, "Test failed");

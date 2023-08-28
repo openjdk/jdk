@@ -92,7 +92,7 @@ public class PatchModuleTestJarDir {
 
 
         // Supply --patch-module with the name of the jar file for the module java.naming.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=" +
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("--patch-module=java.naming=" +
                                                                            moduleJar +
                                                                            File.pathSeparator +
                                                                            System.getProperty("test.classes") + "/mods/java.naming",

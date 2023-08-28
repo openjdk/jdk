@@ -48,7 +48,7 @@ public class TestInitialEnvironmentVariable {
     private final static String EVENT_NAME = EventNames.InitialEnvironmentVariable;
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(Test.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(Test.class.getName());
         setEnv(pb.environment());
         (new OutputAnalyzer(pb.start())).shouldHaveExitValue(0);
     }

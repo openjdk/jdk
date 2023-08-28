@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class StringTableVerifyTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyStringTableAtExit", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyStringTableAtExit", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

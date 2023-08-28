@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class XShareAuto {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-server", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xshare:dump", "-Xlog:cds");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -55,7 +55,7 @@ public class XShareAuto {
         };
 
         for (String x : cases) {
-            pb = ProcessTools.createJavaProcessBuilder(
+            pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./XShareAuto.jsa",
                 "-Xlog:cds",

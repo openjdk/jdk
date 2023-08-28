@@ -68,7 +68,7 @@ public class CheckCodeCacheInfo {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintCodeCache",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintCodeCache",
                                                    "-XX:+Verbose",
                                                    "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());

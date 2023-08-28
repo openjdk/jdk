@@ -131,7 +131,7 @@ public class TestResize {
     // that will allow us to calculate the table's load factor.
     // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
     // that will allow us to detect if the system dictionary resized.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintClassLoaderDataGraphAtExit",
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintClassLoaderDataGraphAtExit",
                                                               "-Xlog:safepoint+cleanup,class+loader+data",
                                                               "TriggerResize",
                                                               String.valueOf(CLASSES_TO_LOAD));

@@ -48,7 +48,7 @@ public class ReserveMemory {
       // expected to crash
       WhiteBox.getWhiteBox().readReservedMemory();
     } else {
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+WhiteBoxAPI",

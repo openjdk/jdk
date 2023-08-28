@@ -42,7 +42,7 @@ public final class NonEmptyErrorStream {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                     NonEmptyErrorStream.class.getSimpleName(),"run");
             Process p = pb.start();
             OutputAnalyzer output = new OutputAnalyzer(p);

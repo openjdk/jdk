@@ -96,7 +96,7 @@ public class TestSmallHeap {
 
     private static void verifySmallHeapSize(String gc, long expectedMaxHeap) throws Exception {
         long minMaxHeap = 4 * 1024 * 1024;
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             gc,
             "-Xmx" + minMaxHeap,
             "-XX:+PrintFlagsFinal",

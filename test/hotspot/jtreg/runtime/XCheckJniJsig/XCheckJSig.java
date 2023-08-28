@@ -61,14 +61,14 @@ public class XCheckJSig {
             throw new RuntimeException("File libjsig not found, path: " + libjsig);
         }
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcheck:jni", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xcheck:jni", "-version");
         Map<String, String> env = pb.environment();
         env.put(env_var, libjsig);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("libjsig is activated");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xcheck:jni", "-verbose:jni", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xcheck:jni", "-verbose:jni", "-version");
         env = pb.environment();
         env.put(env_var, libjsig);
         output = new OutputAnalyzer(pb.start());

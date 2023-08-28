@@ -79,7 +79,7 @@ public class RunToExit {
         };
         args = VMConnection.insertDebuggeeVMOptions(args);
 
-        ProcessBuilder launcher = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder launcher = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
 
         System.out.println(launcher.command().stream().collect(Collectors.joining(" ", "Starting: ", "")));
 

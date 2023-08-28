@@ -92,7 +92,7 @@ class TestEagerReclaimHumongousRegionsWithRefsReclaimRegionFast {
 public class TestEagerReclaimHumongousRegionsWithRefs {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-XX:+UseG1GC",
             "-Xms128M",
             "-Xmx128M",

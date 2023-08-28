@@ -49,11 +49,11 @@ public class StackWalkTest {
     }
 
     public static void main(String... args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:stackwalk=debug",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:stackwalk=debug",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:stackwalk=off",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:stackwalk=off",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
     }

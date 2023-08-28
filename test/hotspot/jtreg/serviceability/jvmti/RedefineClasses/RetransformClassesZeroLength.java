@@ -56,7 +56,7 @@ public class RetransformClassesZeroLength {
     public static void main(String args[]) throws Throwable {
         String agentJar = buildAgent();
         ProcessTools.executeProcess(
-                ProcessTools.createJavaProcessBuilder(
+                ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                         "-javaagent:" + agentJar,
                         "-version")
         ).shouldHaveExitValue(0);

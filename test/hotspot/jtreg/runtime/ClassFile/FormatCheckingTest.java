@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class FormatCheckingTest {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("BadHelloWorld");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("BadHelloWorld");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("java.lang.ClassFormatError: Illegal class name");
         output.shouldHaveExitValue(1);

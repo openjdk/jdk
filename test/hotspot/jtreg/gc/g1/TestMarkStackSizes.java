@@ -50,7 +50,7 @@ public class TestMarkStackSizes {
         Collections.addAll(testArguments, extraArgs);
         testArguments.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(testArguments);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(testArguments);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 

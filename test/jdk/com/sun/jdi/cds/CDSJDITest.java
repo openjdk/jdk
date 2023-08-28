@@ -39,7 +39,7 @@ public class CDSJDITest {
         File jarClasslistFile = makeClassList(jarClasses);
         String appJar = buildJar(testname, jarClasses);
 
-        // These are the arguments passed to createJavaProcessBuilder() to launch
+        // These are the arguments passed to createJavaProcessBuilderIgnoreTestJavaOpts() to launch
         // the JDI test.
         String[] testArgs = {
         // JVM Args:
@@ -67,7 +67,7 @@ public class CDSJDITest {
         };
 
         // Dump the archive
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-Xbootclasspath/a:" + appJar,
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./SharedArchiveFile.jsa",
             "-XX:ExtraSharedClassListFile=" + jarClasslistFile.getPath(),

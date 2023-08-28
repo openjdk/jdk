@@ -63,7 +63,7 @@ public class TestG1PercentageOptions {
     };
 
     private static void check(String flag, boolean is_valid) throws Exception {
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+UseG1GC", flag, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (is_valid) {

@@ -39,7 +39,7 @@ public class ProtectionDomainVerificationTest {
     public static void main(String... args) throws Exception {
 
         // -Xlog:protectiondomain=trace
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:protectiondomain=trace",
                                                                   "-Xmx128m",
                                                                   "-Djava.security.manager=allow",
                                                                   Hello.class.getName(), "security_manager");
@@ -49,7 +49,7 @@ public class ProtectionDomainVerificationTest {
         .shouldContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=debug",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:protectiondomain=debug",
                                                                   "-Xmx128m",
                                                                   "-Djava.security.manager=allow",
                                                                   Hello.class.getName(), "security_manager");
@@ -59,7 +59,7 @@ public class ProtectionDomainVerificationTest {
         .shouldNotContain("[protectiondomain] adding protection domain for class");
 
         // -Xlog:protectiondomain=debug
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:protectiondomain=trace",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:protectiondomain=trace",
                                                    "-Xmx128m",
                                                    "-Djava.security.manager=disallow",
                                                    Hello.class.getName());

@@ -60,7 +60,7 @@ public class ClassResolutionTest {
     public static void main(String... args) throws Exception {
 
         // (1) class+resolve should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:class+resolve=debug",
                                                                   ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
@@ -68,7 +68,7 @@ public class ClassResolutionTest {
         o.shouldContain("[class,resolve] resolve JVM_CONSTANT_MethodHandle");
 
         // (2) class+resolve should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:class+resolve=debug",
                                                    "-Xlog:class+resolve=off",
                                                    ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());

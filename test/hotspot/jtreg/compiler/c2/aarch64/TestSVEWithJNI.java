@@ -79,7 +79,7 @@ public class TestSVEWithJNI {
         Collections.addAll(vmopts, "-Dtest.jdk=" + testjdkPath);
         Collections.addAll(vmopts, args);
         Collections.addAll(vmopts, TestSVEWithJNI.class.getName(), mode);
-        return ProcessTools.createJavaProcessBuilder(vmopts.toArray(new String[vmopts.size()]));
+        return ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(vmopts.toArray(new String[vmopts.size()]));
     }
 
     public static void main(String [] args) throws Exception {

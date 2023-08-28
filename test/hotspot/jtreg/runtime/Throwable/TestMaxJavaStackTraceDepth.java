@@ -79,7 +79,7 @@ public class TestMaxJavaStackTraceDepth {
       int[] depths = {0, 20, 1024};
       for (int d : depths) {
         System.out.println("running test with -XX:MaxJavaStackTraceDepth=" + d);
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:stacktrace=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:stacktrace=info",
                                                                   "-XX:MaxJavaStackTraceDepth=" + d,
                                                                   "--add-opens",
                                                                   "java.base/java.lang=ALL-UNNAMED",

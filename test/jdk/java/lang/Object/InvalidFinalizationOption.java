@@ -43,7 +43,7 @@ public class InvalidFinalizationOption {
         };
 
         for (var data : testData) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(data.arg);
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(data.arg);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldContain(data.expected);
             output.shouldHaveExitValue(1);

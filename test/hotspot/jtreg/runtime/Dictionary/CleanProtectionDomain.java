@@ -43,7 +43,7 @@ import jdk.test.whitebox.WhiteBox;
 public class CleanProtectionDomain {
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                                   "-Xlog:protectiondomain+table=debug",
                                   "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                                   "-XX:+UnlockDiagnosticVMOptions",

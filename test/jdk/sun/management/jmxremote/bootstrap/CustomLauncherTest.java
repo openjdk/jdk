@@ -95,7 +95,7 @@ public class CustomLauncherTest {
             System.out.println("  PID           : " + serverPrc.pid());
             System.out.println("  shutdown port : " + port.get());
 
-            ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder client = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-cp",
                 Utils.TEST_CLASS_PATH,
                 "--add-exports", "jdk.management.agent/jdk.internal.agent=ALL-UNNAMED",

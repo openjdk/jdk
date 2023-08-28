@@ -42,7 +42,7 @@ public class TestCardTablePageCommits {
         // because of 8kB pages, assume 4 KB pages for all other CPUs.
         String Xmx = "-Xmx4m";
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             Xmx,
             "-XX:NativeMemoryTracking=detail",
             "-XX:+UseParallelGC",

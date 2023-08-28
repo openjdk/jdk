@@ -78,7 +78,7 @@ public class JspawnhelperProtocol {
 
     private static void normalExec() throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                    "JspawnhelperProtocol",
                                                    "normalExec");
         pb.inheritIO();
@@ -93,7 +93,7 @@ public class JspawnhelperProtocol {
 
     private static void simulateCrashInChild(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                    "JspawnhelperProtocol",
                                                    "simulateCrashInChild" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
@@ -126,7 +126,7 @@ public class JspawnhelperProtocol {
 
     private static void simulateCrashInParent(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                    "JspawnhelperProtocol",
                                                    "simulateCrashInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));
@@ -172,7 +172,7 @@ public class JspawnhelperProtocol {
 
     private static void simulateTruncatedWriteInParent(int stage) throws Exception {
         ProcessBuilder pb;
-        pb = ProcessTools.createJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                    "JspawnhelperProtocol",
                                                    "simulateTruncatedWriteInParent" + stage);
         pb.environment().put(ENV_KEY, Integer.toString(stage));

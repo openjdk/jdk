@@ -42,7 +42,7 @@ public class VerifyAdapterSharing {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xcomp", "-XX:+IgnoreUnrecognizedVMOptions",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xcomp", "-XX:+IgnoreUnrecognizedVMOptions",
                 "-XX:+VerifyAdapterSharing", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);

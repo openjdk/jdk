@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
 public class CheckJNI {
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xcheck:jni", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-Xcheck:jni", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Minimal VM warning: JNI CHECKING is not supported in this VM")
                 .shouldHaveExitValue(0);

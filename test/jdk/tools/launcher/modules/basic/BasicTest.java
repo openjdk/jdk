@@ -270,7 +270,7 @@ public class BasicTest {
      * while setting the _JAVA_LAUNCHER_DEBUG environment variable.
      */
     private ProcessBuilder createProcessWithLauncherDebugging(String... cmds) {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(Utils.addTestJavaOpts(cmds));
         pb.environment().put("_JAVA_LAUNCHER_DEBUG", "true");
 
         return pb;

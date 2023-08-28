@@ -97,7 +97,7 @@ public class TestDTestAndExclude {
     protected static void run(String dTest, String dExclude, String arg) throws Exception {
         System.out.println("Run -DTest=" + dTest + " -DExclude=" + dExclude + " arg=" + arg);
         OutputAnalyzer oa;
-        ProcessBuilder process = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder process = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-Dtest.class.path=" + Utils.TEST_CLASS_PATH, "-Dtest.jdk=" + Utils.TEST_JDK,
                 "-Dtest.vm.opts=-DTest=" + dTest + " -DExclude=" + dExclude,
                 "ir_framework.tests.TestDTestAndExclude", arg);

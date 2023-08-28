@@ -54,7 +54,7 @@ public class GetPackageXbootclasspath {
         ClassFileInstaller.writeClassToDisk("P/Test",
             InMemoryJavaCompiler.compile("P.Test", Test_src), test_classes);
 
-        new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(
+        new OutputAnalyzer(ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-Xbootclasspath/a:" + test_classes, "P.Test")
             .start()).shouldContain("Test Passed")
             .shouldHaveExitValue(0);

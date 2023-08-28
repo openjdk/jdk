@@ -51,7 +51,7 @@ public class StackTraceLogging {
 
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:stacktrace=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:stacktrace=info",
                                                                   "-XX:MaxJavaStackTraceDepth=1024",
                                                                   "--add-opens",
                                                                   "java.base/java.lang=ALL-UNNAMED",

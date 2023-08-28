@@ -59,7 +59,7 @@ public class TestSharedArchiveWithPreTouch {
         }
         dump_args.addAll(Arrays.asList(new String[] { "-Xshare:dump", "-Xlog:cds" }));
 
-        pb = ProcessTools.createJavaProcessBuilder(dump_args);
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(dump_args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("Loading classes to share");
@@ -72,7 +72,7 @@ public class TestSharedArchiveWithPreTouch {
             }
             load_args.addAll(Arrays.asList(new String[] { "-Xshare:on", "-version" }));
 
-            pb = ProcessTools.createJavaProcessBuilder(load_args.toArray(new String[0]));
+            pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(load_args.toArray(new String[0]));
             output = new OutputAnalyzer(pb.start());
             output.shouldContain("sharing");
             output.shouldHaveExitValue(0);

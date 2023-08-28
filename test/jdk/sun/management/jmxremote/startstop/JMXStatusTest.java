@@ -89,7 +89,7 @@ abstract public class JMXStatusTest {
         args.add("-XX:+UsePerfData");
         args.addAll(getCustomVmArgs());
         args.add(TEST_APP_NAME);
-        testAppPb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+        testAppPb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args.toArray(new String[args.size()]));
 
         jcmd = new ManagementAgentJcmd(TEST_APP_NAME, false);
     }

@@ -156,7 +156,7 @@ public class NMTInitializationTest {
         }
         vmArgs.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmArgs);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(vmArgs);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (debug) {
             output.reportDiagnosticSummary();

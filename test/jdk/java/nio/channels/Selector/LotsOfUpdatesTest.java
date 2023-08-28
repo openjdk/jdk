@@ -46,7 +46,7 @@ public class LotsOfUpdatesTest {
     private static final String ULIMIT_SET_CMD = "ulimit -n 2048";
 
     private static final String JAVA_CMD = ProcessTools.getCommandLine(
-            ProcessTools.createJavaProcessBuilder(LotsOfUpdates.class.getName()));
+            ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(LotsOfUpdates.class.getName()));
 
     public static void main(String[] args) throws Throwable {
         ProcessTools.executeCommand("sh", "-c", ULIMIT_SET_CMD + " && " + JAVA_CMD)

@@ -43,12 +43,12 @@ public class StartupOutput {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xint", "-XX:+DisplayVMOutputToStdout", "-version");
         out = new OutputAnalyzer(pb.start());
         out.shouldNotContain("no space to run compilers");
         out.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xint", "-XX:ReservedCodeCacheSize=1770K", "-XX:InitialCodeCacheSize=4K", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xint", "-XX:ReservedCodeCacheSize=1770K", "-XX:InitialCodeCacheSize=4K", "-version");
         out = new OutputAnalyzer(pb.start());
         // The VM should not crash but may return an error message because we don't have enough space for adapters
         int exitCode = out.getExitValue();

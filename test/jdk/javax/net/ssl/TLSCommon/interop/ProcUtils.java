@@ -42,7 +42,7 @@ public class ProcUtils {
      */
     public static OutputAnalyzer java(Path javaPath, Class<?> clazz,
             Map<String, String> props) {
-        ProcessBuilder pb = createJavaProcessBuilder(javaPath, clazz, props);
+        ProcessBuilder pb = createJavaProcessBuilderIgnoreTestJavaOpts(javaPath, clazz, props);
         try {
             return ProcessTools.executeCommand(pb);
         } catch (Throwable e) {
@@ -50,7 +50,7 @@ public class ProcUtils {
         }
     }
 
-    private static ProcessBuilder createJavaProcessBuilder(Path javaPath,
+    private static ProcessBuilder createJavaProcessBuilderIgnoreTestJavaOpts(Path javaPath,
             Class<?> clazz, Map<String, String> props) {
         List<String> cmds = new ArrayList<>();
         cmds.add(javaPath.toString());

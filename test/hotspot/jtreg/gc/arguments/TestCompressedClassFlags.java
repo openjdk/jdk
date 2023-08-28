@@ -50,7 +50,7 @@ public class TestCompressedClassFlags {
     }
 
     private static OutputAnalyzer runJava(String ... args) throws Exception {
-        ProcessBuilder pb = GCArguments.createJavaProcessBuilder(args);
+        ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(args);
         return new OutputAnalyzer(pb.start());
     }
 }

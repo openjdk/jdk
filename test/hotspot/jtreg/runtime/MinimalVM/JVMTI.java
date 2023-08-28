@@ -36,7 +36,7 @@ import jdk.test.lib.process.ProcessTools;
 public class JVMTI {
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-minimal",
                 "-agentlib:jdwp=server=y,transport=dt_socket,address=5000,suspend=n",
                 "-version");

@@ -46,7 +46,7 @@ public class JImageToolTest {
         args.add("jdk.tools.jimage.Main");
         args.addAll(Arrays.asList(jimageArgs));
 
-        ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+        ProcessBuilder builder = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args.toArray(new String[args.size()]));
         int res = builder.inheritIO().start().waitFor();
 
         if (res != 0) {

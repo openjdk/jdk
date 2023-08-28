@@ -67,7 +67,7 @@ public abstract class DynamicLauncher {
 
     protected OutputAnalyzer runVM() throws Exception {
         String[] options = this.options();
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(options);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(options);
         OutputAnalyzer out = ProcessTools.executeProcess(pb);
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());

@@ -57,23 +57,23 @@ public class ExceptionsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:exceptions=info",
                                                                   InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=off",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:exceptions=off",
                                                    InternalClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(InternalClass.class.getName());
         updateEnvironment(pb, "_JAVA_OPTIONS", "-Xlog:exceptions=info");
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(InternalClass.class.getName());
         updateEnvironment(pb, "JAVA_TOOL_OPTIONS", "-Xlog:exceptions=info -Xlog:exceptions=off");
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
                                                    + File.separator + "ExceptionsTest_options_file",
                                                    InternalClass.class.getName());
         analyzeOutputOn(pb);

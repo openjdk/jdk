@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 public class TestDeprecatedPrintFlags {
 
     public static void testPrintGC() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGC", DoGC.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintGC", DoGC.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-XX:+PrintGC is deprecated. Will use -Xlog:gc instead.");
         output.shouldNotContain("PrintGCDetails");
@@ -52,7 +52,7 @@ public class TestDeprecatedPrintFlags {
     }
 
     public static void testPrintGCDetails() throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGCDetails", DoGC.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintGCDetails", DoGC.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldNotContain("PrintGC is deprecated");
@@ -63,7 +63,7 @@ public class TestDeprecatedPrintFlags {
 
     public static void testXloggc() throws Exception {
         String fileName = "gc-test.log";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xloggc:" + fileName, DoGC.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xloggc:" + fileName, DoGC.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");
         output.shouldNotContain("PrintGCDetails");
@@ -80,7 +80,7 @@ public class TestDeprecatedPrintFlags {
 
     public static void testXloggcWithPrintGCDetails() throws Exception {
         String fileName = "gc-test.log";
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintGCDetails", "-Xloggc:" + fileName, DoGC.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+PrintGCDetails", "-Xloggc:" + fileName, DoGC.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");

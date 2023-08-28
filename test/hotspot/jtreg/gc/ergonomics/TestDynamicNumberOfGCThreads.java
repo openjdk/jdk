@@ -73,7 +73,7 @@ public class TestDynamicNumberOfGCThreads {
     String[] baseArgs = {"-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xmx10M", "-XX:+UseDynamicNumberOfGCThreads", "-Xlog:gc+task=trace", GCTest.class.getName()};
 
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(baseArgs);
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(baseArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
 
     // Turn on parallel reference processing
@@ -81,7 +81,7 @@ public class TestDynamicNumberOfGCThreads {
     String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
     System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
     System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
-    pb_enabled = ProcessTools.createJavaProcessBuilder(parRefArgs);
+    pb_enabled = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(parRefArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
   }
 

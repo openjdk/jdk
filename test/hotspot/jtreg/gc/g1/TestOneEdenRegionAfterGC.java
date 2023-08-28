@@ -40,7 +40,7 @@ public class TestOneEdenRegionAfterGC {
   private static long YoungGenSize = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run() throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-Xbootclasspath/a:.",
       "-Xmn" + YoungGenSize,
       "-Xmx512M",

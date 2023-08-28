@@ -43,7 +43,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestEvacuationFailure {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-Xmx32M",
                                                                   "-Xmn16M",
                                                                   "-XX:+G1EvacuationFailureALot",

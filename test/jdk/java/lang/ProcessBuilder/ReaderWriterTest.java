@@ -82,7 +82,7 @@ public class ReaderWriterTest {
         Charset cs = Charset.forName(nativeEncoding);
         System.out.println("Native.encoding Charset: " + cs);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("ReaderWriterTest$ChildWithCharset");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("ReaderWriterTest$ChildWithCharset");
         Process p = pb.start();
         writeTestChars(p.outputWriter());
         checkReader(p.inputReader(), cs, "Out");
@@ -121,7 +121,7 @@ public class ReaderWriterTest {
             // 2: redirectErrorStream(true); no redirect of errorOutput
             // 3: redirectErrorStream(true); redirect of errorOutput to a file
 
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("ReaderWriterTest$ChildWithCharset");
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("ReaderWriterTest$ChildWithCharset");
             pb.redirectInput(inPath.toFile());
             pb.redirectOutput(outPath.toFile());
             if (errType == 1 || errType == 3) {
@@ -191,7 +191,7 @@ public class ReaderWriterTest {
         }
         String cleanCSName = cleanCharsetName(cs);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-Dsun.stdout.encoding=" + cleanCSName,     // Encode in the child using the charset
                 "-Dsun.stderr.encoding=" + cleanCSName,
                 "ReaderWriterTest$ChildWithCharset");
@@ -217,7 +217,7 @@ public class ReaderWriterTest {
     @Test
     void testNullCharsets()  throws IOException {
         // Launch a child; its behavior is not interesting and is ignored
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "ReaderWriterTest$ChildWithCharset");
 
         Process p = pb.start();
@@ -263,7 +263,7 @@ public class ReaderWriterTest {
                 : StandardCharsets.UTF_8;
 
         // Launch a child; its behavior is not interesting and is ignored
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "ReaderWriterTest$ChildWithCharset");
 
         Process p = pb.start();

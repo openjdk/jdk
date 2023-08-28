@@ -44,7 +44,7 @@ public class SharedStrings {
         // This also serves as a reference on how to use this feature,
         // hence the command lines are spelled out instead of using the
         // test utils methods.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
             "-Xlog:cds,cds+hashtables",
@@ -56,7 +56,7 @@ public class SharedStrings {
         CDSTestUtils.checkDump(out, "Shared string table stats");
 
 
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=./SharedStrings.jsa",
                 // needed for access to white box test API

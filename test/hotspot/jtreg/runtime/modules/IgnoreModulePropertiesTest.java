@@ -43,7 +43,7 @@ public class IgnoreModulePropertiesTest {
     // bogus for that property.  But, since the property is ignored no exception is
     // thrown.
     public static void testProperty(String prop, String value) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-D" + prop + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(" version ");
@@ -62,7 +62,7 @@ public class IgnoreModulePropertiesTest {
     public static void testOption(boolean shouldVMFail,
                                   String option, String value,
                                   String prop, String result) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             option + "=" + value, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (shouldVMFail) {

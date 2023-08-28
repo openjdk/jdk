@@ -91,7 +91,7 @@ public class TestMaxNewSize {
     finalargs.addAll(Arrays.asList(flags));
     finalargs.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldContain("Initial young gen size set larger than the maximum young gen size");
   }
@@ -114,7 +114,7 @@ public class TestMaxNewSize {
     finalargs.add("-XX:+PrintFlagsFinal");
     finalargs.add("-version");
 
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(finalargs);
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(finalargs);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

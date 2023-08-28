@@ -63,7 +63,7 @@ public class RTMTestBase {
     public static OutputAnalyzer executeRTMTest(CompilableTest test,
             String... options) throws Exception {
         ProcessBuilder processBuilder
-                = ProcessTools.createJavaProcessBuilder(
+                = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 RTMTestBase.prepareTestOptions(test, options));
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());
@@ -83,7 +83,7 @@ public class RTMTestBase {
     public static OutputAnalyzer executeRTMTest(String logFileName,
             CompilableTest test, String... options) throws Exception {
         ProcessBuilder processBuilder
-                = ProcessTools.createJavaProcessBuilder(
+                = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 RTMTestBase.prepareTestOptions(logFileName, test, options));
         OutputAnalyzer outputAnalyzer
                 = new OutputAnalyzer(processBuilder.start());

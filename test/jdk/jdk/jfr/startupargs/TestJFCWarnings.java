@@ -70,7 +70,7 @@ public class TestJFCWarnings {
     }
 
     private static void launch(String commandLine, String expectedOutput) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(commandLine, "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(commandLine, "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(expectedOutput);
     }

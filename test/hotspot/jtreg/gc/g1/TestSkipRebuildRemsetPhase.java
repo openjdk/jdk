@@ -40,7 +40,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TestSkipRebuildRemsetPhase {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/a:.",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xbootclasspath/a:.",
                                                                   "-XX:+UseG1GC",
                                                                   "-XX:+UnlockExperimentalVMOptions",
                                                                   "-XX:+UnlockDiagnosticVMOptions",

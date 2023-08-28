@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestMultipleXlogArgs {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:logging=debug",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:logging=debug",
                                                                   "-Xlog:logging=trace",
                                                                   "-Xlog:defaultmethods=trace",
                                                                   "-Xlog:defaultmethods=warning",

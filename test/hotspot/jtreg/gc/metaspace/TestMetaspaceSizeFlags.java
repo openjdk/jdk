@@ -84,7 +84,7 @@ public class TestMetaspaceSizeFlags {
   }
 
   private static OutputAnalyzer run(long maxMetaspaceSize, long metaspaceSize) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
         "-XX:MaxMetaspaceSize=" + maxMetaspaceSize,
         "-XX:MetaspaceSize=" + metaspaceSize,
         "-XX:-UseLargePages", // Prevent us from using 2GB large pages on solaris + sparc.

@@ -51,11 +51,11 @@ public class SafepointCleanupTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:safepoint+cleanup=info",
                                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:safepoint+cleanup=off",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:safepoint+cleanup=off",
                                                    InnerClass.class.getName());
         analyzeOutputOff(pb);
     }

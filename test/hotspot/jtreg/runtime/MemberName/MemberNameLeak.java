@@ -126,7 +126,7 @@ public class MemberNameLeak {
         Path gcLogPath = createGcLogPath("gc." + gc + "." + doConcurrent);
         System.err.println("test(" + gc + ", " + doConcurrent + ")" + " " + dateFormat.format(new Date()));
         // Run this Leak class with logging
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                                       "-Xlog:membername+table=trace,gc+verify=debug,gc:" + gcLogPath + ":time,utctime,uptime,pid,level,tags",
                                       "-XX:+UnlockExperimentalVMOptions",
                                       "-XX:+UnlockDiagnosticVMOptions",

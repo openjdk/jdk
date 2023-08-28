@@ -44,7 +44,7 @@ public class PremainClassTest {
                 System.getProperty("test.src"),
                 System.getProperty("test.classes", "."));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 Utils.addTestJavaOpts(testArgs.split("\\s+")));
         System.out.println("testjvm.cmd:" + Utils.getCommandLine(pb));
 

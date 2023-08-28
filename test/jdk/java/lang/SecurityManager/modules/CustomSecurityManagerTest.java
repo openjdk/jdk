@@ -64,7 +64,7 @@ public class CustomSecurityManagerTest {
 
     @Test(dataProvider = "testCases")
     public void testProvider(List<String> args) throws Throwable {
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
         OutputAnalyzer outputAnalyzer = ProcessTools.executeCommand(processBuilder);
         outputAnalyzer.shouldHaveExitValue(0);
     }

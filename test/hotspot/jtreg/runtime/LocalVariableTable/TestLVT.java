@@ -41,17 +41,17 @@ public class TestLVT {
     public static void main(String[] args) throws Exception {
         test();  // Test good LVT in this test
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("DuplicateLVT");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("DuplicateLVT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTable attribute entry for 'by' in class file DuplicateLVT")
             .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("DuplicateLVTT");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("DuplicateLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("Duplicated LocalVariableTypeTable attribute entry for 'list' in class file DuplicateLVTT")
             .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("NotFoundLVTT");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("NotFoundLVTT");
         new OutputAnalyzer(pb.start())
             .shouldContain("LVTT entry for 'list' in class file NotFoundLVTT does not match any LVT entry")
             .shouldHaveExitValue(1);

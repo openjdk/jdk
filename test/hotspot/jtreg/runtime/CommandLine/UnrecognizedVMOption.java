@@ -44,7 +44,7 @@ public class UnrecognizedVMOption {
       "bogus_option",
     };
     for (String option : badOptions) {
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
           "-XX:" + option, "-version");
 
       OutputAnalyzer output = new OutputAnalyzer(pb.start());

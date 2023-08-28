@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestBadPackageWithInterface {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-cp", System.getProperty("test.classes"),
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+VerifyBeforeExit", MyLoader.class.getName());

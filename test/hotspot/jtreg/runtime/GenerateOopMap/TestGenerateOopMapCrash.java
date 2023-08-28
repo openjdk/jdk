@@ -40,7 +40,7 @@ public class TestGenerateOopMapCrash {
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             // Spawn new VM instance to execute test
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                     "-XX:-TieredCompilation",
                     "-XX:CompileCommand=dontinline,if_icmpleIsLastOpcode.m*",
                     "-Xmx64m",

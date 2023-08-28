@@ -229,7 +229,7 @@ public class TestInheritFD {
             throw new SkippedException("Could not find lsof like command");
         }
 
-        ProcessBuilder pb = createJavaProcessBuilder(
+        ProcessBuilder pb = createJavaProcessBuilderIgnoreTestJavaOpts(
             "-Xlog:gc:\"" + logPath + "\"",
             "-Dtest.jdk=" + getProperty("test.jdk"),
             VMStartedWithLogging.class.getName(),
@@ -250,7 +250,7 @@ public class TestInheritFD {
         // second VM
         public static void main(String[] args) throws IOException, InterruptedException {
             System.out.println(SECOND_VM_PID_PREFIX + ProcessHandle.current().pid());
-            ProcessBuilder pb = createJavaProcessBuilder(
+            ProcessBuilder pb = createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-Dtest.jdk=" + getProperty("test.jdk"),
                 VMShouldNotInheritFileDescriptors.class.getName(),
                 args[0],

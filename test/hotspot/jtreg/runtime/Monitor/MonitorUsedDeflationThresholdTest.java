@@ -73,7 +73,7 @@ public class MonitorUsedDeflationThresholdTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             // Without args we invoke the test in a java sub-process:
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 // Test doesn't need much Java heap:
                 "-Xmx100M",
                 // AvgMonitorsPerThreadEstimate == 1 means we'll start with

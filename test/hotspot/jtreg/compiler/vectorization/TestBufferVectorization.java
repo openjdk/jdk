@@ -224,7 +224,7 @@ public class TestBufferVectorization {
         ProcessBuilder pb;
         OutputAnalyzer out;
         try {
-            pb = ProcessTools.createJavaProcessBuilder("-XX:-BackgroundCompilation",
+            pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:-BackgroundCompilation",
                                                        "-XX:+TraceNewVectors",
                                                        "compiler.vectorization.TestBufferVectorization",
                                                        testName,

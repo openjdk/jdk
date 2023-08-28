@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
 public class NumCompilerThreadsCheck {
 
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:CICompilerCount=-1");
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:CICompilerCount=-1");
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
     String expectedOutput = "outside the allowed range";

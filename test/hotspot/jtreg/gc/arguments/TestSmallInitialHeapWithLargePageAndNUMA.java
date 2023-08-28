@@ -60,7 +60,7 @@ public class TestSmallInitialHeapWithLargePageAndNUMA {
     long initHeap = heapAlignment;
     long maxHeap = heapAlignment * 2;
 
-    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilder(
+    ProcessBuilder pb_enabled = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts(
         "-XX:+UseParallelGC",
         "-Xms" + String.valueOf(initHeap),
         "-Xmx" + String.valueOf(maxHeap),

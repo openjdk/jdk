@@ -46,7 +46,7 @@ public class TestGCYoungGenerationConfigurationEventWithMinAndMaxSize {
                              "-Xms32m",
                              "-Xmx64m",
                              Tester.class.getName()};
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(jvm_args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(jvm_args);
         OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
         analyzer.shouldHaveExitValue(0);
     }

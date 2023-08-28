@@ -42,7 +42,7 @@ import java.io.IOException;
 public class ResolvedClassTest {
     /* ======================================================================== */
     static void testStatic() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStatic.class.getName() + "::test",
@@ -78,7 +78,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testStaticInit() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestStaticInit.class.getName() + "::test",
@@ -115,7 +115,7 @@ public class ResolvedClassTest {
 
     /* ======================================================================== */
     static void testIndy() throws IOException {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-XX:+IgnoreUnrecognizedVMOptions", "-showversion",
                 "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
                 "-Xbatch", "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly," + TestIndy.class.getName() + "::test",

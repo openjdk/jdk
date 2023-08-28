@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TraceClassRes {
   public static void main(String[] args) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
         "-Xlog:class+resolve=debug", "-verify", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

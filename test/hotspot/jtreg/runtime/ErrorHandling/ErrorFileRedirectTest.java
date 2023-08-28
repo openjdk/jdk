@@ -47,7 +47,7 @@ public class ErrorFileRedirectTest {
 
   public static void do_test(boolean redirectStdout, boolean redirectStderr) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-Xmx64M",
             "-XX:-CreateCoredumpOnCrash",
             "-XX:ErrorHandlerTest=14",

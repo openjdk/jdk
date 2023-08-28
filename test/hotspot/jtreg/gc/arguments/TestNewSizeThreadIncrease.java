@@ -65,7 +65,7 @@ public class TestNewSizeThreadIncrease {
   }
 
   static void runNewSizeThreadIncreaseTest(String expectedValue, boolean isNewsizeChanged) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder("-XX:+UseSerialGC",
+    ProcessBuilder pb = GCArguments.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseSerialGC",
                                                              "-Xms96M",
                                                              "-Xmx128M",
                                                              "-XX:NewRatio=2",

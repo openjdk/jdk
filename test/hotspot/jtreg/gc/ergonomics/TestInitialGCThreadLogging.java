@@ -70,7 +70,7 @@ public class TestInitialGCThreadLogging {
 
   private static void testInitialGCThreadLogging(String gcFlag, String threadName) throws Exception {
     // Base test with gc and +UseDynamicNumberOfGCThreads:
-    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb_enabled = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
         "-XX:+UnlockExperimentalVMOptions",
         "-XX:+" + gcFlag,
         "-Xmx10M",

@@ -92,7 +92,7 @@ public class MallocLimitTest {
         args.add("-XX:NativeMemoryTracking=summary");
         args.addAll(Arrays.asList(extraSettings));
         args.add("-version");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
         return pb;
     }
 

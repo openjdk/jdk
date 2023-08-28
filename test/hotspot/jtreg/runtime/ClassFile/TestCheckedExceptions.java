@@ -42,7 +42,7 @@ public class TestCheckedExceptions {
 
     public static void main(String... args) throws Exception {
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
             "-Xlog:exceptions=warning", "CheckedExceptions");
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

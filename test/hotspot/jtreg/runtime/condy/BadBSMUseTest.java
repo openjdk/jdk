@@ -42,7 +42,7 @@ public class BadBSMUseTest {
     public static void main(String args[]) throws Throwable {
         // 1. Test a CONSTANT_Dynamic_info's bootstrap_method_attr_index points
         //    at a BSM meant for a CONSTANT_InvokeDynamic_info
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("CondyUsesIndyBSM");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("CondyUsesIndyBSM");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("In Indybsm target CallSite method foo");
         oa.shouldContain("BootstrapMethodError: bootstrap method initialization exception");
@@ -50,7 +50,7 @@ public class BadBSMUseTest {
 
         // 2. Test a CONSTANT_InvokeDynamic_info's bootstrap_method_attr_index points
         //    at a BSM meant for a CONSTANT_Dynamic_info
-        pb = ProcessTools.createJavaProcessBuilder("IndyUsesCondyBSM");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("IndyUsesCondyBSM");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("In Condybsm");
         oa.shouldContain("BootstrapMethodError: bootstrap method initialization exception");

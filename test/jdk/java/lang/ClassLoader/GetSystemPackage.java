@@ -118,7 +118,7 @@ public class GetSystemPackage {
     private static void runSubProcess(String messageOnError, String ... args)
             throws Exception
     {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(args);
         int res = pb.directory(tmpFolder).inheritIO().start().waitFor();
         if (res != 0) {
             throw new RuntimeException(messageOnError);

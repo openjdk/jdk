@@ -38,12 +38,12 @@ public class JMX {
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-XX:+ManagementServer", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-XX:+ManagementServer", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("ManagementServer is not supported in this VM.")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Dcom.sun.management ", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-Dcom.sun.management ", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("-Dcom.sun.management is not supported in this VM.")
                 .shouldHaveExitValue(1);

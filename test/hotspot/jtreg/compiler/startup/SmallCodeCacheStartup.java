@@ -44,7 +44,7 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:ReservedCodeCacheSize=3m",
                                                                   "-XX:CICompilerCount=64",
                                                                   "-Xcomp",
                                                                   "-version");

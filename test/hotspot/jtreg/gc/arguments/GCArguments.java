@@ -66,12 +66,12 @@ public final class GCArguments {
         return augmented.toArray(new String[augmented.size()]);
     }
 
-    static public ProcessBuilder createJavaProcessBuilder(List<String> arguments) {
-        return createJavaProcessBuilder(arguments.toArray(String[]::new));
+    static public ProcessBuilder createJavaProcessBuilderIgnoreTestJavaOpts(List<String> arguments) {
+        return createJavaProcessBuilderIgnoreTestJavaOpts(arguments.toArray(String[]::new));
     }
 
-    static public ProcessBuilder createJavaProcessBuilder(String... arguments) {
-        return ProcessTools.createJavaProcessBuilder(withDefaults(arguments));
+    static public ProcessBuilder createJavaProcessBuilderIgnoreTestJavaOpts(String... arguments) {
+        return ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(withDefaults(arguments));
     }
 
     static public ProcessBuilder createTestJvm(List<String> arguments) {

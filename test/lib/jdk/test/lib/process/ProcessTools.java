@@ -377,16 +377,6 @@ public final class ProcessTools {
         return ProcessHandle.current().pid();
     }
 
-    /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     *
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createJavaProcessBuilder(List<String> command) {
-        return createJavaProcessBuilder(command.toArray(String[]::new));
-    }
-
     /*
       Convert arguments for tests running with virtual threads main wrapper
       When test is executed with process wrapper the line is changed from
@@ -453,12 +443,34 @@ public final class ProcessTools {
     }
 
     /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b> Please observe that you likely should use
+     * createTestJvm() instead of this method because createTestJvm()
+     * will add JVM options from "test.vm.opts" and "test.java.opts"
+     * </b> and this method will not do that.
      *
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) {
+    public static ProcessBuilder createJavaProcessBuilderIgnoreTestJavaOpts(List<String> command) {
+        return createJavaProcessBuilderIgnoreTestJavaOpts(command.toArray(String[]::new));
+    }
+
+    /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b> Please observe that you likely should use
+     * createTestJvm() instead of this method because createTestJvm()
+     * will add JVM options from "test.vm.opts" and "test.java.opts"
+     * </b> and this method will not do that.
+
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createJavaProcessBuilderIgnoreTestJavaOpts(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -529,7 +541,7 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createTestJvm(String... command) {
-        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+        return createJavaProcessBuilderIgnoreTestJavaOpts(Utils.prependTestJavaOpts(command));
     }
 
     /**

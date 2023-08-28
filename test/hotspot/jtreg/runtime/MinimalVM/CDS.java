@@ -38,17 +38,17 @@ public class CDS {
     public static void main(String args[]) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:dump");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-Xshare:dump");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:on");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-Xshare:on");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(1);
 
-        pb = ProcessTools.createJavaProcessBuilder("-minimal", "-Xshare:auto", "-version");
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-minimal", "-Xshare:auto", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Shared spaces are not supported in this VM")
                 .shouldHaveExitValue(0);

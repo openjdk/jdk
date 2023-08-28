@@ -40,7 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 public class TestPeriodicLogMessages {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                                   "-XX:G1PeriodicGCInterval=0",
                                                                   "-Xlog:gc+init,gc+periodic=debug",
                                                                   "-Xmx10M",
@@ -51,7 +51,7 @@ public class TestPeriodicLogMessages {
         output.shouldNotContain("Checking for periodic GC");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
+        pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-XX:+UseG1GC",
                                                    "-XX:G1PeriodicGCInterval=100",
                                                    "-Xlog:gc+init,gc+periodic=debug",
                                                    "-Xmx10M",

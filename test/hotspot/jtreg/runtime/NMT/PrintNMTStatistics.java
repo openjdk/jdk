@@ -37,7 +37,7 @@ public class PrintNMTStatistics {
 
     public static void main(String args[]) throws Exception {
 
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+PrintNMTStatistics",
       "-XX:NativeMemoryTracking=detail",
@@ -55,7 +55,7 @@ public class PrintNMTStatistics {
     // Make sure memory reserved for Module processing is recorded.
     output_detail.shouldContain(" Module (reserved=");
 
-    ProcessBuilder pb1 = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb1 = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+PrintNMTStatistics",
       "-XX:NativeMemoryTracking=summary",

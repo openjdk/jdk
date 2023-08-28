@@ -35,7 +35,7 @@ public class NegativeAgentRunner {
         }
         String agentClassName = argv[0];
         String excepClassName = argv[1];
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-javaagent:" + agentClassName + ".jar", "-Xmx128m", "-XX:-CreateCoredumpOnCrash",
                 agentClassName);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

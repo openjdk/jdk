@@ -36,7 +36,7 @@ import jdk.test.lib.Platform;
 
 public class MutexRankTest {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:vmmutex",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts("-Xlog:vmmutex",
                                                                   "-version");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("VM Mutex/Monitor ranks:");

@@ -37,7 +37,7 @@ import jdk.test.lib.process.ProcessTools;
 public class Instrumentation {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(
                 "-minimal", "-javaagent:redefineagent.jar", "-version");
         new OutputAnalyzer(pb.start())
                 .shouldContain("Instrumentation agents are not supported in this VM")

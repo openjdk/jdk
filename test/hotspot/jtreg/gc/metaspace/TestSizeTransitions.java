@@ -119,7 +119,7 @@ public class TestSizeTransitions {
       System.out.println("  " + a);
     }
 
-    final ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(jvmArgs);
+    final ProcessBuilder pb = ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts(jvmArgs);
     final OutputAnalyzer output = new OutputAnalyzer(pb.start());
     System.out.println(output.getStdout());
     output.shouldHaveExitValue(0);
