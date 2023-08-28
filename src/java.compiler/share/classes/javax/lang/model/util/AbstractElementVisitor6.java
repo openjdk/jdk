@@ -159,4 +159,22 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
         // Use implementation from interface default method
         return ElementVisitor.super.visitRecordComponent(e, p);
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec Visits a {@code BindingtElement} by calling {@code
+     * visitUnknown}.
+     *
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
+     *
+     * @since 22
+     */
+    @Override
+    public R visitBinding(BindingElement e, P p) {
+        // Use implementation from interface default method
+        return ElementVisitor.super.visitBinding(e, p);
+    }
 }

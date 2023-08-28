@@ -114,4 +114,18 @@ public class ElementScannerNext<R, P> extends ElementScanner14<R, P> {
         // TOOD: What about bindings?
         return scan(createScanningList(e, e.getParameters()), p);
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation scans the enclosed elements.
+     *
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementScanner6}
+     */
+    @Override
+    public R visitBinding(BindingElement e, P p) {
+        return scan(e.getEnclosedElements(), p);
+    }
 }

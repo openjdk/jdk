@@ -29,6 +29,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.BindingElement;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -91,6 +92,21 @@ public class SimpleElementVisitorNext<R, P> extends SimpleElementVisitor14<R, P>
      */
     @Override
     public R visitExecutable(ExecutableElement e, P p) {
+        return defaultAction(e, p);
+    }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
+     * @since 22
+     */
+    @Override
+    public R visitBinding(BindingElement e, P p) {
         return defaultAction(e, p);
     }
 }

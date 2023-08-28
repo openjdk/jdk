@@ -125,9 +125,17 @@ public enum ElementKind {
 
     /**
      * A matcher executable.
+     * @since 22
      */
     // TODO: preview annotation
-    MATCHER;
+    MATCHER,
+
+    /**
+     * A binding.
+     * @since 22
+     */
+    // TODO: preview annotation
+    BINDING;
 
 
     // Maintenance note: check if the default implementation of

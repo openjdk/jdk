@@ -109,6 +109,9 @@ public interface Element extends AnnotatedConstruct {
      * component} is {@link ElementKind#RECORD_COMPONENT
      * RECORD_COMPONENT}.
      *
+     * <li> The kind of a {@linkplain BindingElement} is {@link
+     * ElementKind#BINDING BINDING}.
+     *
      * </ul>
      */
     ElementKind getKind();
@@ -155,6 +158,7 @@ public interface Element extends AnnotatedConstruct {
      * @see RecordComponentElement#getSimpleName
      * @revised 9
      */
+    // TOOD: update for binding, matcher
     Name getSimpleName();
 
     /**
@@ -196,6 +200,7 @@ public interface Element extends AnnotatedConstruct {
      * @see Elements#getPackageOf
      * @revised 9
      */
+    // TOOD: update for binding, matcher
     Element getEnclosingElement();
 
     /**
@@ -233,6 +238,7 @@ public interface Element extends AnnotatedConstruct {
      * @jls 8.10 Record Classes
      * @revised 9
      */
+    // TOOD: update for binding, matcher
     List<? extends Element> getEnclosedElements();
 
     /**

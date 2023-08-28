@@ -96,4 +96,18 @@ public class ElementKindVisitorNext<R, P> extends ElementKindVisitor14<R, P> {
     public R visitExecutableAsMatcher(ExecutableElement e, P p) {
         return defaultAction(e, p);
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitBinding(BindingElement e, P p) {
+        return defaultAction(e, p);
+    }
 }

@@ -222,4 +222,19 @@ public interface ElementVisitor<R, P> {
     default R visitRecordComponent(RecordComponentElement e, P p) {
         return visitUnknown(e, p);
     }
+
+    /**
+     * Visits a binding element.
+     *
+     * @implSpec The default implementation visits a {@code
+     * BindingElement} by calling {@code visitUnknown(e, p)}.
+     *
+     * @param e  the element to visit
+     * @param p  a visitor-specified parameter
+     * @return a visitor-specified result
+     * @since 22
+     */
+    default R visitBinding(BindingElement e, P p) {
+        return visitUnknown(e, p);
+    }
 }

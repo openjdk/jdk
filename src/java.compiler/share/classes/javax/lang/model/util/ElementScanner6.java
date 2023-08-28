@@ -261,4 +261,19 @@ public class ElementScanner6<R, P> extends AbstractElementVisitor6<R, P> {
     public R visitRecordComponent(RecordComponentElement e, P p) {
         return visitUnknown(e, p);
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec This implementation calls {@code visitUnknown(e, p)}.
+     *
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return the result of scanning
+     * @since 22
+     */
+    @Override
+    public R visitBinding(BindingElement e, P p) {
+        return visitUnknown(e, p);
+    }
 }

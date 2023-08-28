@@ -29,6 +29,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.RecordComponentElement;
+import javax.lang.model.element.BindingElement;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -59,4 +60,19 @@ public abstract class AbstractElementVisitorNext<R, P> extends AbstractElementVi
     protected AbstractElementVisitorNext(){
         super();
     }
+
+    /**
+     * {@inheritDoc ElementVisitor}
+     *
+     * @implSpec Visits a {@code BindingElement} in a manner defined by a
+     * subclass.
+     *
+     * @param e  {@inheritDoc ElementVisitor}
+     * @param p  {@inheritDoc ElementVisitor}
+     * @return   {@inheritDoc ElementVisitor}
+     *
+     * @since 22
+     */
+    @Override
+    public abstract R visitBinding(BindingElement e, P p);
 }
