@@ -29,6 +29,7 @@
  */
 
 import java.text.DateFormat;
+import java.text.FieldPosition;
 import java.text.ListFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -220,6 +221,34 @@ public class TestListFormat {
         // Ensures it accepts both List and []
         assertEquals(f.format(SAMPLE4, new StringBuffer(), null).toString(),
                 f.format(SAMPLE4.toArray(), new StringBuffer(), null).toString());
+
+        // Tests NPE
+        assertThrows(NullPointerException.class,
+                () -> f.format(null, new StringBuffer(), new FieldPosition(0)));
+        assertThrows(NullPointerException.class,
+                () -> f.format(new Object(), null, new FieldPosition(0)));
+
+        // Tests IAE
+        var ex = assertThrows(IllegalArgumentException.class,
+                () -> f.format(new Object(), new StringBuffer(), null));
+        assertEquals("The object to format should be a List<Object> or an Object[]", ex.getMessage());
+    }
+
+    @Test
+    void formatToCharacterIterator() {
+        var f = ListFormat.getInstance();
+        // Ensures it accepts both List and []
+        assertEquals(f.formatToCharacterIterator(SAMPLE4).toString(),
+                f.formatToCharacterIterator(SAMPLE4.toArray()).toString());
+
+        // Tests NPE
+        assertThrows(NullPointerException.class,
+                () -> f.formatToCharacterIterator(null));
+
+        // Tests IAE
+        var ex = assertThrows(IllegalArgumentException.class,
+                () -> f.formatToCharacterIterator(new Object()));
+        assertEquals("The arguments should be a List<Object> or an Object[]", ex.getMessage());
     }
 
     @Test

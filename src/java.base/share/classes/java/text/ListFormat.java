@@ -325,6 +325,7 @@ public class ListFormat extends Format {
      */
     public String format(List<String> input) {
         Objects.requireNonNull(input);
+
         return format(input, new StringBuffer(),
                 DontCareFieldPosition.INSTANCE).toString();
     }
@@ -339,13 +340,15 @@ public class ListFormat extends Format {
      * @param pos    Ignored. Not used in ListFormat. May be null
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
-     * @throws    NullPointerException if {@code toAppendTo} is null
+     * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
      * @throws    IllegalArgumentException if the given object cannot
      *               be formatted
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
+        Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
+
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {
@@ -450,6 +453,8 @@ public class ListFormat extends Format {
 
     @Override
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
+        Objects.requireNonNull(arguments);
+
         if (arguments instanceof List<?> objs) {
             var a = objs.toArray(new Object[0]);
             return generateMessageFormat(a).formatToCharacterIterator(a);
