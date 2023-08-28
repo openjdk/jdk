@@ -310,9 +310,20 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
+  const size_t ps = page_size(false, 8);
+  // Print warning if using large pages but not able to use the size given
+  if (UseLargePages) {
+    const size_t lg_ps = page_size(false, 1);
+    if (ps < lg_ps) {
+      log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
+                             "Reverting to smaller page size (" PROPERFMT ").",
+                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
+    }
+  }
+
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(page_size(false, 8), os::vm_allocation_granularity());
+  const size_t alignment = MAX2(ps, os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
   non_profiled_size = align_down(non_profiled_size, alignment);
@@ -324,7 +335,7 @@ void CodeCache::initialize_heaps() {
   //         Non-nmethods
   //      Profiled nmethods
   // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size);
+  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
   ReservedSpace profiled_space      = rs.first_part(profiled_size);
   ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
@@ -354,9 +365,8 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
   }
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
+ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
-  const size_t rs_ps = page_size();
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
   ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
@@ -1194,7 +1204,7 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);

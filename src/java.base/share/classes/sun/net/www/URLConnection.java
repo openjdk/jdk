@@ -261,7 +261,7 @@ public abstract class URLConnection extends java.net.URLConnection {
         url = null;
     }
 
-    private static HashMap<String,Void> proxiedHosts = new HashMap<>();
+    private static final HashMap<String,Void> proxiedHosts = new HashMap<>();
 
     public static synchronized void setProxiedHost(String host) {
         proxiedHosts.put(host.toLowerCase(Locale.ROOT), null);

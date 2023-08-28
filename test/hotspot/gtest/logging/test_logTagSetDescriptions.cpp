@@ -42,7 +42,7 @@ TEST_VM(LogTagSetDescriptions, describe) {
     ResourceMark rm;
     stringStream stream;
     LogConfiguration::describe(&stream);
-    EXPECT_PRED2(string_contains_substring, stream.as_string(), expected)
+    EXPECT_THAT(stream.base(), testing::HasSubstr(expected))
       << "missing log tag set descriptions in LogConfiguration::describe";
   }
 }
