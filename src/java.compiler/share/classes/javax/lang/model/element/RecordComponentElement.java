@@ -38,7 +38,7 @@ public interface RecordComponentElement extends Element {
     /**
      * {@return the type of this record component}
      *
-     * Note that the types of variables range over {@linkplain
+     * Note that the types of record components range over {@linkplain
      * TypeKind many kinds} of types, including primitive types,
      * declared types, and array types.
      *
