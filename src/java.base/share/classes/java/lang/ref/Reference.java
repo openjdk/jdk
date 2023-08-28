@@ -388,11 +388,22 @@ public abstract sealed class Reference<T>
     private native boolean refersTo0(Object o);
 
     /**
-     * Clears this reference object.  Invoking this method will not cause this
-     * object to be enqueued.
+     * Clears this reference object. Invoking this method does not enqueue this
+     * object, and the garbage collector will no longer enqueue this object once
+     * the referent reaches the designated reachability level.
+     * <p>
+     * There is a potential race condition with the garbage collector. When this
+     * method is called, the garbage collector may already be in the process of
+     * (or already completed) clearing and/or enqueueing this reference.
+     *
+     * Avoid this race by ensuring the referent remains strongly-reachable until
+     * after the call to clear(), using {@link #reachabilityFence(Object)} if necessary.
+     *
      *
      * <p> This method is invoked only by Java code; when the garbage collector
-     * clears references it does so directly, without invoking this method.
+     * clears references it does so directly, without invoking this method. The
+     * {@link #enqueue} method also clears references directly, without invoking
+     * this method.
      */
     public void clear() {
         clear0();
@@ -473,19 +484,30 @@ public abstract sealed class Reference<T>
      * Clears this reference object and adds it to the queue with which
      * it is registered, if any.
      *
-     * <p> This method is invoked only by Java code; when the garbage collector
-     * enqueues references it does so directly, without invoking this method.
-     *
      * <p>Memory consistency effects: Actions in a thread prior to a reference
      * being <b><i>successfully</i></b> enqueued
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
      * or {@link ReferenceQueue#remove}.
      *
+     * There is a potential race condition with the garbage collector.
+     * When this method is called, the garbage collector
+     * may already be in the process of (or already completed)
+     * enqueueing this reference.
+     *
+     * This can result in an
+     * <b><i></i></b>unsuccessful</i></b> {@code enqueue()}.
+     *
+     *
+     * Avoid this race by ensuring the referent remains strongly-reachable until after the call to clear(), using {@link #reachabilityFence(Object)} if necessary.
+     *
+     *
+     * <p> This method is invoked only by Java code; when the garbage collector
+     * enqueues references it does so directly, without invoking this method.
+     *
      * @apiNote
-     * An unsuccessful {@code enqueue()} can occur if the GC collects the referent
-     * before the {@code enqueue()} call. {@link #reachabilityFence(Object)} can
-     * prevent this, if used to keep the referent strongly-reachable.
+     * Unexpected behavior can result if this method is called while the
+     * referent is still in use.
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
