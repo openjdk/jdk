@@ -259,7 +259,7 @@ public class ListFormat extends Format {
      * n = 3: parsed pattern for "three"
      * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
      * </pre></blockquote>
-     * As an example, the following table shows patterns array which is equivalent to
+     * As an example, the following table shows a pattern array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
      * <caption style="display:none">Standard/Full Patterns in US English</caption>
