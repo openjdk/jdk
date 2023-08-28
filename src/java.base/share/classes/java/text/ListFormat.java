@@ -359,8 +359,8 @@ public class ListFormat extends Format {
      *
      * Note that {@link #format(List)} and this method
      * may not guarantee a round-trip, if the input strings contain ambiguous
-     * delimiters. For example, a String list {@code "a, b,", "c"} will be
-     * formatted as {@code "a, b, and c"}, but may be parsed as
+     * delimiters. For example, a two element String list {@code "a, b,", "c"} will be
+     * formatted as {@code "a, b, and c"}, but may be parsed as three elements
      * {@code "a", "b", "c"}.
      *
      * @param source the string to parse, not null.
