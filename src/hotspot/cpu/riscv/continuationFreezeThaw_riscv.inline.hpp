@@ -82,7 +82,7 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
   intptr_t *sp, *fp; // sp is really our unextended_sp
   if (FKind::interpreted) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
-      || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
+      || f.unextended_sp() == (intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset), "");
     intptr_t locals_offset = *f.addr_at(frame::interpreter_frame_locals_offset);
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
@@ -121,7 +121,7 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
 
 void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   assert((f.at(frame::interpreter_frame_last_sp_offset) != 0) || (f.unextended_sp() == f.sp()), "");
-  intptr_t* real_unextended_sp = (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset);
+  intptr_t* real_unextended_sp = (intptr_t*)f.at_relative_or_null(frame::interpreter_frame_last_sp_offset);
   if (real_unextended_sp != nullptr) {
     f.set_unextended_sp(real_unextended_sp); // can be null at a safepoint
   }
@@ -147,8 +147,8 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
   // locals value, we don't need to change the locals value here.
 
-  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
-  *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
+  // Make sure that last_sp is already relativized.
+  assert((intptr_t*)hf.at_relative(frame::interpreter_frame_last_sp_offset) == hf.unextended_sp(), "");
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
   relativize_one(vfp, hfp, frame::interpreter_frame_extended_sp_offset);
@@ -292,7 +292,9 @@ static inline void derelativize_one(intptr_t* const fp, int offset) {
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
   intptr_t* vfp = f.fp();
 
-  derelativize_one(vfp, frame::interpreter_frame_last_sp_offset);
+  // Make sure that last_sp is kept relativized.
+  assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
+
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
 }

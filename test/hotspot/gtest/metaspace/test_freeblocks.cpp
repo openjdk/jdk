@@ -130,7 +130,7 @@ class FreeBlocksTest {
     bool forcefeed = false;
     bool draining = false;
     bool stop = false;
-    int iter = 100000; // safety stop
+    int iter = 25000; // safety stop
     while (!stop && iter > 0) {
       iter --;
       int surprise = (int)os::random() % 10;

@@ -33,13 +33,17 @@
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
  *
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
-import java.lang.annotation.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import java.io.*;
-import java.util.List;
-import java.util.LinkedList;
-import com.sun.tools.classfile.*;
+import java.util.*;
 import java.nio.file.Files;
 import java.nio.charset.*;
 import java.io.File;
@@ -62,11 +66,11 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
     int tc = 0, xtc = 180; // 45 x 4 variations of repeated annotations.
     File testSrc = new File(System.getProperty("test.src"));
 
-    String[] AnnoAttributes = {
-        Attribute.RuntimeVisibleTypeAnnotations,
-        Attribute.RuntimeInvisibleTypeAnnotations,
-        Attribute.RuntimeVisibleAnnotations,
-        Attribute.RuntimeInvisibleAnnotations
+    AttributeMapper<?> [] AnnoAttributes = new AttributeMapper<?>[]{
+            Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS,
+            Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS,
+            Attributes.RUNTIME_VISIBLE_ANNOTATIONS,
+            Attributes.RUNTIME_INVISIBLE_ANNOTATIONS
     };
 
     // template for source files
@@ -146,7 +150,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
             System.out.println("PASSED all tests.");
     }
 
-    void test(String ttype, ClassFile cf, Method m, Field f, boolean visible) {
+    <T extends Attribute<T>> void test(AttributedElement m) {
         int vtaActual = 0,
             itaActual = 0,
             vaActual = 0,
@@ -160,122 +164,55 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
         String memberName = null,
             testcase = "undefined",
             testClassName = null;
-        Attribute attr = null,
+        Attribute<T> attr = null,
             cattr = null;
-        Code_attribute CAttr = null;
+        CodeAttribute CAttr = null;
         // Get counts of 4 annotation Attributes on element being checked.
-        for (String AnnoType : AnnoAttributes) {
-            try {
-                switch (ttype) {
-                    case "METHOD":
-                        index = m.attributes.getIndex(cf.constant_pool,
-                                                      AnnoType);
-                        memberName = m.getName(cf.constant_pool);
-                        if (index != -1)
-                            attr = m.attributes.get(index);
-                        //fetch index annotations from code attribute.
-                        index2 = m.attributes.getIndex(cf.constant_pool,
-                                                       Attribute.Code);
-                        if (index2 != -1) {
-                            cattr = m.attributes.get(index2);
-                            assert cattr instanceof Code_attribute;
-                            CAttr = (Code_attribute)cattr;
-                            index2 = CAttr.attributes.getIndex(cf.constant_pool,
-                                                               AnnoType);
-                            if (index2 != -1)
-                                cattr = CAttr.attributes.get(index2);
-                        }
-                        break;
-                    case "FIELD":
-                        index = f.attributes.getIndex(cf.constant_pool,
-                                                      AnnoType);
-                        memberName = f.getName(cf.constant_pool);
-                        if (index != -1)
-                            attr = f.attributes.get(index);
-                        //fetch index annotations from code attribute.
-                        index2 = cf.attributes.getIndex(cf.constant_pool,
-                                                        Attribute.Code);
-                        if (index2!= -1) {
-                            cattr = cf.attributes.get(index2);
-                            assert cattr instanceof Code_attribute;
-                            CAttr = (Code_attribute)cattr;
-                            index2 = CAttr.attributes.getIndex(cf.constant_pool,
-                                                               AnnoType);
-                            if (index2!= -1)
-                                cattr = CAttr.attributes.get(index2);
-                        }
-                        break;
-
-                    default:
-                        memberName = cf.getName();
-                        index = cf.attributes.getIndex(cf.constant_pool,
-                                                       AnnoType);
-                        if (index!= -1) attr = cf.attributes.get(index);
-                        break;
+        for (AttributeMapper<?> Anno : AnnoAttributes) {
+            AttributeMapper<T> AnnoType = (AttributeMapper<T>) Anno;
+            if (Objects.requireNonNull(m) instanceof ClassModel) {
+                ClassModel cm = (ClassModel) m;
+                memberName = cm.thisClass().name().stringValue();
+                attr = m.findAttribute(AnnoType).orElse(null);
+            } else {
+                memberName = m instanceof MethodModel ?
+                        ((MethodModel) m).methodName().stringValue() : ((FieldModel) m).fieldName().stringValue();
+                attr = m.findAttribute(AnnoType).orElse(null);
+                //fetch index annotations from code attribute.
+                CAttr = m.findAttribute(Attributes.CODE).orElse(null);
+                if (CAttr != null) {
+                    cattr = CAttr.findAttribute(AnnoType).orElse(null);
                 }
             }
-            catch (ConstantPoolException cpe) { cpe.printStackTrace(); }
-            try {
-                testClassName=cf.getName();
-                testcase = ttype + ": " + testClassName + ": " +
-                           memberName + ", ";
-            }
-            catch (ConstantPoolException cpe) { cpe.printStackTrace(); }
-            if (index != -1) {
-                switch (AnnoType) {
-                    case Attribute.RuntimeVisibleTypeAnnotations:
-                        //count RuntimeVisibleTypeAnnotations
-                        RuntimeVisibleTypeAnnotations_attribute RVTAa =
-                                (RuntimeVisibleTypeAnnotations_attribute)attr;
-                        vtaActual += RVTAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeVisibleAnnotations:
-                        //count RuntimeVisibleAnnotations
-                        RuntimeVisibleAnnotations_attribute RVAa =
-                                (RuntimeVisibleAnnotations_attribute)attr;
-                        vaActual += RVAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeInvisibleTypeAnnotations:
-                        //count RuntimeInvisibleTypeAnnotations
-                        RuntimeInvisibleTypeAnnotations_attribute RITAa =
-                                (RuntimeInvisibleTypeAnnotations_attribute)attr;
-                        itaActual += RITAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeInvisibleAnnotations:
-                        //count RuntimeInvisibleAnnotations
-                        RuntimeInvisibleAnnotations_attribute RIAa =
-                                (RuntimeInvisibleAnnotations_attribute)attr;
-                        iaActual += RIAa.annotations.length;
-                        break;
+            ;
+//        testClassName=cm.getName();
+//        testcase = ttype + ": " + testClassName + ": " +
+//                memberName + ", ";
+            if (attr != null) {
+                switch (attr) {
+                    case RuntimeVisibleTypeAnnotationsAttribute RVTAa -> //count RuntimeVisibleTypeAnnotations
+                            vtaActual += RVTAa.annotations().size();
+                    case RuntimeVisibleAnnotationsAttribute RVAa -> //count RuntimeVisibleAnnotations
+                            vaActual += RVAa.annotations().size();
+                    case RuntimeInvisibleTypeAnnotationsAttribute RITAa -> //count RuntimeInvisibleTypeAnnotations
+                            itaActual += RITAa.annotations().size();
+                    case RuntimeInvisibleAnnotationsAttribute RIAa -> //count RuntimeInvisibleAnnotations
+                            iaActual += RIAa.annotations().size();
+                    default -> throw new AssertionError();
                 }
             }
             // annotations from code attribute.
-            if (index2 != -1) {
-                switch (AnnoType) {
-                    case Attribute.RuntimeVisibleTypeAnnotations:
-                        //count RuntimeVisibleTypeAnnotations
-                        RuntimeVisibleTypeAnnotations_attribute RVTAa =
-                                (RuntimeVisibleTypeAnnotations_attribute)cattr;
-                        vtaActual += RVTAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeVisibleAnnotations:
-                        //count RuntimeVisibleAnnotations
-                        RuntimeVisibleAnnotations_attribute RVAa =
-                                (RuntimeVisibleAnnotations_attribute)cattr;
-                        vaActual += RVAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeInvisibleTypeAnnotations:
-                        //count RuntimeInvisibleTypeAnnotations
-                        RuntimeInvisibleTypeAnnotations_attribute RITAa =
-                                (RuntimeInvisibleTypeAnnotations_attribute)cattr;
-                        itaActual += RITAa.annotations.length;
-                        break;
-                    case Attribute.RuntimeInvisibleAnnotations:
-                        //count RuntimeInvisibleAnnotations
-                        RuntimeInvisibleAnnotations_attribute RIAa =
-                                (RuntimeInvisibleAnnotations_attribute)cattr;
-                        iaActual += RIAa.annotations.length;
-                        break;
+            if (cattr != null) {
+                switch (cattr) {
+                    case RuntimeVisibleTypeAnnotationsAttribute RVTAa -> //count RuntimeVisibleTypeAnnotations
+                            vtaActual += RVTAa.annotations().size();
+                    case RuntimeVisibleAnnotationsAttribute RVAa -> //count RuntimeVisibleAnnotations
+                            vaActual += RVAa.annotations().size();
+                    case RuntimeInvisibleTypeAnnotationsAttribute RITAa -> //count RuntimeInvisibleTypeAnnotations
+                            itaActual += RITAa.annotations().size();
+                    case RuntimeInvisibleAnnotationsAttribute RIAa -> //count RuntimeInvisibleAnnotations
+                            iaActual += RIAa.annotations().size();
+                    default -> throw new AssertionError();
                 }
             }
         }
@@ -343,8 +280,8 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                        vtaActual,itaActual,vaActual,iaActual);
     }
 
-    public void run() {
-        ClassFile cf   = null;
+    public <T extends Attribute<T>>void run() {
+        ClassModel cm  = null;
         InputStream in = null;
         int testcount  = 1;
         File testFile  = null;
@@ -384,15 +321,16 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                    0,classFile.getAbsolutePath().indexOf(classFile.getPath()));
             for (String clazz : classes) {
                 try {
-                    cf = ClassFile.read(new File(testloc+clazz));
+                    cm = Classfile.of().parse(new File(testloc+clazz).toPath());
                 }
                 catch (Exception e) { e.printStackTrace();  }
                 // Test for all methods and fields
-                for (Method m: cf.methods) {
-                    test("METHOD", cf, m, null, true);
+                assert cm != null;
+                for (MethodModel m: cm.methods()) {
+                    test(m);
                 }
-                for (Field f: cf.fields) {
-                    test("FIELD", cf, null, f, true);
+                for (FieldModel f: cm.fields()) {
+                    test(f);
                 }
             }
         }

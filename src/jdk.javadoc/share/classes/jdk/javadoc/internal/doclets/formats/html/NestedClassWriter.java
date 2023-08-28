@@ -36,23 +36,33 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes nested class documentation in HTML format.
  */
 public class NestedClassWriter extends AbstractMemberWriter {
 
-    public NestedClassWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    public NestedClassWriter(ClassWriter writer) {
+        super(writer, VisibleMemberTable.Kind.NESTED_CLASSES);
     }
 
+    // used in ClassUseWriter and SummaryUseWriter
     public NestedClassWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content content) {
+    public void buildDetails(Content target) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected void buildSignature(Content target) { }
+    protected void buildDeprecationInfo(Content target) { }
+    protected void buildPreviewInfo(Content target) { }
+
+    @Override
+    public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_NESTED_CLASS_SUMMARY);
         Content memberContent = new ContentBuilder();
         writer.addSummaryHeader(this, memberContent);
@@ -60,7 +70,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.nestedClassSummary,
                 HtmlIds.NESTED_CLASS_SUMMARY, summariesList, content);
     }

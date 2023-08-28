@@ -118,7 +118,7 @@ public:
   // The region is being reclaimed; clear its remset, and any mention of
   // entries for this region in other remsets.
   void clear(bool only_cardset = false);
-  void clear_locked(bool only_cardset = false);
+  void clear_locked(bool only_cardset = false, bool keep_tracked = false);
 
   void reset_table_scanner();
 
@@ -156,7 +156,7 @@ public:
 
   // Applies blk->do_code_blob() to each of the entries in _code_roots
   void code_roots_do(CodeBlobClosure* blk) const;
-
+  // Clean out code roots not having an oop pointing into this region any more.
   void clean_code_roots(HeapRegion* hr);
 
   // Returns the number of elements in _code_roots
