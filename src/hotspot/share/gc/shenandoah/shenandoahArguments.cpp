@@ -152,6 +152,10 @@ void ShenandoahArguments::initialize() {
 #endif // ASSERT
 #endif // COMPILER2
 
+  if (ShenandoahIUBarrier) {
+    assert(strcmp(ShenandoahGCMode, "generational"), "Generational mode does not support IU barrier");
+  }
+
   // Record more information about previous cycles for improved debugging pleasure
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
     FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);

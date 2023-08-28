@@ -317,8 +317,9 @@ public:
     // Heap has forwarded objects: needs LRB barriers.
     HAS_FORWARDED_BITPOS   = 0,
 
-    // Young regions are under marking: needs SATB barriers.
-    YOUNG_MARKING_BITPOS    = 1,
+    // Heap is under marking: needs SATB barriers.
+    // For generational mode, it means either young or old marking, or both.
+    MARKING_BITPOS    = 1,
 
     // Heap is under evacuation: needs LRB barriers. (Set together with HAS_FORWARDED)
     EVACUATION_BITPOS = 2,
@@ -329,17 +330,21 @@ public:
     // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
     WEAK_ROOTS_BITPOS  = 4,
 
-    // Old regions are under marking, still need SATB barriers.
-    OLD_MARKING_BITPOS = 5
+    // Young regions are under marking, need SATB barriers.
+    YOUNG_MARKING_BITPOS = 5,
+
+    // Old regions are under marking, need SATB barriers.
+    OLD_MARKING_BITPOS = 6
   };
 
   enum GCState {
     STABLE        = 0,
     HAS_FORWARDED = 1 << HAS_FORWARDED_BITPOS,
-    YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
+    MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
     WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
+    YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
     OLD_MARKING   = 1 << OLD_MARKING_BITPOS
   };
 
@@ -416,7 +421,6 @@ public:
   void set_concurrent_weak_root_in_progress(bool cond);
   void set_prepare_for_old_mark_in_progress(bool cond);
   void set_aging_cycle(bool cond);
-
 
   inline bool is_stable() const;
   inline bool is_idle() const;

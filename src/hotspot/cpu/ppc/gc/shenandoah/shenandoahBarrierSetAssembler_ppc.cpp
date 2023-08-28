@@ -130,7 +130,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
   // for the garbage collector.
   const int required_states = ShenandoahSATBBarrier && dest_uninitialized
                               ? ShenandoahHeap::HAS_FORWARDED
-                              : ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING;
+                              : ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::MARKING;
 
   __ andi_(R11_tmp, R11_tmp, required_states);
   __ beq(CCR0, skip_prologue);
@@ -230,7 +230,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
   // Check whether marking is active.
   __ lbz(tmp1, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
 
-  __ andi_(tmp1, tmp1, ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
+  __ andi_(tmp1, tmp1, ShenandoahHeap::MARKING);
   __ beq(CCR0, skip_barrier);
 
   /* ==== Determine the reference's previous value ==== */
@@ -964,7 +964,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   // another check is required as a safepoint might have been reached in the meantime (JDK-8140588).
   __ lbz(R12_tmp2, in_bytes(ShenandoahThreadLocalData::gc_state_offset()), R16_thread);
 
-  __ andi_(R12_tmp2, R12_tmp2, ShenandoahHeap::YOUNG_MARKING | ShenandoahHeap::OLD_MARKING);
+  __ andi_(R12_tmp2, R12_tmp2, ShenandoahHeap::MARKING);
   __ beq(CCR0, skip_barrier);
 
   /* ==== Add previous value directly to thread-local SATB mark queue ==== */

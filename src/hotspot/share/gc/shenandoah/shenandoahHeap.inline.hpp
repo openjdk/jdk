@@ -694,11 +694,11 @@ inline bool ShenandoahHeap::has_evacuation_reserve_quantities() const {
 }
 
 inline bool ShenandoahHeap::is_idle() const {
-  return _gc_state.is_unset(YOUNG_MARKING | OLD_MARKING | EVACUATION | UPDATEREFS);
+  return _gc_state.is_unset(MARKING | EVACUATION | UPDATEREFS);
 }
 
 inline bool ShenandoahHeap::is_concurrent_mark_in_progress() const {
-  return _gc_state.is_set(YOUNG_MARKING | OLD_MARKING);
+  return _gc_state.is_set(MARKING);
 }
 
 inline bool ShenandoahHeap::is_concurrent_young_mark_in_progress() const {
