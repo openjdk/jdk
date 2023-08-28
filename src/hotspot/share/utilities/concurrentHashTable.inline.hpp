@@ -455,9 +455,8 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   assert(bucket->is_locked(), "Must be locked.");
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
-  bool have_dead = false;
   while (rem_n != nullptr) {
-    if (lookup_f.equals(rem_n->value(), &have_dead)) {
+    if (lookup_f.equals(rem_n->value())) {
       bucket->release_assign_node_ptr(rem_n_prev, rem_n->next());
       break;
     } else {
@@ -546,9 +545,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != nullptr) {
-    bool is_dead = false;
-    lookup_f.equals(rem_n->value(), &is_dead);
-    if (is_dead) {
+    if (lookup_f.is_dead(rem_n->value())) {
       ndel[dels++] = rem_n;
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
@@ -626,12 +623,11 @@ ConcurrentHashTable<CONFIG, F>::
   size_t loop_count = 0;
   Node* node = bucket->first();
   while (node != nullptr) {
-    bool is_dead = false;
     ++loop_count;
-    if (lookup_f.equals(node->value(), &is_dead)) {
+    if (lookup_f.equals(node->value())) {
       break;
     }
-    if (is_dead && !(*have_dead)) {
+    if (!(*have_dead) && lookup_f.is_dead(node->value())) {
       *have_dead = true;
     }
     node = node->next();

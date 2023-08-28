@@ -1177,7 +1177,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
   bool in_white_space = true;
   bool in_comment     = false;
   bool in_quote       = false;
-  char quote_c        = 0;
+  int  quote_c        = 0;
   bool result         = true;
 
   int c = getc(stream);
@@ -1189,7 +1189,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
         if (c == '#') in_comment = true;
         else if (!isspace(c)) {
           in_white_space = false;
-          token[pos++] = c;
+          token[pos++] = checked_cast<char>(c);
         }
       }
     } else {
@@ -1209,7 +1209,7 @@ bool Arguments::process_settings_file(const char* file_name, bool should_exist, 
       } else if (in_quote && (c == quote_c)) {
         in_quote = false;
       } else {
-        token[pos++] = c;
+        token[pos++] = checked_cast<char>(c);
       }
     }
     c = getc(stream);
@@ -1565,22 +1565,22 @@ void Arguments::set_heap_size() {
   // Convert deprecated flags
   if (FLAG_IS_DEFAULT(MaxRAMPercentage) &&
       !FLAG_IS_DEFAULT(MaxRAMFraction))
-    MaxRAMPercentage = 100.0 / MaxRAMFraction;
+    MaxRAMPercentage = 100.0 / (double)MaxRAMFraction;
 
   if (FLAG_IS_DEFAULT(MinRAMPercentage) &&
       !FLAG_IS_DEFAULT(MinRAMFraction))
-    MinRAMPercentage = 100.0 / MinRAMFraction;
+    MinRAMPercentage = 100.0 / (double)MinRAMFraction;
 
   if (FLAG_IS_DEFAULT(InitialRAMPercentage) &&
       !FLAG_IS_DEFAULT(InitialRAMFraction))
-    InitialRAMPercentage = 100.0 / InitialRAMFraction;
+    InitialRAMPercentage = 100.0 / (double)InitialRAMFraction;
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    julong reasonable_max = (julong)((phys_mem * MaxRAMPercentage) / 100);
-    const julong reasonable_min = (julong)((phys_mem * MinRAMPercentage) / 100);
+    julong reasonable_max = (julong)(((double)phys_mem * MaxRAMPercentage) / 100);
+    const julong reasonable_min = (julong)(((double)phys_mem * MinRAMPercentage) / 100);
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
       reasonable_max = reasonable_min;
@@ -1664,7 +1664,7 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      julong reasonable_initial = (julong)((phys_mem * InitialRAMPercentage) / 100);
+      julong reasonable_initial = (julong)(((double)phys_mem * InitialRAMPercentage) / 100);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
@@ -1965,15 +1965,15 @@ static const char* system_assertion_options[] = {
   "-dsa", "-esa", "-disablesystemassertions", "-enablesystemassertions", 0
 };
 
-bool Arguments::parse_uintx(const char* value,
-                            uintx* uintx_arg,
-                            uintx min_size) {
-  uintx n;
+bool Arguments::parse_uint(const char* value,
+                           uint* uint_arg,
+                           uint min_size) {
+  uint n;
   if (!parse_integer(value, &n)) {
     return false;
   }
   if (n >= min_size) {
-    *uintx_arg = n;
+    *uint_arg = n;
     return true;
   } else {
     return false;
@@ -2728,8 +2728,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_EINVAL;
       }
     } else if (match_option(option, "-XX:MaxTenuringThreshold=", &tail)) {
-      uintx max_tenuring_thresh = 0;
-      if (!parse_uintx(tail, &max_tenuring_thresh, 0)) {
+      uint max_tenuring_thresh = 0;
+      if (!parse_uint(tail, &max_tenuring_thresh, 0)) {
         jio_fprintf(defaultStream::error_stream(),
                     "Improperly specified VM option \'MaxTenuringThreshold=%s\'\n", tail);
         return JNI_EINVAL;

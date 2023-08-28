@@ -947,9 +947,6 @@
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
      static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
                                                                                                                                      \
-     static_field(JDK_Version,                 _current,                                      JDK_Version)                           \
-  nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
-                                                                                                                                     \
   /*************************/                                                                                                        \
   /* JVMTI */                                                                                                                        \
   /*************************/                                                                                                        \
@@ -1873,7 +1870,6 @@
   /********************/                                                  \
                                                                           \
   declare_toplevel_type(Abstract_VM_Version)                              \
-  declare_toplevel_type(JDK_Version)                                      \
                                                                           \
   /*************/                                                         \
   /* Arguments */                                                         \
@@ -3037,7 +3033,7 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
   }
   if (start != nullptr) {
     const char * end = strrchr(typeName, '>');
-    int len = end - start + 1;
+    int len = pointer_delta_as_int(end, start) + 1;
     char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);
     strncpy(s, start, len - 1);
     s[len-1] = '\0';

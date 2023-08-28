@@ -143,7 +143,7 @@ public class TestIndependentPacksWithCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0", IRNode.VECTOR_CAST_F2X, "> 0", IRNode.VECTOR_CAST_I2X, "> 0"},
+    @IR(counts = {IRNode.ADD_VI, "> 0", IRNode.MUL_VF, "> 0", IRNode.VECTOR_CAST_F2I, "> 0", IRNode.VECTOR_CAST_I2F, "> 0"},
         applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     static void test1(int[] dataIa, int[] dataIb, float[] dataFa, float[] dataFb) {
         for (int i = 0; i < RANGE; i+=2) {
