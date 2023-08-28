@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,12 +99,15 @@ public class SpecialTempFile {
         test("SlashedName", slashPre, slashSuf, true);
 
         // Windows tests
-        if (!System.getProperty("os.name").startsWith("Windows"))
+        String osName = System.getProperty("os.name");
+        if (!osName.startsWith("Windows"))
             return;
 
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        test("ReservedName", resvPre, resvSuf, true);
+        // Windows 11 does not reserve the names "COM" and "LPT1"
+        boolean exceptionExpected = !osName.endsWith("11");
+        test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
 }
