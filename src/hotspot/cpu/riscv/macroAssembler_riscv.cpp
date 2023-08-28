@@ -4246,55 +4246,58 @@ FCMP(double, d);
 
 #undef FCMP
 
-// Round double with mode
-
-void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register converted_dbl, Register mask, Register converted_dbl_masked)
+// According to Java SE specification, for floating-point round operations, if
+// the input is NaN, +/-infinity, or +/-0, the same input is returned as the
+// rounded result; this differs from behavior of RISC-V fcvt instructions (which
+// round out-of-range values to the nearest max or min value), therefore special
+// handling is needed by NaN, +/-Infinity, +/-0.
+void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register tmp1, Register tmp2, Register tmp3)
 {
 
   assert_different_registers(dst, src);
-  assert_different_registers(converted_dbl, mask, converted_dbl_masked);
+  assert_different_registers(tmp1, tmp2, tmp3);
 
-  // setting roundig mode to double->long (rm_direct) and long->double (rm_back) conversions
-  RoundingMode rm_direct, rm_back;
+  // setting roundig mode to conversions
+  // here we use similar modes to double->long and long->double conversions
+  // different mode for long->double conversion matter only if long value was not representable as double
+  // we got long value as a result of double->long conversion so it is defenitely representable
+  RoundingMode rm;
   switch (round_mode) {
     case Round_double_mode::rmode_ceil:
-      rm_direct = RoundingMode::rup;
-      rm_back = RoundingMode::rdn;
+      rm = RoundingMode::rup;
       break;
     case Round_double_mode::rmode_floor:
-      rm_direct = RoundingMode::rdn;
-      rm_back = RoundingMode::rup;
+      rm = RoundingMode::rdn;
       break;
     case Round_double_mode::rmode_rint:
-      rm_direct = RoundingMode::rne;
-      rm_back = RoundingMode::rne;
+      rm = RoundingMode::rne;
       break;
     default:
       ShouldNotReachHere();
   }
 
-  // converted_dbl - is a register to store double converted to long int
-  // mask - is a register to create constant for comparsion
-  // converted_dbl_masked - is a register were we stroe modidfied result of double -> long int comparison
+  // tmp1 - is a register to store double converted to long int
+  // tmp2 - is a register to create constant for comparsion
+  // tmp3 - is a register were we store modidfied result of double -> long int comparison
   Label done, bad_val;
 
   // generating constant (tmp2)
   // tmp2 = 100...0000
-  addi(mask, zr, 1);
-  slli(mask, mask, 63);
+  addi(tmp2, zr, 1);
+  slli(tmp2, tmp2, 63);
   // conversion from double to long
-  fcvt_l_d(converted_dbl, src, rm_direct);
+  fcvt_l_d(tmp1, src, rm);
 
   // preparing converted long (tmp1)
   // as a result when conversion overflow we got:
-  // converted_dbl = 011...1111 or 100...0000
-  // converting to: converted_dbl_masked = 100...0000
-  addi(converted_dbl_masked, converted_dbl, 1);
-  andi(converted_dbl_masked, converted_dbl_masked, -2);
-  beq(converted_dbl_masked, mask, bad_val);
+  // tmp1 = 011...1111 or 100...0000
+  // converting to: tmp3 = 100...0000
+  addi(tmp3, tmp1, 1);
+  andi(tmp3, tmp3, -2);
+  beq(tmp3, tmp2, bad_val);
   // conversion from long to double
-  fcvt_d_l(dst, converted_dbl, rm_back);
-  // add sign of input value to result
+  fcvt_d_l(dst, tmp1, rm);
+  // add sign of input value to result for +/- 0 cases
   fsgnj_d(dst, dst, src);
   j(done);
   // if got conversion overflow return src

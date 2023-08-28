@@ -4173,16 +4173,6 @@ pipe_class fp_uop_d(fRegD dst, fRegD src)
   FPU    : S5;
 %}
 
-pipe_class fp_rnd_d(fRegD dst, fRegD src)
-%{
-  instruction_count(10);
-  multiple_bundles;
-  src    : S1(read);
-  dst    : S5(write);
-  DECODE : ID;
-  FPU    : S5;
-%}
-
 pipe_class fp_d2f(fRegF dst, fRegD src)
 %{
   single_instruction;
@@ -7703,9 +7693,9 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
 instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3, rFlagsReg cr) %{
   match(Set dst (RoundDoubleMode src rmode));
   ins_cost(2 * XFER_COST + BRANCH_COST);
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
-  format %{ "RoundDoubleMode $src,$rmode" %}
+  format %{ "RoundDoubleMode $src, $rmode" %}
   ins_encode %{
   switch ($rmode$$constant) {
       case RoundDoubleModeNode::rmode_rint:
@@ -7724,7 +7714,7 @@ instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp 
         ShouldNotReachHere();
     }
   %}
-  ins_pipe(fp_rnd_d);
+  ins_pipe(pipe_class_default);
 %}
 
 // Arithmetic Instructions End

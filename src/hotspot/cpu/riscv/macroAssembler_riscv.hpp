@@ -1235,7 +1235,7 @@ public:
     rmode_rint
   };
 
-  void round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register converted_dbl, Register mask, Register converted_dbl_masked);
+  void round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register tmp1, Register tmp2, Register tmp3);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
