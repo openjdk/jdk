@@ -91,7 +91,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <p>
  * On parsing, if some ambiguity is found in the input string, such as delimiting
  * sequences being found in the input string, may produce the result that when formatted is not a
-  * round-trip with the corresponding formatting. For example, a two element String list
+ * round-trip with the corresponding formatting. For example, a two element String list
  * "a, b,", "c" will be formatted as "a, b, and c", but may be parsed as three elements
  * "a", "b", "c".
  *
@@ -571,7 +571,7 @@ public class ListFormat extends Format {
         /**
          * The {@code FULL} list format style. This is the default style, which typically is the 
          * full description of the text and punctuation that appear between the list elements.
-         * Suitable for elements, such as, "Monday", "Tuesday",  "Wednesday", etc.
+         * Suitable for elements, such as, "Monday", "Tuesday", "Wednesday", etc.
          */
         FULL,
 
