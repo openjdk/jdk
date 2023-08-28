@@ -1875,11 +1875,8 @@ static const Type* int_type_narrow(const CT* nt, const CT* ot, const CT* bot) {
   using T = decltype(CT::_lo);
   using U = decltype(CT::_ulo);
 
-  if (nt->singleton()) {
+  if (nt->singleton() || ot == nullptr) {
     return nt;
-  }
-  if (ot == nullptr) {
-    return ot;
   }
 
   // If new guy is equal to old guy, no narrowing
