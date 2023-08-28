@@ -291,18 +291,10 @@ const nsKeyToJavaModifierTable[] =
         //kCGSFlagsMaskAppleLeftAlternateKey,
         //kCGSFlagsMaskAppleRightAlternateKey,
         58,
-        0,
+        61,
         java_awt_event_InputEvent_ALT_DOWN_MASK,
         java_awt_event_InputEvent_ALT_MASK,
         java_awt_event_KeyEvent_VK_ALT
-    },
-    {
-        NSAlternateKeyMask,
-        0,
-        61,
-        java_awt_event_InputEvent_ALT_DOWN_MASK | java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK,
-        java_awt_event_InputEvent_ALT_MASK | java_awt_event_InputEvent_ALT_GRAPH_MASK,
-        java_awt_event_KeyEvent_VK_ALT | java_awt_event_KeyEvent_VK_ALT_GRAPH
     },
     // NSNumericPadKeyMask
     {
