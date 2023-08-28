@@ -52,6 +52,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor9;
@@ -90,8 +91,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -113,11 +116,10 @@ import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 
 /**
- * Class for the Html Format Code Generation specific to JavaDoc.
- * This Class contains methods related to the Html Code Generation which
- * are used extensively while generating the entire documentation.
+ * The base class for classes that write complete HTML pages to be included in the overall API documentation.
+ * The primary method is {@link #buildPage()}.
  */
-public class HtmlDocletWriter {
+public abstract class HtmlDocletWriter {
 
     /**
      * Relative path from the file getting generated to the destination
@@ -134,12 +136,6 @@ public class HtmlDocletWriter {
      * Used when creating the file.
      */
     public final DocPath path;
-
-    /**
-     * Name of the file getting generated. If the file getting generated is
-     * "java/lang/Object.html", then the filename is "Object.html".
-     */
-    public final DocPath filename;
 
     /**
      * The global configuration information for this run.
@@ -207,7 +203,7 @@ public class HtmlDocletWriter {
      * @param path the file to be generated.
      * @param generating whether to write a "Geneterating ..." message to the console
      */
-    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
+    protected HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.contents = configuration.getContents();
@@ -219,7 +215,6 @@ public class HtmlDocletWriter {
         this.htmlIds = configuration.htmlIds;
         this.path = path;
         this.pathToRoot = path.parent().invert();
-        this.filename = path.basename();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
 
@@ -227,6 +222,13 @@ public class HtmlDocletWriter {
             writeGenerating();
         }
     }
+
+    /**
+     * The top-level method to generate and write the page represented by this writer.
+     *
+     * @throws DocletException if a problem occurs while building or writing the page
+     */
+    public abstract void buildPage() throws DocletException;
 
     /**
      * Writes a "Generating _file_" message to the console
@@ -464,7 +466,6 @@ public class HtmlDocletWriter {
                                   Content body)
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
-        additionalStylesheets.addAll(localStylesheets);
         Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
@@ -472,7 +473,7 @@ public class HtmlDocletWriter {
                 .setTitle(winTitle)
                 .setCharset(options.charset())
                 .addKeywords(metakeywords)
-                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
+                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets, localStylesheets)
                 .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
@@ -1868,23 +1869,24 @@ public class HtmlDocletWriter {
         return new SimpleAnnotationValueVisitor9<Content, Void>() {
 
             @Override
-            public Content visitType(TypeMirror t, Void p) {
+            public Content visitType(TypeMirror type, Void p) {
                 return new SimpleTypeVisitor9<Content, Void>() {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.PLAIN, t);
-                        String name = utils.isIncluded(t.asElement())
-                                ? t.asElement().getSimpleName().toString()
-                                : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
-                    protected Content defaultAction(TypeMirror e, Void p) {
-                        return Text.of(t + utils.getDimension(t) + ".class");
+                    public Content visitArray(ArrayType t, Void p) {
+                        // render declared base component type as link
+                        return visit(t.getComponentType()).add("[]");
                     }
-                }.visit(t);
+                    @Override
+                    protected Content defaultAction(TypeMirror t, Void p) {
+                        return new TextBuilder(t.toString());
+                    }
+                }.visit(type).add(".class");
             }
 
             @Override
@@ -2036,7 +2038,7 @@ public class HtmlDocletWriter {
     private List<DocPath> getStylesheets(Element element) throws DocFileIOException {
         List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
         if (localStylesheets == null) {
-            DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(element);
+            DocFilesHandler docFilesHandler = configuration.getWriterFactory().newDocFilesHandler(element);
             localStylesheets = docFilesHandler.getStylesheets();
             configuration.localStylesheetMap.put(element, localStylesheets);
         }

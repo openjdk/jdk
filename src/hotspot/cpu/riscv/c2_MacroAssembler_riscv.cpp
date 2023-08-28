@@ -868,9 +868,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
+      // check if str1 and str2 is same pointer
+      beq(str1, str2, DONE);
       // load 8 bytes once to compare
       ld(tmp1, Address(str1));
-      beq(str1, str2, DONE);
       ld(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
@@ -913,9 +914,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
     }
     addi(cnt2, cnt2, isUL ? 4 : 8);
+    bne(tmp1, tmp2, DIFFERENCE);
     bgez(cnt2, TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
 
     // main loop
     bind(NEXT_WORD);
@@ -944,38 +944,30 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
       addi(cnt2, cnt2, 4);
     }
-    bgez(cnt2, TAIL);
-
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, NEXT_WORD);
-    j(DIFFERENCE);
+    bne(tmp1, tmp2, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
     bind(TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
     if (str1_isL == str2_isL) { // LL or UU
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
     } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_int_misaligned(tmp1, Address(str1), tmp3, false);
+      load_long_misaligned(tmp2, Address(str2), tmp3, 2);
       inflate_lo32(tmp3, tmp1);
       mv(tmp1, tmp3);
     } else { // UL case
-      lwu(tmp2, Address(str2));
-      ld(tmp1, Address(str1));
+      load_int_misaligned(tmp2, Address(str2), tmp3, false);
+      load_long_misaligned(tmp1, Address(str1), tmp3, 2);
       inflate_lo32(tmp3, tmp2);
       mv(tmp2, tmp3);
     }
     bind(TAIL_CHECK);
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, DONE);
+    beq(tmp1, tmp2, DONE);
 
     // Find the first different characters in the longwords and
     // compute their difference.
     bind(DIFFERENCE);
+    xorr(tmp3, tmp1, tmp2);
     ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
