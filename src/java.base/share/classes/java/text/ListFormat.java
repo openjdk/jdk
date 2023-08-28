@@ -569,23 +569,22 @@ public class ListFormat extends Format {
     public enum Style {
 
         /**
-         * The {@code FULL} list format style. This is the default
-         * style, which typically is the full description of text.
-         * Suitable for elements, such as, "Monday", "Tuesday",
-         * "Wednesday", etc.
+         * The {@code FULL} list format style. This is the default style, which typically is the 
+         * full description of the text and punctuation that appear between the list elements.
+         * Suitable for elements, such as, "Monday", "Tuesday",  "Wednesday", etc.
          */
         FULL,
 
         /**
-         * The {@code SHORT} list format style. This style
-         * typically is an abbreviation of text.
+         * The {@code SHORT} list format style. This style is typically an abbreviation 
+         * of the text and punctuation that appear between the list elements.
          * Suitable for elements, such as, "Mon", "Tue", "Wed", etc.
          */
         SHORT,
 
         /**
-         * The {@code NARROW} list format style. This style
-         * typically is the shortest description of text.
+         * The {@code NARROW} list format style. This style is typically the shortest description 
+         * of the text and punctuation that appear between the list elements.
          * Suitable for elements, such as, "M", "T", "W", etc.
          */
         NARROW
