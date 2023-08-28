@@ -188,7 +188,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the available locales that support list formatting}
+     * {@return the available locales that support ListFormat}
      */
     public static Locale[] getAvailableLocales() {
         // Same as a typical format class
@@ -196,7 +196,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the default
+     * {@return the ListFormat object for the default
      * {@link Locale.Category#FORMAT FORMAT Locale}, {@link Type#STANDARD STANDARD} type,
      * and {@link Style#FULL FULL} style}
      */
@@ -205,12 +205,12 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the specified {@link Locale}, {@link Type Type},
+     * {@return the ListFormat object for the specified {@link Locale}, {@link Type Type},
      * and {@link Style Style}}
      * @param locale {@code Locale} to be used, not null
-     * @param type type of the list format. One of {@code STANDARD}, {@code OR},
+     * @param type type of the ListFormat. One of {@code STANDARD}, {@code OR},
      *             or {@code UNIT}, not null
-     * @param style style of the list format. One of {@code FULL}, {@code SHORT},
+     * @param style style of the ListFormat. One of {@code FULL}, {@code SHORT},
      *              or {@code NARROW}, not null
      * @throws NullPointerException if any of the arguments are null
      */
@@ -224,7 +224,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format for the specified patterns}
+     * {@return the ListFormat object for the specified patterns}
      * <p>
      * This factory returns an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the {@code Locale},
@@ -237,19 +237,20 @@ public class ListFormat extends Format {
      * If the length of the patterns array is not 5, an {@code IllegalArgumentException}
      * is thrown.
      * <p>
-     * Each pattern string is first parsed as follows. Patterns in parentheses are optional:
+     * Each pattern string is first parsed as follows. Literals in parentheses, such as,
+     * "start_before", are optional:
      * <blockquote><pre>
      * start := (start_before){0}start_between{1}
      * middle := {0}middle_between{1}
      * end := {0}end_between{1}(end_after)
      * two := (two_before){0}two_between{1}(two_after)
-     * three := (three_before){0}three_between{1}three_between{2}(three_after)
+     * three := (three_before){0}three_between1{1}three_between2{2}(three_after)
      * </pre></blockquote>
-     * If parsing of the pattern string for start/middle/end fails, it throws an
-     * {@code IllegalArgumentException}. If two/three pattern string is empty, or
-     * fails on parsing, it falls back to
+     * If two or three pattern string is empty, it falls back to
      * {@code "(start_before){0}end_between{1}(end_after)"},
      * {@code "(start_before){0}start_between{1}end_between{2}(end_after)"} respectively.
+     * If parsing of any pattern string for start, middle, end, two, or three fails,
+     * it throws an {@code IllegalArgumentException}.
      * <p>
      * On formatting, the input string list with {@code n} elements substitutes above
      * placeholders based on the number of elements:
@@ -274,9 +275,9 @@ public class ListFormat extends Format {
      *     <td>"{0}, {1}"</td>
      * <tr><th scope="row" style="text-align:left">end</th>
      *     <td>"{0}, and {1}"</td>
-     * <tr><th scope="row" style="text-align:left">2</th>
+     * <tr><th scope="row" style="text-align:left">two</th>
      *     <td>"{0} and {1}"</td>
-     * <tr><th scope="row" style="text-align:left">3</th>
+     * <tr><th scope="row" style="text-align:left">three</th>
      *     <td>""</td>
      * </tbody>
      * </table>
@@ -301,7 +302,8 @@ public class ListFormat extends Format {
      *
      * @param patterns array of patterns, not null
      * @throws IllegalArgumentException if the length {@code patterns} array is not 5, or
-     *          any of {@code start}, {@code middle}, {@code end} patterns cannot be parsed.
+     *          any of {@code start}, {@code middle}, {@code end}, {@code two}, or
+     *          {@code three} patterns cannot be parsed.
      * @throws NullPointerException if {@code patterns} is null.
      */
     public static ListFormat getInstance(String[] patterns) {
@@ -350,7 +352,7 @@ public class ListFormat extends Format {
             var a = objs.toArray(new Object[0]);
             return generateMessageFormat(a).format(a, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else {
-            throw new IllegalArgumentException("The object to format should be an Object list");
+            throw new IllegalArgumentException("The object to format should be a List<Object> or an Object[]");
         }
     }
 
@@ -426,7 +428,7 @@ public class ListFormat extends Format {
         if (parsed == null) {
             // now try exact number patterns
             parsed = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
-            if (parsed == null && !patterns[THREE].isEmpty()) {
+            if (parsed == null) {
                 parsed = new MessageFormat(patterns[THREE], locale).parseObject(source, parsePos);
             }
         }
@@ -451,8 +453,10 @@ public class ListFormat extends Format {
         if (arguments instanceof List<?> objs) {
             var a = objs.toArray(new Object[0]);
             return generateMessageFormat(a).formatToCharacterIterator(a);
+        } else if (arguments instanceof Object[] objs) {
+            return generateMessageFormat(objs).formatToCharacterIterator(objs);
         } else {
-            throw new IllegalArgumentException("The arguments should be an Object list");
+            throw new IllegalArgumentException("The arguments should be a List<Object> or an Object[]");
         }
     }
 
@@ -501,14 +505,7 @@ public class ListFormat extends Format {
         return switch (len) {
             case 0 -> throw new IllegalArgumentException("There should at least be one input string");
             case 1 -> new MessageFormat("{0}", locale);
-            case 2, 3 -> {
-                var pattern = patterns[len + 1];
-                if (pattern != null && !pattern.isEmpty()) {
-                    yield new MessageFormat(pattern, locale);
-                } else {
-                    yield new MessageFormat(createMessageFormatString(len), locale);
-                }
-            }
+            case 2, 3 -> new MessageFormat(patterns[len + 1], locale);
             default -> new MessageFormat(createMessageFormatString(len), locale);
         };
     }
@@ -532,7 +529,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * A list format type - {@link #STANDARD STANDARD}, {@link #OR OR}, and
+     * A ListFormat type - {@link #STANDARD STANDARD}, {@link #OR OR}, and
      * {@link #UNIT UNIT}.
      * <p>
      * {@code Type} is an enum which represents the type for formatting
@@ -541,26 +538,26 @@ public class ListFormat extends Format {
     public enum Type {
 
         /**
-         * The {@code STANDARD} list format style. This is the default
+         * The {@code STANDARD} ListFormat style. This is the default
          * type, which concatenates elements in "and" enumeration.
          */
         STANDARD,
 
         /**
-         * The {@code OR} list format style. This style concatenates
+         * The {@code OR} ListFormat style. This style concatenates
          * elements in "or" enumeration.
          */
         OR,
 
         /**
-         * The {@code UNIT} list format style. This style concatenates
+         * The {@code UNIT} ListFormat style. This style concatenates
          * elements, useful for enumerating units.
          */
         UNIT
     }
 
     /**
-     * A list format style - {@link #FULL FULL}, {@link #SHORT SHORT},
+     * A ListFormat style - {@link #FULL FULL}, {@link #SHORT SHORT},
      * and {@link #NARROW NARROW}.
      * <p>
      * {@code Style} is an enum which represents the style for formatting
@@ -569,21 +566,21 @@ public class ListFormat extends Format {
     public enum Style {
 
         /**
-         * The {@code FULL} list format style. This is the default style, which typically is the 
+         * The {@code FULL} ListFormat style. This is the default style, which typically is the
          * full description of the text and punctuation that appear between the list elements.
          * Suitable for elements, such as, "Monday", "Tuesday", "Wednesday", etc.
          */
         FULL,
 
         /**
-         * The {@code SHORT} list format style. This style is typically an abbreviation 
+         * The {@code SHORT} ListFormat style. This style is typically an abbreviation
          * of the text and punctuation that appear between the list elements.
          * Suitable for elements, such as, "Mon", "Tue", "Wed", etc.
          */
         SHORT,
 
         /**
-         * The {@code NARROW} list format style. This style is typically the shortest description 
+         * The {@code NARROW} ListFormat style. This style is typically the shortest description
          * of the text and punctuation that appear between the list elements.
          * Suitable for elements, such as, "M", "T", "W", etc.
          */
