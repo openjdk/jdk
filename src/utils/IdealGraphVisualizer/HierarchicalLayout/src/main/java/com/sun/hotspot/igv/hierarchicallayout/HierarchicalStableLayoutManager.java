@@ -472,9 +472,6 @@ public class HierarchicalStableLayoutManager {
             new AssignYCoordinates().run();
 
             new WriteResult().run();
-
-            sanityCheckNodesAndLayerNodes();
-            sanityCheckEdges();
         }
 
         oldVertices = new HashSet<>(currentVertices);
@@ -869,7 +866,6 @@ public class HierarchicalStableLayoutManager {
             for (LayoutEdge edge : List.copyOf(node.succs)) {
                 processSingleEdge(edge);
             }
-            sanityCheckEdges();
         }
 
         private void moveNodeDown(LayoutNode node) {
@@ -894,7 +890,6 @@ public class HierarchicalStableLayoutManager {
             for (LayoutEdge edge : List.copyOf(node.preds)) {
                 processSingleEdge(edge);
             }
-            sanityCheckEdges();
         }
 
         private void handleNeighborNodesOnSameLayer(LayoutNode from, LayoutNode to) {
@@ -914,7 +909,6 @@ public class HierarchicalStableLayoutManager {
          * remaining layers numbers
          */
         private void expandNewLayerBeneath(LayoutNode node) {
-            sanityCheckEdges();
             int layer = node.layer + 1;
 
             // Move all necessary layers down one step
@@ -981,8 +975,6 @@ public class HierarchicalStableLayoutManager {
             moveNodeDown(node);
             assert layers.get(layer).contains(node);
             assert node.layer == layer;
-
-            sanityCheckEdges();
         }
 
         private void applyAddLinkAction(Link l) {
@@ -1141,8 +1133,6 @@ public class HierarchicalStableLayoutManager {
                     applyAddLinkAction(a.link);
                 }
             }
-
-            sanityCheckEdges();
         }
 
         private void applyRemoveLinkAction(Link l) {
@@ -1289,8 +1279,6 @@ public class HierarchicalStableLayoutManager {
             }
 
             removeNode(node);
-
-            sanityCheckEdges();
         }
 
         void run() {
@@ -1318,8 +1306,6 @@ public class HierarchicalStableLayoutManager {
                     applyAddLinkAction(action.link);
                 }
             }
-
-            sanityCheckEdges();
 
             // Add or remove wrongful links
             Set<Link> layoutedLinks = new HashSet<>();
