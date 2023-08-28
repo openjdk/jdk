@@ -89,8 +89,8 @@ class UnixPath implements Path {
             checkNotNul(input, c);
             prevChar = c;
         }
-        if (prevChar == '/') {
-            return (n == 1) ? "/" : input.substring(0, n - 1);
+        if (prevChar == '/' && n > 1) {
+            return input.substring(0, n - 1);
         }
         return input;
     }
