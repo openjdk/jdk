@@ -386,7 +386,7 @@ public class ListFormat extends Format {
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
      * object is returned. The updated {@code parsePos} can be used to
-     * indicate the starting point for the next call to this method.
+     * indicate the starting point for the next call to parse additional text.
      * If an error occurs, then the index of {@code parsePos} is not
      * changed, the error index of {@code parsePos} is set to the index of
      * the character where the error occurred, and null is returned.
