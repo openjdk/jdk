@@ -7695,7 +7695,7 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
 %}
 
 // Round Instruction
-instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3, rFlagsReg cr) %{
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
   match(Set dst (RoundDoubleMode src rmode));
   ins_cost(2 * XFER_COST + BRANCH_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
