@@ -772,7 +772,6 @@ public abstract class DateFormat extends Format {
      * The hash code value is based on the value returned by {@link #getNumberFormat()}.
      *
      * @see Object#hashCode()
-     * @see NumberFormat#hashCode()
      */
     public int hashCode() {
         return numberFormat.hashCode();
