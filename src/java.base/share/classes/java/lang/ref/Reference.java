@@ -388,11 +388,22 @@ public abstract sealed class Reference<T>
     private native boolean refersTo0(Object o);
 
     /**
-     * Clears this reference object.  Invoking this method will not cause this
-     * object to be enqueued.
+     * Clears this reference object. Invoking this method does not enqueue this
+     * object, and the garbage collector will no longer enqueue this object once
+     * the referent reaches the designated reachability level.
+     * <p>
+     * There is a potential race condition with the garbage collector. When this
+     * method is called, the garbage collector may already be in the process of
+     * (or already completed) clearing and/or enqueueing this reference.
+     *
+     * Avoid this race by ensuring the referent remains strongly-reachable until
+     * after the call to clear(), using {@link #reachabilityFence(Object)} if necessary.
+     *
      *
      * <p> This method is invoked only by Java code; when the garbage collector
-     * clears references it does so directly, without invoking this method.
+     * clears references it does so directly, without invoking this method. The
+     * {@link #enqueue} method also clears references directly, without invoking
+     * this method.
      */
     public void clear() {
         clear0();
@@ -473,8 +484,9 @@ public abstract sealed class Reference<T>
      * Clears this reference object and adds it to the queue with which
      * it is registered, if any.
      *
-     * <p> This method is invoked only by Java code; when the garbage collector
-     * enqueues references it does so directly, without invoking this method.
+     * <p>If this reference was already enqueued (by the garbage collector, or a
+     * previous call to {@code enqueue}), this method is <b><i>not successful</i></b>,
+     * and returns false.
      *
      * <p>Memory consistency effects: Actions in a thread prior to calling
      * {@code enqueue} <b><i>successfully</i></b>
@@ -491,6 +503,7 @@ public abstract sealed class Reference<T>
      * to return this reference even though the referent is still strongly
      * reachable. That is, before the referent has reached the expected
      * reachability level.
+
      *
      * @return   {@code true} if this reference object was successfully
      *           enqueued; {@code false} if it was already enqueued or if
