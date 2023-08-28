@@ -31,8 +31,8 @@ import java.lang.StackWalker.StackFrame;
 class ClassFrameInfo implements StackFrame {
     static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    protected Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
-    protected int flags;                   // updated by VM to set hidden and caller-sensitive bits
+    Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
+    int flags;                   // updated by VM to set hidden and caller-sensitive bits
 
     ClassFrameInfo(StackWalker walker) {
         this.flags = walker.retainClassRef ? RETAIN_CLASS_REF_BIT : 0;
@@ -47,6 +47,7 @@ class ClassFrameInfo implements StackFrame {
     boolean isCallerSensitive() {
         return JLIA.isCallerSensitive(flags & MEMBER_INFO_FLAGS);
     }
+
     boolean isHidden() {
         return JLIA.isHiddenMember(flags & MEMBER_INFO_FLAGS);
     }

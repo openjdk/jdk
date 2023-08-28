@@ -78,14 +78,13 @@ import jdk.internal.vm.ContinuationScope;
  *     StackWalker walker = StackWalker.getInstance(Kind.CLASS_INFO, Option.RETAIN_CLASS_REFERENCE);
  *     Optional<Class<?>> callerClass = walker.walk(s ->
  *             s.map(StackFrame::getDeclaringClass)
- *              .filter(interestingClasses::contains)
+ *              .filter(Predicate.not(implClasses::contains))
  *              .findFirst());
  * }
  *
  * <p>2. To snapshot the top 10 stack frames of the current thread,
  * {@snippet lang="java" :
- *     List<StackFrame> stack = StackWalker.getInstance().walk(s ->
- *             s.limit(10).collect(Collectors.toList()));
+ *     List<StackFrame> stack = StackWalker.getInstance().walk(s -> s.limit(10).toList());
  * }
  *
  * Unless otherwise noted, passing a {@code null} argument to a
@@ -502,7 +501,7 @@ public final class StackWalker {
      * @since 22
      */
     public static StackWalker getInstance(Kind kind, Option... options) {
-        return getInstance(Objects.requireNonNull(kind), Set.of(Objects.requireNonNull(options)));
+        return getInstance(Objects.requireNonNull(kind), Set.of(options));
     }
 
     /**
@@ -646,7 +645,7 @@ public final class StackWalker {
      * List<StackFrame> frames = StackWalker.getInstance().walk(s ->
      *         s.dropWhile(f -> f.getClassName().startsWith("com.foo."))
      *          .limit(10)
-     *          .collect(Collectors.toList()));
+     *          .toList());
      * }
      *
      * <p>This method takes a {@code Function} accepting a {@code Stream<StackFrame>},

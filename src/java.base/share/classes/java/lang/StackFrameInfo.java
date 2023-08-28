@@ -78,12 +78,8 @@ class StackFrameInfo extends ClassFrameInfo {
             assert type != null;
         }
 
-        {
-            // Get a snapshot of type which doesn't get changed by racing threads.
-            final Object type = this.type;
-            if (type instanceof MethodType mt) {
-                return mt;
-            }
+        if (type instanceof MethodType mt) {
+            return mt;
         }
 
         // type is not a MethodType yet.  Convert it thread-safely.
@@ -91,7 +87,6 @@ class StackFrameInfo extends ClassFrameInfo {
             if (type instanceof String sig) {
                 type = JLIA.getMethodType(sig, declaringClass().getClassLoader());
             }
-            assert type instanceof MethodType : "bad method type " + type;
         }
         return (MethodType)type;
     }
