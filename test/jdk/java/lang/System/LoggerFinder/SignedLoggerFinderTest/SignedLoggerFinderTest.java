@@ -39,6 +39,7 @@ import java.io.File;
 import java.nio.file.*;
 import java.security.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.jar.*;
 
 import jdk.test.lib.JDKToolFinder;
@@ -111,31 +112,12 @@ public class SignedLoggerFinderTest {
             if (mutliThreadLoad) {
                 long sleep = new Random().nextLong(100L) + 1L;
                 System.out.println("multi thread load sleep value: " + sleep);
-                Runnable t1 = () -> {
-                    while(!testComplete) {
-                        // random logger call to exercise System.getLogger
-                        System.out.println("System.getLogger type:" +
-                            System.getLogger("random" + System.currentTimeMillis()).getClass().getName());
-                        try {
-                            Thread.sleep(sleep);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
-                Runnable t2 = () -> {
-                    while(!testComplete) {
-                        // random logger call to exercise System.LoggerFinder
-                        System.out.println("System.getLoggerFinder" + System.LoggerFinder.getLoggerFinder().getClass().getName());
-                        try {
-                            Thread.sleep(sleep);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
-                new Thread(t1).start();
-                new Thread(t2).start();
+                new Thread(runnableWithSleep(
+                        () -> System.getLogger("logger" + System.currentTimeMillis()),
+                        sleep, "System.getLogger type: ")).start();
+                new Thread(runnableWithSleep(
+                        () -> System.LoggerFinder.getLoggerFinder(),
+                        sleep, "System.getLoggerFinder type: ")).start();
             }
 
             if (withCustomLoggerFinder) {
@@ -234,6 +216,19 @@ public class SignedLoggerFinderTest {
         } catch (Throwable t) {
             throw new RuntimeException("Unexpected fail.", t);
         }
+    }
+
+    private static Runnable runnableWithSleep(Supplier s, long sleep, String desc) {
+        return () -> {
+            while(!testComplete) {
+                System.out.println(desc + s.get().getClass().getName());
+                try {
+                    Thread.sleep(sleep);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
     }
 
     private static void initialize() throws Throwable {
