@@ -148,7 +148,7 @@
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
-                 
+
   void round_double_mode(FloatRegister dst, FloatRegister src, RoundDoubleModeNode round_mode, Register tmp1, Register tmp2, Register tmp3);
 
   // intrinsic methods implemented by rvv instructions
