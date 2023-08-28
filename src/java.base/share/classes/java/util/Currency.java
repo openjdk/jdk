@@ -297,8 +297,7 @@ public final class Currency implements Serializable {
      * @return the {@code Currency} instance for the given currency code
      * @throws    NullPointerException if {@code currencyCode} is null
      * @throws    IllegalArgumentException if {@code currencyCode} is not
-     * a supported ISO 4217 code or the length of {@code currencyCode} is
-     * not equal to 3
+     * a supported ISO 4217 code.
      */
     public static Currency getInstance(String currencyCode) {
         return getInstance(currencyCode, Integer.MIN_VALUE, 0);
