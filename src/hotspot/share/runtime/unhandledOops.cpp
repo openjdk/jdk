@@ -72,7 +72,7 @@ void UnhandledOops::register_unhandled_oop(oop* op) {
 }
 
 
-bool match_oop_entry(void *op, UnhandledOopEntry e) {
+bool match_oop_entry(oop *op, UnhandledOopEntry e) {
   return (e.oop_ptr() == op);
 }
 
