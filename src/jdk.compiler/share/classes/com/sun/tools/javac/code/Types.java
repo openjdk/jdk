@@ -1012,7 +1012,11 @@ public class Types {
      * Is t an unchecked subtype of s?
      */
     public boolean isSubtypeUnchecked(Type t, Type s, Warner warn) {
-        boolean result = isSubtypeUncheckedInternal(t, s, true, warn);
+        return isSubtypeUnchecked(t, s, true, warn);
+    }
+
+    public boolean isSubtypeUnchecked(Type t, Type s, boolean capture, Warner warn) {
+        boolean result = isSubtypeUncheckedInternal(t, s, capture, warn);
         if (result) {
             checkUnsafeVarargsConversion(t, s, warn);
         }

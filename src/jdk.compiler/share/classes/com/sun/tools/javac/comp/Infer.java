@@ -1208,7 +1208,7 @@ public class Infer {
         IS_SUBTYPE() {
             @Override
             boolean apply(Type op1, Type op2, Warner warn, Types types) {
-                return types.isSubtypeUnchecked(op1, op2, warn);
+                return types.isSubtypeUnchecked(op1, op2, false, warn);
             }
         },
         IS_SAME_TYPE() {
