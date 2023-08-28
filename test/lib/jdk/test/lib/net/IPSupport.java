@@ -171,8 +171,7 @@ public class IPSupport {
     public static final int getMaxUDPSendBufSizeIPv6() {
         if (Platform.isAix()) {
             return IPV6_SNDBUF_AIX;
-        }
-        else {
+        } else {
             return IPV6_SNDBUF;
         }
     }
