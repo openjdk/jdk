@@ -345,11 +345,13 @@ public class ChoiceFormat extends NumberFormat {
      * @param formats are the formats you want to use for each limit.
      * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      */
     public void setChoices(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
-                "Array and limit arrays must be of the same length.");
+                    "Input arrays must be of the same length.");
         }
         choiceLimits = Arrays.copyOf(limits, limits.length);
         choiceFormats = Arrays.copyOf(formats, formats.length);
