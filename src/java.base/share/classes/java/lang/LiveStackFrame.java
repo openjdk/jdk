@@ -25,7 +25,6 @@
 package java.lang;
 
 import java.lang.StackWalker.StackFrame;
-import java.lang.StackWalker.Kind;
 import java.util.EnumSet;
 import java.util.Set;
 import jdk.internal.vm.Continuation;
@@ -207,7 +206,7 @@ interface LiveStackFrame extends StackFrame {
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("liveStackFrames"));
         }
-        return StackWalker.newInstance(Kind.METHOD_INFO, options, LOCALS_AND_OPERANDS, contScope);
+        return StackWalker.newInstance(options, LOCALS_AND_OPERANDS, contScope);
     }
 
     /**
@@ -248,6 +247,6 @@ interface LiveStackFrame extends StackFrame {
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("liveStackFrames"));
         }
-        return StackWalker.newInstance(Kind.METHOD_INFO, options, LOCALS_AND_OPERANDS, contScope, continuation);
+        return StackWalker.newInstance(options, LOCALS_AND_OPERANDS, contScope, continuation);
     }
 }

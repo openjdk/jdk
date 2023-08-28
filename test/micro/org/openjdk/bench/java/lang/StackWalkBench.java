@@ -37,8 +37,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import static java.lang.StackWalker.Kind.CLASS_INFO;
-import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
+import static java.lang.StackWalker.Option.*;
 
 /**
  * Benchmarks for java.lang.StackWalker
@@ -53,7 +52,7 @@ public class StackWalkBench {
     private static final StackWalker WALKER =
             StackWalker.getInstance(RETAIN_CLASS_REFERENCE);
     private static final StackWalker WALKER_CLASS_ONLY =
-            StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE);
+            StackWalker.getInstance(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE);
 
     static StackWalker walker(String name) {
         return switch (name) {

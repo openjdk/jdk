@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.lang.StackWalker.Kind.*;
 import static java.lang.StackWalker.Option.*;
 
 /**
@@ -161,7 +160,7 @@ public class StackStreamTest {
             checkStackTraceElements(GOLDEN_CLASS_NAMES, GOLDEN_METHOD_NAMES, stacktrace);
 
             System.out.println("Collect classes");
-            List<Class<?>> classes = StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE)
+            List<Class<?>> classes = StackWalker.getInstance(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE)
                     .walk(s -> {
                         return s.map(StackFrame::getDeclaringClass).collect(Collectors.toList());
                     });

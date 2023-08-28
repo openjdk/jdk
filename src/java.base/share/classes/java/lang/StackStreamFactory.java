@@ -46,7 +46,6 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import sun.security.action.GetPropertyAction;
 
-import static java.lang.StackWalker.Kind.*;
 import static java.lang.StackStreamFactory.WalkerState.*;
 
 /**
@@ -113,7 +112,7 @@ final class StackStreamFactory {
 
     private static int toStackWalkMode(StackWalker walker, int mode) {
         int newMode = mode;
-        if (walker.kind() == CLASS_INFO)
+        if (walker.hasOption(Option.DROP_METHOD_INFO))
             newMode |= CLASS_INFO_ONLY;
         if (walker.hasOption(Option.SHOW_HIDDEN_FRAMES))
             newMode |= SHOW_HIDDEN_FRAMES;
@@ -529,7 +528,7 @@ final class StackStreamFactory {
 
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = walker.kind() == CLASS_INFO
+            this.frameBuffer = walker.hasOption(Option.DROP_METHOD_INFO)
                                     ? new ClassFrameBuffer(walker, getNextBatchSize())
                                     : new StackFrameBuffer(walker, getNextBatchSize());
         }

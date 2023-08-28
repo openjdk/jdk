@@ -31,7 +31,6 @@
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
-import static java.lang.StackWalker.Kind.*;
 import static java.lang.StackWalker.Option.*;
 
 import org.junit.jupiter.api.Test;
@@ -47,15 +46,11 @@ public class SanityTest {
         assertThrows(NullPointerException.class, () ->
                 StackWalker.getInstance((StackWalker.Option) null));
         assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance(null, (StackWalker.Option[])null));
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance(METHOD_INFO, (StackWalker.Option[])null));
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance(METHOD_INFO, new StackWalker.Option[] { null }));
+                StackWalker.getInstance((StackWalker.Option[])null));
     }
 
     private static Stream<StackWalker> noRetainClassRef() {
-        return Stream.of(StackWalker.getInstance(), StackWalker.getInstance(CLASS_INFO));
+        return Stream.of(StackWalker.getInstance(), StackWalker.getInstance(DROP_METHOD_INFO));
     }
 
     @ParameterizedTest
@@ -97,8 +92,8 @@ public class SanityTest {
     }
 
     private static Stream<StackWalker> noMethodInfo() {
-        return Stream.of(StackWalker.getInstance(CLASS_INFO),
-                         StackWalker.getInstance(CLASS_INFO, RETAIN_CLASS_REFERENCE));
+        return Stream.of(StackWalker.getInstance(DROP_METHOD_INFO),
+                         StackWalker.getInstance(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE));
     }
 
     @ParameterizedTest
