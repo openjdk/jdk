@@ -37,6 +37,8 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -51,14 +53,22 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class URLEncodeDecode {
 
-    @Param("1024")
-    public int count;
+    private static final int COUNT = 1024;
 
     @Param("1024")
     public int maxLength;
 
-    @Param("3")
-    public long mySeed;
+    /**
+     * Percentage of strings that will remain unchanged by an encoding/decoding (0-100)
+     */
+    @Param({"0", "75", "100"})
+    public int unchanged;
+
+    /**
+     * Percentage of chars in changed strings that cause encoding/decoding to happen (0-100)
+     */
+    @Param({"6"})
+    public int encodeChars;
 
     public String[] testStringsEncode;
     public String[] testStringsDecode;
@@ -66,44 +76,55 @@ public class URLEncodeDecode {
 
     @Setup
     public void setupStrings() {
-        char[] tokens = new char[((int) 'Z' - (int) 'A' + 1) + ((int) 'z' - (int) 'a' + 1) + ((int) '9' - (int) '1' + 1) + 5];
+        char[] encodeTokens = new char[] { '[', '(', ' ', '\u00E4', '\u00E5', '\u00F6', ')', '='};
+        char[] tokens = new char[((int) 'Z' - (int) 'A' + 1) + ((int) 'z' - (int) 'a' + 1) + ((int) '9' - (int) '0' + 1) + 4];
         int n = 0;
-        tokens[n++] = '0';
-        for (int i = (int) '1'; i <= (int) '9'; i++) {
-            tokens[n++] = (char) i;
+        for (char c = '0'; c <= '9'; c++) {
+            tokens[n++] = c;
         }
-        for (int i = (int) 'A'; i <= (int) 'Z'; i++) {
-            tokens[n++] = (char) i;
+        for (char c = 'A'; c <= 'Z'; c++) {
+            tokens[n++] = c;
         }
-        for (int i = (int) 'a'; i <= (int) '<'; i++) {
-            tokens[n++] = (char) i;
+        for (char c = 'a'; c <= 'z'; c++) {
+            tokens[n++] = c;
         }
         tokens[n++] = '-';
         tokens[n++] = '_';
         tokens[n++] = '.';
         tokens[n++] = '*';
 
-        Random r = new Random(mySeed);
-        testStringsEncode = new String[count];
-        testStringsDecode = new String[count];
-        toStrings = new String[count];
-        for (int i = 0; i < count; i++) {
+        Random r = new Random(3);
+        testStringsEncode = new String[COUNT];
+        testStringsDecode = new String[COUNT];
+        toStrings = new String[COUNT];
+        for (int i = 0; i < COUNT; i++) {
             int l = r.nextInt(maxLength);
+            boolean needEncoding = r.nextInt(100) >= unchanged;
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < l; j++) {
-                int c = r.nextInt(tokens.length);
-                sb.append(tokens[c]);
+                if (needEncoding && r.nextInt(100) < encodeChars) {
+                    int c = r.nextInt(encodeTokens.length);
+                    sb.append(encodeTokens[c]);
+                } else {
+                    int c = r.nextInt(tokens.length);
+                    sb.append(tokens[c]);
+                }
             }
             testStringsEncode[i] = sb.toString();
         }
 
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < COUNT; i++) {
             int l = r.nextInt(maxLength);
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < l; j++) {
-                int c = r.nextInt(tokens.length + 5);
-                if (c >= tokens.length) {
-                    sb.append("%").append(tokens[r.nextInt(16)]).append(tokens[r.nextInt(16)]);
+                boolean needEncoding = r.nextInt(100) >= unchanged;
+                int c = r.nextInt(tokens.length);
+                if (needEncoding && r.nextInt(100) < encodeChars) {
+                    if (r.nextInt(100) < 15) {
+                        sb.append('+'); // exercise '+' -> ' ' decoding paths.
+                    } else {
+                        sb.append("%").append(tokens[r.nextInt(16)]).append(tokens[r.nextInt(16)]);
+                    }
                 } else {
                     sb.append(tokens[c]);
                 }
@@ -115,14 +136,14 @@ public class URLEncodeDecode {
     @Benchmark
     public void testEncodeUTF8(Blackhole bh) throws UnsupportedEncodingException {
         for (String s : testStringsEncode) {
-            bh.consume(java.net.URLEncoder.encode(s, "UTF-8"));
+            bh.consume(java.net.URLEncoder.encode(s, StandardCharsets.UTF_8));
         }
     }
 
     @Benchmark
     public void testDecodeUTF8(Blackhole bh) throws UnsupportedEncodingException {
         for (String s : testStringsDecode) {
-            bh.consume(URLDecoder.decode(s, "UTF-8"));
+            bh.consume(URLDecoder.decode(s, StandardCharsets.UTF_8));
         }
     }
 
