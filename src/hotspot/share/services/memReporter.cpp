@@ -282,7 +282,7 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
   const MetaspaceStats stats = MetaspaceUtils::get_statistics(type);
 
   size_t waste = stats.committed() - stats.used();
-  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/stats.committed()) : 0.0f;
+  float waste_percentage = stats.committed() > 0 ? (((float)waste * 100)/(float)stats.committed()) : 0.0f;
 
   out->print_cr("%27s (  %s)", " ", name);
   out->print("%27s (    ", " ");
@@ -713,7 +713,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
 
   // Diff waste
   const float waste_percentage = current_stats.committed() == 0 ? 0.0f :
-                                 (current_waste * 100.0f) / current_stats.committed();
+                                 ((float)current_waste * 100.0f) / (float)current_stats.committed();
   out->print("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%", " ",
     amount_in_current_scale(current_waste), scale, waste_percentage);
   if (diff_waste != 0) {

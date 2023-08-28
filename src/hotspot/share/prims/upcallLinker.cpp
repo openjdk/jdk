@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
