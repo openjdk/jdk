@@ -91,8 +91,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <p>
  * On parsing, if some ambiguity is found in the input string, such as delimiting
  * sequences being found in the input string, may produce the result that when formatted is not a
- * round-trip with the corresponding formatting. For example, a String list
- * "a, b,", "c" will be formatted as "a, b, and c", but may be parsed as
+  * round-trip with the corresponding formatting. For example, a two element String list
+ * "a, b,", "c" will be formatted as "a, b, and c", but may be parsed as three elements
  * "a", "b", "c".
  *
  * @implSpec This class is immutable and thread-safe
