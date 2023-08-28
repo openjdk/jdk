@@ -4130,17 +4130,18 @@ void StubGenerator::generate_compiler_stubs() {
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
   }
 
-  // Get addresses for avx512 sort and partition routines
-  void *libx86_64 = nullptr;
-  char ebuf_x86_64[1024];
-  char dll_name_avx512[JVM_MAXPATHLEN];
-  if (os::dll_locate_lib(dll_name_avx512, sizeof(dll_name_avx512), Arguments::get_dll_dir(), "x86_64")) {
-    libx86_64 = os::dll_load(dll_name_avx512, ebuf_x86_64, sizeof ebuf_x86_64);
-  }
-  if (libx86_64 != nullptr) {
-    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "x86_64" JNI_LIB_SUFFIX, p2i(libx86_64));
-
+  // Load x86_64 library on supported hardware to enable avx512 sort and partition intrinsics
     if (UseAVX > 2 && VM_Version::supports_avx512dq()) {
+
+      void *libx86_64 = nullptr;
+      char ebuf_x86_64[1024];
+      char dll_name_avx512[JVM_MAXPATHLEN];
+      if (os::dll_locate_lib(dll_name_avx512, sizeof(dll_name_avx512), Arguments::get_dll_dir(), "x86_64")) {
+        libx86_64 = os::dll_load(dll_name_avx512, ebuf_x86_64, sizeof ebuf_x86_64);
+      }
+    // Get addresses for avx512 sort and partition routines
+    if (libx86_64 != nullptr) {
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "x86_64" JNI_LIB_SUFFIX, p2i(libx86_64));
 
       snprintf(ebuf_x86_64, sizeof(ebuf_x86_64), "avx512_sort_int");
       StubRoutines::_arraysort_int = (address)os::dll_lookup(libx86_64, ebuf_x86_64);

@@ -116,12 +116,6 @@ struct ymm_vector;
 
 // Regular quicksort routines:
 template <typename T>
-void avx512_dual_pivot_partition(T *arr, int64_t low, int64_t high, int32_t *pivot_indices, bool isDualPivot);
-
-template <typename T>
-void avx512_single_pivot_partition(T *arr, int64_t low, int64_t high, int32_t *pivot_indices, bool isDualPivot);
-
-template <typename T>
 void avx512_qsort(T *arr, int64_t arrsize);
 
 template <typename T>

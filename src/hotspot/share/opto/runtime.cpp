@@ -884,7 +884,7 @@ const TypeFunc* OptoRuntime::array_sort_Type() {
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypePtr::NOTNULL;    // array(fromIndex)
+  fields[argp++] = TypePtr::NOTNULL;    // array
   fields[argp++] = TypeInt::INT;    // fromIndex
   fields[argp++] = TypeInt::INT;    // toIndex
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");

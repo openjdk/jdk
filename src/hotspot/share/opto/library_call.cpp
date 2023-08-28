@@ -5208,8 +5208,7 @@ bool LibraryCallKit::inline_array_partition() {
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
   Node* pivot_indices   = argument(6);
-  Node* pivot_offset    = argument(7);
-  Node* isDualPivot     = argument(9);
+  Node* isDualPivot     = argument(7);
 
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
@@ -5221,11 +5220,14 @@ bool LibraryCallKit::inline_array_partition() {
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
     return false; // failed input validation
   }
-
   Node* obj_adr = make_unsafe_address(obj, offset);
 
   pivot_indices = must_be_not_null(pivot_indices, true);
-  Node* pivot_indices_adr = make_unsafe_address(pivot_indices, pivot_offset); //this offset is not same as array offset
+  const TypeAryPtr* pivot_indices_type = pivot_indices->Value(&_gvn)->isa_aryptr();
+  if (pivot_indices_type == nullptr || pivot_indices_type->elem() == Type::BOTTOM ) {
+    return false; // failed input validation
+  }
+  Node* pivot_indices_adr = array_element_address(pivot_indices, intcon(0), T_INT);
 
   // Call the stub.
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
