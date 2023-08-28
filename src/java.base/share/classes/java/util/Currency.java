@@ -684,7 +684,7 @@ public final class Currency implements Serializable {
     private static int getMainTableEntry(char char1, char char2) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
             throw new IllegalArgumentException("The country code is not a " +
-                    "supported ISO 4217 code");
+                    "supported ISO 3166 code");
         }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
@@ -696,7 +696,7 @@ public final class Currency implements Serializable {
     private static void setMainTableEntry(char char1, char char2, int entry) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
             throw new IllegalArgumentException("The country code is not a " +
-                    "supported ISO 4217 code");
+                    "supported ISO 3166 code");
         }
         mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')] = entry;
     }
