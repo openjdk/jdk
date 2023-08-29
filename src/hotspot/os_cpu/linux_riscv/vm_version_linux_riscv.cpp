@@ -228,6 +228,11 @@ void VM_Version::rivos_features() {
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
+  // If we running on a pre-6.5 kernel
+  ext_Zba.enable_feature();
+  ext_Zbb.enable_feature();
+  ext_Zbs.enable_feature();
+
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
