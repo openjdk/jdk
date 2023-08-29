@@ -32,17 +32,15 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.text.JTextComponent;
 
 /* @test
- * @bug 8031573 8040279 8143064
+ * @bug 8031573 8040279 8143064 8294427
  * @summary [macosx] Checkmarks of JCheckBoxMenuItems aren't rendered
  *           in high resolution on Retina
  * @run main/manual bug8031573
@@ -55,13 +53,15 @@ public class bug8031573 {
     private static final CountDownLatch latch = new CountDownLatch(1);
 
     public static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
-            + "Verify that high resolution system icons are used for JCheckBoxMenuItem on HiDPI displays.\n"
+            + "Verify that high resolution system icons are used for JCheckBoxMenuItem and JRadioButtonMenuItem on HiDPI displays.\n"
             + "If the display does not support HiDPI mode press PASS.\n"
             + "1. Run the test on HiDPI Display.\n"
             + "2. Open the Menu.\n"
             + "3. Check that the icon on the JCheckBoxMenuItem is smooth.\n"
             + "4. Check that the icon on the JRadioButtonMenuItem is smooth.\n"
-            + "   If so, press PASS, else press FAIL.\n";
+            + "5. Test the markers are still crisp after changing the scale in Windows settings.\n"
+            + "   This could be done on same monitor by changing scale or multi-monitor setup with different scales.\n"
+            + "6. If so, press PASS, else press FAIL.\n";
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
