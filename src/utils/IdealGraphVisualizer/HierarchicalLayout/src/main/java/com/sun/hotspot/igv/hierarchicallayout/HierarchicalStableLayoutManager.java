@@ -1358,7 +1358,7 @@ public class HierarchicalStableLayoutManager {
 
             LayoutNode cur = e.from;
             LayoutEdge curEdge = e;
-            while (cur.vertex == null && cur.preds.size() != 0) {
+            while (cur.vertex == null && !cur.preds.isEmpty()) {
                 if (points.size() > 1 && points.get(points.size() - 1).x == cur.x + cur.width / 2
                         && points.get(points.size() - 2).x == cur.x + cur.width / 2) {
                     // On the same vertical line, can remove previous point
