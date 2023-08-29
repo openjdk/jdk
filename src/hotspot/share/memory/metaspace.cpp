@@ -610,16 +610,13 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     }
   } // end: low-address reservation
 
+#if defined(AARCH64) || defined(PPC64) || defined(S390)
   if (result == nullptr) {
     // Failing zero-based allocation, or in strict_base mode, try to come up with
-    // an optimized start address that is amenable to most JITs.
-    // Architectures have differing opinions of what constitutes a "good" base,
-    // and some (aarch64) have hard limitations. But many of them (aarch64, s390, ppc)
-    // use 16-bit moves, if possible, to load the encoding base as immediates. Those
-    // that don't (riscv, x64) could potentially benefit in the future from that as
-    // well (e.g. by having to encode shorter immediates).
-    // Therefore we try here for an address that, taken as encoding base, when
-    // right-shifted by LogKlassAlignmentInBytes, has only 1s in the third 16-bit quadrant.
+    // an optimized start address that is amenable to JITs that use 16-bit moves to
+    // load the encoding base as a short immediate.
+    // Therefore we try here for an address that when right-shifted by
+    // LogKlassAlignmentInBytes has only 1s in the third 16-bit quadrant.
     //
     // Example: for shift=3, the address space searched would be
     // [0x0080_0000_0000 - 0xFFF8_0000_0000].
@@ -638,6 +635,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
                               " with " SIZE_FORMAT_X " alignment", min, max, alignment);
     result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
   }
+#endif // defined(AARCH64) || defined(PPC64) || defined(S390)
 
   if (result == nullptr) {
     // Fallback: reserve anywhere and hope the resulting block is usable.
