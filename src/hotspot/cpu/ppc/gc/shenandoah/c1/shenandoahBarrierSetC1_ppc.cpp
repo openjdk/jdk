@@ -104,7 +104,9 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
 
-      post_barrier(access, access.resolved_addr(), new_value.result());
+      if (ShenandoahCardBarrier) {
+        post_barrier(access, access.resolved_addr(), new_value.result());
+      }
 
       if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
         __ membar_acquire();
@@ -118,7 +120,7 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
   LIR_Opr result = BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
 
-  if (access.is_oop()) {
+  if (ShenandoahCardBarrier && access.is_oop()) {
     post_barrier(access, access.resolved_addr(), new_value.result());
   }
 
@@ -159,7 +161,9 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr, result);
     }
 
-    post_barrier(access, access.resolved_addr(), result);
+    if (ShenandoahCardBarrier) {
+      post_barrier(access, access.resolved_addr(), result);
+    }
   }
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {

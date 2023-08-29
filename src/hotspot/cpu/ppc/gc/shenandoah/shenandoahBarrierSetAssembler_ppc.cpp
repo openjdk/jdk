@@ -190,7 +190,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
 void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                        Register dst, Register count,
                                                        Register preserve) {
-  if (is_reference_type(type)) {
+  if (ShenandoahCardBarrier && is_reference_type(type)) {
     __ block_comment("arraycopy_epilogue (shenandoahgc) {");
     gen_write_ref_array_post_barrier(masm, decorators, dst, count, preserve);
     __ block_comment("} arraycopy_epilogue (shenandoahgc)");
@@ -597,9 +597,7 @@ void ShenandoahBarrierSetAssembler::load_at(
 }
 
 void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register base, RegisterOrConstant ind_or_offs, Register tmp) {
-  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
-    return;
-  }
+  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
 
   ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
   CardTable* ct = ctbs->card_table();
@@ -641,7 +639,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
                                 preservation_level);
 
   // No need for post barrier if storing NULL
-  if (is_reference_type(type) && val != noreg) {
+  if (ShenandoahCardBarrier && is_reference_type(type) && val != noreg) {
     store_check(masm, base, ind_or_offs, tmp1);
   }
 }
@@ -795,9 +793,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register addr, Register count, Register preserve) {
-  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
-    return;
-  }
+  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
 
   ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
   CardTable* ct = bs->card_table();

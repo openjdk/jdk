@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP
 #define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHMODE_HPP
 
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"

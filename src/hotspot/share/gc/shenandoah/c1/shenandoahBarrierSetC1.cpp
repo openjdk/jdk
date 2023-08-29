@@ -196,7 +196,7 @@ void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value)
   }
   BarrierSetC1::store_at_resolved(access, value);
 
-  if (access.is_oop()) {
+  if (ShenandoahCardBarrier && access.is_oop()) {
     DecoratorSet decorators = access.decorators();
     bool is_array = (decorators & IS_ARRAY) != 0;
     bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
@@ -305,9 +305,7 @@ void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) 
 }
 
 void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val) {
-  if (!ShenandoahHeap::heap()->mode()->is_generational()) {
-    return;
-  }
+  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
 
   DecoratorSet decorators = access.decorators();
   LIRGenerator* gen = access.gen();

@@ -53,6 +53,7 @@ void ShenandoahPassiveMode::initialize_flags() const {
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahNMethodBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);
+  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCardBarrier);
 
   // Final configuration checks
   // No barriers are required to run.
