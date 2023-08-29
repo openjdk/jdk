@@ -85,7 +85,7 @@ public class CurrencyTest {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                     Currency.getInstance(currencyCode), "getInstance() did not throw IAE");
             assertEquals("The input currency code is not a" +
-                    " supported ISO 4217 code", ex.getMessage());
+                    " valid ISO 4217 code", ex.getMessage());
         }
 
         private static Stream<String> non4217Currencies() {
@@ -164,7 +164,7 @@ public class CurrencyTest {
                     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                             () -> Currency.getInstance(locale), "Did not throw IAE");
                     assertEquals("The country of the input locale is not a" +
-                            " supported ISO 3166 country code", ex.getMessage());
+                            " valid ISO 3166 country code", ex.getMessage());
                 } else {
                     goodCountries++;
                     Currency currency = Currency.getInstance(locale);
@@ -185,7 +185,7 @@ public class CurrencyTest {
         public void invalidCountryTest() {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                     ()-> Currency.getInstance(Locale.of("", "EU")), "Did not throw IAE");
-            assertEquals("The country of the input locale is not a supported" +
+            assertEquals("The country of the input locale is not a valid" +
                     " ISO 3166 country code", ex.getMessage());
         }
 
