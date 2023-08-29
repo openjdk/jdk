@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8140450 8152893 8189291
+ * @bug 8140450 8152893 8189291 8210375
  * @summary Basic test for StackWalker.getCallerClass()
  * @run main/othervm GetCallerClassTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames GetCallerClassTest
@@ -119,8 +119,10 @@ public class GetCallerClassTest {
                                                 Class<?> expected,
                                                 boolean expectUOE) {
         try {
+            // Use reflection to call Method::invoke that invokes StackWalker::getCallerClass
             Method m = StackWalker.class.getMethod("getCallerClass");
-            Class<?> c = (Class<?>) m.invoke(stackWalker);
+            Method invoke = Method.class.getMethod("invoke", Object.class, Object[].class);
+            Class<?> c = (Class<?>) invoke.invoke(m, new Object[] { stackWalker, null });
             assertEquals(c, expected);
             if (expectUOE) { // Should have thrown
                 throw new RuntimeException("Didn't get expected exception");

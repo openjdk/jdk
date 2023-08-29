@@ -32,7 +32,7 @@ import static java.lang.StackWalker.Option.*;
 
 /**
  * @test
- * @bug 8140450
+ * @bug 8140450 8210375
  * @summary Stack Stream Test
  * @modules java.logging
  * @run main/othervm StackStreamTest

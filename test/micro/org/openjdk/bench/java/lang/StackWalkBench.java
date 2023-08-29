@@ -320,6 +320,44 @@ public class StackWalkBench {
     }
 
     /**
+     * StackWalker.getCallerClass() with generated call stack of
+     * the given depth.
+     */
+    @Benchmark
+    public void getCallerClass_withTestStack(Blackhole bh) {
+        final Blackhole localBH = bh;
+        final boolean[] done = {false};
+        final StackWalker sw = walker(walker);
+        new TestStack(depth, new Runnable() {
+            public void run() {
+                localBH.consume(sw.getCallerClass());
+                done[0] = true;
+            }
+        }).start();
+        if (!done[0]) {
+            throw new RuntimeException();
+        }
+    }
+
+    /**
+     * Baseline for generating a call stack of the given depth.
+     * (No StackWalk operations are executed)
+     */
+     @Benchmark
+     public void makeCallStack(Blackhole bh) {
+         final Blackhole localBH = bh;
+         final boolean[] done = {false};
+         new TestStack(depth, new Runnable() {
+             public void run() {
+                 done[0] = true;
+             }
+         }).start();
+         if (!done[0]) {
+             throw new RuntimeException();
+         }
+     }
+
+    /**
      * Use StackWalker.walk() to filter the StackFrames, looking for the
      * TestMarker class, which will be (approximately) 'mark' calls back up the
      * call stack.

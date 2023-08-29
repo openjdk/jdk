@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8140450
+ * @bug 8140450 8268829
  * @summary Sanity test for exception cases
  * @run junit SanityTest
  */
