@@ -198,8 +198,6 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
-     * @throws    IllegalArgumentException if {@code newPattern}
-     *            is invalid
      * @see #ChoiceFormat(String)
      */
     public void applyPattern(String newPattern) {
@@ -348,8 +346,6 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
-     * @throws    IllegalArgumentException if {@code newPattern}
-     *            is invalid
      * @see #applyPattern(String)
      */
     public ChoiceFormat(String newPattern)  {
