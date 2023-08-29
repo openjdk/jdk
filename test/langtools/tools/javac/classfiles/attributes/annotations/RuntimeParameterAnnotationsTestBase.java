@@ -21,7 +21,8 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -32,15 +33,16 @@ public abstract class RuntimeParameterAnnotationsTestBase extends AnnotationsTes
 
     @Override
     public void test(TestCase testCase, Map<String, ? extends JavaFileObject> classes)
-            throws IOException, ConstantPoolException, Descriptor.InvalidDescriptor {
+            throws IOException {
         for (Map.Entry<String, ? extends JavaFileObject> entry : classes.entrySet()) {
-            ClassFile classFile = readClassFile(classes.get(entry.getKey()));
+            ClassModel classFile = readClassFile(classes.get(entry.getKey()));
             Set<String> foundMethods = new HashSet<>();
-            String className = classFile.getName();
+            String className = classFile.thisClass().name().stringValue();
             TestCase.TestClassInfo testClassInfo = testCase.classes.get(className);
-            for (Method method : classFile.methods) {
-                String methodName = method.getName(classFile.constant_pool) +
-                        method.descriptor.getParameterTypes(classFile.constant_pool);
+            for (MethodModel method : classFile.methods()) {
+                String methodName = method.methodName().stringValue() +
+                        method.methodTypeSymbol().displayDescriptor();
+                methodName = methodName.substring(0, methodName.indexOf(")") + 1);
                 if (methodName.startsWith("<init>")) {
                     methodName = methodName.replace("<init>", className);
                 }
@@ -59,18 +61,18 @@ public abstract class RuntimeParameterAnnotationsTestBase extends AnnotationsTes
 
     protected void testAttributes(
             TestCase.TestMethodInfo testMethod,
-            ClassFile classFile,
-            Method method) throws ConstantPoolException {
+            ClassModel classFile,
+            MethodModel method) {
         List<Map<String, Annotation>> actualInvisible = collectAnnotations(
                 classFile,
                 testMethod,
                 method,
-                Attribute.RuntimeInvisibleParameterAnnotations);
+                Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS);
         List<Map<String, Annotation>> actualVisible = collectAnnotations(
                 classFile,
                 testMethod,
                 method,
-                Attribute.RuntimeVisibleParameterAnnotations);
+                Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS);
 
         List<TestCase.TestParameterInfo> parameters = testMethod.parameters;
         for (int i = 0; i < parameters.size(); ++i) {
@@ -103,38 +105,46 @@ public abstract class RuntimeParameterAnnotationsTestBase extends AnnotationsTes
         }
     }
 
-    private List<Map<String, Annotation>> collectAnnotations(
-            ClassFile classFile,
+    private <T extends Attribute<T>> List<Map<String, Annotation>> collectAnnotations(
+            ClassModel classFile,
             TestCase.TestMethodInfo testMethod,
-            Method method,
-            String attribute) throws ConstantPoolException {
+            MethodModel method,
+            AttributeMapper<T> attribute) {
 
-        Attributes attributes = method.attributes;
-        RuntimeParameterAnnotations_attribute attr = (RuntimeParameterAnnotations_attribute) attributes.get(attribute);
-
+        Object attr = method.findAttribute(attribute).orElse(null);
         List<Map<String, Annotation>> actualAnnotations = new ArrayList<>();
-        RetentionPolicy policy = getRetentionPolicy(attribute);
+        RetentionPolicy policy = getRetentionPolicy(attribute.name());
         if (testMethod.isParameterAnnotated(policy)) {
-            if (!checkNotNull(attr, "Attribute " + attribute + " must not be null")) {
+            if (!checkNotNull(attr, "Attribute " + attribute.name() + " must not be null")) {
                 testMethod.parameters.forEach($ -> actualAnnotations.add(new HashMap<>()));
                 return actualAnnotations;
             }
-            for (Annotation[] anns : attr.parameter_annotations) {
+            List<List<Annotation>> annotationList;
+            switch (attr) {
+                case RuntimeVisibleParameterAnnotationsAttribute pAnnots -> {
+                    annotationList = pAnnots.parameterAnnotations();
+                }
+                case RuntimeInvisibleParameterAnnotationsAttribute pAnnots -> {
+                    annotationList = pAnnots.parameterAnnotations();
+                }
+                default -> throw new AssertionError();
+            }
+            for (List<Annotation> anns: annotationList) {
                 Map<String, Annotation> annotations = new HashMap<>();
-                for (Annotation ann : anns) {
-                    String name = classFile.constant_pool.getUTF8Value(ann.type_index);
-                    annotations.put(name.substring(1, name.length() - 1), ann);
+                for (Annotation ann: anns) {
+                    String name = ann.classSymbol().displayName();
+                    annotations.put(name, ann);
                 }
                 actualAnnotations.add(annotations);
             }
-            checkEquals(countNumberOfAttributes(attributes.attrs,
-                    getRetentionPolicy(attribute) == RetentionPolicy.RUNTIME
-                            ? RuntimeVisibleParameterAnnotations_attribute.class
-                            : RuntimeInvisibleParameterAnnotations_attribute.class),
-                    1l,
-                    String.format("Number of %s", attribute));
+            checkEquals(countNumberOfAttributes(method.attributes(),
+                    getRetentionPolicy(attribute.name()) == RetentionPolicy.RUNTIME
+                            ? RuntimeVisibleParameterAnnotationsAttribute.class
+                            : RuntimeInvisibleParameterAnnotationsAttribute.class),
+                    1L,
+                    String.format("Number of %s", attribute.name()));
         } else {
-            checkNull(attr, String.format("%s should be null", attribute));
+            checkNull(attr, String.format("%s should be null", attribute.name()));
             testMethod.parameters.forEach($ -> actualAnnotations.add(new HashMap<>()));
         }
         return actualAnnotations;
