@@ -48,8 +48,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 public class OptionKeyEventTest extends JFrame
-        implements KeyListener, ActionListener
-{
+        implements KeyListener, ActionListener {
     private static JTextArea displayArea;
     private static JTextField typingArea;
     private static final String newline = System.getProperty("line.separator");
