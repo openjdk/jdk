@@ -422,7 +422,7 @@ public class HierarchicalStableLayoutManager {
             findInitialReversedLinks();
 
             // Only apply updates if there are any
-            if (linkActions.size() > 0 || vertexActions.size() > 0) {
+            if (!linkActions.isEmpty() || !vertexActions.isEmpty()) {
                 new ApplyActionUpdates().run();
             }
 
