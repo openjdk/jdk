@@ -1425,7 +1425,7 @@ ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)
 # are internal only, to support Init.gmk.
 
 print-targets:
-	  @$(ECHO) $(sort $(ALL_TARGETS))
+	  @$(ECHO) $(sort $(ALL_TARGETS)) | $(TR) ' ' '\n'
 
 print-modules:
 	  @$(ECHO) $(sort $(ALL_MODULES))
