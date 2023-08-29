@@ -282,7 +282,7 @@ public class HierarchicalStableLayoutManager {
         // If so, reversed edges going upwards are drawn to the left.
         boolean hasReversedDown = reversedDown.size() > 0;
 
-        SortedSet<Integer> reversedUp = null;
+        SortedSet<Integer> reversedUp;
         if (hasReversedDown) {
             reversedUp = new TreeSet<>();
         } else {
