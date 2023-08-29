@@ -76,7 +76,7 @@ public class PipedInputStream extends InputStream {
      * The circular buffer into which incoming data is placed.
      * @since   1.1
      */
-    protected byte buffer[];
+    protected byte[] buffer;
 
     /**
      * The index of the position in the circular buffer at which the
@@ -444,10 +444,8 @@ public class PipedInputStream extends InputStream {
      * @throws     IOException  {@inheritDoc}
      */
     @Override
-    public void close()  throws IOException {
+    public void close() throws IOException {
+        in = -1;
         closedByReader = true;
-        synchronized (this) {
-            in = -1;
-        }
     }
 }
