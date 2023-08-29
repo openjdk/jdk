@@ -36,6 +36,8 @@ import sun.java2d.DisposerRecord;
 
 import java.awt.geom.Point2D;
 import java.lang.ref.SoftReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.WeakHashMap;
 
@@ -162,17 +164,57 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         return ref.getNativePtr();
     }
 
+    static boolean usePanama = true;
+    static boolean logTime = false;
+    static {
+        @SuppressWarnings("removal")
+        String prop = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () ->
+               System.getProperty("sun.font.layout.panama", "true"));
+        usePanama = "true".equals(prop);
+
+        @SuppressWarnings("removal")
+        String prop2 = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () ->
+               System.getProperty("sun.font.layout.logtime", "false"));
+        logTime = "true".equals(prop2);
+    }
+       
+    static volatile int layoutCnt = 0;
+    static volatile long totalTime = 0L;
+
     public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,
                        int baseIndex, TextRecord tr, int typo_flags,
                        Point2D.Float pt, GVData data) {
+
+        long t0 = 0;
+        if (logTime) {
+            layoutCnt++;
+            t0 = System.nanoTime();
+        }
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
-        long pFace = getFacePtr(font);
-        if (pFace != 0) {
+        if (usePanama) {
+            java.lang.foreign.MemorySegment face = HBShaper.getFace(font);
+            if (face != null) {
+                HBShaper.shape(font, strike, ptSize, mat, face,
+                        tr.text, data, key.script(),
+                        tr.start, tr.limit, baseIndex, pt,
+                        typo_flags, gmask);
+            }
+        } else {
+           long pFace = getFacePtr(font);
             shape(font, strike, ptSize, mat, pFace,
                     tr.text, data, key.script(),
                     tr.start, tr.limit, baseIndex, pt,
                     typo_flags, gmask);
+        }
+        if (logTime) {
+            long t1 = System.nanoTime();
+            totalTime += (t1-t0);
+            if ((layoutCnt <= 5) || ((layoutCnt % 10000) == 0)) {
+                System.out.println("layoutCnt="+layoutCnt +" total="+totalTime/1000000+"ms");
+            }
         }
     }
 
