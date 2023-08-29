@@ -105,8 +105,11 @@ struct SimpleTestLookup {
   uintx get_hash() {
     return Pointer::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 
@@ -533,8 +536,11 @@ struct TestLookup {
   uintx get_hash() {
     return TestInterface::get_hash(_val, NULL);
   }
-  bool equals(const uintptr_t* value, bool* is_dead) {
+  bool equals(const uintptr_t* value) {
     return _val == *value;
+  }
+  bool is_dead(const uintptr_t* value) {
+    return false;
   }
 };
 
