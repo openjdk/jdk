@@ -36,16 +36,23 @@ uint64_t CompressedKlassPointers::_combo = 0;
 
 #ifdef _LP64
 
-void CompressedKlassPointers::init_combo() {
+void CompressedKlassPointers::set_base_and_shift(address thebase, int theshift) {
   assert(UseCompressedClassPointers, "Why are we here?");
+  assert(theshift == 0 || theshift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
+  _base = thebase;
+  _shift = theshift;
+
+  // we keep a composite word, `_combo`, containing base+shift+UseCCP, to load
+  // all three information with a single 64-bit load.
   const uint64_t base_i = (uint64_t)_base;
   assert((base_i & ~mask_base) == 0, "Base not aligned?");
   assert(_shift <= 63, "Sanity");
 
   _combo = (uint64_t)_base | (uint64_t)_shift | (1 << bitpos_useccp);
 
-  assert(base_from_combo() == _base, "combo encoding");
-  assert(shift_from_combo() == _shift, "combo encoding");
+  // validate combo.
+  assert(base() == _base, "combo encoding");
+  assert(shift() == _shift, "combo encoding");
   assert(use_compressed_class_pointers() == UseCompressedClassPointers, "combo encoding");
 }
 
@@ -65,10 +72,8 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   assert(requested_base == addr, "Invalid requested base");
   assert(encoding_range_end >= end, "Encoding does not cover the full Klass range");
 
-  set_base(requested_base);
-  set_shift(requested_shift);
+  set_base_and_shift(requested_base, requested_shift);
   set_range(encoding_range_size);
-  init_combo();
 }
 
 // Given an address range [addr, addr+len) which the encoding is supposed to
@@ -102,10 +107,8 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     shift = LogKlassAlignmentInBytes;
   }
 
-  set_base(base);
-  set_shift(shift);
+  set_base_and_shift(base, shift);
   set_range(range);
-  init_combo();
 }
 
 // Given an address p, return true if p can be used as an encoding base.
@@ -127,16 +130,6 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
   st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
                "Narrow klass range: " SIZE_FORMAT_X, p2i(base()), shift(),
                range());
-}
-
-void CompressedKlassPointers::set_base(address base) {
-  assert(UseCompressedClassPointers, "no compressed klass ptrs?");
-  _base   = base;
-}
-
-void CompressedKlassPointers::set_shift(int shift)       {
-  assert(shift == 0 || shift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
-  _shift   = shift;
 }
 
 void CompressedKlassPointers::set_range(size_t range) {

@@ -70,13 +70,9 @@ class CompressedKlassPointers : public AllStatic {
   static constexpr uint64_t mask_base = ~right_n_bits(base_alignment);
   static constexpr int shift_bitlen = 8; // read with a mov8
   static constexpr int bitpos_useccp = shift_bitlen;
-  static address  base_from_combo()  { return  (address)(_combo & mask_base); }
-  static int      shift_from_combo() { return  (int)(_combo & right_n_bits(shift_bitlen)); }
-  static void init_combo();
 
-  static void set_base(address base);
+  static void set_base_and_shift(address base, int shift);
   static void set_range(size_t range);
-  static void set_shift(int shift);
 
 public:
 
@@ -100,8 +96,8 @@ public:
   static void     print_mode(outputStream* st);
 
   static bool     use_compressed_class_pointers() { return (_combo & nth_bit(bitpos_useccp)); }
-  static address  base()             { return base_from_combo(); }
-  static int      shift()            { return shift_from_combo(); }
+  static address  base()             { return  (address)(_combo & mask_base); }
+  static int      shift()            { return  (int)(_combo & right_n_bits(shift_bitlen)); }
   static size_t   range()            { return  _range; }
 
   static bool is_null(Klass* v)      { return v == nullptr; }
