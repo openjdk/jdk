@@ -562,7 +562,7 @@ JVM_ENTRY(void, JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj))
   }
 JVM_END
 
-JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                                      jint skip_frames, jobject contScope, jobject cont,
                                      jint frame_count, jint start_index, jobjectArray frames))
   if (!thread->has_last_Java_frame()) {
@@ -589,7 +589,7 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
 JVM_END
 
 
-JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
+JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
                                   jint frame_count, jint start_index,
                                   jobjectArray frames))
   // frames array is a ClassFrameInfo[] array when only getting caller reference,

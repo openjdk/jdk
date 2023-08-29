@@ -253,12 +253,12 @@ JNIEXPORT void JNICALL
 JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj);
 
 JNIEXPORT jobject JNICALL
-JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                   jint skip_frames, jobject contScope, jobject cont,
                   jint frame_count, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
-JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
+JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
                   jint frame_count, jint start_index,
                   jobjectArray frames);
 

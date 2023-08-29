@@ -457,7 +457,7 @@ final class StackStreamFactory {
          *                    or a {@link StackFrameInfo} (or derivative) array otherwise.
          * @return            Result of AbstractStackWalker::doStackWalk
          */
-        private native R callStackWalk(long mode, int skipframes,
+        private native R callStackWalk(int mode, int skipframes,
                                        ContinuationScope contScope, Continuation continuation,
                                        int batchSize, int startIndex,
                                        T[] frames);
@@ -474,7 +474,7 @@ final class StackStreamFactory {
          *
          * @return the end index to the frame buffers
          */
-        private native int fetchStackFrames(long mode, long anchor,
+        private native int fetchStackFrames(int mode, long anchor,
                                             int batchSize, int startIndex,
                                             T[] frames);
 

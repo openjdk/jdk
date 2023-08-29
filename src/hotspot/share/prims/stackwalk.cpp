@@ -80,7 +80,7 @@ void BaseFrameStream::set_continuation(Handle cont) {
   _continuation.replace(cont());
 }
 
-JavaFrameStream::JavaFrameStream(JavaThread* thread, jlong mode, Handle cont_scope, Handle cont)
+JavaFrameStream::JavaFrameStream(JavaThread* thread, jint mode, Handle cont_scope, Handle cont)
   : BaseFrameStream(thread, cont),
    _vfst(cont.is_null()
       ? vframeStream(thread, cont_scope)
@@ -162,7 +162,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 //
 // Returns the number of frames whose information was transferred into the buffers.
 //
-int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
+int StackWalk::fill_in_frames(jint mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
                               int& end_index, TRAPS) {
@@ -407,14 +407,14 @@ void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
 //
 // Returns Object returned from AbstractStackWalker::doStackWalk call.
 //
-oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,
+oop StackWalk::walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
                     int frame_count, int start_index, objArrayHandle frames_array,
                     TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD); // needed to store a continuation in the RegisterMap
 
   JavaThread* jt = THREAD;
-  log_debug(stackwalk)("Start walking: mode " JLONG_FORMAT " skip %d frames batch size %d", mode, skip_frames, frame_count);
+  log_debug(stackwalk)("Start walking: mode " INT32_FORMAT_X " skip %d frames batch size %d", mode, skip_frames, frame_count);
   LogTarget(Debug, stackwalk) lt;
   if (lt.is_enabled()) {
     ResourceMark rm(THREAD);
@@ -448,7 +448,7 @@ oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont
 }
 
 oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
-                               jlong mode, int skip_frames, int frame_count,
+                               jint mode, int skip_frames, int frame_count,
                                int start_index, objArrayHandle frames_array, TRAPS) {
   methodHandle m_doStackWalk(THREAD, Universe::do_stack_walk_method());
 
@@ -541,7 +541,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
 //
 // Returns the end index of frame filled in the buffer.
 //
-jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
+jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                                int frame_count, int start_index,
                                objArrayHandle frames_array,
                                TRAPS)
