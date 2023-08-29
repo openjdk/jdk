@@ -237,7 +237,7 @@ public class ListFormat extends Format {
      * If the length of the patterns array is not 5, an {@code IllegalArgumentException}
      * is thrown.
      * <p>
-     * Each pattern string is first parsed as follows. Literals in parentheses, such as,
+     * Each pattern string is first parsed as follows. Literals in parentheses, such as
      * "start_before", are optional:
      * <blockquote><pre>
      * start := (start_before){0}start_between{1}
@@ -573,21 +573,21 @@ public class ListFormat extends Format {
         /**
          * The {@code FULL} ListFormat style. This is the default style, which typically is the
          * full description of the text and punctuation that appear between the list elements.
-         * Suitable for elements, such as, "Monday", "Tuesday", "Wednesday", etc.
+         * Suitable for elements, such as "Monday", "Tuesday", "Wednesday", etc.
          */
         FULL,
 
         /**
          * The {@code SHORT} ListFormat style. This style is typically an abbreviation
          * of the text and punctuation that appear between the list elements.
-         * Suitable for elements, such as, "Mon", "Tue", "Wed", etc.
+         * Suitable for elements, such as "Mon", "Tue", "Wed", etc.
          */
         SHORT,
 
         /**
          * The {@code NARROW} ListFormat style. This style is typically the shortest description
          * of the text and punctuation that appear between the list elements.
-         * Suitable for elements, such as, "M", "T", "W", etc.
+         * Suitable for elements, such as "M", "T", "W", etc.
          */
         NARROW
     }
