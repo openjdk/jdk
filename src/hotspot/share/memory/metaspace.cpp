@@ -582,19 +582,12 @@ bool Metaspace::class_space_is_initialized() {
   return MetaspaceContext::context_class() != nullptr;
 }
 
-// Reserve a range of memory that is to contain narrow Klass IDs. If "cds_runtime"
-// is true, the memory must be located at an address that can be directly used as
-// encoding base, otherwise the API has more leeway (e.g. optimizing reservation
-// for zero-based encoding).
-ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool cds_runtime) {
+// Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+// is true, we will attempt to reserve memory suitable for zero-based encoding.
+ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges) {
 
   char* result = nullptr;
   const bool randomize = RandomizeClassSpaceLocation;
-
-  // At CDS runtime, there is no need bothering with low-address reservation since we cannot set
-  // the encoding base to zero anyway: the encoding base has to be the base of the mapped archive
-  // (ultimately, the start address of the region we are reserving here).
-  const bool try_in_low_address_ranges = !cds_runtime;
 
   // First try to reserve in low address ranges.
   if (try_in_low_address_ranges) {
@@ -800,7 +793,7 @@ void Metaspace::global_initialize() {
 
     // ...failing that, reserve anywhere, but let platform do optimized placement:
     if (!rs.is_reserved()) {
-      rs = Metaspace::reserve_address_space_for_compressed_classes(size, false);
+      rs = Metaspace::reserve_address_space_for_compressed_classes(size, true);
     }
 
     // ...failing that, give up.

@@ -1855,7 +1855,7 @@ static void hemi_split(T* arr, unsigned num) {
   }
 }
 
-// Given an address range [min, max), attempts to reserve memory within this area, with the given alignmend.
+// Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
 // If randomize is true, the location will be randomized.
 char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
 

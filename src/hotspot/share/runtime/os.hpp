@@ -440,7 +440,7 @@ class os: AllStatic {
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
-  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignmend.
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
   static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 

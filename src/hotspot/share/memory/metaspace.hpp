@@ -74,10 +74,9 @@ public:
 
 #ifdef _LP64
 
-  // Reserve a range of memory that is to contain narrow Klass IDs. If "cds_runtime" is true,
-  // the memory must be located at an address that can be directly used as encoding base,
-  // otherwise the API has more leeway (e.g. optimizing reservation for zero-based encoding).
-  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool cds_runtime);
+  // Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+  // is true, we will attempt to reserve memory suitable for zero-based encoding.
+  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges);
 
   // Given a prereserved space, use that to set up the compressed class space list.
   static void initialize_class_space(ReservedSpace rs);
