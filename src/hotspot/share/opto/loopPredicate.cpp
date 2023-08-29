@@ -311,7 +311,6 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredic
                                                                slow_loop);
   assert(new_predicate_proj->is_IfTrue(), "the success projection of a Parse Predicate is a true projection");
   ParsePredicateNode* parse_predicate = new_predicate_proj->in(0)->as_ParsePredicate();
-  _igvn.hash_delete(parse_predicate);
   return new_predicate_proj;
 }
 
