@@ -888,7 +888,13 @@ class UnixPath implements Path {
         }
 
         // if not resolving links then eliminate "." and also ".."
-        // where the previous element is neither a link nor ".."
+        // where the previous element is neither a link nor "..".
+        // if there is a preceding "..", then it might have followed
+        // a link or a link followed by a sequence of two or more "..".
+        // if for example one has the path "link/../../file",
+        // then if a preceding ".." were eliminated, then the result
+        // would be "<root>/link/file" instead of the correct
+        // "<root>/link/../../file".
         UnixPath result = fs.rootDirectory();
         boolean parentIsDotDot = false;
         for (int i = 0; i < absolute.getNameCount(); i++) {
