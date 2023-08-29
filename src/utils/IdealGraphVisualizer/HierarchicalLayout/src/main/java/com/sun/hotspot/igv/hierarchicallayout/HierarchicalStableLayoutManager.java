@@ -280,7 +280,7 @@ public class HierarchicalStableLayoutManager {
 
         // Whether the node has non-self reversed edges going downwards.
         // If so, reversed edges going upwards are drawn to the left.
-        boolean hasReversedDown = reversedDown.size() > 0;
+        boolean hasReversedDown = !reversedDown.isEmpty();
 
         SortedSet<Integer> reversedUp;
         if (hasReversedDown) {
