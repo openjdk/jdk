@@ -245,7 +245,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </table>
  * </blockquote>
  *
- * <h3>Scientific Notation</h3>
+ * <h3 id="scientific_notation">Scientific Notation</h3>
  *
  * <p>Numbers in scientific notation are expressed as the product of a mantissa
  * and a power of ten, for example, 1234 can be expressed as 1.234 x 10^3.  The
@@ -449,13 +449,14 @@ public class DecimalFormat extends NumberFormat {
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is a convenient way to obtain a
      * DecimalFormat when internationalization is not the main concern.
-     * If the given pattern is in scientific notation, the limit of integer
-     * digits will be derived from the pattern. Otherwise, if the pattern is not
-     * in scientific notation, the limit of integer digits will not be based on the
-     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
-     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
-     * if you want to set a specific limit to integer digits when the
-     * given pattern is not in scientific notation.
+     * If the given pattern is not in scientific notation, the maximum number
+     * of integer digits will not be derived from the pattern, and instead set
+     * to {@link Integer#MAX_VALUE}. Otherwise, if the pattern is in scientific
+     * notation, the maximum number of integer digits will be derived from the
+     * pattern. This derivation is detailed in the {@link ##scientific_notation
+     * Scientific Notation} section. This behavior is the typical end-user desire;
+     * {@link #setMaximumIntegerDigits(int)} can be used to manually adjust the
+     * maximum integer digits.
      * <p>
      * To obtain standard formats for a given locale, use the factory methods
      * on NumberFormat such as getNumberInstance. These factories will
@@ -481,13 +482,14 @@ public class DecimalFormat extends NumberFormat {
      * Creates a DecimalFormat using the given pattern and symbols.
      * Use this constructor when you need to completely customize the
      * behavior of the format.
-     * If the given pattern is in scientific notation, the limit of integer
-     * digits will be derived from the pattern. Otherwise, if the pattern is not
-     * in scientific notation, the limit of integer digits will not be based on the
-     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
-     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
-     * if you want to set a specific limit to integer digits when the
-     * given pattern is not in scientific notation.
+     * If the given pattern is not in scientific notation, the maximum number
+     * of integer digits will not be derived from the pattern, and instead set
+     * to {@link Integer#MAX_VALUE}. Otherwise, if the pattern is in scientific
+     * notation, the maximum number of integer digits will be derived from the
+     * pattern. This derivation is detailed in the {@link ##scientific_notation
+     * Scientific Notation} section. This behavior is the typical end-user desire;
+     * {@link #setMaximumIntegerDigits(int)} can be used to manually adjust the
+     * maximum integer digits.
      * <p>
      * To obtain standard formats for a given
      * locale, use the factory methods on NumberFormat such as
@@ -3312,13 +3314,14 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * If the pattern set is in scientific notation, the limit of integer
-     * digits will be derived from the pattern. Otherwise, if the pattern is not
-     * in scientific notation, the limit of integer digits will not be based on the
-     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
-     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
-     * if you want to set a specific limit to integer digits when the
-     * applied pattern is not in scientific notation.
+     * If the given pattern is not in scientific notation, the maximum number
+     * of integer digits will not be derived from the pattern, and instead set
+     * to {@link Integer#MAX_VALUE}. Otherwise, if the pattern is in scientific
+     * notation, the maximum number of integer digits will be derived from the
+     * pattern. This derivation is detailed in the {@link ##scientific_notation
+     * Scientific Notation} section. This behavior is the typical end-user desire;
+     * {@link #setMaximumIntegerDigits(int)} can be used to manually adjust the
+     * maximum integer digits.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3343,13 +3346,14 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * If the pattern set is in scientific notation, the limit of integer
-     * digits will be derived from the pattern. Otherwise, if the pattern is not
-     * in scientific notation, the limit of integer digits will not be based on the
-     * pattern, and instead set to {@link Integer#MAX_VALUE}. This behavior
-     * is the typical end-user desire. Use {@link #setMaximumIntegerDigits(int)}
-     * if you want to set a specific limit to integer digits when the
-     * applied pattern is not in scientific notation.
+     * If the given pattern is not in scientific notation, the maximum number
+     * of integer digits will not be derived from the pattern, and instead set
+     * to {@link Integer#MAX_VALUE}. Otherwise, if the pattern is in scientific
+     * notation, the maximum number of integer digits will be derived from the
+     * pattern. This derivation is detailed in the {@link ##scientific_notation
+     * Scientific Notation} section. This behavior is the typical end-user desire;
+     * {@link #setMaximumIntegerDigits(int)} can be used to manually adjust the
+     * maximum integer digits.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
