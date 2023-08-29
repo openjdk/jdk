@@ -44,10 +44,17 @@ import javax.imageio.ImageIO;
 public class RotatedTextTest
 {
     static final int size = 720;
-    static final Font fnt = new Font(Font.SERIF, Font.PLAIN, 12);
     static final String text = "The quick brown fox jumps over the lazy dog";
 
     static void drawRotatedText(Graphics g) {
+        Font fnt = fnt = new Font(Font.SERIF, Font.PLAIN, 12);
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.startsWith("linux")) {
+            // On Linux we prefer DejaVu Serif - we have seen issues with some other fonts.
+            fnt = new Font("DejaVu Serif", Font.PLAIN, 12);
+        }
+        System.out.println(fnt);
+
         Graphics2D g2d = (Graphics2D)g;
 
         g2d.setFont(fnt);
