@@ -377,14 +377,16 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
 
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
-  // Only get a new PLAB if the allocation fits into the to-be-allocated PLAB and
-  // it would not waste more than ParallelGCBufferWastePct in the current PLAB.
-  // Boosting the PLAB also increasingly allows more waste to occur.
-  if ((required_in_plab <= next_plab_word_size) &&
-    may_throw_away_buffer(required_in_plab, plab_word_size)) {
 
-    PLAB* alloc_buf = alloc_buffer(dest, node_index);
-    guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
+  PLAB* alloc_buf = alloc_buffer(dest, node_index);
+  size_t words_remaining = alloc_buf->words_remaining();
+  // Only get a new PLAB if the allocation fits into the to-be-allocated PLAB and
+  // retiring the current PLAB would not waste more than ParallelGCBufferWastePct
+  // in the current PLAB. Boosting the PLAB also increasingly allows more waste to occur.
+  if ((required_in_plab <= next_plab_word_size) &&
+    may_throw_away_buffer(words_remaining, plab_word_size)) {
+
+    guarantee(words_remaining <= required_in_plab, "must be");
 
     alloc_buf->retire();
 
