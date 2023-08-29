@@ -33,6 +33,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"
 
+using testing::HasSubstr;
+
 // Tests for InstanceKlass::is_class_loader_instance_klass() function
 TEST_VM(InstanceKlass, class_loader_class) {
   InstanceKlass* klass = vmClasses::ClassLoader_klass();
@@ -51,20 +53,20 @@ TEST_VM(InstanceKlass, class_loader_printer) {
   stringStream st;
   loader->print_on(&st);
   // See if injected loader_data field is printed in string
-  ASSERT_TRUE(strstr(st.as_string(), "injected 'loader_data'") != NULL) << "Must contain injected fields";
+  ASSERT_THAT(st.base(), HasSubstr("injected 'loader_data'")) << "Must contain injected fields";
   st.reset();
   // See if mirror injected fields are printed.
   oop mirror = vmClasses::ClassLoader_klass()->java_mirror();
   mirror->print_on(&st);
-  ASSERT_TRUE(strstr(st.as_string(), "injected 'protection_domain'") != NULL) << "Must contain injected fields";
+  ASSERT_THAT(st.base(), HasSubstr("injected 'protection_domain'")) << "Must contain injected fields";
   // We should test other printing functions too.
 #ifndef PRODUCT
   st.reset();
   // method printing is non-product
   Method* method = vmClasses::ClassLoader_klass()->methods()->at(0);  // we know there's a method here!
   method->print_on(&st);
-  ASSERT_TRUE(strstr(st.as_string(), "method holder:") != NULL) << "Must contain method_holder field";
-  ASSERT_TRUE(strstr(st.as_string(), "'java/lang/ClassLoader'") != NULL) << "Must be in ClassLoader";
+  ASSERT_THAT(st.base(), HasSubstr("method holder:")) << "Must contain method_holder field";
+  ASSERT_THAT(st.base(), HasSubstr("'java/lang/ClassLoader'")) << "Must be in ClassLoader";
 #endif
 }
 
