@@ -425,40 +425,31 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
-// os::current_stack_base()
-//
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
 
-address os::current_stack_base() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   MEMORY_BASIC_INFORMATION minfo;
   address stack_bottom;
-  size_t stack_size;
+  size_t size;
 
   VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  stack_bottom =  (address)minfo.AllocationBase;
-  stack_size = minfo.RegionSize;
+  stack_bottom = (address)minfo.AllocationBase;
+  size = minfo.RegionSize;
 
   // Add up the sizes of all the regions with the same
   // AllocationBase.
   while (1) {
-    VirtualQuery(stack_bottom+stack_size, &minfo, sizeof(minfo));
+    VirtualQuery(stack_bottom + size, &minfo, sizeof(minfo));
     if (stack_bottom == (address)minfo.AllocationBase) {
-      stack_size += minfo.RegionSize;
+      size += minfo.RegionSize;
     } else {
       break;
     }
   }
-  return stack_bottom + stack_size;
-}
-
-size_t os::current_stack_size() {
-  size_t sz;
-  MEMORY_BASIC_INFORMATION minfo;
-  VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  sz = (size_t)os::current_stack_base() - (size_t)minfo.AllocationBase;
-  return sz;
+  *stack_base = stack_bottom + size;
+  *stack_size = size;
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
@@ -1254,13 +1245,34 @@ void  os::dll_unload(void *lib) {
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
     snprintf(name, MAX_PATH, "<not available>");
   }
+
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(name);
+#endif
+
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const DWORD errcode = ::GetLastError();
+    char buf[500];
+    size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+#if INCLUDE_JFR
+    event.set_success(false);
+    if (tl == 0) {
+      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+    }
+    event.set_errorMessage(buf);
+    event.commit();
+#endif
   }
 }
 
@@ -1762,7 +1774,7 @@ static inline time_t get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   time_t t1 = get_mtime(file1);
   time_t t2 = get_mtime(file2);
-  return t1 - t2;
+  return primitive_compare(t1, t2);
 }
 
 void os::print_os_info_brief(outputStream* st) {
@@ -5613,19 +5625,19 @@ int os::socket_close(int fd) {
   return ::closesocket(fd);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
   return ::connect(fd, him, len);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
   return ::recv(fd, buf, (int)nBytes, flags);
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 

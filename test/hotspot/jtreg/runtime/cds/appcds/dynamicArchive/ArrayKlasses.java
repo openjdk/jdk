@@ -44,8 +44,10 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
 
     static void test() throws Exception {
         String topArchiveName = getNewArchiveName();
-        String appJar = ClassFileInstaller.getJarPath("ArrayKlasses.jar");
-        String mainClass = "ArrayKlassesApp";
+        final String appJar = ClassFileInstaller.getJarPath("ArrayKlasses.jar");
+        final String mainClass = "ArrayKlassesApp";
+        final String runtimeLogOptions =
+            "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug,cds+unshareable=trace";
 
         // Case 1
         // Create a dynamic archive with the ArrayKlassesApp app class and its
@@ -62,14 +64,17 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // Case 1
         // At runtime , the ArrayKlasesApp and its array class should be loaded
         // from the dynamic archive.
-        run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
+        run2(null, topArchiveName, runtimeLogOptions,
              "-cp", appJar, mainClass)
              .assertNormalExit(output -> {
                      output.shouldContain("ArrayKlassesApp source: shared objects file (top)")
+                           .shouldContain("restore: ArrayKlassesApp with class loader: jdk.internal.loader.ClassLoaders$AppClassLoader")
                            .shouldContain("[LArrayKlassesApp; source: shared objects file (top)")
+                           .shouldContain("restore: [LArrayKlassesApp; with class loader: jdk.internal.loader.ClassLoaders$AppClassLoader")
                            .shouldContain("[[LArrayKlassesApp; source: shared objects file (top)")
+                           .shouldContain("restore: [[LArrayKlassesApp; with class loader: jdk.internal.loader.ClassLoaders$AppClassLoader")
                            .shouldContain("[[[LArrayKlassesApp; source: shared objects file (top)")
+                           .shouldContain("restore: [[[LArrayKlassesApp; with class loader: jdk.internal.loader.ClassLoaders$AppClassLoader")
                            .shouldHaveExitValue(0);
                  });
 
@@ -90,14 +95,17 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // Case 2
         // At runtime, the java/util/Date class should be loaded from the default
         // CDS archive; its array class should be loaded from the dynamic archive.
-        run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
+        run2(null, topArchiveName, runtimeLogOptions,
              "-cp", appJar, mainClass, "system")
              .assertNormalExit(output -> {
                      output.shouldContain("java.util.Date source: shared objects file")
+                           .shouldContain("restore: java.util.Date with class loader: boot")
                            .shouldContain("[Ljava.util.Date; source: shared objects file (top)")
+                           .shouldContain("restore: [Ljava.util.Date; with class loader: boot")
                            .shouldContain("[[Ljava.util.Date; source: shared objects file (top)")
+                           .shouldContain("restore: [[Ljava.util.Date; with class loader: boot")
                            .shouldContain("[[[Ljava.util.Date; source: shared objects file (top)")
+                           .shouldContain("restore: [[[Ljava.util.Date; with class loader: boot")
                            .shouldHaveExitValue(0);
                  });
 
@@ -116,13 +124,15 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // Case 3
         // At runtime, the [J should be loaded from the default CDS archive;
         // the higher-dimension array should be loaded from the dynamic archive.
-        run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
+        run2(null, topArchiveName, runtimeLogOptions,
              "-cp", appJar, mainClass, "primitive")
              .assertNormalExit(output -> {
                      output.shouldContain("[J source: shared objects file")
+                           .shouldContain("restore: [J with class loader: boot")
                            .shouldContain("[[J source: shared objects file (top)")
+                           .shouldContain("restore: [[J with class loader: boot")
                            .shouldContain("[[[J source: shared objects file (top)")
+                           .shouldContain("restore: [[[J with class loader: boot")
                            .shouldHaveExitValue(0);
                  });
 
@@ -142,13 +152,18 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // Case 4
         // At runtime, the 4-dimension array of java/lang/Integer should be
         // loaded from the dynamic archive.
-        run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
+        run2(null, topArchiveName, runtimeLogOptions,
              "-cp", appJar, mainClass, "integer-array")
              .assertNormalExit(output -> {
-                     output.shouldContain("[[Ljava.lang.Integer; source: shared objects file (top)")
+                     output.shouldContain("java.lang.Integer source: shared objects file")
+                           .shouldContain("restore: java.lang.Integer with class loader: boot")
+                           .shouldContain("restore: [Ljava.lang.Integer; with class loader: boot")
+                           .shouldContain("[[Ljava.lang.Integer; source: shared objects file (top)")
+                           .shouldContain("restore: [[Ljava.lang.Integer; with class loader: boot")
                            .shouldContain("[[[Ljava.lang.Integer; source: shared objects file (top)")
+                           .shouldContain("restore: [[[Ljava.lang.Integer; with class loader: boot")
                            .shouldContain("[[[[Ljava.lang.Integer; source: shared objects file (top)")
+                           .shouldContain("restore: [[[[Ljava.lang.Integer; with class loader: boot")
                            .shouldHaveExitValue(0);
                  });
     }

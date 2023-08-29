@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,6 @@
 #define PREVIOUS_EPOCH_METHOD_BIT                 (JfrTraceIdEpoch::previous_epoch_method_bit())
 #define THIS_EPOCH_METHOD_AND_CLASS_BITS          (JfrTraceIdEpoch::this_epoch_method_and_class_bits())
 #define PREVIOUS_EPOCH_METHOD_AND_CLASS_BITS      (JfrTraceIdEpoch::previous_epoch_method_and_class_bits())
-#define THIS_EPOCH_METHOD_FLAG_BIT                ((jbyte)THIS_EPOCH_BIT)
-#define PREVIOUS_EPOCH_METHOD_FLAG_BIT            ((jbyte)PREVIOUS_EPOCH_BIT)
 
 // operators
 #define TRACE_ID_RAW(ptr)                         (JfrTraceIdBits::load(ptr))
@@ -102,18 +100,18 @@
 #define METHOD_AND_CLASS_USED_THIS_EPOCH(kls)     (TRACE_ID_PREDICATE(kls, (THIS_EPOCH_METHOD_AND_CLASS_BITS)))
 #define METHOD_AND_CLASS_USED_PREVIOUS_EPOCH(kls) (TRACE_ID_PREDICATE(kls, (PREVIOUS_EPOCH_METHOD_AND_CLASS_BITS)))
 #define METHOD_AND_CLASS_USED_ANY_EPOCH(kls)      (METHOD_USED_ANY_EPOCH(kls) && USED_ANY_EPOCH(kls))
-#define METHOD_FLAG_USED_THIS_EPOCH(method)       (METHOD_FLAG_PREDICATE(method, (THIS_EPOCH_METHOD_FLAG_BIT)))
+#define METHOD_FLAG_USED_THIS_EPOCH(method)       (METHOD_FLAG_PREDICATE(method, (THIS_EPOCH_BIT)))
 #define METHOD_FLAG_NOT_USED_THIS_EPOCH(method)   (!(METHOD_FLAG_USED_THIS_EPOCH(method)))
-#define METHOD_FLAG_USED_PREVIOUS_EPOCH(method)   (METHOD_FLAG_PREDICATE(method, (PREVIOUS_EPOCH_METHOD_FLAG_BIT)))
+#define METHOD_FLAG_USED_PREVIOUS_EPOCH(method)   (METHOD_FLAG_PREDICATE(method, (PREVIOUS_EPOCH_BIT)))
 #define IS_METHOD_BLESSED(method)                 (METHOD_FLAG_PREDICATE(method, BLESSED_METHOD_BIT))
 
 // setters
 #define SET_USED_THIS_EPOCH(ptr)                  (TRACE_ID_TAG(ptr, THIS_EPOCH_BIT))
 #define SET_METHOD_AND_CLASS_USED_THIS_EPOCH(kls) (TRACE_ID_TAG(kls, THIS_EPOCH_METHOD_AND_CLASS_BITS))
-#define SET_METHOD_FLAG_USED_THIS_EPOCH(method)   (METHOD_FLAG_TAG(method, THIS_EPOCH_METHOD_FLAG_BIT))
+#define SET_METHOD_FLAG_USED_THIS_EPOCH(method)   (METHOD_FLAG_TAG(method, THIS_EPOCH_BIT))
 #define PREVIOUS_EPOCH_METHOD_AND_CLASS_BIT_MASK  (~(PREVIOUS_EPOCH_METHOD_BIT | PREVIOUS_EPOCH_BIT))
 #define CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(kls) (TRACE_ID_MASK_CLEAR(kls, PREVIOUS_EPOCH_METHOD_AND_CLASS_BIT_MASK))
-#define CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method)  (METHOD_FLAG_CLEAR(method, PREVIOUS_EPOCH_METHOD_FLAG_BIT))
+#define CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method)  (METHOD_FLAG_CLEAR(method, PREVIOUS_EPOCH_BIT))
 #define BLESS_METHOD(method)                      (METHOD_FLAG_TAG(method, BLESSED_METHOD_BIT))
 
 // types

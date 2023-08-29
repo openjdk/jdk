@@ -68,6 +68,7 @@ public interface Element extends AnnotatedConstruct {
      * @see TypeElement#asType
      * @see TypeParameterElement#asType
      * @see VariableElement#asType
+     * @see RecordComponentElement#asType
      */
     TypeMirror asType();
 
@@ -153,7 +154,6 @@ public interface Element extends AnnotatedConstruct {
      * @see VariableElement#getSimpleName
      * @see ModuleElement#getSimpleName
      * @see RecordComponentElement#getSimpleName
-     * @revised 9
      */
     Name getSimpleName();
 
@@ -194,7 +194,6 @@ public interface Element extends AnnotatedConstruct {
      *
      * @return the enclosing element, or {@code null} if there is none
      * @see Elements#getPackageOf
-     * @revised 9
      */
     Element getEnclosingElement();
 
@@ -231,7 +230,6 @@ public interface Element extends AnnotatedConstruct {
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Classes
      * @jls 8.10 Record Classes
-     * @revised 9
      */
     List<? extends Element> getEnclosedElements();
 

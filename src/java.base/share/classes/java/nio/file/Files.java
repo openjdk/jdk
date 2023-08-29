@@ -1531,7 +1531,8 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to both files.
+     *          method is invoked to check read access to both files when the
+     *          two paths are not equal
      *
      * @see java.nio.file.attribute.BasicFileAttributes#fileKey
      */
@@ -1571,6 +1572,9 @@ public final class Files {
      * and {@code g}, {@code mismatch(f,g)} will return the same value as
      * {@code mismatch(g,f)}).
      *
+     * <p> If both {@code Path} objects are equal, then this method returns
+     * {@code true} without checking if the file exists.
+     *
      * @param   path
      *          the path to the first file
      * @param   path2
@@ -1583,7 +1587,8 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to both files.
+     *          method is invoked to check read access to both files when the
+     *          two paths are not equal
      *
      * @since 12
      */
