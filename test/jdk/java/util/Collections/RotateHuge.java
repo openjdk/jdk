@@ -72,6 +72,10 @@ public class RotateHuge {
         testRotate(Integer.MAX_VALUE, Integer.MAX_VALUE - 1);
     }
 
+    /*
+     * This test covers only index computations.
+     * Correctness of elements rotation is not checked.
+     */
     private static void testRotate(final int size, final int distance) {
         final List<Object> list = new MockList(size);
         Collections.rotate(list, distance);
