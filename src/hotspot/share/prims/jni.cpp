@@ -2918,7 +2918,7 @@ JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
   Handle ref_handle(thread, JNIHandles::resolve(ref));
   jweak ret = JNIHandles::make_weak_global(ref_handle, AllocFailStrategy::RETURN_NULL);
-  if (ret == NULL) {
+  if (ret == NULL && ref_handle.not_null()) {
     THROW_OOP_(Universe::out_of_memory_error_c_heap(), NULL);
   }
   HOTSPOT_JNI_NEWWEAKGLOBALREF_RETURN(ret);
