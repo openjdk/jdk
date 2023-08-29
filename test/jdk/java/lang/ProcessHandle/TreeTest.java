@@ -456,9 +456,9 @@ public class TreeTest extends ProcessUtil {
             Assert.assertTrue(count >= totalChildren,
                     "expected at least " + totalChildren + ", actual: " + count);
 
-            subprocesses = getDescendants(p1Handle);
+            List<ProcessHandle> descSubprocesses = getDescendants(p1Handle);
             printf(" descendants:  %s%n",
-                    subprocesses.stream().map(p -> p.pid())
+                    descSubprocesses.stream().map(p -> p.pid())
                     .collect(Collectors.toList()));
 
             p1.getOutputStream().close();  // Close stdin for the controlling p1
