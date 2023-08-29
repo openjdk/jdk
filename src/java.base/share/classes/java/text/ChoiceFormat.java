@@ -176,6 +176,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern See the class description.
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      */
     public void applyPattern(String newPattern) {
         StringBuilder[] segments = new StringBuilder[2];
@@ -315,6 +317,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
@@ -328,6 +332,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param formats corresponding format strings
      * @throws    NullPointerException if {@code limits} or {@code formats}
      *            is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
