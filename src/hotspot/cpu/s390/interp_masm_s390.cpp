@@ -839,7 +839,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   // Check that all monitors are unlocked.
   {
     NearLabel loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     // We use Z_ARG2 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
@@ -951,6 +951,11 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     BLOCK_COMMENT("reserved_stack_check:");
     // Test if reserved zone needs to be enabled.
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    z_ly(Z_R0, Address(Z_thread, JavaThread::stack_guard_state_offset()));
+    compare32_and_branch(Z_R0, StackOverflow::stack_guard_enabled, bcondEqual, no_reserved_zone_enabling);
 
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent
@@ -2034,7 +2039,7 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
 
   const Register Rcurr_slot = Rtemp1;
   const Register Rlimit     = Rtemp2;
-  const jint delta = -frame::interpreter_frame_monitor_size() * wordSize;
+  const jint delta = -frame::interpreter_frame_monitor_size_in_bytes();
 
   assert((delta & LongAlignmentMask) == 0,
          "sizeof BasicObjectLock must be even number of doublewords");

@@ -30,6 +30,10 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logLevel.hpp"
+#include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
@@ -46,7 +50,15 @@
 #include "jfr/jfr.hpp"
 #endif
 
-void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
+void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count) {
+  CompileTask::print_inline_indent(depth, out);
+  out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
+  prof_klass->name()->print_symbol_on(out);
+  out->cr();
+}
+
+void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMethod* prof_method,
+                        ciKlass* prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
     outputStream* out = tty;
     if (!C->print_inlining()) {
@@ -58,12 +70,13 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
     } else {
       out = C->print_inlining_stream();
     }
-    CompileTask::print_inline_indent(depth, out);
-    out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
-    stringStream ss;
-    prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.freeze());
-    out->cr();
+    print_trace_type_profile(out, depth, prof_klass, site_count, receiver_count);
+  }
+
+  LogTarget(Debug, jit, inlining) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count);
   }
 }
 
@@ -790,44 +803,47 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
   Node* i_o = this->i_o();
 
   // Add a CatchNode.
-  GrowableArray<int>* bcis = new (C->node_arena()) GrowableArray<int>(C->node_arena(), 8, 0, -1);
-  GrowableArray<const Type*>* extypes = new (C->node_arena()) GrowableArray<const Type*>(C->node_arena(), 8, 0, nullptr);
-  GrowableArray<int>* saw_unloaded = new (C->node_arena()) GrowableArray<int>(C->node_arena(), 8, 0, 0);
+  Arena tmp_mem{mtCompiler};
+  GrowableArray<int> bcis(&tmp_mem, 8, 0, -1);
+  GrowableArray<const Type*> extypes(&tmp_mem, 8, 0, nullptr);
+  GrowableArray<int> saw_unloaded(&tmp_mem, 8, 0, -1);
 
   bool default_handler = false;
   for (; !handlers.is_done(); handlers.next()) {
-    ciExceptionHandler* h        = handlers.handler();
-    int                 h_bci    = h->handler_bci();
-    ciInstanceKlass*    h_klass  = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
+    ciExceptionHandler* h       = handlers.handler();
+    int                 h_bci   = h->handler_bci();
+    ciInstanceKlass*    h_klass = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
     // Do not introduce unloaded exception types into the graph:
     if (!h_klass->is_loaded()) {
-      if (saw_unloaded->contains(h_bci)) {
+      if (saw_unloaded.contains(h_bci)) {
         /* We've already seen an unloaded exception with h_bci,
            so don't duplicate. Duplication will cause the CatchNode to be
            unnecessarily large. See 4713716. */
         continue;
       } else {
-        saw_unloaded->append(h_bci);
+        saw_unloaded.append(h_bci);
       }
     }
-    const Type*         h_extype = TypeOopPtr::make_from_klass(h_klass);
+    const Type* h_extype = TypeOopPtr::make_from_klass(h_klass);
     // (We use make_from_klass because it respects UseUniqueSubclasses.)
     h_extype = h_extype->join(TypeInstPtr::NOTNULL);
     assert(!h_extype->empty(), "sanity");
-    // Note:  It's OK if the BCIs repeat themselves.
-    bcis->append(h_bci);
-    extypes->append(h_extype);
+    // Note: It's OK if the BCIs repeat themselves.
+    bcis.append(h_bci);
+    extypes.append(h_extype);
     if (h_bci == -1) {
       default_handler = true;
     }
   }
 
   if (!default_handler) {
-    bcis->append(-1);
-    extypes->append(TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr());
+    bcis.append(-1);
+    const Type* extype = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
+    extype = extype->join(TypeInstPtr::NOTNULL);
+    extypes.append(extype);
   }
 
-  int len = bcis->length();
+  int len = bcis.length();
   CatchNode *cn = new CatchNode(control(), i_o, len+1);
   Node *catch_ = _gvn.transform(cn);
 
@@ -838,18 +854,18 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     PreserveJVMState pjvms(this);
     // Locals are just copied from before the call.
     // Get control from the CatchNode.
-    int handler_bci = bcis->at(i);
+    int handler_bci = bcis.at(i);
     Node* ctrl = _gvn.transform( new CatchProjNode(catch_, i+1,handler_bci));
     // This handler cannot happen?
     if (ctrl == top())  continue;
     set_control(ctrl);
 
     // Create exception oop
-    const TypeInstPtr* extype = extypes->at(i)->is_instptr();
-    Node *ex_oop = _gvn.transform(new CreateExNode(extypes->at(i), ctrl, i_o));
+    const TypeInstPtr* extype = extypes.at(i)->is_instptr();
+    Node* ex_oop = _gvn.transform(new CreateExNode(extypes.at(i), ctrl, i_o));
 
     // Handle unloaded exception classes.
-    if (saw_unloaded->contains(handler_bci)) {
+    if (saw_unloaded.contains(handler_bci)) {
       // An unloaded exception type is coming here.  Do an uncommon trap.
 #ifndef PRODUCT
       // We do not expect the same handler bci to take both cold unloaded
@@ -981,6 +997,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
+      // If this is a backwards branch in the bytecodes, add safepoint
+      maybe_add_safepoint(handler_bci);
       merge_exception(handler_bci); // jump to handler
       return;                   // No more handling to be done here!
     }
@@ -1012,6 +1030,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
         klass->print_name();
         tty->cr();
       }
+      // If this is a backwards branch in the bytecodes, add safepoint
+      maybe_add_safepoint(handler_bci);
       merge_exception(handler_bci);
     }
     set_control(not_subtype_ctrl);

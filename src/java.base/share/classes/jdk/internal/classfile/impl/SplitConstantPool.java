@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import jdk.internal.classfile.Attribute;
@@ -81,7 +80,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
-    final Options options;
 
     private int size, bsmSize;
     private PoolEntry[] myEntries;
@@ -91,10 +89,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private EntryMap<BootstrapMethodEntryImpl> bsmMap;
 
     public SplitConstantPool() {
-        this(new Options(Collections.emptyList()));
-    }
-
-    public SplitConstantPool(Options options) {
         this.size = 1;
         this.bsmSize = 0;
         this.myEntries = new PoolEntry[1024];
@@ -102,12 +96,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parent = null;
         this.parentSize = 0;
         this.parentBsmSize = 0;
-        this.options = options;
         this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
-        this.options = ((ClassReaderImpl) parent).options;
         this.parent = (ClassReaderImpl) parent;
         this.parentSize = parent.entryCount();
         this.parentBsmSize = parent.bootstrapMethodCount();
@@ -115,18 +107,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.bsmSize = parentBsmSize;
         this.myEntries = new PoolEntry[8];
         this.myBsmEntries = new BootstrapMethodEntryImpl[8];
-    }
-
-    //clone constructor for internal purposes
-    SplitConstantPool(SplitConstantPool cloneFrom, Options options) {
-        this.options = options;
-        this.parent = cloneFrom.parent;
-        this.parentSize = cloneFrom.parentSize;
-        this.parentBsmSize = cloneFrom.parentBsmSize;
-        this.size = cloneFrom.size;
-        this.bsmSize = cloneFrom.bsmSize;
-        this.myEntries = Arrays.copyOf(cloneFrom.myEntries, cloneFrom.myEntries.length);
-        this.myBsmEntries = Arrays.copyOf(cloneFrom.myBsmEntries, cloneFrom.myBsmEntries.length);
     }
 
     @Override
@@ -151,10 +131,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return (index < parentBsmSize)
                ? parent.bootstrapMethodEntry(index)
                : myBsmEntries[index - parentBsmSize];
-    }
-
-    public Options options() {
-        return options;
     }
 
     @Override

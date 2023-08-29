@@ -454,7 +454,7 @@ public sealed interface TypeAnnotation
             permits TargetInfoImpl.LocalVarTargetImpl {
 
         /**
-         * @return the table of local variable location/indicies.
+         * @return the table of local variable location/indices.
          */
         List<LocalVarTargetInfo> table();
     }

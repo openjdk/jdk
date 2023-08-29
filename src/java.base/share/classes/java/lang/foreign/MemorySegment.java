@@ -1,27 +1,26 @@
 /*
- *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.  Oracle designates this
- *  particular file as subject to the "Classpath" exception as provided
- *  by Oracle in the LICENSE file that accompanied this code.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *   Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package java.lang.foreign;
@@ -1252,7 +1251,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment are copied into the destination
      * segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
      * <p>
-     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * If the source segment overlaps with the destination segment, then the copying is performed as if the bytes at
      * offset {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment were first copied into a
      * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
      * the destination segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
@@ -1300,7 +1299,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * If the byte order of the two element layouts differ, the bytes corresponding to each element to be copied
      * are swapped accordingly during the copy operation.
      * <p>
-     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * If the source segment overlaps with the destination segment, then the copying is performed as if the bytes at
      * offset {@code srcOffset} through {@code srcOffset + (elementCount * S) - 1} in the source segment were first copied into a
      * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
      * the destination segment at offset {@code dstOffset} through {@code dstOffset + (elementCount * S) - 1}.

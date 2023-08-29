@@ -43,6 +43,9 @@
 LogOutput** LogConfiguration::_outputs = nullptr;
 size_t      LogConfiguration::_n_outputs = 0;
 
+LogStdoutOutput* LogConfiguration::StdoutLog = nullptr;
+LogStderrOutput* LogConfiguration::StderrLog = nullptr;
+
 LogConfiguration::UpdateListenerFunction* LogConfiguration::_listener_callbacks = nullptr;
 size_t      LogConfiguration::_n_listener_callbacks = 0;
 

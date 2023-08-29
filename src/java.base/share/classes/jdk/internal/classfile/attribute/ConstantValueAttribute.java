@@ -67,7 +67,7 @@ public sealed interface ConstantValueAttribute
             case Long l -> TemporaryConstantPool.INSTANCE.longEntry(l);
             case Double d -> TemporaryConstantPool.INSTANCE.doubleEntry(d);
             case String s -> TemporaryConstantPool.INSTANCE.stringEntry(s);
-            default -> throw new IllegalArgumentException("Invalid ConstantValueAtrtibute value: " + value);
+            default -> throw new IllegalArgumentException("Invalid ConstantValueAttribute value: " + value);
         });
     }
 }

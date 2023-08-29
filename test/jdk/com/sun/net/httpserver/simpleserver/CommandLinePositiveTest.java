@@ -25,6 +25,7 @@
  * @test
  * @summary Positive tests for java -m jdk.httpserver command
  * @library /test/lib
+ * @build jdk.test.lib.net.IPSupport
  * @modules jdk.httpserver
  * @run testng/othervm CommandLinePositiveTest
  */
@@ -35,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import jdk.test.lib.Platform;
+import jdk.test.lib.net.IPSupport;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
@@ -154,10 +156,12 @@ public class CommandLinePositiveTest {
                 .shouldHaveExitValue(NORMAL_EXIT_CODE)
                 .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
                 .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
-        simpleserver(JAVA, "-m", "jdk.httpserver", opt, "::0")
-                .shouldHaveExitValue(NORMAL_EXIT_CODE)
-                .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
-                .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
+        if (IPSupport.hasIPv6()) {
+            simpleserver(JAVA, "-m", "jdk.httpserver", opt, "::0")
+                    .shouldHaveExitValue(NORMAL_EXIT_CODE)
+                    .shouldContain("Serving " + TEST_DIR_STR + " and subdirectories on 0.0.0.0 (all interfaces) port")
+                    .shouldContain("URL http://" + InetAddress.getLocalHost().getHostAddress());
+        }
     }
 
     @Test(dataProvider = "bindOptions")

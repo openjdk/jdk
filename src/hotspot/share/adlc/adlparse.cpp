@@ -1153,13 +1153,13 @@ char *ADLParser::parse_one_arg(const char *description) {
     }
     next_char();           // skip the close paren
     if(_curchar != ';') {  // check for semi-colon
-      parse_err(SYNERR, "missing %c in.\n", ';', description);
+      parse_err(SYNERR, "missing %c in %s.\n", ';', description);
       return nullptr;
     }
     next_char();           // skip the semi-colon
   }
   else {
-    parse_err(SYNERR, "Missing %c in.\n", '(', description);
+    parse_err(SYNERR, "Missing %c in %s.\n", '(', description);
     return nullptr;
   }
 
@@ -4191,7 +4191,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
       if (_curchar == '%') { // Need a constructor for the operand
         c = find_cpp_block("Operand Constructor");
         if (c == nullptr) {
-          parse_err(SYNERR, "Invalid code block for operand constructor\n", _curchar);
+          parse_err(SYNERR, "Invalid code block for operand constructor\n");
           continue;
         }
         // Add constructor to _newopconst Dict
