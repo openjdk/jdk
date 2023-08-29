@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,31 +61,37 @@ import jdk.jpackage.test.AdditionalLauncher;
 public class SigningAppImageTest {
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public void test(boolean doSign) throws Exception {
-        SigningCheck.checkCertificates();
+    @Parameter({"true", "0"}) // ({"sign or not", "certificate index"})
+    @Parameter({"true", "1"})
+    @Parameter({"false", "-1"})
+    public void test(String... testArgs) throws Exception {
+        boolean doSign = Boolean.parseBoolean(testArgs[0]);
+        int certIndex = Integer.parseInt(testArgs[1]);
+
+        SigningCheck.checkCertificates(certIndex);
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         if (doSign) {
-            cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
-                    SigningBase.DEV_NAME, "--mac-signing-keychain",
-                    SigningBase.KEYCHAIN);
+            cmd.addArguments("--mac-sign",
+                    "--mac-signing-key-user-name",
+                    SigningBase.getDevName(certIndex),
+                    "--mac-signing-keychain",
+                    SigningBase.getKeyChain());
         }
         AdditionalLauncher testAL = new AdditionalLauncher("testAL");
         testAL.applyTo(cmd);
         cmd.executeAndAssertHelloAppImageCreated();
 
         Path launcherPath = cmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, doSign);
+        SigningBase.verifyCodesign(launcherPath, doSign, certIndex);
 
         Path testALPath = launcherPath.getParent().resolve("testAL");
-        SigningBase.verifyCodesign(testALPath, doSign);
+        SigningBase.verifyCodesign(testALPath, doSign, certIndex);
 
         Path appImage = cmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, doSign);
+        SigningBase.verifyCodesign(appImage, doSign, certIndex);
         if (doSign) {
-            SigningBase.verifySpctl(appImage, "exec");
+            SigningBase.verifySpctl(appImage, "exec", certIndex);
         }
     }
 }
