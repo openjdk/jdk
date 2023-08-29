@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8314024
+ * @requires vm.compiler2.enabled
  * @summary Node used in check in main loop sunk from pre loop before RC elimination
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseLoopPredicate TestNodeSunkFromPreLoop
  *
