@@ -49,13 +49,13 @@ import jdk.internal.vm.ContinuationScope;
  * If an attempt is made to reuse the closed stream,
  * {@code IllegalStateException} will be thrown.
  *
- * <p> The {@linkplain Option <em>stack walking option</em>} specifies
- * what the information a stack walker collects from the stack frames.
- * By default, the class name and method information are available but
+ * <p> {@linkplain Option <em>Stack walker options</em>} configure the stack frame
+ * information obtained by a {@code StackWalker}.
+ * By default, the class name and method information are collected but
  * not the {@link StackFrame#getDeclaringClass() Class reference}.
- * The method information can be dropped via {@link Option#DROP_METHOD_INFO
+ * The method information can be dropped via the {@link Option#DROP_METHOD_INFO
  * DROP_METHOD_INFO} option. The {@code Class} object can be retained for
- * access via {@link Option#RETAIN_CLASS_REFERENCE RETAIN_CLASS_REFERENCE} option.
+ * access via the {@link Option#RETAIN_CLASS_REFERENCE RETAIN_CLASS_REFERENCE} option.
  * Stack frames of the reflection API and implementation classes are
  * {@linkplain Option#SHOW_HIDDEN_FRAMES hidden} by default.
  *
@@ -68,7 +68,7 @@ import jdk.internal.vm.ContinuationScope;
  * @apiNote
  * Examples
  *
- * <p>1. To find the first caller filtering a known list of implementation class:
+ * <p>1. To find the first caller filtering out a known list of implementation class:
  * {@snippet lang="java" :
  *     StackWalker walker = StackWalker.getInstance(Option.DROP_METHOD_INFO, Option.RETAIN_CLASS_REFERENCE);
  *     Optional<Class<?>> callerClass = walker.walk(s ->
@@ -94,8 +94,8 @@ public final class StackWalker {
      * A {@code StackFrame} object represents a method invocation returned by
      * {@link StackWalker}.
      *
-     * <p> The information of a {@code StackFrame} available is determined by the
-     * {@linkplain Option stack walking options} of a stack walker.
+     * <p> {@linkplain Option <em>Stack walker options</em>} configure the stack
+     * frame information obtained by a {@code StackWalker}.
      * If the stack walker is configured with {@link Option#DROP_METHOD_INFO
      * DROP_METHOD_INFO} option, method information such as
      * the {@linkplain StackFrame#getMethodName() method name},
