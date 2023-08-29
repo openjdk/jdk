@@ -1377,8 +1377,7 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
 // rounded result; this differs from behavior of RISC-V fcvt instructions (which
 // round out-of-range values to the nearest max or min value), therefore special
 // handling is needed by NaN, +/-Infinity, +/-0.
-void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode, Register tmp1, Register tmp2, Register tmp3)
-{
+void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode, Register tmp1, Register tmp2, Register tmp3) {
 
   assert_different_registers(dst, src);
   assert_different_registers(tmp1, tmp2, tmp3);
