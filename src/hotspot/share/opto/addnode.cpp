@@ -216,22 +216,19 @@ Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // the other input's symbols.
 const Type* AddNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // Check for an addition involving the additive identity
-  const Type *tadd = add_of_identity( t1, t2 );
-  if( tadd ) return tadd;
+  const Type* tadd = add_of_identity(t1, t2);
+  if (tadd != nullptr) {
+    return tadd;
+  }
 
-  return add_ring(t1,t2);               // Local flavor of type addition
+  return add_ring(t1, t2);               // Local flavor of type addition
 }
 
 //------------------------------add_identity-----------------------------------
@@ -513,7 +510,9 @@ const Type *AddFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AddFNode::add_ring( const Type *t0, const Type *t1 ) const {
-  // We must be adding 2 float constants.
+  if (!t0->isa_float_constant() || !t1->isa_float_constant()) {
+    return bottom_type();
+  }
   return TypeF::make( t0->getf() + t1->getf() );
 }
 
@@ -544,7 +543,9 @@ const Type *AddDNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
 const Type *AddDNode::add_ring( const Type *t0, const Type *t1 ) const {
-  // We must be adding 2 double constants.
+  if (!t0->isa_double_constant() || !t1->isa_double_constant()) {
+    return bottom_type();
+  }
   return TypeD::make( t0->getd() + t1->getd() );
 }
 
@@ -1030,6 +1031,14 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
+Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+  if (is_max) {
+    return new MaxINode(a, b);
+  } else {
+    return new MinINode(a, b);
+  }
+}
+
 Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn) {
   bool is_int = gvn.type(a)->isa_int();
   assert(is_int || gvn.type(a)->isa_long(), "int or long inputs");
@@ -1044,13 +1053,8 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
   }
   Node* res = nullptr;
   if (is_int && !is_unsigned) {
-    if (is_max) {
-      res =  gvn.transform(new MaxINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-    } else {
-      Node* res =  gvn.transform(new MinINode(a, b));
-      assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
-    }
+    res = gvn.transform(build_min_max_int(a, b, is_max));
+    assert(gvn.type(res)->is_int()->_lo >= t->is_int()->_lo && gvn.type(res)->is_int()->_hi <= t->is_int()->_hi, "type doesn't match");
   } else {
     Node* cmp = nullptr;
     if (is_max) {
@@ -1095,6 +1099,113 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   return res;
 }
 
+// Check if addition of an integer with type 't' and a constant 'c' can overflow.
+static bool can_overflow(const TypeInt* t, jint c) {
+  jint t_lo = t->_lo;
+  jint t_hi = t->_hi;
+  return ((c < 0 && (java_add(t_lo, c) > t_lo)) ||
+          (c > 0 && (java_add(t_hi, c) < t_hi)));
+}
+
+// Let <x, x_off> = x_operands and <y, y_off> = y_operands.
+// If x == y and neither add(x, x_off) nor add(y, y_off) overflow, return
+// add(x, op(x_off, y_off)). Otherwise, return nullptr.
+Node* MaxNode::extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands) {
+  Node* x = x_operands.first;
+  Node* y = y_operands.first;
+  int opcode = Opcode();
+  assert(opcode == Op_MaxI || opcode == Op_MinI, "Unexpected opcode");
+  const TypeInt* tx = phase->type(x)->isa_int();
+  jint x_off = x_operands.second;
+  jint y_off = y_operands.second;
+  if (x == y && tx != nullptr &&
+      !can_overflow(tx, x_off) &&
+      !can_overflow(tx, y_off)) {
+    jint c = opcode == Op_MinI ? MIN2(x_off, y_off) : MAX2(x_off, y_off);
+    return new AddINode(x, phase->intcon(c));
+  }
+  return nullptr;
+}
+
+// Try to cast n as an integer addition with a constant. Return:
+//   <x, C>,       if n == add(x, C), where 'C' is a non-TOP constant;
+//   <nullptr, 0>, if n == add(x, C), where 'C' is a TOP constant; or
+//   <n, 0>,       otherwise.
+static ConstAddOperands as_add_with_constant(Node* n) {
+  if (n->Opcode() != Op_AddI) {
+    return ConstAddOperands(n, 0);
+  }
+  Node* x = n->in(1);
+  Node* c = n->in(2);
+  if (!c->is_Con()) {
+    return ConstAddOperands(n, 0);
+  }
+  const Type* c_type = c->bottom_type();
+  if (c_type == Type::TOP) {
+    return ConstAddOperands(nullptr, 0);
+  }
+  return ConstAddOperands(x, c_type->is_int()->get_con());
+}
+
+Node* MaxNode::IdealI(PhaseGVN* phase, bool can_reshape) {
+  int opcode = Opcode();
+  assert(opcode == Op_MinI || opcode == Op_MaxI, "Unexpected opcode");
+  // Try to transform the following pattern, in any of its four possible
+  // permutations induced by op's commutativity:
+  //     op(op(add(inner, inner_off), inner_other), add(outer, outer_off))
+  // into
+  //     op(add(inner, op(inner_off, outer_off)), inner_other),
+  // where:
+  //     op is either MinI or MaxI, and
+  //     inner == outer, and
+  //     the additions cannot overflow.
+  for (uint inner_op_index = 1; inner_op_index <= 2; inner_op_index++) {
+    if (in(inner_op_index)->Opcode() != opcode) {
+      continue;
+    }
+    Node* outer_add = in(inner_op_index == 1 ? 2 : 1);
+    ConstAddOperands outer_add_operands = as_add_with_constant(outer_add);
+    if (outer_add_operands.first == nullptr) {
+      return nullptr; // outer_add has a TOP input, no need to continue.
+    }
+    // One operand is a MinI/MaxI and the other is an integer addition with
+    // constant. Test the operands of the inner MinI/MaxI.
+    for (uint inner_add_index = 1; inner_add_index <= 2; inner_add_index++) {
+      Node* inner_op = in(inner_op_index);
+      Node* inner_add = inner_op->in(inner_add_index);
+      ConstAddOperands inner_add_operands = as_add_with_constant(inner_add);
+      if (inner_add_operands.first == nullptr) {
+        return nullptr; // inner_add has a TOP input, no need to continue.
+      }
+      // Try to extract the inner add.
+      Node* add_extracted = extract_add(phase, inner_add_operands, outer_add_operands);
+      if (add_extracted == nullptr) {
+        continue;
+      }
+      Node* add_transformed = phase->transform(add_extracted);
+      Node* inner_other = inner_op->in(inner_add_index == 1 ? 2 : 1);
+      return build_min_max_int(add_transformed, inner_other, opcode == Op_MaxI);
+    }
+  }
+  // Try to transform
+  //     op(add(x, x_off), add(y, y_off))
+  // into
+  //     add(x, op(x_off, y_off)),
+  // where:
+  //     op is either MinI or MaxI, and
+  //     inner == outer, and
+  //     the additions cannot overflow.
+  ConstAddOperands xC = as_add_with_constant(in(1));
+  ConstAddOperands yC = as_add_with_constant(in(2));
+  if (xC.first == nullptr || yC.first == nullptr) return nullptr;
+  return extract_add(phase, xC, yC);
+}
+
+// Ideal transformations for MaxINode
+Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return IdealI(phase, can_reshape);
+}
+
 //=============================================================================
 //------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
@@ -1106,174 +1217,12 @@ const Type *MaxINode::add_ring( const Type *t0, const Type *t1 ) const {
   return TypeInt::make( MAX2(r0->_lo,r1->_lo), MAX2(r0->_hi,r1->_hi), MAX2(r0->_widen,r1->_widen) );
 }
 
-// Check if addition of an integer with type 't' and a constant 'c' can overflow
-static bool can_overflow(const TypeInt* t, jint c) {
-  jint t_lo = t->_lo;
-  jint t_hi = t->_hi;
-  return ((c < 0 && (java_add(t_lo, c) > t_lo)) ||
-          (c > 0 && (java_add(t_hi, c) < t_hi)));
-}
-
-// Ideal transformations for MaxINode
-Node* MaxINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Force a right-spline graph
-  Node* l = in(1);
-  Node* r = in(2);
-  // Transform  MaxI1(MaxI2(a, b), c)  into  MaxI1(a, MaxI2(b, c))
-  // to force a right-spline graph for the rest of MaxINode::Ideal().
-  if (l->Opcode() == Op_MaxI) {
-    assert(l != l->in(1), "dead loop in MaxINode::Ideal");
-    r = phase->transform(new MaxINode(l->in(2), r));
-    l = l->in(1);
-    set_req_X(1, l, phase);
-    set_req_X(2, r, phase);
-    return this;
-  }
-
-  // Get left input & constant
-  Node* x = l;
-  jint x_off = 0;
-  if (x->Opcode() == Op_AddI && // Check for "x+c0" and collect constant
-      x->in(2)->is_Con()) {
-    const Type* t = x->in(2)->bottom_type();
-    if (t == Type::TOP) return nullptr;  // No progress
-    x_off = t->is_int()->get_con();
-    x = x->in(1);
-  }
-
-  // Scan a right-spline-tree for MAXs
-  Node* y = r;
-  jint y_off = 0;
-  // Check final part of MAX tree
-  if (y->Opcode() == Op_AddI && // Check for "y+c1" and collect constant
-      y->in(2)->is_Con()) {
-    const Type* t = y->in(2)->bottom_type();
-    if (t == Type::TOP) return nullptr;  // No progress
-    y_off = t->is_int()->get_con();
-    y = y->in(1);
-  }
-  if (x->_idx > y->_idx && r->Opcode() != Op_MaxI) {
-    swap_edges(1, 2);
-    return this;
-  }
-
-  const TypeInt* tx = phase->type(x)->isa_int();
-
-  if (r->Opcode() == Op_MaxI) {
-    assert(r != r->in(2), "dead loop in MaxINode::Ideal");
-    y = r->in(1);
-    // Check final part of MAX tree
-    if (y->Opcode() == Op_AddI &&// Check for "y+c1" and collect constant
-        y->in(2)->is_Con()) {
-      const Type* t = y->in(2)->bottom_type();
-      if (t == Type::TOP) return nullptr;  // No progress
-      y_off = t->is_int()->get_con();
-      y = y->in(1);
-    }
-
-    if (x->_idx > y->_idx)
-      return new MaxINode(r->in(1), phase->transform(new MaxINode(l, r->in(2))));
-
-    // Transform MAX2(x + c0, MAX2(x + c1, z)) into MAX2(x + MAX2(c0, c1), z)
-    // if x == y and the additions can't overflow.
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      return new MaxINode(phase->transform(new AddINode(x, phase->intcon(MAX2(x_off, y_off)))), r->in(2));
-    }
-  } else {
-    // Transform MAX2(x + c0, y + c1) into x + MAX2(c0, c1)
-    // if x == y and the additions can't overflow.
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      return new AddINode(x, phase->intcon(MAX2(x_off, y_off)));
-    }
-  }
- return nullptr;
-}
-
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 // MINs show up in range-check loop limit calculations.  Look for
 // "MIN2(x+c0,MIN2(y,x+c1))".  Pick the smaller constant: "MIN2(x+c0,y)"
-Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  Node *progress = nullptr;
-  // Force a right-spline graph
-  Node *l = in(1);
-  Node *r = in(2);
-  // Transform  MinI1( MinI2(a,b), c)  into  MinI1( a, MinI2(b,c) )
-  // to force a right-spline graph for the rest of MinINode::Ideal().
-  if( l->Opcode() == Op_MinI ) {
-    assert( l != l->in(1), "dead loop in MinINode::Ideal" );
-    r = phase->transform(new MinINode(l->in(2),r));
-    l = l->in(1);
-    set_req_X(1, l, phase);
-    set_req_X(2, r, phase);
-    return this;
-  }
-
-  // Get left input & constant
-  Node *x = l;
-  jint x_off = 0;
-  if( x->Opcode() == Op_AddI && // Check for "x+c0" and collect constant
-      x->in(2)->is_Con() ) {
-    const Type *t = x->in(2)->bottom_type();
-    if( t == Type::TOP ) return nullptr;  // No progress
-    x_off = t->is_int()->get_con();
-    x = x->in(1);
-  }
-
-  // Scan a right-spline-tree for MINs
-  Node *y = r;
-  jint y_off = 0;
-  // Check final part of MIN tree
-  if( y->Opcode() == Op_AddI && // Check for "y+c1" and collect constant
-      y->in(2)->is_Con() ) {
-    const Type *t = y->in(2)->bottom_type();
-    if( t == Type::TOP ) return nullptr;  // No progress
-    y_off = t->is_int()->get_con();
-    y = y->in(1);
-  }
-  if( x->_idx > y->_idx && r->Opcode() != Op_MinI ) {
-    swap_edges(1, 2);
-    return this;
-  }
-
-  const TypeInt* tx = phase->type(x)->isa_int();
-
-  if( r->Opcode() == Op_MinI ) {
-    assert( r != r->in(2), "dead loop in MinINode::Ideal" );
-    y = r->in(1);
-    // Check final part of MIN tree
-    if( y->Opcode() == Op_AddI &&// Check for "y+c1" and collect constant
-        y->in(2)->is_Con() ) {
-      const Type *t = y->in(2)->bottom_type();
-      if( t == Type::TOP ) return nullptr;  // No progress
-      y_off = t->is_int()->get_con();
-      y = y->in(1);
-    }
-
-    if( x->_idx > y->_idx )
-      return new MinINode(r->in(1),phase->transform(new MinINode(l,r->in(2))));
-
-    // Transform MIN2(x + c0, MIN2(x + c1, z)) into MIN2(x + MIN2(c0, c1), z)
-    // if x == y and the additions can't overflow.
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      return new MinINode(phase->transform(new AddINode(x, phase->intcon(MIN2(x_off, y_off)))), r->in(2));
-    }
-  } else {
-    // Transform MIN2(x + c0, y + c1) into x + MIN2(c0, c1)
-    // if x == y and the additions can't overflow.
-    if (x == y && tx != nullptr &&
-        !can_overflow(tx, x_off) &&
-        !can_overflow(tx, y_off)) {
-      return new AddINode(x,phase->intcon(MIN2(x_off,y_off)));
-    }
-  }
-  return nullptr;
+Node* MinINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return IdealI(phase, can_reshape);
 }
 
 //------------------------------add_ring---------------------------------------
@@ -1419,9 +1368,12 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeF *r0 = t0->is_float_constant();
-  const TypeF *r1 = t1->is_float_constant();
+const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
+  const TypeF* r0 = t0->isa_float_constant();
+  const TypeF* r1 = t1->isa_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
 
   if (r0->is_nan()) {
     return r0;
@@ -1441,9 +1393,12 @@ const Type *MinFNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeD *r0 = t0->is_double_constant();
-  const TypeD *r1 = t1->is_double_constant();
+const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeD* r0 = t0->isa_double_constant();
+  const TypeD* r1 = t1->isa_double_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
 
   if (r0->is_nan()) {
     return r0;
@@ -1463,9 +1418,12 @@ const Type *MinDNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeF *r0 = t0->is_float_constant();
-  const TypeF *r1 = t1->is_float_constant();
+const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeF* r0 = t0->isa_float_constant();
+  const TypeF* r1 = t1->isa_float_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
 
   if (r0->is_nan()) {
     return r0;
@@ -1485,9 +1443,12 @@ const Type *MaxFNode::add_ring( const Type *t0, const Type *t1 ) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeD *r0 = t0->is_double_constant();
-  const TypeD *r1 = t1->is_double_constant();
+const Type* MaxDNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeD* r0 = t0->isa_double_constant();
+  const TypeD* r1 = t1->isa_double_constant();
+  if (r0 == nullptr || r1 == nullptr) {
+    return bottom_type();
+  }
 
   if (r0->is_nan()) {
     return r0;

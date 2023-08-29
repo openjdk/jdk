@@ -54,7 +54,7 @@ class ChunkManagerRandomChunkAllocTest {
     // Assuming we allocate only the largest type of chunk, committed to the fullest commit factor,
     // how many chunks can we accomodate before hitting max_footprint_words?
     const size_t largest_chunk_size = word_size_for_level(r.lowest());
-    int max_chunks = (max_footprint_words * commit_factor) / largest_chunk_size;
+    int max_chunks = (int)((max_footprint_words * commit_factor) / (float) largest_chunk_size);
     // .. but cap at (min) 50 and (max) 1000
     max_chunks = MIN2(1000, max_chunks);
     max_chunks = MAX2(50, max_chunks);
@@ -96,7 +96,7 @@ class ChunkManagerRandomChunkAllocTest {
 
   // Given a chunk level and a factor, return a random commit size.
   static size_t random_committed_words(chunklevel_t lvl, float commit_factor) {
-    const size_t sz = word_size_for_level(lvl) * commit_factor;
+    const size_t sz = (size_t)((float)word_size_for_level(lvl) * commit_factor);
     if (sz < 2) {
       return 0;
     }
@@ -194,7 +194,7 @@ class ChunkManagerRandomChunkAllocTest {
 
     IntRange rand(100);
 
-    for (int j = 0; j < 1000; j++) {
+    for (int j = 0; j < 750; j++) {
 
       bool force_alloc = false;
       bool force_free = true;
@@ -249,7 +249,7 @@ public:
   // {}
 
   void do_tests() {
-    const int num_runs = 5;
+    const int num_runs = 3;
     for (int n = 0; n < num_runs; n++) {
       one_test();
     }

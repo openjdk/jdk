@@ -405,19 +405,18 @@ class os: AllStatic {
   // passed to page_size_for_region() and page_size should be the result of that
   // call.  The (optional) base and size parameters should come from the
   // ReservedSpace base() and size() methods.
-  static void trace_page_sizes(const char* str, const size_t* page_sizes, int count);
   static void trace_page_sizes(const char* str,
                                const size_t region_min_size,
                                const size_t region_max_size,
-                               const size_t page_size,
                                const char* base,
-                               const size_t size);
+                               const size_t size,
+                               const size_t page_size);
   static void trace_page_sizes_for_requested_size(const char* str,
                                                   const size_t requested_size,
-                                                  const size_t page_size,
-                                                  const size_t alignment,
+                                                  const size_t requested_page_size,
                                                   const char* base,
-                                                  const size_t size);
+                                                  const size_t size,
+                                                  const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
@@ -597,8 +596,7 @@ class os: AllStatic {
   static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
-  static address current_stack_base();
-  static size_t current_stack_size();
+  static void current_stack_base_and_size(address* base, size_t* size);
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
@@ -773,7 +771,7 @@ class os: AllStatic {
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
   static void print_tos(outputStream* st, address sp);
-  static void print_instructions(outputStream* st, address pc, int unitsize);
+  static void print_instructions(outputStream* st, address pc, int unitsize = 1);
   static void print_register_info(outputStream* st, const void* context, int& continuation);
   static void print_register_info(outputStream* st, const void* context);
   static bool signal_sent_by_kill(const void* siginfo);
@@ -790,6 +788,9 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Send JFR memory info event
+  static void jfr_report_memory_info() NOT_JFR_RETURN();
 
   // Replacement for strerror().
   // Will return the english description of the error (e.g. "File not found", as
@@ -884,10 +885,10 @@ class os: AllStatic {
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static int recv(int fd, char* buf, size_t nBytes, uint flags);
-  static int send(int fd, char* buf, size_t nBytes, uint flags);
-  static int raw_send(int fd, char* buf, size_t nBytes, uint flags);
-  static int connect(int fd, struct sockaddr* him, socklen_t len);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
   // Support for signals
   static void  initialize_jdk_signal_support(TRAPS);
@@ -1005,7 +1006,7 @@ class os: AllStatic {
 
  public:
   inline static bool platform_print_native_stack(outputStream* st, const void* context,
-                                                 char *buf, int buf_size);
+                                                 char *buf, int buf_size, address& lastpc);
 
   // debugging support (mostly used by debug.cpp but also fatal error handler)
   static bool find(address pc, outputStream* st = tty); // OS specific function to make sense out of an address

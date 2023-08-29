@@ -210,6 +210,7 @@ public:
   bool valid_bundle_info(const Node *n);
 
   bool starts_bundle(const Node *n) const;
+  bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)
@@ -222,7 +223,8 @@ public:
   void BuildOopMaps();
 
 #ifndef PRODUCT
-  void print_scheduling();
+  void print_scheduling(outputStream* output_stream);
+  void print_scheduling(); // to tty for debugging
   static void print_statistics();
 #endif
 };

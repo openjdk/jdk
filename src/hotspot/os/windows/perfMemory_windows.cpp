@@ -222,7 +222,7 @@ static bool is_directory_secure(const char* path) {
     else {
       // unexpected error, declare the path insecure
       if (PrintMiscellaneous && Verbose) {
-        warning("could not get attributes for file %s: ",
+        warning("could not get attributes for file %s: "
                 " lasterror = %d\n", path, lasterror);
       }
       return false;

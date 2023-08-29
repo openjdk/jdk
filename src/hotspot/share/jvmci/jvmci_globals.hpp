@@ -48,6 +48,11 @@ class fileStream;
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
           "Enable JVMCI")                                                   \
                                                                             \
+  product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
+          "Select the Graal JVMCI compiler. This is an alias for: "         \
+          "  -XX:+EnableJVMCIProduct "                                      \
+          "  -Djvmci.Compiler=graal ")                                      \
+                                                                            \
   product(bool, EnableJVMCIProduct, false, EXPERIMENTAL,                    \
           "Allow JVMCI to be used in product mode. This alters a subset of "\
           "JVMCI flags to be non-experimental, defaults UseJVMCICompiler "  \
@@ -152,6 +157,11 @@ class fileStream;
           "error data to this file"                                         \
           "[default: ./" LIBJVMCI_ERR_FILE "] (%p replaced with pid)")      \
                                                                             \
+  product(bool, LibJVMCICompilerThreadHidden, true, EXPERIMENTAL,           \
+          "If true then native JVMCI compiler threads are hidden from "     \
+          "JVMTI and FlightRecorder.  This must be set to false if you "    \
+          "wish to use a Java debugger against JVMCI threads.")             \
+                                                                            \
   NOT_COMPILER2(product(bool, UseMultiplyToLenIntrinsic, false, DIAGNOSTIC, \
           "Enables intrinsification of BigInteger.multiplyToLen()"))        \
                                                                             \
@@ -165,7 +175,19 @@ class fileStream;
           "Enables intrinsification of BigInteger.montgomeryMultiply()"))   \
                                                                             \
   NOT_COMPILER2(product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC, \
-          "Enables intrinsification of BigInteger.montgomerySquare()"))
+          "Enables intrinsification of BigInteger.montgomerySquare()"))     \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorSupport, false, EXPERIMENTAL,     \
+          "Enables VectorSupport intrinsics"))                              \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorReboxing, false, EXPERIMENTAL,    \
+          "Enables reboxing of vectors"))                                   \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
+          "Enables aggressive reboxing of vectors"))                        \
+                                                                            \
+  NOT_COMPILER2(product(bool, UseVectorStubs, false, EXPERIMENTAL,          \
+          "Use stubs for vector transcendental operations"))                \
 
 // end of JVMCI_FLAGS
 
@@ -185,7 +207,7 @@ class JVMCIGlobals {
   static bool check_jvmci_flags_are_consistent();
 
   // Convert JVMCI experimental flags to product
-  static bool enable_jvmci_product_mode(JVMFlagOrigin);
+  static bool enable_jvmci_product_mode(JVMFlagOrigin origin, bool use_graal_jit);
 
   // Returns true iff the GC fully supports JVMCI.
   static bool gc_supports_jvmci();

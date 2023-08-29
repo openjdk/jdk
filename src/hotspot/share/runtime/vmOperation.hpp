@@ -48,6 +48,7 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
+  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
@@ -174,6 +175,8 @@ class VM_Operation : public StackObj {
     assert(type >= 0 && type < VMOp_Terminating, "invalid VM operation type");
     return _names[type];
   }
+  // Extra information about what triggered this operation.
+  virtual const char* cause() const { return nullptr; }
 #ifndef PRODUCT
   void print_on(outputStream* st) const { print_on_error(st); }
 #endif

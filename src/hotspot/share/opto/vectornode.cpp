@@ -1202,9 +1202,10 @@ int ExtractNode::opcode(BasicType bt) {
   }
 }
 
-// Extract a scalar element of vector.
+// Extract a scalar element of vector by constant position.
 Node* ExtractNode::make(Node* v, ConINode* pos, BasicType bt) {
-  assert(pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
+  assert(pos->get_int() >= 0 &&
+         pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
   switch (bt) {
   case T_BOOLEAN: return new ExtractUBNode(v, pos);
   case T_BYTE:    return new ExtractBNode(v, pos);
@@ -1753,13 +1754,19 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
 
-        bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
           return new VectorMaskCastNode(value, vmask_type);
+        } else if (is_vector_shuffle) {
+          if (!is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
         // Vector length mismatch.
@@ -1865,6 +1872,21 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
        return new VectorMaskCastNode(src, dst_type);
      }
+  }
+  return nullptr;
+}
+
+Node* FmaVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
+  // This reduces the number of rules in the matcher, as we only need to check
+  // for negations on the second argument, and not the symmetric case where
+  // the first argument is negated.
+  // We cannot do this if the FmaV is masked, since the inactive lanes have to return
+  // the first input (i.e. "-a"). If we were to swap the inputs, the inactive lanes would
+  // incorrectly return "b".
+  if (!is_predicated_vector() && in(1)->is_NegV() && !in(2)->is_NegV()) {
+    swap_edges(1, 2);
+    return this;
   }
   return nullptr;
 }

@@ -48,7 +48,7 @@ public sealed interface StoreInstruction extends Instruction
      * {@return a local variable store instruction}
      *
      * @param kind the type of the value to be stored
-     * @param slot the local varaible slot to store to
+     * @param slot the local variable slot to store to
      */
     static StoreInstruction of(TypeKind kind, int slot) {
         return of(BytecodeHelpers.storeOpcode(kind, slot), slot);
@@ -59,7 +59,7 @@ public sealed interface StoreInstruction extends Instruction
      *
      * @param op the opcode for the specific type of store instruction,
      *           which must be of kind {@link Opcode.Kind#STORE}
-     * @param slot the local varaible slot to store to
+     * @param slot the local variable slot to store to
      */
     static StoreInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.STORE);

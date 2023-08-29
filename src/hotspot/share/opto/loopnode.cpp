@@ -42,10 +42,12 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/superword.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //=============================================================================
@@ -343,6 +345,7 @@ IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Nod
 
 void PhaseIdealLoop::insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj,
                                                        Node* cmp_limit, Node* bol) {
+  assert(loop_limit_check_parse_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
   Node* new_predicate_proj = create_new_if_for_predicate(loop_limit_check_parse_proj, nullptr,
                                                          Deoptimization::Reason_loop_limit_check,
                                                          Op_If);
@@ -1089,13 +1092,13 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node* c = loop->_body.at(i);
     if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
-      CallStaticJavaNode* call = c->as_IfProj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      IfProjNode* if_proj = c->as_IfProj();
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
       if (call != nullptr) {
         Node* range = nullptr;
         Node* offset = nullptr;
         jlong scale = 0;
-        RangeCheckNode* rc = c->in(0)->as_RangeCheck();
-        if (loop->is_range_check_if(rc, this, T_LONG, phi, range, offset, scale) &&
+        if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
             original_iters_limit / ABS(scale * stride_con) >= min_iters) {
           reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit/ABS(scale));
@@ -1745,6 +1748,21 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
+
+  if (x->Opcode() == Op_Region) {
+    // x has not yet been transformed to Loop or LongCountedLoop.
+    // This should only happen if we are inside an infinite loop.
+    // It happens like this:
+    //   build_loop_tree -> do not attach infinite loop and nested loops
+    //   beautify_loops  -> does not transform the infinite and nested loops to LoopNode, because not attached yet
+    //   build_loop_tree -> find and attach infinite and nested loops
+    //   counted_loop    -> nested Regions are not yet transformed to LoopNodes, we land here
+    assert(x->as_Region()->is_in_infinite_subgraph(),
+           "x can only be a Region and not Loop if inside infinite loop");
+    // Come back later when Region is transformed to LoopNode
+    return false;
+  }
+
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
@@ -1788,11 +1806,13 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     assert(!x->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
     // Generate loop's limit check.
     // Loop limit check predicate should be near the loop.
-    if (!ParsePredicates::is_loop_limit_check_predicate_proj(init_control)) {
+    const Predicates predicates(init_control);
+    const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+    if (!loop_limit_check_predicate_block->has_parse_predicate()) {
       // The limit check predicate is not generated if this method trapped here before.
 #ifdef ASSERT
       if (TraceLoopLimitCheck) {
-        tty->print("missing loop limit check:");
+        tty->print("Missing Loop Limit Check Parse Predicate:");
         loop->dump_head();
         x->dump(1);
       }
@@ -1800,10 +1820,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       return false;
     }
 
-    ParsePredicateSuccessProj* loop_limit_check_parse_predicate_proj = init_control->as_IfTrue();
-    ParsePredicateNode* parse_predicate = loop_limit_check_parse_predicate_proj->in(0)->as_ParsePredicate();
-
-    if (!is_dominator(get_ctrl(limit), parse_predicate->in(0))) {
+    ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+    if (!is_dominator(get_ctrl(limit), loop_limit_check_parse_predicate->in(0))) {
       return false;
     }
 
@@ -1818,7 +1836,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       bol = new BoolNode(cmp_limit, BoolTest::ge);
     }
 
-    insert_loop_limit_check_predicate(loop_limit_check_parse_predicate_proj, cmp_limit, bol);
+    insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
   }
 
   // Now we need to canonicalize loop condition.
@@ -1831,22 +1849,24 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       // 'ne' can be replaced with 'gt' only when init > limit.
       bt = BoolTest::gt;
     } else {
-      if (!ParsePredicates::is_loop_limit_check_predicate_proj(init_control)) {
+      const Predicates predicates(init_control);
+      const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+      if (!loop_limit_check_predicate_block->has_parse_predicate()) {
         // The limit check predicate is not generated if this method trapped here before.
 #ifdef ASSERT
         if (TraceLoopLimitCheck) {
-          tty->print("missing loop limit check:");
+          tty->print("Missing Loop Limit Check Parse Predicate:");
           loop->dump_head();
           x->dump(1);
         }
 #endif
         return false;
       }
-      ParsePredicateSuccessProj* loop_limit_check_parse_predicate_proj = init_control->as_IfTrue();
-      ParsePredicateNode* parse_predicate = init_control->in(0)->as_ParsePredicate();
 
-      if (!is_dominator(get_ctrl(limit), parse_predicate->in(0)) ||
-          !is_dominator(get_ctrl(init_trip), parse_predicate->in(0))) {
+      ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+      Node* parse_predicate_entry = loop_limit_check_parse_predicate->in(0);
+      if (!is_dominator(get_ctrl(limit), parse_predicate_entry) ||
+          !is_dominator(get_ctrl(init_trip), parse_predicate_entry)) {
         return false;
       }
 
@@ -1861,7 +1881,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         bol = new BoolNode(cmp_limit, BoolTest::gt);
       }
 
-      insert_loop_limit_check_predicate(loop_limit_check_parse_predicate_proj, cmp_limit, bol);
+      insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol);
 
       if (stride_con > 0) {
         // 'ne' can be replaced with 'lt' only when init < limit.
@@ -2296,8 +2316,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (jlong)final_int, "final value should be integer");
-    return TypeInt::make(final_int);
+    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
+    // there might be a temporary overflow from PhiNodes see JDK-8309266
+    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    if (final_con == (jlong)final_int) {
+      return TypeInt::make(final_int);
+    } else {
+      return bottom_type();
+    }
   }
 
   return bottom_type(); // TypeInt::INT
@@ -2549,41 +2575,14 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
   return l->outer_safepoint();
 }
 
-Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
-    while (ctrl != nullptr && ctrl->is_Proj() && ctrl->in(0) != nullptr && ctrl->in(0)->is_If() &&
-           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
-           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == nullptr ||
-             (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
-              ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
-      ctrl = ctrl->in(0)->in(0);
-    }
-
-    return ctrl;
-  }
-
-bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
-  if (iff->in(1) == nullptr || !iff->in(1)->is_Bool()) {
-    return false;
-  }
-  if (iff->in(1)->in(1) == nullptr || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
-    return false;
-  }
-  if (iff->in(1)->in(1)->in(1) != nullptr && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
-    return true;
-  }
-  if (iff->in(1)->in(1)->in(2) != nullptr && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
-    return true;
-  }
-  return false;
-}
-
-Node* CountedLoopNode::skip_predicates() {
+Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
   Node* ctrl = in(LoopNode::EntryControl);
   if (is_main_loop()) {
     ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
   }
   if (is_main_loop() || is_post_loop()) {
-    return skip_predicates_from_entry(ctrl);
+    AssertionPredicatesWithHalt assertion_predicates(ctrl);
+    return assertion_predicates.entry();
   }
   return ctrl;
 }
@@ -3510,13 +3509,13 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 }
 
 //------------------------------allpaths_check_safepts----------------------------
-// Allpaths backwards scan from loop tail, terminating each path at first safepoint
-// encountered.  Helper for check_safepts.
+// Allpaths backwards scan. Starting at the head, traversing all backedges, and the body. Terminating each path at first
+// safepoint encountered.  Helper for check_safepts.
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
   assert(stack.size() == 0, "empty stack");
-  stack.push(_tail);
+  stack.push(_head);
   visited.clear();
-  visited.set(_tail->_idx);
+  visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
     if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
@@ -3524,12 +3523,13 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
-        _required_safept->push(n);  // save the one closest to the tail
+        // save the first we run into on that path: closest to the tail if the head has a single backedge
+        _required_safept->push(n);
       }
       // Terminate this path
     } else {
       uint start = n->is_Region() ? 1 : 0;
-      uint end   = n->is_Region() && !n->is_Loop() ? n->req() : start + 1;
+      uint end   = n->is_Region() && (!n->is_Loop() || n == _head) ? n->req() : start + 1;
       for (uint i = start; i < end; i++) {
         Node* in = n->in(i);
         assert(in->is_CFG(), "must be");
@@ -3601,53 +3601,55 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   if (_child) _child->check_safepts(visited, stack);
   if (_next)  _next ->check_safepts(visited, stack);
 
-  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr && !_irreducible) {
+  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr) {
     bool  has_call         = false;    // call on dom-path
     bool  has_local_ncsfpt = false;    // ncsfpt on dom-path at this loop depth
     Node* nonlocal_ncsfpt  = nullptr;  // ncsfpt on dom-path at a deeper depth
-    // Scan the dom-path nodes from tail to head
-    for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-      if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
-        has_call = true;
-        _has_sfpt = 1;          // Then no need for a safept!
-        break;
-      } else if (n->Opcode() == Op_SafePoint) {
-        if (_phase->get_loop(n) == this) {
-          has_local_ncsfpt = true;
+    if (!_irreducible) {
+      // Scan the dom-path nodes from tail to head
+      for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
+          has_call = true;
+          _has_sfpt = 1;          // Then no need for a safept!
           break;
-        }
-        if (nonlocal_ncsfpt == nullptr) {
-          nonlocal_ncsfpt = n; // save the one closest to the tail
-        }
-      } else {
-        IdealLoopTree* nlpt = _phase->get_loop(n);
-        if (this != nlpt) {
-          // If at an inner loop tail, see if the inner loop has already
-          // recorded seeing a call on the dom-path (and stop.)  If not,
-          // jump to the head of the inner loop.
-          assert(is_member(nlpt), "nested loop");
-          Node* tail = nlpt->_tail;
-          if (tail->in(0)->is_If()) tail = tail->in(0);
-          if (n == tail) {
-            // If inner loop has call on dom-path, so does outer loop
-            if (nlpt->_has_sfpt) {
-              has_call = true;
-              _has_sfpt = 1;
-              break;
-            }
-            // Skip to head of inner loop
-            assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
-            n = nlpt->_head;
-            if (_head == n) {
-              // this and nlpt (inner loop) have the same loop head. This should not happen because
-              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
-              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
-              // but then attached in the build_loop_tree afterwards, and so still have unmerged
-              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
-              // since we have reached the loop head of this.
-              assert(_head->as_Region()->is_in_infinite_subgraph(),
-                     "only expect unmerged backedges in infinite loops");
-              break;
+        } else if (n->Opcode() == Op_SafePoint) {
+          if (_phase->get_loop(n) == this) {
+            has_local_ncsfpt = true;
+            break;
+          }
+          if (nonlocal_ncsfpt == nullptr) {
+            nonlocal_ncsfpt = n; // save the one closest to the tail
+          }
+        } else {
+          IdealLoopTree* nlpt = _phase->get_loop(n);
+          if (this != nlpt) {
+            // If at an inner loop tail, see if the inner loop has already
+            // recorded seeing a call on the dom-path (and stop.)  If not,
+            // jump to the head of the inner loop.
+            assert(is_member(nlpt), "nested loop");
+            Node* tail = nlpt->_tail;
+            if (tail->in(0)->is_If()) tail = tail->in(0);
+            if (n == tail) {
+              // If inner loop has call on dom-path, so does outer loop
+              if (nlpt->_has_sfpt) {
+                has_call = true;
+                _has_sfpt = 1;
+                break;
+              }
+              // Skip to head of inner loop
+              assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
+              n = nlpt->_head;
+              if (_head == n) {
+                // this and nlpt (inner loop) have the same loop head. This should not happen because
+                // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+                // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+                // but then attached in the build_loop_tree afterwards, and so still have unmerged
+                // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+                // since we have reached the loop head of this.
+                assert(_head->as_Region()->is_in_infinite_subgraph(),
+                       "only expect unmerged backedges in infinite loops");
+                break;
+              }
             }
           }
         }
@@ -3954,14 +3956,14 @@ void IdealLoopTree::dump_head() {
   if (_irreducible) tty->print(" IRREDUCIBLE");
   Node* entry = _head->is_Loop() ? _head->as_Loop()->skip_strip_mined(-1)->in(LoopNode::EntryControl)
                                  : _head->in(LoopNode::EntryControl);
-  ParsePredicates parse_predicates(entry);
-  if (parse_predicates.loop_limit_check_predicate_proj() != nullptr) {
+  const Predicates predicates(entry);
+  if (predicates.loop_limit_check_predicate_block()->is_non_empty()) {
     tty->print(" limit_check");
   }
-  if (UseProfiledLoopPredicate && parse_predicates.profiled_loop_predicate_proj() != nullptr) {
+  if (UseProfiledLoopPredicate && predicates.profiled_loop_predicate_block()->is_non_empty()) {
     tty->print(" profile_predicated");
   }
-  if (UseLoopPredicate && parse_predicates.loop_predicate_proj() != nullptr) {
+  if (UseLoopPredicate && predicates.loop_predicate_block()->is_non_empty()) {
     tty->print(" predicated");
   }
   if (_head->is_CountedLoop()) {
@@ -3989,7 +3991,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
-    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4069,25 +4070,28 @@ void PhaseIdealLoop::collect_potentially_useful_predicates(IdealLoopTree* loop, 
       !loop->tail()->is_top()) {
     LoopNode* lpn = loop->_head->as_Loop();
     Node* entry = lpn->in(LoopNode::EntryControl);
-    ParsePredicates parse_predicates(entry);
-    ProjNode* predicate_proj = parse_predicates.loop_limit_check_predicate_proj();
-    if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-      assert(predicate_proj->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
-      useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
+    const Predicates predicates(entry);
+    const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+    if (loop_limit_check_predicate_block->has_parse_predicate()) { // right pattern that can be used by loop predication
+      IfProjNode* parse_predicate_proj = loop_limit_check_predicate_block->parse_predicate_success_proj();
+      assert(parse_predicate_proj->in(0)->in(1)->in(1)->Opcode() == Op_Opaque1, "must be");
+      useful_predicates.push(parse_predicate_proj->in(0)->in(1)->in(1)); // good one
     }
     if (UseProfiledLoopPredicate) {
-      predicate_proj = parse_predicates.profiled_loop_predicate_proj();
-      if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-        useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
-        get_assertion_predicates(predicate_proj, useful_predicates, true);
+      const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
+      if (profiled_loop_predicate_block->has_parse_predicate()) { // right pattern that can be used by loop predication
+        IfProjNode* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
+        useful_predicates.push(parse_predicate_proj->in(0)->in(1)->in(1)); // good one
+        get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
       }
     }
 
     if (UseLoopPredicate) {
-      predicate_proj = parse_predicates.loop_predicate_proj();
-      if (predicate_proj != nullptr) { // right pattern that can be used by loop predication
-        useful_predicates.push(predicate_proj->in(0)->in(1)->in(1)); // good one
-        get_assertion_predicates(predicate_proj, useful_predicates, true);
+      const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
+      if (loop_predicate_block->has_parse_predicate()) { // right pattern that can be used by loop predication
+        IfProjNode* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
+        useful_predicates.push(parse_predicate_proj->in(0)->in(1)->in(1)); // good one
+        get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
       }
     }
   }
@@ -4629,29 +4633,7 @@ void PhaseIdealLoop::build_and_optimize() {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-
-        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
-          assert(PostLoopMultiversioning, "multiversioning must be enabled");
-          // Check that the rce'd post loop is encountered first, multiversion after all
-          // major main loop optimization are concluded
-          if (!C->major_progress()) {
-            IdealLoopTree *lpt_next = lpt->_next;
-            if (lpt_next && lpt_next->is_counted()) {
-              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
-                if (!cl->is_multiversioned()) {
-                  if (multi_version_post_loops(lpt, lpt_next) == false) {
-                    // Cause the rce loop to be optimized away if we fail
-                    cl->mark_is_multiversioned();
-                    cl->set_slp_max_unroll(0);
-                    poison_rce_post_loop(lpt);
-                  }
-                }
-              }
-            }
-            sw.transform_loop(lpt, true);
-          }
-        } else if (cl->is_main_loop()) {
+        if (cl->is_main_loop()) {
           if (!sw.transform_loop(lpt, true)) {
             // Instigate more unrolling for optimization when vectorization fails.
             if (cl->has_passed_slp()) {
@@ -5682,7 +5664,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (!is_main_loop() && !is_post_loop()) {
     return nullptr;
   }
-  Node* ctrl = skip_predicates();
+  Node* ctrl = skip_assertion_predicates_with_halt();
 
   if (ctrl == nullptr || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
     return nullptr;

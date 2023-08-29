@@ -155,7 +155,7 @@ class SystemDictionaryShared: public SystemDictionary {
   };
 
 public:
-  enum {
+  enum : char {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
     FROM_IS_ARRAY           = 1 << 1,
     FROM_IS_OBJECT          = 1 << 2

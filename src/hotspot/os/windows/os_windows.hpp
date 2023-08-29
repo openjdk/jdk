@@ -48,7 +48,7 @@ class os::win32 {
   static void print_uptime_info(outputStream* st);
 
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size);
+                                          char *buf, int buf_size, address& lastpc);
 
   static bool register_code_area(char *low, char *high);
 

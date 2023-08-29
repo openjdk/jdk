@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package jdk.jpackage.internal;
+
+import jdk.internal.util.OperatingSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -582,7 +584,7 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     PREDEFINED_RUNTIME_IMAGE.getID()));
         }
 
-        if (Platform.isMac()) {
+        if (OperatingSystem.isMacOS()) {
             // On Mac topImage can be runtime root or runtime home.
             Path runtimeHome = topImage.resolve("Contents/Home");
             if (Files.isDirectory(runtimeHome)) {

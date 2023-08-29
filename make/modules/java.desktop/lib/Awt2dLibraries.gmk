@@ -132,6 +132,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -191,6 +192,9 @@ ifeq ($(call isTargetOs, windows macosx), false)
 
     LIBAWT_XAWT_EXCLUDES := medialib debug
 
+    LIBPIPEWIRE_HEADER_DIRS := \
+        $(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
+
     LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
         $(LIBAWT_DEFAULT_HEADER_DIRS) \
         libawt_xawt/awt \
@@ -200,7 +204,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
         common/font \
         common/java2d/opengl \
         common/java2d/x11 \
-        #
+        $(LIBPIPEWIRE_HEADER_DIRS)
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
         $(FONTCONFIG_CFLAGS) \
@@ -218,6 +222,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LIBAWT_XAWT_LIBS += -lpthread
     endif
 
+    # These are the object files provided by the awt native
+    # library. Do not include these external (non-awt_xawt library)
+    # objects in the static library. When statically linking the java
+    # launcher with all JDK and VM static libraries, we use the
+    # --whole-archive linker option. The duplicate objects in different
+    # static libraries cause linking errors due to duplicate symbols.
+    LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
+
     $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
         EXTRA_SRC := $(LIBAWT_XAWT_EXTRA_SRC), \
@@ -234,16 +246,34 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
         DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+        DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
         DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
+        DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
         LIBS :=  $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
+        STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
     ))
 
     $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
@@ -367,6 +397,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
       -DHEADLESS=true
 
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_headless library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS := systemScale.o
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
@@ -382,6 +420,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
   ))
 
   $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
@@ -410,6 +449,7 @@ else
     LIBFREETYPE_LIBS := -lfreetype
   endif
 
+  # gcc_ftobjs.c := maybe-uninitialized required for GCC 7 builds.
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
@@ -418,6 +458,7 @@ else
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
+      DISABLED_WARNINGS_gcc_ftobjs.c := maybe-uninitialized, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -446,14 +487,16 @@ else
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
    ifeq ($(call isTargetOs, aix), true)
+    ifneq ($(TOOLCHAIN_TYPE), clang)
      HARFBUZZ_CFLAGS += -qdebug=necan
+    endif
    endif
 
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
-       unused-result array-bounds
+       unused-result array-bounds parentheses
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type expansion-to-defined dangling-reference
@@ -571,7 +614,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CXXFLAGS_JDKLIB) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJAWT_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) \
           $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
@@ -693,6 +738,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
     endif
   endif
 
+  # The external libpng submitted in the jdk is a reduced version
+  # which does not contain .png_init_filter_functions_vsx.
+  # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
+  # it to 0. If this define is not set, it would be automatically set to 2,
+  # because
+  #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
+  # expands to true. This would results in the fact that
+  # .png_init_filter_functions_vsx is needed in libpng.
+  ifeq ($(call isTargetOs, aix), true)
+    ifeq ($(TOOLCHAIN_TYPE), clang)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
+  endif
+
   ifeq ($(call isTargetOs, macosx), true)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
 
@@ -739,6 +798,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+          $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \

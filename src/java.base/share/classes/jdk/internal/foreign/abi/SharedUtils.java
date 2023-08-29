@@ -35,6 +35,7 @@ import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
+import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.vm.annotation.ForceInline;
@@ -78,6 +79,7 @@ public final class SharedUtils {
     private static final MethodHandle MH_BUFFER_COPY;
     private static final MethodHandle MH_REACHABILITY_FENCE;
     public static final MethodHandle MH_CHECK_SYMBOL;
+    private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
     public static final AddressLayout C_POINTER = ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
@@ -110,6 +112,8 @@ public final class SharedUtils {
                     methodType(void.class, Object.class));
             MH_CHECK_SYMBOL = lookup.findStatic(SharedUtils.class, "checkSymbol",
                     methodType(void.class, MemorySegment.class));
+            MH_CHECK_CAPTURE_SEGMENT = lookup.findStatic(SharedUtils.class, "checkCaptureSegment",
+                    methodType(MemorySegment.class, MemorySegment.class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
@@ -239,6 +243,7 @@ public final class SharedUtils {
             case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
             case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
+            case LINUX_S390 -> LinuxS390Linker.getInstance();
             case FALLBACK -> FallbackLinker.getInstance();
             case UNSUPPORTED -> throw new UnsupportedOperationException("Platform does not support native linker");
         };
@@ -341,6 +346,23 @@ public final class SharedUtils {
             handle = insertArguments(handle, 1, THROWING_ALLOCATOR);
         }
         return handle;
+    }
+
+    public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, LinkerOptions options) {
+        if (options.hasCapturedCallState()) {
+            // (<target address>, SegmentAllocator, <capture segment>, ...) -> ...
+            handle = MethodHandles.filterArguments(handle, 2, MH_CHECK_CAPTURE_SEGMENT);
+        }
+        return handle;
+    }
+
+    @ForceInline
+    public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
+        Objects.requireNonNull(captureSegment);
+        if (captureSegment.equals(MemorySegment.NULL)) {
+            throw new IllegalArgumentException("Capture segment is NULL: " + captureSegment);
+        }
+        return captureSegment.asSlice(0, CapturableState.LAYOUT);
     }
 
     @ForceInline

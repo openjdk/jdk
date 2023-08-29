@@ -33,10 +33,10 @@
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link jdk.internal.classfile.ClassModel}; we
  * convert bytes into a {@link jdk.internal.classfile.ClassModel} with {@link
- * jdk.internal.classfile.Classfile#parse(byte[], jdk.internal.classfile.Classfile.Option[])}:
+ * jdk.internal.classfile.Classfile#parse(byte[])}:
  * <p>
  * {@snippet lang=java :
- * ClassModel cm = Classfile.parse(bytes);
+ * ClassModel cm = Classfile.of().parse(bytes);
  * }
  * <p>
  * There are several additional overloads of {@code parse} that let you specify
@@ -164,31 +164,30 @@
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link
- * jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}}
+ * jdk.internal.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
  * jdk.internal.classfile.CustomAttribute}.
  *
  * <h3>Options</h3>
  * <p>
- * {@link jdk.internal.classfile.Classfile#parse(byte[], jdk.internal.classfile.Classfile.Option[])}
- * accepts a list of options.  {@link jdk.internal.classfile.Classfile.Option} exports some
- * static boolean options, as well as factories for more complex options,
+ * {@link jdk.internal.classfile.Classfile#of(jdk.internal.classfile.Classfile.Option[])}
+ * accepts a list of options.  {@link jdk.internal.classfile.Classfile.Option} is a base interface
+ * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#generateStackmap(boolean)}
- * -- generate stackmaps (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processDebug(boolean)}
- * -- processing of debug information, such as local variable metadata (default is true) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processLineNumbers(boolean)}
- * -- processing of line numbers (default is true) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#processUnknownAttributes(boolean)}
- * -- processing of unrecognized attributes (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#constantPoolSharing(boolean)}}
- * -- share constant pool when transforming (default is true)</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#classHierarchyResolver(jdk.internal.classfile.ClassHierarchyResolver)}
- * -- specify a custom class hierarchy
- * resolver used by stack map generation</li>
- *   <li>{@link jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}
+ *   <li>{@link jdk.internal.classfile.Classfile.StackMapsOption}
+ * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.DebugElementsOption}
+ * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
+ *   <li>{@link jdk.internal.classfile.Classfile.LineNumbersOption}
+ * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
+ *   <li>{@link jdk.internal.classfile.Classfile.UnknownAttributesOption}
+ * -- processing of unrecognized attributes (default is {@code PASS_UNKNOWN_ATTRIBUTES})</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.ConstantPoolSharingOption}}
+ * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.ClassHierarchyResolverOption#of(jdk.internal.classfile.ClassHierarchyResolver)}
+ * -- specify a custom class hierarchy resolver used by stack map generation</li>
+ *   <li>{@link jdk.internal.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}
  * -- specify format of custom attributes</li>
  * </ul>
  * <p>
@@ -304,7 +303,8 @@
  * <p>
  * and then transform the classfile:
  * {@snippet lang=java :
- * byte[] newBytes = Classfile.parse(bytes).transform(ct);
+ * var cc = Classfile.of();
+ * byte[] newBytes = cc.transform(cc.parse(bytes), ct);
  * }
  * <p>
  * This is much more concise (and less error-prone) than the equivalent
@@ -322,10 +322,11 @@
  * jdk.internal.classfile.CodeTransform#andThen(jdk.internal.classfile.CodeTransform)}:
  * <p>
  * {@snippet lang=java :
- * byte[] newBytes = Classfile.parse(bytes)
- *                             .transform(ClassTransform.transformingMethods(
- *                                 MethodTransform.transformingCode(
- *                                     fooToBar.andThen(instrumentCalls))));
+ * var cc = Classfile.of();
+ * byte[] newBytes = cc.transform(cc.parse(bytes),
+ *                                ClassTransform.transformingMethods(
+ *                                    MethodTransform.transformingCode(
+ *                                        fooToBar.andThen(instrumentCalls))));
  * }
  *
  * Transform {@code instrumentCalls} will receive all code elements produced by
@@ -341,7 +342,7 @@
  * attributes that are not transformed can be processed by bulk-copying their
  * bytes, rather than parsing them and regenerating their contents.)  If
  * constant pool sharing is not desired it can be suppressed
- * with the {@link jdk.internal.classfile.Classfile.Option#constantPoolSharing(boolean)} option.
+ * with the {@link jdk.internal.classfile.Classfile.ConstantPoolSharingOption} option.
  * Such suppression may be beneficial when transformation removes many elements,
  * resulting in many unreferenced constant pool entries.
  *
