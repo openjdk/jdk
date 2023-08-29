@@ -1010,8 +1010,12 @@ void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
   size_t region_capacity = alloc_capacity(r);
   _free_sets.move_to_set(idx, OldCollector, region_capacity);
   _free_sets.assert_bounds();
-  _heap->generation_sizer()->force_transfer_to_old(1);
   _heap->augment_old_evac_reserve(region_capacity);
+  bool transferred = _heap->generation_sizer()->transfer_to_old(1);
+  if (!transferred) {
+    log_warning(gc, free)("Forcing transfer of " SIZE_FORMAT " to old reserve.", idx);
+    _heap->generation_sizer()->force_transfer_to_old(1);
+  }
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
 }
@@ -1225,15 +1229,15 @@ void ShenandoahFreeSet::rebuild(size_t young_cset_regions, size_t old_cset_regio
       old_reserve = old_available;
     }
   }
-  if (old_reserve > _free_sets.capacity_of(OldCollector)) {
-    // Old available regions that have less than PLAB::min_size() of available memory are not placed into the OldCollector
-    // free set.  Because of this, old_available may not have enough memory to represent the intended reserve.  Adjust
-    // the reserve downward to account for this possibility. This loss is part of the reason why the original budget
-    // was adjusted with ShenandoahOldEvacWaste and ShenandoahOldPromoWaste multipliers.
-    if (old_reserve > _free_sets.capacity_of(OldCollector) + old_unaffiliated_regions * region_size_bytes) {
-      old_reserve = _free_sets.capacity_of(OldCollector) + old_unaffiliated_regions * region_size_bytes;
-    }
+
+  // Old available regions that have less than PLAB::min_size() of available memory are not placed into the OldCollector
+  // free set.  Because of this, old_available may not have enough memory to represent the intended reserve.  Adjust
+  // the reserve downward to account for this possibility. This loss is part of the reason why the original budget
+  // was adjusted with ShenandoahOldEvacWaste and ShenandoahOldPromoWaste multipliers.
+  if (old_reserve > _free_sets.capacity_of(OldCollector) + old_unaffiliated_regions * region_size_bytes) {
+    old_reserve = _free_sets.capacity_of(OldCollector) + old_unaffiliated_regions * region_size_bytes;
   }
+
   if (young_reserve > young_unaffiliated_regions * region_size_bytes) {
     young_reserve = young_unaffiliated_regions * region_size_bytes;
   }
@@ -1253,26 +1257,51 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   for (size_t i = _heap->num_regions(); i > 0; i--) {
     size_t idx = i - 1;
     ShenandoahHeapRegion* r = _heap->get_region(idx);
-    if (_free_sets.in_free_set(idx, Mutator)) {
-      assert (!r->is_old(), "mutator_is_free regions should not be affiliated OLD");
-      size_t ac = alloc_capacity(r);
-      assert (ac > 0, "Membership in free set implies has capacity");
+    if (!_free_sets.in_free_set(idx, Mutator)) {
+      continue;
+    }
 
-      // OLD regions that have available memory are already in the old_collector free set
-      if ((_free_sets.capacity_of(OldCollector) < to_reserve_old) && (r->is_trash() || !r->is_affiliated())) {
-        _free_sets.move_to_set(idx, OldCollector, alloc_capacity(r));
+    size_t ac = alloc_capacity(r);
+    assert (ac > 0, "Membership in free set implies has capacity");
+    assert (!r->is_old(), "mutator_is_free regions should not be affiliated OLD");
+
+    bool move_to_old = _free_sets.capacity_of(OldCollector) < to_reserve_old;
+    bool move_to_young = _free_sets.capacity_of(Collector) < to_reserve;
+
+    if (!move_to_old && !move_to_young) {
+      // We've satisfied both to_reserve and to_reserved_old
+      break;
+    }
+
+    if (move_to_old) {
+      if (r->is_trash() || !r->is_affiliated()) {
+        // OLD regions that have available memory are already in the old_collector free set
+        _free_sets.move_to_set(idx, OldCollector, ac);
         log_debug(gc, free)("  Shifting region " SIZE_FORMAT " from mutator_free to old_collector_free", idx);
-      } else if (_free_sets.capacity_of(Collector) < to_reserve) {
-        // Note: In a previous implementation, regions were only placed into the survivor space (collector_is_free) if
-        // they were entirely empty.  I'm not sure I understand the rational for that.  That alternative behavior would
-        // tend to mix survivor objects with ephemeral objects, making it more difficult to reclaim the memory for the
-        // ephemeral objects.  It also delays aging of regions, causing promotion in place to be delayed.
-        _free_sets.move_to_set(idx, Collector, ac);
-        log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
-      } else {
-        // We've satisfied both to_reserve and to_reserved_old
-        break;
+        continue;
       }
+    }
+
+    if (move_to_young) {
+      // Note: In a previous implementation, regions were only placed into the survivor space (collector_is_free) if
+      // they were entirely empty.  I'm not sure I understand the rationale for that.  That alternative behavior would
+      // tend to mix survivor objects with ephemeral objects, making it more difficult to reclaim the memory for the
+      // ephemeral objects.  It also delays aging of regions, causing promotion in place to be delayed.
+      _free_sets.move_to_set(idx, Collector, ac);
+      log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
+    }
+  }
+
+  if (LogTarget(Info, gc, free)::is_enabled()) {
+    size_t old_reserve = _free_sets.capacity_of(OldCollector);
+    if (old_reserve < to_reserve_old) {
+      log_info(gc, free)("Wanted " PROPERFMT " for old reserve, but only reserved: " PROPERFMT,
+                         PROPERFMTARGS(to_reserve_old), PROPERFMTARGS(old_reserve));
+    }
+    size_t young_reserve = _free_sets.capacity_of(Collector);
+    if (young_reserve < to_reserve) {
+      log_info(gc, free)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
+                         PROPERFMTARGS(to_reserve), PROPERFMTARGS(young_reserve));
     }
   }
 }

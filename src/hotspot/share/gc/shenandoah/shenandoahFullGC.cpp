@@ -1535,7 +1535,7 @@ void ShenandoahFullGC::phase5_epilog() {
         heap->generation_sizer()->transfer_to_young(excess_old_regions);
       } else if (old_capacity < old_usage) {
         size_t old_regions_deficit = (old_usage - old_capacity) / ShenandoahHeapRegion::region_size_bytes();
-        heap->generation_sizer()->transfer_to_old(old_regions_deficit);
+        heap->generation_sizer()->force_transfer_to_old(old_regions_deficit);
       }
 
       log_info(gc)("FullGC done: young usage: " SIZE_FORMAT "%s, old usage: " SIZE_FORMAT "%s",

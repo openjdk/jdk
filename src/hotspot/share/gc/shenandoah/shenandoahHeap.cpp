@@ -3151,7 +3151,9 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     size_t old_used = old_generation()->used() + old_generation()->get_humongous_waste();
     size_t trigger_threshold = old_generation()->usage_trigger_threshold();
     // Detects unsigned arithmetic underflow
-    assert(old_used < ShenandoahHeap::heap()->capacity(), "Old used must be less than heap capacity");
+    assert(old_used <= capacity(),
+           "Old used (" SIZE_FORMAT ", " SIZE_FORMAT") must not be more than heap capacity (" SIZE_FORMAT ")",
+           old_generation()->used(), old_generation()->get_humongous_waste(), capacity());
 
     if (old_used > trigger_threshold) {
       old_heuristics()->trigger_old_has_grown();

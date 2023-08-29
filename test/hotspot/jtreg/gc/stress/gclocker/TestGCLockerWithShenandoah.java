@@ -49,13 +49,11 @@ package gc.stress.gclocker;
  *
  * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:ShenandoahMaxYoungPercentage=90
  *      -XX:+ShenandoahVerify
  *      gc.stress.gclocker.TestGCLockerWithShenandoah
  *
  * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:ShenandoahMaxYoungPercentage=90
  *      gc.stress.gclocker.TestGCLockerWithShenandoah
  */
 

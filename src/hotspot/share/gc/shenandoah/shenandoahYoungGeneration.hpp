@@ -63,8 +63,6 @@ public:
     return _old_gen_task_queues != nullptr;
   }
 
-  virtual void add_collection_time(double time_seconds) override;
-
   size_t available() const override;
   size_t soft_available() const override;
 };

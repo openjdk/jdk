@@ -87,15 +87,6 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   return _heuristics;
 }
 
-void ShenandoahYoungGeneration::add_collection_time(double time_seconds) {
-  if (is_bootstrap_cycle()) {
-    // This is a bootstrap cycle, so attribute time to old gc
-    ShenandoahHeap::heap()->old_generation()->add_collection_time(time_seconds);
-  } else {
-    ShenandoahGeneration::add_collection_time(time_seconds);
-  }
-}
-
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.

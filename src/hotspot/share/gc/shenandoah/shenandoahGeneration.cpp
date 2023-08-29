@@ -777,7 +777,6 @@ ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
-  _collection_thread_time_s(0.0),
   _affiliated_region_count(0), _humongous_waste(0), _used(0), _bytes_allocated_since_gc_start(0),
   _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
   _heuristics(nullptr) {
@@ -853,7 +852,7 @@ size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_fullgc_safepoint();
-  assert(_affiliated_region_count > delta, "Affiliated region count cannot be negative");
+  assert(_affiliated_region_count >= delta, "Affiliated region count cannot be negative");
 
   _affiliated_region_count -= delta;
   // TODO: REMOVE IS_GLOBAL() QUALIFIER AFTER WE FIX GLOBAL AFFILIATED REGION ACCOUNTING
@@ -979,15 +978,3 @@ void ShenandoahGeneration::record_success_degenerated() {
   heuristics()->record_success_degenerated();
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_degenerated();
 }
-
-void ShenandoahGeneration::add_collection_time(double time_seconds) {
-  shenandoah_assert_control_or_vm_thread();
-  _collection_thread_time_s += time_seconds;
-}
-
-double ShenandoahGeneration::reset_collection_time() {
-  double t = _collection_thread_time_s;
-  _collection_thread_time_s = 0.0;
-  return t;
-}
-
