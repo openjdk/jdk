@@ -1403,7 +1403,7 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
 
   // tmp1 - is a register to store double converted to long int
   // tmp2 - is a register to create constant for comparsion
-  // tmp3 - is a register were we store modidfied result of double -> long int comparison
+  // tmp3 - is a register were we store modified result of double->long comparison
   Label done, bad_val;
 
   // generating constant (tmp2)
