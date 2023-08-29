@@ -385,7 +385,7 @@ public class HierarchicalStableLayoutManager {
             }
 
             node.xOffset = -minX;
-            node.width += -minX;
+            node.width -= minX;
         }
     }
 
