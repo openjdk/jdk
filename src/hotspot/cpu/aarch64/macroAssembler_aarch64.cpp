@@ -1229,7 +1229,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
   // temp_itbl_klass = itable[0]._interface;
   int vtblEntrySize = vtableEntry::size_in_bytes();
-  guarantee(vtblEntrySize == wordSize, "ldr shift amount must be lsl#3");
+  assert(vtblEntrySize == wordSize, "ldr shift amount must be lsl#3");
   ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
   mov(holder_offset, zr);
   // scan_temp = &(itable[0]._interface)
