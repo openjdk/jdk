@@ -26,15 +26,9 @@
  * @bug 8314263
  * @summary Creating a logger while loading the Logger finder
  *          triggers recursion and StackOverflowError
- * @library /test/lib
- * @build jdk.test.lib.compiler.CompilerUtils
- *        jdk.test.lib.process.*
- *        jdk.test.lib.util.JarUtils
- *        jdk.test.lib.JDKToolLauncher
  * @compile RecursiveLoadingTest.java SimpleLoggerFinder.java
  * @run main/othervm RecursiveLoadingTest
  */
-
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -44,21 +38,17 @@ import java.util.logging.LogRecord;
 public class RecursiveLoadingTest {
 
     /**
-     * This test triggers recursion in the broken JDK. The error can
-     * manifest in a few different ways.
-     * One error seen is "java.lang.NoClassDefFoundError:
-     * Could not initialize class jdk.internal.logger.LoggerFinderLoader$ErrorPolicy"
-     *
-     * The original reported error was a StackOverflow (also seen in different iterations
-     * of this run). Running test in signed and unsigned jar mode for sanity coverage.
-     * The current bug only manifests when jars are signed.
+     * This test triggers recursion by calling `System.getLogger` in the class init
+     * of a custom LoggerFinder. Without the fix, this is expected to throw
+     * java.lang.NoClassDefFoundError: Could not initialize class jdk.internal.logger.LoggerFinderLoader$ErrorPolicy
+     * caused by: java.lang.StackOverflowError
      */
     public static void main(String[] args) throws Throwable {
         System.getLogger("main").log(System.Logger.Level.INFO, "in main");
         List<Object> logs = loggerfinder.SimpleLoggerFinder.LOGS;
         logs.stream().map(SimpleLogRecord::of).forEach(System.out::println);
         logs.stream().map(SimpleLogRecord::of).forEach(SimpleLogRecord::check);
-        assertEquals(String.valueOf(logs.size()), String.valueOf(2));
+        assertEquals(String.valueOf(logs.size()), String.valueOf(3));
     }
 
     static List<Object> asList(Object[] params) {
@@ -96,5 +86,3 @@ public class RecursiveLoadingTest {
         }
     }
 }
-
-

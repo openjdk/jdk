@@ -26,13 +26,14 @@ package loggerfinder;
 import java.lang.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class SimpleLoggerFinder extends System.LoggerFinder {
 
+    public static final CopyOnWriteArrayList<Object> LOGS = new CopyOnWriteArrayList<>();
     static {
         try {
             long sleep = new Random().nextLong(1000L) + 1L;
@@ -46,11 +47,16 @@ public class SimpleLoggerFinder extends System.LoggerFinder {
         }
     }
 
-    public static final CopyOnWriteArrayList<Object> LOGS = new CopyOnWriteArrayList<>();
+    private final Map<String, SimpleLogger> loggers = new ConcurrentHashMap<>();
+    public SimpleLoggerFinder() {
+        System.getLogger("dummy")
+                .log(System.Logger.Level.INFO,
+                        "Logger finder service created");
+    }
 
     @Override
     public System.Logger getLogger(String name, Module module) {
-        return new SimpleLogger(name);
+        return loggers.computeIfAbsent(name, SimpleLogger::new);
     }
 
     private static class SimpleLogger implements System.Logger {
