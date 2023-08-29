@@ -104,10 +104,10 @@ public class SignedLoggerFinderTest {
         } else {
             // set up complete. Run the code to trigger the recursion
             // We're in the JVM launched by ProcessTools.executeCommand
-            boolean mutliThreadLoad = Boolean.getBoolean("mutliThreadLoad");
+            boolean multiThreadLoad = Boolean.getBoolean("multiThreadLoad");
             boolean withCustomLoggerFinder = Boolean.getBoolean("withCustomLoggerFinder");
 
-            if (mutliThreadLoad) {
+            if (multiThreadLoad) {
                 long sleep = new Random().nextLong(100L) + 1L;
                 System.out.println("multi thread load sleep value: " + sleep);
                 new Thread(runnableWithSleep(
@@ -137,17 +137,10 @@ public class SignedLoggerFinderTest {
                 System.Logger testLogger = System.getLogger("jdk.event.security");
                 assertEquals(testLogger.getClass().getName(), CUSTOM_LOGGER_NAME);
             } else {
-                if (signJars) {
-                    assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
-                            INTERNAL_LOGGER_FINDER_NAME);
-                    System.Logger testLogger = System.getLogger("jdk.event.security");
-                    assertEquals(testLogger.getClass().getName(), INTERNAL_LOGGER_FINDER_NAME);
-                } else {
-                    assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
-                            INTERNAL_LOGGER_FINDER_NAME);
-                    System.Logger testLogger = System.getLogger("jdk.event.security");
-                    assertEquals(testLogger.getClass().getName(), INTERNAL_LOGGER_NAME);
-                }
+                assertEquals(System.LoggerFinder.getLoggerFinder().getClass().getName(),
+                        INTERNAL_LOGGER_FINDER_NAME);
+                System.Logger testLogger = System.getLogger("jdk.event.security");
+                assertEquals(testLogger.getClass().getName(), INTERNAL_LOGGER_NAME);
             }
             testComplete = true;
 
@@ -158,7 +151,7 @@ public class SignedLoggerFinderTest {
 
     // helper to create the inner test. Run config variations with the LoggerFinder jars
     // on the classpath and with other threads running System.Logger calls during load
-    private static void launchTest(boolean mutliThreadLoad, boolean withCustomLoggerFinder) {
+    private static void launchTest(boolean multiThreadLoad, boolean withCustomLoggerFinder) {
         List<String> cmds = new ArrayList<>();
         cmds.add(JDKToolFinder.getJDKTool("java"));
         cmds.addAll(asList(Utils.getTestJavaOpts()));
@@ -181,8 +174,8 @@ public class SignedLoggerFinderTest {
             // enable logging to verify correct output
             "-Djava.util.logging.config.file=" +
                     Path.of(System.getProperty("test.src", "."), "logging.properties")));
-        if (mutliThreadLoad) {
-            cmds.add("-DmutliThreadLoad=true");
+        if (multiThreadLoad) {
+            cmds.add("-DmultiThreadLoad=true");
         }
         if (withCustomLoggerFinder) {
             cmds.add("-DwithCustomLoggerFinder=true");

@@ -38,7 +38,7 @@ import java.util.logging.LogRecord;
 public class RecursiveLoadingTest {
 
     /**
-     * This test triggers recursion by calling `System.getLogger` in the class init
+     * This test triggers recursion by calling `System.getLogger` in the class init and constructor
      * of a custom LoggerFinder. Without the fix, this is expected to throw
      * java.lang.NoClassDefFoundError: Could not initialize class jdk.internal.logger.LoggerFinderLoader$ErrorPolicy
      * caused by: java.lang.StackOverflowError

@@ -77,7 +77,6 @@ public final class LazyLoggers {
 
     }
 
-
     static interface LoggerAccessor {
         /**
          * The logger name.
