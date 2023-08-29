@@ -602,6 +602,7 @@ private:
   intx jni_monitor_count()  { return _jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
+  inline bool is_virtual() const;
   inline bool is_vthread_mounted() const;
   inline const ContinuationEntry* vthread_continuation() const;
 

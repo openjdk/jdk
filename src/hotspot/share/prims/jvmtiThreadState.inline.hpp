@@ -98,6 +98,7 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
+  JvmtiEventController::recompute_thread_filtered(state);
   return state;
 }
 
