@@ -29,7 +29,7 @@
  * @requires vm.debug
  *
  * @run driver jdk.test.lib.helpers.ClassFileInstaller
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xbootclasspath/a:.
  *                   compiler.codecache.CheckCodeCacheInfo
  */
 
@@ -68,9 +68,9 @@ public class CheckCodeCacheInfo {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintCodeCache",
-                                                   "-XX:+Verbose",
-                                                   "-version");
+        pb = ProcessTools.createTestJvm("-XX:+PrintCodeCache",
+                                        "-XX:+Verbose",
+                                        "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         out.stdoutShouldMatch(VERBOSE_REGEXP);

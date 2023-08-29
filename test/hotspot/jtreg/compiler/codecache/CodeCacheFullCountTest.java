@@ -33,6 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8276036 8277213 8277441
  * @summary test for the value of full_count in the message of insufficient codecache
+ * @requires vm.flagless
  * @library /test/lib
  */
 public class CodeCacheFullCountTest {
