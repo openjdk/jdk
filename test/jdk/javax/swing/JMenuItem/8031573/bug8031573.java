@@ -63,7 +63,7 @@ public class bug8031573 {
             + "4. Check that the icon on the JRadioButtonMenuItem is smooth.\n"
             + "   If so, press PASS, else press FAIL.\n";
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         try {
             SwingUtilities.invokeAndWait(() -> createTestGUI());
