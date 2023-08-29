@@ -33,11 +33,16 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
+import sun.security.action.GetIntegerAction;
+import sun.security.action.GetPropertyAction;
 
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
@@ -101,21 +106,61 @@ final class MethodHandleAccessorFactory {
         // Ensure class initialized outside the invocation of method handle
         // so that EIIE is propagated (not wrapped with ITE)
         ensureClassInitialized(ctor.getDeclaringClass());
-
         try {
-            MethodHandle mh = JLIA.unreflectConstructor(ctor);
-            int paramCount = mh.type().parameterCount();
-            MethodHandle target = mh.asFixedArity();
-            MethodType mtype = specializedMethodTypeForConstructor(paramCount);
-            if (paramCount > SPECIALIZED_PARAM_COUNT) {
-                // spread the parameters only for the non-specialized case
-                target = target.asSpreader(Object[].class, paramCount);
-            }
-            target = target.asType(mtype);
+            MethodHandle target = makeConstructorHandle(JLIA.unreflectConstructor(ctor));
             return DirectConstructorHandleAccessor.constructorAccessor(ctor, target);
         } catch (IllegalAccessException e) {
             throw new InternalError(e);
         }
+    }
+
+    /**
+     * Creates a ConstructorAccessor that is capable of creating instances
+     * of the given class and instantiated by the given constructor.
+     *
+     * @param decl the class to instantiate
+     * @param ctor the constructor to call
+     * @return an accessible constructor
+     */
+    static ConstructorAccessorImpl newSerializableConstructorAccessor(Class<?> decl, Constructor<?> ctor) {
+        if (!constructorInSuperclass(decl, ctor)) {
+            throw new UnsupportedOperationException(ctor + " not a superclass of " + decl.getName());
+        }
+
+        // ExceptionInInitializerError may be thrown during class initialization
+        // Ensure class initialized outside the invocation of method handle
+        // so that EIIE is propagated (not wrapped with ITE)
+        ensureClassInitialized(decl);
+        try {
+            MethodHandle target = makeConstructorHandle(JLIA.serializableConstructor(decl, ctor));
+            return DirectConstructorHandleAccessor.constructorAccessor(ctor, target);
+        } catch (IllegalAccessException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static boolean constructorInSuperclass(Class<?> decl, Constructor<?> ctor) {
+        if (decl == ctor.getDeclaringClass())
+            return true;
+
+        Class<?> cl = decl;
+        while ((cl = cl.getSuperclass()) != null) {
+            if (cl == ctor.getDeclaringClass()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static MethodHandle makeConstructorHandle(MethodHandle ctor) {
+        int paramCount = ctor.type().parameterCount();
+        MethodHandle target = ctor.asFixedArity();
+        MethodType mtype = specializedMethodTypeForConstructor(paramCount);
+        if (paramCount > SPECIALIZED_PARAM_COUNT) {
+            // spread the parameters only for the non-specialized case
+            target = target.asSpreader(Object[].class, paramCount);
+        }
+        return target.asType(mtype);
     }
 
     /**

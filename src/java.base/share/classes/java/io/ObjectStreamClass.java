@@ -1034,12 +1034,12 @@ public final class ObjectStreamClass implements Serializable {
                                    new AccessControlContext(domains));
                     } catch (UndeclaredThrowableException x) {
                         Throwable cause = x.getCause();
-                        if (cause instanceof InstantiationException)
-                            throw (InstantiationException) cause;
-                        if (cause instanceof InvocationTargetException)
-                            throw (InvocationTargetException) cause;
-                        if (cause instanceof IllegalAccessException)
-                            throw (IllegalAccessException) cause;
+                        if (cause instanceof InstantiationException ie)
+                            throw ie;
+                        if (cause instanceof InvocationTargetException ite)
+                            throw ite;
+                        if (cause instanceof IllegalAccessException iae)
+                            throw iae;
                         // not supposed to happen
                         throw x;
                     }
@@ -1047,6 +1047,12 @@ public final class ObjectStreamClass implements Serializable {
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 throw new InternalError(ex);
+            } catch (InvocationTargetException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof Error err)
+                    throw err;
+                else
+                    throw ex;
             } catch (InstantiationError err) {
                 var ex = new InstantiationException();
                 ex.initCause(err);
