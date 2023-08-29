@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-import jdk.internal.javac.ParticipatesInPreview;
-
-/**
- * Defines an API for expressing computations that can be reliably compiled
- * at runtime into SIMD instructions, such as AVX instructions on x64, and
- * NEON instructions on AArch64.
- * {@incubating}
  *
- * @moduleGraph
  */
-@ParticipatesInPreview
-module jdk.incubator.vector {
-    exports jdk.incubator.vector;
+package com.sun.hotspot.igv.view.actions;
+
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
+
+public class EnableStableSeaLayoutAction extends EnableLayoutAction {
+
+    public EnableStableSeaLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/stable_sea.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show stable sea of nodes";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowStableSea(this.isSelected());
+    }
 }

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-import jdk.internal.javac.ParticipatesInPreview;
-
-/**
- * Defines an API for expressing computations that can be reliably compiled
- * at runtime into SIMD instructions, such as AVX instructions on x64, and
- * NEON instructions on AArch64.
- * {@incubating}
  *
- * @moduleGraph
  */
-@ParticipatesInPreview
-module jdk.incubator.vector {
-    exports jdk.incubator.vector;
-}
+
+package com.sun.hotspot.igv.hierarchicallayout;
+
+import com.sun.hotspot.igv.layout.Link;
+
+public class LayoutEdge {
+
+        public LayoutNode from;
+        public LayoutNode to;
+        // Horizontal distance relative to start of 'from'.
+        public int relativeFrom;
+        // Horizontal distance relative to start of 'to'.
+        public int relativeTo;
+        public Link link;
+        public boolean vip;
+
+        @Override
+        public String toString() {
+            return "Edge " + from + ", " + to;
+        }
+    }

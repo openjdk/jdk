@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,18 @@
  * questions.
  */
 
-import jdk.internal.javac.ParticipatesInPreview;
+package com.sun.hotspot.igv.util;
 
-/**
- * Defines an API for expressing computations that can be reliably compiled
- * at runtime into SIMD instructions, such as AVX instructions on x64, and
- * NEON instructions on AArch64.
- * {@incubating}
- *
- * @moduleGraph
- */
-@ParticipatesInPreview
-module jdk.incubator.vector {
-    exports jdk.incubator.vector;
+import java.util.Arrays;
+
+public class Statistics {
+
+    public static int median(int[] values) {
+        Arrays.sort(values);
+        if (values.length % 2 == 0) {
+            return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
+        } else {
+            return values[values.length / 2];
+        }
+    }
 }
