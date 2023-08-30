@@ -191,17 +191,14 @@ TOOLCHAIN_POST_DETECTION
 TOOLCHAIN_SETUP_BUILD_COMPILERS
 TOOLCHAIN_MISC_CHECKS
 
-# Setup the JTReg Regression Test Harness.
-TOOLCHAIN_SETUP_JTREG
-
-# Setup the Java Microbenchmark Harness (JMH)
-LIB_TESTS_SETUP_JMH
-
-# Setup Jib dependency tool
-TOOLCHAIN_SETUP_JIB
-
 # After toolchain setup, we need to process some flags to be able to continue.
 FLAGS_POST_TOOLCHAIN
+
+# Setup the tools needed to test the JDK (JTReg Regression Test Harness,
+# Java Microbenchmark Harness (JMH) and the Jib dependency tool).
+LIB_TESTS_SETUP_JTREG
+LIB_TESTS_SETUP_JMH
+LIB_TESTS_SETUP_JIB
 
 # Now we can test some aspects on the target using configure macros.
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
@@ -244,7 +241,8 @@ HOTSPOT_SETUP_MISC
 #
 ###############################################################################
 
-JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER
+LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER
+
 JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST
 JDKOPT_EXCLUDE_TRANSLATIONS
 JDKOPT_ENABLE_DISABLE_MANPAGES

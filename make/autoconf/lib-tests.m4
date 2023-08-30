@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,13 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+################################################################################
+# Setup libraries and functionalities needed to test the JDK.
+################################################################################
+
+# Minimum supported version
+JTREG_MINIMUM_VERSION=6.1
 
 ###############################################################################
 #
@@ -117,4 +124,164 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JMH],
   AC_SUBST(JMH_JOPT_SIMPLE_JAR)
   AC_SUBST(JMH_COMMONS_MATH_JAR)
   AC_SUBST(JMH_VERSION)
+])
+
+# Setup the JTReg Regression Test Harness.
+AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
+[
+  AC_ARG_WITH(jtreg, [AS_HELP_STRING([--with-jtreg],
+      [Regression Test Harness @<:@probed@:>@])])
+
+  if test "x$with_jtreg" = xno; then
+    # jtreg disabled
+    AC_MSG_CHECKING([for jtreg test harness])
+    AC_MSG_RESULT([no, disabled])
+  elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
+    if test -d "$with_jtreg"; then
+      # An explicit path is specified, use it.
+      JT_HOME="$with_jtreg"
+    else
+      case "$with_jtreg" in
+        *.zip )
+          JTREG_SUPPORT_DIR=$CONFIGURESUPPORT_OUTPUTDIR/jtreg
+          $RM -rf $JTREG_SUPPORT_DIR
+          $MKDIR -p $JTREG_SUPPORT_DIR
+          $UNZIP -qq -d $JTREG_SUPPORT_DIR $with_jtreg
+
+          # Try to find jtreg to determine JT_HOME path
+          JTREG_PATH=`$FIND $JTREG_SUPPORT_DIR | $GREP "/bin/jtreg"`
+          if test "x$JTREG_PATH" != x; then
+            JT_HOME=$($DIRNAME $($DIRNAME $JTREG_PATH))
+          fi
+          ;;
+        * )
+          ;;
+      esac
+    fi
+    UTIL_FIXUP_PATH([JT_HOME])
+    if test ! -d "$JT_HOME"; then
+      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg does not exist])
+    fi
+
+    if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+      AC_MSG_ERROR([jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home])
+    fi
+
+    AC_MSG_CHECKING([for jtreg test harness])
+    AC_MSG_RESULT([$JT_HOME])
+  else
+    # Try to locate jtreg using the JT_HOME environment variable
+    if test "x$JT_HOME" != x; then
+      # JT_HOME set in environment, use it
+      if test ! -d "$JT_HOME"; then
+        AC_MSG_WARN([Ignoring JT_HOME pointing to invalid directory: $JT_HOME])
+        JT_HOME=
+      else
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          AC_MSG_WARN([Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME])
+          JT_HOME=
+        else
+          AC_MSG_NOTICE([Located jtreg using JT_HOME from environment])
+        fi
+      fi
+    fi
+
+    if test "x$JT_HOME" = x; then
+      # JT_HOME is not set in environment, or was deemed invalid.
+      # Try to find jtreg on path
+      UTIL_LOOKUP_PROGS(JTREGEXE, jtreg)
+      if test "x$JTREGEXE" != x; then
+        # That's good, now try to derive JT_HOME
+        JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          AC_MSG_WARN([Ignoring jtreg from path since a valid jtreg home cannot be found])
+          JT_HOME=
+        else
+          AC_MSG_NOTICE([Located jtreg using jtreg executable in path])
+        fi
+      fi
+    fi
+
+    AC_MSG_CHECKING([for jtreg test harness])
+    if test "x$JT_HOME" != x; then
+      AC_MSG_RESULT([$JT_HOME])
+    else
+      AC_MSG_RESULT([no, not found])
+
+      if test "x$with_jtreg" = xyes; then
+        AC_MSG_ERROR([--with-jtreg was specified, but no jtreg found.])
+      fi
+    fi
+  fi
+
+  UTIL_FIXUP_PATH(JT_HOME)
+  AC_SUBST(JT_HOME)
+
+  # Verify jtreg version
+  if test "x$JT_HOME" != x; then
+    AC_MSG_CHECKING([jtreg version number])
+    # jtreg -version looks like this: "jtreg 6.1+1-19"
+    # Extract actual version part ("6.1" in this case)
+    jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
+    jtreg_version=${jtreg_version_full/%+*}
+    AC_MSG_RESULT([$jtreg_version])
+
+    # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+    comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$jtreg_version"`
+    comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$JTREG_MINIMUM_VERSION"`
+    if test $comparable_actual_version -lt $comparable_minimum_version ; then
+      AC_MSG_ERROR([jtreg version is too old, at least version $JTREG_MINIMUM_VERSION is required])
+    fi
+  fi
+])
+
+# Setup the JIB dependency resolver
+AC_DEFUN_ONCE([LIB_TESTS_SETUP_JIB],
+[
+  AC_ARG_WITH(jib, [AS_HELP_STRING([--with-jib],
+      [Jib dependency management tool @<:@not used@:>@])])
+
+  if test "x$with_jib" = xno || test "x$with_jib" = x; then
+    # jib disabled
+    AC_MSG_CHECKING([for jib])
+    AC_MSG_RESULT(no)
+  elif test "x$with_jib" = xyes; then
+    AC_MSG_ERROR([Must supply a value to --with-jib])
+  else
+    JIB_HOME="${with_jib}"
+    AC_MSG_CHECKING([for jib])
+    AC_MSG_RESULT(${JIB_HOME})
+    if test ! -d "${JIB_HOME}"; then
+      AC_MSG_ERROR([--with-jib must be a directory])
+    fi
+    JIB_JAR=$(ls ${JIB_HOME}/lib/jib-*.jar)
+    if test ! -f "${JIB_JAR}"; then
+      AC_MSG_ERROR([Could not find jib jar file in ${JIB_HOME}])
+    fi
+  fi
+
+  AC_SUBST(JIB_HOME)
+])
+
+################################################################################
+#
+# Check if building of the jtreg failure handler should be enabled.
+#
+AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
+[
+  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
+      RESULT: BUILD_FAILURE_HANDLER,
+      DESC: [enable building of the jtreg failure handler],
+      DEFAULT_DESC: [enabled if jtreg is present],
+      CHECKING_MSG: [if the jtreg failure handler should be built],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if the jtreg failure handler is available])
+        if test "x$JT_HOME" != "x"; then
+          AC_MSG_RESULT([yes])
+        else
+          AVAILABLE=false
+          AC_MSG_RESULT([no (jtreg not present)])
+        fi
+      ])
+  AC_SUBST(BUILD_FAILURE_HANDLER)
 ])
