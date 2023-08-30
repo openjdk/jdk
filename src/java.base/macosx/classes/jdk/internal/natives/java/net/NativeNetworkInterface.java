@@ -8,6 +8,7 @@ import jdk.internal.natives.include.SockAddr;
 import jdk.internal.natives.include.UniStdUtil;
 import jdk.internal.natives.include.netinet.SockAddrIn;
 import jdk.internal.natives.include.sys.SocketUtil;
+import jdk.internal.natives.java.NetUtil;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -27,8 +28,7 @@ import static jdk.internal.natives.include.net.IfUtil.IFF_POINTOPOINT;
 import static jdk.internal.natives.include.sys.ErrNo.*;
 import static jdk.internal.natives.include.sys.IoCtlUtil.ioctl;
 import static jdk.internal.natives.include.sys.SockIoUtil.*;
-import static jdk.internal.natives.include.sys.SocketUtil.AF_INET;
-import static jdk.internal.natives.include.sys.SocketUtil.SOCK_DGRAM;
+import static jdk.internal.natives.include.sys.SocketUtil.*;
 
 public final class NativeNetworkInterface {
 
@@ -173,6 +173,20 @@ public final class NativeNetworkInterface {
                     UniStdUtil.close(socket);
                 }
             }
+
+            // If IPv6 is available then enumerate IPv6 addresses.
+            // User can disable ipv6 explicitly by -Djava.net.preferIPv4Stack=true,
+            // so we have to call ipv6_available()
+            if (NetUtil.ipv6_available()) {
+                socket = SocketUtil.socket(errSeg, AF_INET6, SOCK_DGRAM, 0);
+                if (!socket.isError()) {
+                    try {
+                        enumIPv6Interfaces(arena, socket, result);
+                    } finally {
+                        UniStdUtil.close(socket);
+                    }
+                }
+            }
         }
         return result;
     }
@@ -186,37 +200,25 @@ public final class NativeNetworkInterface {
             return;
         }
 
-        var head = IfAddrs.dereference(ptr);
-
-        int cnt = -1;
+        IfAddrs head = IfAddrs.dereference(ptr);
         try {
             for (var ifa = head; ifa != null; ifa = ifa.ifa_next()) {
-                cnt++;
-
                 SockAddr broadaddr = null;
                 // ignore non IPv4 addresses
                 SockAddr ifa_addr = ifa.ifa_addr();
                 if (ifa_addr == null || ifa_addr.sa_family() != AF_INET) {
-                    System.out.println(ifa.ifa_name()+" is not IPv4. sa_family: " + ifa_addr.sa_family());
                     continue;
                 }
-
-                System.out.println("ifa(" + (cnt++) + ") = " + ifa);
 
                 // set ifa_broadaddr, if there is one
                 if ((ifa.ifa_flags() & IFF_POINTOPOINT) == 0 &&
                         (ifa.ifa_flags() & IFF_BROADCAST) != 0) {
-                    System.out.println("Creating broadaddr");
                     broadaddr = ifa.ifa_dstaddr();
-                    System.out.println("broadaddr = " + broadaddr);
                 }
                 interfaces.add(create(socket, ifa.ifa_name(), ifa_addr, broadaddr, AF_INET, (short) 0, interfaces.size()));
-                System.out.println("interfaces.size() = " + interfaces.size());
             }
         } finally {
-            System.out.println("freeifaddrs");
-            // Todo: Fix free
-            // IfAddrsUtil.freeifaddrs(head);
+            IfAddrsUtil.freeifaddrs(head);
         }
     }
 
@@ -230,11 +232,9 @@ public final class NativeNetworkInterface {
 
         // Todo: Fix a lot of stuff...
         try {
-            System.out.println("** Creating " + ifName);
             byte[] a = addr.sa_data().asSlice(0, 4).toArray(ValueLayout.JAVA_BYTE);
-            System.out.println("Arrays.toString(a) = " + Arrays.toString(a));
             InetAddress address = InetAddress.getByAddress(ifName, a);
-            System.out.println("address = " + address);
+            System.out.println(ifName + " ,address = " + address);
             return new NetworkInterface2(ifName, index, new InetAddress[]{address});
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

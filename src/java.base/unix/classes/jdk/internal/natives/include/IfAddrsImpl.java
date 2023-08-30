@@ -100,9 +100,9 @@ public final class IfAddrsImpl implements IfAddrs {
         // How to free the new segment? Consider AutoCloseable for IfAddrs?
 
         MemorySegment nextSegment = pointerSegment.get(ADDRESS.withTargetLayout(IfAddrs.LAYOUT), 0);
-        /*System.out.println("nextSegment = " + nextSegment);*/
-
-        return MAPPER.of(nextSegment);
+        return nextSegment.equals(MemorySegment.NULL)
+                ? null
+                : MAPPER.of(nextSegment);
     }
 
 }

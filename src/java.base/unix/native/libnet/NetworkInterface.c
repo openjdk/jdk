@@ -466,8 +466,6 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     jobjectArray netIFArr;
     jint arr_index, ifCount;
 
-    printf("getAll\n");
-
     ifs = enumInterfaces(env);
     if (ifs == NULL) {
         return NULL;
@@ -858,11 +856,7 @@ static netif *enumInterfaces(JNIEnv *env) {
     netif *ifs = NULL;
     int sock;
 
-    printf("enumInterface\n");
-
     sock = openSocket(env, AF_INET);
-    printf("  sock[AF_INET])=%d\n", sock);
-
     if (sock < 0 && (*env)->ExceptionOccurred(env)) {
         return NULL;
     }
@@ -884,13 +878,10 @@ static netif *enumInterfaces(JNIEnv *env) {
     // so we have to call ipv6_available()
     if (ipv6_available()) {
         sock = openSocket(env, AF_INET6);
-        printf("  sock[AF_INET6])=%d\n", sock);
         if (sock < 0) {
             freeif(ifs);
             return NULL;
         }
-        printf("  sock >= 0\n");
-
         ifs = enumIPv6Interfaces(env, sock, ifs);
         close(sock);
 
