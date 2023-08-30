@@ -31,6 +31,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/relocator.hpp"
+#include "utilities/checkedCast.hpp"
 
 #define MAX_METHOD_LENGTH  65535
 

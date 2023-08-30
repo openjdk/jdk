@@ -36,7 +36,6 @@ import java.nio.file.ProviderMismatchException;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.nio.file.spi.FileSystemProvider;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -90,8 +89,9 @@ class UnixPath implements Path {
             checkNotNul(input, c);
             prevChar = c;
         }
-        if (prevChar == '/')
-            return normalize(input, n, n - 1);
+        if (prevChar == '/' && n > 1) {
+            return input.substring(0, n - 1);
+        }
         return input;
     }
 
@@ -109,7 +109,7 @@ class UnixPath implements Path {
             return "/";
         StringBuilder sb = new StringBuilder(input.length());
         if (off > 0)
-            sb.append(input.substring(0, off));
+            sb.append(input, 0, off);
         char prevChar = 0;
         for (int i=off; i < n; i++) {
             char c = input.charAt(i);
