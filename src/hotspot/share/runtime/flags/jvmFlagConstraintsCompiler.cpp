@@ -439,3 +439,29 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error InlineCacheBufferSizeConstraintFunc(int value, bool verbose) {
+  if (value <= 0) {
+      JVMFlag::printError(verbose,
+                          "InlineCacheBufferSize (%d) must be "
+                          "greater than %d\n",
+                          value, 0);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if ((uintx)value >= NonNMethodCodeHeapSize) {
+    JVMFlag::printError(verbose,
+                        "InlineCacheBufferSize (%d) must be "
+                        "less than NonNMethodCodeHeapSize (" UINTX_FORMAT ")\n",
+                        value, NonNMethodCodeHeapSize);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  if ((value % CodeEntryAlignment) != 0) {
+    JVMFlag::printError(verbose,
+                        "InlineCacheBufferSize (%d) must be a multiple of " INTX_FORMAT "\n",
+                        value, CodeEntryAlignment);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
