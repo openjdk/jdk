@@ -33,6 +33,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.ValueBased;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
 
@@ -364,10 +365,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Checks that fromIndex ... toIndex is a valid range of bit indices.
      */
     private static void checkRange(int fromIndex, int toIndex) {
-        if (fromIndex < 0)
-            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
-        if (toIndex < 0)
-            throw new IndexOutOfBoundsException("toIndex < 0: " + toIndex);
+        requireNonNegative("fromIndex", fromIndex);
+        requireNonNegative("toIndex", toIndex);
         if (fromIndex > toIndex)
             throw new IndexOutOfBoundsException("fromIndex: " + fromIndex +
                                                 " > toIndex: " + toIndex);
@@ -382,8 +381,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public void flip(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+        requireNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
@@ -446,8 +444,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.0
      */
     public void set(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+        requireNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
@@ -542,8 +539,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.0
      */
     public void clear(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+        requireNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         if (wordIndex >= wordsInUse)
@@ -625,8 +621,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @throws IndexOutOfBoundsException if the specified index is negative
      */
     public boolean get(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+        requireNonNegative("bitIndex", bitIndex);
 
         checkInvariants();
 
@@ -714,8 +709,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public int nextSetBit(int fromIndex) {
-        if (fromIndex < 0)
-            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+        requireNonNegative("fromIndex", fromIndex);
 
         checkInvariants();
 
@@ -746,8 +740,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     public int nextClearBit(int fromIndex) {
         // Neither spec nor implementation handle bitsets of maximal length.
         // See 4816253.
-        if (fromIndex < 0)
-            throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+        requireNonNegative("fromIndex", fromIndex);
 
         checkInvariants();
 
@@ -1399,6 +1392,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
         }
     }
 
+    private static int requireNonNegative(String label, int index) {
+        if (index < 0)
+            throw new IndexOutOfBoundsException(label + " < 0: " + index);
+        return index;
+    }
+
     /**
      * {@return a new immutable snapshot of this {@code BitSet}}.
      */
@@ -1420,6 +1419,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * @since 22
      */
+    @ValueBased
     public sealed interface OfImmutable {
 
         /**
@@ -1540,6 +1540,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
     }
 
+    @ValueBased
     private static final class OfImmutableImpl implements OfImmutable {
 
         @Stable
@@ -1547,20 +1548,20 @@ public class BitSet implements Cloneable, java.io.Serializable {
         private final int cardinality;
         private final int length;
 
-        public OfImmutableImpl(BitSet original) {
+        private OfImmutableImpl(BitSet original) {
             this.words = original.words.clone();
 
             // These are eagerly computed.
             // It would be possible to lazily compute them declaring
             // @Stable int fields holding the values.
-            this.cardinality = original.cardinality();
-            this.length = original.length();
+            // For TOCTOU reasons, we calculate these values from the array copy
+            this.cardinality = cardinality0();
+            this.length = length0();
         }
 
         @Override
         public boolean get(int bitIndex) {
-            if (bitIndex < 0)
-                throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+            requireNonNegative("bitIndex", bitIndex);
             int wordIndex = wordIndex(bitIndex);
             return (wordIndex < words.length)
                     && ((words[wordIndex] & (1L << bitIndex)) != 0);
@@ -1583,8 +1584,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         @Override
         public int nextSetBit(int fromIndex) {
-            if (fromIndex < 0)
-                throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+            requireNonNegative("fromIndex", fromIndex);
 
             int u = wordIndex(fromIndex);
             if (u >= words.length)
@@ -1603,8 +1603,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         @Override
         public int nextClearBit(int fromIndex) {
-            if (fromIndex < 0)
-                throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+            requireNonNegative("fromIndex", fromIndex);
 
             int u = wordIndex(fromIndex);
             if (u >= words.length)
@@ -1676,6 +1675,27 @@ public class BitSet implements Cloneable, java.io.Serializable {
             }
             return IntStream.iterate(nextSetBit(0), i -> i != -1, this::nextSetBit);
         }
+
+        private int cardinality0() {
+            return Math.toIntExact(Arrays.stream(words)
+                    .map(Long::bitCount)
+                    .sum());
+        }
+
+        private int length0() {
+            for (int i = words.length - 1; i >= 0; i--) {
+                long word = words[i];
+                if (word != 0) {
+                    return Math.toIntExact(i * Long.BYTES * Long.highestOneBit(word));
+                }
+            }
+            return 0;
+        }
+
+        private static OfImmutable of(BitSet original) {
+            return new OfImmutableImpl(original);
+        }
+
     }
 
 }
