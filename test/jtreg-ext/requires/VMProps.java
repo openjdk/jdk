@@ -535,7 +535,7 @@ public class VMProps implements Callable<Map<String, String>> {
     protected String containerSupport() {
         log("Entering containerSupport()");
 
-        boolean isSupported = true;
+        boolean isSupported = false;
         if (Platform.isLinux()) {
            // currently container testing is only supported for Linux,
            // on certain platforms
