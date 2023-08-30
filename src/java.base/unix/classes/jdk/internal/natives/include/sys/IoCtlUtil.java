@@ -4,6 +4,7 @@ import jdk.internal.foreign.support.LookupUtil;
 import jdk.internal.natives.HasSegment;
 
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -20,7 +21,14 @@ public final class IoCtlUtil {
 
     private static final FunctionDescriptor IOCTL_FUNC = FunctionDescriptor.of(C_INT,C_INT, C_LONG_LONG);
 
-    private static final MethodHandle IOCTL_IGNORING_ERRNO = LookupUtil.downcallVararg("ioctl", IOCTL_FUNC);
+    private static final MethodHandle IOCTL_IGNORING_ERRNO;
+
+    static {
+        var lookup = Linker.nativeLinker().defaultLookup().find("ioctl").orElseThrow();
+        IOCTL_IGNORING_ERRNO = Linker.nativeLinker().downcallHandle(lookup, FunctionDescriptor.of(C_INT, C_INT, C_LONG_LONG, C_POINTER), Linker.Option.firstVariadicArg(2));
+    }
+
+
     // private static final MethodHandle IOCTL = LookupUtil.downcallVararg("ioctl", IOCTL_FUNC);
 
 
@@ -32,7 +40,7 @@ public final class IoCtlUtil {
 
     public static int ioctl(int fd, long request, HasSegment hasSegment) {
         try {
-            return (int) IOCTL_IGNORING_ERRNO.invokeExact(fd, request, new MemorySegment[]{hasSegment.segment()});
+            return (int) IOCTL_IGNORING_ERRNO.invokeExact(fd, request, hasSegment.segment());
         } catch (Throwable ex$) {
             throw newInternalError(IOCTL_IGNORING_ERRNO, ex$);
         }

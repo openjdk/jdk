@@ -18,10 +18,7 @@ import static jdk.internal.natives.CLayouts.C_POINTER;
 @ValueBased
 public final class IfConfImpl implements IfConf {
 
-    public static final StructLayout LAYOUT = MemoryLayout.structLayout(
-            C_INT.withName("ifc_len"),
-            IfcU.LAYOUT
-    ).withName("ifconf");
+    private static final long UNION_OFFSET = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("ifc_ifcu"));
 
     private final MemorySegment segment;
 
@@ -46,7 +43,7 @@ public final class IfConfImpl implements IfConf {
 
     @Override
     public IfConf.IfcU ifc_ifcu() {
-        return IfConf.IfcU.MAPPER.of(segment.asSlice(C_INT.byteSize(), IfConf.IfcU.LAYOUT));
+        return IfConf.IfcU.MAPPER.of(segment.asSlice(UNION_OFFSET, IfConf.IfcU.LAYOUT));
     }
 
     @Override
@@ -79,11 +76,6 @@ public final class IfConfImpl implements IfConf {
      */
     @ValueBased
     public static final class IfcUImpl implements IfcU {
-
-        public static final UnionLayout LAYOUT = MemoryLayout.unionLayout(
-                C_POINTER.withName("ifcu_buf"),
-                C_POINTER.withName("ifcu_req")
-        );
 
         static final VarHandle IFCU_BUF = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("ifcu_buf"));
 

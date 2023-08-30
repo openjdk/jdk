@@ -22,4 +22,9 @@ public final class CLayouts {
     public static final OfFloat C_FLOAT = JAVA_FLOAT;
     public static final OfDouble C_DOUBLE = JAVA_DOUBLE;
     public static final AddressLayout C_POINTER = ADDRESS.withByteAlignment(8).withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
+
+    // Special layouts
+
+    // If used, a string will be rendered in clear text in the toString method
+    public static final AddressLayout C_STRING = ADDRESS.withByteAlignment(8).withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR).withName("c_string"));
 }

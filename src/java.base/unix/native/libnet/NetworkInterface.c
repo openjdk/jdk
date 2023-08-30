@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <net/if.h>
@@ -465,6 +466,8 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     jobjectArray netIFArr;
     jint arr_index, ifCount;
 
+    printf("getAll\n");
+
     ifs = enumInterfaces(env);
     if (ifs == NULL) {
         return NULL;
@@ -855,13 +858,18 @@ static netif *enumInterfaces(JNIEnv *env) {
     netif *ifs = NULL;
     int sock;
 
+    printf("enumInterface\n");
+
     sock = openSocket(env, AF_INET);
+    printf("  sock[AF_INET])=%d\n", sock);
+
     if (sock < 0 && (*env)->ExceptionOccurred(env)) {
         return NULL;
     }
 
     // enumerate IPv4 addresses
     if (sock >= 0) {
+        printf("  sock >= 0\n");
         ifs = enumIPv4Interfaces(env, sock, ifs);
         close(sock);
 
@@ -876,10 +884,12 @@ static netif *enumInterfaces(JNIEnv *env) {
     // so we have to call ipv6_available()
     if (ipv6_available()) {
         sock = openSocket(env, AF_INET6);
+        printf("  sock[AF_INET6])=%d\n", sock);
         if (sock < 0) {
             freeif(ifs);
             return NULL;
         }
+        printf("  sock >= 0\n");
 
         ifs = enumIPv6Interfaces(env, sock, ifs);
         close(sock);
@@ -1691,6 +1701,8 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
 static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct ifaddrs *ifa, *origifa;
 
+    printf("enumIPv4Interfaces on BSD(...%d...)\n", sock);
+
     if (getifaddrs(&origifa) != 0) {
         JNU_ThrowByNameWithMessageAndLastError
             (env, JNU_JAVANETPKG "SocketException", "getifaddrs() failed");
@@ -1734,6 +1746,8 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
  */
 static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct ifaddrs *ifa, *origifa;
+
+    printf("enumIPv6Interfaces on BSD(...%d...)\n", sock);
 
     if (getifaddrs(&origifa) != 0) {
         JNU_ThrowByNameWithMessageAndLastError

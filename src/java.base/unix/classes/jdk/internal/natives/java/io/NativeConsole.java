@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandle;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static jdk.internal.foreign.support.LookupUtil.*;
 import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
+import static jdk.internal.natives.CLayouts.C_INT;
 
 public final class NativeConsole {
 
@@ -46,7 +47,7 @@ public final class NativeConsole {
     // Native methods
 
     // https://man7.org/linux/man-pages/man3/isatty.3.html
-    private static final MethodHandle IS_A_TTY = downcall("isatty", JAVA_INT, JAVA_INT);
+    private static final MethodHandle IS_A_TTY = downcall("isatty", C_INT, C_INT);
 
     static boolean isatty(int fd) {
         try {

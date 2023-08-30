@@ -1,5 +1,6 @@
 package jdk.internal.natives.include;
 
+import jdk.internal.natives.HasCopyFrom;
 import jdk.internal.natives.HasSegment;
 import jdk.internal.natives.StructMapper;
 
@@ -27,7 +28,7 @@ jextract --source -t jdk.internal.natives.include -I \
  * };
  * }
  */
-public interface IfReq extends HasSegment {
+public interface IfReq extends HasSegment, HasCopyFrom<IfReq> {
 
     StructLayout LAYOUT = MemoryLayout.structLayout(
             MemoryLayout.sequenceLayout(16, C_CHAR).withName("ifr_name"),
@@ -68,12 +69,13 @@ public interface IfReq extends HasSegment {
      * };
      * }
      */
-    interface IfrU {
+    interface IfrU extends HasSegment, HasCopyFrom<IfrU> {
 
         UnionLayout LAYOUT = MemoryLayout.unionLayout(
                 SockAddr.LAYOUT.withName("ifru_addr"),
                 SockAddr.LAYOUT.withName("ifru_dstaddr"),
                 SockAddr.LAYOUT.withName("ifru_broadaddr"),
+                SockAddr.LAYOUT.withName("ifru_netmask"), // Added manually
                 C_SHORT.withName("ifru_flags"),
                 C_INT.withName("ifru_metric"),
                 C_INT.withName("ifru_mtu"),
@@ -102,16 +104,13 @@ public interface IfReq extends HasSegment {
 
         StructMapper<IfrU> MAPPER = IfReqImpl.IfrUImpl.mapper();
 
-        /**
-         * {@return the segment that backs this instance}
-         */
-        MemorySegment segment();
-
         SockAddr ifru_addr();
 
         SockAddr ifru_dstaddr();
 
         SockAddr ifru_broadaddr();
+
+        SockAddr ifru_netmask();
 
         short ifru_flags();
 

@@ -1,6 +1,7 @@
 package jdk.internal.natives.include;
 
 import jdk.internal.ValueBased;
+import jdk.internal.natives.HasCopyFrom;
 import jdk.internal.natives.HasSegment;
 import jdk.internal.natives.StructMapper;
 
@@ -8,7 +9,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.UnionLayout;
-import java.lang.invoke.VarHandle;
 
 import static jdk.internal.natives.CLayouts.*;
 
@@ -30,7 +30,7 @@ import static jdk.internal.natives.CLayouts.*;
  * }
  */
 @ValueBased
-public interface IfConf extends HasSegment {
+public interface IfConf extends HasSegment, HasCopyFrom<IfConf> {
 
     StructLayout LAYOUT = MemoryLayout.structLayout(
             C_INT.withName("ifc_len"),
@@ -60,9 +60,9 @@ public interface IfConf extends HasSegment {
     interface IfcU extends HasSegment {
 
         UnionLayout LAYOUT = MemoryLayout.unionLayout(
-                C_POINTER.withName("ifcu_buf"),
-                C_POINTER.withName("ifcu_req")
-        );;
+                C_POINTER.withName("ifcu_buf").withByteAlignment(4), // #pragma pack(4),
+                C_POINTER.withName("ifcu_req").withByteAlignment(4) // #pragma pack(4)
+        );
 
         StructMapper<IfcU> MAPPER = IfConfImpl.IfcUImpl.mapper();
 

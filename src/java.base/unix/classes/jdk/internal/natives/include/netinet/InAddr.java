@@ -6,6 +6,7 @@ package jdk.internal.natives.include.netinet;
 */
 
 import jdk.internal.ValueBased;
+import jdk.internal.natives.HasCopyFrom;
 import jdk.internal.natives.HasSegment;
 import jdk.internal.natives.StructMapper;
 
@@ -23,7 +24,7 @@ import static jdk.internal.natives.CLayouts.C_INT;
  * }
  */
 @ValueBased
-public interface InAddr extends HasSegment {
+public interface InAddr extends HasSegment, HasCopyFrom<InAddr> {
 
     StructLayout LAYOUT = MemoryLayout.structLayout(
             C_INT.withName("s_addr")

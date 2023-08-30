@@ -8,6 +8,7 @@ package jdk.internal.natives.include;
  */
 
 import jdk.internal.ValueBased;
+import jdk.internal.natives.HasCopyFrom;
 import jdk.internal.natives.HasSegment;
 import jdk.internal.natives.StructMapper;
 
@@ -27,7 +28,7 @@ import static jdk.internal.natives.CLayouts.C_CHAR;
  * }
  */
 @ValueBased
-public interface SockAddr extends HasSegment {
+public interface SockAddr extends HasSegment, HasCopyFrom<SockAddr> {
 
     StructLayout LAYOUT = MemoryLayout.structLayout(
             C_CHAR.withName("sa_len"),

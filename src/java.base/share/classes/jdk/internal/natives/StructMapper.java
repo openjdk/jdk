@@ -27,7 +27,7 @@ public interface StructMapper<T> {
      * @param arena from which to allocate segments to use as a backing store
      * @see #of(MemorySegment)
      */
-    T of(Arena arena);
+    T allocate(Arena arena);
 
     /**
      * {@return a new List of T elements that is backed by the provided {@code segment}}

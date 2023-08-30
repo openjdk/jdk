@@ -1,5 +1,7 @@
 package jdk.internal.natives.java.net;
 
+import jdk.internal.natives.include.IfAddrs;
+import jdk.internal.natives.include.IfAddrsUtil;
 import jdk.internal.natives.include.IfConf;
 import jdk.internal.natives.include.IfReq;
 import jdk.internal.natives.include.SockAddr;
@@ -11,19 +13,22 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.NetworkInterface2;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.natives.include.net.IfUtil.IFF_BROADCAST;
+import static jdk.internal.natives.include.net.IfUtil.IFF_POINTOPOINT;
 import static jdk.internal.natives.include.sys.ErrNo.*;
 import static jdk.internal.natives.include.sys.IoCtlUtil.ioctl;
 import static jdk.internal.natives.include.sys.SockIoUtil.*;
-import static jdk.internal.natives.include.sys.SocketUtil.*;
+import static jdk.internal.natives.include.sys.SocketUtil.AF_INET;
+import static jdk.internal.natives.include.sys.SocketUtil.SOCK_DGRAM;
 
 public final class NativeNetworkInterface {
 
@@ -176,82 +181,42 @@ public final class NativeNetworkInterface {
                                           Fd socket,
                                           List<NetworkInterface2> interfaces) {
 
-        IfConf ifc = IfConf.MAPPER.allocate(arena);
-        // Create an alias for ifc_ifcu
-        IfConf.IfcU ifcU = ifc.ifc_ifcu();
-
-        // do a dummy SIOCGIFCONF to determine the buffer size
-        // SIOCGIFCOUNT doesn't work
-        ifcU.ifcu_buf(MemorySegment.NULL);
-
-
-        // TEST
-
-/*        var buff = arena.allocate(4096);
-        ifc.ifc_len((int)buff.byteSize());
-        ifcU.ifcu_buf(buff);*/
-
-        // TEST
-
-        if (ioctl(socket.fd(), SIOCGIFCONF, ifc) < 0) {
-                /*JNU_ThrowByNameWithMessageAndLastError
-                        (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFCONF) failed");*/
+        var ptr = arena.allocate(ADDRESS.withTargetLayout(IfAddrs.LAYOUT));
+        if (IfAddrsUtil.getifaddrs(ptr) != 0) {
             return;
         }
 
-        // call SIOCGIFCONF to enumerate the interfaces
-        long byteSize = ifc.ifc_len();
-        MemorySegment buffSegment = arena.allocate(byteSize);
-        ifcU.ifcu_buf(buffSegment);
-        List<IfReq> buffers = IfReq.MAPPER.ofElements(buffSegment); // Nice if we could get the backing segment here. Maybe a record?
+        var head = IfAddrs.dereference(ptr);
 
-        if (ioctl(socket.fd(), SIOCGIFCONF, ifc) < 0) {
-                /*JNU_ThrowByNameWithMessageAndLastError
-                        (env, JNU_JAVANETPKG "SocketException", "ioctl(SIOCGIFCONF) failed");*/
-            return;
-        }
+        int cnt = -1;
+        try {
+            for (var ifa = head; ifa != null; ifa = ifa.ifa_next()) {
+                cnt++;
 
-        // iterate through each interface
-        for (IfReq ifreq : buffers) {
-            System.out.println("ifreq = " + ifreq);
-
-            SockAddr addr = SockAddr.MAPPER.allocate(arena);
-            IfReq.IfrU ifrequ = ifreq.ifr_ifru();
-            SockAddr broadaddr = SockAddr.MAPPER.allocate(arena);
-            short prefix = 0;
-
-            // ignore non IPv4 addresses
-            if (ifrequ.ifru_addr().sa_family() != AF_INET) {
-                continue;
-            }
-
-            // save socket address
-            addr.copyFrom(ifrequ.ifru_addr());
-
-            // determine broadcast address, if applicable
-            if ((ioctl(socket.fd(), SIOCGIFFLAGS, ifrequ) == 0) &&
-                    (ifrequ.ifru_flags() & IFF_BROADCAST) != 0) {
-
-                // restore socket address to ifreqP
-                ifrequ.ifru_addr().copyFrom(addr);
-
-                if (ioctl(socket.fd(), SIOCGIFBRDADDR, ifrequ) == 0) {
-                    broadaddr.copyFrom(ifrequ.ifru_addr());
+                SockAddr broadaddr = null;
+                // ignore non IPv4 addresses
+                SockAddr ifa_addr = ifa.ifa_addr();
+                if (ifa_addr == null || ifa_addr.sa_family() != AF_INET) {
+                    System.out.println(ifa.ifa_name()+" is not IPv4. sa_family: " + ifa_addr.sa_family());
+                    continue;
                 }
 
+                System.out.println("ifa(" + (cnt++) + ") = " + ifa);
+
+                // set ifa_broadaddr, if there is one
+                if ((ifa.ifa_flags() & IFF_POINTOPOINT) == 0 &&
+                        (ifa.ifa_flags() & IFF_BROADCAST) != 0) {
+                    System.out.println("Creating broadaddr");
+                    broadaddr = ifa.ifa_dstaddr();
+                    System.out.println("broadaddr = " + broadaddr);
+                }
+                interfaces.add(create(socket, ifa.ifa_name(), ifa_addr, broadaddr, AF_INET, (short) 0, interfaces.size()));
+                System.out.println("interfaces.size() = " + interfaces.size());
             }
-
-            // restore socket address to ifreqP
-            ifrequ.ifru_addr().copyFrom(addr);
-
-            // determine netmask
-            if (ioctl(socket.fd(), SIOCGIFNETMASK, ifrequ) == 0) {
-                // Suspicious cast
-                prefix = translateIPv4AddressToPrefix(SockAddrIn.of(ifrequ.ifru_netmask().segment()));
-            }
-
-            // add interface to the list
-            interfaces.add(create(socket, ifreq.ifr_name(), addr, broadaddr, AF_INET, prefix, interfaces.size()));
+        } finally {
+            System.out.println("freeifaddrs");
+            // Todo: Fix free
+            // IfAddrsUtil.freeifaddrs(head);
         }
     }
 
@@ -263,9 +228,13 @@ public final class NativeNetworkInterface {
                                            short prefix,
                                            int index) {
 
-        // Todo: Fix a lot of stuff here...
+        // Todo: Fix a lot of stuff...
         try {
-            InetAddress address = InetAddress.getByAddress(ifName, addr.sa_data().toArray(ValueLayout.JAVA_BYTE));
+            System.out.println("** Creating " + ifName);
+            byte[] a = addr.sa_data().asSlice(0, 4).toArray(ValueLayout.JAVA_BYTE);
+            System.out.println("Arrays.toString(a) = " + Arrays.toString(a));
+            InetAddress address = InetAddress.getByAddress(ifName, a);
+            System.out.println("address = " + address);
             return new NetworkInterface2(ifName, index, new InetAddress[]{address});
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

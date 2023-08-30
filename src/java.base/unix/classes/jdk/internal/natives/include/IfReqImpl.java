@@ -96,6 +96,11 @@ public final class IfReqImpl implements IfReq {
         }
 
         @Override
+        public SockAddr ifru_netmask() {
+            return SockAddr.of(segment);
+        }
+
+        @Override
         public short ifru_flags() {
             return (short) C_SHORT.varHandle().get(segment);
         }

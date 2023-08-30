@@ -53,6 +53,8 @@ public final class LookupUtil {
                 CSS_ERROR);
     }
 
+    // Todo: remove
+    @Deprecated
     public static MethodHandle downcallVararg(String name, FunctionDescriptor fDesc) {
         var symbol = findOrThrow(name);
         return VarargsInvoker.make(symbol, fDesc);
