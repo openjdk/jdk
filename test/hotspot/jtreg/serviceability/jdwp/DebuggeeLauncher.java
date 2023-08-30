@@ -61,6 +61,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
     private Process p;
     private final Listener listener;
     private StreamHandler inputHandler;
+    private StreamHandler errorHandler;
 
     /**
      * @param listener the listener we report the debuggee events to
@@ -80,7 +81,9 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
         ProcessBuilder pb = ProcessTools.createTestJvm(JDWP_OPT, DEBUGGEE);
         p = pb.start();
         inputHandler = new StreamHandler(p.getInputStream(), this);
+        errorHandler = new StreamHandler(p.getErrorStream(), this);
         inputHandler.start();
+        errorHandler.start();
     }
 
     /**
