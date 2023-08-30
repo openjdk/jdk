@@ -54,7 +54,7 @@ public class ToRealPath {
 
     static {
         try {
-            DIR  = TestUtil.createTemporaryDirectory();
+            DIR = TestUtil.createTemporaryDirectory();
             SUBDIR = Files.createDirectory(DIR.resolve("subdir"));
             FILE = Files.createFile(DIR.resolve("foo"));
             LINK = DIR.resolve("link");
