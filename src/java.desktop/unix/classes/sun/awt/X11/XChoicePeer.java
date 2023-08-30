@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     // MouseReleased event to send ItemStateChanged. To prevent it we should
     // use a combination of firstPress and wasDragged variables.
     // The only difference in dragging and wasDragged is: last one will not
-    // set to false on mouse ungrab. It become false after MouseReleased() finishes.
+    // set to false on mouse ungrab. It become false after MouseRelased() finishes.
     private boolean wasDragged = false;
     private ListHelper helper;
     private UnfurledChoice unfurledChoice;
@@ -1129,7 +1129,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
     }
 
     /* Returns true if the MouseEvent coords
-     * are inside of the Choice itself (it doesn't depend on
+     * are inside of the Choice itself (it doesnt's depends on
      * if this choice opened or not).
      */
     private boolean isMouseEventInChoice(MouseEvent e) {

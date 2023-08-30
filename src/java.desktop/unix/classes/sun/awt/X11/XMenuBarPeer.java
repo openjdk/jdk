@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /*
      * Functions addMenu, delMenu, addHelpMenu
-     * need to have somewhat strange behaviour
+     * need to have somewhat strange behaivour
      * deduced from java.awt.MenuBar.
      * We can not get index of particular item in
      * MenuBar.menus array, because MenuBar firstly

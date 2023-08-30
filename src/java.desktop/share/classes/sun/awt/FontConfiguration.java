@@ -1553,7 +1553,7 @@ public abstract class FontConfiguration {
         }
     }
 
-    /* Same as getComponentFontID() except this method returns the fontID define by
+    /* Same as getCompoentFontID() except this method returns the fontID define by
      * "xxxx.motif" entry.
      */
     protected static short getComponentFontIDMotif(short scriptID, int fontIndex, int styleIndex) {

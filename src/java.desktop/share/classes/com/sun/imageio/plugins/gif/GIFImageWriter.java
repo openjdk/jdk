@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ public class GIFImageWriter extends ImageWriter {
                     if (imageMetadata.transparentColorFlag) {
                         imageMetadata.transparentColorIndex = index;
                     }
-                    /* NB: transparentColorFlag might have not been reset for
+                    /* NB: transparentColorFlag might have not beed reset for
                        greyscale images but explicitly resetting it here
                        is potentially not right thing to do until we have way
                        to find whether current value was explicitly set by
