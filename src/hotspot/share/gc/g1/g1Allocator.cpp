@@ -358,8 +358,8 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   }
 }
 
-bool G1PLABAllocator::may_throw_away_buffer(size_t const allocation_word_sz, size_t const buffer_size) const {
-  return (allocation_word_sz * 100 < buffer_size * ParallelGCBufferWastePct);
+bool G1PLABAllocator::may_throw_away_buffer(size_t const words_remaining, size_t const buffer_size) const {
+  return (words_remaining * 100 < buffer_size * ParallelGCBufferWastePct);
 }
 
 HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
