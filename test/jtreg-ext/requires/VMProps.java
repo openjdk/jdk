@@ -102,6 +102,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
         map.put("vm.jvmci", this::vmJvmci);
+        map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
         map.put("vm.emulatedClient", this::vmEmulatedClient);
         // vm.hasSA is "true" if the VM contains the serviceability agent
         // and jhsdb.
@@ -122,6 +123,10 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
+        // jdk.hasLibgraal is true if the libgraal shared library file is present
+        map.put("jdk.hasLibgraal", this::hasLibgraal);
+        // vm.libgraal.enabled is true if libgraal is used as JIT
+        map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -265,6 +270,20 @@ public class VMProps implements Callable<Map<String, String>> {
 
         return "true";
     }
+
+
+    /**
+     * @return true if JVMCI is enabled
+     */
+    protected String vmJvmciEnabled() {
+        // builds with jvmci have this flag
+        if ("false".equals(vmJvmci())) {
+            return "false";
+        }
+
+        return "" + Compiler.isJVMCIEnabled();
+    }
+
 
     /**
      * @return true if VM runs in emulated-client mode and false otherwise.
@@ -469,6 +488,24 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String isGraalEnabled() {
         return "" + Compiler.isGraalEnabled();
+    }
+
+    /**
+     * Check if the libgraal shared library file is present.
+     *
+     * @return true if the libgraal shared library file is present.
+     */
+    protected String hasLibgraal() {
+        return "" + WB.hasLibgraal();
+    }
+
+    /**
+     * Check if libgraal is used as JIT compiler.
+     *
+     * @return true if libgraal is used as JIT compiler.
+     */
+    protected String isLibgraalEnabled() {
+        return "" + Compiler.isLibgraalEnabled();
     }
 
     /**
@@ -694,6 +731,7 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
+        Collections.sort(lines);
         try {
             Files.write(Paths.get(dumpFileName), lines,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);

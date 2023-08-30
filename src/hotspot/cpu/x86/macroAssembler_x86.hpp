@@ -32,6 +32,7 @@
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -1787,6 +1788,9 @@ public:
 
   using Assembler::evpandq;
   void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::evpaddq;
+  void evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch = noreg);
 
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);

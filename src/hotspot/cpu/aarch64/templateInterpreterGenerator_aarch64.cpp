@@ -53,6 +53,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
@@ -465,7 +466,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -521,7 +523,8 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // null last_sp until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -689,7 +692,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved rbp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -770,7 +773,7 @@ void TemplateInterpreterGenerator::lock_method() {
   const Address monitor_block_top(
         rfp,
         frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
   {
@@ -1867,7 +1870,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* notify_jvmdi */ false);
 
   // Restore the last_sp and null it out
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();

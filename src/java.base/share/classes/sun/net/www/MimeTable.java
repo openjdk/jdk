@@ -45,10 +45,10 @@ public class MimeTable implements FileNameMap {
     private static final int HASH_MARK = '#';
 
     /** Keyed by content type, returns MimeEntries */
-    private Hashtable<String, MimeEntry> entries = new Hashtable<>();
+    private final Hashtable<String, MimeEntry> entries = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
-    private Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
+    private final Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
