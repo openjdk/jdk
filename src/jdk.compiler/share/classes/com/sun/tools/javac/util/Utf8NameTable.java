@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import java.lang.ref.SoftReference;
-
 import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
@@ -51,7 +49,7 @@ public abstract class Utf8NameTable extends Name.Table {
 
     /** Generate a hash value for a subarray.
      */
-    protected static int hashValue(byte buf[], int off, int len) {
+    protected static int hashValue(byte[] buf, int off, int len) {
         int hash = 0;
         while (len-- > 0)
             hash = (hash << 5) - hash + buf[off++];
@@ -100,6 +98,11 @@ public abstract class Utf8NameTable extends Name.Table {
          */
         protected abstract int getNameIndex();
 
+        @Override
+        protected boolean nameEquals(Name that) {
+            return ((NameImpl)that).getNameIndex() == getNameIndex();
+        }
+
     // CharSequence
 
         @Override
@@ -112,16 +115,11 @@ public abstract class Utf8NameTable extends Name.Table {
             try {
                 return Convert.utf2string(getByteData(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
             } catch (InvalidUtfException e) {
-                throw new AssertionError();
+                throw new AssertionError("invalid UTF8 data", e);
             }
         }
 
     // javax.lang.model.element.Name
-
-        @Override
-        protected boolean nameEquals(Name that) {
-            return ((NameImpl)that).getNameIndex() == getNameIndex();
-        }
 
         @Override
         public int hashCode() {
@@ -132,8 +130,15 @@ public abstract class Utf8NameTable extends Name.Table {
 
         @Override
         public int compareTo(Name name0) {
+            // While most operations on Name that take a Name as an argument expect the argument
+            // to come from the same table, in many cases, including here, that is not strictly
+            // required. Moreover, java.util.Name implements javax.lang.model.element.Name,
+            // which extends CharSequence, which provides
+            //   static int compare(CharSequence cs1, CharSequence cs2)
+            // which ends up calling to this method when the two arguments have the same class.
+            // Therefore, for this method, we relax "same table" to "same class".
+            Assert.check(name0.getClass() == getClass());
             NameImpl name = (NameImpl)name0;
-            Assert.check(name.table == table);
             byte[] buf1 = getByteData();
             byte[] buf2 = name.getByteData();
             int off1 = getByteOffset();
@@ -180,7 +185,7 @@ public abstract class Utf8NameTable extends Name.Table {
             try {
                 return table.fromUtf(result, 0, result.length, Convert.Validation.NONE);
             } catch (InvalidUtfException e) {
-                throw new AssertionError();
+                throw new AssertionError("invalid UTF8 data", e);
             }
         }
 
@@ -202,7 +207,7 @@ public abstract class Utf8NameTable extends Name.Table {
             try {
                 return table.fromUtf(result, 0, result.length, Convert.Validation.NONE);
             } catch (InvalidUtfException e) {
-                throw new AssertionError();
+                throw new AssertionError("invalid UTF8 data", e);
             }
         }
 
@@ -252,7 +257,7 @@ public abstract class Utf8NameTable extends Name.Table {
         }
 
         @Override
-        public void getUtf8Bytes(byte buf[], int off) {
+        public void getUtf8Bytes(byte[] buf, int off) {
             System.arraycopy(getByteData(), getByteOffset(), buf, off, getByteLength());
         }
     }
