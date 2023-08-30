@@ -63,7 +63,7 @@ public class TestPLABPromotion {
     private final static String PLAB_DIRECT_ALLOCATED_FIELD_NAME = "direct allocated";
     private final static List<String> FIELDS_TO_EXTRACT = Arrays.asList(PLAB_USED_FIELD_NAME, PLAB_DIRECT_ALLOCATED_FIELD_NAME);
 
-    public final static int heapWordSize = Platform.is32bit() ? 4 : 8;
+    public final static int HEAP_WORD_SIZE = Platform.is32bit() ? 4 : 8;
 
     private static String output;
 
@@ -72,9 +72,9 @@ public class TestPLABPromotion {
     private static final int PLAB_SIZE_SMALL = 1024;
     private static final int PLAB_SIZE_MEDIUM = 4096;
     private static final int PLAB_SIZE_HIGH = 65536;
-    private static final int OBJECT_SIZE_SMALL  = 10 * heapWordSize;
-    private static final int OBJECT_SIZE_MEDIUM = 128 * heapWordSize;
-    private static final int OBJECT_SIZE_HIGH   = 3072 * heapWordSize;
+    private static final int OBJECT_SIZE_SMALL  = 10 * HEAP_WORD_SIZE;
+    private static final int OBJECT_SIZE_MEDIUM = 128 * HEAP_WORD_SIZE;
+    private static final int OBJECT_SIZE_HIGH   = 3072 * HEAP_WORD_SIZE;
     private static final int GC_NUM_SMALL = 1;
     private static final int GC_NUM_MEDIUM = 3;
     private static final int GC_NUM_HIGH = 7;
