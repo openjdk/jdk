@@ -64,7 +64,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _stk(arena(), 8, 0, nullptr),                             // scratch stack of nodes
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
-  _pre_loop_end(nullptr),                                   // Pre loop CountedLoopEndNode
   _loop_reductions(arena()),                                // reduction nodes in the current loop
   _bb(nullptr),                                             // basic block
   _iv(nullptr),                                             // induction var
@@ -156,7 +155,7 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     if (pre_opaq1->Opcode() != Op_Opaque1) {
       return false;
     }
-    set_pre_loop_end(pre_end);
+    cl->set_pre_loop_end(pre_end);
   }
 
   init(); // initialize data structures
@@ -920,7 +919,7 @@ bool SuperWord::ref_is_alignable(VPointer& p) {
   if (!p.has_iv()) {
     return true;   // no induction variable
   }
-  CountedLoopEndNode* pre_end = pre_loop_end();
+  CountedLoopEndNode* pre_end = lp()->pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
   int preloop_stride = pre_end->stride_con();
 
@@ -3631,14 +3630,14 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 //   (iv + k) mod vector_align == 0
 void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   assert(lp()->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = pre_loop_end();
+  CountedLoopEndNode* pre_end = lp()->pre_loop_end();
   Node* pre_opaq1 = pre_end->limit();
   assert(pre_opaq1->Opcode() == Op_Opaque1, "");
   Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;
   Node* lim0 = pre_opaq->in(1);
 
   // Where we put new limit calculations
-  Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = lp()->pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.

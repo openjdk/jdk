@@ -128,7 +128,6 @@ bool VPointer::is_loop_member(Node* n) const {
 
 bool VPointer::invariant(Node* n) const {
   NOT_PRODUCT(Tracer::Depth dd;)
-  // TODO: Add more trace output for invariant check after later refactoring
   bool is_not_member = !is_loop_member(n);
   if (is_not_member) {
     CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
@@ -138,11 +137,8 @@ bool VPointer::invariant(Node* n) const {
       // because n_c is either part of the pre loop or between the pre and the
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
-      CountedLoopEndNode* pre_loop_end = cl->find_pre_loop_end();
-      if (pre_loop_end != nullptr) {
-        Node* n_c = phase()->get_ctrl(n);
-        return phase()->is_dominator(n_c, pre_loop_end->loopnode());
-      }
+      Node* n_c = phase()->get_ctrl(n);
+      return phase()->is_dominator(n_c, cl->pre_loop_head());
     }
   }
   return is_not_member;

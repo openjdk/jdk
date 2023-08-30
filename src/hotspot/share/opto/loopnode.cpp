@@ -5722,6 +5722,30 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   return pre_end;
 }
 
+  CountedLoopNode* CountedLoopNode::pre_loop_head() const {
+    assert(is_main_loop(), "Only main loop has pre loop");
+    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr,
+           "should find head from pre loop end");
+    return _pre_loop_end->loopnode();
+  }
+
+  CountedLoopEndNode* CountedLoopNode::pre_loop_end() {
+#ifdef ASSERT
+    assert(is_main_loop(), "Only main loop has pre loop");
+    assert(_pre_loop_end != nullptr, "should be set when fetched");
+    Node* found_pre_end = find_pre_loop_end();
+    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
+           "should find the pre loop end and must be the same result");
+#endif
+    return _pre_loop_end;
+  }
+
+  void CountedLoopNode::set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
+    assert(is_main_loop(), "Only main loop has pre loop");
+    assert(pre_loop_end, "must be valid");
+    _pre_loop_end = pre_loop_end;
+  }
+
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.
 Node *PhaseIdealLoop::get_late_ctrl( Node *n, Node *early ) {

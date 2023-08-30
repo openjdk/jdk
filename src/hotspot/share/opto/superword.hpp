@@ -292,7 +292,6 @@ class SuperWord : public ResourceObj {
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   CountedLoopNode* _lp;            // Current CountedLoopNode
-  CountedLoopEndNode* _pre_loop_end; // Current CountedLoopEndNode of pre loop
   VectorSet      _loop_reductions; // Reduction nodes in the current loop
   Node*          _bb;              // Current basic block
   PhiNode*       _iv;              // Induction var
@@ -318,25 +317,6 @@ class SuperWord : public ResourceObj {
     _iv = lp->as_CountedLoop()->phi()->as_Phi();
   }
   int iv_stride() const            { return lp()->stride_con(); }
-
-  CountedLoopNode* pre_loop_head() const {
-    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr, "should find head from pre loop end");
-    return _pre_loop_end->loopnode();
-  }
-  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
-    assert(pre_loop_end, "must be valid");
-    _pre_loop_end = pre_loop_end;
-  }
-  CountedLoopEndNode* pre_loop_end() const {
-#ifdef ASSERT
-    assert(_lp != nullptr, "sanity");
-    assert(_pre_loop_end != nullptr, "should be set when fetched");
-    Node* found_pre_end = _lp->find_pre_loop_end();
-    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
-           "should find the pre loop end and must be the same result");
-#endif
-    return _pre_loop_end;
-  }
 
   int vector_width(Node* n) {
     BasicType bt = velt_basic_type(n);
