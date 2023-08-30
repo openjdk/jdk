@@ -280,7 +280,7 @@ public class FormView extends ComponentView implements ActionListener {
                 @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
                 ImageIcon icon = new ImageIcon(srcURL);
-                button  = icon.getImageLoadStatus() == MediaTracker.COMPLETE ? new JButton(icon) : new JButton(altAtt);
+                button = icon.getImageLoadStatus() == MediaTracker.COMPLETE ? new JButton(icon) : new JButton(altAtt);
             } catch (MalformedURLException e) {
                 button = new JButton(srcAtt);
             }
