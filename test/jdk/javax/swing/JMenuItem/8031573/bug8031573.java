@@ -53,7 +53,8 @@ public class bug8031573 {
     private static final CountDownLatch latch = new CountDownLatch(1);
 
     public static final String INSTRUCTIONS = "INSTRUCTIONS:\n\n"
-            + "Verify that high resolution system icons are used for JCheckBoxMenuItem and JRadioButtonMenuItem on HiDPI displays.\n"
+            + "Verify that high resolution system icons are used for\n"
+            + "JCheckBoxMenuItem and JRadioButtonMenuItem on HiDPI displays.\n"
             + "If the display does not support HiDPI mode press PASS.\n"
             + "1. Run the test on HiDPI Display.\n"
             + "2. Open the Menu.\n"
