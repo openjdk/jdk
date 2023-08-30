@@ -41,7 +41,7 @@ import javax.swing.text.JTextComponent;
 
 /* @test
  * @bug 8031573 8040279 8143064 8294427
- * @summary [macosx] Checkmarks of JCheckBoxMenuItems aren't rendered
+ * @summary  Checkmarks of JCheckBoxMenuItems aren't rendered
  *           in high resolution on Retina
  * @run main/manual bug8031573
  */
