@@ -1431,6 +1431,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                + " if doOutput=false - call setDoOutput(true)");
             }
 
+            if (rememberedException != null) {
+                if (rememberedException instanceof RuntimeException) {
+                    throw new RuntimeException(rememberedException);
+                } else {
+                    throw getChainedException((IOException) rememberedException);
+                }
+            }
+
             if (method.equals("GET")) {
                 method = "POST"; // Backward compatibility
             }
@@ -1490,9 +1498,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             int i = responseCode;
             disconnectInternal();
             responseCode = i;
+            rememberedException = e;
             throw e;
         } catch (RuntimeException | IOException e) {
             disconnectInternal();
+            rememberedException = e;
             throw e;
         }
     }
