@@ -1712,6 +1712,20 @@ const Type* URShiftLNode::Value(PhaseGVN* phase) const {
 }
 
 //=============================================================================
+//------------------------------Ideal------------------------------------------
+Node* FmaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // We canonicalize the node by converting "(-a)*b+c" into "b*(-a)+c"
+  // This reduces the number of rules in the matcher, as we only need to check
+  // for negations on the second argument, and not the symmetric case where
+  // the first argument is negated.
+  if (in(1)->is_Neg() && !in(2)->is_Neg()) {
+    swap_edges(1, 2);
+    return this;
+  }
+  return nullptr;
+}
+
+//=============================================================================
 //------------------------------Value------------------------------------------
 const Type* FmaDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type(in(1));

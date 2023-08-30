@@ -64,6 +64,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
@@ -216,6 +217,12 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     HandleMark hm(THREAD);
     Handle refs_handle (THREAD, stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
+
+    // Create a "scratch" copy of the resolved references array to archive
+    if (DumpSharedSpaces) {
+      objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
+      HeapShared::add_scratch_resolved_references(this, scratch_references);
+    }
   }
 }
 
@@ -286,22 +293,25 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
 
   objArrayOop rr = resolved_references();
   if (rr != nullptr) {
+    ConstantPool* orig_pool = ArchiveBuilder::current()->get_source_addr(this);
+    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(orig_pool);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop obj = rr->obj_at(i);
-      rr->obj_at_put(i, nullptr);
+      scratch_rr->obj_at_put(i, nullptr);
       if (obj != nullptr && i < ref_map_len) {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
           assert(java_lang_String::is_instance(obj), "must be");
           if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
-            rr->obj_at_put(i, obj);
+            scratch_rr->obj_at_put(i, obj);
           }
         }
       }
     }
+    return scratch_rr;
   }
   return rr;
 }

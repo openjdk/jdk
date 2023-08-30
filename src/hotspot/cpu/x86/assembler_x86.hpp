@@ -26,6 +26,7 @@
 #define CPU_X86_ASSEMBLER_X86_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Contains all the definitions needed for x86 assembly code generation.

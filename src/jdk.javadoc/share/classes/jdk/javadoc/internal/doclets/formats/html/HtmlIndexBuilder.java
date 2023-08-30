@@ -83,7 +83,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
             return;
         }
 
-
         Map<String,Integer> duplicateLabelCheck = new HashMap<>();
         for (Character ch : getFirstCharacters()) {
             for (IndexItem item : getItems(ch)) {
@@ -148,7 +147,6 @@ public class HtmlIndexBuilder extends IndexBuilder {
                 throw new Error();
         }
     }
-
 
     /**
      * Generates the set of index files used by interactive search.
