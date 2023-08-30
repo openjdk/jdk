@@ -1167,6 +1167,14 @@ void MacroAssembler::align(int modulus, int target) {
   }
 }
 
+// Alignment specifying the maximum number of allowed bytes to pad.
+// If padding > max, no padding is inserted.
+void MacroAssembler::p2align(int modulus, int maxbytes) {
+  if (modulus - (offset() % modulus) <= maxbytes) {
+    align(modulus, offset());
+  }
+}
+
 void MacroAssembler::push_f(XMMRegister r) {
   subptr(rsp, wordSize);
   movflt(Address(rsp, 0), r);
@@ -3469,6 +3477,10 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
 void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
+}
+
+void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
+  Assembler::vpcmpeqb(dst, src1, src2, vector_len);
 }
 
 void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
