@@ -99,6 +99,10 @@ static bool thread_state_in_native(JavaThread* thread) {
   return false;
 }
 
+static bool is_vthread_in_transition(JavaThread* thread) {
+  return JfrThreadLocal::is_vthread(thread) && (thread->last_continuation() == nullptr);
+}
+
 class JfrThreadSampleClosure {
  public:
   JfrThreadSampleClosure(EventExecutionSample* events, EventNativeMethodSample* events_native);
@@ -184,7 +188,7 @@ void OSThreadSampler::do_task(const SuspendedThreadTaskContext& context) {
 void OSThreadSampler::protected_task(const SuspendedThreadTaskContext& context) {
   JavaThread* const jt = JavaThread::cast(context.thread());
   // Skip sample if we signaled a thread that moved to other state
-  if (!thread_state_in_java(jt)) {
+  if (!thread_state_in_java(jt) || is_vthread_in_transition(jt)) {
     return;
   }
   JfrGetCallTrace trace(true, jt);
@@ -403,12 +407,12 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
     SystemMemoryBarrier::emit();
   }
   if (JAVA_SAMPLE == type) {
-    if (thread_state_in_java(thread)) {
+    if (thread_state_in_java(thread) && !is_vthread_in_transition(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);
     }
   } else {
     assert(NATIVE_SAMPLE == type, "invariant");
-    if (thread_state_in_native(thread)) {
+    if (thread_state_in_native(thread) && !is_vthread_in_transition(thread)) {
       ret = sample_thread_in_native(thread, frames, max_frames);
     }
   }
