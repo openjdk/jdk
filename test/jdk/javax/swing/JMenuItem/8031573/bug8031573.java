@@ -61,7 +61,8 @@ public class bug8031573 {
             + "3. Check that the icon on the JCheckBoxMenuItem is smooth.\n"
             + "4. Check that the icon on the JRadioButtonMenuItem is smooth.\n"
             + "5. Test the markers are still crisp after changing the scale in Windows settings.\n"
-            + "   This could be done on same monitor by changing scale or multi-monitor setup with different scales.\n"
+            + "   This could be done on same monitor by changing scale or multi-monitor setup\n"
+            + "   with different scales.\n"
             + "6. If so, press PASS, else press FAIL.\n";
 
     public static void main(String[] args) throws Exception {
