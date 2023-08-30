@@ -402,8 +402,8 @@ public sealed interface CodeBuilder
 
     /**
      * Load instruction
-     * @param tk load type
-     * @param slot local variable slot
+     * @param tk the load type
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder loadInstruction(TypeKind tk, int slot) {
@@ -413,8 +413,8 @@ public sealed interface CodeBuilder
 
     /**
      * Store instruction
-     * @param tk store type
-     * @param slot local variable slot
+     * @param tk the store type
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder storeInstruction(TypeKind tk, int slot) {
@@ -424,8 +424,8 @@ public sealed interface CodeBuilder
 
     /**
      * Increment local variable by constant
-     * @param slot local variable slot
-     * @param val increment value
+     * @param slot the local variable slot
+     * @param val the increment value
      * @return this builder
      */
     default CodeBuilder incrementInstruction(int slot, int val) {
@@ -436,8 +436,8 @@ public sealed interface CodeBuilder
     /**
      * Branch instruction
      * @see Opcode.Kind#BRANCH
-     * @param op branch opcode
-     * @param target branch target
+     * @param op the branch opcode
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder branchInstruction(Opcode op, Label target) {
@@ -447,8 +447,8 @@ public sealed interface CodeBuilder
 
     /**
      * Access jump table by key match and jump
-     * @param defaultTarget default jump target
-     * @param cases switch cases
+     * @param defaultTarget the default jump target
+     * @param cases the switch cases
      * @return this builder
      */
     default CodeBuilder lookupSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) {
@@ -458,10 +458,10 @@ public sealed interface CodeBuilder
 
     /**
      * Access jump table by index and jump
-     * @param lowValue low key value
-     * @param highValue high key value
-     * @param defaultTarget default jump target
-     * @param cases switch cases
+     * @param lowValue the low key value
+     * @param highValue the high key value
+     * @param defaultTarget the default jump target
+     * @param cases the switch cases
      * @return this builder
      */
     default CodeBuilder tableSwitchInstruction(int lowValue, int highValue, Label defaultTarget, List<SwitchCase> cases) {
@@ -471,7 +471,7 @@ public sealed interface CodeBuilder
 
     /**
      * Return instruction
-     * @param tk return type
+     * @param tk the return type
      * @return this builder
      */
     default CodeBuilder returnInstruction(TypeKind tk) {
@@ -491,8 +491,8 @@ public sealed interface CodeBuilder
     /**
      * Field access instruction
      * @see Opcode.Kind#FIELD_ACCESS
-     * @param opcode field access opcode
-     * @param ref field reference
+     * @param opcode the field access opcode
+     * @param ref the field reference
      * @return this builder
      */
     default CodeBuilder fieldInstruction(Opcode opcode, FieldRefEntry ref) {
@@ -503,10 +503,10 @@ public sealed interface CodeBuilder
     /**
      * Field access instruction
      * @see Opcode.Kind#FIELD_ACCESS
-     * @param opcode field access opcode
-     * @param owner class
-     * @param name field name
-     * @param type field type
+     * @param opcode the field access opcode
+     * @param owner the class
+     * @param name the field name
+     * @param type the field type
      * @return this builder
      */
     default CodeBuilder fieldInstruction(Opcode opcode, ClassDesc owner, String name, ClassDesc type) {
@@ -516,8 +516,8 @@ public sealed interface CodeBuilder
     /**
      * Invoke a method or constructor
      * @see Opcode.Kind#INVOKE
-     * @param opcode invoke opcode
-     * @param ref interface method or method reference
+     * @param opcode the invoke opcode
+     * @param ref the interface method or method reference
      * @return this builder
      */
     default CodeBuilder invokeInstruction(Opcode opcode, MemberRefEntry ref) {
@@ -527,11 +527,11 @@ public sealed interface CodeBuilder
     /**
      * Invoke a method or constructor
      * @see Opcode.Kind#INVOKE
-     * @param opcode invoke opcode
-     * @param owner class
-     * @param name method name
-     * @param desc method type
-     * @param isInterface interface method invocation indication
+     * @param opcode the invoke opcode
+     * @param owner the class
+     * @param name the method name
+     * @param desc the method type
+     * @param isInterface the interface method invocation indication
      * @return this builder
      */
     default CodeBuilder invokeInstruction(Opcode opcode, ClassDesc owner, String name, MethodTypeDesc desc, boolean isInterface) {
@@ -542,7 +542,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a dynamically-computed call site
-     * @param ref dynamic call site
+     * @param ref the dynamic call site
      * @return this builder
      */
     default CodeBuilder invokeDynamicInstruction(InvokeDynamicEntry ref) {
@@ -551,8 +551,8 @@ public sealed interface CodeBuilder
     }
 
     /**
-     *
-     * @param desc
+     * Invoke a dynamically-computed call site
+     * @param desc the dynamic call site
      * @return this builder
      */
     default CodeBuilder invokeDynamicInstruction(DynamicCallSiteDesc desc) {
@@ -570,7 +570,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new object
-     * @param type class
+     * @param type the object type
      * @return this builder
      */
     default CodeBuilder newObjectInstruction(ClassEntry type) {
@@ -580,7 +580,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new object
-     * @param type class
+     * @param type the object type
      * @return this builder
      */
     default CodeBuilder newObjectInstruction(ClassDesc type) {
@@ -589,7 +589,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array
-     * @param typeKind primitive component type
+     * @param typeKind the primitive component type
      * @return this builder
      */
     default CodeBuilder newPrimitiveArrayInstruction(TypeKind typeKind) {
@@ -599,7 +599,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array of reference
-     * @param type component type
+     * @param type the component type
      * @return this builder
      */
     default CodeBuilder newReferenceArrayInstruction(ClassEntry type) {
@@ -609,7 +609,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array of reference
-     * @param type component type
+     * @param type the component type
      * @return this builder
      */
     default CodeBuilder newReferenceArrayInstruction(ClassDesc type) {
@@ -618,8 +618,8 @@ public sealed interface CodeBuilder
 
     /**
      * Create new multidimensional array
-     * @param dimensions number of dimensions
-     * @param type array type
+     * @param dimensions the number of dimensions
+     * @param type the array type
      * @return this builder
      */
     default CodeBuilder newMultidimensionalArrayInstruction(int dimensions,
@@ -630,8 +630,8 @@ public sealed interface CodeBuilder
 
     /**
      * Create new multidimensional array
-     * @param dimensions number of dimensions
-     * @param type array type
+     * @param dimensions the number of dimensions
+     * @param type the array type
      * @return this builder
      */
     default CodeBuilder newMultidimensionalArrayInstruction(int dimensions,
@@ -641,7 +641,7 @@ public sealed interface CodeBuilder
 
     /**
      * Array load instruction
-     * @param tk array element type
+     * @param tk the array element type
      * @return this builder
      */
     default CodeBuilder arrayLoadInstruction(TypeKind tk) {
@@ -652,7 +652,7 @@ public sealed interface CodeBuilder
 
     /**
      * Array store instruction
-     * @param tk array element type
+     * @param tk the array element type
      * @return this builder
      */
     default CodeBuilder arrayStoreInstruction(TypeKind tk) {
@@ -664,8 +664,8 @@ public sealed interface CodeBuilder
     /**
      * Type check instruction
      * @see Opcode.Kind#TYPE_CHECK
-     * @param opcode type check instruction opcode
-     * @param type type
+     * @param opcode the type check instruction opcode
+     * @param type the type
      * @return this builder
      */
     default CodeBuilder typeCheckInstruction(Opcode opcode,
@@ -677,8 +677,8 @@ public sealed interface CodeBuilder
     /**
      * Type check instruction
      * @see Opcode.Kind#TYPE_CHECK
-     * @param opcode type check instruction opcode
-     * @param type type
+     * @param opcode the type check instruction opcode
+     * @param type the type
      * @return this builder
      */
     default CodeBuilder typeCheckInstruction(Opcode opcode, ClassDesc type) {
@@ -687,8 +687,8 @@ public sealed interface CodeBuilder
 
     /**
      * Convert instruction
-     * @param fromType source type
-     * @param toType target type
+     * @param fromType the source type
+     * @param toType the target type
      * @return this builder
      */
     default CodeBuilder convertInstruction(TypeKind fromType, TypeKind toType) {
@@ -698,7 +698,7 @@ public sealed interface CodeBuilder
 
     /**
      * Stack instruction
-     * @param opcode stack instruction opcode
+     * @param opcode the stack instruction opcode
      * @see Opcode.Kind#STACK
      * @return this builder
      */
@@ -710,7 +710,7 @@ public sealed interface CodeBuilder
     /**
      * Operator instruction
      * @see Opcode.Kind#OPERATOR
-     * @param opcode operator instruction opcode
+     * @param opcode the operator instruction opcode
      * @return this builder
      */
     default CodeBuilder operatorInstruction(Opcode opcode) {
@@ -721,8 +721,8 @@ public sealed interface CodeBuilder
     /**
      * Constant instruction
      * @see Opcode.Kind#CONSTANT
-     * @param opcode constant instruction opcode
-     * @param value constant value
+     * @param opcode the constant instruction opcode
+     * @param value the constant value
      * @return this builder
      */
     default CodeBuilder constantInstruction(Opcode opcode, ConstantDesc value) {
@@ -736,7 +736,7 @@ public sealed interface CodeBuilder
 
     /**
      * Constant instruction
-     * @param value constant value
+     * @param value the constant value
      * @return this builder
      */
     default CodeBuilder constantInstruction(ConstantDesc value) {
@@ -775,7 +775,7 @@ public sealed interface CodeBuilder
     /**
      * Monitor instruction
      * @see Opcode.Kind#MONITOR
-     * @param opcode monitor instruction opcode
+     * @param opcode the monitor instruction opcode
      * @return this builder
      */
     default CodeBuilder monitorInstruction(Opcode opcode) {
@@ -814,7 +814,7 @@ public sealed interface CodeBuilder
 
     /**
      * Bind label with current position
-     * @param label label
+     * @param label the label
      * @return this builder
      */
     default CodeBuilder labelBinding(Label label) {
@@ -824,7 +824,7 @@ public sealed interface CodeBuilder
 
     /**
      * Declare source line number of current position
-     * @param line line number
+     * @param line the line number
      * @return this builder
      */
     default CodeBuilder lineNumber(int line) {
@@ -834,10 +834,10 @@ public sealed interface CodeBuilder
 
     /**
      * Exception table entry
-     * @param start try block start
-     * @param end try block end
-     * @param handler exception handler start
-     * @param catchType catch type or null to catch all exceptions and errors
+     * @param start the try block start
+     * @param end the try block end
+     * @param handler the exception handler start
+     * @param catchType the catch type or null to catch all exceptions and errors
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
@@ -847,10 +847,10 @@ public sealed interface CodeBuilder
 
     /**
      * Exception table entry
-     * @param start try block start
-     * @param end try block end
-     * @param handler exception handler start
-     * @param catchType optional catch type, empty to catch all exceptions and errors
+     * @param start the try block start
+     * @param end the try block end
+     * @param handler the exception handler start
+     * @param catchType the optional catch type, empty to catch all exceptions and errors
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, Optional<ClassEntry> catchType) {
@@ -860,10 +860,10 @@ public sealed interface CodeBuilder
 
     /**
      * Exception table entry
-     * @param start try block start
-     * @param end try block end
-     * @param handler exception handler start
-     * @param catchType catch type
+     * @param start the try block start
+     * @param end the try block end
+     * @param handler the exception handler start
+     * @param catchType the catch type
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassDesc catchType) {
@@ -873,9 +873,9 @@ public sealed interface CodeBuilder
 
     /**
      * Exception table entry catching all exceptions and errors
-     * @param start try block start
-     * @param end try block end
-     * @param handler exception handler start
+     * @param start the try block start
+     * @param end the try block end
+     * @param handler the exception handler start
      * @return this builder
      */
     default CodeBuilder exceptionCatchAll(Label start, Label end, Label handler) {
@@ -885,11 +885,11 @@ public sealed interface CodeBuilder
 
     /**
      * Character range entry
-     * @param startScope start scope of the character range
-     * @param endScope end scope of the character range
+     * @param startScope the start scope of the character range
+     * @param endScope the end scope of the character range
      * @param characterRangeStart the encoded start of the character range region (inclusive)
      * @param characterRangeEnd the encoded end of the character range region (exclusive)
-     * @param flags flags word, indicating the kind of range
+     * @param flags the flags word, indicating the kind of range
      * @return this builder
      */
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
@@ -899,11 +899,11 @@ public sealed interface CodeBuilder
 
     /**
      * Local variable entry
-     * @param slot local variable slot
-     * @param nameEntry variable name
-     * @param descriptorEntry variable descriptor
-     * @param startScope start scope of the variable
-     * @param endScope end scope of the variable
+     * @param slot the local variable slot
+     * @param nameEntry the variable name
+     * @param descriptorEntry the variable descriptor
+     * @param startScope the start scope of the variable
+     * @param endScope the end scope of the variable
      * @return this builder
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
@@ -913,11 +913,11 @@ public sealed interface CodeBuilder
 
     /**
      * Local variable entry
-     * @param slot local variable slot
-     * @param name variable name
-     * @param descriptor variable descriptor
-     * @param startScope start scope of the variable
-     * @param endScope end scope of the variable
+     * @param slot the local variable slot
+     * @param name the variable name
+     * @param descriptor the variable descriptor
+     * @param startScope the start scope of the variable
+     * @param endScope the end scope of the variable
      * @return this builder
      */
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
@@ -929,11 +929,11 @@ public sealed interface CodeBuilder
 
     /**
      * Local variable type entry
-     * @param slot local variable slot
-     * @param nameEntry variable name
-     * @param signatureEntry variable signature
-     * @param startScope start scope of the variable
-     * @param endScope end scope of the variable
+     * @param slot the local variable slot
+     * @param nameEntry the variable name
+     * @param signatureEntry the variable signature
+     * @param startScope the start scope of the variable
+     * @param endScope the end scope of the variable
      * @return this builder
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
@@ -943,11 +943,11 @@ public sealed interface CodeBuilder
 
     /**
      * Local variable type entry
-     * @param slot local variable slot
-     * @param name variable name
-     * @param signature variable signature
-     * @param startScope start scope of the variable
-     * @param endScope end scope of the variable
+     * @param slot the local variable slot
+     * @param name the variable name
+     * @param signature the variable signature
+     * @param startScope the start scope of the variable
+     * @param endScope the end scope of the variable
      * @return this builder
      */
     default CodeBuilder localVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) {
@@ -985,7 +985,7 @@ public sealed interface CodeBuilder
 
     /**
      * Load reference from local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder aload(int slot) {
@@ -994,7 +994,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array of reference
-     * @param classEntry component type
+     * @param classEntry the component type
      * @return this builder
      */
     default CodeBuilder anewarray(ClassEntry classEntry) {
@@ -1003,7 +1003,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array of reference
-     * @param className component type
+     * @param className the component type
      * @return this builder
      */
     default CodeBuilder anewarray(ClassDesc className) {
@@ -1028,7 +1028,7 @@ public sealed interface CodeBuilder
 
     /**
      * Store reference into local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder astore(int slot) {
@@ -1061,7 +1061,7 @@ public sealed interface CodeBuilder
 
     /**
      * Push byte
-     * @param b byte
+     * @param b the byte
      * @return this builder
      */
     default CodeBuilder bipush(int b) {
@@ -1086,7 +1086,7 @@ public sealed interface CodeBuilder
 
     /**
      * Check whether object is of given type
-     * @param type object type
+     * @param type the object type
      * @return this builder
      */
     default CodeBuilder checkcast(ClassEntry type) {
@@ -1095,7 +1095,7 @@ public sealed interface CodeBuilder
 
     /**
      * Check whether object is of given type
-     * @param type object type
+     * @param type the object type
      * @return this builder
      */
     default CodeBuilder checkcast(ClassDesc type) {
@@ -1192,7 +1192,7 @@ public sealed interface CodeBuilder
 
     /**
      * Load double from local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dload(int slot) {
@@ -1233,7 +1233,7 @@ public sealed interface CodeBuilder
 
     /**
      * Store double into local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dstore(int slot) {
@@ -1396,7 +1396,7 @@ public sealed interface CodeBuilder
 
     /**
      * Load float from local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fload(int slot) {
@@ -1437,7 +1437,7 @@ public sealed interface CodeBuilder
 
     /**
      * Store float into local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fstore(int slot) {
@@ -1454,7 +1454,7 @@ public sealed interface CodeBuilder
 
     /**
      * Fetch field from object
-     * @param ref field reference
+     * @param ref the field reference
      * @return this builder
      */
     default CodeBuilder getfield(FieldRefEntry ref) {
@@ -1463,9 +1463,9 @@ public sealed interface CodeBuilder
 
     /**
      * Fetch field from object
-     * @param owner class
-     * @param name field name
-     * @param type field type
+     * @param owner the owner class
+     * @param name the field name
+     * @param type the field type
      * @return this builder
      */
     default CodeBuilder getfield(ClassDesc owner, String name, ClassDesc type) {
@@ -1474,7 +1474,7 @@ public sealed interface CodeBuilder
 
     /**
      * Get static field from class
-     * @param ref field reference
+     * @param ref the field reference
      * @return this builder
      */
     default CodeBuilder getstatic(FieldRefEntry ref) {
@@ -1483,9 +1483,9 @@ public sealed interface CodeBuilder
 
     /**
      * Get static field from class
-     * @param owner class
-     * @param name field name
-     * @param type field type
+     * @param owner the owner class
+     * @param name the field name
+     * @param type the field type
      * @return this builder
      */
     default CodeBuilder getstatic(ClassDesc owner, String name, ClassDesc type) {
@@ -1494,7 +1494,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch always
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder goto_(Label target) {
@@ -1503,7 +1503,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch always (wide index)
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder goto_w(Label target) {
@@ -1656,7 +1656,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_acmpeq(Label target) {
@@ -1665,7 +1665,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_acmpne(Label target) {
@@ -1674,7 +1674,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmpeq(Label target) {
@@ -1683,7 +1683,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmpge(Label target) {
@@ -1692,7 +1692,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmpgt(Label target) {
@@ -1701,7 +1701,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmple(Label target) {
@@ -1710,7 +1710,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmplt(Label target) {
@@ -1719,7 +1719,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_icmpne(Label target) {
@@ -1728,7 +1728,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if reference is not null
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_nonnull(Label target) {
@@ -1737,7 +1737,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if reference is null
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder if_null(Label target) {
@@ -1746,7 +1746,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder ifeq(Label target) {
@@ -1755,7 +1755,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder ifge(Label target) {
@@ -1764,7 +1764,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder ifgt(Label target) {
@@ -1773,7 +1773,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder ifle(Label target) {
@@ -1782,7 +1782,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder iflt(Label target) {
@@ -1791,7 +1791,7 @@ public sealed interface CodeBuilder
 
     /**
      * Branch if int comparison with zero succeeds
-     * @param target branch target
+     * @param target the branch target
      * @return this builder
      */
     default CodeBuilder ifne(Label target) {
@@ -1800,8 +1800,8 @@ public sealed interface CodeBuilder
 
     /**
      * Increment local variable by constant
-     * @param slot local variable slot
-     * @param val increment value
+     * @param slot the local variable slot
+     * @param val the increment value
      * @return this builder
      */
     default CodeBuilder iinc(int slot, int val) {
@@ -1810,7 +1810,7 @@ public sealed interface CodeBuilder
 
     /**
      * Load int from local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder iload(int slot) {
@@ -1835,7 +1835,7 @@ public sealed interface CodeBuilder
 
     /**
      * Determine if object is of given type
-     * @param target target type
+     * @param target the target type
      * @return this builder
      */
     default CodeBuilder instanceof_(ClassEntry target) {
@@ -1844,7 +1844,7 @@ public sealed interface CodeBuilder
 
     /**
      * Determine if object is of given type
-     * @param target target type
+     * @param target the target type
      * @return this builder
      */
     default CodeBuilder instanceof_(ClassDesc target) {
@@ -1853,7 +1853,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a dynamically-computed call site
-     * @param ref dynamic call site
+     * @param ref the dynamic call site
      * @return this builder
      */
     default CodeBuilder invokedynamic(InvokeDynamicEntry ref) {
@@ -1862,7 +1862,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a dynamically-computed call site
-     * @param ref dynamic call site
+     * @param ref the dynamic call site
      * @return this builder
      */
     default CodeBuilder invokedynamic(DynamicCallSiteDesc ref) {
@@ -1871,7 +1871,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke interface method
-     * @param ref interface method reference
+     * @param ref the interface method reference
      * @return this builder
      */
     default CodeBuilder invokeinterface(InterfaceMethodRefEntry ref) {
@@ -1880,9 +1880,9 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke interface method
-     * @param owner class
-     * @param name method name
-     * @param type method type
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
      * @return this builder
      */
     default CodeBuilder invokeinterface(ClassDesc owner, String name, MethodTypeDesc type) {
@@ -1892,7 +1892,7 @@ public sealed interface CodeBuilder
     /**
      * Invoke instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
-     * @param ref interface method reference
+     * @param ref the interface method reference
      * @return this builder
      */
     default CodeBuilder invokespecial(InterfaceMethodRefEntry ref) {
@@ -1902,7 +1902,7 @@ public sealed interface CodeBuilder
     /**
      * Invoke instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
-     * @param ref method reference
+     * @param ref the method reference
      * @return this builder
      */
     default CodeBuilder invokespecial(MethodRefEntry ref) {
@@ -1912,9 +1912,9 @@ public sealed interface CodeBuilder
     /**
      * Invoke instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
-     * @param owner class
-     * @param name method name
-     * @param type method type
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
      * @return this builder
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type) {
@@ -1924,10 +1924,10 @@ public sealed interface CodeBuilder
     /**
      * Invoke instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
-     * @param owner class
-     * @param name method name
-     * @param type method type
-     * @param isInterface interface method invocation indication
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
+     * @param isInterface the interface method invocation indication
      * @return this builder
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
@@ -1936,7 +1936,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a class (static) method
-     * @param ref interface method reference
+     * @param ref the interface method reference
      * @return this builder
      */
     default CodeBuilder invokestatic(InterfaceMethodRefEntry ref) {
@@ -1945,7 +1945,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a class (static) method
-     * @param ref method reference
+     * @param ref the method reference
      * @return this builder
      */
     default CodeBuilder invokestatic(MethodRefEntry ref) {
@@ -1954,9 +1954,9 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a class (static) method
-     * @param owner class
-     * @param name method name
-     * @param type method type
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
      * @return this builder
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type) {
@@ -1965,10 +1965,10 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke a class (static) method
-     * @param owner class
-     * @param name method name
-     * @param type method type
-     * @param isInterface
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
+     * @param isInterface the interface method invocation indication
      * @return this builder
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
@@ -1977,7 +1977,7 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke instance method; dispatch based on class
-     * @param ref method reference
+     * @param ref the method reference
      * @return this builder
      */
     default CodeBuilder invokevirtual(MethodRefEntry ref) {
@@ -1986,9 +1986,9 @@ public sealed interface CodeBuilder
 
     /**
      * Invoke instance method; dispatch based on class
-     * @param owner class
-     * @param name method name
-     * @param type method type
+     * @param owner the owner class
+     * @param name the method name
+     * @param type the method type
      * @return this builder
      */
     default CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
@@ -2037,7 +2037,7 @@ public sealed interface CodeBuilder
 
     /**
      * Store int into local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder istore(int slot) {
@@ -2070,8 +2070,8 @@ public sealed interface CodeBuilder
 
     /**
      * Access jump table by key match and jump
-     * @param defaultTarget default jump target
-     * @param cases switch cases
+     * @param defaultTarget the default jump target
+     * @param cases the switch cases
      * @return this builder
      */
     default CodeBuilder lookupswitch(Label defaultTarget, List<SwitchCase> cases) {
@@ -2160,7 +2160,7 @@ public sealed interface CodeBuilder
 
     /**
      * Push item from run-time constant pool
-     * @param value
+     * @param value the constant value
      * @return this builder
      */
     default CodeBuilder ldc(ConstantDesc value) {
@@ -2169,7 +2169,7 @@ public sealed interface CodeBuilder
 
     /**
      * Push item from run-time constant pool
-     * @param entry
+     * @param entry the constant value
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
@@ -2189,7 +2189,7 @@ public sealed interface CodeBuilder
 
     /**
      * Load long from local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lload(int slot) {
@@ -2254,7 +2254,7 @@ public sealed interface CodeBuilder
 
     /**
      * Store long into local variable
-     * @param slot local variable slot
+     * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lstore(int slot) {
@@ -2303,8 +2303,8 @@ public sealed interface CodeBuilder
 
     /**
      * Create new multidimensional array
-     * @param array array type
-     * @param dims number of dimensions
+     * @param array the array type
+     * @param dims the number of dimensions
      * @return this builder
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
@@ -2313,8 +2313,8 @@ public sealed interface CodeBuilder
 
     /**
      * Create new multidimensional array
-     * @param array array type
-     * @param dims number of dimensions
+     * @param array the array type
+     * @param dims the number of dimensions
      * @return this builder
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
@@ -2323,7 +2323,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new object
-     * @param clazz class
+     * @param clazz the new class type
      * @return this builder
      */
     default CodeBuilder new_(ClassEntry clazz) {
@@ -2332,7 +2332,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new object
-     * @param clazz class
+     * @param clazz the new class type
      * @return this builder
      */
     default CodeBuilder new_(ClassDesc clazz) {
@@ -2341,7 +2341,7 @@ public sealed interface CodeBuilder
 
     /**
      * Create new array
-     * @param typeKind primitive array type
+     * @param typeKind the primitive array type
      * @return this builder
      */
     default CodeBuilder newarray(TypeKind typeKind) {
@@ -2366,7 +2366,7 @@ public sealed interface CodeBuilder
 
     /**
      * Set field in object
-     * @param ref field reference
+     * @param ref the field reference
      * @return this builder
      */
     default CodeBuilder putfield(FieldRefEntry ref) {
@@ -2375,9 +2375,9 @@ public sealed interface CodeBuilder
 
     /**
      * Set field in object
-     * @param owner class
-     * @param name field name
-     * @param type field type
+     * @param owner the owner class
+     * @param name the field name
+     * @param type the field type
      * @return this builder
      */
     default CodeBuilder putfield(ClassDesc owner, String name, ClassDesc type) {
@@ -2386,7 +2386,7 @@ public sealed interface CodeBuilder
 
     /**
      * Set static field in class
-     * @param ref field reference
+     * @param ref the field reference
      * @return this builder
      */
     default CodeBuilder putstatic(FieldRefEntry ref) {
@@ -2395,9 +2395,9 @@ public sealed interface CodeBuilder
 
     /**
      * Set static field in class
-     * @param owner class
-     * @param name field name
-     * @param type field type
+     * @param owner the owner class
+     * @param name the field name
+     * @param type the field type
      * @return this builder
      */
     default CodeBuilder putstatic(ClassDesc owner, String name, ClassDesc type) {
@@ -2430,7 +2430,7 @@ public sealed interface CodeBuilder
 
     /**
      * Push short
-     * @param s short
+     * @param s the short
      * @return this builder
      */
     default CodeBuilder sipush(int s) {
@@ -2447,10 +2447,10 @@ public sealed interface CodeBuilder
 
     /**
      * Access jump table by index and jump
-     * @param low low key value
-     * @param high high key value
-     * @param defaultTarget default jump target
-     * @param cases switch cases
+     * @param low the low key value
+     * @param high the high key value
+     * @param defaultTarget the default jump target
+     * @param cases the switch cases
      * @return this builder
      */
     default CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
@@ -2459,8 +2459,8 @@ public sealed interface CodeBuilder
 
     /**
      * Access jump table by index and jump
-     * @param defaultTarget default jump target
-     * @param cases switch cases
+     * @param defaultTarget the default jump target
+     * @param cases the switch cases
      * @return this builder
      */
     default CodeBuilder tableswitch(Label defaultTarget, List<SwitchCase> cases) {
