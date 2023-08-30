@@ -503,6 +503,7 @@ bool RegionNode::is_diamond() const {
   }
   Node* diamond_if = left_path->in(0);
   if (diamond_if == nullptr || !diamond_if->is_If() || diamond_if != right_path->in(0)) {
+    // Not an IfNode merging a diamond or TOP.
     return false;
   }
 
@@ -1386,7 +1387,7 @@ bool PhiNode::try_clean_memory_phi(PhaseIterGVN* igvn) {
   if (_type != Type::MEMORY) {
     return false;
   }
-  assert(is_diamond_phi(), "sanity");
+  assert(is_diamond_phi() > 0, "sanity");
   assert(req() == 3, "same as region");
   const Node* region = in(0);
   for (uint i = 1; i < 3; i++) {
