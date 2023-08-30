@@ -233,6 +233,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   Thread* current_thread = Thread::current();
+  assert(current_thread->is_JfrSampler_thread(), "invariant");
   assert(jt != current_thread, "invariant");
   // Explicitly monitor the available space of the thread-local buffer used for enqueuing klasses as part of tagging methods.
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
@@ -285,6 +286,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   assert(jt != nullptr, "invariant");
   assert(jt == Thread::current(), "invariant");
+  assert(jt->thread_state() == _thread_in_vm, "invariant");
   assert(!_lineno, "invariant");
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.
