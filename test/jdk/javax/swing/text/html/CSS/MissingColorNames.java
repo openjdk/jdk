@@ -29,14 +29,16 @@ import javax.swing.text.html.StyleSheet;
 /*
  * @test
  * @bug 8292276
- * @summary Missing Color Names in CSS
+ * @summary Missing Color Names in CSS and CSS 4 and 8 digits hex coded Color
  * @run main MissingColorNames
  */
 public class MissingColorNames {
 
     // The CSS 'color' property accepts <name-color> listed in the CSS Color Module Level 4.
     // - Many of they keywords are not supported.
-    //
+    // The CSS 'color' property accepts <hex-color>. The syntax is a a hash character, "#",
+    // followed by 3, 4, 6, or 8 hexadecimal digits.
+    // - Syntax with 4 and 8 hexadecimal digits are not supported.
     // Test fails if stringToColor doesn't return the expected value.
     public static void main(String[] args) {
         StringBuilder result = new StringBuilder("Failed.");
@@ -65,10 +67,11 @@ public class MissingColorNames {
 
     static String [][] listNAMEetRGBA = {
         // The null argument
+        // Subset of named color tests
         {null, null},
-        // This color doesn't belong to the CSS-COLOR-4 specification
+        // - This color doesn't belong to the CSS-COLOR-4 specification
         {"com.scientificware.color", null},
-        // The colors listed below belong to the CSS-COLOR-4 specification
+        // - The colors listed below belong to the CSS-COLOR-4 specification
         {"aliceblue", "fff0f8ff"},
         {"antiquewhite", "fffaebd7"},
         {"aqua", "ff00ffff"},
@@ -217,6 +220,32 @@ public class MissingColorNames {
         {"white", "ffffffff"},
         {"whitesmoke", "fff5f5f5"},
         {"yellow", "ffffff00"},
-        {"yellowgreen", "ff9acd32"}
+        {"yellowgreen", "ff9acd32"},
+        // Subset of hexadecimal tests
+        {"#", null},
+        {"#f", null},
+        {"#f0", null},
+        {"#f0f", "ffff00ff"},
+        // - #rgba should be interpreted as #rrggbbaa according CSS Color Level 4.
+        // - Then expecting 0xaaff1122 from Color.
+        {"#f12a", "aaff1122"},
+        {"#f0f10", null},
+        {"#f0f109", "fff0f109"},
+        {"#f0f1092", null},
+        // - In #rrggbbaa, last two digits should be interpreted as Alpha value according CSS Color Level 4.
+        // - Then expecting 0xaaff1122 from Color.
+        {"#ff1122aa", "aaff1122"},
+        {"#f0f10928", "28f0f109"},
+        {"f0f10928", "28f0f109"},
+        {"#f0f109289", null},
+        {"f0f109289", null},
+        {"ppabcdef", null},
+        {"b52k", null},
+        {"#ppabcdef", null},
+        {"#b52k", null},
+        {"#ffffffff", "ffffffff"},
+        {"ffffffff", "ffffffff"},
+        {"#ffffff", "ffffffff"},
+        {"ffffff", "ffffffff"}
     };
 }
