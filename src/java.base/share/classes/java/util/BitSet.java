@@ -1402,7 +1402,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * {@return a new immutable snapshot of this {@code BitSet}}.
      */
     public OfImmutable asImmutable() {
-        return new OfImmutableImpl(this);
+        return OfImmutableImpl.of(this);
     }
 
     /**
@@ -1683,10 +1683,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
         }
 
         private int length0() {
+            // Scan backwards
             for (int i = words.length - 1; i >= 0; i--) {
                 long word = words[i];
                 if (word != 0) {
-                    return Math.toIntExact(i * Long.BYTES * Long.highestOneBit(word));
+                    return Math.toIntExact(i * Long.BYTES * Long.highestOneBit(word) + 1);
                 }
             }
             return 0;
