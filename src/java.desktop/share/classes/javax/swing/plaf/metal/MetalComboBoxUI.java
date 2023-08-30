@@ -338,7 +338,7 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
         }
     }
 
-    // These two methods were overloaded and made public. This was probably a
+    // These two methods were overridden and made public. This was probably a
     // mistake in the implementation. The functionality that they used to
     // provide is no longer necessary and should be removed. However,
     // removing them will create an incompatible API change.
@@ -410,10 +410,10 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
             super( cBox );
         }
 
-        // This method was overloaded and made public. This was probably
-        // mistake in the implementation. The functionality that they used to
+        // This method was overridden and made public. This was probably
+        // a mistake in the implementation. The functionality that it used to
         // provide is no longer necessary and should be removed. However,
-        // removing them will create an incompatible API change.
+        // removing it will create an incompatible API change.
 
         public void delegateFocus(MouseEvent e) {
             super.delegateFocus(e);

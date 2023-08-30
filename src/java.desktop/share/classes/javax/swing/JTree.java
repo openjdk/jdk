@@ -3104,7 +3104,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
         }
         prefix = prefix.toUpperCase();
 
-        // start search from the next/previous element from the
+        // start search from the next/previous element of the
         // selected element
         int increment = (bias == Position.Bias.Forward) ? 1 : -1;
         int row = startingRow;

@@ -248,7 +248,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     private volatile StateValue state;
 
     /**
-     * everything is run inside this FutureTask. Also it is used as
+     * Everything is run inside this FutureTask. Also it is used as
      * a delegate for the Future API.
      */
     private final FutureTask<T> future;

@@ -1027,7 +1027,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             if (lastFocused != null) {
                 if(!lastFocused.requestFocusInWindow()) {
                     // Workaround for 4810575.
-                    // If lastFocused is not in currently focused window
+                    // If lastFocused is not in currently focused window,
                     // requestFocusInWindow will fail. In this case we must
                     // request focus by requestFocus() if it was not
                     // transferred from our popup.

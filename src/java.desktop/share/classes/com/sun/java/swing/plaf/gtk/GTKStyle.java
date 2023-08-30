@@ -775,10 +775,10 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             Object value = getClassSpecificValue(classKey);
             if (value != null) {
                 //This is a workaround as the "slider-length" property has been
-                //deprecated for GtkScale from gtk 3.20, so default value of 31
-                //is used and makes rendering of slider wrong. Value 14 is being
-                //used as default value for Slider.thumbHeight is 14 and making
-                //width 14 as well makes slider thumb render in proper shape
+                //deprecated for GtkScale from gtk 3.20, so the default value of 31
+                //is used and makes rendering of the slider wrong. Value 14 is being
+                //used as the default value for Slider.thumbHeight is 14 and making
+                //width 14 as well makes the slider thumb render in proper shape
                 if ("Slider.thumbWidth".equals(key) && value.equals(31)) {
                     return 14;
                 }

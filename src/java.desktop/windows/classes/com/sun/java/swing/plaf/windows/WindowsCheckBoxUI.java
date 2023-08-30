@@ -39,9 +39,9 @@ import sun.awt.AppContext;
  */
 public class WindowsCheckBoxUI extends WindowsRadioButtonUI
 {
-    // NOTE: MetalCheckBoxUI inherits from MetalRadioButtonUI instead
+    // NOTE: WindowsCheckBoxUI inherits from WindowsRadioButtonUI instead
     // of BasicCheckBoxUI because we want to pick up all the
-    // painting changes made in MetalRadioButtonUI.
+    // painting changes made in WindowsRadioButtonUI.
 
     private static final Object WINDOWS_CHECK_BOX_UI_KEY = new Object();
 

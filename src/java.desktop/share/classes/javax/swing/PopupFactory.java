@@ -537,7 +537,7 @@ public class PopupFactory {
         }
 
         /**
-         * As we recycle the <code>Window</code>, we don't want to dispose it,
+         * As we recycle the <code>Window</code>, we don't want to dispose of it,
          * thus this method does nothing, instead use <code>_dispose</code>
          * which will handle the disposing.
          */

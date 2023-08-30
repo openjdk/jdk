@@ -1287,10 +1287,10 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
 
     Position.Bias guessBiasForOffset(int offset, Position.Bias lastBias,
                                      boolean lastLTR) {
-        // There is an ambiguous case here. That if your model looks like:
+        // There is an ambiguous case here. If your model looks like:
         // abAB with the cursor at abB]A (visual representation of
         // 3 forward) deleting could either become abB] or
-        // ab[B. I'ld actually prefer abB]. But, if I implement that
+        // ab[B. I'd actually prefer abB]. But, if I implement that
         // a delete at abBA] would result in aBA] vs a[BA which I
         // think is totally wrong. To get this right we need to know what
         // was deleted. And we could get this from the bidi structure

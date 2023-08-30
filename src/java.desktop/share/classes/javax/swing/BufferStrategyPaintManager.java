@@ -690,7 +690,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
          * false, or if there is a problem in creating the
          * <code>BufferStrategy</code>.
          *
-         * @param create If true, and the BufferStrategy is currently null,
+         * @param create If true and the BufferStrategy is currently null,
          *               one will be created.
          */
         public BufferStrategy getBufferStrategy(boolean create) {

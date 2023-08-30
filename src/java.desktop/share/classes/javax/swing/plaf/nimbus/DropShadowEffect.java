@@ -41,9 +41,7 @@ class DropShadowEffect extends ShadowEffect {
     // Effect Methods
 
     /**
-     * Get the type of this effect, one of UNDER,BLENDED,OVER. UNDER means the result of apply effect should be painted
-     * under the src image. BLENDED means the result of apply effect contains a modified src image so just it should be
-     * painted. OVER means the result of apply effect should be painted over the src image.
+     * {@inheritDoc}
      *
      * @return The effect type
      */

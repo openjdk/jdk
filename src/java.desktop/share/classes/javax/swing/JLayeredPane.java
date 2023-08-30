@@ -465,7 +465,7 @@ public class JLayeredPane extends JComponent implements Accessible {
      * @param c  the Component to check
      * @return an int giving the component's position, where 0 is the
      *         topmost position and the highest index value = the count
-     *         of components at that layer, minus 1
+     *         of components at that layer minus 1
      *
      * @see #getComponentCountInLayer
      */
@@ -529,7 +529,7 @@ public class JLayeredPane extends JComponent implements Accessible {
             curLayer = getLayer(getComponent(i));
             if(curLayer == layer) {
                 layerCount++;
-            /// Short circuit the counting when we have them all
+            /// Short-circuit the counting when we have them all
             } else if(layerCount > 0 || curLayer < layer) {
                 break;
             }

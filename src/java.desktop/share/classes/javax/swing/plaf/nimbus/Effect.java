@@ -43,9 +43,10 @@ abstract class Effect {
     // Abstract Methods
 
     /**
-     * Get the type of this effect, one of UNDER,BLENDED,OVER. UNDER means the result of apply effect should be painted
-     * under the src image. BLENDED means the result of apply effect contains a modified src image so just it should be
-     * painted. OVER means the result of apply effect should be painted over the src image.
+     * Get the type of this effect, one of UNDER,BLENDED,OVER.
+     * UNDER means the result of applying the effect should be painted under the src image.
+     * BLENDED means the result of applying the effect contains a modified src image, so it should just be painted.
+     * OVER means the result of applying the effect should be painted over the src image.
      *
      * @return The effect type
      */
@@ -68,7 +69,7 @@ abstract class Effect {
      *            the area the need effect applied to it
      * @param h   The height of the src image to apply effect to, this allow the src and dst buffers to be bigger than
      *            the area the need effect applied to it
-     * @return The result of apply
+     * @return The result of applying the effect
      */
     abstract BufferedImage applyEffect(BufferedImage src, BufferedImage dst, int w, int h);
 

@@ -44,7 +44,7 @@ import java.awt.*;
  *
  * <p>While <code>CompositeView</code>
  * does not impose a layout policy on its child <code>View</code>s,
- * it does allow for inserting the child <code>View</code>s
+ * it does allow for insetting the child <code>View</code>s
  * it will contain.  The insets can be set by either
  * {@link #setInsets} or {@link #setParagraphInsets}.
  *

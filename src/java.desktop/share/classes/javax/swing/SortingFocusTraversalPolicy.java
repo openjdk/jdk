@@ -282,7 +282,7 @@ public class SortingFocusTraversalPolicy
         }
 
         // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
-        // If it's the case just go down cycle (if it's set to "implicit").
+        // If it's the case, just go down cycle (if it's set to "implicit").
         Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
         if (comp != null) {
             return comp;

@@ -1118,7 +1118,7 @@ public class BasicSplitPaneDivider extends Container
             int     newLoc;
 
             // We use the location from the UI directly, as the location the
-            // JSplitPane itself maintains is not necessary correct.
+            // JSplitPane itself maintains is not necessarily correct.
             if (toMinimum) {
                 if (orientation == JSplitPane.VERTICAL_SPLIT) {
                     if (currentLoc >= (splitPane.getHeight() -

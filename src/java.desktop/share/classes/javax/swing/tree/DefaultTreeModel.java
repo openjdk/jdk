@@ -348,7 +348,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
       * must be sorted in ascending order. And removedChildren should be
       * the array of the children objects that were removed.
       *
-      * @param node             parent node which children were removed
+      * @param node             parent node from which children were removed
       * @param childIndices     indexes of removed children
       * @param removedChildren  array of the children objects that were removed
       */

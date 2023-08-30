@@ -1865,7 +1865,7 @@ public class RepaintManager
      * Runnable used to process all repaint/revalidate requests.
      */
     private final class ProcessingRunnable implements Runnable {
-        // If true, we're wanting on the EventQueue.
+        // If true, we're waiting on the EventQueue.
         private boolean pending;
 
         /**

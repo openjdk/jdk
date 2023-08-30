@@ -342,7 +342,7 @@ public class SwingUtilities2 {
      * Graphics.
      *
      * @param c JComponent requesting FontMetrics, may be null
-     * @param g Graphics Graphics
+     * @param g Graphics
      * @param font Font to get FontMetrics for
      */
     @SuppressWarnings("deprecation")
@@ -350,7 +350,7 @@ public class SwingUtilities2 {
                                              Font font) {
         if (c != null) {
             // Note: We assume that we're using the FontMetrics
-            // from the widget to layout out text, otherwise we can get
+            // from the widget to lay out text, otherwise we can get
             // mismatches when printing.
             return c.getFontMetrics(font);
         }
