@@ -73,7 +73,7 @@ public class URLEncodeDecode {
     public String[] testStringsDecode;
     public String[] toStrings;
 
-    @Setup
+    @Setup()
     public void setupStrings() {
         char[] encodeTokens = new char[] { '[', '(', ' ', '\u00E4', '\u00E5', '\u00F6', ')', '='};
         char[] tokens = new char[('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1) + 4];
@@ -90,7 +90,7 @@ public class URLEncodeDecode {
         tokens[n++] = '-';
         tokens[n++] = '_';
         tokens[n++] = '.';
-        tokens[n++] = '*';
+        tokens[n] = '*';
 
         Random r = new Random(3);
         testStringsEncode = new String[COUNT];
@@ -100,35 +100,78 @@ public class URLEncodeDecode {
             int l = r.nextInt(maxLength);
             boolean needEncoding = r.nextInt(100) >= unchanged;
             StringBuilder sb = new StringBuilder();
+            boolean hasEncoded = false;
             for (int j = 0; j < l; j++) {
                 if (needEncoding && r.nextInt(100) < encodeChars) {
-                    int c = r.nextInt(encodeTokens.length);
-                    sb.append(encodeTokens[c]);
+                    addToken(encodeTokens, r, sb);
+                    hasEncoded = true;
                 } else {
-                    int c = r.nextInt(tokens.length);
-                    sb.append(tokens[c]);
+                    addToken(tokens, r, sb);
                 }
+            }
+            if (needEncoding && !hasEncoded) {
+                addToken(encodeTokens, r, sb);
             }
             testStringsEncode[i] = sb.toString();
         }
+        int countUnchanged = 0;
+        for (String s : testStringsEncode) {
+            if (s.equals(java.net.URLEncoder.encode(s, StandardCharsets.UTF_8))) {
+                countUnchanged++;
+            } else {
+                if (unchanged == 100) {
+                    System.out.println("Unexpectedly needs encoding action: ");
+                    System.out.println("\t" + s);
+                    System.out.println("\t" + java.net.URLEncoder.encode(s, StandardCharsets.UTF_8));
+                }
+            }
+        }
+        System.out.println();
+        System.out.println("Generated " + testStringsEncode.length + " encodable strings, " + countUnchanged + " of which does not need encoding action");
 
         for (int i = 0; i < COUNT; i++) {
             int l = r.nextInt(maxLength);
+            boolean needDecoding = r.nextInt(100) >= unchanged;
             StringBuilder sb = new StringBuilder();
+            boolean hasDecoded = false;
             for (int j = 0; j < l; j++) {
-                boolean needEncoding = r.nextInt(100) >= unchanged;
-                int c = r.nextInt(tokens.length);
-                if (needEncoding && r.nextInt(100) < encodeChars) {
-                    if (r.nextInt(100) < 15) {
-                        sb.append('+'); // exercise '+' -> ' ' decoding paths.
-                    } else {
-                        sb.append("%").append(tokens[r.nextInt(16)]).append(tokens[r.nextInt(16)]);
-                    }
+                if (needDecoding && r.nextInt(100) < encodeChars) {
+                    addDecodableChar(tokens, r, sb);
+                    hasDecoded = true;
                 } else {
-                    sb.append(tokens[c]);
+                    addToken(tokens, r, sb);
                 }
             }
+            if (needDecoding && !hasDecoded) {
+                addDecodableChar(tokens, r, sb);
+            }
             testStringsDecode[i] = sb.toString();
+        }
+        countUnchanged = 0;
+        for (String s : testStringsDecode) {
+            if (s.equals(java.net.URLDecoder.decode(s, StandardCharsets.UTF_8))) {
+                countUnchanged++;
+            } else {
+                if (unchanged == 100) {
+                    System.out.println("Unexpectedly needs encoding action: ");
+                    System.out.println("\t" + s);
+                    System.out.println("\t" + java.net.URLDecoder.decode(s, StandardCharsets.UTF_8));
+                }
+            }
+        }
+        System.out.println("Generated " + testStringsDecode.length + " decodable strings, " + countUnchanged + " of which does not need decoding action");
+    }
+
+    private static void addToken(char[] tokens, Random r, StringBuilder sb) {
+        int c = r.nextInt(tokens.length);
+        sb.append(tokens[c]);
+    }
+
+    private static void addDecodableChar(char[] tokens, Random r, StringBuilder sb) {
+        if (r.nextInt(100) < 15) {
+            sb.append('+'); // exercise '+' -> ' ' decoding paths.
+        } else {
+            sb.append("%").append(tokens[r.nextInt(16)]).append(tokens[r.nextInt(16)]);
         }
     }
 
