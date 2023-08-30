@@ -192,7 +192,7 @@ public class Config {
                 .privilegedGetProperty("java.security.krb5.kdc");
         if (tmp != null) {
             // The user can specify a list of kdc hosts separated by ":"
-            defaultKDC = tmp.replace(':', ' ');
+            defaultKDC = tmp.replace(',', ' ');
         } else {
             defaultKDC = null;
         }
