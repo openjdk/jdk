@@ -21,12 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import tests.JImageGenerator;
-import tests.Result;
 
 import java.io.File;
 import java.nio.file.Files;
