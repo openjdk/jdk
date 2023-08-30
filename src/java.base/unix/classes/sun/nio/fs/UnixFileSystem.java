@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.nio.ByteBuffer;
+import java.nio.file.AccessMode;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
@@ -913,6 +914,9 @@ abstract class UnixFileSystem
             if (!flags.replaceExisting) {
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
+            } else if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
+                // Ensure source can be read
+                provider.checkAccess(source, AccessMode.READ);
             }
 
             // attempt to delete target
@@ -1037,6 +1041,10 @@ abstract class UnixFileSystem
             if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
+            else if (!sourceAttrs.isSymbolicLink() || flags.followLinks)
+                // Ensure source can be read
+                provider.checkAccess(source, AccessMode.READ);
+
             try {
                 if (targetAttrs.isDirectory()) {
                     rmdir(target);
