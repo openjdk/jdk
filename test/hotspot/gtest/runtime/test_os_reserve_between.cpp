@@ -35,6 +35,10 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
+// On AIX, these tests make no sense as long as JDK-8315321 remains unfixed since the attach
+// addresses are not predictable.
+#ifndef AIX
+
 // Must be the same as in os::attempt_reserve_memory_between()
 struct ARMB_constants {
   static constexpr uintptr_t absolute_max = NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024);
@@ -339,3 +343,4 @@ TEST_VM(os, attempt_reserve_memory_between_small_range_fill_hole) {
   }
 }
 
+#endif // AIX
