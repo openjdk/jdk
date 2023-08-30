@@ -56,4 +56,8 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
     static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
         return new IllegalArgumentException("Misaligned access at address: " + address);
     }
+
+    static UnsupportedOperationException newUnsupportedAccessModeForAlignment(long alignment) {
+        return new UnsupportedOperationException("Unsupported access mode for alignment: " + alignment);
+    }
 }

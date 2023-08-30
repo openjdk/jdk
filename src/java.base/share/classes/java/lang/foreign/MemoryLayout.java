@@ -234,19 +234,23 @@ import jdk.internal.vm.annotation.ForceInline;
  *
  * <h2 id="access-mode-restrictions">Access mode restrictions</h2>
  *
- * The var handles returned by {@link #varHandle(PathElement...)} and {@link ValueLayout#varHandle()} feature certain
- * <i>access mode restrictions</i>. A var handle is associated with an access size {@code S}, derived from the
- * {@linkplain ValueLayout#byteSize() byte size} of the receiver layout, and an alignment constraint {@code B}, derived
- * from the {@linkplain ValueLayout#byteAlignment() alignment constraint} of the receiver layout. We say that a memory
- * access operation is <em>fully aligned</em> if it occurs at a memory address {@code A} which is compatible with both
- * alignment constraints {@code S} and {@code B}. If access is fully aligned then following access modes are supported
- * and are guaranteed to support atomic access:
+ * A var handle returned by {@link #varHandle(PathElement...)} or {@link ValueLayout#varHandle()} features certain
+ * access characteristics, which are derived from the selected layout {@code L}:
  * <ul>
- * <li>read write access modes for all {@code T}, with the exception of
- *     access modes {@code get} and {@code set} for {@code long} and
- *     {@code double} on 32-bit platforms.
+ * <li>A carrier type {@code T}, derived from {@code L.carrier()}</li>
+ * <li>An alignment constraint {@code A}, derived from {@code L.byteAlignment()}</li>
+ * <li>An access size {@code S}, derived from {@code L.byteSize()}</li>
+ * </ul>
+ * Depending on the above characteristics, the returned var handle might feature certain <i>access mode restrictions</i>.
+ * We say that a var handle is <em>aligned</em> if its alignment constraint {@code A} is compatible with the access size
+ * {@code S}, that is if {@code A >= S}. An aligned var handle is guaranteed to support the following access modes:
+ * <ul>
+ * <li>read write access modes for all {@code T}. On 32-bit platforms, access modes
+ *     {@code get} and {@code set} for {@code long}, {@code double} and {@code MemorySegment}
+ *     are supported but might lead to word tearing, as described in Section {@jls 17.7}.
+ *     of <cite>The Java Language Specification</cite>.
  * <li>atomic update access modes for {@code int}, {@code long},
- *     {@code float}, {@code double} or {@link MemorySegment}.
+ *     {@code float}, {@code double} and {@link MemorySegment}.
  *     (Future major platform releases of the JDK may support additional
  *     types for certain currently unsupported access modes.)
  * <li>numeric atomic update access modes for {@code int}, {@code long} and {@link MemorySegment}.
@@ -260,16 +264,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * values using their bitwise representation (see {@link Float#floatToRawIntBits}, {@link Double#doubleToRawLongBits}
  * and {@link MemorySegment#address()}, respectively).
  * <p>
- * Alternatively, a memory access operation is <em>partially aligned</em> if it occurs at a memory address {@code A}
- * which is only compatible with the alignment constraint {@code B}; in such cases, access for anything other than the
- * {@code get} and {@code set} access modes will result in an {@code IllegalArgumentException}. If access is partially aligned,
- * atomic access is only guaranteed when {@code A} is aligned according to {@code S}.
- * <p>
- * In all other cases, we say that a memory access operation is <em>misaligned</em>; in such cases an
- * {@code IllegalArgumentException} is thrown, irrespective of the access mode being used.
- * <p>
- * Finally, if {@code T} is {@code MemorySegment} all write access modes throw {@link IllegalArgumentException}
- * unless the value to be written is a {@linkplain MemorySegment#isNative() native} memory segment.
+ * Alternatively, a var handle is <em>unaligned</em> if its alignment constraint {@code A} is incompatible with the
+ * access size {@code S}, that is, if {@code A < S}. An unaligned var handle only supports the {@code get} and {@code set}
+ * access modes. All other access modes will result in {@link UnsupportedOperationException} being thrown. Moreover,
+ * while supported, access modes {@code get} and {@code set} might lead to word tearing.
  *
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
@@ -471,6 +469,9 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     <li>Otherwise, the address layout has no target layout, and the size of the returned segment
      *     is <a href="MemorySegment.html#wrapping-addresses">zero</a>.</li>
      * </ul>
+     * Moreover, if the selected layout is an {@linkplain AddressLayout address layout}, calling {@link VarHandle#set(Object...)}
+     * can throw {@link IllegalArgumentException} if the memory segment representing the address to be written is not a
+     * {@linkplain MemorySegment#isNative() native} memory segment.
      * <p>
      * If the provided layout path has size {@code m} and contains a dereference path element in position {@code k}
      * (where {@code k <= m}) then two layout paths {@code P} and {@code P'} are derived, where P contains all the path
@@ -502,7 +503,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * }
      *
      * @apiNote The resulting var handle features certain <a href="#access-mode-restrictions"><em>access mode restrictions</em></a>,
-     * which are common to all memory access var handles derived from memory layouts.
+     * which are common to all var handles derived from memory layouts.
      *
      * @param elements the layout path elements.
      * @return a var handle that accesses a memory segment at the offset selected by the given layout path.
