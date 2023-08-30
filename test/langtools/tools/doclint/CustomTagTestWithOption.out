@@ -1,5 +1,6 @@
 CustomTagTest.java:17: error: unknown tag: unknownTag
  * @unknownTag Text for an unknown tag.
    ^
+Note: An unknown tag has been reported. Mistyped? Forgot to add a custom tag or register a taglet?
 1 error
 

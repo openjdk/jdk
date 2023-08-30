@@ -1139,6 +1139,8 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitUnknownInlineTag(tree, ignore);
     }
 
+    private boolean reportedHelpOnUnknownTag;
+
     private void checkUnknownTag(DocTree tree, String tagName) {
         // if it were a standard tag, this method wouldn't be called:
         // a standard tag is never represented by Unknown{Block,Inline}TagTree
@@ -1147,8 +1149,19 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                 || k == DocTree.Kind.UNKNOWN_INLINE_TAG;
         assert !getStandardTags().contains(tagName);
         // report an unknown tag only if custom tags are set, see 8314213
-        if (env.customTags != null && !env.customTags.contains(tagName))
-            env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+        if (env.customTags != null && !env.customTags.contains(tagName)) {
+            var suggestions = DocLint.suggestSimilar(env.customTags, tagName);
+            if (suggestions.isEmpty()) {
+                env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
+            } else {
+                env.messages.error(SYNTAX, tree, "dc.tag.unknown.with.hint", tagName,
+                        String.join(", ", suggestions)); // TODO: revisit after 8041488
+            }
+            if (!reportedHelpOnUnknownTag) {
+                reportedHelpOnUnknownTag = true;
+                env.messages.note(SYNTAX, "dc.tag.unknown.help");
+            }
+        }
     }
 
     private Set<String> getStandardTags() {
