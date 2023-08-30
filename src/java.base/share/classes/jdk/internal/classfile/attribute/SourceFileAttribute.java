@@ -48,16 +48,16 @@ public sealed interface SourceFileAttribute
     Utf8Entry sourceFile();
 
     /**
-     * {@return source file attribute}
-     * @param sourceFile source file name
+     * {@return a source file attribute}
+     * @param sourceFile the source file name
      */
     static SourceFileAttribute of(String sourceFile) {
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(sourceFile));
     }
 
     /**
-     * {@return source file attribute}
-     * @param sourceFile source file name
+     * {@return a source file attribute}
+     * @param sourceFile the source file name
      */
     static SourceFileAttribute of(Utf8Entry sourceFile) {
         return new UnboundAttribute.UnboundSourceFileAttribute(sourceFile);

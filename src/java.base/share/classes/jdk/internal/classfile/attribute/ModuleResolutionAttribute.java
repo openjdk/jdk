@@ -72,7 +72,7 @@ public sealed interface ModuleResolutionAttribute
      *   0x0002 (WARN_DEPRECATED)
      *   0x0004 (WARN_DEPRECATED_FOR_REMOVAL)
      *   0x0008 (WARN_INCUBATING)
-     * @return module resolution flags
+     * @return the module resolution flags
      */
     int resolutionFlags();
 

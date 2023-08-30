@@ -46,8 +46,8 @@ public sealed interface StackMapTableAttribute
     List<StackMapFrameInfo> entries();
 
     /**
-     * {@return stack map table attribute}
-     * @param entries stack map frames
+     * {@return a stack map table attribute}
+     * @param entries the stack map frames
      */
     public static StackMapTableAttribute of(List<StackMapFrameInfo> entries) {
         return new UnboundAttribute.UnboundStackMapTableAttribute(entries);
