@@ -800,7 +800,7 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 // Return projection that leads to an uncommon trap if any
 ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj(Deoptimization::Reason_none);
+    call = proj_out(i)->is_uncommon_trap_proj();
     if (call != nullptr) {
       return proj_out(i);
     }
@@ -811,7 +811,7 @@ ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
 // Do this If and the dominating If both branch out to an uncommon trap
 bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn) {
   ProjNode* otherproj = proj->other_if_proj();
-  CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj(Deoptimization::Reason_none);
+  CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
 
   if (otherproj->outcnt() == 1 && dom_unc != nullptr) {
     // We need to re-execute the folded Ifs after deoptimization from the merged traps
@@ -1076,8 +1076,8 @@ Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* 
 
   ProjNode* otherproj = proj->other_if_proj();
 
-  CallStaticJavaNode* unc = success->is_uncommon_trap_proj(Deoptimization::Reason_none);
-  CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj(Deoptimization::Reason_none);
+  CallStaticJavaNode* unc = success->is_uncommon_trap_proj();
+  CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj();
 
   if (unc != dom_unc) {
     Node* r = new RegionNode(3);
@@ -1241,13 +1241,13 @@ bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
   if (proj == nullptr) {
     return false;
   }
-  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
   if (unc != nullptr && proj->outcnt() <= 2) {
     if (proj->outcnt() == 1 ||
         // Allow simple null check from LoadRange
         (is_cmp_with_loadrange(proj) && is_null_check(proj, igvn))) {
-      CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
-      CallStaticJavaNode* dom_unc = proj->in(0)->in(0)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
+      CallStaticJavaNode* dom_unc = proj->in(0)->in(0)->as_Proj()->is_uncommon_trap_if_pattern();
       assert(dom_unc != nullptr, "is_uncommon_trap_if_pattern returned null");
 
       // reroute_side_effect_free_unc changes the state of this
@@ -1278,9 +1278,9 @@ bool IfNode::is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn) {
 // where the first CmpI would have prevented it from executing: on a
 // trap, we need to restart execution at the state of the first CmpI
 void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn) {
-  CallStaticJavaNode* dom_unc = dom_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+  CallStaticJavaNode* dom_unc = dom_proj->is_uncommon_trap_if_pattern();
   ProjNode* otherproj = proj->other_if_proj();
-  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+  CallStaticJavaNode* unc = proj->is_uncommon_trap_if_pattern();
   Node* call_proj = dom_unc->unique_ctrl_out();
   Node* halt = call_proj->unique_ctrl_out();
 

@@ -69,7 +69,7 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
 }
 
 Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
-    CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+    CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
       return Deoptimization::Reason_none;
     }

@@ -177,7 +177,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
     if (ctl->is_CountedLoop() && ctl->in(1) != nullptr && ctl->in(1)->in(0) != nullptr && ctl->in(1)->in(0)->is_If()) {
-      if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+      if (!ctl->in(1)->as_Proj()->is_uncommon_trap_if_pattern()) {
         break;
       }
       next = idom(ctl->in(1)->in(0));
@@ -191,7 +191,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
       } else if (parent_ctl->is_CountedLoopEnd() && parent_ctl->as_CountedLoopEnd()->loopnode() != nullptr) {
         next = parent_ctl->as_CountedLoopEnd()->loopnode()->init_control();
       } else if (parent_ctl->is_If()) {
-        if (!ctl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+        if (!ctl->as_Proj()->is_uncommon_trap_if_pattern()) {
           break;
         }
         assert(idom(ctl) == parent_ctl, "strange");
@@ -1081,7 +1081,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
     Node* c = loop->_body.at(i);
     if (c->is_IfProj() && c->in(0)->is_RangeCheck()) {
       IfProjNode* if_proj = c->as_IfProj();
-      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      CallStaticJavaNode* call = if_proj->is_uncommon_trap_if_pattern();
       if (call != nullptr) {
         Node* range = nullptr;
         Node* offset = nullptr;
@@ -6118,7 +6118,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       if (!new_ctrl->is_Proj()) {
         break;
       }
-      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern();
       if (call == nullptr) {
         break;
       }
