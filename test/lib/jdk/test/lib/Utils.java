@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
 import static jdk.test.lib.Asserts.assertTrue;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 /**
  * Common library for various test helper functions.
@@ -199,6 +200,77 @@ public final class Utils {
      * converted to {@code long}.
      */
     public static final long DEFAULT_TEST_TIMEOUT = TimeUnit.SECONDS.toMillis(120);
+
+    /**
+     * An utility class for test skipping DSL.
+     */
+    public static class TestSkipper {
+        /**
+         * Skips the test if Test JVM have any of the provided arguments.
+         * @param args disabled arguments
+         */
+        public void jvmArgsHaveAnyOf(String... args) {
+            for (String jvmArgument: Utils.getTestJavaOpts()) {
+                for (String bannedArg: args) {
+                    if (jvmArgument.contains(bannedArg)) {
+                        throw new SkippedException("Test JVM has argument '" + jvmArgument +
+                                "', which is forbidden by the test");
+                    }
+                }
+            }
+        }
+
+        /**
+         * Skips the test if Test JVM have none of the given args specified.
+         * @param args required arguments
+         */
+        public void jvmArgsHaveNoneOf(String... args) {
+            for (String jvmArgument: Utils.getTestJavaOpts()) {
+                for (String requiredArg: args) {
+                    if (jvmArgument.contains(requiredArg)) {
+                        return;
+                    }
+                }
+            }
+            throw new SkippedException("Test JVM provided none of the required arguments: " +
+                    String.join(", ", args));
+        }
+
+        /**
+         * Skips the test have any argument other that those allowed by args.
+         * @param args allowed arguments
+         */
+        public void jvmArgsHaveAnyOtherThan(String... args) {
+            for (String jvmArgument: Utils.getTestJavaOpts()) {
+                boolean contains = false;
+                for (String allowedArg: args) {
+                    contains |= jvmArgument.contains(allowedArg);
+                }
+                if (!contains) {
+                    throw new SkippedException("JVM argument '" + jvmArgument +
+                            "' is not in the list of those allowed by the test");
+                }
+            }
+        }
+
+        /**
+         * Skips the test if provided condition is true
+         * @param condition should be true to skip the test
+         */
+        public void isTrue(boolean condition) {
+            if (condition) {
+                throw new SkippedException("Test skipped");
+            }
+        }
+
+        /**
+         * Skips the test if provided condition is false
+         * @param condition should be false to skip the test
+         */
+        public void isFalse(boolean condition) {
+            isTrue(!condition);
+        }
+    }
 
     private Utils() {
         // Private constructor to prevent class instantiation
@@ -998,6 +1070,16 @@ public final class Utils {
         } else {
             throw new RuntimeException("Unsupported file attributes: " + attr);
         }
+    }
+
+    /**
+     * Starts test-skipping DSL. Returns TestSkipper that allows for different test
+     * skip conditions.
+     *
+     * @return      TestSkipper DSL object
+     */
+    public static TestSkipper skipIf() {
+        return new TestSkipper();
     }
 
     /**
