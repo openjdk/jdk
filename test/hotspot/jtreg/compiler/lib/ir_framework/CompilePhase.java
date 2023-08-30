@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * This enum represents all available compile phases on which an IR matching can be done. There is a 1:1 mapping
  * between IGV phases as specified in phasetype.hpp.  Compile phases which are normally not emitted by C2 like FAILURE
- * or DEBUG are not listed. This enum should be kept in sync with phasetye.hpp.
+ * or DEBUG are not listed. This enum should be kept in sync with phasetype.hpp.
  *
  * <p>
  * There are two additional compile phases PRINT_IDEAL and PRINT_OPTO_ASSEMBLY. PRINT_IDEAL is the output that is printed
