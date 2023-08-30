@@ -234,8 +234,6 @@ public class ToRealPath {
     public static void cleanup() throws IOException {
         Files.delete(FILE);
         Files.delete(SUBDIR);
-        for (String s : DIR.toFile().list())
-            System.out.println("DIR: " + s);
         Files.delete(DIR);
     }
 }
