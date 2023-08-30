@@ -401,7 +401,7 @@ public sealed interface CodeBuilder
     // Base convenience methods
 
     /**
-     * Load instruction
+     * Generate an instruction to load a value from a local variable
      * @param tk the load type
      * @param slot the local variable slot
      * @return this builder
@@ -412,7 +412,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store instruction
+     * Generate an instruction to store a value to a local variable
      * @param tk the store type
      * @param slot the local variable slot
      * @return this builder
@@ -423,7 +423,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Increment local variable by constant
+     * Generate an instruction to increment a local variable by a constant
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
@@ -434,7 +434,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch instruction
+     * Generate a branch instruction
      * @see Opcode.Kind#BRANCH
      * @param op the branch opcode
      * @param target the branch target
@@ -446,7 +446,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Access jump table by key match and jump
+     * Generate an instruction to access a jump table by key match and jump
      * @param defaultTarget the default jump target
      * @param cases the switch cases
      * @return this builder
@@ -457,7 +457,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Access jump table by index and jump
+     * Generate an instruction to access a jump table by index and jump
      * @param lowValue the low key value
      * @param highValue the high key value
      * @param defaultTarget the default jump target
@@ -470,7 +470,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return instruction
+     * Generate return instruction
      * @param tk the return type
      * @return this builder
      */
@@ -480,7 +480,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Throw exception or error
+     * Generate an instruction to throw an exception or error
      * @return this builder
      */
     default CodeBuilder throwInstruction() {
@@ -489,7 +489,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Field access instruction
+     * Generate an instruction to access a field
      * @see Opcode.Kind#FIELD_ACCESS
      * @param opcode the field access opcode
      * @param ref the field reference
@@ -501,7 +501,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Field access instruction
+     * Generate an instruction to access a field
      * @see Opcode.Kind#FIELD_ACCESS
      * @param opcode the field access opcode
      * @param owner the class
@@ -514,7 +514,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a method or constructor
+     * Generate an instruction to invoke a method or constructor
      * @see Opcode.Kind#INVOKE
      * @param opcode the invoke opcode
      * @param ref the interface method or method reference
@@ -525,7 +525,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a method or constructor
+     * Generate an instruction to invoke a method or constructor
      * @see Opcode.Kind#INVOKE
      * @param opcode the invoke opcode
      * @param owner the class
@@ -541,7 +541,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a dynamically-computed call site
+     * Generate an instruction to invoke a dynamically-computed call site
      * @param ref the dynamic call site
      * @return this builder
      */
@@ -551,7 +551,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a dynamically-computed call site
+     * Generate an instruction to invoke a dynamically-computed call site
      * @param desc the dynamic call site
      * @return this builder
      */
@@ -569,7 +569,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new object
+     * Generate an instruction to create a new object
      * @param type the object type
      * @return this builder
      */
@@ -579,7 +579,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new object
+     * Generate an instruction to create a new object
      * @param type the object type
      * @return this builder
      */
@@ -588,7 +588,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array
+     * Generate an instruction to create a new array of a primitive type
      * @param typeKind the primitive component type
      * @return this builder
      */
@@ -598,7 +598,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array of reference
+     * Generate an instruction to create a new array of reference
      * @param type the component type
      * @return this builder
      */
@@ -608,7 +608,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array of reference
+     * Generate an instruction to create a new array of reference
      * @param type the component type
      * @return this builder
      */
@@ -617,7 +617,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new multidimensional array
+     * Generate an instruction to create a new multidimensional array
      * @param dimensions the number of dimensions
      * @param type the array type
      * @return this builder
@@ -629,7 +629,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new multidimensional array
+     * Generate an instruction to create a new multidimensional array
      * @param dimensions the number of dimensions
      * @param type the array type
      * @return this builder
@@ -640,7 +640,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Array load instruction
+     * Generate an instruction to load from an array
      * @param tk the array element type
      * @return this builder
      */
@@ -651,7 +651,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Array store instruction
+     * Generate an instruction to store into an array
      * @param tk the array element type
      * @return this builder
      */
@@ -662,7 +662,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Type check instruction
+     * Generate a type checking instruction
      * @see Opcode.Kind#TYPE_CHECK
      * @param opcode the type check instruction opcode
      * @param type the type
@@ -675,7 +675,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Type check instruction
+     * Generate a type checking instruction
      * @see Opcode.Kind#TYPE_CHECK
      * @param opcode the type check instruction opcode
      * @param type the type
@@ -686,7 +686,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert instruction
+     * Generate a type converting instruction
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
@@ -697,7 +697,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Stack instruction
+     * Generate a stack manipulating instruction
      * @param opcode the stack instruction opcode
      * @see Opcode.Kind#STACK
      * @return this builder
@@ -708,7 +708,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Operator instruction
+     * Generate an operator instruction
      * @see Opcode.Kind#OPERATOR
      * @param opcode the operator instruction opcode
      * @return this builder
@@ -719,7 +719,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Constant instruction
+     * Generate an instruction pushing a constant onto the operand stack
      * @see Opcode.Kind#CONSTANT
      * @param opcode the constant instruction opcode
      * @param value the constant value
@@ -735,7 +735,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Constant instruction
+     * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
      */
@@ -773,7 +773,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Monitor instruction
+     * Generate a monitor instruction
      * @see Opcode.Kind#MONITOR
      * @param opcode the monitor instruction opcode
      * @return this builder
@@ -784,7 +784,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Do nothing instruction
+     * Generate a do nothing instruction
      * @return this builder
      */
     default CodeBuilder nopInstruction() {
@@ -793,7 +793,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Do nothing instruction
+     * Generate a do nothing instruction
      * @return this builder
      */
     default CodeBuilder nop() {
@@ -823,7 +823,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Declare source line number of current position
+     * Declare a source line number of the current builder position
      * @param line the line number
      * @return this builder
      */
@@ -833,7 +833,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Exception table entry
+     * Declare an exception table entry
      * @param start the try block start
      * @param end the try block end
      * @param handler the exception handler start
@@ -846,7 +846,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Exception table entry
+     * Declare an exception table entry
      * @param start the try block start
      * @param end the try block end
      * @param handler the exception handler start
@@ -859,7 +859,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Exception table entry
+     * Declare an exception table entry
      * @param start the try block start
      * @param end the try block end
      * @param handler the exception handler start
@@ -872,7 +872,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Exception table entry catching all exceptions and errors
+     * Declare an exception table entry catching all exceptions and errors
      * @param start the try block start
      * @param end the try block end
      * @param handler the exception handler start
@@ -884,7 +884,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Character range entry
+     * Declare a character range entry
      * @param startScope the start scope of the character range
      * @param endScope the end scope of the character range
      * @param characterRangeStart the encoded start of the character range region (inclusive)
@@ -898,7 +898,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Local variable entry
+     * Declare a local variable entry
      * @param slot the local variable slot
      * @param nameEntry the variable name
      * @param descriptorEntry the variable descriptor
@@ -912,7 +912,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Local variable entry
+     * Declare a local variable entry
      * @param slot the local variable slot
      * @param name the variable name
      * @param descriptor the variable descriptor
@@ -928,7 +928,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Local variable type entry
+     * Declare a local variable type entry
      * @param slot the local variable slot
      * @param nameEntry the variable name
      * @param signatureEntry the variable signature
@@ -942,7 +942,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Local variable type entry
+     * Declare a local variable type entry
      * @param slot the local variable slot
      * @param name the variable name
      * @param signature the variable signature
@@ -960,7 +960,7 @@ public sealed interface CodeBuilder
     // Bytecode conveniences
 
     /**
-     * Push null
+     * Generate an instruction pushing the null object reference onto the operand stack
      * @return this builder
      */
     default CodeBuilder aconst_null() {
@@ -968,7 +968,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load reference from array
+     * Generate an instruction to load a reference from an array
      * @return this builder
      */
     default CodeBuilder aaload() {
@@ -976,7 +976,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into reference array
+     * Generate an instruction to store into a reference array
      * @return this builder
      */
     default CodeBuilder aastore() {
@@ -984,7 +984,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load reference from local variable
+     * Generate an instruction to load a reference from a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -993,7 +993,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array of reference
+     * Generate an instruction to create a new array of reference
      * @param classEntry the component type
      * @return this builder
      */
@@ -1002,7 +1002,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array of reference
+     * Generate an instruction to create a new array of reference
      * @param className the component type
      * @return this builder
      */
@@ -1011,7 +1011,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return reference from method
+     * Generate an instruction to return a reference from the method
      * @return this builder
      */
     default CodeBuilder areturn() {
@@ -1019,7 +1019,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Get length of array
+     * Generate an instruction to get length of an array
      * @return this builder
      */
     default CodeBuilder arraylength() {
@@ -1027,7 +1027,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store reference into local variable
+     * Generate an instruction to store a reference into a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1036,7 +1036,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Throw exception or error
+     * Generate an instruction to throw an exception or error
      * @return this builder
      */
     default CodeBuilder athrow() {
@@ -1044,7 +1044,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load byte from array
+     * Generate an instruction to load a byte from a array
      * @return this builder
      */
     default CodeBuilder baload() {
@@ -1052,7 +1052,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into byte array
+     * Generate an instruction to store into a byte array
      * @return this builder
      */
     default CodeBuilder bastore() {
@@ -1060,7 +1060,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push byte
+     * Generate an instruction pushing a byte onto the operand stack
      * @param b the byte
      * @return this builder
      */
@@ -1069,7 +1069,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load char from array
+     * Generate an instruction to load a char from an array
      * @return this builder
      */
     default CodeBuilder caload() {
@@ -1077,7 +1077,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into char array
+     * Generate an instruction to store into a char array
      * @return this builder
      */
     default CodeBuilder castore() {
@@ -1085,7 +1085,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Check whether object is of given type
+     * Generate an instruction to check whether an object is of the given type
      * @param type the object type
      * @return this builder
      */
@@ -1094,7 +1094,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Check whether object is of given type
+     * Generate an instruction to check whether an object is of the given type
      * @param type the object type
      * @return this builder
      */
@@ -1103,7 +1103,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert double to float
+     * Generate an instruction to convert a double into a float
      * @return this builder
      */
     default CodeBuilder d2f() {
@@ -1111,7 +1111,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert double to int
+     * Generate an instruction to convert a double into an int
      * @return this builder
      */
     default CodeBuilder d2i() {
@@ -1119,7 +1119,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert double to long
+     * Generate an instruction to convert a double into a long
      * @return this builder
      */
     default CodeBuilder d2l() {
@@ -1127,7 +1127,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Add double
+     * Generate an instruction to add a double
      * @return this builder
      */
     default CodeBuilder dadd() {
@@ -1135,7 +1135,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load double from array
+     * Generate an instruction to load a double from an array
      * @return this builder
      */
     default CodeBuilder daload() {
@@ -1143,7 +1143,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into double array
+     * Generate an instruction to store into a double array
      * @return this builder
      */
     default CodeBuilder dastore() {
@@ -1151,7 +1151,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Compare double
+     * Generate an instruction to add a double
      * @return this builder
      */
     default CodeBuilder dcmpg() {
@@ -1159,7 +1159,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Compare double
+     * Generate an instruction to compare doubles
      * @return this builder
      */
     default CodeBuilder dcmpl() {
@@ -1167,7 +1167,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push double constant 0
+     * Generate an instruction pushing double constant 0 onto the operand stack
      * @return this builder
      */
     default CodeBuilder dconst_0() {
@@ -1175,7 +1175,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push double constant 1
+     * Generate an instruction pushing double constant 1 onto the operand stack
      * @return this builder
      */
     default CodeBuilder dconst_1() {
@@ -1183,7 +1183,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Divide double
+     * Generate an instruction to divide doubles
      * @return this builder
      */
     default CodeBuilder ddiv() {
@@ -1191,7 +1191,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load double from local variable
+     * Generate an instruction to load a double from a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1200,7 +1200,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Multiply double
+     * Generate an instruction to multiply doubles
      * @return this builder
      */
     default CodeBuilder dmul() {
@@ -1208,7 +1208,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Negate double
+     * Generate an instruction to negate a double
      * @return this builder
      */
     default CodeBuilder dneg() {
@@ -1216,7 +1216,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Remainder double
+     * Generate an instruction to calculate double remainder
      * @return this builder
      */
     default CodeBuilder drem() {
@@ -1224,7 +1224,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return double from method
+     * Generate an instruction to return a double from the method
      * @return this builder
      */
     default CodeBuilder dreturn() {
@@ -1232,7 +1232,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store double into local variable
+     * Generate an instruction to store a double into a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1241,7 +1241,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Subtract double
+     * Generate an instruction to subtract doubles
      * @return this builder
      */
     default CodeBuilder dsub() {
@@ -1249,7 +1249,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top operand stack value
+     * Generate an instruction to duplicate the top operand stack value
      * @return this builder
      */
     default CodeBuilder dup() {
@@ -1257,7 +1257,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top one or two operand stack value
+     * Generate an instruction to duplicate the top one or two operand stack value
      * @return this builder
      */
     default CodeBuilder dup2() {
@@ -1265,7 +1265,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top one or two operand stack values and insert two or three
+     * Generate an instruction to duplicate the top one or two operand stack values and insert two or three
      * values down
      * @return this builder
      */
@@ -1274,7 +1274,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top one or two operand stack values and insert two, three,
+     * Generate an instruction to duplicate the top one or two operand stack values and insert two, three,
      * or four values down
      * @return this builder
      */
@@ -1283,7 +1283,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top operand stack value and insert two values down
+     * Generate an instruction to duplicate the top operand stack value and insert two values down
      * @return this builder
      */
     default CodeBuilder dup_x1() {
@@ -1291,7 +1291,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Duplicate the top operand stack value and insert two or three values down
+     * Generate an instruction to duplicate the top operand stack value and insert two or three values down
      * @return this builder
      */
     default CodeBuilder dup_x2() {
@@ -1299,7 +1299,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert float to double
+     * Generate an instruction to convert a float into a double
      * @return this builder
      */
     default CodeBuilder f2d() {
@@ -1307,7 +1307,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert float to int
+     * Generate an instruction to convert a float into an int
      * @return this builder
      */
     default CodeBuilder f2i() {
@@ -1315,7 +1315,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert float to long
+     * Generate an instruction to convert a float into a long
      * @return this builder
      */
     default CodeBuilder f2l() {
@@ -1323,7 +1323,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Add float
+     * Generate an instruction to add a float
      * @return this builder
      */
     default CodeBuilder fadd() {
@@ -1331,7 +1331,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load float from array
+     * Generate an instruction to load a float from an array
      * @return this builder
      */
     default CodeBuilder faload() {
@@ -1339,7 +1339,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into float array
+     * Generate an instruction to store into a float array
      * @return this builder
      */
     default CodeBuilder fastore() {
@@ -1347,7 +1347,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Compare float
+     * Generate an instruction to compare floats
      * @return this builder
      */
     default CodeBuilder fcmpg() {
@@ -1355,7 +1355,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Compare float
+     * Generate an instruction to compare floats
      * @return this builder
      */
     default CodeBuilder fcmpl() {
@@ -1363,7 +1363,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push float constant 0
+     * Generate an instruction pushing float constant 0 onto the operand stack
      * @return this builder
      */
     default CodeBuilder fconst_0() {
@@ -1371,7 +1371,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push float constant 1
+     * Generate an instruction pushing float constant 1 onto the operand stack
      * @return this builder
      */
     default CodeBuilder fconst_1() {
@@ -1379,7 +1379,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push float constant 2
+     * Generate an instruction pushing float constant 2 onto the operand stack
      * @return this builder
      */
     default CodeBuilder fconst_2() {
@@ -1387,7 +1387,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Divide float
+     * Generate an instruction to divide floats
      * @return this builder
      */
     default CodeBuilder fdiv() {
@@ -1395,7 +1395,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load float from local variable
+     * Generate an instruction to load a float from a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1404,7 +1404,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Multiply float
+     * Generate an instruction to multiply floats
      * @return this builder
      */
     default CodeBuilder fmul() {
@@ -1412,7 +1412,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Negate float
+     * Generate an instruction to negate a float
      * @return this builder
      */
     default CodeBuilder fneg() {
@@ -1420,7 +1420,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Remainder float
+     * Generate an instruction to calculate floats remainder
      * @return this builder
      */
     default CodeBuilder frem() {
@@ -1428,7 +1428,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return float from method
+     * Generate an instruction to return a float from the method
      * @return this builder
      */
     default CodeBuilder freturn() {
@@ -1436,7 +1436,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store float into local variable
+     * Generate an instruction to store a float into a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1445,7 +1445,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Subtract float
+     * Generate an instruction to subtract floats
      * @return this builder
      */
     default CodeBuilder fsub() {
@@ -1453,7 +1453,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Fetch field from object
+     * Generate an instruction to fetch field from an object
      * @param ref the field reference
      * @return this builder
      */
@@ -1462,7 +1462,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Fetch field from object
+     * Generate an instruction to fetch field from an object
      * @param owner the owner class
      * @param name the field name
      * @param type the field type
@@ -1473,7 +1473,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Get static field from class
+     * Generate an instruction to get static field from a class
      * @param ref the field reference
      * @return this builder
      */
@@ -1482,7 +1482,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Get static field from class
+     * Generate an instruction to get static field from a class
      * @param owner the owner class
      * @param name the field name
      * @param type the field type
@@ -1493,7 +1493,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch always
+     * Generate an instruction to branch always
      * @param target the branch target
      * @return this builder
      */
@@ -1502,7 +1502,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch always (wide index)
+     * Generate an instruction to branch always with wide index
      * @param target the branch target
      * @return this builder
      */
@@ -1511,7 +1511,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to byte
+     * Generate an instruction to convert an int into a byte
      * @return this builder
      */
     default CodeBuilder i2b() {
@@ -1519,7 +1519,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to char
+     * Generate an instruction to convert an int into a char
      * @return this builder
      */
     default CodeBuilder i2c() {
@@ -1527,7 +1527,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to double
+     * Generate an instruction to convert an int into a double
      * @return this builder
      */
     default CodeBuilder i2d() {
@@ -1535,7 +1535,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to float
+     * Generate an instruction to convert an int into a float
      * @return this builder
      */
     default CodeBuilder i2f() {
@@ -1543,7 +1543,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to long
+     * Generate an instruction to convert an int into a long
      * @return this builder
      */
     default CodeBuilder i2l() {
@@ -1551,7 +1551,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert int to short
+     * Generate an instruction to convert an int into a short
      * @return this builder
      */
     default CodeBuilder i2s() {
@@ -1559,7 +1559,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Add int
+     * Generate an instruction to add an int
      * @return this builder
      */
     default CodeBuilder iadd() {
@@ -1567,7 +1567,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load int from array
+     * Generate an instruction to load a int from an array
      * @return this builder
      */
     default CodeBuilder iaload() {
@@ -1575,7 +1575,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean AND int
+     * Generate an instruction to calculate boolean AND of ints
      * @return this builder
      */
     default CodeBuilder iand() {
@@ -1583,7 +1583,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into int array
+     * Generate an instruction to store into an int array
      * @return this builder
      */
     default CodeBuilder iastore() {
@@ -1591,7 +1591,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 0
+     * Generate an instruction pushing int constant 0 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_0() {
@@ -1599,7 +1599,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 1
+     * Generate an instruction pushing int constant 1 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_1() {
@@ -1607,7 +1607,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 2
+     * Generate an instruction pushing int constant 2 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_2() {
@@ -1615,7 +1615,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 3
+     * Generate an instruction pushing int constant 3 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_3() {
@@ -1623,7 +1623,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 4
+     * Generate an instruction pushing int constant 4 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_4() {
@@ -1631,7 +1631,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant 5
+     * Generate an instruction pushing int constant 5 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_5() {
@@ -1639,7 +1639,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push int constant -1
+     * Generate an instruction pushing int constant -1 onto the operand stack
      * @return this builder
      */
     default CodeBuilder iconst_m1() {
@@ -1647,7 +1647,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Divide int
+     * Generate an instruction to divide ints
      * @return this builder
      */
     default CodeBuilder idiv() {
@@ -1655,7 +1655,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1664,7 +1664,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1673,7 +1673,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1682,7 +1682,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1691,7 +1691,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1700,7 +1700,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1709,7 +1709,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1718,7 +1718,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison succeeds
+     * Generate an instruction to branch if int comparison succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1727,7 +1727,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if reference is not null
+     * Generate an instruction to branch if reference is not null
      * @param target the branch target
      * @return this builder
      */
@@ -1736,7 +1736,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if reference is null
+     * Generate an instruction to branch if reference is null
      * @param target the branch target
      * @return this builder
      */
@@ -1745,7 +1745,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1754,7 +1754,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1763,7 +1763,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1772,7 +1772,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1781,7 +1781,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1790,7 +1790,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Branch if int comparison with zero succeeds
+     * Generate an instruction to branch if int comparison with zero succeeds
      * @param target the branch target
      * @return this builder
      */
@@ -1799,7 +1799,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Increment local variable by constant
+     * Generate an instruction to increment a local variable by a constant
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
@@ -1809,7 +1809,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load int from local variable
+     * Generate an instruction to load an int from a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -1818,7 +1818,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Multiply int
+     * Generate an instruction to multiply ints
      * @return this builder
      */
     default CodeBuilder imul() {
@@ -1826,7 +1826,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Negate int
+     * Generate an instruction to negate an int
      * @return this builder
      */
     default CodeBuilder ineg() {
@@ -1834,7 +1834,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Determine if object is of given type
+     * Generate an instruction to determine if an object is of the given type
      * @param target the target type
      * @return this builder
      */
@@ -1843,7 +1843,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Determine if object is of given type
+     * Generate an instruction to determine if an object is of the given type
      * @param target the target type
      * @return this builder
      */
@@ -1852,7 +1852,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a dynamically-computed call site
+     * Generate an instruction to invoke a dynamically-computed call site
      * @param ref the dynamic call site
      * @return this builder
      */
@@ -1861,7 +1861,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a dynamically-computed call site
+     * Generate an instruction to invoke a dynamically-computed call site
      * @param ref the dynamic call site
      * @return this builder
      */
@@ -1870,7 +1870,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke interface method
+     * Generate an instruction to invoke an interface method
      * @param ref the interface method reference
      * @return this builder
      */
@@ -1879,7 +1879,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke interface method
+     * Generate an instruction to invoke an interface method
      * @param owner the owner class
      * @param name the method name
      * @param type the method type
@@ -1890,7 +1890,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; direct invocation of instance initialization
+     * Generate an instruction to invoke an instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
      * @param ref the interface method reference
      * @return this builder
@@ -1900,7 +1900,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; direct invocation of instance initialization
+     * Generate an instruction to invoke an instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
      * @param ref the method reference
      * @return this builder
@@ -1910,7 +1910,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; direct invocation of instance initialization
+     * Generate an instruction to invoke an instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
      * @param owner the owner class
      * @param name the method name
@@ -1922,7 +1922,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; direct invocation of instance initialization
+     * Generate an instruction to invoke an instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
      * @param owner the owner class
      * @param name the method name
@@ -1935,7 +1935,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a class (static) method
+     * Generate an instruction to invoke a class (static) method
      * @param ref the interface method reference
      * @return this builder
      */
@@ -1944,7 +1944,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a class (static) method
+     * Generate an instruction to invoke a class (static) method
      * @param ref the method reference
      * @return this builder
      */
@@ -1953,7 +1953,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a class (static) method
+     * Generate an instruction to invoke a class (static) method
      * @param owner the owner class
      * @param name the method name
      * @param type the method type
@@ -1964,7 +1964,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke a class (static) method
+     * Generate an instruction to invoke a class (static) method
      * @param owner the owner class
      * @param name the method name
      * @param type the method type
@@ -1976,7 +1976,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; dispatch based on class
+     * Generate an instruction to invoke an instance method; dispatch based on class
      * @param ref the method reference
      * @return this builder
      */
@@ -1985,7 +1985,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Invoke instance method; dispatch based on class
+     * Generate an instruction to invoke an instance method; dispatch based on class
      * @param owner the owner class
      * @param name the method name
      * @param type the method type
@@ -1996,7 +1996,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean OR int
+     * Generate an instruction to calculate boolean OR of ints
      * @return this builder
      */
     default CodeBuilder ior() {
@@ -2004,7 +2004,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Remainder int
+     * Generate an instruction to calculate ints remainder
      * @return this builder
      */
     default CodeBuilder irem() {
@@ -2012,7 +2012,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return int from method
+     * Generate an instruction to return an int from the method
      * @return this builder
      */
     default CodeBuilder ireturn() {
@@ -2020,7 +2020,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Shift left int
+     * Generate an instruction to shift an int left
      * @return this builder
      */
     default CodeBuilder ishl() {
@@ -2028,7 +2028,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Shift right int
+     * Generate an instruction to shift an int right
      * @return this builder
      */
     default CodeBuilder ishr() {
@@ -2036,7 +2036,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store int into local variable
+     * Generate an instruction to store an int into a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2045,7 +2045,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Subtract int
+     * Generate an instruction to subtract ints
      * @return this builder
      */
     default CodeBuilder isub() {
@@ -2053,7 +2053,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Logical shift right int
+     * Generate an instruction to logical shift an int right
      * @return this builder
      */
     default CodeBuilder iushr() {
@@ -2061,7 +2061,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean XOR int
+     * Generate an instruction to calculate boolean XOR of ints
      * @return this builder
      */
     default CodeBuilder ixor() {
@@ -2069,7 +2069,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Access jump table by key match and jump
+     * Generate an instruction to access a jump table by key match and jump
      * @param defaultTarget the default jump target
      * @param cases the switch cases
      * @return this builder
@@ -2079,7 +2079,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert long to double
+     * Generate an instruction to convert a long into a double
      * @return this builder
      */
     default CodeBuilder l2d() {
@@ -2087,7 +2087,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert long to float
+     * Generate an instruction to convert a long into a float
      * @return this builder
      */
     default CodeBuilder l2f() {
@@ -2095,7 +2095,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Convert long to int
+     * Generate an instruction to convert a long into an int
      * @return this builder
      */
     default CodeBuilder l2i() {
@@ -2103,7 +2103,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Add long
+     * Generate an instruction to add a long
      * @return this builder
      */
     default CodeBuilder ladd() {
@@ -2111,7 +2111,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load long from array
+     * Generate an instruction to load a long from an array
      * @return this builder
      */
     default CodeBuilder laload() {
@@ -2119,7 +2119,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean AND long
+     * Generate an instruction to calculate boolean AND of longs
      * @return this builder
      */
     default CodeBuilder land() {
@@ -2127,7 +2127,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into long array
+     * Generate an instruction to store into a long array
      * @return this builder
      */
     default CodeBuilder lastore() {
@@ -2135,7 +2135,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Compare long
+     * Generate an instruction to compare longs
      * @return this builder
      */
     default CodeBuilder lcmp() {
@@ -2143,7 +2143,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push long constant 0
+     * Generate an instruction pushing long constant 0 onto the operand stack
      * @return this builder
      */
     default CodeBuilder lconst_0() {
@@ -2151,7 +2151,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push long constant 1
+     * Generate an instruction pushing long constant 1 onto the operand stack
      * @return this builder
      */
     default CodeBuilder lconst_1() {
@@ -2159,7 +2159,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push item from run-time constant pool
+     * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
      * @param value the constant value
      * @return this builder
      */
@@ -2168,7 +2168,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push item from run-time constant pool
+     * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
      * @param entry the constant value
      * @return this builder
      */
@@ -2180,7 +2180,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Divide long
+     * Generate an instruction to divide longs
      * @return this builder
      */
     default CodeBuilder ldiv() {
@@ -2188,7 +2188,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load long from local variable
+     * Generate an instruction to load a long from a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2197,7 +2197,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Multiply long
+     * Generate an instruction to multiply longs
      * @return this builder
      */
     default CodeBuilder lmul() {
@@ -2205,7 +2205,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Negate long
+     * Generate an instruction to negate a long
      * @return this builder
      */
     default CodeBuilder lneg() {
@@ -2213,7 +2213,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean OR long
+     * Generate an instruction to calculate boolean OR of longs
      * @return this builder
      */
     default CodeBuilder lor() {
@@ -2221,7 +2221,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Remainder long
+     * Generate an instruction to calculate longs remainder
      * @return this builder
      */
     default CodeBuilder lrem() {
@@ -2229,7 +2229,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return long from method
+     * Generate an instruction to return a long from the method
      * @return this builder
      */
     default CodeBuilder lreturn() {
@@ -2237,7 +2237,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Shift left long
+     * Generate an instruction to shift a long left
      * @return this builder
      */
     default CodeBuilder lshl() {
@@ -2245,7 +2245,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Shift right long
+     * Generate an instruction to shift a long right
      * @return this builder
      */
     default CodeBuilder lshr() {
@@ -2253,7 +2253,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store long into local variable
+     * Generate an instruction to store a long into a local variable
      * @param slot the local variable slot
      * @return this builder
      */
@@ -2262,7 +2262,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Subtract long
+     * Generate an instruction to subtract longs
      * @return this builder
      */
     default CodeBuilder lsub() {
@@ -2270,7 +2270,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Logical shift right long
+     * Generate an instruction to logical shift a long left
      * @return this builder
      */
     default CodeBuilder lushr() {
@@ -2278,7 +2278,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Boolean XOR long
+     * Generate an instruction to calculate boolean XOR of longs
      * @return this builder
      */
     default CodeBuilder lxor() {
@@ -2286,7 +2286,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Enter monitor for object
+     * Generate an instruction to enter monitor for an object
      * @return this builder
      */
     default CodeBuilder monitorenter() {
@@ -2294,7 +2294,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Exit monitor for object
+     * Generate an instruction to exit monitor for an object
      * @return this builder
      */
     default CodeBuilder monitorexit() {
@@ -2302,7 +2302,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new multidimensional array
+     * Generate an instruction to create a new multidimensional array
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
@@ -2312,7 +2312,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new multidimensional array
+     * Generate an instruction to create a new multidimensional array
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
@@ -2322,7 +2322,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new object
+     * Generate an instruction to create a new object
      * @param clazz the new class type
      * @return this builder
      */
@@ -2331,7 +2331,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new object
+     * Generate an instruction to create a new object
      * @param clazz the new class type
      * @return this builder
      */
@@ -2340,7 +2340,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Create new array
+     * Generate an instruction to create a new array of a primitive type
      * @param typeKind the primitive array type
      * @return this builder
      */
@@ -2349,7 +2349,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Pop the top operand stack value
+     * Generate an instruction to pop the top operand stack value
      * @return this builder
      */
     default CodeBuilder pop() {
@@ -2357,7 +2357,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Pop the top one or two operand stack values
+     * Generate an instruction to pop the top one or two operand stack values
      * @return this builder
      */
     default CodeBuilder pop2() {
@@ -2365,7 +2365,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Set field in object
+     * Generate an instruction to set field in an object
      * @param ref the field reference
      * @return this builder
      */
@@ -2374,7 +2374,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Set field in object
+     * Generate an instruction to set field in an object
      * @param owner the owner class
      * @param name the field name
      * @param type the field type
@@ -2385,7 +2385,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Set static field in class
+     * Generate an instruction to set static field in a class
      * @param ref the field reference
      * @return this builder
      */
@@ -2394,7 +2394,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Set static field in class
+     * Generate an instruction to set static field in a class
      * @param owner the owner class
      * @param name the field name
      * @param type the field type
@@ -2405,7 +2405,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Return void from method
+     * Generate an instruction to return void from the method
      * @return this builder
      */
     default CodeBuilder return_() {
@@ -2413,7 +2413,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Load short from array
+     * Generate an instruction to load a short from an array
      * @return this builder
      */
     default CodeBuilder saload() {
@@ -2421,7 +2421,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Store into short array
+     * Generate an instruction to store into a short array
      * @return this builder
      */
     default CodeBuilder sastore() {
@@ -2429,7 +2429,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Push short
+     * Generate an instruction pushing a short onto the operand stack
      * @param s the short
      * @return this builder
      */
@@ -2438,7 +2438,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Swap the top two operand stack values
+     * Generate an instruction to swap the top two operand stack values
      * @return this builder
      */
     default CodeBuilder swap() {
@@ -2446,7 +2446,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Access jump table by index and jump
+     * Generate an instruction to access a jump table by index and jump
      * @param low the low key value
      * @param high the high key value
      * @param defaultTarget the default jump target
@@ -2458,7 +2458,7 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Access jump table by index and jump
+     * Generate an instruction to access a jump table by index and jump
      * @param defaultTarget the default jump target
      * @param cases the switch cases
      * @return this builder
@@ -2473,9 +2473,4 @@ public sealed interface CodeBuilder
         }
         return tableSwitchInstruction(low, high, defaultTarget, cases);
     }
-
-    // Structured conveniences:
-
-    //   allocLocal(type)
-    //   returnFromMethod(inferred)
 }
