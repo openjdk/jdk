@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
@@ -1395,6 +1396,285 @@ public class BitSet implements Cloneable, java.io.Serializable {
             if (++u > toWordIndex)
                 return -1;
             word = words[u];
+        }
+    }
+
+    /**
+     * {@return a new immutable snapshot of this {@code BitSet}}.
+     */
+    public OfImmutable asImmutable() {
+        return new OfImmutableImpl(this);
+    }
+
+    /**
+     * This interface models an immutable vector of bits. Each
+     * component of the bit set has a {@code boolean} value. The
+     * bits of an {@code ImmutableBitSet} are indexed by non-negative integers.
+     * Individual indexed bits can be examined.
+     * <p>
+     * A {@code ImmutableBitSet} is threadsafe and can be used without external
+     * synchronisation.
+     * <p>
+     * ImmutableBitSet instances are eligible for constant-folding optimization
+     * by the VM.
+     *
+     * @since 22
+     */
+    public sealed interface OfImmutable {
+
+        /**
+         * Returns the value of the bit with the specified index. The value
+         * is {@code true} if the bit with the index {@code bitIndex}
+         * is currently set in this {@code ImmutableBitSet}; otherwise, the result
+         * is {@code false}.
+         *
+         * @param  bitIndex   the bit index
+         * @return the value of the bit with the specified index
+         * @throws IndexOutOfBoundsException if the specified index is negative
+         */
+        boolean get(int bitIndex);
+
+        /**
+         * Returns the number of bits set to {@code true} in this {@code ImmutableBitSet}.
+         *
+         * @return the number of bits set to {@code true} in this {@code ImmutableBitSet}
+         */
+        int cardinality();
+
+        /**
+         * Returns the "logical size" of this {@code ImmutableBitSet}: the index of
+         * the highest set bit in the {@code ImmutableBitSet} plus one. Returns zero
+         * if the {@code ImmutableBitSet} contains no set bits.
+         *
+         * @return the logical size of this {@code ImmutableBitSet}
+         */
+        int length();
+
+        /**
+         * Returns true if this {@code ImmutableBitSet} contains no bits that are set
+         * to {@code true}.
+         *
+         * @return boolean indicating whether this {@code ImmutableBitSet} is empty
+         */
+        boolean isEmpty();
+
+        /**
+         * Returns the index of the first bit that is set to {@code true}
+         * that occurs on or after the specified starting index. If no such
+         * bit exists then {@code -1} is returned.
+         *
+         * <p>To iterate over the {@code true} bits in a {@code ImmutableBitSet},
+         * use the following loop:
+         *
+         *  <pre> {@code
+         * for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
+         *     // operate on index i here
+         *     if (i == Integer.MAX_VALUE) {
+         *         break; // or (i+1) would overflow
+         *     }
+         * }}</pre>
+         *
+         * @param  fromIndex the index to start checking from (inclusive)
+         * @return the index of the next set bit, or {@code -1} if there
+         *         is no such bit
+         * @throws IndexOutOfBoundsException if the specified index is negative
+         */
+        int nextSetBit(int fromIndex);
+
+        /**
+         * Returns the index of the first bit that is set to {@code false}
+         * that occurs on or after the specified starting index.
+         *
+         * @param  fromIndex the index to start checking from (inclusive)
+         * @return the index of the next clear bit
+         * @throws IndexOutOfBoundsException if the specified index is negative
+         */
+        int nextClearBit(int fromIndex);
+
+        /**
+         * Returns the index of the nearest bit that is set to {@code true}
+         * that occurs on or before the specified starting index.
+         * If no such bit exists, or if {@code -1} is given as the
+         * starting index, then {@code -1} is returned.
+         *
+         * <p>To iterate over the {@code true} bits in a {@code ImmutableBitSet},
+         * use the following loop:
+         *
+         *  <pre> {@code
+         * for (int i = bs.length(); (i = bs.previousSetBit(i-1)) >= 0; ) {
+         *     // operate on index i here
+         * }}</pre>
+         *
+         * @param  fromIndex the index to start checking from (inclusive)
+         * @return the index of the previous set bit, or {@code -1} if there
+         *         is no such bit
+         * @throws IndexOutOfBoundsException if the specified index is less
+         *         than {@code -1}
+         */
+        int previousSetBit(int fromIndex);
+
+        /**
+         * Returns the index of the nearest bit that is set to {@code false}
+         * that occurs on or before the specified starting index.
+         * If no such bit exists, or if {@code -1} is given as the
+         * starting index, then {@code -1} is returned.
+         *
+         * @param  fromIndex the index to start checking from (inclusive)
+         * @return the index of the previous clear bit, or {@code -1} if there
+         *         is no such bit
+         * @throws IndexOutOfBoundsException if the specified index is less
+         *         than {@code -1}
+         */
+        int previousClearBit(int fromIndex);
+
+        /**
+         * Returns a stream of indices for which this {@code ImmutableBitSet}
+         * contains a bit in the set state. The indices are returned
+         * in order, from lowest to highest. The size of the stream
+         * is the number of bits in the set state, equal to the value
+         * returned by the {@link #cardinality()} method.
+         *
+         * @return a stream of integers representing set indices
+         */
+        IntStream stream();
+
+    }
+
+    private static final class OfImmutableImpl implements OfImmutable {
+
+        @Stable
+        private final long[] words;
+        private final int cardinality;
+        private final int length;
+
+        public OfImmutableImpl(BitSet original) {
+            this.words = original.words.clone();
+
+            // These are eagerly computed.
+            // It would be possible to lazily compute them declaring
+            // @Stable int fields holding the values.
+            this.cardinality = original.cardinality();
+            this.length = original.length();
+        }
+
+        @Override
+        public boolean get(int bitIndex) {
+            if (bitIndex < 0)
+                throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+            int wordIndex = wordIndex(bitIndex);
+            return (wordIndex < words.length)
+                    && ((words[wordIndex] & (1L << bitIndex)) != 0);
+        }
+
+        @Override
+        public int cardinality() {
+            return cardinality;
+        }
+
+        @Override
+        public int length() {
+            return length;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return cardinality == 0;
+        }
+
+        @Override
+        public int nextSetBit(int fromIndex) {
+            if (fromIndex < 0)
+                throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+
+            int u = wordIndex(fromIndex);
+            if (u >= words.length)
+                return -1;
+
+            long word = words[u] & (WORD_MASK << fromIndex);
+
+            while (true) {
+                if (word != 0)
+                    return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+                if (++u == words.length)
+                    return -1;
+                word = words[u];
+            }
+        }
+
+        @Override
+        public int nextClearBit(int fromIndex) {
+            if (fromIndex < 0)
+                throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
+
+            int u = wordIndex(fromIndex);
+            if (u >= words.length)
+                return fromIndex;
+
+            long word = ~words[u] & (WORD_MASK << fromIndex);
+
+            while (true) {
+                if (word != 0)
+                    return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+                if (++u == words.length)
+                    return words.length * BITS_PER_WORD;
+                word = ~words[u];
+            }
+        }
+
+        @Override
+        public int previousSetBit(int fromIndex) {
+            if (fromIndex < 0) {
+                if (fromIndex == -1)
+                    return -1;
+                throw new IndexOutOfBoundsException(
+                        "fromIndex < -1: " + fromIndex);
+            }
+
+            int u = wordIndex(fromIndex);
+            if (u >= words.length)
+                return length() - 1;
+
+            long word = words[u] & (WORD_MASK >>> -(fromIndex+1));
+
+            while (true) {
+                if (word != 0)
+                    return (u+1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
+                if (u-- == 0)
+                    return -1;
+                word = words[u];
+            }
+        }
+
+        @Override
+        public int previousClearBit(int fromIndex) {
+            if (fromIndex < 0) {
+                if (fromIndex == -1)
+                    return -1;
+                throw new IndexOutOfBoundsException(
+                        "fromIndex < -1: " + fromIndex);
+            }
+
+            int u = wordIndex(fromIndex);
+            if (u >= words.length)
+                return fromIndex;
+
+            long word = ~words[u] & (WORD_MASK >>> -(fromIndex+1));
+
+            while (true) {
+                if (word != 0)
+                    return (u+1) * BITS_PER_WORD -1 - Long.numberOfLeadingZeros(word);
+                if (u-- == 0)
+                    return -1;
+                word = ~words[u];
+            }
+        }
+
+        @Override
+        public IntStream stream() {
+            if (isEmpty()) {
+                return IntStream.empty();
+            }
+            return IntStream.iterate(nextSetBit(0), i -> i != -1, this::nextSetBit);
         }
     }
 
