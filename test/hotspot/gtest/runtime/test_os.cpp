@@ -947,3 +947,14 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     tty->print_cr("Skipped.");
   }
 }
+
+TEST_VM(os, vm_min_address) {
+  size_t s = os::vm_min_address();
+  ASSERT_GE(s, M);
+  // Test upper limit. On Linux, its adjustable, so we just test for absurd values to prevent errors
+  // with high vm.mmap_min_addr settings.
+#if defined(_LP64)
+  ASSERT_LE(s, NOT_LINUX(G * 4) LINUX_ONLY(G * 1024));
+#endif
+}
+
