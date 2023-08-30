@@ -1419,6 +1419,9 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
+  develop(bool, RandomizeClassSpaceLocation, true,                          \
+          "Randomize location of class space.")                             \
+                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
