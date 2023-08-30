@@ -304,7 +304,7 @@ public class HBShaper {
         MemorySegment user_data   /* Not used */
     ) {
 
-        Font2D font2D = scopedFont2D.get();
+        Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToGlyph(unicode);
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
@@ -319,7 +319,7 @@ public class HBShaper {
         MemorySegment glyph,      /* pointer to location to store glyphID */
         MemorySegment user_data   /* Not used */
     ) {
-        Font2D font2D = scopedFont2D.get();
+        Font2D font2D = scopedVars.get().font();
         int glyphID = font2D.charToVariationGlyph(unicode, variation_selector);
         MemorySegment glyphIDPtr = glyph.reinterpret(4);
         glyphIDPtr.setAtIndex(JAVA_INT, 0, glyphID);
@@ -338,7 +338,7 @@ public class HBShaper {
         MemorySegment user_data  /* Not used */
     ) {
 
-        FontStrike strike = scopedFontStrike.get();
+        FontStrike strike = scopedVars.get().fontStrike();
         Point2D.Float pt = strike.getGlyphMetrics(glyph);
         return (pt != null) ? HBFloatToFixed(pt.x) : 0;
     }
@@ -350,7 +350,7 @@ public class HBShaper {
         MemorySegment user_data  /* Not used */
     ) {
 
-        FontStrike strike = scopedFontStrike.get();
+        FontStrike strike = scopedVars.get().fontStrike();
         Point2D.Float pt = strike.getGlyphMetrics(glyph);
         return (pt != null) ? HBFloatToFixed(pt.y) : 0;
     }
@@ -386,7 +386,7 @@ public class HBShaper {
             return 1;
         }
 
-        FontStrike strike = scopedFontStrike.get();
+        FontStrike strike = scopedVars.get().fontStrike();
         Point2D.Float pt = ((PhysicalStrike)strike).getGlyphPoint(glyph, point_index);
         x.set(HBFloatToFixed(pt.x));
         y.set(HBFloatToFixed(pt.y));
@@ -394,10 +394,13 @@ public class HBShaper {
        return 1;
     }
 
-    private static final ScopedValue<Font2D> scopedFont2D = ScopedValue.newInstance();
-    private static final ScopedValue<FontStrike> scopedFontStrike = ScopedValue.newInstance();
-    private static final ScopedValue<GVData> scopedGVData = ScopedValue.newInstance();
-    private static final ScopedValue<Point2D.Float> scopedStartPt = ScopedValue.newInstance();
+    record ScopedVars (
+        Font2D font,
+        FontStrike fontStrike,
+        GVData gvData,
+        Point2D.Float point) {}
+
+    static final ScopedValue<ScopedVars> scopedVars = ScopedValue.newInstance();
 
     static void shape(
         Font2D font2D,
@@ -420,10 +423,8 @@ public class HBShaper {
          * shaping can locate the correct instances of these to query or update.
          * The alternative of creating bound method handles is far too slow.
          */ 
-        ScopedValue.where(scopedFont2D, font2D)
-                   .where(scopedFontStrike, fontStrike)
-                   .where(scopedGVData, gvData)
-                   .where(scopedStartPt, startPt)
+        ScopedVars vars = new ScopedVars(font2D, fontStrike, gvData, startPt);
+        ScopedValue.where(scopedVars, vars)
                    .run(() -> {
 
             try (Arena arena = Arena.ofConfined()) {
@@ -567,8 +568,8 @@ public class HBShaper {
         MemorySegment /* hb_glyph_position_t* */ glyphPos
         ) {
 
-        GVData gvdata = scopedGVData.get();
-        Point2D.Float startPt = scopedStartPt.get();
+        GVData gvdata = scopedVars.get().gvData();
+        Point2D.Float startPt = scopedVars.get().point();
         float x=0, y=0;
         float advX, advY;
         float scale = 1.0f / HBFloatToFixedScale / devScale;
