@@ -113,7 +113,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
     }
   }
 
-  if (UsePerfData) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
     _g1_concurrent_refine_threads_cpu_time =
         PerfDataManager::create_variable(NULL_NS, "g1_conc_refine_thread_time",
@@ -163,7 +163,7 @@ void G1ConcurrentRefineThreadControl::stop() {
 void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   // The primary thread (_threads[0]) updates the counter for all worker
   // threads, because:
-  // the primary thread is always waken up first from being blocked on a monitor
+  // the primary thread is always woken up first from being blocked on a monitor
   // when there is refinement work to do (see comment in
   // G1ConcurrentRefineThread's constructor);
   // the primary thread is started last and stopped first, so it will not risk
@@ -171,7 +171,7 @@ void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   assert(Thread::current() == _threads[0],
          "Must be called from G1ConcurrentRefineThreadControl::_threads[0] to "
          "avoid races");
-  assert(UsePerfData, "Must be enabled");
+  assert(UsePerfData && os::is_thread_cpu_time_supported(), "Must be enabled");
   ThreadTotalCPUTimeClosure tttc(_g1_concurrent_refine_threads_cpu_time);
   worker_threads_do(&tttc);
 }

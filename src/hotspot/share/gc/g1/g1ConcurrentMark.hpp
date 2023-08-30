@@ -374,7 +374,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   void verify_during_pause(G1HeapVerifier::G1VerifyType type,
                            VerifyLocation location);
 
-
   void finalize_marking();
 
   void weak_refs_work();

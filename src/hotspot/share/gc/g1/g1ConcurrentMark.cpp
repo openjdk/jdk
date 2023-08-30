@@ -454,7 +454,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   reset_at_marking_complete();
 
-  if (UsePerfData) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
 
     _g1_concurrent_mark_threads_cpu_time =
