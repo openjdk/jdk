@@ -70,6 +70,48 @@ size_t MallocMemorySnapshot::total_arena() const {
   return amount;
 }
 
+size_t MallocMemorySnapshot::thread_count() const {
+  if (ThreadStackTracker::track_as_vm()) {
+    return _thread_count;
+  } else {
+    assert(_thread_count == 0, "_thread_count can not be used if ThreadStackTracker::track_as_vm() == false");
+    MallocMemorySnapshot* s = const_cast<MallocMemorySnapshot*>(this);
+    return s->by_type(mtThreadStack)->malloc_count();
+  }
+}
+
+void MallocMemorySnapshot::snapshot_thread_count() {
+  if (ThreadStackTracker::track_as_vm()) {
+    _thread_count = ThreadStackTracker::thread_count();
+  } else {
+    // Thread count will be reported as malloc count for mtThreadStack.
+  }
+}
+
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+  // Need to make sure that mtChunks don't get deallocated while the
+  // copy is going on, because their size is adjusted using this
+  // buffer in make_adjustment().
+  ThreadCritical tc;
+  size_t total_size;
+  size_t loop_counter = 0;
+  const size_t loop_limit = 100;
+  // It is observed that other threads can allocate during the loop of copying.
+  // This results in inconsistent total and sum of parts. So, the while-loop and
+  // the local total_size are used to find and try again a limited number of times.
+  // Acheiving fully consistent total and sum of parts requires to block all mallooc's during
+  // the copy which is a performance obstacle.
+  do {
+    total_size = 0;
+    s->_all_mallocs = _all_mallocs;
+    for (int index = 0; index < mt_number_of_types; index ++) {
+      s->_malloc[index] = _malloc[index];
+      total_size += _malloc[index].malloc_size();
+    }
+  } while(s->_all_mallocs.size() != total_size && ++loop_counter < loop_limit);
+  assert(s->_all_mallocs.size() == total_size, "Total != sum of parts");
+}
+
 // Make adjustment by subtracting chunks used by arenas
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {

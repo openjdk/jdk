@@ -152,8 +152,13 @@ class MallocMemorySnapshot : public ResourceObj {
   MallocMemory      _malloc[mt_number_of_types];
   MemoryCounter     _all_mallocs;
 
+  // Used only for ThreadStackTracker::track_as_vm() == true to report thread
+  // count diff during "jcmd <pid> VM.native_memory summary.diff" correctly.
+  int               _thread_count;
 
  public:
+  MallocMemorySnapshot() : _thread_count(0) {  }
+
   inline MallocMemory* by_type(MEMFLAGS flags) {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
@@ -181,10 +186,8 @@ class MallocMemorySnapshot : public ResourceObj {
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
-  inline size_t thread_count() const {
-    MallocMemorySnapshot* s = const_cast<MallocMemorySnapshot*>(this);
-    return s->by_type(mtThreadStack)->malloc_count();
-  }
+  size_t thread_count() const;
+  void snapshot_thread_count();
 
   void copy_to(MallocMemorySnapshot* s) {
      // Need to make sure that mtChunks don't get deallocated while the
@@ -247,6 +250,7 @@ class MallocMemorySummary : AllStatic {
    static void snapshot(MallocMemorySnapshot* s) {
      as_snapshot()->copy_to(s);
      s->make_adjustment();
+     s->snapshot_thread_count();
    }
 
    // The memory used by malloc tracking headers
