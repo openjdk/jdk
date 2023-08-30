@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.util;
 
-import com.sun.tools.javac.util.DefinedBy.Api;
-
 /**
  * Support superclass for {@link Name.Table} implementations that store
  * names as Modified UTF-8 data in {@code byte[]} arrays.
@@ -132,13 +130,16 @@ public abstract class Utf8NameTable extends Name.Table {
         public int compareTo(Name name0) {
             // While most operations on Name that take a Name as an argument expect the argument
             // to come from the same table, in many cases, including here, that is not strictly
-            // required. Moreover, java.util.Name implements javax.lang.model.element.Name,
+            // required. Moreover, javac.util.Name implements javax.lang.model.element.Name,
             // which extends CharSequence, which provides
             //   static int compare(CharSequence cs1, CharSequence cs2)
-            // which ends up calling to this method when the two arguments have the same class.
-            // Therefore, for this method, we relax "same table" to "same class".
-            Assert.check(name0.getClass() == getClass());
-            NameImpl name = (NameImpl)name0;
+            // which ends up calling to this method via the Comparable<Object> interface
+            // and a bridge method when the two arguments have the same class.
+            // Therefore, for this method, we relax "same table", and delegate to the more
+            // general super method if necessary.
+            if (!(name0 instanceof NameImpl name)) {
+                return super.compareTo(name0);
+            }
             byte[] buf1 = getByteData();
             byte[] buf2 = name.getByteData();
             int off1 = getByteOffset();

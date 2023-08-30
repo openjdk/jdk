@@ -84,7 +84,7 @@ public class TestNameTables {
     }
 
     /**
-     * Tests operations using a single name tbale
+     * Tests operations using a single name table.
      *
      * @param table the name table
      */
