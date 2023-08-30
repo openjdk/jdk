@@ -163,6 +163,7 @@ public class Symtab {
      */
     public final Type objectType;
     public final Type objectMethodsType;
+    public final Type exactnessMethodsType;
     public final Type objectsType;
     public final Type classType;
     public final Type classLoaderType;
@@ -544,6 +545,7 @@ public class Symtab {
         // Enter predefined classes. All are assumed to be in the java.base module.
         objectType = enterClass("java.lang.Object");
         objectMethodsType = enterClass("java.lang.runtime.ObjectMethods");
+        exactnessMethodsType = enterClass("java.lang.runtime.ExactnessMethods");
         objectsType = enterClass("java.util.Objects");
         classType = enterClass("java.lang.Class");
         stringType = enterClass("java.lang.String");

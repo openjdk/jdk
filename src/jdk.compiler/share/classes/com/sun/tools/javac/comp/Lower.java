@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -2903,6 +2904,121 @@ public class Lower extends TreeTranslator {
         else
             tree.expr = translate(tree.expr);
         result = tree;
+    }
+
+    public void visitTypeTest(JCInstanceOf tree) {
+        if (tree.expr.type.equals(syms.objectType) && tree.pattern.type.isPrimitive()) {
+            // Object v = ...
+            // v instanceof float
+            // =>
+            // v instanceof Float
+            result = make.at(tree.pos()).TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type)).setType(syms.booleanType);
+        }
+        else if (!(tree.expr.type.isNullOrReference() && tree.pattern.type.isReference())) {
+            JCExpression exactnessCheck = null;
+
+            // translate tree.expr to resolve potential statically qualified names, etc
+            JCExpression instanceOfExpr = translate(tree.expr);
+
+            // We regard Wrapper instanceof p as unconditional if the underlying primitive of Wrapper is unconditional to p.
+            // However, we still need to emit a null check.
+            // This branch covers true unconditionality for the underlying type as well.
+            if (types.checkUnconditionallyExact(tree.expr.type, tree.pattern.type) &&
+                !(tree.expr.type.isReference() && types.isExactPrimitiveWidening(types.unboxedType(tree.expr.type), tree.pattern.type))) {
+                if (types.isConvertible(tree.expr.type, tree.pattern.type)) {
+                    exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);
+                }
+            } else if (tree.pattern.type.isPrimitive()) {
+                // Covers cases where the Type of the pattern is primitive e.g., v instanceof int
+                // - case type of v is ReferenceType, null check and unbox
+                // - case type of v is PrimitiveType
+
+                // rewrite instanceof if expr : wrapper reference type
+                //
+                // Integer v = ...
+                // if (v instanceof float)
+                // =>
+                // if (let tmp$123 = v; tmp$123 != null <&& if not unconditionally exact> ExactnessChecks.int_float(tmp$123.intValue()))
+                VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
+                        names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
+                        tree.expr.type,
+                        currentMethodSym);
+
+                JCStatement var = make.at(tree.pos()).VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
+
+                if (tree.expr.type.isReference()) {
+                    JCExpression nullCheck = makeBinary(NE,
+                            make.Ident(dollar_s),
+                            makeNull());
+
+                    if (types.checkUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                        exactnessCheck = make.Literal(BOOLEAN, 1).setType(syms.booleanType);                                          // emit no exactness check
+                    } else {
+                        // if expression type is Byte, Short, Integer, ...
+                        // an unboxing conversion followed by a widening primitive conversion
+                        if (types.unboxedType(tree.expr.type).isPrimitive()) {
+                            exactnessCheck = getExactnessCheck(tree, boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type))); // emit the exactness call
+                        } else {
+                            // if expression type is a supertype: Number, ..
+                            // a narrowing reference conversion followed by an unboxing conversion
+                            exactnessCheck = make.at(tree.pos()).TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type)).setType(syms.booleanType);;
+                        }
+                    }
+
+                    JCBinary nullCheckFollowedByExactnessCheckCall = makeBinary(AND,
+                            nullCheck,
+                            exactnessCheck);
+
+                    exactnessCheck = make.LetExpr(List.of(var), nullCheckFollowedByExactnessCheckCall)
+                            .setType(syms.booleanType);
+                } else {
+                    // rewrite instanceof if expr : primitive
+                    // int v = ...
+                    // if (v instanceof float)
+                    // =>
+                    // if (let tmp$123 = v; ExactnessChecks.int_float(tmp$123))
+                    JCIdent argument = make.Ident(dollar_s);
+
+                    JCExpression exactnessCheckCall =
+                            getExactnessCheck(tree, argument);
+
+                    exactnessCheck = make.LetExpr(List.of(var), exactnessCheckCall)
+                            .setType(syms.booleanType);
+                }
+            }
+
+            result = exactnessCheck;
+        }
+        else {
+            tree.expr = translate(tree.expr);
+            tree.pattern = translate(tree.pattern);
+            result = tree;
+        }
+    }
+
+    private JCExpression getExactnessCheck(JCInstanceOf tree, JCExpression argument) {
+        Name exactnessFunction = names.fromString(types.unboxedTypeOrType(tree.expr.type).tsym.name.toString() + "_"+ tree.pattern.type.toString());
+
+        // Resolve the exactness method
+        Symbol ecsym = rs.resolveQualifiedMethod(null,
+                attrEnv,
+                syms.exactnessMethodsType,
+                exactnessFunction,
+                List.of(tree.expr.type),
+                List.nil());
+
+        // Generate the method call ExactnessChecks.<exactness method>(<argument>);
+        JCFieldAccess select = make.Select(
+                make.QualIdent(syms.exactnessMethodsType.tsym),
+                exactnessFunction);
+        select.sym = ecsym;
+        select.setType(syms.booleanType);
+
+        JCExpression exactnessCheck = make.Apply(List.nil(),
+                select,
+                List.of(argument));
+        exactnessCheck.setType(syms.booleanType);
+        return exactnessCheck;
     }
 
     public void visitNewClass(JCNewClass tree) {

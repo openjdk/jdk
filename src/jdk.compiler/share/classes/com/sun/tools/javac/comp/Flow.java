@@ -732,9 +732,27 @@ public class Flow {
                     }
                 }
             }
-            tree.isExhaustive = tree.hasUnconditionalPattern ||
-                                TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
-                                exhausts(tree.selector, tree.cases);
+            if (tree.selector.type.hasTag(TypeTag.BOOLEAN)) {
+                HashSet<JCTree> labelValues = tree.cases.stream()
+                        .filter(TreeInfo::unguardedCase)
+                        .flatMap(c -> c.labels.stream())
+                        .filter(l -> !l.hasTag(DEFAULTCASELABEL))
+                        .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                : ((JCPatternCaseLabel) l).pat)
+                        .collect(Collectors.toCollection(HashSet::new));
+
+                boolean hasBothTrueAndFalse = labelValues.stream().filter(l -> l.hasTag(Tag.LITERAL)).map(l -> ((JCLiteral)l).value).distinct().count() == 2;
+
+                tree.isExhaustive = hasBothTrueAndFalse || tree.hasUnconditionalPattern;
+
+                if (hasBothTrueAndFalse && tree.hasUnconditionalPattern) {
+                    log.error(tree, Errors.DefaultLabelNotAllowed);
+                }
+            } else {
+                tree.isExhaustive = tree.hasUnconditionalPattern ||
+                        TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases) ||
+                        exhausts(tree.selector, tree.cases);
+            }
             if (!tree.isExhaustive) {
                 log.error(tree, Errors.NotExhaustive);
             }
@@ -798,8 +816,7 @@ public class Flow {
         private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
                 for (PatternDescription pd : patterns) {
-                    if (pd instanceof BindingPattern bp &&
-                        types.isSubtype(seltypeComponent, types.erasure(bp.type))) {
+                    if(isBpCovered(seltypeComponent, pd)) {
                         return true;
                     }
                 }
@@ -1079,8 +1096,7 @@ public class Flow {
                         reducedNestedPatterns[i] = newNested;
                     }
 
-                    covered &= newNested instanceof BindingPattern bp &&
-                               types.isSubtype(types.erasure(componentType[i]), types.erasure(bp.type));
+                    covered &= isBpCovered(componentType[i], newNested);
                 }
                 if (covered) {
                     return new BindingPattern(rpOne.recordType);
@@ -1254,6 +1270,30 @@ public class Flow {
                 Flow.this.make = null;
             }
         }
+    }
+
+    private boolean isBpCovered(Type componentType, PatternDescription newNested) {
+        if (newNested instanceof BindingPattern bp) {
+            var seltype = types.erasure(componentType);
+
+            if (seltype.isPrimitive()) {
+                if (types.isSameType(bp.type, types.boxedClass(seltype).type)) {
+                    return true;
+                }
+
+                // if the target is unconditionally exact to the pattern, target is covered
+                if (types.checkUnconditionallyExact(seltype, bp.type)) {
+                    return true;
+                }
+            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {
+                return true;
+            } else {
+                if (types.isSubtype(seltype, types.erasure(bp.type))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -3459,7 +3499,7 @@ public class Flow {
     sealed interface PatternDescription { }
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
         if (pattern instanceof JCBindingPattern binding) {
-            Type type = types.isSubtype(selectorType, binding.type)
+            Type type = !selectorType.isPrimitive() && types.isSubtype(selectorType, binding.type)
                     ? selectorType : binding.type;
             return new BindingPattern(type);
         } else if (pattern instanceof JCRecordPattern record) {

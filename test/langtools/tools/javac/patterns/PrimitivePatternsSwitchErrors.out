@@ -1,0 +1,18 @@
+PrimitivePatternsSwitchErrors.java:14:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:23:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:30:24: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.Long)
+PrimitivePatternsSwitchErrors.java:61:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:69:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:77:18: compiler.err.pattern.dominated
+PrimitivePatternsSwitchErrors.java:83:18: compiler.err.prob.found.req: (compiler.misc.possible.loss.of.precision: long, byte)
+PrimitivePatternsSwitchErrors.java:89:18: compiler.err.constant.label.not.compatible: int, float
+PrimitivePatternsSwitchErrors.java:91:18: compiler.err.constant.label.not.compatible: int, float
+PrimitivePatternsSwitchErrors.java:102:13: compiler.err.duplicate.case.label
+PrimitivePatternsSwitchErrors.java:29:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:36:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:43:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:51:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:110:16: compiler.err.default.label.not.allowed
+- compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
+- compiler.note.preview.recompile
+15 errors

@@ -1,5 +1,5 @@
-SwitchNoExtraTypes.java:11:16: compiler.err.selector.type.not.allowed: boolean
-SwitchNoExtraTypes.java:17:16: compiler.err.selector.type.not.allowed: long
-SwitchNoExtraTypes.java:23:16: compiler.err.selector.type.not.allowed: float
-SwitchNoExtraTypes.java:29:16: compiler.err.selector.type.not.allowed: double
+SwitchNoExtraTypes.java:12:16: compiler.err.selector.type.not.allowed: boolean
+SwitchNoExtraTypes.java:19:16: compiler.err.selector.type.not.allowed: long
+SwitchNoExtraTypes.java:26:16: compiler.err.selector.type.not.allowed: float
+SwitchNoExtraTypes.java:33:16: compiler.err.selector.type.not.allowed: double
 4 errors
