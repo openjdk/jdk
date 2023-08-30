@@ -38,7 +38,6 @@ import org.openjdk.jmh.infra.Blackhole;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -77,7 +76,7 @@ public class URLEncodeDecode {
     @Setup
     public void setupStrings() {
         char[] encodeTokens = new char[] { '[', '(', ' ', '\u00E4', '\u00E5', '\u00F6', ')', '='};
-        char[] tokens = new char[((int) 'Z' - (int) 'A' + 1) + ((int) 'z' - (int) 'a' + 1) + ((int) '9' - (int) '0' + 1) + 4];
+        char[] tokens = new char[('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1) + 4];
         int n = 0;
         for (char c = '0'; c <= '9'; c++) {
             tokens[n++] = c;
