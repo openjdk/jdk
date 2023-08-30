@@ -111,43 +111,39 @@ public class HBShaper {
             PathElement.groupElement(name));
     }
 
-    private static VarHandle x_offsetHandle;
-    private static VarHandle y_offsetHandle;
-    private static VarHandle x_advanceHandle;
-    private static VarHandle y_advanceHandle;
-    private static VarHandle codePointHandle;
-    private static VarHandle clusterHandle;
+    private static final VarHandle x_offsetHandle;
+    private static final VarHandle y_offsetHandle;
+    private static final VarHandle x_advanceHandle;
+    private static final VarHandle y_advanceHandle;
+    private static final VarHandle codePointHandle;
+    private static final VarHandle clusterHandle;
 
-    private static MethodHandles.Lookup MH_LOOKUP;
-    private static Linker LINKER;
-    private static SymbolLookup SYM_LOOKUP;
-    private static MethodHandle malloc_handle;
-    private static MethodHandle create_face_handle;
-    private static MethodHandle dispose_face_handle;
-    private static MethodHandle jdk_hb_shape_handle;
+    private static final MethodHandles.Lookup MH_LOOKUP;
+    private static final Linker LINKER;
+    private static final SymbolLookup SYM_LOOKUP;
+    private static final MethodHandle malloc_handle;
+    private static final MethodHandle create_face_handle;
+    private static final MethodHandle dispose_face_handle;
+    private static final MethodHandle jdk_hb_shape_handle;
 
-    private static FunctionDescriptor get_nominal_glyph_fd;
-    private static MethodHandle get_nominal_glyph_mh;
-    private static FunctionDescriptor get_var_glyph_fd;
-    private static MethodHandle get_var_glyph_mh;
-    private static FunctionDescriptor get_h_adv_fd;
-    private static MethodHandle get_h_adv_mh;
-    private static FunctionDescriptor get_v_adv_fd;
-    private static MethodHandle get_v_adv_mh;
-    private static FunctionDescriptor get_contour_pt_fd;
-    private static MethodHandle get_contour_pt_mh;
+    private static final FunctionDescriptor get_nominal_glyph_fd;
+    private static final MethodHandle get_nominal_glyph_mh;
+    private static final FunctionDescriptor get_var_glyph_fd;
+    private static final MethodHandle get_var_glyph_mh;
+    private static final FunctionDescriptor get_h_adv_fd;
+    private static final MethodHandle get_h_adv_mh;
+    private static final FunctionDescriptor get_v_adv_fd;
+    private static final MethodHandle get_v_adv_mh;
+    private static final FunctionDescriptor get_contour_pt_fd;
+    private static final MethodHandle get_contour_pt_mh;
 
-    private static MemorySegment get_var_glyph_stub;
-    private static MemorySegment get_nominal_glyph_stub;
-    private static MemorySegment get_h_advance_stub;
-    private static MemorySegment get_v_advance_stub;
-    private static MemorySegment get_contour_pt_stub;
+    private static final MemorySegment get_var_glyph_stub;
+    private static final MemorySegment get_nominal_glyph_stub;
+    private static final MemorySegment get_h_advance_stub;
+    private static final MemorySegment get_v_advance_stub;
+    private static final MemorySegment get_contour_pt_stub;
 
     private static MemorySegment store_layout_results_stub;
-
-    static {
-         initMethodHandles();
-    }
 
    private static FunctionDescriptor
        getFunctionDescriptor(MemoryLayout retType,
@@ -170,8 +166,7 @@ public class HBShaper {
        }
    }
 
-    private static void initMethodHandles() {
-
+   static {
         MH_LOOKUP = MethodHandles.lookup();
         LINKER = Linker.nativeLinker();
         SYM_LOOKUP = SymbolLookup.loaderLookup().or(LINKER.defaultLookup());
