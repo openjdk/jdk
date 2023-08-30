@@ -1428,10 +1428,10 @@ print-targets:
 	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_TARGETS))))
 
 print-modules:
-	  @$(ECHO) $(sort $(ALL_MODULES))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_MODULES))))
 
 print-tests:
-	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_NAMED_TESTS))))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)
