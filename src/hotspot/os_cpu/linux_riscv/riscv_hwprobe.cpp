@@ -100,7 +100,7 @@ static bool is_valid(int64_t key) {
 
 static bool is_set(int64_t key, uint64_t value_mask) {
   if (is_valid(key)) {
-    return query[key].value & value_mask != 0;
+    return (query[key].value & value_mask) != 0;
   }
   return false;
 }
