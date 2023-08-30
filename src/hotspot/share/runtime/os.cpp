@@ -74,6 +74,7 @@
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastrand.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifndef _WINDOWS
@@ -1811,11 +1812,204 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   char* result = pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
   } else {
     log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
                  SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
   }
+
   return result;
+}
+
+#ifdef ASSERT
+static void print_points(const char* s, unsigned* points, unsigned num) {
+  stringStream ss;
+  for (unsigned i = 0; i < num; i ++) {
+    ss.print("%u ", points[i]);
+  }
+  log_trace(os, map)("%s, %u Points: %s", s, num, ss.base());
+}
+#endif
+
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, shuffle them (Fisher-Yates)
+template <typename T>
+static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
+  for (unsigned i = num - 1; i >= 1; i--) {
+    unsigned j = frand.next() % i;
+    swap(arr[i], arr[j]);
+  }
+}
+
+// Helper for os::attempt_reserve_memory_between
+// Given an array of things, do a hemisphere split such that the resulting
+// order is: [first, last, first + 1, last - 1, ...]
+template <typename T>
+static void hemi_split(T* arr, unsigned num) {
+  T* tmp = (T*)::alloca(sizeof(T) * num);
+  for (unsigned i = 0; i < num; i++) {
+    tmp[i] = arr[i];
+  }
+  for (unsigned i = 0; i < num; i++) {
+    arr[i] = is_even(i) ? tmp[i / 2] : tmp[num - (i / 2) - 1];
+  }
+}
+
+// Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+// If randomize is true, the location will be randomized.
+char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
+
+  // Please keep the following constants in sync with the companion gtests:
+
+  // Number of mmap attemts we will undertake.
+  constexpr unsigned max_attempts = 32;
+
+  // In randomization mode: We require a minimum number of possible attach points for
+  // randomness. Below that we refuse to reserve anything.
+  constexpr unsigned min_random_value_range = 16;
+
+  // In randomization mode: If the possible value range is below this threshold, we
+  // use a total shuffle without regard for address space fragmentation, otherwise
+  // we attempt to minimize fragmentation.
+  constexpr unsigned total_shuffle_threshold = 1024;
+
+#define ARGSFMT " range [" PTR_FORMAT "-" PTR_FORMAT "), size " SIZE_FORMAT_X ", alignment " SIZE_FORMAT_X ", randomize: %d"
+#define ARGSFMTARGS p2i(min), p2i(max), bytes, alignment, randomize
+
+  log_trace(os, map) ("reserve_between (" ARGSFMT ")", ARGSFMTARGS);
+
+  assert(is_power_of_2(alignment), "alignment invalid (" ARGSFMT ")", ARGSFMTARGS);
+  assert(alignment < SIZE_MAX / 2, "alignment too large (" ARGSFMT ")", ARGSFMTARGS);
+  assert(is_aligned(bytes, os::vm_page_size()), "size not page aligned (" ARGSFMT ")", ARGSFMTARGS);
+  assert(max >= min, "invalid range (" ARGSFMT ")", ARGSFMTARGS);
+
+  char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
+  char* const absolute_min = (char*) os::vm_min_address();
+
+  const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
+
+  // Calculate first and last possible attach points:
+  char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
+  if (lo_att == nullptr) {
+    return nullptr; // overflow
+  }
+
+  char* const hi_att = align_down(MIN2(max, absolute_max) - bytes, alignment_adjusted);
+  if (hi_att > max) {
+    return nullptr; // overflow
+  }
+
+  // no possible attach points
+  if (hi_att < lo_att) {
+    return nullptr;
+  }
+
+  char* result = nullptr;
+
+  const size_t num_attach_points = (size_t)((hi_att - lo_att) / alignment_adjusted) + 1;
+  assert(num_attach_points > 0, "Sanity");
+
+  // If this fires, the input range is too large for the given alignment (we work
+  // with int below to keep things simple). Since alignment is bound to page size,
+  // and the lowest page size is 4K, this gives us a minimum of 4K*4G=8TB address
+  // range.
+  assert(num_attach_points <= UINT_MAX,
+         "Too many possible attach points - range too large or alignment too small (" ARGSFMT ")", ARGSFMTARGS);
+
+  const unsigned num_attempts = MIN2((unsigned)num_attach_points, max_attempts);
+  unsigned points[max_attempts];
+
+  if (randomize) {
+    FastRandom frand;
+
+    if (num_attach_points < min_random_value_range) {
+      return nullptr;
+    }
+
+    // We pre-calc the attach points:
+    // 1 We divide the attach range into equidistant sections and calculate an attach
+    //   point within each section.
+    // 2 We wiggle those attach points around within their section (depends on attach
+    //   point granularity)
+    // 3 Should that not be enough to get effective randomization, shuffle all
+    //   attach points
+    // 4 Otherwise, re-order them to get an optimized probing sequence.
+    const unsigned stepsize = (unsigned)num_attach_points / num_attempts;
+    const unsigned half = num_attempts / 2;
+
+    // 1+2: pre-calc points
+    for (unsigned i = 0; i < num_attempts; i++) {
+      const unsigned deviation = stepsize > 1 ? (frand.next() % stepsize) : 0;
+      points[i] = (i * stepsize) + deviation;
+    }
+
+    if (num_attach_points < total_shuffle_threshold) {
+      // 3:
+      // The numeber of possible attach points is too low for the "wiggle" from
+      // point 2 to be enough to provide randomization. In that case, shuffle
+      // all attach points at the cost of possible fragmentation (e.g. if we
+      // end up mapping into the middle of the range).
+      shuffle_fisher_yates(points, num_attempts, frand);
+    } else {
+      // 4
+      // We have a large enough number of attach points to satisfy the randomness
+      // goal without. In that case, we optimize probing by sorting the attach
+      // points: We attempt outermost points first, then work ourselves up to
+      // the middle. That reduces address space fragmentation. We also alternate
+      // hemispheres, which increases the chance of successfull mappings if the
+      // previous mapping had been blocked by large maps.
+      hemi_split(points, num_attempts);
+    }
+  } // end: randomized
+  else
+  {
+    // Non-randomized. We just attempt to reserve by probing sequentially. We
+    // alternate between hemispheres, working ourselves up to the middle.
+    const int stepsize = (unsigned)num_attach_points / num_attempts;
+    for (unsigned i = 0; i < num_attempts; i++) {
+      points[i] = (i * stepsize);
+    }
+    hemi_split(points, num_attempts);
+  }
+
+#ifdef ASSERT
+  // Print + check all pre-calculated attach points
+  print_points("before reserve", points, num_attempts);
+  for (unsigned i = 0; i < num_attempts; i++) {
+    assert(points[i] < num_attach_points, "Candidate attach point %d out of range (%u, num_attach_points: %zu) " ARGSFMT,
+           i, points[i], num_attach_points, ARGSFMTARGS);
+  }
+#endif
+
+  // Now reserve
+  for (unsigned i = 0; result == nullptr && i < num_attempts; i++) {
+    const unsigned candidate_offset = points[i];
+    char* const candidate = lo_att + candidate_offset * alignment_adjusted;
+    assert(candidate <= hi_att, "Invalid offset %u (" ARGSFMT ")", candidate_offset, ARGSFMTARGS);
+    result = os::pd_attempt_reserve_memory_at(candidate, bytes, false);
+    if (!result) {
+      log_trace(os, map)("Failed to attach at " PTR_FORMAT, p2i(candidate));
+    }
+  }
+
+  // Sanity checks, logging, NMT stuff:
+  if (result != nullptr) {
+#define ERRFMT "result: " PTR_FORMAT " " ARGSFMT
+#define ERRFMTARGS p2i(result), ARGSFMTARGS
+    assert(result >= min, "OOB min (" ERRFMT ")", ERRFMTARGS);
+    assert((result + bytes) <= max, "OOB max (" ERRFMT ")", ERRFMTARGS);
+    assert(result >= (char*)os::vm_min_address(), "OOB vm.map min (" ERRFMT ")", ERRFMTARGS);
+    assert((result + bytes) <= absolute_max, "OOB vm.map max (" ERRFMT ")", ERRFMTARGS);
+    assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
+    log_trace(os, map)(ERRFMT, ERRFMTARGS);
+    log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  }
+  return result;
+#undef ARGSFMT
+#undef ERRFMT
+#undef ARGSFMTARGS
+#undef ERRFMTARGS
 }
 
 static void assert_nonempty_range(const char* addr, size_t bytes) {
