@@ -54,8 +54,8 @@ public class OptionKeyEventTest extends JFrame
     private static final String newline = System.getProperty("line.separator");
     private static final String INSTRUCTIONS =
             "This test checks if the key events for the left and right\n" +
-            "option keys are correct. To complete the test, click on the \n" +
-            "OptionKeyEventTest window's typing area at the top to focus it.\n" +
+            "option keys are correct. To complete the test, ensure the\n" +
+            "OptionKeyEventTest window's typing area is focused.\n" +
             "Press and release the left option key. Then press and release\n" +
             "the right option key. Confirm in the display area and pass the\n" +
             "test if these are correct, otherwise this test fails: \n\n" +
@@ -84,6 +84,7 @@ public class OptionKeyEventTest extends JFrame
             PassFailJFrame.addTestWindow(frame);
             PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
+            typingArea.requestFocus();
         });
     }
 
@@ -96,6 +97,7 @@ public class OptionKeyEventTest extends JFrame
 
         displayArea = new JTextArea();
         displayArea.setEditable(false);
+        displayArea.setFocusable(false);
         JScrollPane scrollPane = new JScrollPane(displayArea);
         scrollPane.setPreferredSize(new Dimension(375, 125));
 
