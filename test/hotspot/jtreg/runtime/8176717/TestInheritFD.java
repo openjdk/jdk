@@ -28,7 +28,7 @@ import static java.nio.file.Files.readAllBytes;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static jdk.test.lib.process.ProcessTools.createJavaProcessBuilder;
+import static jdk.test.lib.process.ProcessTools.createJavaProcessBuilderIgnoreTestJavaOpts;
 import static jdk.test.lib.Platform.isWindows;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
@@ -361,4 +361,3 @@ public class TestInheritFD {
         System.out.println(f.renameTo(f) ? RETAINS_FD : LEAKS_FD); // this parts communicates a closed file descriptor by printing "VM RESULT => RETAINS FD"
     }
 }
-
