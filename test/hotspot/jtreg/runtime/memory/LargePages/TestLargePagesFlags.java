@@ -107,6 +107,7 @@ public class TestLargePagesFlags {
       System.out.println("Expecting: " + Arrays.toString(expectedFlags));
 
       OutputAnalyzer output = executeNewJVM(useFlags);
+      output.reportDiagnosticSummary();
 
       for (Flag flag : expectedFlags) {
         System.out.println("Looking for: " + flag.flagString());
@@ -132,7 +133,7 @@ public class TestLargePagesFlags {
     for (Flag flag : flags) {
       args.add(flag.flagString());
     }
-    args.add("-XX:+PrintFlagsFinal");
+    args.add("-Xlog:pagesize");
     args.add("-version");
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
