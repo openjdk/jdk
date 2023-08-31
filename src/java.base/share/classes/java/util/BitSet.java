@@ -1293,8 +1293,8 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
             // @Stable int fields holding the values.
             //
             // For TOCTOU reasons, we calculate these values from the array copy
-            this.cardinality = cardinality0();
-            this.length = length0();
+            this.cardinality = BitSet.cardinality(words, words.length);
+            this.length = BitSet.length(words, words.length);
         }
 
         /**
@@ -1427,15 +1427,6 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
         @Override
         public String toString() {
             return BitSet.toString(this, words.length);
-        }
-
-        private int cardinality0() {
-            return BitSet.cardinality(words, words.length);
-        }
-
-        private int length0() {
-            // Scan backwards
-            return BitSet.length(words, words.length);
         }
 
         private static BitSetReadOps of(BitSet original) {
