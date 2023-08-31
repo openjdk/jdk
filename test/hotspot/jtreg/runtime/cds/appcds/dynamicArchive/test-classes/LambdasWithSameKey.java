@@ -33,7 +33,7 @@ public class LambdasWithSameKey {
         boolean isRun = (args.length == 1 && args[0].equals("run")) ? true : false;
         {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
         {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
-        if (isRun) { 
+        if (isRun) {
             {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
         }
     }
