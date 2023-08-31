@@ -743,19 +743,6 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
         resizingColumn = aColumn;
     }
 
-    /**
-     * See <code>readObject</code> and <code>writeObject</code> in
-     * <code>JComponent</code> for more
-     * information about serialization in Swing.
-     */
-    @Serial
-    private void writeObject(ObjectOutputStream s) throws IOException {
-        s.defaultWriteObject();
-        if ((ui != null) && (getUIClassID().equals(uiClassID))) {
-            ui.installUI(this);
-        }
-    }
-
     private int getWidthInRightToLeft() {
         if ((table != null) &&
             (table.getAutoResizeMode() != JTable.AUTO_RESIZE_OFF)) {
