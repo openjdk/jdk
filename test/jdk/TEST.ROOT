@@ -31,7 +31,7 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-com/sun/net/httpserver/simpleserver
+com/sun/net/httpserver/simpleserver sun/tools/jhsdb
 
 # Group definitions
 groups=TEST.groups

@@ -254,10 +254,6 @@ inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
 }
 
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
 // entry frames
 
 inline intptr_t* frame::entry_frame_argument_at(int offset) const {
