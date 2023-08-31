@@ -40,16 +40,14 @@ public class FileChooserNewFolderLocaleTest {
         File newFolderEnglish = null;
         File newFolderFrench = null;
         String newFolderKey;
-        String newFolderSubKey;
 
         boolean IS_WINDOWS =
                 System.getProperty("os.name").toLowerCase().contains("windows");
         if (IS_WINDOWS) {
             newFolderKey = "FileChooser.win32.newFolder";
-            newFolderSubKey = "FileChooser.win32.newFolder.subsequent";
         } else {
             newFolderKey = "FileChooser.other.newFolder";
-            newFolderSubKey = "FileChooser.other.newFolder.subsequent";
+            ENGLISH_NEW_FOLDER = "NewFolder";
         }
 
         try {
@@ -58,28 +56,27 @@ public class FileChooserNewFolderLocaleTest {
 
             newFolderEnglish =
                     fileChooser.getFileSystemView().createNewFolder(currentDir);
-            if(!newFolderEnglish.getName().contains(ENGLISH_NEW_FOLDER)) {
+            if (!newFolderEnglish.getName().contains(ENGLISH_NEW_FOLDER)) {
                 throw new RuntimeException("English Locale verification Failed");
             }
 
             UIManager.put(newFolderKey, FRENCH_NEW_FOLDER);
-            UIManager.put(newFolderSubKey, FRENCH_NEW_FOLDER + " ({0})");
 
             newFolderFrench =
                     fileChooser.getFileSystemView().createNewFolder(currentDir);
-            if(!newFolderFrench.getName().contains(FRENCH_NEW_FOLDER)) {
-                throw new RuntimeException("Failed to update French Locale");
+            if (!newFolderFrench.getName().contains(FRENCH_NEW_FOLDER)) {
+                throw new RuntimeException("Failed to update to French Locale");
             }
         } finally {
-            if (!(newFolderEnglish != null && newFolderEnglish.delete())) {
-                System.out.println("Failed to delete file : " +
-                        newFolderEnglish.getName());
-            }
-            if (!(newFolderFrench != null && newFolderFrench.delete())) {
-                System.out.println("Failed to delete file: " +
-                        newFolderFrench.getName());
-            }
+            deleteFolder(newFolderEnglish);
+            deleteFolder(newFolderFrench);
         }
         System.out.println("Test Passed!");
+    }
+
+    public static void deleteFolder(File file) {
+        if (file != null && !(file.delete())) {
+            System.out.println("Failed to delete file : " + file.getName());
+        }
     }
 }
