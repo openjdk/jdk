@@ -874,35 +874,6 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
     }
 
     /**
-     * Returns the index of the first bit that is set to {@code true}
-     * that occurs on or after the specified starting index and up to and
-     * including the specified word index
-     * If no such bit exists then {@code -1} is returned.
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @param  toWordIndex the last word index to check (inclusive)
-     * @return the index of the next set bit, or {@code -1} if there
-     *         is no such bit
-     */
-    private int nextSetBit(int fromIndex, int toWordIndex) {
-        int u = wordIndex(fromIndex);
-        // Check if out of bounds
-        if (u > toWordIndex)
-            return -1;
-
-        long word = words[u] & (WORD_MASK << fromIndex);
-
-        while (true) {
-            if (word != 0)
-                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-            // Check if out of bounds
-            if (++u > toWordIndex)
-                return -1;
-            word = words[u];
-        }
-    }
-
-    /**
      * {@return a new immutable snapshot of this {@code BitSet}}.
      * <p>
      * A {@code ImmutableBitSet} is threadsafe and can be used without external
