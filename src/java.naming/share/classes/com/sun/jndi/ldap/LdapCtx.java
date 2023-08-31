@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2792,8 +2792,8 @@ public final class LdapCtx extends ComponentDirContext
 
             } else if (!sharable || startTLS) {
 
-                ReentrantLock lock = clnt.lock;
-                lock.lock();
+                ReentrantLock clientLock = clnt.lock;
+                clientLock.lock();
                 try {
                     if (!clnt.isLdapv3
                         || clnt.referenceCount > 1
@@ -2802,7 +2802,7 @@ public final class LdapCtx extends ComponentDirContext
                         closeConnection(SOFT_CLOSE);
                     }
                 } finally {
-                    lock.unlock();
+                    clientLock.unlock();
                 }
                 // reset the cache before a new connection is established
                 schemaTrees = new Hashtable<>(11, 0.75f);
@@ -3604,13 +3604,10 @@ public final class LdapCtx extends ComponentDirContext
     public void addNamingListener(String nm, String filter,
                                   SearchControls ctls, NamingListener l)
             throws NamingException {
-        eventSupport.lock.lock();
-        try {
-            if (eventSupport == null)
-                eventSupport = new EventSupport(this);
-        } finally {
-            eventSupport.lock.unlock();
-        }
+
+        if (eventSupport == null)
+            eventSupport = new EventSupport(this);
+
         eventSupport.addNamingListener(getTargetName(new CompositeName(nm)),
                 filter, cloneSearchControls(ctls), l);
 
@@ -3684,12 +3681,13 @@ public final class LdapCtx extends ComponentDirContext
 
         // addNamingListener must have created EventSupport already
         ensureOpen();
-        eventSupport.lock.lock();
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
         try {
             clnt.addUnsolicited(this);
             unsolicited = true;
         } finally {
-            eventSupport.lock.unlock();
+            eventSupportLock.unlock();
         }
     }
 
@@ -3716,14 +3714,15 @@ public final class LdapCtx extends ComponentDirContext
         }
 
         // addNamingListener must have created EventSupport already
-        eventSupport.lock.lock();
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
         try {
             if (unsolicited && clnt != null) {
                 clnt.removeUnsolicited(this);
             }
             unsolicited = false;
         } finally {
-            eventSupport.lock.unlock();
+            eventSupportLock.unlock();
         }
     }
 
@@ -3736,7 +3735,8 @@ public final class LdapCtx extends ComponentDirContext
             System.out.println("LdapCtx.fireUnsolicited: " + obj);
         }
         // addNamingListener must have created EventSupport already
-        eventSupport.lock.lock();
+        ReentrantLock eventSupportLock = eventSupport.lock;
+        eventSupportLock.lock();
         try {
             if (unsolicited) {
                 eventSupport.fireUnsolicited(obj);
@@ -3749,7 +3749,7 @@ public final class LdapCtx extends ComponentDirContext
                 }
             }
         } finally {
-            eventSupport.lock.unlock();
+            eventSupportLock.unlock();
         }
     }
 }

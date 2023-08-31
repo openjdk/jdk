@@ -179,7 +179,7 @@ public final class Connection implements Runnable {
     final ReentrantLock startTlsLock = new ReentrantLock();
 
     // Connection instance lock
-    final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     private static final boolean IS_HOSTNAME_VERIFICATION_DISABLED
             = hostnameVerificationDisabledValue();
@@ -904,14 +904,14 @@ public final class Connection implements Runnable {
      /*
      * Pauses reader so that it stops reading from the input stream.
      * Reader blocks on pauseLock instead of read().
-     * MUST be called from with pauseLock locked.
+     * MUST be called with pauseLock locked.
      */
     private void pauseReader() throws IOException {
+        assert pauseLock.isHeldByCurrentThread();
         if (debug) {
             System.err.println("Pausing reader;  was reading from: " +
                                 inStream);
         }
-        assert pauseLock.isHeldByCurrentThread();
         paused = true;
         try {
             while (paused) {

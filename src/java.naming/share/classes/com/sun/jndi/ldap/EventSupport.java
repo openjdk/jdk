@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ final class EventSupport {
         lock.lock();
         try {
             if (l instanceof ObjectChangeListener ||
-                    l instanceof NamespaceChangeListener) {
+                l instanceof NamespaceChangeListener) {
                 NotifierArgs args = new NotifierArgs(nm, scope, l);
 
                 NamingEventNotifier notifier = notifiers.get(args);
@@ -193,7 +193,7 @@ final class EventSupport {
         lock.lock();
         try {
             if (l instanceof ObjectChangeListener ||
-                    l instanceof NamespaceChangeListener) {
+                l instanceof NamespaceChangeListener) {
                 NotifierArgs args = new NotifierArgs(nm, filter, ctls, l);
 
                 NamingEventNotifier notifier = notifiers.get(args);
@@ -372,7 +372,7 @@ final class EventSupport {
      * Package private; used by NamingEventNotifier to fire events
      */
     void queueEvent(EventObject event,
-                                 Vector<? extends NamingListener> vector) {
+                    Vector<? extends NamingListener> vector) {
         lock.lock();
         try {
             if (notifiers == null) {
