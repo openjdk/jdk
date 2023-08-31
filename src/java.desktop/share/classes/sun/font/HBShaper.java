@@ -37,6 +37,7 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import static java.lang.foreign.MemorySegment.NULL;
+import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.UnionLayout;
@@ -105,7 +106,7 @@ public class HBShaper {
         VarIntLayout.withName("var2")
     ).withName("hb_glyph_info_t");
 
-    private static VarHandle getVarHandle(MemoryLayout layout, String name) {
+    private static VarHandle getVarHandle(SequenceLayout layout, String name) {
         return layout.varHandle(
             PathElement.sequenceElement(),
             PathElement.groupElement(name));
@@ -125,17 +126,6 @@ public class HBShaper {
     private static final MethodHandle create_face_handle;
     private static final MethodHandle dispose_face_handle;
     private static final MethodHandle jdk_hb_shape_handle;
-
-    private static final FunctionDescriptor get_nominal_glyph_fd;
-    private static final MethodHandle get_nominal_glyph_mh;
-    private static final FunctionDescriptor get_var_glyph_fd;
-    private static final MethodHandle get_var_glyph_mh;
-    private static final FunctionDescriptor get_h_adv_fd;
-    private static final MethodHandle get_h_adv_mh;
-    private static final FunctionDescriptor get_v_adv_fd;
-    private static final MethodHandle get_v_adv_mh;
-    private static final FunctionDescriptor get_contour_pt_fd;
-    private static final MethodHandle get_contour_pt_mh;
 
     private static final MemorySegment get_var_glyph_stub;
     private static final MemorySegment get_nominal_glyph_stub;
@@ -209,40 +199,40 @@ public class HBShaper {
         jdk_hb_shape_handle = LINKER.downcallHandle(shape_sym.get(), shapeDesc);
 
         Arena garena = Arena.global(); // creating stubs that exist until VM exit.
-        get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,              // return type
+        FunctionDescriptor get_var_glyph_fd = getFunctionDescriptor(JAVA_INT,  // return type
               ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        get_var_glyph_mh =
+        MethodHandle get_var_glyph_mh =
             getMethodHandle("get_variation_glyph", get_var_glyph_fd);
         get_var_glyph_stub =
             LINKER.upcallStub(get_var_glyph_mh, get_var_glyph_fd, garena);
 
-        get_nominal_glyph_fd = getFunctionDescriptor(JAVA_INT,    // return type
+        FunctionDescriptor get_nominal_glyph_fd = getFunctionDescriptor(JAVA_INT, // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS, ADDRESS); // arg types
-        get_nominal_glyph_mh =
+        MethodHandle get_nominal_glyph_mh =
             getMethodHandle("get_nominal_glyph", get_nominal_glyph_fd);
         get_nominal_glyph_stub =
             LINKER.upcallStub(get_nominal_glyph_mh, get_nominal_glyph_fd, garena);
 
-        get_h_adv_fd = getFunctionDescriptor(JAVA_INT,   // return type
+        FunctionDescriptor get_h_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        get_h_adv_mh =
+        MethodHandle get_h_adv_mh =
             getMethodHandle("get_glyph_h_advance", get_h_adv_fd);
-       get_h_advance_stub =
-           LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
+        get_h_advance_stub =
+            LINKER.upcallStub(get_h_adv_mh, get_h_adv_fd, garena);
 
-        get_v_adv_fd = getFunctionDescriptor(JAVA_INT,   // return type
+        FunctionDescriptor get_v_adv_fd = getFunctionDescriptor(JAVA_INT,  // return type
                    ADDRESS, ADDRESS, JAVA_INT, ADDRESS); // arg types
-        get_v_adv_mh =
+        MethodHandle get_v_adv_mh =
             getMethodHandle("get_glyph_v_advance", get_v_adv_fd);
-       get_v_advance_stub =
-           LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
+        get_v_advance_stub =
+            LINKER.upcallStub(get_v_adv_mh, get_v_adv_fd, garena);
 
-        get_contour_pt_fd = getFunctionDescriptor(JAVA_INT,   // return type
+        FunctionDescriptor get_contour_pt_fd = getFunctionDescriptor(JAVA_INT,  // return type
             ADDRESS, ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS); // arg types
-        get_contour_pt_mh =
+        MethodHandle get_contour_pt_mh =
             getMethodHandle("get_glyph_contour_point", get_contour_pt_fd);
-       get_contour_pt_stub =
-           LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
+        get_contour_pt_stub =
+            LINKER.upcallStub(get_contour_pt_mh, get_contour_pt_fd, garena);
 
        FunctionDescriptor store_layout_fd =
           FunctionDescriptor.ofVoid(
@@ -261,12 +251,12 @@ public class HBShaper {
        store_layout_results_stub =
            LINKER.upcallStub(store_layout_mh, store_layout_fd, garena);
 
-        MemoryLayout glyphPosLayout = MemoryLayout.sequenceLayout(PositionLayout);
+        SequenceLayout glyphPosLayout = MemoryLayout.sequenceLayout(PositionLayout);
         x_offsetHandle = getVarHandle(glyphPosLayout, "x_offset");
         y_offsetHandle = getVarHandle(glyphPosLayout, "y_offset");
         x_advanceHandle = getVarHandle(glyphPosLayout, "x_advance");
         y_advanceHandle = getVarHandle(glyphPosLayout, "y_advance");
-        MemoryLayout glyphInfosLayout = MemoryLayout.sequenceLayout(GlyphInfoLayout);
+        SequenceLayout glyphInfosLayout = MemoryLayout.sequenceLayout(GlyphInfoLayout);
         codePointHandle = getVarHandle(glyphInfosLayout, "codepoint");
         clusterHandle = getVarHandle(glyphInfosLayout, "cluster");
     }
@@ -463,11 +453,12 @@ public class HBShaper {
          */
         MemorySegment data_ptr = data_ptr_out.reinterpret(ADDRESS.byteSize());
         if (tag == 0) {
-            data_ptr_out.setAtIndex(ADDRESS, 0, MemorySegment.NULL);
+            data_ptr.setAtIndex(ADDRESS, 0, NULL);
             return 0;
         }
         byte[] data = font2D.getTableBytes(tag);
         if (data == null) {
+            data_ptr.setAtIndex(ADDRESS, 0, NULL);
             return 0;
         }
         int len = data.length;
