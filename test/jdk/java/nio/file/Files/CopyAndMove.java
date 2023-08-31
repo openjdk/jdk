@@ -391,6 +391,27 @@ public class CopyAndMove {
             delete(source);
         }
 
+        /**
+         * Test: ensure target not deleted if source permissions are zero
+         */
+        source = createSourceFile(dir1);
+        if (getFileStore(source).supportsFileAttributeView("posix")) {
+            Files.setPosixFilePermissions(source, Set.of());
+            target = getTargetFile(dir2);
+            createFile(target);
+            try {
+                Files.move(source, target, REPLACE_EXISTING);
+                throw new RuntimeException("AccessDeniedException not thrown");
+            } catch (AccessDeniedException expected) {
+                if (!Files.exists(source))
+                    throw new RuntimeException("source deleted");
+            }
+            if (!Files.exists(target))
+                throw new RuntimeException("target deleted");
+            delete(target);
+        }
+        delete(source);
+
         // -- directories --
 
         /*

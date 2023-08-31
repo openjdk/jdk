@@ -915,8 +915,12 @@ abstract class UnixFileSystem
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
             } else if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
-                // Ensure source can be read
-                provider.checkAccess(source, AccessMode.READ);
+                // Ensure source can be moved
+                try {
+                    access(source, W_OK);
+                } catch (UnixException exc) {
+                    exc.rethrowAsIOException(source);
+                }
             }
 
             // attempt to delete target
