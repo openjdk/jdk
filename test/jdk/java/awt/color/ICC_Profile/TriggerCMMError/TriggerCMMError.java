@@ -29,6 +29,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.zip.ZipInputStream;
 
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
@@ -40,11 +41,14 @@ import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 public final class TriggerCMMError {
 
     public static void main(String[] args) throws Exception {
-        // "broken.pf" is a copy of "PYCC.pf"
-        File file = new File(System.getProperty("test.src", "."), "broken.pf");
+        // "broken.zip" is a copy of "PYCC.pf"
+        File file = new File(System.getProperty("test.src", "."), "broken.zip");
         ICC_Profile profile;
-        try (FileInputStream fis = new FileInputStream(file)) {
-            profile = ICC_Profile.getInstance(fis);
+        try (FileInputStream fis = new FileInputStream(file);
+             ZipInputStream zis = new ZipInputStream(fis))
+        {
+            zis.getNextEntry();
+            profile = ICC_Profile.getInstance(zis);
         }
         var from = new ICC_ColorSpace(profile);
         var to = (ICC_ColorSpace) ColorSpace.getInstance(ColorSpace.CS_CIEXYZ);
