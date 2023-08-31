@@ -51,7 +51,7 @@ public class SetLabelTest {
     private static MenuBar mb;
     private static PopupMenu pm;
     private static Point frameLoc;
-    private static StringBuffer errorLog = new StringBuffer();
+    private static final StringBuffer errorLog = new StringBuffer();
 
     public static void main(String[] args) throws Exception {
         try {
@@ -124,7 +124,7 @@ public class SetLabelTest {
         frame.setVisible(true);
     }
 
-    private static void checkMenu() throws Exception {
+    private static void checkMenu() throws IOException {
         robot.mouseMove(frameLoc.x + 8, frameLoc.y + 8);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
