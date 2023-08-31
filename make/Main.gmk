@@ -194,11 +194,6 @@ $(foreach m, $(JAVA_MODULES), $(eval $(call DeclareCompileJavaRecipe,$m)))
 
 ALL_TARGETS += $(JAVA_TARGETS)
 
-$(eval $(call SetupTarget, generate-ctsym, \
-    MAKEFILE := GenSymbols, \
-    DEPS := $(JAVA_TARGETS), \
-))
-
 ################################################################################
 # Targets for compiling native libraries
 $(eval $(call DeclareRecipesForPhase, LIBS, \
@@ -976,6 +971,13 @@ else
 
   # The ct.sym generation uses all the moduleinfos as input
   jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      jdk.compiler-gendata: create-buildjdk
+    endif
+  else
+    jdk.compiler-gendata: jdk.compiler-java jdk.jdeps-java jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the jmods for all non
@@ -1135,7 +1137,7 @@ $(foreach v, $(JVM_VARIANTS), \
 
 gensrc: $(GENSRC_TARGETS)
 
-gendata: $(GENDATA_TARGETS) generate-ctsym
+gendata: $(GENDATA_TARGETS)
 
 copy: $(ALL_COPY_TARGETS)
 
