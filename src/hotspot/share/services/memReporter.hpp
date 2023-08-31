@@ -127,6 +127,8 @@ class MemSummaryReporter : public MemReporterBase {
   VirtualMemorySnapshot*  _vm_snapshot;
   size_t                  _instance_class_count;
   size_t                  _array_class_count;
+  size_t                  _total_reserved;
+  size_t                  _total_committed;
 
  public:
   // This constructor is for normal reporting from a recent baseline.
