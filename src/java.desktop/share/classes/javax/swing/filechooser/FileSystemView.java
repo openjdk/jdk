@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -782,7 +782,7 @@ class UnixFileSystemView extends FileSystemView {
         }
         String newFolderString =
                 UIManager.getString("FileChooser.other.newFolder");
-        String newFolderNextString  =
+        String newFolderNextString =
                 UIManager.getString("FileChooser.other.newFolder.subsequent");
         File newFolder;
         // Unix - using OpenWindows' default folder name. Can't find one for Motif/CDE.
@@ -895,7 +895,7 @@ class WindowsFileSystemView extends FileSystemView {
         // Using NT's default folder name
         String newFolderString =
                 UIManager.getString("FileChooser.win32.newFolder");
-        String newFolderNextString  =
+        String newFolderNextString =
                 UIManager.getString("FileChooser.win32.newFolder.subsequent");
         File newFolder = createFileObject(containingDir, newFolderString);
         int i = 2;
