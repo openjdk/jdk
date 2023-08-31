@@ -237,19 +237,21 @@ endif
 ################################################################################
 
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
-  $(eval $(call SetupJdkLibrary, BUILD_LIB_X86_64, \
-      NAME := x86_64, \
-      OPTIMIZATION := HIGH, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
-      LIBS := $(LIBCXX), \
-      LIBS_linux := -lc -lm -ldl, \
-  ))
+    ifeq ($(TOOLCHAIN_TYPE), gcc)
+        $(eval $(call SetupJdkLibrary, BUILD_LIB_X86_64, \
+            NAME := x86_64, \
+            TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+            OPTIMIZATION := HIGH, \
+            CFLAGS := $(CFLAGS_JDKLIB), \
+            CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+            LDFLAGS := $(LDFLAGS_JDKLIB) \
+                $(call SET_SHARED_LIBRARY_ORIGIN), \
+            LIBS := $(LIBCXX), \
+            LIBS_linux := -lc -lm -ldl, \
+        ))
 
-  TARGETS += $(BUILD_LIB_X86_64)
+        TARGETS += $(BUILD_LIB_X86_64)
+  endif
 endif
 
 ################################################################################
