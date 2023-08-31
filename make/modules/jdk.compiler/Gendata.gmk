@@ -40,7 +40,7 @@ $(eval $(call IncludeCustomExtension, modules/jdk.compiler/Gendata.gmk))
 $(eval $(call ReadImportMetaData))
 
 # Modules that should be visible for 9 - the documented modules:
-CT_MODULES := $(DOCS_MODULES)
+CT_MODULES := $(filter-out $(MODULES_FILTER), $(DOCS_MODULES))
 
 # Get the complete module source path:
 CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
