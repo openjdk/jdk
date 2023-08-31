@@ -183,8 +183,7 @@ PSPromotionManager::PSPromotionManager() {
   if (ParallelGCThreads == 1) {
     _target_stack_size = 0;
   } else {
-    // don't let the target stack size to be more than 1/4 of the entries
-    _target_stack_size = MIN2(GCDrainStackTargetSize, (queue_size / 4));
+    _target_stack_size = GCDrainStackTargetSize;
   }
 
   _array_chunk_size = ParGCArrayScanChunk;
