@@ -549,8 +549,6 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
-java/nio/file/Path/ToRealPath.java                              8315273 windows-all
-
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
 ############################################################################
