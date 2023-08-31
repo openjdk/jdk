@@ -46,12 +46,6 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
          */
         void onDebuggeeSendingCompleted();
 
-        /**
-         * Callback to handle any debuggee error
-         *
-         * @param line line from the debuggee's stderr
-         */
-        void onDebuggeeError(String line);
     }
 
     private int jdwpPort = -1;
