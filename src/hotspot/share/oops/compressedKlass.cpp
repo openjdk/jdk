@@ -82,7 +82,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 //  will encounter (and the implicit promise that there will be no Klass
 //  structures outside this range).
 void CompressedKlassPointers::initialize(address addr, size_t len) {
-  assert(is_valid_base(addr), "Address must be a valid encoding base");
   address const end = addr + len;
 
   address base;
@@ -109,6 +108,8 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   set_base_and_shift(base, shift);
   set_range(range);
+
+  assert(is_valid_base(_base), "Address must be a valid encoding base");
 }
 
 // Given an address p, return true if p can be used as an encoding base.

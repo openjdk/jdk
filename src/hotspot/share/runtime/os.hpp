@@ -190,6 +190,11 @@ class os: AllStatic {
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
 
+  // The default value for os::vm_min_address() unless the platform knows better. This value
+  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // low enough to leave most of the valuable low-4gb address space open.
+  static constexpr size_t _vm_min_address_default = 16 * M;
+
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
@@ -420,6 +425,9 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
+  // Returns the lowest address the process is allowed to map against.
+  static size_t vm_min_address();
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -431,6 +439,10 @@ class os: AllStatic {
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+
+  // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
+  // If randomize is true, the location will be randomized.
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
