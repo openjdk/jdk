@@ -286,7 +286,6 @@ class SSLStreams {
                 } while (status == Status.BUFFER_OVERFLOW);
                 if (status == Status.CLOSED && !ignoreClose) {
                     closed = true;
-                    return r;
                 }
                 if (r.result.bytesProduced() > 0) {
                     wrap_dst.flip();
