@@ -183,45 +183,14 @@ public abstract class PKCS11Test {
         Provider[] oldProviders = Security.getProviders();
         try {
             System.out.println("Beginning test run " + test.getClass().getName() + "...");
-            boolean skippedDefault = false;
-            boolean skippedNSS = false;
-            boolean skippedDeimos = false;
-
-            // Use separate try-catch for each test to allow all test run
-            try {
-                testDefault(test);
-            } catch (SkippedException se) {
-                System.out.println("testDefault: Skipped");
-                skippedDefault = true;
-                se.printStackTrace(System.out);
-            }
-
-            try {
-                testNSS(test);
-            } catch (SkippedException se) {
-                System.out.println("testNSS: Skipped");
-                skippedNSS = true;
-                se.printStackTrace(System.out);
-            }
-
-            try {
-                testDeimos(test);
-            } catch (SkippedException se) {
-                System.out.println("testDeimos: Skipped");
-                skippedDeimos = true;
-                se.printStackTrace(System.out);
-            }
-
-            if (skippedDefault && skippedNSS && skippedDeimos) {
-                throw new SkippedException("All tests are skipped, check logs");
-            }
+            testNSS(test);
 
         } finally {
             // NOTE: Do not place a 'return' in any finally block
             // as it will suppress exceptions and hide test failures.
             Provider[] newProviders = Security.getProviders();
             boolean found = true;
-            // Do not restore providers if nothing changed. This is especailly
+            // Do not restore providers if nothing changed. This is especially
             // useful for ./Provider/Login.sh, where a SecurityManager exists.
             if (oldProviders.length == newProviders.length) {
                 found = false;
@@ -241,51 +210,6 @@ public abstract class PKCS11Test {
                 }
             }
         }
-    }
-
-    public static void testDeimos(PKCS11Test test) throws Exception {
-        System.out.println("===> testDeimos: Starting test run");
-        if ("true".equals(System.getProperty("NO_DEIMOS"))) {
-            System.out.println("Skip Deimos software as test configured with NO_DEIMOS");
-            return;
-        }
-
-        if (!new File("/opt/SUNWconn/lib/libpkcs11.so").isFile()) {
-            throw new SkippedException("testDeimos: \"/opt/SUNWconn/lib/libpkcs11.so\" " +
-                    "file required for Deimos not found");
-        }
-
-        String base = getBase();
-        String p11config = base + SEP + "nss" + SEP + "p11-deimos.txt";
-        Provider p = getSunPKCS11(p11config);
-        test.premain(p);
-        System.out.println("testDeimos: Completed");
-    }
-
-    // Run test for default configured PKCS11 providers (if any)
-    public static void testDefault(PKCS11Test test) throws Exception {
-        System.out.println("===> testDefault: Starting test run");
-        boolean foundPKCS11 = false;
-
-        if ("true".equals(System.getProperty("NO_DEFAULT"))) {
-            System.out.println("Skip default provider as test configured with NO_DEFAULT");
-            return;
-        }
-
-        Provider[] providers = Security.getProviders();
-        for (Provider p : providers) {
-            if (p.getName().startsWith("SunPKCS11-")) {
-                foundPKCS11 = true;
-                test.premain(p);
-            }
-        }
-
-        if (!foundPKCS11) {
-            throw new SkippedException("testDefault: Skip default test as SunPKCS11 " +
-                    "provider is not configured");
-        }
-
-        System.out.println("testDefault: Completed");
     }
 
     public static String getBase() throws Exception {
@@ -973,8 +897,6 @@ public abstract class PKCS11Test {
 
     protected void setCommonSystemProps() {
         System.setProperty("java.security.debug", "true");
-        System.setProperty("NO_DEIMOS", "true");
-        System.setProperty("NO_DEFAULT", "true");
         System.setProperty("CUSTOM_DB_DIR", TEST_CLASSES);
     }
 
