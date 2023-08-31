@@ -1679,16 +1679,16 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     transform_later(mark_node);
   }
 
-  Node* memadr = AddPNode::make(_igvn, object, oopDesc::mark_offset_in_bytes());
+  Node* memadr = transform_later(new AddPNode(object, object, _igvn.makecon(oopDesc::mark_offset_in_bytes())));
   rawmem = transform_later(StoreNode::make(_igvn, control, rawmem, memadr, nullptr, mark_node, TypeX_X->basic_type(), MemNode::unordered));
 
-  memadr = AddPNode::make(_igvn, object, oopDesc::klass_offset_in_bytes());
+  memadr = transform_later(new AddPNode(object, object, _igvn.makecon(oopDesc::klass_offset_in_bytes())));
   rawmem = transform_later(StoreNode::make(_igvn, control, rawmem, memadr, nullptr, klass_node, T_METADATA, MemNode::unordered));
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
   if (length != nullptr) {         // Arrays need length field
-    memadr = AddPNode::make(_igvn, object, arrayOopDesc::length_offset_in_bytes());
+    memadr = transform_later(new AddPNode(object, object, _igvn.makecon(arrayOopDesc::length_offset_in_bytes())));
     rawmem = transform_later(StoreNode::make(_igvn, control, rawmem, memadr, nullptr, length, T_INT, MemNode::unordered));
     // conservatively small header size:
     header_size = arrayOopDesc::base_offset_in_bytes(T_BYTE);
@@ -2303,7 +2303,7 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
     if (_igvn.type(obj_or_subklass)->isa_klassptr()) {
       subklass = obj_or_subklass;
     } else {
-      Node* k_adr = AddPNode::make(_igvn, obj_or_subklass, oopDesc::klass_offset_in_bytes());
+      Node* k_adr = _igvn.transform(new AddPNode(obj_or_subklass, obj_or_subklass, _igvn.makecon(oopDesc::klass_offset_in_bytes())));
       subklass = _igvn.transform(LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), k_adr, TypeInstPtr::KLASS));
     }
 

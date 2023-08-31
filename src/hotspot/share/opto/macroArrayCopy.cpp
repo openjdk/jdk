@@ -52,7 +52,7 @@ void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node*
 Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt) {
   uint shift  = exact_log2(type2aelembytes(elembt));
   uint header = arrayOopDesc::base_offset_in_bytes(elembt);
-  Node* base =  AddPNode::make(igvn(), ary, header);
+  Node* base =  transform_later(new AddPNode(ary, ary, igvn().makecon(header)));
 #ifdef _LP64
   // see comment in GraphKit::array_element_address
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
@@ -61,7 +61,7 @@ Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType el
 #endif
   Node* scale = new LShiftXNode(idx, intcon(shift));
   transform_later(scale);
-  return AddPNode::make(igvn(), ary, base, scale);
+  return transform_later(new AddPNode(ary, base, scale));
 }
 
 Node* PhaseMacroExpand::ConvI2L(Node* offset) {
@@ -642,7 +642,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
 
         // (At this point we can assume disjoint_bases, since types differ.)
         int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-        Node* p1 = AddPNode::make(igvn(), dest_klass, ek_offset);
+        Node* p1 = transform_later(new AddPNode(dest_klass, dest_klass, igvn().makecon(ek_offset)));
         Node* n1 = LoadKlassNode::make(_igvn, nullptr, C->immutable_memory(), p1, TypeRawPtr::BOTTOM);
         Node* dest_elem_klass = transform_later(n1);
         Node* cv = generate_checkcast_arraycopy(&local_ctrl, &local_mem,
@@ -958,7 +958,7 @@ void PhaseMacroExpand::generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
       if (bump_bit != 0) {
         // Store a zero to the immediately preceding jint:
         Node* x1 = transform_later(new AddXNode(start, MakeConX(-bump_bit)) );
-        Node* p1 = AddPNode::make(_igvn, dest, dest, x1);
+        Node* p1 = transform_later(new AddPNode(dest, dest, x1));
         mem = StoreNode::make(_igvn, ctrl, mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
         mem = transform_later(mem);
       }
@@ -1007,8 +1007,8 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
     // This is a common case, since abase can be odd mod 8.
     if (((src_off | dest_off) & (BytesPerLong-1)) == BytesPerInt &&
         ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
-      Node* sptr = AddPNode::make(igvn(), src,  src_off);
-      Node* dptr = AddPNode::make(igvn(), dest, dest_off);
+      Node* sptr = transform_later(new AddPNode(src, src,  igvn().makecon(src_off)));
+      Node* dptr = transform_later(new AddPNode(dest, dest, igvn().makecon(dest_off)));
       const TypePtr* s_adr_type = _igvn.type(sptr)->is_ptr();
       assert(s_adr_type->isa_aryptr(), "impossible slice");
       uint s_alias_idx = C->get_alias_index(s_adr_type);
@@ -1035,8 +1035,8 @@ bool PhaseMacroExpand::generate_block_arraycopy(Node** ctrl, MergeMemNode** mem,
   assert(dest_off % BytesPerLong == 0, "");
 
   // Do this copy by giant steps.
-  Node* sptr  = AddPNode::make(igvn(), src,  src_off);
-  Node* dptr  = AddPNode::make(igvn(), dest, dest_off);
+  Node* sptr  = transform_later(new AddPNode(src, src,  igvn().makecon(src_off)));
+  Node* dptr  = transform_later(new AddPNode(dest, dest, igvn().makecon(dest_off)));
   Node* countx = dest_size;
   countx = transform_later(new SubXNode(countx, MakeConX(dest_off)));
   countx = transform_later(new URShiftXNode(countx, intcon(LogBytesPerLong)));
@@ -1128,7 +1128,7 @@ Node* PhaseMacroExpand::generate_checkcast_arraycopy(Node** ctrl, MergeMemNode**
   // look in each non-null element's class, at the desired klass's
   // super_check_offset, for the desired klass.
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
-  Node* p3 = AddPNode::make(igvn(), dest_elem_klass, sco_offset);
+  Node* p3 = transform_later(new AddPNode(dest_elem_klass, dest_elem_klass, igvn().makecon(sco_offset)));
   Node* n3 = new LoadINode(nullptr, *mem /*memory(p3)*/, p3, _igvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
   Node* check_offset = ConvI2X(transform_later(n3));
   Node* check_value  = dest_elem_klass;

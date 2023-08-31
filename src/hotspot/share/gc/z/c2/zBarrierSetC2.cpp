@@ -487,8 +487,8 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
         dest_offset = src_offset;
       }
     }
-    Node* const payload_src = AddPNode::make(phase->igvn(), src, src_offset);
-    Node* const payload_dst = AddPNode::make(phase->igvn(), dest, dest_offset);
+    Node* const payload_src = phase->transform_later(new AddPNode(src, src, src_offset));
+    Node* const payload_dst = phase->transform_later(new AddPNode(dest, dest, dest_offset));
 
     const char*   copyfunc_name = "arraycopy";
     const address copyfunc_addr = phase->basictype2arraycopy(bt, nullptr, nullptr, true, copyfunc_name, true);

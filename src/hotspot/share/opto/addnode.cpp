@@ -31,6 +31,7 @@
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 
 // Portions of code courtesy of Clifford Click
