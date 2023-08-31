@@ -42,6 +42,7 @@
 #include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "suspendResume_posix.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/parseInteger.hpp"
@@ -1733,8 +1734,8 @@ int SR_initialize() {
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
       PosixSignals::SR_signum = sig;
     } else {
-      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
-              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
+      warning("You set _JAVA_SR_SIGNUM=%s. It must be a number in range [%d, %d]. Using %d instead.",
+              s, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }
 

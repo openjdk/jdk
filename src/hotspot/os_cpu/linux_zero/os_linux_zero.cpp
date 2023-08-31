@@ -306,89 +306,68 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-static void current_stack_region(address *bottom, size_t *size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
   if (os::is_primordial_thread()) {
     // primordial thread needs special handling because pthread_getattr_np()
     // may return bogus value.
-    address stack_bottom = os::Linux::initial_thread_stack_bottom();
-    size_t stack_bytes  = os::Linux::initial_thread_stack_size();
+    bottom = os::Linux::initial_thread_stack_bottom();
+    *size = os::Linux::initial_thread_stack_size();
+    *base = bottom + *size;
+  } else {
 
-    assert(os::current_stack_pointer() >= stack_bottom, "should do");
-    assert(os::current_stack_pointer() < stack_bottom + stack_bytes, "should do");
+    pthread_attr_t attr;
 
-    *bottom = stack_bottom;
-    *size = stack_bytes;
-    return;
-  }
+    int rslt = pthread_getattr_np(pthread_self(), &attr);
 
-  pthread_attr_t attr;
-  int res = pthread_getattr_np(pthread_self(), &attr);
-  if (res != 0) {
-    if (res == ENOMEM) {
-      vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+    // JVM needs to know exact stack location, abort if it fails
+    if (rslt != 0) {
+      if (rslt == ENOMEM) {
+        vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
+      } else {
+        fatal("pthread_getattr_np failed with error = %d", rslt);
+      }
     }
-    else {
-      fatal("pthread_getattr_np failed with error = %d", res);
+
+    if (pthread_attr_getstack(&attr, (void **)&bottom, size) != 0) {
+      fatal("Cannot locate current stack attributes!");
     }
-  }
 
-  address stack_bottom;
-  size_t stack_bytes;
-  res = pthread_attr_getstack(&attr, (void **) &stack_bottom, &stack_bytes);
-  if (res != 0) {
-    fatal("pthread_attr_getstack failed with error = %d", res);
-  }
-  address stack_top = stack_bottom + stack_bytes;
+    *base = bottom + *size;
 
-  // The block of memory returned by pthread_attr_getstack() includes
-  // guard pages where present.  We need to trim these off.
-  size_t page_bytes = os::vm_page_size();
-  assert(((intptr_t) stack_bottom & (page_bytes - 1)) == 0, "unaligned stack");
+    // The block of memory returned by pthread_attr_getstack() includes
+    // guard pages where present.  We need to trim these off.
+    size_t page_bytes = os::vm_page_size();
+    assert(((intptr_t) bottom & (page_bytes - 1)) == 0, "unaligned stack");
 
-  size_t guard_bytes;
-  res = pthread_attr_getguardsize(&attr, &guard_bytes);
-  if (res != 0) {
-    fatal("pthread_attr_getguardsize failed with errno = %d", res);
-  }
-  int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
-  assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
+    size_t guard_bytes;
+    rslt = pthread_attr_getguardsize(&attr, &guard_bytes);
+    if (rslt != 0) {
+      fatal("pthread_attr_getguardsize failed with errno = %d", rslt);
+    }
+    int guard_pages = align_up(guard_bytes, page_bytes) / page_bytes;
+    assert(guard_bytes == guard_pages * page_bytes, "unaligned guard");
 
 #ifdef IA64
-  // IA64 has two stacks sharing the same area of memory, a normal
-  // stack growing downwards and a register stack growing upwards.
-  // Guard pages, if present, are in the centre.  This code splits
-  // the stack in two even without guard pages, though in theory
-  // there's nothing to stop us allocating more to the normal stack
-  // or more to the register stack if one or the other were found
-  // to grow faster.
-  int total_pages = align_down(stack_bytes, page_bytes) / page_bytes;
-  stack_bottom += (total_pages - guard_pages) / 2 * page_bytes;
+    // IA64 has two stacks sharing the same area of memory, a normal
+    // stack growing downwards and a register stack growing upwards.
+    // Guard pages, if present, are in the centre.  This code splits
+    // the stack in two even without guard pages, though in theory
+    // there's nothing to stop us allocating more to the normal stack
+    // or more to the register stack if one or the other were found
+    // to grow faster.
+    int total_pages = align_down(stack_bytes, page_bytes) / page_bytes;
+    bottom += (total_pages - guard_pages) / 2 * page_bytes;
 #endif // IA64
 
-  stack_bottom += guard_bytes;
+    bottom += guard_bytes;
+    *size = *base - bottom;
 
-  pthread_attr_destroy(&attr);
+    pthread_attr_destroy(&attr);
+  }
 
-  assert(os::current_stack_pointer() >= stack_bottom, "should do");
-  assert(os::current_stack_pointer() < stack_top, "should do");
-
-  *bottom = stack_bottom;
-  *size = stack_top - stack_bottom;
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return bottom + size;
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
