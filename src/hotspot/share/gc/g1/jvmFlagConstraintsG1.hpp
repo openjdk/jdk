@@ -37,8 +37,8 @@
                                                       \
   /* G1 Heap Size Constraints */                      \
   f(size_t, G1HeapRegionSizeConstraintFunc)           \
-  f(uintx,  G1NewSizePercentConstraintFunc)           \
-  f(uintx,  G1MaxNewSizePercentConstraintFunc)        \
+  f(uint,  G1NewSizePercentConstraintFunc)           \
+  f(uint,  G1MaxNewSizePercentConstraintFunc)        \
                                                       \
   /* G1 Subconstraints */                             \
   f(uintx,  MaxGCPauseMillisConstraintFuncG1)         \

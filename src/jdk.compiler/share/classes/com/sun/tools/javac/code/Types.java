@@ -5192,7 +5192,7 @@ public class Types {
                 append(rawOuter ? '$' : '.');
                 Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
                 append(rawOuter
-                        ? c.flatname.subName(c.owner.enclClass().flatname.getByteLength() + 1, c.flatname.getByteLength())
+                        ? c.flatname.subName(c.owner.enclClass().flatname.length() + 1)
                         : c.name);
             } else {
                 append(externalize(c.flatname));
