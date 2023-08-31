@@ -126,6 +126,9 @@ class x86 {
 
  private:
   static jint    _mxcsr_std;
+#ifdef _LP64
+  static jint    _mxcsr_rz;
+#endif // _LP64
 
   static address _verify_mxcsr_entry;
 
@@ -207,6 +210,9 @@ class x86 {
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
+#ifdef _LP64
+  static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
+#endif // _LP64
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 #ifdef _LP64

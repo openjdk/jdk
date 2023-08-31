@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package com.sun.hotspot.igv.view.actions;
 
-/*
- * @test
- * @summary run CTW for all classes from jdk.crypto.ec module
- *
- * @library /test/lib / /testlibrary/ctw/src
- * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.jimage
- *          java.base/jdk.internal.misc
- *          java.base/jdk.internal.reflect
- * @modules jdk.crypto.ec
- *
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver/timeout=7200 sun.hotspot.tools.ctw.CtwRunner modules:jdk.crypto.ec
- */
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
+
+public class EnableStableSeaLayoutAction extends EnableLayoutAction {
+
+    public EnableStableSeaLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/stable_sea.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show stable sea of nodes";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowStableSea(this.isSelected());
+    }
+}

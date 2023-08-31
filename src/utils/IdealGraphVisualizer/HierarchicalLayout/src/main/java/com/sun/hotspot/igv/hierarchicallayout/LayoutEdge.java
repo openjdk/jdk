@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,23 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GCUTIL_INLINE_HPP
-#define SHARE_GC_SHARED_GCUTIL_INLINE_HPP
+package com.sun.hotspot.igv.hierarchicallayout;
 
-#include "gc/shared/gcUtil.hpp"
+import com.sun.hotspot.igv.layout.Link;
 
-#include "memory/allocation.inline.hpp"
+public class LayoutEdge {
 
-inline void* AdaptivePaddedAverage::operator new(size_t size) throw() {
-  return CHeapObj<mtGC>::operator new(size);
-}
+        public LayoutNode from;
+        public LayoutNode to;
+        // Horizontal distance relative to start of 'from'.
+        public int relativeFrom;
+        // Horizontal distance relative to start of 'to'.
+        public int relativeTo;
+        public Link link;
+        public boolean vip;
 
-#endif // SHARE_GC_SHARED_GCUTIL_INLINE_HPP
+        @Override
+        public String toString() {
+            return "Edge " + from + ", " + to;
+        }
+    }

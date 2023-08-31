@@ -215,7 +215,7 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
                                                                                                                                      \
@@ -817,7 +817,7 @@
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \
