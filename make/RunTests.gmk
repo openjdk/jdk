@@ -523,7 +523,7 @@ define SetupRunGtestTestBody
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_TOTAL := $$(shell $$(AWK) '/==========.* tests? from .* \
-	      test cases? ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
+	      test (cases?|suites?) ran/ { print $$$$2 }' $$($1_RESULT_FILE))) \
 	  $$(if $$($1_TOTAL), , $$(eval $1_TOTAL := 0)) \
 	  $$(eval $1_PASSED := $$(shell $$(AWK) '/\[  PASSED  \] .* tests?./ \
 	      { print $$$$4 }' $$($1_RESULT_FILE))) \
