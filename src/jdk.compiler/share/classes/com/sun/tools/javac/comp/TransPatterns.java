@@ -523,7 +523,7 @@ public class TransPatterns extends TreeTranslator {
             int i = 0;
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
-
+            JCCase previousC = null;
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
                 boolean hasJoinedNull =
@@ -541,7 +541,7 @@ public class TransPatterns extends TreeTranslator {
                     validCaseLabelList = clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
                 }
 
-                if (validCaseLabelList && !previousCompletesNormally) {
+                if (validCaseLabelList && !previousCompletesNormally || c.guard != null) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
@@ -575,7 +575,8 @@ public class TransPatterns extends TreeTranslator {
                             }
                         }
 
-                        if (c.guard != null) {
+                        boolean hasGuard = c.guard != null;
+                        if (hasGuard) {
                             test = makeBinary(Tag.AND, accTest, translate(c.guard));
                             c.guard = null;
                         } else {
@@ -585,13 +586,25 @@ public class TransPatterns extends TreeTranslator {
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
-                        c.stats = c.stats.prepend(make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
-                                                           make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
-                                                                                                       makeLit(syms.intType, i + labels.length()))
-                                                                                     .setType(syms.intType)),
-                                                                                 continueSwitch)),
-                                                           null));
+
+                        if (previousC != null && hasGuard && previousCompletesNormally) {
+                            JCExpression or = make.Literal(false);
+                            for (JCPatternCaseLabel label: labels) {
+                                or = makeBinary(Tag.OR, makeTypeTest(make.Ident(temp), make.Type(label.pat.type)), or);
+                            }
+                            test = makeBinary(Tag.AND, or, test);
+                            previousC.stats = previousC.stats.appendList(c.stats); // copying to previous
+                        }
+
+                        JCIf ifStatement = make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
+                                make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
+                                                        makeLit(syms.intType, i + labels.length()))
+                                                .setType(syms.intType)),
+                                        continueSwitch)),
+                                null);
+                        c.stats = c.stats.prepend(ifStatement);
                         c.stats = c.stats.prependList(bindingContext.bindingVars(c.pos));
+                        previousC = c;
                     } finally {
                         currentValue = prevCurrentValue;
                         bindingContext.pop();
