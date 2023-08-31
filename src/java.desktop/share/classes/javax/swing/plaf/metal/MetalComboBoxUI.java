@@ -338,8 +338,8 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
         }
     }
 
-    // These two methods were overridden and made public. This was probably a
-    // mistake in the implementation. The functionality that they used to
+    // These two methods were overridden and made public. This was probably
+    // a mistake in the implementation. The functionality that they used to
     // provide is no longer necessary and should be removed. However,
     // removing them will create an incompatible API change.
 

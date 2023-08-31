@@ -43,7 +43,7 @@ class DropShadowEffect extends ShadowEffect {
     /**
      * {@inheritDoc}
      *
-     * @return The effect type
+     * @return {@inheritDoc}
      */
     @Override
     EffectType getEffectType() {

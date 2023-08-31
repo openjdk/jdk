@@ -43,10 +43,15 @@ abstract class Effect {
     // Abstract Methods
 
     /**
-     * Get the type of this effect, one of UNDER,BLENDED,OVER.
-     * UNDER means the result of applying the effect should be painted under the src image.
-     * BLENDED means the result of applying the effect contains a modified src image, so it should just be painted.
-     * OVER means the result of applying the effect should be painted over the src image.
+     * Get the type of this effect, one of {@code UNDER}, {@code BLENDED}, {@code OVER}.
+     * <ul>
+     *   <li><b>{@code UNDER}</b> means the result of applying the effect
+     *       should be painted under the src image.</li>
+     *   <li><b>{@code BLENDED}</b> means the result of applying the effect
+     *       contains a modified src image, so it should just be painted.</li>
+     *   <li><b>{@code OVER}</b> means the result of applying the effect
+     *       should be painted over the src image.</li>
+     * </ul>
      *
      * @return The effect type
      */

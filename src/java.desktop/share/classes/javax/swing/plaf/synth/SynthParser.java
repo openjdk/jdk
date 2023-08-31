@@ -182,7 +182,7 @@ class SynthParser extends DefaultHandler {
     private List<ColorType> _colorTypes;
 
     /**
-     * Defaults properties are placed here.
+     * Default properties are placed here.
      */
     private Map<String, Object> _defaultsMap;
 
