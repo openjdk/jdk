@@ -238,8 +238,8 @@ endif
 
 ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2), true+true+true)
   ifeq ($(TOOLCHAIN_TYPE), gcc)
-    $(eval $(call SetupJdkLibrary, BUILD_LIB_X86_64, \
-        NAME := x86_64, \
+    $(eval $(call SetupJdkLibrary, BUILD_LIB_X86_64_SORT, \
+        NAME := x86_64_sort, \
         TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
         OPTIMIZATION := HIGH, \
         CFLAGS := $(CFLAGS_JDKLIB), \
@@ -250,7 +250,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
         LIBS_linux := -lc -lm -ldl, \
     ))
 
-    TARGETS += $(BUILD_LIB_X86_64)
+    TARGETS += $(BUILD_LIB_X86_64_SORT)
   endif
 endif
 
