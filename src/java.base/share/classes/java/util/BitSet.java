@@ -330,8 +330,8 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
      * Checks that fromIndex ... toIndex is a valid range of bit indices.
      */
     private static void checkRange(int fromIndex, int toIndex) {
-        requireNonNegative("fromIndex", fromIndex);
-        requireNonNegative("toIndex", toIndex);
+        assertNonNegative("fromIndex", fromIndex);
+        assertNonNegative("toIndex", toIndex);
         if (fromIndex > toIndex)
             throw new IndexOutOfBoundsException("fromIndex: " + fromIndex +
                                                 " > toIndex: " + toIndex);
@@ -346,7 +346,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
      * @since  1.4
      */
     public void flip(int bitIndex) {
-        requireNonNegative("bitIndex", bitIndex);
+        assertNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
@@ -409,7 +409,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
      * @since  1.0
      */
     public void set(int bitIndex) {
-        requireNonNegative("bitIndex", bitIndex);
+        assertNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
@@ -504,7 +504,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
      * @since  1.0
      */
     public void clear(int bitIndex) {
-        requireNonNegative("bitIndex", bitIndex);
+        assertNonNegative("bitIndex", bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
         if (wordIndex >= wordsInUse)
@@ -870,148 +870,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
 
     @Override
     public IntStream stream() {
-        class BitSetSpliterator implements Spliterator.OfInt {
-            private int index; // current bit index for a set bit
-            private int fence; // -1 until used; then one past last bit index
-            private int est;   // size estimate
-            private boolean root; // true if root and not split
-            // root == true then size estimate is accurate
-            // index == -1 or index >= fence if fully traversed
-            // Special case when the max bit set is Integer.MAX_VALUE
-
-            BitSetSpliterator(int origin, int fence, int est, boolean root) {
-                this.index = origin;
-                this.fence = fence;
-                this.est = est;
-                this.root = root;
-            }
-
-            private int getFence() {
-                int hi;
-                if ((hi = fence) < 0) {
-                    // Round up fence to maximum cardinality for allocated words
-                    // This is sufficient and cheap for sequential access
-                    // When splitting this value is lowered
-                    hi = fence = (wordsInUse >= wordIndex(Integer.MAX_VALUE))
-                                 ? Integer.MAX_VALUE
-                                 : wordsInUse << ADDRESS_BITS_PER_WORD;
-                    est = cardinality();
-                    index = nextSetBit(0);
-                }
-                return hi;
-            }
-
-            @Override
-            public boolean tryAdvance(IntConsumer action) {
-                Objects.requireNonNull(action);
-
-                int hi = getFence();
-                int i = index;
-                if (i < 0 || i >= hi) {
-                    // Check if there is a final bit set for Integer.MAX_VALUE
-                    if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
-                        index = -1;
-                        action.accept(Integer.MAX_VALUE);
-                        return true;
-                    }
-                    return false;
-                }
-
-                index = nextSetBit(i + 1, wordIndex(hi - 1));
-                action.accept(i);
-                return true;
-            }
-
-            @Override
-            public void forEachRemaining(IntConsumer action) {
-                Objects.requireNonNull(action);
-
-                int hi = getFence();
-                int i = index;
-                index = -1;
-
-                if (i >= 0 && i < hi) {
-                    action.accept(i++);
-
-                    int u = wordIndex(i);      // next lower word bound
-                    int v = wordIndex(hi - 1); // upper word bound
-
-                    words_loop:
-                    for (; u <= v && i <= hi; u++, i = u << ADDRESS_BITS_PER_WORD) {
-                        long word = words[u] & (WORD_MASK << i);
-                        while (word != 0) {
-                            i = (u << ADDRESS_BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-                            if (i >= hi) {
-                                // Break out of outer loop to ensure check of
-                                // Integer.MAX_VALUE bit set
-                                break words_loop;
-                            }
-
-                            // Flip the set bit
-                            word &= ~(1L << i);
-
-                            action.accept(i);
-                        }
-                    }
-                }
-
-                // Check if there is a final bit set for Integer.MAX_VALUE
-                if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
-                    action.accept(Integer.MAX_VALUE);
-                }
-            }
-
-            @Override
-            public OfInt trySplit() {
-                int hi = getFence();
-                int lo = index;
-                if (lo < 0) {
-                    return null;
-                }
-
-                // Lower the fence to be the upper bound of last bit set
-                // The index is the first bit set, thus this spliterator
-                // covers one bit and cannot be split, or two or more
-                // bits
-                hi = fence = (hi < Integer.MAX_VALUE || !get(Integer.MAX_VALUE))
-                        ? previousSetBit(hi - 1) + 1
-                        : Integer.MAX_VALUE;
-
-                // Find the mid point
-                int mid = (lo + hi) >>> 1;
-                if (lo >= mid) {
-                    return null;
-                }
-
-                // Raise the index of this spliterator to be the next set bit
-                // from the mid point
-                index = nextSetBit(mid, wordIndex(hi - 1));
-                root = false;
-
-                // Don't lower the fence (mid point) of the returned spliterator,
-                // traversal or further splitting will do that work
-                return new BitSetSpliterator(lo, mid, est >>>= 1, false);
-            }
-
-            @Override
-            public long estimateSize() {
-                getFence(); // force init
-                return est;
-            }
-
-            @Override
-            public int characteristics() {
-                // Only sized when root and not split
-                return (root ? Spliterator.SIZED : 0) |
-                    Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED;
-            }
-
-            @Override
-            public Comparator<? super Integer> getComparator() {
-                return null;
-            }
-        }
-        return StreamSupport.intStream(new BitSetSpliterator(0, -1, 0, true), false);
+        return StreamSupport.intStream(new BitSetSpliterator(words, wordsInUse, this::length, 0, -1, 0, true), false);
     }
 
     /**
@@ -1078,7 +937,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
     }
 
     private static boolean get(long[] words, int wordsInUse, int bitIndex) {
-        requireNonNegative("bitIndex", bitIndex);
+        assertNonNegative("bitIndex", bitIndex);
         int wordIndex = wordIndex(bitIndex);
         return (wordIndex < wordsInUse)
                 && ((words[wordIndex] & (1L << bitIndex)) != 0);
@@ -1148,7 +1007,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
     }
 
     private static int nextSetBit(long[] words, int wordsInUse, int fromIndex) {
-        requireNonNegative("fromIndex", fromIndex);
+        assertNonNegative("fromIndex", fromIndex);
 
         int u = wordIndex(fromIndex);
         if (u >= wordsInUse)
@@ -1168,7 +1027,7 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
     private static int nextClearBit(long[] words, int wordsInUse,int fromIndex) {
         // Neither spec nor implementation handle bitsets of maximal length.
         // See 4816253.
-        requireNonNegative("fromIndex", fromIndex);
+        assertNonNegative("fromIndex", fromIndex);
         int u = wordIndex(fromIndex);
         if (u >= wordsInUse)
             return fromIndex;
@@ -1271,10 +1130,197 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
         return b.toString();
     }
 
-    private static int requireNonNegative(String label, int index) {
-        if (index < 0)
+    private static void assertNonNegative(String label, int index) {
+        if (index < 0) {
             throw new IndexOutOfBoundsException(label + " < 0: " + index);
-        return index;
+        }
+    }
+
+    private static final class BitSetSpliterator implements Spliterator.OfInt {
+
+        private final long[] words;
+        private final int wordsInUse;
+        private final IntSupplier lengthSupplier;
+
+        private int index; // current bit index for a set bit
+        private int fence; // -1 until used; then one past last bit index
+        private int est;   // size estimate
+        private boolean root; // true if root and not split
+        // root == true then size estimate is accurate
+        // index == -1 or index >= fence if fully traversed
+        // Special case when the max bit set is Integer.MAX_VALUE
+
+        BitSetSpliterator(long[] words,
+                          int wordsInUse,
+                          IntSupplier lengthSupplier,
+                          int origin,
+                          int fence,
+                          int est,
+                          boolean root) {
+            this.words = words;
+            this.wordsInUse = wordsInUse;
+            this.lengthSupplier = lengthSupplier;
+            this.index = origin;
+            this.fence = fence;
+            this.est = est;
+            this.root = root;
+        }
+
+        private int getFence() {
+            int hi;
+            if ((hi = fence) < 0) {
+                // Round up fence to maximum cardinality for allocated words
+                // This is sufficient and cheap for sequential access
+                // When splitting this value is lowered
+                hi = fence = (wordsInUse >= wordIndex(Integer.MAX_VALUE))
+                        ? Integer.MAX_VALUE
+                        : wordsInUse << ADDRESS_BITS_PER_WORD;
+                est = cardinality(words, wordsInUse);
+                index = BitSet.nextSetBit(words, wordsInUse, 0);
+            }
+            return hi;
+        }
+
+        @Override
+        public boolean tryAdvance(IntConsumer action) {
+            Objects.requireNonNull(action);
+
+            int hi = getFence();
+            int i = index;
+            if (i < 0 || i >= hi) {
+                // Check if there is a final bit set for Integer.MAX_VALUE
+                if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
+                    index = -1;
+                    action.accept(Integer.MAX_VALUE);
+                    return true;
+                }
+                return false;
+            }
+
+            index = this.nextSetBit(i + 1, wordIndex(hi - 1));
+            action.accept(i);
+            return true;
+        }
+
+        @Override
+        public void forEachRemaining(IntConsumer action) {
+            Objects.requireNonNull(action);
+
+            int hi = getFence();
+            int i = index;
+            index = -1;
+
+            if (i >= 0 && i < hi) {
+                action.accept(i++);
+
+                int u = wordIndex(i);      // next lower word bound
+                int v = wordIndex(hi - 1); // upper word bound
+
+                words_loop:
+                for (; u <= v && i <= hi; u++, i = u << ADDRESS_BITS_PER_WORD) {
+                    long word = words[u] & (WORD_MASK << i);
+                    while (word != 0) {
+                        i = (u << ADDRESS_BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+                        if (i >= hi) {
+                            // Break out of outer loop to ensure check of
+                            // Integer.MAX_VALUE bit set
+                            break words_loop;
+                        }
+
+                        // Flip the set bit
+                        word &= ~(1L << i);
+
+                        action.accept(i);
+                    }
+                }
+            }
+
+            // Check if there is a final bit set for Integer.MAX_VALUE
+            if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
+                action.accept(Integer.MAX_VALUE);
+            }
+        }
+
+        @Override
+        public OfInt trySplit() {
+            int hi = getFence();
+            int lo = index;
+            if (lo < 0) {
+                return null;
+            }
+
+            // Lower the fence to be the upper bound of last bit set
+            // The index is the first bit set, thus this spliterator
+            // covers one bit and cannot be split, or two or more
+            // bits
+            hi = fence = (hi < Integer.MAX_VALUE || !get(words, wordsInUse, Integer.MAX_VALUE))
+                    ? previousSetBit(words, wordsInUse, lengthSupplier, hi - 1) + 1
+                    : Integer.MAX_VALUE;
+
+            // Find the mid point
+            int mid = (lo + hi) >>> 1;
+            if (lo >= mid) {
+                return null;
+            }
+
+            // Raise the index of this spliterator to be the next set bit
+            // from the mid point
+            index = this.nextSetBit(mid, wordIndex(hi - 1));
+            root = false;
+
+            // Don't lower the fence (mid point) of the returned spliterator,
+            // traversal or further splitting will do that work
+            return new BitSetSpliterator(words, wordsInUse, lengthSupplier, lo, mid, est >>>= 1, false);
+        }
+
+        @Override
+        public long estimateSize() {
+            getFence(); // force init
+            return est;
+        }
+
+        @Override
+        public int characteristics() {
+            // Only sized when root and not split
+            return (root ? Spliterator.SIZED : 0) |
+                    Spliterator.ORDERED | Spliterator.DISTINCT | Spliterator.SORTED;
+        }
+
+        @Override
+        public Comparator<? super Integer> getComparator() {
+            return null;
+        }
+
+
+        /**
+         * Returns the index of the first bit that is set to {@code true}
+         * that occurs on or after the specified starting index and up to and
+         * including the specified word index
+         * If no such bit exists then {@code -1} is returned.
+         *
+         * @param  fromIndex the index to start checking from (inclusive)
+         * @param  toWordIndex the last word index to check (inclusive)
+         * @return the index of the next set bit, or {@code -1} if there
+         *         is no such bit
+         */
+        private int nextSetBit(int fromIndex, int toWordIndex) {
+            int u = wordIndex(fromIndex);
+            // Check if out of bounds
+            if (u > toWordIndex)
+                return -1;
+
+            long word = words[u] & (WORD_MASK << fromIndex);
+
+            while (true) {
+                if (word != 0)
+                    return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+                // Check if out of bounds
+                if (++u > toWordIndex)
+                    return -1;
+                word = words[u];
+            }
+        }
+
     }
 
     @ValueBased
@@ -1354,11 +1400,10 @@ public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Seri
 
         @Override
         public IntStream stream() {
-            // Todo: Improve on this
             if (isEmpty()) {
                 return IntStream.empty();
             }
-            return IntStream.iterate(nextSetBit(0), i -> i != -1, this::nextSetBit);
+            return StreamSupport.intStream(new BitSetSpliterator(words, words.length, this::length, 0, -1, 0, true), false);
         }
 
         @Override
