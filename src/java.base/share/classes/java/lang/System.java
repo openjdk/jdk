@@ -723,6 +723,8 @@ public final class System {
      *     <td>Java Runtime Environment vendor</td></tr>
      * <tr><th scope="row">{@systemProperty java.vendor.url}</th>
      *     <td>Java vendor URL</td></tr>
+     * <tr><th scope="row">{@systemProperty java.vendor.url.bug}</th>
+     *     <td>Java vendor's bug tracker URL</td></tr>
      * <tr><th scope="row">{@systemProperty java.vendor.version}</th>
      *     <td>Java vendor version <em>(optional)</em> </td></tr>
      * <tr><th scope="row">{@systemProperty java.home}</th>
