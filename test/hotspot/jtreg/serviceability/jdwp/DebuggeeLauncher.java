@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.util.StringTokenizer;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDWP;
 import static jdk.test.lib.Asserts.assertFalse;
-import jdk.test.lib.process.ProcessTools;
 
 /**
  * Launches the debuggee with the necessary JDWP options and handles the output
@@ -55,9 +54,8 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
     }
 
     private int jdwpPort = -1;
+    private static final String CLS_DIR = System.getProperty("test.classes", "").trim();
     private static final String DEBUGGEE = "AllModulesCommandTestDebuggee";
-    private static final String JDWP_OPT = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0";
-
     private Process p;
     private final Listener listener;
     private StreamHandler inputHandler;
@@ -78,12 +76,28 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
      */
     public void launchDebuggee() throws Throwable {
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(JDWP_OPT, DEBUGGEE);
+        ProcessBuilder pb = new ProcessBuilder(getCommand());
         p = pb.start();
         inputHandler = new StreamHandler(p.getInputStream(), this);
         errorHandler = new StreamHandler(p.getErrorStream(), this);
         inputHandler.start();
         errorHandler.start();
+    }
+
+    /**
+     * Command to start the debuggee with the JDWP options and using the JDK
+     * under test
+     *
+     * @return the command
+     */
+    private String[] getCommand() {
+        return new String[]{
+            JDKToolFinder.getTestJDKTool("java"),
+            getJdwpOptions(),
+            "-cp",
+            CLS_DIR,
+            DEBUGGEE
+        };
     }
 
     /**
@@ -93,6 +107,15 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
         if (p.isAlive()) {
             p.destroyForcibly();
         }
+    }
+
+    /**
+     * Debuggee JDWP options
+     *
+     * @return the JDWP options to start the debuggee with
+     */
+    private static String getJdwpOptions() {
+        return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0";
     }
 
     /**
