@@ -174,6 +174,7 @@ void MemSummaryReporter::report() {
 
     report_summary_of_type(flag, malloc_memory, virtual_memory);
   }
+
 }
 
 void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
@@ -181,6 +182,8 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
+  log_debug(nmt, tracking)("reserved amount: %ld", reserved_amount);
+  log_debug(nmt, tracking)("committed amount: %ld", committed_amount);
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
