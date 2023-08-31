@@ -70,7 +70,7 @@ import jdk.internal.vm.ContinuationScope;
  *
  * <p>1. To find the first caller filtering out a known list of implementation class:
  * {@snippet lang="java" :
- *     StackWalker walker = StackWalker.getInstance(Option.DROP_METHOD_INFO, Option.RETAIN_CLASS_REFERENCE);
+ *     StackWalker walker = StackWalker.getInstance(Set.of(Option.DROP_METHOD_INFO, Option.RETAIN_CLASS_REFERENCE));
  *     Optional<Class<?>> callerClass = walker.walk(s ->
  *             s.map(StackFrame::getDeclaringClass)
  *              .filter(Predicate.not(implClasses::contains))
@@ -372,34 +372,6 @@ public final class StackWalker {
     }
 
     /**
-     * Returns a {@code StackWalker} instance configured with the given options
-     * specifying the stack frame information it can access.
-     *
-     * <p>
-     * If the given {@code options} is an empty array, this {@code StackWalker} is
-     * configured to skip all {@linkplain Option#SHOW_HIDDEN_FRAMES hidden frames}
-     * and no {@linkplain Option#RETAIN_CLASS_REFERENCE class reference} is retained.
-     *
-     * <p>
-     * If a security manager is present and the given {@code options} contains
-     * {@link Option#RETAIN_CLASS_REFERENCE Option.RETAIN_CLASS_REFERENCE},
-     * it calls its {@link SecurityManager#checkPermission checkPermission}
-     * method for {@code RuntimePermission("getStackWalkerWithClassReference")}.
-     *
-     * @param options {@linkplain Option stack walking options}
-     *
-     * @return a {@code StackWalker} configured with the given options
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkPermission} method denies access.
-     *
-     * @since 22
-     */
-    public static StackWalker getInstance(Option... options) {
-        return getInstance(Set.of(options));
-    }
-
-    /**
      * Returns a {@code StackWalker} instance with the given {@code options} specifying
      * the stack frame information it can access.
      *
@@ -622,7 +594,8 @@ public final class StackWalker {
      *
      * {@snippet lang="java" :
      * class Util {
-     *     private final StackWalker walker = StackWalker.getInstance(Option.DROP_METHOD_INFO, Option.RETAIN_CLASS_REFERENCE);
+     *     private final StackWalker walker =
+     *         StackWalker.getInstance(Set.of(Option.DROP_METHOD_INFO, Option.RETAIN_CLASS_REFERENCE));
      *     public ResourceBundle getResourceBundle(String bundleName) {
      *         Class<?> caller = walker.getCallerClass();
      *         return ResourceBundle.getBundle(bundleName, Locale.getDefault(), caller.getClassLoader());

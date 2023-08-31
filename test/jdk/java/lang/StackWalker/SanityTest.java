@@ -45,8 +45,6 @@ public class SanityTest {
                 StackWalker.getInstance((Set<StackWalker.Option>) null));
         assertThrows(NullPointerException.class, () ->
                 StackWalker.getInstance((StackWalker.Option) null));
-        assertThrows(NullPointerException.class, () ->
-                StackWalker.getInstance((StackWalker.Option[])null));
     }
 
     private static Stream<StackWalker> noRetainClassRef() {
@@ -93,7 +91,7 @@ public class SanityTest {
 
     private static Stream<StackWalker> noMethodInfo() {
         return Stream.of(StackWalker.getInstance(DROP_METHOD_INFO),
-                         StackWalker.getInstance(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE));
+                         StackWalker.getInstance(Set.of(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE)));
     }
 
     @ParameterizedTest

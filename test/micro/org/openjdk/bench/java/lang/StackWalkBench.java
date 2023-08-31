@@ -24,6 +24,7 @@ package org.openjdk.bench.java.lang;
 
 import java.lang.StackWalker.StackFrame;
 import java.util.concurrent.TimeUnit;
+import java.util.Set;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -52,7 +53,7 @@ public class StackWalkBench {
     private static final StackWalker WALKER =
             StackWalker.getInstance(RETAIN_CLASS_REFERENCE);
     private static final StackWalker WALKER_CLASS_ONLY =
-            StackWalker.getInstance(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE);
+            StackWalker.getInstance(Set.of(DROP_METHOD_INFO, RETAIN_CLASS_REFERENCE));
 
     static StackWalker walker(String name) {
         return switch (name) {
