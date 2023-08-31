@@ -787,10 +787,34 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
   MutexLocker ml(CDSLambda_lock, Mutex::_no_safepoint_check_flag);
   LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
                           method_type, member_method, instantiated_method_type);
+
+  // Try to retrieve the lambda proxy class from static archive.
   const RunTimeLambdaProxyClassInfo* info = _static_archive.lookup_lambda_proxy_class(&key);
-  if (info == nullptr) {
-    info = _dynamic_archive.lookup_lambda_proxy_class(&key);
+  InstanceKlass* proxy_klass = retrieve_lambda_proxy_class(info);
+  if (proxy_klass == nullptr) {
+    if (info != nullptr && log_is_enabled(Debug, cds)) {
+      ResourceMark rm;
+      log_debug(cds)("Used all static archived lambda proxy classes for: %s %s%s",
+                     caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
+    }
+  } else {
+    return proxy_klass;
   }
+
+  // Retrieving from static archive is unsuccessful, try dynamic archive.
+  info = _dynamic_archive.lookup_lambda_proxy_class(&key);
+  proxy_klass = retrieve_lambda_proxy_class(info);
+  if (proxy_klass == nullptr) {
+    if (info != nullptr && log_is_enabled(Debug, cds)) {
+      ResourceMark rm;
+      log_debug(cds)("Used all dynamic archived lambda proxy classes for: %s %s%s",
+                     caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
+    }
+  }
+  return proxy_klass;
+}
+
+InstanceKlass* SystemDictionaryShared::retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) {
   InstanceKlass* proxy_klass = nullptr;
   if (info != nullptr) {
     InstanceKlass* curr_klass = info->proxy_klass_head();
@@ -809,12 +833,6 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
       if (log_is_enabled(Debug, cds)) {
         ResourceMark rm;
         log_debug(cds)("Loaded lambda proxy: %s ", proxy_klass->external_name());
-      }
-    } else {
-      if (log_is_enabled(Debug, cds)) {
-        ResourceMark rm;
-        log_debug(cds)("Used all archived lambda proxy classes for: %s %s%s",
-                       caller_ik->external_name(), invoked_name->as_C_string(), invoked_type->as_C_string());
       }
     }
   }

@@ -3627,8 +3627,16 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Handle dynamic_method_type_oop(THREAD, JNIHandles::resolve_non_null(dynamicMethodType));
   Symbol* dynamic_method_type = java_lang_invoke_MethodType::as_signature(dynamic_method_type_oop(), true);
 
-  SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, interface_method_name, factory_type,
-                                                 interface_method_type, m, dynamic_method_type, THREAD);
+  InstanceKlass* shared_lambda = nullptr;
+  if (caller_ik->is_shared()) {
+    shared_lambda = SystemDictionaryShared::get_shared_lambda_proxy_class(caller_ik, interface_method_name, factory_type,
+                                                                          interface_method_type, m, dynamic_method_type);
+  }
+
+  if (shared_lambda == nullptr) {
+    SystemDictionaryShared::add_lambda_proxy_class(caller_ik, lambda_ik, interface_method_name, factory_type,
+                                                   interface_method_type, m, dynamic_method_type, THREAD);
+  }
 #endif // INCLUDE_CDS
 JVM_END
 
