@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -67,9 +68,9 @@ import jdk.internal.vm.annotation.Stable;
  * @author  Martin Buchholz
  * @since   1.0
  */
-public class BitSet implements Cloneable, java.io.Serializable {
+public non-sealed class BitSet implements BitSetReadOps, Cloneable, java.io.Serializable {
     /*
-     * BitSets are packed into arrays of "words."  Currently a word is
+     * BitSets are packed into arrays of "words."  Currently, a word is
      * a long, which consists of 64 bits, requiring 6 address bits.
      * The choice of word size is determined purely by performance concerns.
      */
@@ -287,48 +288,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
         return new BitSet(words);
     }
 
-    /**
-     * Returns a new byte array containing all the bits in this bit set.
-     *
-     * <p>More precisely, if
-     * <br>{@code byte[] bytes = s.toByteArray();}
-     * <br>then {@code bytes.length == (s.length()+7)/8} and
-     * <br>{@code s.get(n) == ((bytes[n/8] & (1<<(n%8))) != 0)}
-     * <br>for all {@code n < 8 * bytes.length}.
-     *
-     * @return a byte array containing a little-endian representation
-     *         of all the bits in this bit set
-     * @since 1.7
-     */
+    @Override
     public byte[] toByteArray() {
-        int n = wordsInUse;
-        if (n == 0)
-            return new byte[0];
-        int len = 8 * (n-1);
-        for (long x = words[n - 1]; x != 0; x >>>= 8)
-            len++;
-        byte[] bytes = new byte[len];
-        ByteBuffer bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
-        for (int i = 0; i < n - 1; i++)
-            bb.putLong(words[i]);
-        for (long x = words[n - 1]; x != 0; x >>>= 8)
-            bb.put((byte) (x & 0xff));
-        return bytes;
+        return toByteArray(words, wordsInUse);
     }
 
-    /**
-     * Returns a new long array containing all the bits in this bit set.
-     *
-     * <p>More precisely, if
-     * <br>{@code long[] longs = s.toLongArray();}
-     * <br>then {@code longs.length == (s.length()+63)/64} and
-     * <br>{@code s.get(n) == ((longs[n/64] & (1L<<(n%64))) != 0)}
-     * <br>for all {@code n < 64 * longs.length}.
-     *
-     * @return a long array containing a little-endian representation
-     *         of all the bits in this bit set
-     * @since 1.7
-     */
+    @Override
     public long[] toLongArray() {
         return Arrays.copyOf(words, wordsInUse);
     }
@@ -611,292 +576,85 @@ public class BitSet implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Returns the value of the bit with the specified index. The value
-     * is {@code true} if the bit with the index {@code bitIndex}
-     * is currently set in this {@code BitSet}; otherwise, the result
-     * is {@code false}.
-     *
-     * @param  bitIndex   the bit index
-     * @return the value of the bit with the specified index
-     * @throws IndexOutOfBoundsException if the specified index is negative
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public boolean get(int bitIndex) {
-        requireNonNegative("bitIndex", bitIndex);
-
         checkInvariants();
-
-        int wordIndex = wordIndex(bitIndex);
-        return (wordIndex < wordsInUse)
-            && ((words[wordIndex] & (1L << bitIndex)) != 0);
+        return get(words, wordsInUse, bitIndex);
     }
 
     /**
-     * Returns a new {@code BitSet} composed of bits from this {@code BitSet}
-     * from {@code fromIndex} (inclusive) to {@code toIndex} (exclusive).
-     *
-     * @param  fromIndex index of the first bit to include
-     * @param  toIndex index after the last bit to include
-     * @return a new {@code BitSet} from a range of this {@code BitSet}
-     * @throws IndexOutOfBoundsException if {@code fromIndex} is negative,
-     *         or {@code toIndex} is negative, or {@code fromIndex} is
-     *         larger than {@code toIndex}
-     * @since  1.4
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public BitSet get(int fromIndex, int toIndex) {
-        checkRange(fromIndex, toIndex);
-
         checkInvariants();
-
-        int len = length();
-
-        // If no set bits in range return empty bitset
-        if (len <= fromIndex || fromIndex == toIndex)
-            return new BitSet(0);
-
-        // An optimization
-        if (toIndex > len)
-            toIndex = len;
-
-        BitSet result = new BitSet(toIndex - fromIndex);
-        int targetWords = wordIndex(toIndex - fromIndex - 1) + 1;
-        int sourceIndex = wordIndex(fromIndex);
-        boolean wordAligned = ((fromIndex & BIT_INDEX_MASK) == 0);
-
-        // Process all words but the last word
-        for (int i = 0; i < targetWords - 1; i++, sourceIndex++)
-            result.words[i] = wordAligned ? words[sourceIndex] :
-                (words[sourceIndex] >>> fromIndex) |
-                (words[sourceIndex+1] << -fromIndex);
-
-        // Process the last word
-        long lastWordMask = WORD_MASK >>> -toIndex;
-        result.words[targetWords - 1] =
-            ((toIndex-1) & BIT_INDEX_MASK) < (fromIndex & BIT_INDEX_MASK)
-            ? /* straddles source words */
-            ((words[sourceIndex] >>> fromIndex) |
-             (words[sourceIndex+1] & lastWordMask) << -fromIndex)
-            :
-            ((words[sourceIndex] & lastWordMask) >>> fromIndex);
-
-        // Set wordsInUse correctly
-        result.wordsInUse = targetWords;
-        result.recalculateWordsInUse();
-        result.checkInvariants();
-
-        return result;
+        return get(words, length(), fromIndex, toIndex);
     }
 
     /**
-     * Returns the index of the first bit that is set to {@code true}
-     * that occurs on or after the specified starting index. If no such
-     * bit exists then {@code -1} is returned.
-     *
-     * <p>To iterate over the {@code true} bits in a {@code BitSet},
-     * use the following loop:
-     *
-     *  <pre> {@code
-     * for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-     *     // operate on index i here
-     *     if (i == Integer.MAX_VALUE) {
-     *         break; // or (i+1) would overflow
-     *     }
-     * }}</pre>
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the next set bit, or {@code -1} if there
-     *         is no such bit
-     * @throws IndexOutOfBoundsException if the specified index is negative
-     * @since  1.4
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public int nextSetBit(int fromIndex) {
-        requireNonNegative("fromIndex", fromIndex);
-
         checkInvariants();
-
-        int u = wordIndex(fromIndex);
-        if (u >= wordsInUse)
-            return -1;
-
-        long word = words[u] & (WORD_MASK << fromIndex);
-
-        while (true) {
-            if (word != 0)
-                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-            if (++u == wordsInUse)
-                return -1;
-            word = words[u];
-        }
+        return nextSetBit(words, wordsInUse, fromIndex);
     }
 
     /**
-     * Returns the index of the first bit that is set to {@code false}
-     * that occurs on or after the specified starting index.
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the next clear bit
-     * @throws IndexOutOfBoundsException if the specified index is negative
-     * @since  1.4
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public int nextClearBit(int fromIndex) {
-        // Neither spec nor implementation handle bitsets of maximal length.
-        // See 4816253.
-        requireNonNegative("fromIndex", fromIndex);
-
         checkInvariants();
-
-        int u = wordIndex(fromIndex);
-        if (u >= wordsInUse)
-            return fromIndex;
-
-        long word = ~words[u] & (WORD_MASK << fromIndex);
-
-        while (true) {
-            if (word != 0)
-                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-            if (++u == wordsInUse)
-                return wordsInUse * BITS_PER_WORD;
-            word = ~words[u];
-        }
+        return nextClearBit(words, wordsInUse, fromIndex);
     }
 
     /**
-     * Returns the index of the nearest bit that is set to {@code true}
-     * that occurs on or before the specified starting index.
-     * If no such bit exists, or if {@code -1} is given as the
-     * starting index, then {@code -1} is returned.
-     *
-     * <p>To iterate over the {@code true} bits in a {@code BitSet},
-     * use the following loop:
-     *
-     *  <pre> {@code
-     * for (int i = bs.length(); (i = bs.previousSetBit(i-1)) >= 0; ) {
-     *     // operate on index i here
-     * }}</pre>
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the previous set bit, or {@code -1} if there
-     *         is no such bit
-     * @throws IndexOutOfBoundsException if the specified index is less
-     *         than {@code -1}
-     * @since  1.7
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public int previousSetBit(int fromIndex) {
-        if (fromIndex < 0) {
-            if (fromIndex == -1)
-                return -1;
-            throw new IndexOutOfBoundsException(
-                "fromIndex < -1: " + fromIndex);
-        }
-
         checkInvariants();
-
-        int u = wordIndex(fromIndex);
-        if (u >= wordsInUse)
-            return length() - 1;
-
-        long word = words[u] & (WORD_MASK >>> -(fromIndex+1));
-
-        while (true) {
-            if (word != 0)
-                return (u+1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
-            if (u-- == 0)
-                return -1;
-            word = words[u];
-        }
+        return previousSetBit(words, wordsInUse, this::length, fromIndex);
     }
 
     /**
-     * Returns the index of the nearest bit that is set to {@code false}
-     * that occurs on or before the specified starting index.
-     * If no such bit exists, or if {@code -1} is given as the
-     * starting index, then {@code -1} is returned.
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the previous clear bit, or {@code -1} if there
-     *         is no such bit
-     * @throws IndexOutOfBoundsException if the specified index is less
-     *         than {@code -1}
-     * @since  1.7
+     * @throws IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public int previousClearBit(int fromIndex) {
-        if (fromIndex < 0) {
-            if (fromIndex == -1)
-                return -1;
-            throw new IndexOutOfBoundsException(
-                "fromIndex < -1: " + fromIndex);
-        }
-
         checkInvariants();
-
-        int u = wordIndex(fromIndex);
-        if (u >= wordsInUse)
-            return fromIndex;
-
-        long word = ~words[u] & (WORD_MASK >>> -(fromIndex+1));
-
-        while (true) {
-            if (word != 0)
-                return (u+1) * BITS_PER_WORD -1 - Long.numberOfLeadingZeros(word);
-            if (u-- == 0)
-                return -1;
-            word = ~words[u];
-        }
+        return previousClearBit(words, wordsInUse, fromIndex);
     }
 
-    /**
-     * Returns the "logical size" of this {@code BitSet}: the index of
-     * the highest set bit in the {@code BitSet} plus one. Returns zero
-     * if the {@code BitSet} contains no set bits.
-     *
-     * @return the logical size of this {@code BitSet}
-     * @since  1.2
-     */
+    @Override
     public int length() {
-        if (wordsInUse == 0)
-            return 0;
-
-        return BITS_PER_WORD * (wordsInUse - 1) +
-            (BITS_PER_WORD - Long.numberOfLeadingZeros(words[wordsInUse - 1]));
+        return length(words, wordsInUse);
     }
 
-    /**
-     * Returns true if this {@code BitSet} contains no bits that are set
-     * to {@code true}.
-     *
-     * @return boolean indicating whether this {@code BitSet} is empty
-     * @since  1.4
-     */
+    @Override
     public boolean isEmpty() {
         return wordsInUse == 0;
     }
 
-    /**
-     * Returns true if the specified {@code BitSet} has any bits set to
-     * {@code true} that are also set to {@code true} in this {@code BitSet}.
-     *
-     * @param  set {@code BitSet} to intersect with
-     * @return boolean indicating whether this {@code BitSet} intersects
-     *         the specified {@code BitSet}
-     * @since  1.4
-     */
+    @Override
     public boolean intersects(BitSet set) {
-        for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
-            if ((words[i] & set.words[i]) != 0)
-                return true;
-        return false;
+        return intersects(words, wordsInUse, set.words, set.wordsInUse);
     }
 
-    /**
-     * Returns the number of bits set to {@code true} in this {@code BitSet}.
-     *
-     * @return the number of bits set to {@code true} in this {@code BitSet}
-     * @since  1.4
-     */
+    @Override
+    public boolean intersects(BitSetReadOps set) {
+        return switch (set) {
+            case BitSet otherBs -> intersects(otherBs);
+            case OfImmutable ro -> intersects(words, wordsInUse, ro.words, ro.words.length);
+        };
+    }
+
+    @Override
     public int cardinality() {
-        int sum = 0;
-        for (int i = 0; i < wordsInUse; i++)
-            sum += Long.bitCount(words[i]);
-        return sum;
+        return cardinality(words, wordsInUse);
     }
 
     /**
@@ -1010,84 +768,36 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
     }
 
-    /**
-     * {@return the hash code value for this bit set}
-     *
-     * The hash code depends only on which bits are set within this
-     * {@code BitSet}.
-     *
-     * <p>The hash code is defined to be the result of the following
-     * calculation:
-     *  <pre> {@code
-     * public int hashCode() {
-     *     long h = 1234;
-     *     long[] words = toLongArray();
-     *     for (int i = words.length; --i >= 0; )
-     *         h ^= words[i] * (i + 1);
-     *     return (int)((h >> 32) ^ h);
-     * }}</pre>
-     * Note that the hash code changes if the set of bits is altered.
-     */
     @Override
     public int hashCode() {
-        long h = 1234;
-        for (int i = wordsInUse; --i >= 0; )
-            h ^= words[i] * (i + 1);
-
-        return (int)((h >> 32) ^ h);
+        return hashCode(words, wordsInUse);
     }
 
-    /**
-     * Returns the number of bits of space actually in use by this
-     * {@code BitSet} to represent bit values.
-     * The maximum element in the set is the size - 1st element.
-     *
-     * @return the number of bits currently in this bit set
-     */
+    @Override
     public int size() {
         return words.length * BITS_PER_WORD;
     }
 
-    /**
-     * Compares this bit set against the specified object.
-     * The result is {@code true} if and only if the argument is
-     * not {@code null} and is a {@code BitSet} object that has
-     * exactly the same set of bits set to {@code true} as this bit
-     * set. That is, for every nonnegative {@code int} index {@code k},
-     * <pre>((BitSet)obj).get(k) == this.get(k)</pre>
-     * must be true. The current sizes of the two bit sets are not compared.
-     *
-     * @param  obj the object to compare with
-     * @return {@code true} if the objects are the same;
-     *         {@code false} otherwise
-     * @see    #size()
-     */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (!(obj instanceof BitSet set))
-            return false;
-
-        checkInvariants();
-        set.checkInvariants();
-
-        if (wordsInUse != set.wordsInUse)
-            return false;
-
-        // Check words in use by both BitSets
-        return ArraysSupport.mismatch(words, 0, set.words, 0, wordsInUse) == -1;
+        return switch (obj) {
+            case BitSet set -> {
+                if (this == set) {
+                    yield true;
+                }
+                checkInvariants();
+                set.checkInvariants();
+                yield equals(words, wordsInUse, set.words, set.wordsInUse);
+            }
+            case OfImmutable roSet -> {
+                checkInvariants();
+                yield equals(words, wordsInUse, roSet.words, roSet.words.length);
+            }
+            default -> false;
+        };
     }
 
-    /**
-     * Cloning this {@code BitSet} produces a new {@code BitSet}
-     * that is equal to it.
-     * The clone of the bit set is another bit set that has exactly the
-     * same bits set to {@code true} as this bit set.
-     *
-     * @return a clone of this bit set
-     * @see    #size()
-     */
+    @Override
     public Object clone() {
         if (! sizeIsSticky)
             trimToSize();
@@ -1152,72 +862,13 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
     }
 
-    /**
-     * Returns a string representation of this bit set. For every index
-     * for which this {@code BitSet} contains a bit in the set
-     * state, the decimal representation of that index is included in
-     * the result. Such indices are listed in order from lowest to
-     * highest, separated by ",&nbsp;" (a comma and a space) and
-     * surrounded by braces, resulting in the usual mathematical
-     * notation for a set of integers.
-     *
-     * <p>Example:
-     * <pre>
-     * BitSet drPepper = new BitSet();</pre>
-     * Now {@code drPepper.toString()} returns "{@code {}}".
-     * <pre>
-     * drPepper.set(2);</pre>
-     * Now {@code drPepper.toString()} returns "{@code {2}}".
-     * <pre>
-     * drPepper.set(4);
-     * drPepper.set(10);</pre>
-     * Now {@code drPepper.toString()} returns "{@code {2, 4, 10}}".
-     *
-     * @return a string representation of this bit set
-     */
+    @Override
     public String toString() {
         checkInvariants();
-
-        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
-        int numBits = (wordsInUse > 128) ?
-            cardinality() : wordsInUse * BITS_PER_WORD;
-        // Avoid overflow in the case of a humongous numBits
-        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
-            6 * numBits + 2 : MAX_INITIAL_CAPACITY;
-        StringBuilder b = new StringBuilder(initialCapacity);
-        b.append('{');
-
-        int i = nextSetBit(0);
-        if (i != -1) {
-            b.append(i);
-            while (true) {
-                if (++i < 0) break;
-                if ((i = nextSetBit(i)) < 0) break;
-                int endOfRun = nextClearBit(i);
-                do { b.append(", ").append(i); }
-                while (++i != endOfRun);
-            }
-        }
-
-        b.append('}');
-        return b.toString();
+        return toString(this, wordsInUse);
     }
 
-    /**
-     * Returns a stream of indices for which this {@code BitSet}
-     * contains a bit in the set state. The indices are returned
-     * in order, from lowest to highest. The size of the stream
-     * is the number of bits in the set state, equal to the value
-     * returned by the {@link #cardinality()} method.
-     *
-     * <p>The stream binds to this bit set when the terminal stream operation
-     * commences (specifically, the spliterator for the stream is
-     * <a href="Spliterator.html#binding"><em>late-binding</em></a>).  If the
-     * bit set is modified during that operation then the result is undefined.
-     *
-     * @return a stream of integers representing set indices
-     * @since 1.8
-     */
+    @Override
     public IntStream stream() {
         class BitSetSpliterator implements Spliterator.OfInt {
             private int index; // current bit index for a set bit
@@ -1392,24 +1043,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
         }
     }
 
-    private static int requireNonNegative(String label, int index) {
-        if (index < 0)
-            throw new IndexOutOfBoundsException(label + " < 0: " + index);
-        return index;
-    }
-
     /**
      * {@return a new immutable snapshot of this {@code BitSet}}.
-     */
-    public OfImmutable asImmutable() {
-        return OfImmutableImpl.of(this);
-    }
-
-    /**
-     * This interface models an immutable vector of bits. Each
-     * component of the bit set has a {@code boolean} value. The
-     * bits of an {@code ImmutableBitSet} are indexed by non-negative integers.
-     * Individual indexed bits can be examined.
      * <p>
      * A {@code ImmutableBitSet} is threadsafe and can be used without external
      * synchronisation.
@@ -1417,154 +1052,257 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * ImmutableBitSet instances are eligible for constant-folding optimization
      * by the VM.
      *
+     * @implNote The method is free to return a {@link ValueBased} implementation.
+     *
      * @since 22
      */
-    @ValueBased
-    public sealed interface OfImmutable {
+    public BitSetReadOps asImmutable() {
+        return OfImmutable.of(this);
+    }
 
-        /**
-         * Returns the value of the bit with the specified index. The value
-         * is {@code true} if the bit with the index {@code bitIndex}
-         * is currently set in this {@code ImmutableBitSet}; otherwise, the result
-         * is {@code false}.
-         *
-         * @param  bitIndex   the bit index
-         * @return the value of the bit with the specified index
-         * @throws IndexOutOfBoundsException if the specified index is negative
-         */
-        boolean get(int bitIndex);
+    // Support methods that allows code sharing of the two implementations.
 
-        /**
-         * Returns the number of bits set to {@code true} in this {@code ImmutableBitSet}.
-         *
-         * @return the number of bits set to {@code true} in this {@code ImmutableBitSet}
-         */
-        int cardinality();
+    private static int length(long[] words, int wordsInUse) {
+        if (wordsInUse == 0)
+            return 0;
 
-        /**
-         * Returns the "logical size" of this {@code ImmutableBitSet}: the index of
-         * the highest set bit in the {@code ImmutableBitSet} plus one. Returns zero
-         * if the {@code ImmutableBitSet} contains no set bits.
-         *
-         * @return the logical size of this {@code ImmutableBitSet}
-         */
-        int length();
+        return BITS_PER_WORD * (wordsInUse - 1) +
+                (BITS_PER_WORD - Long.numberOfLeadingZeros(words[wordsInUse - 1]));
+    }
 
-        /**
-         * Returns true if this {@code ImmutableBitSet} contains no bits that are set
-         * to {@code true}.
-         *
-         * @return boolean indicating whether this {@code ImmutableBitSet} is empty
-         */
-        boolean isEmpty();
+    private static int cardinality(long[] words, int wordsInUse) {
+        int sum = 0;
+        for (int i = 0; i < wordsInUse; i++)
+            sum += Long.bitCount(words[i]);
+        return sum;
+    }
 
-        /**
-         * Returns the index of the first bit that is set to {@code true}
-         * that occurs on or after the specified starting index. If no such
-         * bit exists then {@code -1} is returned.
-         *
-         * <p>To iterate over the {@code true} bits in a {@code ImmutableBitSet},
-         * use the following loop:
-         *
-         *  <pre> {@code
-         * for (int i = bs.nextSetBit(0); i >= 0; i = bs.nextSetBit(i+1)) {
-         *     // operate on index i here
-         *     if (i == Integer.MAX_VALUE) {
-         *         break; // or (i+1) would overflow
-         *     }
-         * }}</pre>
-         *
-         * @param  fromIndex the index to start checking from (inclusive)
-         * @return the index of the next set bit, or {@code -1} if there
-         *         is no such bit
-         * @throws IndexOutOfBoundsException if the specified index is negative
-         */
-        int nextSetBit(int fromIndex);
+    private static boolean get(long[] words, int wordsInUse, int bitIndex) {
+        requireNonNegative("bitIndex", bitIndex);
+        int wordIndex = wordIndex(bitIndex);
+        return (wordIndex < wordsInUse)
+                && ((words[wordIndex] & (1L << bitIndex)) != 0);
+    }
 
-        /**
-         * Returns the index of the first bit that is set to {@code false}
-         * that occurs on or after the specified starting index.
-         *
-         * @param  fromIndex the index to start checking from (inclusive)
-         * @return the index of the next clear bit
-         * @throws IndexOutOfBoundsException if the specified index is negative
-         */
-        int nextClearBit(int fromIndex);
+    private static boolean intersects(long[] words, int wordsInUse, long[] otherWords, int otherWordsInUse) {
+        for (int i = Math.min(wordsInUse, otherWordsInUse) - 1; i >= 0; i--)
+            if ((words[i] & otherWords[i]) != 0)
+                return true;
+        return false;
+    }
 
-        /**
-         * Returns the index of the nearest bit that is set to {@code true}
-         * that occurs on or before the specified starting index.
-         * If no such bit exists, or if {@code -1} is given as the
-         * starting index, then {@code -1} is returned.
-         *
-         * <p>To iterate over the {@code true} bits in a {@code ImmutableBitSet},
-         * use the following loop:
-         *
-         *  <pre> {@code
-         * for (int i = bs.length(); (i = bs.previousSetBit(i-1)) >= 0; ) {
-         *     // operate on index i here
-         * }}</pre>
-         *
-         * @param  fromIndex the index to start checking from (inclusive)
-         * @return the index of the previous set bit, or {@code -1} if there
-         *         is no such bit
-         * @throws IndexOutOfBoundsException if the specified index is less
-         *         than {@code -1}
-         */
-        int previousSetBit(int fromIndex);
+    private static byte[] toByteArray(long[] words, int wordsInUse) {
+        int n = wordsInUse;
+        if (n == 0)
+            return new byte[0];
+        int len = 8 * (n-1);
+        for (long x = words[n - 1]; x != 0; x >>>= 8)
+            len++;
+        byte[] bytes = new byte[len];
+        ByteBuffer bb = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < n - 1; i++)
+            bb.putLong(words[i]);
+        for (long x = words[n - 1]; x != 0; x >>>= 8)
+            bb.put((byte) (x & 0xff));
+        return bytes;
+    }
 
-        /**
-         * Returns the index of the nearest bit that is set to {@code false}
-         * that occurs on or before the specified starting index.
-         * If no such bit exists, or if {@code -1} is given as the
-         * starting index, then {@code -1} is returned.
-         *
-         * @param  fromIndex the index to start checking from (inclusive)
-         * @return the index of the previous clear bit, or {@code -1} if there
-         *         is no such bit
-         * @throws IndexOutOfBoundsException if the specified index is less
-         *         than {@code -1}
-         */
-        int previousClearBit(int fromIndex);
+    private static BitSet get(long[] words, int len,  int fromIndex, int toIndex) {
+        checkRange(fromIndex, toIndex);
 
-        /**
-         * Returns a stream of indices for which this {@code ImmutableBitSet}
-         * contains a bit in the set state. The indices are returned
-         * in order, from lowest to highest. The size of the stream
-         * is the number of bits in the set state, equal to the value
-         * returned by the {@link #cardinality()} method.
-         *
-         * @return a stream of integers representing set indices
-         */
-        IntStream stream();
+        // If no set bits in range return empty bitset
+        if (len <= fromIndex || fromIndex == toIndex)
+            return new BitSet(0);
 
+        // An optimization
+        if (toIndex > len)
+            toIndex = len;
+
+        BitSet result = new BitSet(toIndex - fromIndex);
+        int targetWords = wordIndex(toIndex - fromIndex - 1) + 1;
+        int sourceIndex = wordIndex(fromIndex);
+        boolean wordAligned = ((fromIndex & BIT_INDEX_MASK) == 0);
+
+        // Process all words but the last word
+        for (int i = 0; i < targetWords - 1; i++, sourceIndex++)
+            result.words[i] = wordAligned ? words[sourceIndex] :
+                    (words[sourceIndex] >>> fromIndex) |
+                            (words[sourceIndex+1] << -fromIndex);
+
+        // Process the last word
+        long lastWordMask = WORD_MASK >>> -toIndex;
+        result.words[targetWords - 1] =
+                ((toIndex-1) & BIT_INDEX_MASK) < (fromIndex & BIT_INDEX_MASK)
+                        ? /* straddles source words */
+                        ((words[sourceIndex] >>> fromIndex) |
+                                (words[sourceIndex+1] & lastWordMask) << -fromIndex)
+                        :
+                        ((words[sourceIndex] & lastWordMask) >>> fromIndex);
+
+        // Set wordsInUse correctly
+        result.wordsInUse = targetWords;
+        result.recalculateWordsInUse();
+        result.checkInvariants();
+
+        return result;
+    }
+
+    private static int nextSetBit(long[] words, int wordsInUse, int fromIndex) {
+        requireNonNegative("fromIndex", fromIndex);
+
+        int u = wordIndex(fromIndex);
+        if (u >= wordsInUse)
+            return -1;
+
+        long word = words[u] & (WORD_MASK << fromIndex);
+
+        while (true) {
+            if (word != 0)
+                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+            if (++u == wordsInUse)
+                return -1;
+            word = words[u];
+        }
+    }
+
+    private static int nextClearBit(long[] words, int wordsInUse,int fromIndex) {
+        // Neither spec nor implementation handle bitsets of maximal length.
+        // See 4816253.
+        requireNonNegative("fromIndex", fromIndex);
+        int u = wordIndex(fromIndex);
+        if (u >= wordsInUse)
+            return fromIndex;
+
+        long word = ~words[u] & (WORD_MASK << fromIndex);
+
+        while (true) {
+            if (word != 0)
+                return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+            if (++u == wordsInUse)
+                return wordsInUse * BITS_PER_WORD;
+            word = ~words[u];
+        }
+    }
+
+    private static int previousSetBit(long[] words, int wordsInUse, IntSupplier lengthSupplier, int fromIndex) {
+        if (fromIndex < 0) {
+            if (fromIndex == -1)
+                return -1;
+            throw new IndexOutOfBoundsException(
+                    "fromIndex < -1: " + fromIndex);
+        }
+
+        int u = wordIndex(fromIndex);
+        if (u >= wordsInUse)
+            return lengthSupplier.getAsInt() - 1;
+
+        long word = words[u] & (WORD_MASK >>> -(fromIndex + 1));
+
+        while (true) {
+            if (word != 0)
+                return (u + 1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
+            if (u-- == 0)
+                return -1;
+            word = words[u];
+        }
+    }
+
+    private static int previousClearBit(long[] words, int wordsInUse, int fromIndex) {
+        if (fromIndex < 0) {
+            if (fromIndex == -1)
+                return -1;
+            throw new IndexOutOfBoundsException(
+                    "fromIndex < -1: " + fromIndex);
+        }
+        int u = wordIndex(fromIndex);
+        if (u >= wordsInUse)
+            return fromIndex;
+
+        long word = ~words[u] & (WORD_MASK >>> -(fromIndex+1));
+
+        while (true) {
+            if (word != 0)
+                return (u+1) * BITS_PER_WORD -1 - Long.numberOfLeadingZeros(word);
+            if (u-- == 0)
+                return -1;
+            word = ~words[u];
+        }
+    }
+
+    private static int hashCode(long[] words, int wordsInUse) {
+        long h = 1234;
+        for (int i = wordsInUse; --i >= 0; )
+            h ^= words[i] * (i + 1);
+
+        return (int)((h >> 32) ^ h);
+    }
+
+    private static boolean equals(long[] words, int wordsInUse, long[] otherWords, int otherWordsInUse) {
+        if (wordsInUse != otherWordsInUse)
+            return false;
+
+        // Check words in use by both BitSets
+        return ArraysSupport.mismatch(words, 0, otherWords, 0, wordsInUse) == -1;
+    }
+
+    private static String toString(BitSetReadOps bs, int wordsInUse) {
+        final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
+        int numBits = (wordsInUse > 128) ?
+                bs.cardinality() : wordsInUse * BITS_PER_WORD;
+        // Avoid overflow in the case of a humongous numBits
+        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
+                6 * numBits + 2 : MAX_INITIAL_CAPACITY;
+        StringBuilder b = new StringBuilder(initialCapacity);
+        b.append('{');
+
+        int i = bs.nextSetBit(0);
+        if (i != -1) {
+            b.append(i);
+            while (true) {
+                if (++i < 0) break;
+                if ((i = bs.nextSetBit(i)) < 0) break;
+                int endOfRun = bs.nextClearBit(i);
+                do { b.append(", ").append(i); }
+                while (++i != endOfRun);
+            }
+        }
+
+        b.append('}');
+        return b.toString();
+    }
+
+    private static int requireNonNegative(String label, int index) {
+        if (index < 0)
+            throw new IndexOutOfBoundsException(label + " < 0: " + index);
+        return index;
     }
 
     @ValueBased
-    private static final class OfImmutableImpl implements OfImmutable {
+    static final class OfImmutable implements BitSetReadOps {
 
         @Stable
         private final long[] words;
         private final int cardinality;
         private final int length;
 
-        private OfImmutableImpl(BitSet original) {
-            this.words = original.words.clone();
+        private OfImmutable(BitSet original) {
+            this.words = original.toLongArray();
 
             // These are eagerly computed.
             // It would be possible to lazily compute them declaring
             // @Stable int fields holding the values.
+            //
             // For TOCTOU reasons, we calculate these values from the array copy
             this.cardinality = cardinality0();
             this.length = length0();
         }
 
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
         @Override
         public boolean get(int bitIndex) {
-            requireNonNegative("bitIndex", bitIndex);
-            int wordIndex = wordIndex(bitIndex);
-            return (wordIndex < words.length)
-                    && ((words[wordIndex] & (1L << bitIndex)) != 0);
+            return BitSet.get(words, words.length, bitIndex);
         }
 
         @Override
@@ -1582,119 +1320,126 @@ public class BitSet implements Cloneable, java.io.Serializable {
             return cardinality == 0;
         }
 
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
         @Override
         public int nextSetBit(int fromIndex) {
-            requireNonNegative("fromIndex", fromIndex);
-
-            int u = wordIndex(fromIndex);
-            if (u >= words.length)
-                return -1;
-
-            long word = words[u] & (WORD_MASK << fromIndex);
-
-            while (true) {
-                if (word != 0)
-                    return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-                if (++u == words.length)
-                    return -1;
-                word = words[u];
-            }
+            return BitSet.nextSetBit(words, words.length, fromIndex);
         }
 
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
         @Override
         public int nextClearBit(int fromIndex) {
-            requireNonNegative("fromIndex", fromIndex);
-
-            int u = wordIndex(fromIndex);
-            if (u >= words.length)
-                return fromIndex;
-
-            long word = ~words[u] & (WORD_MASK << fromIndex);
-
-            while (true) {
-                if (word != 0)
-                    return (u * BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
-                if (++u == words.length)
-                    return words.length * BITS_PER_WORD;
-                word = ~words[u];
-            }
+            return BitSet.nextClearBit(words, words.length, fromIndex);
         }
 
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
         @Override
         public int previousSetBit(int fromIndex) {
-            if (fromIndex < 0) {
-                if (fromIndex == -1)
-                    return -1;
-                throw new IndexOutOfBoundsException(
-                        "fromIndex < -1: " + fromIndex);
-            }
-
-            int u = wordIndex(fromIndex);
-            if (u >= words.length)
-                return length() - 1;
-
-            long word = words[u] & (WORD_MASK >>> -(fromIndex+1));
-
-            while (true) {
-                if (word != 0)
-                    return (u+1) * BITS_PER_WORD - 1 - Long.numberOfLeadingZeros(word);
-                if (u-- == 0)
-                    return -1;
-                word = words[u];
-            }
+            return BitSet.previousSetBit(words, words.length, this::length, fromIndex);
         }
 
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
         @Override
         public int previousClearBit(int fromIndex) {
-            if (fromIndex < 0) {
-                if (fromIndex == -1)
-                    return -1;
-                throw new IndexOutOfBoundsException(
-                        "fromIndex < -1: " + fromIndex);
-            }
-
-            int u = wordIndex(fromIndex);
-            if (u >= words.length)
-                return fromIndex;
-
-            long word = ~words[u] & (WORD_MASK >>> -(fromIndex+1));
-
-            while (true) {
-                if (word != 0)
-                    return (u+1) * BITS_PER_WORD -1 - Long.numberOfLeadingZeros(word);
-                if (u-- == 0)
-                    return -1;
-                word = ~words[u];
-            }
+            return BitSet.previousClearBit(words, words.length, fromIndex);
         }
 
         @Override
         public IntStream stream() {
+            // Todo: Improve on this
             if (isEmpty()) {
                 return IntStream.empty();
             }
             return IntStream.iterate(nextSetBit(0), i -> i != -1, this::nextSetBit);
         }
 
+        @Override
+        public byte[] toByteArray() {
+            return BitSet.toByteArray(words, words.length);
+        }
+
+        @Override
+        public long[] toLongArray() {
+            return words.clone();
+        }
+
+        /**
+         * @throws IndexOutOfBoundsException {@inheritDoc}
+         */
+        @Override
+        public BitSetReadOps get(int fromIndex, int toIndex) {
+            BitSet bs = BitSet.get(words, length(), fromIndex, toIndex);
+            return of(bs);
+        }
+
+        @Override
+        public boolean intersects(BitSet set) {
+            return BitSet.intersects(words, words.length, set.words, set.wordsInUse);
+        }
+
+        @Override
+        public boolean intersects(BitSetReadOps set) {
+            return switch (set) {
+                case BitSet otherBs -> intersects(otherBs);
+                case OfImmutable ro -> BitSet.intersects(words, words.length, ro.words, ro.words.length);
+            };
+        }
+
+        @Override
+        public int size() {
+            return words.length * BITS_PER_WORD;
+        }
+
+        @Override
+        public Object clone() {
+            try {
+                BitSet result = (BitSet) super.clone();
+                // As the array never changes, we can reuse it
+                result.words = words;
+                return result;
+            } catch (CloneNotSupportedException e) {
+                throw new InternalError(e);
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return switch (o) {
+                case BitSet bs -> BitSet.equals(words, words.length, bs.words, bs.wordsInUse);
+                case OfImmutable ro -> BitSet.equals(words, words.length, ro.words, ro.length);
+                default -> false;
+            };
+        }
+
+        @Override
+        public int hashCode() {
+            return BitSet.hashCode(words, words.length);
+        }
+
+        @Override
+        public String toString() {
+            return BitSet.toString(this, words.length);
+        }
+
         private int cardinality0() {
-            return Math.toIntExact(Arrays.stream(words)
-                    .map(Long::bitCount)
-                    .sum());
+            return BitSet.cardinality(words, words.length);
         }
 
         private int length0() {
             // Scan backwards
-            for (int i = words.length - 1; i >= 0; i--) {
-                long word = words[i];
-                if (word != 0) {
-                    return Math.toIntExact(i * Long.BYTES * Long.highestOneBit(word) + 1);
-                }
-            }
-            return 0;
+            return BitSet.length(words, words.length);
         }
 
-        private static OfImmutable of(BitSet original) {
-            return new OfImmutableImpl(original);
+        private static BitSetReadOps of(BitSet original) {
+            return new OfImmutable(original);
         }
 
     }
