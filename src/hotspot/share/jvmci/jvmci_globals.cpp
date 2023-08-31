@@ -130,6 +130,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCILibDumpJNIConfig,               EnableJVMCI)
 
 #ifndef COMPILER2
+  JVMCI_FLAG_CHECKED(EnableVectorAggressiveReboxing)
+  JVMCI_FLAG_CHECKED(EnableVectorReboxing)
+  JVMCI_FLAG_CHECKED(EnableVectorSupport)
   JVMCI_FLAG_CHECKED(MaxVectorSize)
   JVMCI_FLAG_CHECKED(ReduceInitialCardMarks)
   JVMCI_FLAG_CHECKED(UseMultiplyToLenIntrinsic)
@@ -137,6 +140,7 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   JVMCI_FLAG_CHECKED(UseMulAddIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomeryMultiplyIntrinsic)
   JVMCI_FLAG_CHECKED(UseMontgomerySquareIntrinsic)
+  JVMCI_FLAG_CHECKED(UseVectorStubs)
 #endif // !COMPILER2
 
 #ifndef PRODUCT

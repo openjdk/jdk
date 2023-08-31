@@ -30,6 +30,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/monitorChunk.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #ifdef ZERO
@@ -378,6 +379,7 @@ class frame {
   BasicObjectLock* next_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   BasicObjectLock* previous_monitor_in_interpreter_frame(BasicObjectLock* current) const;
   static int interpreter_frame_monitor_size();
+  static int interpreter_frame_monitor_size_in_bytes();
 
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
 

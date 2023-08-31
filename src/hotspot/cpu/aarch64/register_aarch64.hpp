@@ -27,6 +27,7 @@
 #define CPU_AARCH64_REGISTER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 class VMRegImpl;
