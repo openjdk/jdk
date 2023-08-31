@@ -305,8 +305,8 @@ void XBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
         dest_offset = src_offset;
       }
     }
-    Node* payload_src = AddPNode::make(&phase->igvn(), src, src_offset);
-    Node* payload_dst = AddPNode::make(&phase->igvn(), dest, dest_offset);
+    Node* payload_src = AddPNode::make(phase->igvn(), src, src_offset);
+    Node* payload_dst = AddPNode::make(phase->igvn(), dest, dest_offset);
 
     const char* copyfunc_name = "arraycopy";
     address     copyfunc_addr = phase->basictype2arraycopy(bt, nullptr, nullptr, true, copyfunc_name, true);

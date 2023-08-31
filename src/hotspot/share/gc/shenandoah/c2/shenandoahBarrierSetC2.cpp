@@ -816,8 +816,8 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  Node* src = AddPNode::make(&phase->igvn(), src_base, src_offset);
-  Node* dest = AddPNode::make(&phase->igvn(), dest_base, dest_offset);
+  Node* src = AddPNode::make(phase->igvn(), src_base, src_offset);
+  Node* dest = AddPNode::make(phase->igvn(), dest_base, dest_offset);
 
   if (ShenandoahCloneBarrier && clone_needs_barrier(src, phase->igvn())) {
     // Check if heap is has forwarded objects. If it does, we need to call into the special

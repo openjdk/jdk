@@ -699,8 +699,8 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   assert(UseTLAB, "Only for TLAB enabled allocations");
 
   Node* thread = macro->transform_later(new ThreadLocalNode());
-  Node* tlab_top_adr = AddPNode::make(&macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
-  Node* tlab_end_adr = AddPNode::make(&macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
+  Node* tlab_top_adr = AddPNode::make(macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_top_offset()));
+  Node* tlab_end_adr = AddPNode::make(macro->igvn(), macro->top()/*not oop*/, thread, in_bytes(JavaThread::tlab_end_offset()));
 
   // Load TLAB end.
   //
@@ -767,8 +767,8 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
   Node* dest_offset = ac->in(ArrayCopyNode::DestPos);
   Node* length = ac->in(ArrayCopyNode::Length);
 
-  Node* payload_src = AddPNode::make(&phase->igvn(), src, src_offset);
-  Node* payload_dst = AddPNode::make(&phase->igvn(), dest, dest_offset);
+  Node* payload_src = AddPNode::make(phase->igvn(), src, src_offset);
+  Node* payload_dst = AddPNode::make(phase->igvn(), dest, dest_offset);
 
   const char* copyfunc_name = "arraycopy";
   address     copyfunc_addr = phase->basictype2arraycopy(T_LONG, nullptr, nullptr, true, copyfunc_name, true);
