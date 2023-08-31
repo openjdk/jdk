@@ -2100,7 +2100,7 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
   return 0;
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -2148,6 +2148,9 @@ const bool Matcher::match_rule_supported(int opcode) {
       return SuperwordUseVSX;
     case Op_PopCountVI:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
@@ -2170,26 +2173,22 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   return false;
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -2202,7 +2201,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2212,7 +2211,7 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16, "");
     return 16;
@@ -2223,7 +2222,7 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16 && size == 16, "");
     return Op_VecX;
@@ -2234,20 +2233,20 @@ const uint Matcher::vector_ideal_reg(int size) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -9656,6 +9655,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMADDS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9668,58 +9668,63 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMADD   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "FNMSUBS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "FNMSUB  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "FNMADDS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "FNMADD  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9732,6 +9737,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMSUBS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9744,6 +9750,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMSUB   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -14061,7 +14068,7 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
 %}
 
 // --------------------------------- FMA --------------------------------------
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14070,14 +14077,15 @@ instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVF dst (Binary (NegVF src1) src2)));
   match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
   predicate(n->as_Vector()->length() == 4);
 
@@ -14085,12 +14093,13 @@ instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14099,12 +14108,13 @@ instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD  dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14113,14 +14123,15 @@ instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
   match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
   predicate(n->as_Vector()->length() == 2);
 
@@ -14128,12 +14139,13 @@ instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14142,6 +14154,7 @@ instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);

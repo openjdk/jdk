@@ -143,6 +143,15 @@ private:
       }
     }
 
+    // This constructor is only used for regenerated objects (created by LambdaFormInvokers, etc).
+    //   src = address of a Method or InstanceKlass that has been regenerated.
+    //   renegerated_obj_info = info for the regenerated version of src.
+    SourceObjInfo(address src, SourceObjInfo* renegerated_obj_info) :
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(false),
+      _follow_mode(renegerated_obj_info->_follow_mode),
+      _size_in_bytes(0), _msotype(renegerated_obj_info->_msotype),
+      _source_addr(src),  _buffered_addr(renegerated_obj_info->_buffered_addr) {}
+
     bool should_copy() const { return _follow_mode == make_a_copy; }
     void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
@@ -232,7 +241,6 @@ private:
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
   void iterate_sorted_roots(MetaspaceClosure* it);
-  void sort_symbols_and_fix_hash();
   void sort_klasses();
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
   static int compare_klass_by_name(Klass** a, Klass** b);
@@ -332,6 +340,7 @@ public:
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
+  static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
@@ -368,6 +377,7 @@ public:
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
+  void record_regenerated_object(address orig_src_obj, address regen_src_obj);
   void make_klasses_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);

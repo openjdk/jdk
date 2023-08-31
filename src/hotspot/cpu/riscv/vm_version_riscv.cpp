@@ -171,9 +171,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
   if (UseRVV) {
@@ -202,6 +201,13 @@ void VM_Version::initialize() {
     } else {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
     }
+  }
+
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() == MISALIGNED_FAST);
   }
 
   if (UseZbb) {
@@ -261,8 +267,8 @@ void VM_Version::c2_initialize() {
       if (MaxVectorSize > _initial_vector_length) {
         warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
                 _initial_vector_length, _initial_vector_length);
+        MaxVectorSize = _initial_vector_length;
       }
-      MaxVectorSize = _initial_vector_length;
     } else {
       vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
     }
@@ -275,7 +281,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
   } else {
     // Limit AllocatePrefetchDistance so that it does not exceed the
-    // constraint in AllocatePrefetchDistanceConstraintFunc.
+    // static constraint of 512 defined in runtime/globals.hpp.
     if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
       FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
     }

@@ -44,11 +44,12 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-int    HeapRegion::LogOfHRGrainBytes = 0;
-int    HeapRegion::LogCardsPerRegion = 0;
+uint   HeapRegion::LogOfHRGrainBytes = 0;
+uint   HeapRegion::LogCardsPerRegion = 0;
 size_t HeapRegion::GrainBytes        = 0;
 size_t HeapRegion::GrainWords        = 0;
 size_t HeapRegion::CardsPerRegion    = 0;
@@ -77,12 +78,9 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   // Now make sure that we don't go over or under our limits.
   region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
 
-  // Calculate the log for the region size.
-  int region_size_log = log2i_exact(region_size);
-
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
-  LogOfHRGrainBytes = region_size_log;
+  LogOfHRGrainBytes = log2i_exact(region_size);
 
   guarantee(GrainBytes == 0, "we should only set it once");
   GrainBytes = region_size;
@@ -93,21 +91,21 @@ void HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> G1CardTable::card_shift();
 
-  LogCardsPerRegion = log2i(CardsPerRegion);
+  LogCardsPerRegion = log2i_exact(CardsPerRegion);
 
   if (G1HeapRegionSize != GrainBytes) {
     FLAG_SET_ERGO(G1HeapRegionSize, GrainBytes);
   }
 }
 
-void HeapRegion::handle_evacuation_failure() {
+void HeapRegion::handle_evacuation_failure(bool retain) {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear_locked(true /* only_cardset */);
+  _rem_set->clear_locked(true /* only_cardset */, retain /* keep_tracked */);
 }
 
 void HeapRegion::unlink_from_list() {
@@ -263,23 +261,12 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
- void HeapRegion::note_evacuation_failure(bool during_concurrent_start) {
+ void HeapRegion::note_evacuation_failure() {
   // PB must be bottom - we only evacuate old gen regions after scrubbing, and
   // young gen regions never have their PB set to anything other than bottom.
   assert(parsable_bottom_acquire() == bottom(), "must be");
 
   _garbage_bytes = 0;
-
-  if (during_concurrent_start) {
-    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
-    // below it.
-    set_top_at_mark_start(top());
-  } else {
-    // Outside of the mixed phase all regions that had an evacuation failure must
-    // be young regions, and their TAMS is always bottom. Similarly, before the
-    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
-    assert(top_at_mark_start() == bottom(), "must be");
-  }
 }
 
 void HeapRegion::note_self_forward_chunk_done(size_t garbage_bytes) {
@@ -618,7 +605,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
-    oop obj = CompressedOops::decode_not_null(heap_oop);
+    oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
     LiveChecker<T> live_check(this, _containing_obj, p, obj, _vo);
     if (live_check.failed()) {

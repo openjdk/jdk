@@ -28,6 +28,7 @@
 #include "asm/macroAssembler.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
+#include "utilities/checkedCast.hpp"
 
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
 // There's a one-to-one relationship between a VtableStub and such a pair.
@@ -130,7 +131,7 @@ class VtableStub {
 
   void* operator new(size_t size, int code_size) throw();
 
-  VtableStub(bool is_vtable_stub, int index)
+  VtableStub(bool is_vtable_stub, short index)
         : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
           _is_vtable_stub(is_vtable_stub) {}
   VtableStub* next() const                       { return _next; }
@@ -151,8 +152,8 @@ class VtableStub {
 
  private:
   void set_exception_points(address npe_addr, address ame_addr) {
-    _npe_offset = npe_addr - code_begin();
-    _ame_offset = ame_addr - code_begin();
+    _npe_offset = checked_cast<short>(npe_addr - code_begin());
+    _ame_offset = checked_cast<short>(ame_addr - code_begin());
     assert(is_abstract_method_error(ame_addr),   "offset must be correct");
     assert(is_null_pointer_exception(npe_addr),  "offset must be correct");
     assert(!is_abstract_method_error(npe_addr),  "offset must be correct");
