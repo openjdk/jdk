@@ -1677,9 +1677,10 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
           assert(!n_loop->is_member(get_loop(x_ctrl)), "should have moved out of loop");
           register_new_node(x, x_ctrl);
 
-          // Chain of AddP: (AddP base (AddP base )) must keep the same base after sinking so:
-          // 1- We don't add a CastPP here when the first one is sunk so if the second one is not, their bases remain
-          // the same.
+          // Chain of AddP nodes: (AddP base (AddP base (AddP base )))
+          // All AddP nodes must keep the same base after sinking so:
+          // 1- We don't add a CastPP here until the last one of the chain is sunk: if part of the chain is not sunk,
+          // their bases remain the same.
           // (see 2- below)
           assert(!x->is_AddP() || !x->in(AddPNode::Address)->is_AddP() ||
                  x->in(AddPNode::Address)->in(AddPNode::Base) == x->in(AddPNode::Base) ||
@@ -1704,16 +1705,10 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
                   register_new_node(cast, x_ctrl);
                 }
                 x->replace_edge(in, cast);
-                // Chain of AddP:
-                // 2- A CastPP of the base is only added now that both AddP nodes are sunk
+                // Chain of AddP nodes:
+                // 2- A CastPP of the base is only added now that all AddP nodes are sunk
                 if (x->is_AddP() && k == AddPNode::Base) {
-                  for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
-                    Node* u = x->fast_out(i);
-                    if (u->is_AddP() && u->in(AddPNode::Base) == n->in(AddPNode::Base)) {
-                      _igvn.replace_input_of(u, AddPNode::Base, cast);
-                      assert(u->find_out_with(Op_AddP) == nullptr, "more than 2 chained AddP nodes?");
-                    }
-                  }
+                  update_addp_chain_base(x, n->in(AddPNode::Base), cast);
                 }
                 break;
               }
@@ -1724,6 +1719,22 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         _igvn.remove_dead_node(n);
       }
       _dom_lca_tags_round = 0;
+    }
+  }
+}
+
+void PhaseIdealLoop::update_addp_chain_base(Node* x, Node* old_base, Node* new_base) {
+  ResourceMark rm;
+  Node_List wq;
+  wq.push(x);
+  while (wq.size() != 0) {
+    Node* n = wq.pop();
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* u = n->fast_out(i);
+      if (u->is_AddP() && u->in(AddPNode::Base) == old_base) {
+        _igvn.replace_input_of(u, AddPNode::Base, new_base);
+        wq.push(u);
+      }
     }
   }
 }
