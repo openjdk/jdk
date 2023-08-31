@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8295753 8306882
+ * @bug 8295753 8306882 8315273
  * @summary Verify correct operation of Path.toRealPath
  * @library .. /test/lib
  * @build ToRealPath jdk.test.lib.Platform
