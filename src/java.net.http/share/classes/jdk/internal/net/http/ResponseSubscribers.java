@@ -538,8 +538,8 @@ public class ResponseSubscribers {
             if (available != 0) return available;
             Iterator<?> iterator = currentListItr;
             if (iterator != null && iterator.hasNext()) return 1;
-            if (buffers.isEmpty()) return 0;
-            return 1;
+            if (!buffers.isEmpty() && buffers.peek() != LAST_LIST ) return 1;
+            return available;
         }
 
         @Override
