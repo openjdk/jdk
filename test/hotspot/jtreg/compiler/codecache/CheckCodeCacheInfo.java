@@ -26,7 +26,7 @@
  * @bug 8005885
  * @summary Checks VM verbose information related to the code cache
  * @library /test/lib
- * @requires vm.debug & vm.flagless
+ * @requires vm.debug
  *
  * @run driver compiler.codecache.CheckCodeCacheInfo
  */
@@ -66,9 +66,9 @@ public class CheckCodeCacheInfo {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintCodeCache",
-                                                   "-XX:+Verbose",
-                                                   "-version");
+        pb = ProcessTools.createTestJvm("-XX:+PrintCodeCache",
+                                        "-XX:+Verbose",
+                                        "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         out.stdoutShouldMatch(VERBOSE_REGEXP);
