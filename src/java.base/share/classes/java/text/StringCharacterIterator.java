@@ -40,6 +40,8 @@
 
 package java.text;
 
+import java.util.Objects;
+
 /**
  * {@code StringCharacterIterator} implements the
  * {@code CharacterIterator} protocol for a {@code String}.
@@ -62,9 +64,9 @@ public final class StringCharacterIterator implements CharacterIterator
      * Constructs an iterator with an initial index of 0.
      *
      * @param text the {@code String} to be iterated over
+     * @throws NullPointerException if {@code text} is {@code null}
      */
-    public StringCharacterIterator(String text)
-    {
+    public StringCharacterIterator(String text) {
         this(text, 0);
     }
 
@@ -73,10 +75,12 @@ public final class StringCharacterIterator implements CharacterIterator
      *
      * @param  text   The String to be iterated over
      * @param  pos    Initial iterator position
+     * @throws NullPointerException if {@code text} is {@code null}
+     * @throws IllegalArgumentException if {@code pos} is not within the bounds of
+     * range (inclusive) from {@code 0} to the length of {@code text}
      */
-    public StringCharacterIterator(String text, int pos)
-    {
-    this(text, 0, text.length(), pos);
+    public StringCharacterIterator(String text, int pos) {
+        this(text, 0, text.length(), pos);
     }
 
     /**
@@ -87,11 +91,14 @@ public final class StringCharacterIterator implements CharacterIterator
      * @param  begin  Index of the first character
      * @param  end    Index of the character following the last character
      * @param  pos    Initial iterator position
+     * @throws NullPointerException if {@code text} is {@code null}
+     * @throws IllegalArgumentException if {@code begin} and {@code end} are not
+     * within the bounds of range (inclusive) from {@code 0} to the length of {@code text},
+     * {@code begin} is greater than {@code end}, or {@code pos} is not within
+     * the bounds of range (inclusive) from {@code begin} to {@code end}
      */
     public StringCharacterIterator(String text, int begin, int end, int pos) {
-        if (text == null)
-            throw new NullPointerException();
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text must not be null");
 
         if (begin < 0 || begin > end || end > text.length())
             throw new IllegalArgumentException("Invalid substring range");
@@ -111,12 +118,11 @@ public final class StringCharacterIterator implements CharacterIterator
      * is called.
      *
      * @param  text   The String to be iterated over
+     * @throws NullPointerException if {@code text} is {@code null}
      * @since 1.2
      */
     public void setText(String text) {
-        if (text == null)
-            throw new NullPointerException();
-        this.text = text;
+        this.text = Objects.requireNonNull(text, "text must not be null");
         this.begin = 0;
         this.end = text.length();
         this.pos = 0;
@@ -148,6 +154,8 @@ public final class StringCharacterIterator implements CharacterIterator
 
     /**
      * Implements CharacterIterator.setIndex() for String.
+     *
+     * @throws IllegalArgumentException if {@code p} is an invalid index
      * @see CharacterIterator#setIndex
      */
     public char setIndex(int p)
