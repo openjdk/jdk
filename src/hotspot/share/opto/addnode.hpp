@@ -28,6 +28,7 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
+#include "opto/phaseX.hpp"
 #include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -173,10 +174,21 @@ public:
                                      intptr_t& offset);
 
   // Helper methods roughly modeled after GraphKit:
-  static Node* make(PhaseIterGVN* igvn, Node* base, int offset);
-  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, int offset);
-  static Node* make(PhaseIterGVN* igvn, Node* base, Node* offset);
-  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, Node* offset);
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, Node* offset) {
+    return igvn->register_new_node_with_optimizer(new AddPNode(base, ptr, offset));
+  }
+
+  static Node* make(PhaseIterGVN* igvn, Node* base, int offset) {
+    return (offset == 0) ? base : make(igvn, base, base, (Node*) igvn->makecon(offset));
+  }
+
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* ptr, int offset) {
+    return (offset == 0) ? ptr : make(igvn, base, ptr, (Node*) igvn->makecon(offset));
+  }
+
+  static Node* make(PhaseIterGVN* igvn, Node* base, Node* offset) {
+    return make(igvn, base, base, offset);
+  }
 
   // Collect the AddP offset values into the elements array, giving up
   // if there are more than length.

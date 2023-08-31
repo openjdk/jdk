@@ -571,11 +571,6 @@ PhaseValues::~PhaseValues() {
 #endif
 
 //------------------------------makecon----------------------------------------
-ConNode* PhaseValues::makecon(int value) {
-  return MakeConX(value);
-}
-
-//------------------------------makecon----------------------------------------
 ConNode* PhaseValues::makecon(const Type* t) {
   assert(t->singleton(), "must be a constant");
   assert(!t->empty() || t == Type::TOP, "must not be vacuous range");

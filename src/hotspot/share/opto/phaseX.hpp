@@ -29,6 +29,7 @@
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/memnode.hpp"
+#include "opto/connode.hpp"
 #include "opto/node.hpp"
 #include "opto/phase.hpp"
 #include "opto/type.hpp"
@@ -330,7 +331,7 @@ public:
 
   // Make an idealized constant, i.e., one of ConINode, ConPNode, ConFNode, etc.
   // Same as transform(ConNode::make(t)).
-  ConNode* makecon(int value);
+  ConNode* makecon(int value) { return MakeConX(value); }
   ConNode* makecon(const Type* t);
   ConNode* uncached_makecon(const Type* t);
 
