@@ -160,16 +160,7 @@ public class InfoTest {
                     ProcessHandle.Info info = p1.info();
                     System.out.printf(" info: %s%n", info);
 
-                    if (info.user().isPresent()) {
-                        String user = info.user().get();
-                        Assert.assertNotNull(user, "User name");
-                        if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
-                            System.out.println("Test seems to be run as Administrator. " +
-                                    "Check for user correctness is not possible.");
-                        } else {
-                            Assert.assertEquals(user, whoami, "User name");
-                        }
-                    }
+                    assertUser(info);
 
                     Optional<String> command = info.command();
                     if (command.isPresent()) {
@@ -296,16 +287,8 @@ public class InfoTest {
                 ProcessHandle.Info info = p.info();
                 System.out.printf(" info: %s%n", info);
 
-                if (info.user().isPresent()) {
-                    String user = info.user().get();
-                    Assert.assertNotNull(user);
-                    if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
-                        System.out.println("Test seems to be run as Administrator. " +
-                                "Check for user correctness is not possible.");
-                    } else {
-                        Assert.assertEquals(user, whoami);
-                    }
-                }
+                assertUser(info);
+
                 if (info.command().isPresent()) {
                     String command = info.command().get();
                     String expected = "sleep";
@@ -453,5 +436,32 @@ public class InfoTest {
             list.add(arg);
         pb.command(list);
         return pb.start();
+    }
+
+    /**
+     * Asserts the expected process user.
+     *
+     * The Expected user is determined by creating a file and reading its owner, see static block above.
+     *
+     * On Windows, when run privileged as member of the Administrators group, this does not always
+     * work because new files can be owned by BUILTIN\Administrators instead, depending on system
+     * settings. In that case we resort to comparing System property user.name, which does not contain
+     * the domain name, though.
+     *
+     * @param info ProcessHanlde info object
+     */
+    static void assertUser(ProcessHandle.Info info) {
+        if (!info.user().isPresent()) {
+            return;
+        }
+        String user = info.user().get();
+        Assert.assertNotNull(user, "User name");
+        if (Platform.isWindows() && "BUILTIN\\Administrators".equals(whoami)) {
+            int bsi = user.lastIndexOf("\\");
+            Assert.assertEquals(bsi == -1 ? user : user.substring(bsi + 1),
+                    System.getProperty("user.name"), "User name");
+        } else {
+            Assert.assertEquals(user, whoami, "User name");
+        }
     }
 }
