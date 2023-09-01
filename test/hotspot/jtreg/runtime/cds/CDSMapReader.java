@@ -24,7 +24,6 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
@@ -279,7 +278,7 @@ public class CDSMapReader {
             throw new RuntimeException(t);
         } finally {
             System.out.println("Parsed " + lineCount + " lines in " + fileName);
-            System.out.println("Found "  + mapFile.heapObjectCount() + " heap objects ("
+            System.out.println("Found " + mapFile.heapObjectCount() + " heap objects ("
                                + mapFile.stringCount + " strings)");
             mapFile = null;
             reader = null;
@@ -289,7 +288,7 @@ public class CDSMapReader {
     }
 
     private static void mustContain(HashMap<Long, HeapObject> allObjects, Field field, long pointer, boolean isNarrow) {
-        if (pointer != 0 && allObjects.get(pointer) == null) {
+        if (allObjects.get(pointer) == null) {
             throw new RuntimeException((isNarrow ? "narrowOop" : "oop") + " pointer 0x" + Long.toHexString(pointer) +
                                        " on line " + field.lineCount + " doesn't point to a valid heap object");
         }
@@ -308,8 +307,10 @@ public class CDSMapReader {
                     // Is this test actually doing something?
                     //     To see how an invalidate pointer may be found, change oop in the
                     //     following line to oop+1
-                    mustContain(mapFile.oopToObject, field, oop, false);
-                    count1 ++;
+                    if (oop != 0) {
+                        mustContain(mapFile.oopToObject, field, oop, false);
+                        count1 ++;
+                    }
                     if (narrowOop != 0) {
                         mustContain(mapFile.narrowOopToObject, field, narrowOop, true);
                         count2 ++;
@@ -317,8 +318,8 @@ public class CDSMapReader {
                 }
             }
         }
-        System.out.println("Checked " + count1 + " oop field references (normal)");
-        System.out.println("Checked " + count2 + " oop field references (narrow)");
+        System.out.println("Found " + count1 + " non-null oop field references (normal)");
+        System.out.println("Found " + count2 + " non-null oop field references (narrow)");
 
         if (mapFile.heapObjectCount() > 0) {
             // heapObjectCount() may be zero if the selected GC doesn't support heap object archiving.
@@ -328,8 +329,8 @@ public class CDSMapReader {
             if (count1 < mapFile.stringCount) {
                 throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
                                            " objects (" + mapFile.stringCount + " strings). Each string should" +
-                                           " have one oop field but we found only " + count1 +
-                                           " oop field references");
+                                           " have one non-null oop field but we found only " + count1 +
+                                           " non-null oop field references");
             }
         }
     }
