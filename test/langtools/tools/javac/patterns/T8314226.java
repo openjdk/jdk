@@ -33,7 +33,29 @@ public class T8314226 {
     int multipleGuardedCases(Object obj) {
         switch (obj) {
             case Integer _ when ((Integer) obj) > 0:
-            case String _ when !((String) obj).isEmpty():
+            case String _  when !((String) obj).isEmpty():
+                return 1;
+            default:
+                return -1;
+        }
+    }
+
+    int multipleGuardedCases2a(Object obj) {
+        switch (obj) {
+            case Integer _ when ((Integer) obj) > 0:
+            case Float _   when ((Float) obj) > 0.0f:
+            case String _  when !((String) obj).isEmpty():
+                return 1;
+            default:
+                return -1;
+        }
+    }
+
+    int multipleGuardedCases2b(Object obj) {
+        switch (obj) {
+            case Float _   when ((Float) obj) > 0.0f: // reversing the order
+            case Integer _ when ((Integer) obj) > 0:
+            case String _  when !((String) obj).isEmpty():
                 return 1;
             default:
                 return -1;
@@ -42,7 +64,7 @@ public class T8314226 {
 
     int multipleGuardedCasesMultiplePatterns(Object obj) {
         switch (obj) {
-            case String _ when !((String) obj).isEmpty():
+            case String _          when !((String) obj).isEmpty():
             case Integer _, Byte _ when ((Number) obj).intValue() > 0:
                 return 1;
             default:
@@ -67,6 +89,12 @@ public class T8314226 {
         assertEquals(1, multipleGuardedCases(42));
         assertEquals(1, multipleGuardedCases("test"));
         assertEquals(-1, multipleGuardedCases(""));
+        assertEquals(1, multipleGuardedCases2a(42.0f));
+        assertEquals(1, multipleGuardedCases2a("test"));
+        assertEquals(-1, multipleGuardedCases2a(""));
+        assertEquals(1, multipleGuardedCases2b(42.0f));
+        assertEquals(1, multipleGuardedCases2b("test"));
+        assertEquals(-1, multipleGuardedCases2b(""));
         assertEquals(1, multipleGuardedCasesMultiplePatterns((byte) 42));
         assertEquals(1, multipleGuardedCasesMultiplePatterns("test"));
         assertEquals(-1, multipleGuardedCasesMultiplePatterns(""));

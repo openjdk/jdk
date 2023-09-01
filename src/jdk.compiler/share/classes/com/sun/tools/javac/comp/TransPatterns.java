@@ -66,13 +66,8 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
@@ -523,7 +518,9 @@ public class TransPatterns extends TreeTranslator {
             int i = 0;
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
-            JCCase previousC = null;
+
+            cases = patchCompletingNormallyCases(cases);
+
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
                 boolean hasJoinedNull =
@@ -575,8 +572,7 @@ public class TransPatterns extends TreeTranslator {
                             }
                         }
 
-                        boolean hasGuard = c.guard != null;
-                        if (hasGuard) {
+                        if (c.guard != null) {
                             test = makeBinary(Tag.AND, accTest, translate(c.guard));
                             c.guard = null;
                         } else {
@@ -587,10 +583,6 @@ public class TransPatterns extends TreeTranslator {
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
 
-                        if (previousC != null && hasGuard && previousCompletesNormally) {
-                            previousC.stats = previousC.stats.appendList(c.stats); // copying to previous
-                        }
-
                         JCIf ifStatement = make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
                                 make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
                                                         makeLit(syms.intType, i + labels.length()))
@@ -599,7 +591,6 @@ public class TransPatterns extends TreeTranslator {
                                 null);
                         c.stats = c.stats.prepend(ifStatement);
                         c.stats = c.stats.prependList(bindingContext.bindingVars(c.pos));
-                        previousC = c;
                     } finally {
                         currentValue = prevCurrentValue;
                         bindingContext.pop();
@@ -640,7 +631,6 @@ public class TransPatterns extends TreeTranslator {
                         c.caseKind == CaseTree.CaseKind.STATEMENT &&
                         c.completesNormally;
             }
-
             if (tree.hasTag(Tag.SWITCH)) {
                 ((JCSwitch) tree).selector = selector;
                 ((JCSwitch) tree).cases = cases;
@@ -665,6 +655,41 @@ public class TransPatterns extends TreeTranslator {
             super.visitSwitchExpression((JCSwitchExpression) tree);
         }
     }
+
+    // Duplicates the block statement where needed.
+    // Processes cases in reverse order, e.g.
+    // switch (obj) {
+    //     case Integer _ when ((Integer) obj) > 0:
+    //     case String _  when !((String) obj).isEmpty():
+    //         return 1;
+    //     ...
+    // }
+    // =>
+    // switch (typeSwitch(...)) {
+    //     case 0:
+    //         if (!((Integer)obj) > 0) { ... }
+    //         return 1;
+    //     case 1:
+    //         if (!((String)obj).isEmpty()) { ... }
+    //         return 1;
+    //     ...
+    // }
+    private static List<JCCase> patchCompletingNormallyCases(List<JCCase> cases) {
+        ListBuffer<JCCase> newCases = new ListBuffer<>();
+        for (int j = cases.size() - 1; j >= 0; j--) {
+            var currentCase = cases.get(j);
+
+            if (currentCase != cases.last() && currentCase.guard != null &&
+                    currentCase.caseKind == CaseKind.STATEMENT &&
+                    currentCase.completesNormally) {
+                var nextCase = cases.get(j + 1);
+                currentCase.stats = currentCase.stats.appendList(nextCase.stats);
+            }
+            newCases.add(currentCase);
+        }
+        return newCases.toList().reverse();
+    }
+
     //where:
         private void fixupContinue(JCTree switchTree, JCCase c, VarSymbol indexVariable, int currentCaseIndex) {
             //inject 'index = currentCaseIndex + 1;` before continue which has the current switch as the target
