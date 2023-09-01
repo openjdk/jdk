@@ -784,7 +784,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Synthetic} attribute */
     public static final AttributeMapper<SyntheticAttribute>
-            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC) {
+            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC, true) {
                 @Override
                 public SyntheticAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSyntheticAttribute(cf, this, p);

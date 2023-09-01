@@ -37,6 +37,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Models the {@code SourceFile} attribute {@jvms 4.7.10}, which
  * can appear on classes. Delivered as a {@link jdk.internal.classfile.ClassElement}
  * when traversing a {@link ClassModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface SourceFileAttribute
         extends Attribute<SourceFileAttribute>, ClassElement
