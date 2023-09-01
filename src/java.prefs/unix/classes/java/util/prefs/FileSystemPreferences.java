@@ -728,8 +728,8 @@ class FileSystemPreferences extends AbstractPreferences {
             int errCode = lockFile(false);
             if (errCode != 0) {
                 String errStr = getErrorString(errCode);
-                if (! errStr.equals("")) errStr = " (" + errStr + ")";
-                throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr));
+                if (!errStr.equals("")) errStr = " (" + errStr + ")";
+                throw new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr);
             }
             try {
                 super.removeNode();
@@ -795,8 +795,8 @@ class FileSystemPreferences extends AbstractPreferences {
                String sharingMode = "shared";
                if (!shared) sharingMode = "nonshared";
                String errStr = getErrorString(errCode);
-               if (! errStr.equals("")) errStr = " (" + errStr + ")";
-               throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr + " mode is " + sharingMode));
+               if (!errStr.equals("")) errStr = " (" + errStr + ")";
+               throw new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr + " mode is " + sharingMode);
            }
            final Long newModTime =
                 AccessController.doPrivileged(
