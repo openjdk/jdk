@@ -2400,11 +2400,10 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
     init_containers();
 
     if (gtk3_version_3_20) {
-        if (widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD || widget_type == SPINNER_TEXT_FIELD ||
-            widget_type == FORMATTED_TEXT_FIELD) {
-                if (state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND) {
-                    widget_type = TEXT_AREA;
-                } else if (state_type == GTK_STATE_INSENSITIVE && color_type == TEXT_FOREGROUND) {
+        if (widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD
+            || widget_type == SPINNER_TEXT_FIELD || widget_type == FORMATTED_TEXT_FIELD) {
+                if ((state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND)
+                    || (state_type == GTK_STATE_INSENSITIVE && color_type == TEXT_FOREGROUND)) {
                     widget_type = TEXT_AREA;
                 }
         } else if (widget_type == MENU_BAR && state_type == GTK_STATE_INSENSITIVE
