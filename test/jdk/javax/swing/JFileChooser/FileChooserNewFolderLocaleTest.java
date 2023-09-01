@@ -33,30 +33,29 @@ import java.io.File;
  * @run main/othervm -Duser.language=en -Duser.country=US FileChooserNewFolderLocaleTest
  */
 public class FileChooserNewFolderLocaleTest {
-    static String FRENCH_NEW_FOLDER = "Nouveau dossier";
-    static String ENGLISH_NEW_FOLDER = "New Folder";
+    static final String FRENCH_NEW_FOLDER = "Nouveau dossier";
 
     public static void main(String[] args) throws Exception {
         File newFolderEnglish = null;
         File newFolderFrench = null;
         String newFolderKey;
 
-        boolean IS_WINDOWS =
+        boolean isWindows =
                 System.getProperty("os.name").toLowerCase().contains("windows");
-        if (IS_WINDOWS) {
+        if (isWindows) {
             newFolderKey = "FileChooser.win32.newFolder";
         } else {
             newFolderKey = "FileChooser.other.newFolder";
-            ENGLISH_NEW_FOLDER = "NewFolder";
         }
 
+        String englishNewFolder = UIManager.getString(newFolderKey);
         try {
             JFileChooser fileChooser = new JFileChooser();
             File currentDir = new File(".");
 
             newFolderEnglish =
                     fileChooser.getFileSystemView().createNewFolder(currentDir);
-            if (!newFolderEnglish.getName().contains(ENGLISH_NEW_FOLDER)) {
+            if (!newFolderEnglish.getName().contains(englishNewFolder)) {
                 throw new RuntimeException("English Locale verification Failed");
             }
 
