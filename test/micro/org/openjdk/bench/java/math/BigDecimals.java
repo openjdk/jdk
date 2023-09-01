@@ -35,6 +35,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Random;
@@ -142,6 +145,22 @@ public class BigDecimals {
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testToPlainString(Blackhole bh) {
+        for (BigDecimal s : bigDecimals) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testToEngineeringString(Blackhole bh) {
+        for (BigDecimal s : bigDecimals) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
     /**
      * Invokes the setScale method of BigDecimal with various different values.
      */
@@ -213,6 +232,22 @@ public class BigDecimals {
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testHugeToPlainString(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testHugeToEngineeringString(Blackhole bh) {
+        for (BigDecimal s : hugeArray) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
     /** Test BigDecimal.toString() with large numbers less than MAX_LONG but larger than MAX_INT */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE)
@@ -222,12 +257,44 @@ public class BigDecimals {
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testLargeToPlainString(Blackhole bh) {
+        for (BigDecimal s : largeArray) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testLargeToEngineeringString(Blackhole bh) {
+        for (BigDecimal s : largeArray) {
+            bh.consume(s.toEngineeringString());
+        }
+    }
+
     /** Test BigDecimal.toString() with small numbers less than MAX_INT */
     @Benchmark
     @OperationsPerInvocation(TEST_SIZE)
     public void testSmallToString(Blackhole bh) {
         for (BigDecimal s : smallArray) {
             bh.consume(s.toString());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testSmallToPlainString(Blackhole bh) {
+        for (BigDecimal s : smallArray) {
+            bh.consume(s.toPlainString());
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testSmallToEngineeringString(Blackhole bh) {
+        for (BigDecimal s : smallArray) {
+            bh.consume(s.toEngineeringString());
         }
     }
 }

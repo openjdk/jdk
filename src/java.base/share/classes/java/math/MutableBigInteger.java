@@ -174,7 +174,7 @@ class MutableBigInteger {
      * Convert this MutableBigInteger to a long value. The caller has to make
      * sure this MutableBigInteger can be fit into long.
      */
-    private long toLong() {
+    long toLong() {
         assert (intLen <= 2) : "this MutableBigInteger exceeds the range of long";
         if (intLen == 0)
             return 0;

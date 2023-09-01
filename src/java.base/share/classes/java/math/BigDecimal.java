@@ -30,6 +30,14 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.Stable;
+import java.nio.ByteOrder;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -37,7 +45,6 @@ import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.Objects;
-
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
  * BigDecimal} consists of an arbitrary precision integer
@@ -307,6 +314,8 @@ import java.util.Objects;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
+    static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+    static final Unsafe UNSAFE = Unsafe.getUnsafe();
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
@@ -412,6 +421,29 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         new BigDecimal(BigInteger.ZERO, 0, 14, 1),
         new BigDecimal(BigInteger.ZERO, 0, 15, 1),
     };
+
+    @Stable
+    static final short[] PACKED_DIGITS;
+    static {
+        short[] shorts = new short[]{
+                0x3030, 0x3130, 0x3230, 0x3330, 0x3430, 0x3530, 0x3630, 0x3730, 0x3830, 0x3930,
+                0x3031, 0x3131, 0x3231, 0x3331, 0x3431, 0x3531, 0x3631, 0x3731, 0x3831, 0x3931,
+                0x3032, 0x3132, 0x3232, 0x3332, 0x3432, 0x3532, 0x3632, 0x3732, 0x3832, 0x3932,
+                0x3033, 0x3133, 0x3233, 0x3333, 0x3433, 0x3533, 0x3633, 0x3733, 0x3833, 0x3933,
+                0x3034, 0x3134, 0x3234, 0x3334, 0x3434, 0x3534, 0x3634, 0x3734, 0x3834, 0x3934,
+                0x3035, 0x3135, 0x3235, 0x3335, 0x3435, 0x3535, 0x3635, 0x3735, 0x3835, 0x3935,
+                0x3036, 0x3136, 0x3236, 0x3336, 0x3436, 0x3536, 0x3636, 0x3736, 0x3836, 0x3936,
+                0x3037, 0x3137, 0x3237, 0x3337, 0x3437, 0x3537, 0x3637, 0x3737, 0x3837, 0x3937,
+                0x3038, 0x3138, 0x3238, 0x3338, 0x3438, 0x3538, 0x3638, 0x3738, 0x3838, 0x3938,
+                0x3039, 0x3139, 0x3239, 0x3339, 0x3439, 0x3539, 0x3639, 0x3739, 0x3839, 0x3939
+        };
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            for (int i = 0; i < shorts.length; i++) {
+                shorts[i] = Short.reverseBytes(shorts[i]);
+            }
+        }
+        PACKED_DIGITS = shorts;
+    }
 
     // Half of Long.MIN_VALUE & Long.MAX_VALUE.
     private static final long HALF_LONG_MAX_VALUE = Long.MAX_VALUE / 2;
@@ -3469,63 +3501,147 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see #toString()
      * @see #toEngineeringString()
      */
+    @SuppressWarnings("deprecation")
     public String toPlainString() {
-        if(scale==0) {
-            if(intCompact!=INFLATED) {
-                return Long.toString(intCompact);
-            } else {
-                return intVal.toString();
-            }
+        if (scale == 0) {
+            return (intCompact != INFLATED) ?
+                    Long.toString(intCompact) :
+                    intVal.toString(10);
         }
-        if(this.scale<0) { // No decimal point
-            if(signum()==0) {
-                return "0";
-            }
-            int trailingZeros = checkScaleNonZero((-(long)scale));
-            StringBuilder buf;
-            if(intCompact!=INFLATED) {
-                buf = new StringBuilder(20+trailingZeros);
-                buf.append(intCompact);
-            } else {
-                String str = intVal.toString();
-                buf = new StringBuilder(str.length()+trailingZeros);
-                buf.append(str);
-            }
-            for (int i = 0; i < trailingZeros; i++) {
-                buf.append('0');
-            }
-            return buf.toString();
+
+        if (intCompact != INFLATED) {
+            return toPlainStringCompact(intCompact, scale);
         }
-        String str ;
-        if(intCompact!=INFLATED) {
-            str = Long.toString(Math.abs(intCompact));
-        } else {
-            str = intVal.abs().toString();
-        }
-        return getValueString(signum(), str, scale);
+        return getValueString(intVal, scale);
     }
 
-    /* Returns a digit.digit string */
-    private String getValueString(int signum, String intString, int scale) {
-        /* Insert decimal point */
-        StringBuilder buf;
-        int insertionPoint = intString.length() - scale;
-        if (insertionPoint == 0) {  /* Point goes right before intVal */
-            return (signum<0 ? "-0." : "0.") + intString;
-        } else if (insertionPoint > 0) { /* Point goes inside intVal */
-            buf = new StringBuilder(intString);
-            buf.insert(insertionPoint, '.');
-            if (signum < 0)
-                buf.insert(0, '-');
-        } else { /* We must insert zeros between point and intVal */
-            buf = new StringBuilder(3-insertionPoint + intString.length());
-            buf.append(signum<0 ? "-0." : "0.");
-            for (int i=0; i<-insertionPoint; i++) {
-                buf.append('0');
-            }
-            buf.append(intString);
+    @SuppressWarnings("deprecation")
+    private static String getValueString(BigInteger intVal, int scale) {
+        if (scale == 0) {
+            return intVal.toString(10);
         }
-        return buf.toString();
+
+        final boolean negative;
+        final BigInteger intValAbs;
+        if (intVal.signum < 0) {
+            negative = true;
+            intValAbs = intVal.negate();
+        } else {
+            negative = false;
+            intValAbs = intVal;
+        }
+
+        String intValAbsString = intValAbs.toString(10);
+
+        int size = intValAbsString.length();
+
+        byte[] buf;
+        int off = 0;
+        if (scale < 0) {
+            buf = new byte[size - scale + (negative ? 1 : 0)];
+            if (negative) {
+                buf[0] = '-';
+                off = 1;
+            }
+            intValAbsString.getBytes(0, size, buf, off);
+            Arrays.fill(buf, off + size, buf.length, (byte) '0');
+        } else {
+            int insertionPoint = size - scale;
+            if (insertionPoint <= 0) {
+                buf = new byte[size - insertionPoint + (negative ? 3 : 2)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+                buf[off] = '0';
+                buf[off + 1] = '.';
+                off += 2;
+
+                for (int i = 0; i < -insertionPoint; i++) {
+                    buf[off++] = '0';
+                }
+
+                intValAbsString.getBytes(0, size, buf, off);
+            } else { /* We must insert zeros between point and intVal */
+                buf = new byte[size + (negative ? 2 : 1)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+
+                intValAbsString.getBytes(0, insertionPoint, buf, off);
+                off += insertionPoint;
+                buf[off] = '.';
+                intValAbsString.getBytes(insertionPoint, size, buf, off + 1);
+            }
+        }
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
+    }
+
+    private static String toPlainStringCompact(long intCompact, int scale) {
+        final boolean negative;
+        final long intCompactAbs;
+        if (intCompact < 0) {
+            intCompactAbs = -intCompact;
+            negative = true;
+        } else {
+            intCompactAbs = intCompact;
+            negative = false;
+        }
+
+        int size = stringSize(intCompactAbs);
+
+        byte[] buf;
+        int off = 0;
+        if (scale < 0) {
+            buf = new byte[size - scale + (negative ? 1 : 0)];
+            if (negative) {
+                buf[0] = '-';
+                off = 1;
+            }
+            getChars(intCompactAbs, off + size, buf);
+            Arrays.fill(buf, off + size, buf.length, (byte) '0');
+        } else {
+            int insertionPoint = size - scale;
+            if (insertionPoint <= 0) {
+                buf = new byte[size - insertionPoint + (negative ? 3 : 2)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+                buf[off] = '0';
+                buf[off + 1] = '.';
+
+                for (int i = 0; i < -insertionPoint; i++) {
+                    buf[off + i + 2] = '0';
+                }
+                getChars(intCompactAbs, buf.length, buf);
+            } else {
+                long power = POWER_TEN[scale - 1];
+                long div = intCompactAbs / power;
+                long rem = intCompactAbs - div * power;
+                buf = new byte[size + (negative ? 2 : 1)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+                int divOff = off + size - scale;
+                getChars(div, divOff, buf);
+                buf[divOff] = '.';
+                getChars(rem, buf.length, buf);
+            }
+        }
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
     }
 
     /**
@@ -4147,103 +4263,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
-    // Private class to build a string representation for BigDecimal object. The
-    // StringBuilder field acts as a buffer to hold the temporary representation
-    // of BigDecimal. The cmpCharArray holds all the characters for the compact
-    // representation of BigDecimal (except for '-' sign' if it is negative) if
-    // its intCompact field is not INFLATED.
-    static class StringBuilderHelper {
-        final StringBuilder sb;    // Placeholder for BigDecimal string
-        final char[] cmpCharArray; // character array to place the intCompact
-
-        StringBuilderHelper() {
-            sb = new StringBuilder(32);
-            // All non negative longs can be made to fit into 19 character array.
-            cmpCharArray = new char[19];
-        }
-
-        // Accessors.
-        StringBuilder getStringBuilder() {
-            sb.setLength(0);
-            return sb;
-        }
-
-        char[] getCompactCharArray() {
-            return cmpCharArray;
-        }
-
-        /**
-         * Places characters representing the intCompact in {@code long} into
-         * cmpCharArray and returns the offset to the array where the
-         * representation starts.
-         *
-         * @param intCompact the number to put into the cmpCharArray.
-         * @return offset to the array where the representation starts.
-         * Note: intCompact must be greater or equal to zero.
-         */
-        int putIntCompact(long intCompact) {
-            assert intCompact >= 0;
-
-            long q;
-            int r;
-            // since we start from the least significant digit, charPos points to
-            // the last character in cmpCharArray.
-            int charPos = cmpCharArray.length;
-
-            // Get 2 digits/iteration using longs until quotient fits into an int
-            while (intCompact > Integer.MAX_VALUE) {
-                q = intCompact / 100;
-                r = (int)(intCompact - q * 100);
-                intCompact = q;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            // Get 2 digits/iteration using ints when i2 >= 100
-            int q2;
-            int i2 = (int)intCompact;
-            while (i2 >= 100) {
-                q2 = i2 / 100;
-                r  = i2 - q2 * 100;
-                i2 = q2;
-                cmpCharArray[--charPos] = DIGIT_ONES[r];
-                cmpCharArray[--charPos] = DIGIT_TENS[r];
-            }
-
-            cmpCharArray[--charPos] = DIGIT_ONES[i2];
-            if (i2 >= 10)
-                cmpCharArray[--charPos] = DIGIT_TENS[i2];
-
-            return charPos;
-        }
-
-        static final char[] DIGIT_TENS = {
-            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        };
-
-        static final char[] DIGIT_ONES = {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        };
-    }
-
     /**
      * Lay out this {@code BigDecimal} into a {@code char[]} array.
      * The Java 1.2 equivalent to this was called {@code getValueString}.
@@ -4254,111 +4273,376 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         {@code BigDecimal}
      */
     private String layoutChars(boolean sci) {
-        if (scale == 0)                      // zero scale is trivial
+        if (scale == 0) {                     // zero scale is trivial
             return (intCompact != INFLATED) ?
-                Long.toString(intCompact):
-                intVal.toString();
-        if (scale == 2  &&
-            intCompact >= 0 && intCompact < Integer.MAX_VALUE) {
-            // currency fast path
-            int lowInt = (int)intCompact % 100;
-            int highInt = (int)intCompact / 100;
-            return (Integer.toString(highInt) + '.' +
-                    StringBuilderHelper.DIGIT_TENS[lowInt] +
-                    StringBuilderHelper.DIGIT_ONES[lowInt]) ;
+                    Long.toString(intCompact) :
+                    intVal.toString();
         }
 
-        StringBuilderHelper sbHelper = new StringBuilderHelper();
-        char[] coeff;
-        int offset;  // offset is the starting index for coeff array
-        // Get the significand as an absolute value
         if (intCompact != INFLATED) {
-            offset = sbHelper.putIntCompact(Math.abs(intCompact));
-            coeff  = sbHelper.getCompactCharArray();
-        } else {
-            offset = 0;
-            coeff  = intVal.abs().toString().toCharArray();
+            if (scale == 2) {
+                long intCompactAbs;
+                boolean negative = false;
+                if (intCompact < 0) {
+                    intCompactAbs = -intCompact;
+                    negative = true;
+                } else {
+                    intCompactAbs = intCompact;
+                }
+
+                long highInt = intCompactAbs / 100;
+                short lowInt = (short) (intCompactAbs - highInt * 100);
+                int highIntSize = stringSize(highInt) + (negative ? 1 : 0);
+                byte[] buf = new byte[highIntSize + 3];
+                if (negative) {
+                    buf[0] = '-';
+                }
+                getChars(highInt, highIntSize, buf);
+                buf[highIntSize] = '.';
+                UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + highIntSize + 1, PACKED_DIGITS[lowInt], false);
+
+                try {
+                    return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException x) {
+                    throw new Error(x);
+                }
+            }
+
+            return layoutChars(intCompact, scale, sci);
         }
 
-        // Construct a buffer, with sufficient capacity for all cases.
-        // If E-notation is needed, length will be: +1 if negative, +1
-        // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
-        // Otherwise it could have +1 if negative, plus leading "0.00000"
-        StringBuilder buf = sbHelper.getStringBuilder();
-        if (signum() < 0)             // prefix '-' if negative
-            buf.append('-');
-        int coeffLen = coeff.length - offset;
-        long adjusted = -(long)scale + (coeffLen -1);
-        if ((scale >= 0) && (adjusted >= -6)) { // plain number
-            int pad = scale - coeffLen;         // count of padding zeros
-            if (pad >= 0) {                     // 0.xxx form
-                buf.append('0');
-                buf.append('.');
-                for (; pad>0; pad--) {
-                    buf.append('0');
+       return layoutChars(intVal, scale, sci);
+    }
+
+    private static String layoutChars(long intCompact, int scale, boolean sci) {
+        if (scale == 0) {
+            return Long.toString(intCompact);
+        }
+
+        long intCompactAbs;
+        boolean negative = false;
+        if (intCompact < 0) {
+            intCompactAbs = -intCompact;
+            negative = true;
+        } else {
+            intCompactAbs = intCompact;
+        }
+
+        int coeffLen = stringSize(intCompactAbs);
+        long adjusted = -(long) scale + (coeffLen - 1);
+
+        byte[] buf;
+        int off = 0;
+        if ((scale >= 0) && (adjusted >= -6)) {
+            int pad = scale - coeffLen;
+            if (pad >= 0) { // 0.xxx form
+                buf = new byte[coeffLen + pad + (negative ? 3 : 2)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
                 }
-                buf.append(coeff, offset, coeffLen);
-            } else {                         // xx.xx form
-                buf.append(coeff, offset, -pad);
-                buf.append('.');
-                buf.append(coeff, -pad + offset, scale);
+                buf[off] = '0';
+                buf[off + 1] = '.';
+                off += 2;
+                for (int i = 0; i < pad; i++) {
+                    buf[off++] = '0';
+                }
+                getChars(intCompactAbs, buf.length, buf);
+            } else { // xx.xx form
+                buf = new byte[coeffLen + (negative ? 2 : 1)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+
+                long power = POWER_TEN[scale - 1];
+                long div = intCompactAbs / power;
+                long rem = intCompactAbs - div * power;
+                int remSize = stringSize(rem);
+                getChars(div, off + coeffLen - scale, buf);
+                off += coeffLen - scale;
+                buf[off] = '.';
+                for (int i = 0, end = scale - remSize; i < end; ++i) {
+                    buf[off + 1 + i] = '0';
+                }
+                getChars(rem, buf.length, buf);
             }
-        } else { // E-notation is needed
-            if (sci) {                       // Scientific notation
-                buf.append(coeff[offset]);   // first character
-                if (coeffLen > 1) {          // more to come
-                    buf.append('.');
-                    buf.append(coeff, offset + 1, coeffLen - 1);
+        } else {
+            if (sci) {
+                if (coeffLen > 1) {
+                    int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                    buf = new byte[coeffLen + adjustedSize + (negative ? 2 : 1)];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    long power = POWER_TEN[coeffLen - 2];
+                    long div = intCompactAbs / power;
+                    long rem = intCompactAbs - div * power;
+                    int remSize = stringSize(rem);
+                    buf[off] = (byte) (div + '0');
+                    buf[off + 1] = '.';
+                    for (int i = 0, end = coeffLen - remSize - 1; i < end; ++i) {
+                        buf[off + 2 + i] = '0';
+                    }
+                    getChars(rem, off + coeffLen + 1, buf);
+                    off += coeffLen + 1;
+                } else {
+                    int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                    buf = new byte[adjustedSize + (negative ? 2 : 1)];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    buf[off++] = (byte) (intCompactAbs + '0');
                 }
-            } else {                         // Engineering notation
-                int sig = (int)(adjusted % 3);
-                if (sig < 0)
+            } else {
+                int sig = (int) (adjusted % 3);
+                if (sig < 0) {
                     sig += 3;                // [adjusted was negative]
+                }
                 adjusted -= sig;             // now a multiple of 3
                 sig++;
-                if (signum() == 0) {
+
+                int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                if (intCompactAbs == 0) {
                     switch (sig) {
-                    case 1:
-                        buf.append('0'); // exponent is a multiple of three
-                        break;
-                    case 2:
-                        buf.append("0.00");
-                        adjusted += 3;
-                        break;
-                    case 3:
-                        buf.append("0.0");
-                        adjusted += 3;
-                        break;
-                    default:
-                        throw new AssertionError("Unexpected sig value " + sig);
+                        case 1: {
+                            buf = new byte[adjustedSize + 1];
+                            buf[0] = '0'; // exponent is a multiple of three
+                            off = 1;
+                            break;
+                        }
+                        case 2: {
+                            adjusted += 3;
+                            adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                            buf = new byte[adjustedSize + 4];
+                            buf[0] = '0';
+                            buf[1] = '.';
+                            buf[2] = '0';
+                            buf[3] = '0';
+                            off = 4;
+                            break;
+                        }
+                        case 3: {
+                            adjusted += 3;
+                            adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                            buf = new byte[adjustedSize + 3];
+                            buf[0] = '0';
+                            buf[1] = '.';
+                            buf[2] = '0';
+                            off = 3;
+                            break;
+                        }
+                        default:
+                            throw new AssertionError("Unexpected sig value " + sig);
                     }
-                } else if (sig >= coeffLen) {   // significand all in integer
-                    buf.append(coeff, offset, coeffLen);
+                } else if (sig >= coeffLen) {
+                    buf = new byte[adjustedSize + (negative ? 2 : 1) + sig - coeffLen];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    getChars(intCompactAbs, off + coeffLen, buf);
+                    off += coeffLen;
+                    for (int i = sig - coeffLen; i > 0; i--) {
+                        buf[off++] = '0';
+                    }
+                } else {
+                    buf = new byte[adjustedSize + (negative ? 2 : 1) + coeffLen];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+
+                    long power = POWER_TEN[coeffLen - sig - 1];
+                    long div = intCompactAbs / power;
+                    long rem = intCompactAbs - div * power;
+                    getChars(div, off + sig, buf);
+                    buf[off + sig] = '.';
+                    getChars(rem, off + coeffLen + 1, buf);
+                    off += coeffLen + 1;
+                }
+            }
+
+            if (adjusted != 0) {             // [!sci could have made 0]
+                buf[off++] = 'E';
+                if (adjusted > 0) {
+                    buf[off] = '+';
+                } else {
+                    buf[off] = '-';
+                    adjusted = -adjusted;
+                }
+                getChars(adjusted, buf.length, buf);
+            }
+        }
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
+    }
+
+    private static String layoutChars(BigInteger intVal, int scale, boolean sci) {
+        if (scale == 0) {
+            return intVal.toString();
+        }
+
+        BigInteger intValAbs;
+        boolean negative = false;
+        int signum = intVal.signum();
+        if (signum < 0) {
+            intValAbs = intVal.negate();
+            negative = true;
+        } else {
+            intValAbs = intVal;
+        }
+
+        byte[] buf;
+        int off = 0;
+        String intValAbsString = intValAbs.toString(10);
+        byte[] coeff = intValAbsString.getBytes(StandardCharsets.ISO_8859_1);
+        int coeffLen = coeff.length;
+        long adjusted = -(long) scale + (coeffLen - 1);
+        if ((scale >= 0) && (adjusted >= -6)) {
+            int pad = scale - coeffLen;
+            if (pad >= 0) {
+                buf = new byte[coeffLen + 2 + pad + (negative ? 1 : 0)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+                buf[off] = '0';
+                buf[off + 1] = '.';
+                off += 2;
+                for (int i = 0; i < pad; i++) {
+                    buf[off++] = '0';
+                }
+                System.arraycopy(coeff, 0, buf, off, coeffLen);
+            } else {
+                buf = new byte[coeffLen + 1 + (negative ? 1 : 0)];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+
+                System.arraycopy(coeff, 0, buf, off, -pad);
+                buf[off - pad] = '.';
+                System.arraycopy(coeff, -pad, buf, off - pad + 1, scale);
+            }
+        } else {
+            if (sci) {                       // Scientific notation
+                if (coeffLen > 1) {
+                    int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                    buf = new byte[coeffLen + adjustedSize + 1 + (negative ? 1 : 0)];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    buf[off] = coeff[0];
+                    buf[off + 1] = '.';
+                    System.arraycopy(coeff, 1, buf, off + 2, coeffLen - 1);
+                    off += coeffLen + 1;
+                } else {
+                    int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                    buf = new byte[adjustedSize + (negative ? 2 : 1)];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    buf[off++] = coeff[0];
+                }
+            } else { // Engineering notation
+                int sig = (int) (adjusted % 3);
+                if (sig < 0) {
+                    sig += 3;                // [adjusted was negative]
+                }
+                adjusted -= sig;             // now a multiple of 3
+                sig++;
+
+                int adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                if (signum == 0) {
+                    switch (sig) {
+                        case 1: {
+                            buf = new byte[adjustedSize + 1];
+                            buf[0] = '0'; // exponent is a multiple of three
+                            off = 1;
+                            break;
+                        }
+                        case 2: {
+                            adjusted += 3;
+                            adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                            buf = new byte[adjustedSize + 4];
+                            buf[0] = '0';
+                            buf[1] = '.';
+                            buf[2] = '0';
+                            buf[3] = '0';
+                            off = 4;
+                            break;
+                        }
+                        case 3: {
+                            adjusted += 3;
+                            adjustedSize = adjusted != 0 ? stringSize(Math.abs(adjusted)) + 2 : 0;
+                            buf = new byte[adjustedSize + 3];
+                            buf[0] = '0';
+                            buf[1] = '.';
+                            buf[2] = '0';
+                            off = 3;
+                            break;
+                        }
+                        default:
+                            throw new AssertionError("Unexpected sig value " + sig);
+                    }
+                } else if (sig >= coeffLen) { // significand all in integer
+                    buf = new byte[adjustedSize + (negative ? 2 : 1) + sig - coeffLen];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    System.arraycopy(coeff, 0, buf, off, coeffLen);
+                    off += coeffLen;
                     // may need some zeros, too
                     for (int i = sig - coeffLen; i > 0; i--) {
-                        buf.append('0');
+                        buf[off++] = '0';
                     }
-                } else {                     // xx.xxE form
-                    buf.append(coeff, offset, sig);
-                    buf.append('.');
-                    buf.append(coeff, offset + sig, coeffLen - sig);
+                } else { // xx.xxE form
+                    buf = new byte[adjustedSize + (negative ? 2 : 1) + coeffLen];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+
+                    System.arraycopy(coeff, 0, buf, off, sig);
+                    buf[off + sig] = '.';
+                    System.arraycopy(coeff, sig, buf, off + sig + 1, coeffLen - sig);
+                    off += coeffLen + 1;
                 }
             }
             if (adjusted != 0) {             // [!sci could have made 0]
-                buf.append('E');
-                if (adjusted > 0)            // force sign for positive
-                    buf.append('+');
-                buf.append(adjusted);
+                buf[off++] = 'E';
+                if (adjusted > 0) { // force sign for positive
+                    buf[off] = '+';
+                } else {
+                    buf[off] = '-';
+                    adjusted = -adjusted;
+                }
+                getChars(adjusted, buf.length, buf);
             }
         }
-        return buf.toString();
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException x) {
+            throw new Error(x);
+        }
     }
 
     /**
      * Return 10 to the power n, as a {@code BigInteger}.
      *
      * @param  n the power of ten to be returned (>=0)
-     * @return a {@code BigInteger} with the value (10<sup>n</sup>)
+     * @return a {@code BigInteger} with the value (10<sup>n</sutp>)
      */
     private static BigInteger bigTenToThe(int n) {
         if (n < 0)
@@ -6096,4 +6380,74 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
+    @Stable
+    static final long[] POWER_TEN = {
+            10,
+            100,
+            1000,
+            10000,
+            100000,
+            1000000,
+            10000000,
+            100000000,
+            1000000000,
+            10000000000L,
+            100000000000L,
+            1000000000000L,
+            10000000000000L,
+            100000000000000L,
+            1000000000000000L,
+            10000000000000000L,
+            100000000000000000L,
+            1000000000000000000L,
+    };
+
+    // Requires positive x
+    static int stringSize(long x) {
+        long p = 10;
+        for (int i = 1; i < 19; i++) {
+            if (x < p) {
+                return i;
+            }
+            p = 10 * p;
+        }
+        return 19;
+    }
+
+    // Requires positive x
+    static void getChars(long i, int index, byte[] buf) {
+        long q;
+        int charPos = index;
+
+        assert i >= 0 : "i >= 0";
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i > Integer.MAX_VALUE) {
+            q = i / 100;
+            charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[(int) (i - q * 100)], false);
+            i = q;
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int) i;
+        while (i2 >= 100) {
+            q2 = i2 / 100;
+            charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[i2 - q2 * 100], false);
+            i2 = q2;
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i2 > 9) {
+            charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[i2], false);
+        } else {
+            buf[--charPos] = (byte) ('0' + i2);
+        }
+    }
 }
