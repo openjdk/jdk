@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  *         When test thread has finish execution debugger suspends thread and call command for this thread, INVALID_THREAD
  *         error is expected, then, debugger resumes test thread and call command again, INVALID_THREAD error should
  *         be returned in reply.
- *         - debuggee starts test thread which executes infinite loop in native method, debugger calls command for
+ *         - debuggee starts test thread which executes loop in native method, debugger calls command for
  *         this thread(without suspending) and expects THREAD_NOT_SUSPENDED error. Then, debugger suspends this thread
  *         and calls command again, OPAQUE_FRAME error is expected.
  *         - debugger creates ThreadStartEventRequest with suspend policy 'JDWP.SuspendPolicy.ALL' and forces debuggee start new thread.
@@ -226,6 +226,9 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
         debuggee.suspendThread(threadID);
         // suspended thread in native, expect OPAQUE_FRAME error
         sendCommand(threadID, value, true, JDWP.Error.OPAQUE_FRAME);
+
+        // signal native method to exit; the thread will be actually suspended
+        pipe.println(forceEarlyReturn002a.COMMAND_EXIT_THREAD_IN_NATIVE);
 
         // create request for ThreadStart event
         int requestID = createThreadStartEventRequest();
