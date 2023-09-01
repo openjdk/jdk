@@ -72,7 +72,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
         ProcessBuilder pb = ProcessTools.createTestJvm(JDWP_OPT, DEBUGGEE);
         p = pb.start();
         StreamHandler inputHandler = new StreamHandler(p.getInputStream(), this);
-        StreamHandler errorHandler = new StreamHandler(p.getErrorStream(), System.out::println);
+        StreamHandler errorHandler = new StreamHandler(p.getErrorStream(), l -> System.out.println("[stderr]: " + l));
         inputHandler.start();
         errorHandler.start();
     }
@@ -98,6 +98,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
 
     @Override
     public void onStringRead(String line) {
+        System.out.println("[stdout]: " + line);
         if (jdwpPort == -1) {
             JDWP.ListenAddress addr = JDWP.parseListenAddress(line);
             if (addr != null) {
