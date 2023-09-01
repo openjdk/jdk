@@ -153,11 +153,14 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   assert((intptr_t*)hf.at_relative(frame::interpreter_frame_last_sp_offset) == hf.unextended_sp(), "");
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
-  relativize_one(vfp, hfp, frame::interpreter_frame_extended_sp_offset);
+
+  // extended_sp is already relativized by TemplateInterpreterGenerator::generate_normal_entry or
+  // AbstractInterpreter::layout_activation
 
   assert((hf.fp() - hf.unextended_sp()) == (f.fp() - f.unextended_sp()), "");
   assert(hf.unextended_sp() == (intptr_t*)hf.at(frame::interpreter_frame_last_sp_offset), "");
   assert(hf.unextended_sp() <= (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
+  assert(hf.unextended_sp() >  (intptr_t*)hf.at(frame::interpreter_frame_extended_sp_offset), "");
   assert(hf.fp()            >  (intptr_t*)hf.at(frame::interpreter_frame_initial_sp_offset), "");
   assert(hf.fp()            <= (intptr_t*)hf.at(frame::interpreter_frame_locals_offset), "");
 }
@@ -294,7 +297,9 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   assert((intptr_t*)f.at_relative(frame::interpreter_frame_last_sp_offset) == f.unextended_sp(), "");
 
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
-  derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
+
+  // Make sure that extended_sp is kept relativized.
+  assert((intptr_t*)f.at_relative(frame::interpreter_frame_extended_sp_offset) < f.unextended_sp(), "");
 }
 
 #endif // CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP
