@@ -518,7 +518,7 @@ public class ChoiceFormat extends NumberFormat {
      * two formats would format any value the same.
      *
      * @implNote Implementers should be aware that the default implementation does an
-     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * equality check using {@code getClass} rather than {@code instanceof} when
      * deciding if they should override this method.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code ChoiceFormat}
