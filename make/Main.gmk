@@ -607,11 +607,11 @@ endif
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -970,13 +970,13 @@ else
   jdk.jdeps-gendata: java
 
   # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) java
   ifeq ($(CREATE_BUILDJDK), true)
     ifneq ($(CREATING_BUILDJDK), true)
       jdk.compiler-gendata: create-buildjdk
     endif
   else
-    jdk.compiler-gendata: jdk.compiler-java jdk.jdeps-java jdk.compiler-launchers
+    jdk.compiler-gendata: jdk.compiler-launchers
   endif
 
   # Declare dependencies between jmod targets.
