@@ -425,40 +425,31 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
   return captured;
 }
 
-// os::current_stack_base()
-//
 //   Returns the base of the stack, which is the stack's
 //   starting address.  This function must be called
 //   while running on the stack of the thread being queried.
 
-address os::current_stack_base() {
+void os::current_stack_base_and_size(address* stack_base, size_t* stack_size) {
   MEMORY_BASIC_INFORMATION minfo;
   address stack_bottom;
-  size_t stack_size;
+  size_t size;
 
   VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  stack_bottom =  (address)minfo.AllocationBase;
-  stack_size = minfo.RegionSize;
+  stack_bottom = (address)minfo.AllocationBase;
+  size = minfo.RegionSize;
 
   // Add up the sizes of all the regions with the same
   // AllocationBase.
   while (1) {
-    VirtualQuery(stack_bottom+stack_size, &minfo, sizeof(minfo));
+    VirtualQuery(stack_bottom + size, &minfo, sizeof(minfo));
     if (stack_bottom == (address)minfo.AllocationBase) {
-      stack_size += minfo.RegionSize;
+      size += minfo.RegionSize;
     } else {
       break;
     }
   }
-  return stack_bottom + stack_size;
-}
-
-size_t os::current_stack_size() {
-  size_t sz;
-  MEMORY_BASIC_INFORMATION minfo;
-  VirtualQuery(&minfo, &minfo, sizeof(minfo));
-  sz = (size_t)os::current_stack_base() - (size_t)minfo.AllocationBase;
-  return sz;
+  *stack_base = stack_bottom + size;
+  *stack_size = size;
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
@@ -1254,13 +1245,34 @@ void  os::dll_unload(void *lib) {
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
     snprintf(name, MAX_PATH, "<not available>");
   }
+
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(name);
+#endif
+
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(nullptr, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const DWORD errcode = ::GetLastError();
+    char buf[500];
+    size_t tl = os::lasterror(buf, sizeof(buf));
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+#if INCLUDE_JFR
+    event.set_success(false);
+    if (tl == 0) {
+      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+    }
+    event.set_errorMessage(buf);
+    event.commit();
+#endif
   }
 }
 
@@ -3421,6 +3433,11 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
          "Unexpected address from reserve.");
 
   return res;
+}
+
+size_t os::vm_min_address() {
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {

@@ -52,6 +52,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -9254,6 +9255,17 @@ void MacroAssembler::evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   } else {
     lea(rscratch, src);
     evpandq(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
+void MacroAssembler::evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::evpaddq(dst, mask, nds, as_Address(src), merge, vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evpaddq(dst, mask, nds, Address(rscratch, 0), merge, vector_len);
   }
 }
 

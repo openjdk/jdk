@@ -2225,7 +2225,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         }
       }
     }
-    if (!task->is_success()) {
+    if (!task->is_success() && !JVMCI::in_shutdown()) {
       handle_compile_error(thread, task, nullptr, compilable, failure_reason);
     }
     if (event.should_commit()) {

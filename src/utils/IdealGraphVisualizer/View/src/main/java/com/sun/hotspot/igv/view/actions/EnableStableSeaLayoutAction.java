@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,29 @@
  * questions.
  *
  */
+package com.sun.hotspot.igv.view.actions;
 
-#ifndef SHARE_GC_SHARED_GCUTIL_INLINE_HPP
-#define SHARE_GC_SHARED_GCUTIL_INLINE_HPP
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-#include "gc/shared/gcUtil.hpp"
+public class EnableStableSeaLayoutAction extends EnableLayoutAction {
 
-#include "memory/allocation.inline.hpp"
+    public EnableStableSeaLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
 
-inline void* AdaptivePaddedAverage::operator new(size_t size) throw() {
-  return CHeapObj<mtGC>::operator new(size);
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/stable_sea.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show stable sea of nodes";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowStableSea(this.isSelected());
+    }
 }
-
-#endif // SHARE_GC_SHARED_GCUTIL_INLINE_HPP

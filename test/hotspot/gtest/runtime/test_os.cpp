@@ -25,6 +25,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
@@ -37,6 +38,8 @@
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
+
+using testing::HasSubstr;
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -171,7 +174,7 @@ static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
   // tty->print_cr("expected: %s", expected);
   // tty->print_cr("result: %s", buf);
-  EXPECT_THAT(buf, testing::HasSubstr(expected));
+  EXPECT_THAT(buf, HasSubstr(expected));
 }
 
 TEST_VM(os, test_print_hex_dump) {
@@ -768,7 +771,7 @@ TEST_VM(os, pagesizes_test_print) {
   char buffer[256];
   stringStream ss(buffer, sizeof(buffer));
   pss.print_on(&ss);
-  ASSERT_EQ(strcmp(expected, buffer), 0);
+  EXPECT_STREQ(expected, buffer);
 }
 
 TEST_VM(os, dll_address_to_function_and_library_name) {
@@ -777,9 +780,9 @@ TEST_VM(os, dll_address_to_function_and_library_name) {
   stringStream st(output, sizeof(output));
 
 #define EXPECT_CONTAINS(haystack, needle) \
-  EXPECT_NE(::strstr(haystack, needle), (char*)NULL)
+  EXPECT_THAT(haystack, HasSubstr(needle));
 #define EXPECT_DOES_NOT_CONTAIN(haystack, needle) \
-  EXPECT_EQ(::strstr(haystack, needle), (char*)NULL)
+  EXPECT_THAT(haystack, Not(HasSubstr(needle)));
 // #define LOG(...) tty->print_cr(__VA_ARGS__); // enable if needed
 #define LOG(...)
 
@@ -924,3 +927,47 @@ TEST_VM(os, open_O_CLOEXEC) {
   ::close(fd);
 #endif
 }
+
+TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_smallpages) {
+  char* p1 = os::reserve_memory(M, false, mtTest);
+  ASSERT_NE(p1, nullptr);
+  char* p2 = os::attempt_reserve_memory_at(p1, M);
+  ASSERT_EQ(p2, nullptr); // should have failed
+  os::release_memory(p1, M);
+}
+
+TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
+  if (UseLargePages && !os::can_commit_large_page_memory()) { // aka special
+    const size_t lpsz = os::large_page_size();
+    char* p1 = os::reserve_memory_aligned(lpsz, lpsz, false);
+    ASSERT_NE(p1, nullptr);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    ASSERT_EQ(p2, nullptr); // should have failed
+    os::release_memory(p1, M);
+  } else {
+    tty->print_cr("Skipped.");
+  }
+}
+
+#ifdef AIX
+// On Aix, we should fail attach attempts not aligned to segment boundaries (256m)
+TEST_VM(os, aix_reserve_at_non_shmlba_aligned_address) {
+  if (Use64KPages && Use64KPagesThreshold == 0) {
+    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
+    ASSERT_EQ(p, nullptr); // should have failed
+    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
+    ASSERT_EQ(p, nullptr); // should have failed
+  }
+}
+#endif // AIX
+
+TEST_VM(os, vm_min_address) {
+  size_t s = os::vm_min_address();
+  ASSERT_GE(s, M);
+  // Test upper limit. On Linux, its adjustable, so we just test for absurd values to prevent errors
+  // with high vm.mmap_min_addr settings.
+#if defined(_LP64)
+  ASSERT_LE(s, NOT_LINUX(G * 4) LINUX_ONLY(G * 1024));
+#endif
+}
+

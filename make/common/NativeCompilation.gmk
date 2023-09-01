@@ -215,7 +215,24 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 # The fix-deps-file macro is used to adjust the contents of the generated make
 # dependency files to contain paths compatible with make.
 #
+REWRITE_PATHS_RELATIVE = false
 ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
+  REWRITE_PATHS_RELATIVE = true
+endif
+
+# CCACHE_BASEDIR needs fix-deps-file as makefiles use absolute filenames for
+# object files while CCACHE_BASEDIR will make ccache relativize all paths for
+# its compiler. The compiler then produces relative dependency files.
+# make does not know a relative and absolute filename is the same so it will
+# ignore such dependencies. This only applies when the OUTPUTDIR is inside
+# the WORKSPACE_ROOT.
+ifneq ($(CCACHE), )
+  ifneq ($(filter $(WORKSPACE_ROOT)/%, $(OUTPUTDIR)), )
+    REWRITE_PATHS_RELATIVE = true
+  endif
+endif
+
+ifeq ($(REWRITE_PATHS_RELATIVE), true)
   # Need to handle -I flags as both '-Ifoo' and '-I foo'.
   MakeCommandRelative = \
       $(CD) $(WORKSPACE_ROOT) && \
