@@ -64,7 +64,7 @@ public class TestDisabledPasswordFieldForegroundColor {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
         boolean testFail = false;
         robot = new Robot();
-        robot.setAutoDelay(1000);
+        robot.setAutoDelay(100);
         try {
             SwingUtilities.invokeAndWait(
                     TestDisabledPasswordFieldForegroundColor::createAndShowUI);
