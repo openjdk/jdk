@@ -37,7 +37,6 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
