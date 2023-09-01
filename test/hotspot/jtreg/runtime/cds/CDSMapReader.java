@@ -30,15 +30,36 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// This is a simple parser for parsing the output of
-//
-//   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
-//
-// Currently it just check the output related to JDK-8308903.
-// I.e., each oop field in the HeapObjects must point to a valid HeapObject.
-//
-// It can be extended to check for the other parts of the map file, or perform
-// more analysis on the HeapObjects.
+/*
+
+This is a simple parser for parsing the output of
+
+   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
+
+The map file contains patterns like this for the heap objects:
+
+======================================================================
+0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String
+ - klass: 'java/lang/String' 0x0000000800010220
+ - fields (3 words):
+ - private 'hash' 'I' @12  0 (0x00000000)
+ - private final 'coder' 'B' @16  0 (0x00)
+ - private 'hashIsZero' 'Z' @17  true (0x01)
+ - injected 'flags' 'B' @18  1 (0x01)
+ - private final 'value' '[B' @20 0x00000000ffe00018 (0xffe00018) [B length: 0
+0x00000000ffe00018: @@ Object (0xffe00018) [B length: 0
+ - klass: {type array byte} 0x00000008000024d8
+======================================================================
+
+Currently this parser just check the output related to JDK-8308903.
+I.e., each oop field must point to a valid HeapObject. For example, the 'value' field
+in the String must point to a valid byte array.
+
+This parser can be extended to check for the other parts of the map file, or perform
+more analysis on the HeapObjects.
+
+*/
+
 public class CDSMapReader {
     public static class MapFile {
         ArrayList<HeapObject> heapObjects = new ArrayList<>();
@@ -299,12 +320,17 @@ public class CDSMapReader {
         System.out.println("Checked " + count1 + " oop field references (normal)");
         System.out.println("Checked " + count2 + " oop field references (narrow)");
 
-        if (mapFile.heapObjectCount() > 0 && count1 < mapFile.stringCount) {
+        if (mapFile.heapObjectCount() > 0) {
             // heapObjectCount() may be zero if the selected GC doesn't support heap object archiving.
-            throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
-                                       " objects (" + mapFile.stringCount + " strings). Each string should" +
-                                       " have one oop field but we found only " + count1 +
-                                       " oop field references");
+            if (mapFile.stringCount <= 0) {
+                throw new RuntimeException("CDS map file should contain at least one string");
+            }
+            if (count1 < mapFile.stringCount) {
+                throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
+                                           " objects (" + mapFile.stringCount + " strings). Each string should" +
+                                           " have one oop field but we found only " + count1 +
+                                           " oop field references");
+            }
         }
     }
 
