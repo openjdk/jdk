@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Basic tests of immutable BitSets
+ * @modules java.base/jdk.internal.util
  * @run junit ImmutableBitSet
  */
 
