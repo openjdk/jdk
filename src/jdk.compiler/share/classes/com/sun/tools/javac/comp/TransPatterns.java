@@ -66,8 +66,13 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
@@ -582,14 +587,12 @@ public class TransPatterns extends TreeTranslator {
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
                         continueSwitch.target = tree;
-
-                        JCIf ifStatement = make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
-                                make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
-                                                        makeLit(syms.intType, i + labels.length()))
-                                                .setType(syms.intType)),
-                                        continueSwitch)),
-                                null);
-                        c.stats = c.stats.prepend(ifStatement);
+                        c.stats = c.stats.prepend(make.If(makeUnary(Tag.NOT, test).setType(syms.booleanType),
+                                                           make.Block(0, List.of(make.Exec(make.Assign(make.Ident(index),
+                                                                                                       makeLit(syms.intType, i + labels.length()))
+                                                                                     .setType(syms.intType)),
+                                                                                 continueSwitch)),
+                                                           null));
                         c.stats = c.stats.prependList(bindingContext.bindingVars(c.pos));
                     } finally {
                         currentValue = prevCurrentValue;
@@ -631,6 +634,7 @@ public class TransPatterns extends TreeTranslator {
                         c.caseKind == CaseTree.CaseKind.STATEMENT &&
                         c.completesNormally;
             }
+
             if (tree.hasTag(Tag.SWITCH)) {
                 ((JCSwitch) tree).selector = selector;
                 ((JCSwitch) tree).cases = cases;
