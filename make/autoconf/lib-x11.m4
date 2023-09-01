@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,10 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
     # this doesn't make sense so we remove it.
     if test "x$COMPILE_TYPE" = xcross; then
+      X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
+    fi
+    # Also remove the -R setting for devkit usage
+    if test "x$with_devkit" != "x" && test "x$with_devkit" != "xno"; then
       X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
     fi
 
