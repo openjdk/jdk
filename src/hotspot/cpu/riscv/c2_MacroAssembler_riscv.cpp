@@ -1377,15 +1377,15 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
 // rounded result; this differs from behavior of RISC-V fcvt instructions (which
 // round out-of-range values to the nearest max or min value), therefore special
 // handling is needed by NaN, +/-Infinity, +/-0.
-void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode, Register tmp1, Register tmp2, Register tmp3) {
+void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                                          Register tmp1, Register tmp2, Register tmp3) {
 
-  assert_different_registers(dst, src);
-  assert_different_registers(tmp1, tmp2, tmp3);
+  assert_different_registers(dst, src, tmp1, tmp2, tmp3);
 
-  // setting rounding mode for conversions
-  // here we use similar modes to double->long and long->double conversions
-  // different mode for long->double conversion matter only if long value was not representable as double
-  // we got long value as a result of double->long conversion so it is defenitely representable
+  // Set rounding mode for conversions
+  // Here we use similar modes to double->long and long->double conversions
+  // Different mode for long->double conversion matter only if long value was not representable as double,
+  // we got long value as a result of double->long conversion so, it is definitely representable
   RoundingMode rm;
   switch (round_mode) {
     case RoundDoubleModeNode::rmode_ceil:
@@ -1406,26 +1406,28 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   // tmp3 - is a register where we store modified result of double->long conversion
   Label done, bad_val;
 
-  // generating constant (tmp2)
-  // tmp2 = 100...0000
   addi(tmp2, zr, 1);
   slli(tmp2, tmp2, 63);
-  // conversion from double to long
+  // Conversion from double to long
   fcvt_l_d(tmp1, src, rm);
 
-  // preparing converted long (tmp1)
+  // Generate constant (tmp2)
+  // tmp2 = 100...0000
+  // Prepare converted long (tmp1)
   // as a result when conversion overflow we got:
   // tmp1 = 011...1111 or 100...0000
-  // converting to: tmp3 = 100...0000
+  // Convert it to: tmp3 = 100...0000
   addi(tmp3, tmp1, 1);
   andi(tmp3, tmp3, -2);
   beq(tmp3, tmp2, bad_val);
-  // conversion from long to double
+
+  // Conversion from long to double
   fcvt_d_l(dst, tmp1, rm);
-  // add sign of input value to result for +/- 0 cases
+  // Add sign of input value to result for +/- 0 cases
   fsgnj_d(dst, dst, src);
   j(done);
-  // if got conversion overflow return src
+
+  // If got conversion overflow return src
   bind(bad_val);
   fmv_d(dst, src);
 
