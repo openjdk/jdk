@@ -545,7 +545,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   void do_claimed_block(uint const region_idx, CardValue* const dirty_l, CardValue* const dirty_r) {
     _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
-    size_t num_cards = dirty_r - dirty_l;
+    size_t num_cards = pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
@@ -1264,9 +1264,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    size_t buffer_capacity = dcqs.buffer_capacity();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_capacity, worker_id);
+      cl->apply_to_buffer(node, worker_id);
       dcqs.deallocate_buffer(node);
     }
   }

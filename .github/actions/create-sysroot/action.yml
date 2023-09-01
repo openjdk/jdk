@@ -41,9 +41,6 @@ inputs:
   debian-version:
     description: 'Debian version'
     required: true
-  debian-keyring:
-    description: 'Debian keyring'
-    required: false
 
 runs:
   using: composite
@@ -68,7 +65,6 @@ runs:
         --include=fakeroot,symlinks,build-essential,make,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev,libatomic1
         --resolve-deps
         --variant=minbase
-        $(test -n "${{ inputs.debian-keyring }}" && echo "--keyring=${{ inputs.debian-keyring }}")
         ${{ inputs.debian-version }}
         sysroot
         ${{ inputs.debian-repository }}

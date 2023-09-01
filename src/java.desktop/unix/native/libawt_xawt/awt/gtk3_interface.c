@@ -604,6 +604,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_string_new = dl_symbol("g_string_new");
         fp_g_string_erase = dl_symbol("g_string_erase");
+        fp_g_string_set_size = dl_symbol("g_string_set_size");
         fp_g_string_free = dl_symbol("g_string_free");
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
@@ -3110,6 +3111,7 @@ static void gtk3_init(GtkApi* gtk) {
 
     gtk->g_string_new = fp_g_string_new;
     gtk->g_string_erase = fp_g_string_erase;
+    gtk->g_string_set_size = fp_g_string_set_size;
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;

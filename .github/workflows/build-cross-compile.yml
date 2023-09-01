@@ -34,12 +34,6 @@ on:
       gcc-major-version:
         required: true
         type: string
-      apt-gcc-version:
-        required: true
-        type: string
-      apt-gcc-cross-version:
-        required: true
-        type: string
       extra-conf-options:
         required: false
         type: string
@@ -115,8 +109,7 @@ jobs:
               g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
               gcc-${{ inputs.gcc-major-version }}-${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}=${{ inputs.apt-gcc-cross-version }} \
               g++-${{ inputs.gcc-major-version }}-${{ steps.platform-variables.outputs.gnu-arch }}-linux-gnu${{ steps.platform-variables.outputs.gnu-abi }}=${{ inputs.apt-gcc-cross-version }} \
-              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev \
-              debian-ports-archive-keyring
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Create sysroot'
@@ -127,7 +120,6 @@ jobs:
           debian-arch: ${{ steps.platform-variables.outputs.debian-arch }}
           debian-repository: ${{ steps.platform-variables.outputs.debian-repository }}
           debian-version: ${{ steps.platform-variables.outputs.debian-version }}
-          debian-keyring: ${{ steps.platform-variables.outputs.debian-keyring }}
 
       - name: 'Configure'
         run: >

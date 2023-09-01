@@ -148,7 +148,6 @@ jobs:
           debian-arch: ${{ steps.platform-variables.outputs.debian-arch }}
           debian-repository: ${{ steps.platform-variables.outputs.debian-repository }}
           debian-version: sid # it's necessary to get libc 2.34
-          debian-keyring: ${{ steps.platform-variables.outputs.debian-keyring }}
 
       - name: 'Mount folders in sysroot'
         run: |

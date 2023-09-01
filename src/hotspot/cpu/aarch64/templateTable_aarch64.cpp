@@ -2205,6 +2205,18 @@ void TemplateTable::_return(TosState state)
   if (_desc->bytecode() == Bytecodes::_return)
     __ membar(MacroAssembler::StoreStore);
 
+  if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
+    Label no_safepoint;
+    __ ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
+    __ tbz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), no_safepoint);
+    __ push(state);
+    __ push_cont_fastpath(rthread);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::at_safepoint));
+    __ pop_cont_fastpath(rthread);
+    __ pop(state);
+    __ bind(no_safepoint);
+  }
+
   // Narrow result if state is itos but result type is smaller.
   // Need to narrow in the return bytecode rather than in generate_return_entry
   // since compiled code callers expect the result to already be narrowed.
@@ -3852,7 +3864,7 @@ void TemplateTable::monitorenter()
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
         rfp, frame::interpreter_frame_initial_sp_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   Label allocated;
 
@@ -3955,7 +3967,7 @@ void TemplateTable::monitorexit()
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
         rfp, frame::interpreter_frame_initial_sp_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   Label found;
 

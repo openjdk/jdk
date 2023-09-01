@@ -32,6 +32,7 @@ import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
+import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.foreign.layout.AbstractLayout;
@@ -60,7 +61,8 @@ import java.util.Set;
 public abstract sealed class AbstractLinker implements Linker permits LinuxAArch64Linker, MacOsAArch64Linker,
                                                                       SysVx64Linker, WindowsAArch64Linker,
                                                                       Windowsx64Linker, LinuxPPC64leLinker,
-                                                                      LinuxRISCV64Linker, FallbackLinker {
+                                                                      LinuxRISCV64Linker, LinuxS390Linker,
+                                                                      FallbackLinker {
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);

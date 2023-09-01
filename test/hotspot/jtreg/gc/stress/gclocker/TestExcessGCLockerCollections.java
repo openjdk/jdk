@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,18 +133,12 @@ class TestExcessGCLockerCollectionsAux {
             new Thread(new JNICriticalWorker()).start();
         }
 
-        long durationMS = (long) (1000 * durationSec);
-        long start = System.currentTimeMillis();
-        long now = start;
-        long soFar = now - start;
-        while (soFar < durationMS) {
-            try {
-                Thread.sleep(durationMS - soFar);
-            } catch (Exception e) {
-            }
-            now = System.currentTimeMillis();
-            soFar = now - start;
+        try {
+            Thread.sleep(durationSec * 1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Test Failure, did not expect an InterruptedException", e);
         }
+
         println("Done.");
         keepRunning = false;
     }

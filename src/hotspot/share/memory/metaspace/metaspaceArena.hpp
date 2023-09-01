@@ -119,6 +119,7 @@ class MetaspaceArena : public CHeapObj<mtClass> {
     // Two eyecatchers to easily spot a corrupted _next pointer
     const uintx _eye1;
     const Fence* const _next;
+    NOT_LP64(uintx _dummy;)
     const uintx _eye2;
   public:
     Fence(const Fence* next) : _eye1(EyeCatcher), _next(next), _eye2(EyeCatcher) {}
