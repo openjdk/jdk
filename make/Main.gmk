@@ -970,7 +970,7 @@ else
   jdk.jdeps-gendata: java
 
   # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) java
+  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) $(JAVA_TARGETS)
   ifeq ($(CREATE_BUILDJDK), true)
     ifneq ($(CREATING_BUILDJDK), true)
       jdk.compiler-gendata: create-buildjdk
