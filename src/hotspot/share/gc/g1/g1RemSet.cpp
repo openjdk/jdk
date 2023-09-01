@@ -757,6 +757,24 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
+class G1ScanAndCountCodeBlobClosure : public CodeBlobClosure {
+  CodeBlobClosure* _cl;
+  size_t _count;
+
+public:
+  G1ScanAndCountCodeBlobClosure(CodeBlobClosure* cl) : _cl(cl), _count(0) {
+  }
+
+  void do_code_blob(CodeBlob* cb) override {
+    _cl->do_code_blob(cb);
+    _count++;
+  }
+
+  size_t count() const {
+    return _count;
+  }
+};
+
 // Heap region closure to be applied to all regions in the current collection set
 // increment to fix up non-card related roots.
 class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
@@ -822,8 +840,13 @@ public:
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      G1ScanAndCountCodeBlobClosure cl(_pss->closures()->weak_codeblobs());
+
       // Scan the code root list attached to the current region
-      r->code_roots_do(_pss->closures()->weak_codeblobs());
+      r->code_roots_do(&cl);
+
+      G1GCPhaseTimes* p = G1CollectedHeap::heap()->phase_times();
+      p->record_or_add_thread_work_item(_code_roots_phase, _worker_id, cl.count(), G1GCPhaseTimes::CodeRootsScannedNMethods);
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
