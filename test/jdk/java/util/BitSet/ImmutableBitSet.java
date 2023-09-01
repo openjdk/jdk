@@ -27,6 +27,7 @@
  * @run junit ImmutableBitSet
  */
 
+import jdk.internal.util.ImmutableBitSetPredicate;
 import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
@@ -40,14 +41,14 @@ public class ImmutableBitSet {
     @Test
     void empty() {
         BitSet bs = new BitSet();
-        IntPredicate ibs = bs.toPredicate();
+        IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
         test(bs, ibs);
     }
 
     @Test
     void negativeIndex() {
         BitSet bs = new BitSet();
-        IntPredicate ibs = bs.toPredicate();
+        IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
         assertThrows(IndexOutOfBoundsException.class, () -> {
             ibs.test(-1);
         });
@@ -56,7 +57,7 @@ public class ImmutableBitSet {
     @Test
     void basic() {
         BitSet bs = createReference(147);
-        IntPredicate ibs = bs.toPredicate();
+        IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
         test(bs, ibs);
     }
 
@@ -67,7 +68,7 @@ public class ImmutableBitSet {
             for (int j = bs.length() - 1; j > Long.BYTES - 1; j++) {
                 bs.clear(j);
             }
-            IntPredicate ibs = bs.toPredicate();
+            IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
             test(bs, ibs);
         }
     }

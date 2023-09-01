@@ -34,6 +34,7 @@ import java.util.BitSet;
 import java.util.Objects;
 import java.util.function.IntPredicate;
 
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.util.StaticProperty;
 
 /**
@@ -132,7 +133,7 @@ public class URLEncoder {
         bitSet.set('.');
         bitSet.set('*');
 
-        DONT_NEED_ENCODING = bitSet.toPredicate();
+        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
 
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
