@@ -1642,7 +1642,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
             // Find control for 'x' next to use but not inside inner loops.
             x_ctrl = place_outside_loop(x_ctrl, n_loop);
             // Replace all uses
-            if (u->is_ConstraintCast() && u->bottom_type()->higher_equal(_igvn.type(n)) && u->in(0) == x_ctrl) {
+            if (u->is_ConstraintCast() && _igvn.type(n)->higher_equal(u->bottom_type()) && u->in(0) == x_ctrl) {
               // If we're sinking a chain of data nodes, we might have inserted a cast to pin the use which is not necessary
               // anymore now that we're going to pin n as well
               _igvn.replace_node(u, x);
@@ -1696,7 +1696,13 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
                 cast = ConstraintCastNode::make_cast_for_type(x_ctrl, in, in_t, ConstraintCastNode::UnconditionalDependency);
               }
               if (cast != nullptr) {
-                register_new_node(cast, x_ctrl);
+                Node* prev = _igvn.hash_find_insert(cast);
+                if (prev != nullptr && get_ctrl(prev) == x_ctrl) {
+                  cast->destruct(&_igvn);
+                  cast = prev;
+                } else {
+                  register_new_node(cast, x_ctrl);
+                }
                 x->replace_edge(in, cast);
                 // Chain of AddP:
                 // 2- A CastPP of the base is only added now that both AddP nodes are sunk
@@ -1792,6 +1798,14 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   }
   if (n_loop->is_member(u_loop)) {
     return false; // Found use in inner loop
+  }
+  // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
+  // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
+  // test of the pre loop above the point in the graph where it's pinned.
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop() &&
+      u_loop->_head->is_CountedLoop() && u_loop->_head->as_CountedLoop()->is_main_loop() &&
+      n_loop->_next == get_loop(u_loop->_head->as_CountedLoop()->skip_strip_mined())) {
+    return false;
   }
   return true;
 }

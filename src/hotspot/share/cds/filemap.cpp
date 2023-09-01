@@ -207,22 +207,10 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
     _narrow_oop_mode = CompressedOops::mode();
     _narrow_oop_base = CompressedOops::base();
     _narrow_oop_shift = CompressedOops::shift();
-    if (UseCompressedOops) {
-      _heap_begin = CompressedOops::begin();
-      _heap_end = CompressedOops::end();
-    } else {
-#if INCLUDE_G1GC
-      address start = (address)G1CollectedHeap::heap()->reserved().start();
-      address end = (address)G1CollectedHeap::heap()->reserved().end();
-      _heap_begin = HeapShared::to_requested_address(start);
-      _heap_end = HeapShared::to_requested_address(end);
-#endif
-    }
   }
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
-  _narrow_klass_shift = CompressedKlassPointers::shift();
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
   _use_full_module_graph = MetaspaceShared::use_full_module_graph();
 
@@ -235,8 +223,8 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
   _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
-  _num_module_paths = ClassLoader::num_module_path_entries();
   _max_used_path_index = ClassLoaderExt::max_used_path_index();
+  _num_module_paths = ClassLoader::num_module_path_entries();
 
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
@@ -283,13 +271,10 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
-  st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
   st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
-  st->print_cr("- heap_begin:                     " INTPTR_FORMAT, p2i(_heap_begin));
-  st->print_cr("- heap_end:                       " INTPTR_FORMAT, p2i(_heap_end));
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
   st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_X, _shared_path_table_offset);
   st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
@@ -302,6 +287,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
+  st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- use_full_module_graph           %d", _use_full_module_graph);
@@ -368,7 +354,7 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
   _from_class_path_attr = ent->_from_class_path_attr;
   set_name(ent->name(), CHECK);
 
-  if (ent->is_jar() && !ent->is_signed() && ent->manifest() != nullptr) {
+  if (ent->is_jar() && ent->manifest() != nullptr) {
     Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
                                                     ent->manifest_size(),
                                                     CHECK);
@@ -622,29 +608,6 @@ class ManifestStream: public ResourceObj {
     buf[len] = 0;
     return buf;
   }
-
-  // The return value indicates if the JAR is signed or not
-  bool check_is_signed() {
-    u1* attr = _current;
-    bool isSigned = false;
-    while (_current < _buffer_end) {
-      if (*_current == '\n') {
-        *_current = '\0';
-        u1* value = (u1*)strchr((char*)attr, ':');
-        if (value != nullptr) {
-          assert(*(value+1) == ' ', "Unrecognized format" );
-          if (strstr((char*)attr, "-Digest") != nullptr) {
-            isSigned = true;
-            break;
-          }
-        }
-        *_current = '\n'; // restore
-        attr = _current + 1;
-      }
-      _current ++;
-    }
-    return isSigned;
-  }
 };
 
 void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry* ent, TRAPS) {
@@ -657,18 +620,14 @@ void FileMapInfo::update_jar_manifest(ClassPathEntry *cpe, SharedClassPathEntry*
   if (manifest != nullptr) {
     ManifestStream* stream = new ManifestStream((u1*)manifest,
                                                 manifest_size);
-    if (stream->check_is_signed()) {
-      ent->set_is_signed();
-    } else {
-      // Copy the manifest into the shared archive
-      manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
-      Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
-                                                      manifest_size,
-                                                      CHECK);
-      char* p = (char*)(buf->data());
-      memcpy(p, manifest, manifest_size);
-      ent->set_manifest(buf);
-    }
+    // Copy the manifest into the shared archive
+    manifest = ClassLoaderExt::read_raw_manifest(THREAD, cpe, &manifest_size);
+    Array<u1>* buf = MetadataFactory::new_array<u1>(loader_data,
+                                                    manifest_size,
+                                                    CHECK);
+    char* p = (char*)(buf->data());
+    memcpy(p, manifest, manifest_size);
+    ent->set_manifest(buf);
   }
 }
 
@@ -1569,9 +1528,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
       mapping_offset = (size_t)((address)requested_base - CompressedOops::base());
       assert((mapping_offset >> CompressedOops::shift()) << CompressedOops::shift() == mapping_offset, "must be");
     } else {
-#if INCLUDE_G1GC
-      mapping_offset = requested_base - (char*)G1CollectedHeap::heap()->reserved().start();
-#endif
+      mapping_offset = 0; // not used with !UseCompressedOops
     }
 #endif // INCLUDE_CDS_JAVA_HEAP
   } else {
@@ -1636,10 +1593,11 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
 }
 
 size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
-  char* start = heap_info->start();
-  size_t size = heap_info->byte_size();
-  write_region(MetaspaceShared::hp, start, size, false, false);
-  return size;
+  char* buffer_start = heap_info->buffer_start();
+  size_t buffer_size = heap_info->buffer_byte_size();
+  write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
+  header()->set_heap_roots_offset(heap_info->heap_roots_offset());
+  return buffer_size;
 }
 
 // Dump bytes to file -- at the current file position.
@@ -1698,6 +1656,20 @@ void FileMapInfo::close() {
   }
 }
 
+/*
+ * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
+ */
+char* map_memory(int fd, const char* file_name, size_t file_offset,
+                 char *addr, size_t bytes, bool read_only,
+                 bool allow_exec, MEMFLAGS flags = mtNone) {
+  char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
+                             AlwaysPreTouch ? false : read_only,
+                             allow_exec, flags);
+  if (mem != nullptr && AlwaysPreTouch) {
+    os::pretouch_memory(mem, mem + bytes);
+  }
+  return mem;
+}
 
 // JVM/TI RedefineClasses() support:
 // Remap the shared readonly space to shared readwrite, private.
@@ -1833,9 +1805,9 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in MetaspaceShared::map_archives().
-    char* base = os::map_memory(_fd, _full_path, r->file_offset(),
-                                requested_addr, size, r->read_only(),
-                                r->allow_exec(), mtClassShared);
+    char* base = map_memory(_fd, _full_path, r->file_offset(),
+                            requested_addr, size, r->read_only(),
+                            r->allow_exec(), mtClassShared);
     if (base != requested_addr) {
       log_info(cds)("Unable to map %s shared space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
@@ -1861,8 +1833,8 @@ char* FileMapInfo::map_bitmap_region() {
   }
   bool read_only = true, allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
-  char* bitmap_base = os::map_memory(_fd, _full_path, r->file_offset(),
-                                     requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
+  char* bitmap_base = map_memory(_fd, _full_path, r->file_offset(),
+                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
   if (bitmap_base == nullptr) {
     log_info(cds)("failed to map relocation bitmap");
     return nullptr;
@@ -2016,15 +1988,19 @@ bool FileMapInfo::can_use_heap_region() {
     // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
   }
 
+  // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
+  // ArchiveHeapWriter::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
+  // hold:
+  address archive_narrow_klass_base = (address)header()->mapped_base_address();
+  const int archive_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
                 max_heap_size()/M);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(narrow_klass_base()), narrow_klass_shift());
+  log_info(cds)("    narrow_klass_base at mapping start address, narrow_klass_shift = %d",
+                archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
-  log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                p2i(header()->heap_begin()), p2i(header()->heap_end()));
-
   log_info(cds)("The current max heap size = " SIZE_FORMAT "M, HeapRegion::GrainBytes = " SIZE_FORMAT,
                 MaxHeapSize/M, HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
@@ -2037,11 +2013,11 @@ bool FileMapInfo::can_use_heap_region() {
                 UseCompressedOops ? p2i(CompressedOops::end()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
 
-  if (narrow_klass_base() != CompressedKlassPointers::base() ||
-      narrow_klass_shift() != CompressedKlassPointers::shift()) {
-    log_info(cds)("CDS heap data cannot be used because the archive was created with an incompatible narrow klass encoding mode.");
-    return false;
-  }
+  assert(archive_narrow_klass_base == CompressedKlassPointers::base(), "Unexpected encoding base encountered "
+         "(" PTR_FORMAT ", expected " PTR_FORMAT ")", p2i(CompressedKlassPointers::base()), p2i(archive_narrow_klass_base));
+  assert(archive_narrow_klass_shift == CompressedKlassPointers::shift(), "Unexpected encoding shift encountered "
+         "(%d, expected %d)", CompressedKlassPointers::shift(), archive_narrow_klass_shift);
+
   return true;
 }
 
@@ -2079,9 +2055,10 @@ address FileMapInfo::heap_region_requested_address() {
     // which is the runtime location of the referenced object.
     return /*runtime*/ CompressedOops::base() + r->mapping_offset();
   } else {
-    // We can avoid relocation if each region is mapped into the exact same address
-    // where it was at dump time.
-    return /*dumptime*/header()->heap_begin() + r->mapping_offset();
+    // This was the hard-coded requested base address used at dump time. With uncompressed oops,
+    // the heap range is assigned by the OS so we will most likely have to relocate anyway, no matter
+    // what base address was picked at duump time.
+    return (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   }
 }
 
@@ -2137,9 +2114,9 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                              r->allow_exec());
+  char* base = map_memory(_fd, _full_path, r->file_offset(),
+                          addr, _mapped_heap_memregion.byte_size(), r->read_only(),
+                          r->allow_exec());
   if (base == nullptr || base != addr) {
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
@@ -2167,7 +2144,7 @@ bool FileMapInfo::map_heap_region_impl() {
   if (delta != 0) {
     _heap_pointers_need_patching = true;
   }
-  ArchiveHeapLoader::init_mapped_heap_relocation(delta, narrow_oop_shift());
+  ArchiveHeapLoader::init_mapped_heap_info(mapped_start, delta, narrow_oop_shift());
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();

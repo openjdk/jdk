@@ -123,4 +123,3 @@ public class TestHumongousCodeCacheRoots {
     runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(), new String[] { });
   }
 }
-

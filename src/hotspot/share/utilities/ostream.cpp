@@ -186,18 +186,9 @@ void outputStream::put(char ch) {
   write(buf, 1);
 }
 
-#define SP_USE_TABS false
-
 void outputStream::sp(int count) {
   if (count < 0)  return;
-  if (SP_USE_TABS && count >= 8) {
-    int target = position() + count;
-    while (count >= 8) {
-      this->write("\t", 1);
-      count -= 8;
-    }
-    count = target - position();
-  }
+
   while (count > 0) {
     int nw = (count > 8) ? 8 : count;
     this->write("        ", nw);
@@ -257,7 +248,7 @@ void outputStream::date_stamp(bool guard,
 }
 
 outputStream& outputStream::indent() {
-  while (_position < _indentation) sp();
+  sp(_indentation - _position);
   return *this;
 }
 
@@ -1105,15 +1096,15 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
   }
 }
 
-int networkStream::read(char *buf, size_t len) {
-  return os::recv(_socket, buf, (int)len, 0);
+ssize_t networkStream::read(char *buf, size_t len) {
+  return os::recv(_socket, buf, len, 0);
 }
 
 void networkStream::flush() {
   if (size() != 0) {
-    int result = os::raw_send(_socket, (char *)base(), size(), 0);
+    ssize_t result = os::raw_send(_socket, (char *)base(), size(), 0);
     assert(result != -1, "connection error");
-    assert(result == (int)size(), "didn't send enough data");
+    assert(result >= 0 && (size_t)result == size(), "didn't send enough data");
   }
   reset();
 }
@@ -1152,9 +1143,9 @@ bool networkStream::connect(const char *host, short port) {
     return false;
   }
 
-  ret = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
+  ssize_t conn = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
   freeaddrinfo(addr_info);
-  return (ret >= 0);
+  return (conn >= 0);
 }
 
 #endif

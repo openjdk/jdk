@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+
+<svg width="160" height="160"
+     version="1.1"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <style><![CDATA[
+        rect {
+            fill: none;
+            stroke: black;
+            stroke-width: 1;
+        }
+        text {
+            font: 16px 'DejaVu Sans', sans-serif;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        text.left {
+            text-anchor: start;
+            dominant-baseline: auto;
+        }
+    ]]></style>
+
+    <rect x="8" y="8"
+          width="144" height="144"/>
+    <text x="16" y="24" class="left">P1</text>
+    <g id="leftBox">
+        <rect x="16" y="28"
+              width="56" height="116"/>
+
+        <rect x="24" y="36"
+              width="40" height="28"/>
+        <rect x="24" y="72"
+              width="40" height="28"/>
+        <rect x="24" y="108"
+              width="40" height="28"/>
+    </g>
+
+    <text x="44" y="50">C1</text>
+    <text x="44" y="86">C2</text>
+    <text x="44" y="122">C3</text>
+
+    <use xlink:href="#leftBox" x="72" y="0"/>
+    <text x="86" y="24" class="left">P2</text>
+    <text x="116" y="50">C4</text>
+    <text x="116" y="86">C5</text>
+    <text x="116" y="122">C6</text>
+
+</svg>
