@@ -1517,37 +1517,6 @@ final class StringUTF16 {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    /**
-     * UTF16 version of {@link Integer#PACKED_DIGITS}, but the endianness
-     * of each integer is already adapted to platform.
-     * As a result, the packed values should <strong>NOT</strong> be recombined
-     * with bitwise operations, like {@code p[a] << 32 | p[b]}, and can only be
-     * passed to {@link Unsafe#putIntUnaligned(Object, long, int)} without a
-     * boolean parameter.
-     */
-    @Stable
-    private static final int[] PACKED_DIGITS_UTF16;
-    static {
-        int[] digits = new int[] {
-                0x300030, 0x310030, 0x320030, 0x330030, 0x340030, 0x350030, 0x360030, 0x370030, 0x380030, 0x390030,
-                0x300031, 0x310031, 0x320031, 0x330031, 0x340031, 0x350031, 0x360031, 0x370031, 0x380031, 0x390031,
-                0x300032, 0x310032, 0x320032, 0x330032, 0x340032, 0x350032, 0x360032, 0x370032, 0x380032, 0x390032,
-                0x300033, 0x310033, 0x320033, 0x330033, 0x340033, 0x350033, 0x360033, 0x370033, 0x380033, 0x390033,
-                0x300034, 0x310034, 0x320034, 0x330034, 0x340034, 0x350034, 0x360034, 0x370034, 0x380034, 0x390034,
-                0x300035, 0x310035, 0x320035, 0x330035, 0x340035, 0x350035, 0x360035, 0x370035, 0x380035, 0x390035,
-                0x300036, 0x310036, 0x320036, 0x330036, 0x340036, 0x350036, 0x360036, 0x370036, 0x380036, 0x390036,
-                0x300037, 0x310037, 0x320037, 0x330037, 0x340037, 0x350037, 0x360037, 0x370037, 0x380037, 0x390037,
-                0x300038, 0x310038, 0x320038, 0x330038, 0x340038, 0x350038, 0x360038, 0x370038, 0x380038, 0x390038,
-                0x300039, 0x310039, 0x320039, 0x330039, 0x340039, 0x350039, 0x360039, 0x370039, 0x380039, 0x390039
-        };
-        if (isBigEndian()) {
-            for (int i = 0; i < digits.length; i++) {
-                digits[i] = Integer.reverseBytes(digits[i] << 8);
-            }
-        }
-        PACKED_DIGITS_UTF16 = digits;
-    }
-
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
     // Used by trusted callers.  Assumes all necessary bounds checks have
@@ -1577,22 +1546,30 @@ final class StringUTF16 {
             r = (q * 100) - i;
             i = q;
 
+            int packed = (int) Integer.PACKED_DIGITS[r];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
             charPos -= 2;
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[r]);
+                    inflated,
+                    false);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
+            int packed = (int) Integer.PACKED_DIGITS[-i];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
             charPos -= 2;
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[-i]);
+                    inflated,
+                    false);
         } else {
             putChar(buf, --charPos, '0' - i);
         }
@@ -1624,12 +1601,17 @@ final class StringUTF16 {
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
+
+            int packed = (int) Integer.PACKED_DIGITS[(int)((q * 100) - i)];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
             charPos -= 2;
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[(int)((q * 100) - i)]);
+                    inflated,
+                    false);
             i = q;
         }
 
@@ -1638,23 +1620,33 @@ final class StringUTF16 {
         int i2 = (int)i;
         while (i2 <= -100) {
             q2 = i2 / 100;
+
+            int packed = (int) Integer.PACKED_DIGITS[(q2 * 100) - i2];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
             charPos -= 2;
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[(q2 * 100) - i2]);
+                    inflated,
+                    false);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
+
+            int packed = (int) Integer.PACKED_DIGITS[-i2];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[-i2]);
+                    inflated,
+                    false);
         } else {
             putChar(buf, --charPos, '0' - i2);
         }
