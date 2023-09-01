@@ -3697,7 +3697,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          __ testptr(mdo_addr, mdo_addr);
+          __ cmpptr(mdo_addr, 0);
           __ jccb(Assembler::equal, none);
           __ cmpptr(mdo_addr, TypeEntries::null_seen);
           __ jccb(Assembler::equal, none);
@@ -3740,7 +3740,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         {
           Label ok;
           __ push(tmp);
-          __ testptr(mdo_addr, mdo_addr);
+          __ cmpptr(mdo_addr, 0);
           __ jcc(Assembler::equal, ok);
           __ cmpptr(mdo_addr, TypeEntries::null_seen);
           __ jcc(Assembler::equal, ok);
