@@ -30,13 +30,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.function.IntConsumer;
-import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.ValueBased;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
