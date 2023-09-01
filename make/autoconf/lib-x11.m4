@@ -35,6 +35,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     X_CFLAGS=
     X_LIBS=
   else
+    x_libraries_orig="$x_libraries"
 
     if test "x${with_x}" = xno; then
       AC_MSG_ERROR([It is not possible to disable the use of X11. Remove the --without-x option.])
@@ -82,12 +83,8 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     AC_PATH_XTRA
 
     # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
-    # this doesn't make sense so we remove it.
-    if test "x$COMPILE_TYPE" = xcross; then
-      X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
-    fi
-    # Also remove the -R setting for devkit usage
-    if test "x$with_devkit" != "x" && test "x$with_devkit" != "xno"; then
+    # this doesn't make sense so we remove it; same for sysroot (devkit).
+    if test "x$COMPILE_TYPE" = xcross || (test "x$SYSROOT" != "x" && test "x$x_libraries_orig" = xNONE); then
       X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
     fi
 
