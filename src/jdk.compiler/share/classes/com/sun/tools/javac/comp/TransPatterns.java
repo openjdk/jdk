@@ -524,7 +524,7 @@ public class TransPatterns extends TreeTranslator {
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
 
-            cases = patchCompletingNormallyCases(cases);
+            patchCompletingNormallyCases(cases);
 
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
@@ -543,7 +543,8 @@ public class TransPatterns extends TreeTranslator {
                     validCaseLabelList = clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL);
                 }
 
-                if (validCaseLabelList && !previousCompletesNormally || c.guard != null) {
+                if ((validCaseLabelList && !previousCompletesNormally) ||
+                        c.guard != null) {
                     List<JCPatternCaseLabel> labels = clearedPatterns.stream().map(cp -> (JCPatternCaseLabel)cp).collect(List.collector());
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
@@ -661,7 +662,7 @@ public class TransPatterns extends TreeTranslator {
     }
 
     // Duplicates the block statement where needed.
-    // Processes cases in reverse order, e.g.
+    // Processes cases in place, e.g.
     // switch (obj) {
     //     case Integer _ when ((Integer) obj) > 0:
     //     case String _  when !((String) obj).isEmpty():
@@ -678,8 +679,7 @@ public class TransPatterns extends TreeTranslator {
     //         return 1;
     //     ...
     // }
-    private static List<JCCase> patchCompletingNormallyCases(List<JCCase> cases) {
-        ListBuffer<JCCase> newCases = new ListBuffer<>();
+    private static void patchCompletingNormallyCases(List<JCCase> cases) {
         for (int j = cases.size() - 1; j >= 0; j--) {
             var currentCase = cases.get(j);
 
@@ -689,9 +689,7 @@ public class TransPatterns extends TreeTranslator {
                 var nextCase = cases.get(j + 1);
                 currentCase.stats = currentCase.stats.appendList(nextCase.stats);
             }
-            newCases.add(currentCase);
         }
-        return newCases.toList().reverse();
     }
 
     //where:
