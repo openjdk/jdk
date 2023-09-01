@@ -1117,7 +1117,8 @@ public class TreeInfo {
         case MUL:
         case DIV:
         case MOD: return mulPrec;
-        case TYPETEST: return ordPrec;
+        case TYPETEST:
+        case RECONSTRUCTION: return ordPrec;
         default: throw new AssertionError();
         }
     }

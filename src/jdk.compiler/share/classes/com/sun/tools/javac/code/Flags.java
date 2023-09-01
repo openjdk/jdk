@@ -390,6 +390,11 @@ public class Flags {
     public static final long SEALED = 1L<<62; // ClassSymbols
 
     /**
+     * Flag to indicate outgoing binding declaration.
+     */
+    public static final long OUTGOING_BINDING = 1L<<62; // VarSymbols
+
+    /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols

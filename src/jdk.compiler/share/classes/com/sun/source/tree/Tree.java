@@ -228,6 +228,11 @@ public interface Tree {
         PARENTHESIZED(ParenthesizedTree.class),
 
         /**
+         * Used for instances of {@link ReconstructionTree}.
+         */
+        RECONSTRUCTION(ReconstructionTree.class),
+
+        /**
          * Used for instances of {@link BindingPatternTree}.
          *
          * @since 21

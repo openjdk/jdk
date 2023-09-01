@@ -380,6 +380,14 @@ public interface TreeVisitor<R,P> {
     R visitParenthesized(ParenthesizedTree node, P p);
 
     /**
+     * Visits a {@code ReconstructionTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitReconstruction(ReconstructionTree node, P p);
+
+    /**
      * Visits a {@code ReturnTree} node.
      * @param node the node being visited
      * @param p a parameter value

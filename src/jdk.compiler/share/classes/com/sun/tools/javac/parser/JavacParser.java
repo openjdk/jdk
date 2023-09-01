@@ -1036,11 +1036,11 @@ public class JavacParser implements Parser {
         case GTGTEQ:
         case GTGTGTEQ:
             int pos = token.pos;
-            TokenKind tk = token.kind;
+            Token baseToken = token;
             nextToken();
             selectExprMode();
             JCExpression t1 = term();
-            return F.at(pos).Assignop(optag(tk), t, t1);
+            return F.at(pos).Assignop(optag(baseToken), t, t1);
         default:
             return t;
         }
@@ -1081,7 +1081,7 @@ public class JavacParser implements Parser {
      */
     JCExpression term2() {
         JCExpression t = term3();
-        if (isMode(EXPR) && prec(token.kind) >= TreeInfo.orPrec) {
+        if (isMode(EXPR) && prec(token) >= TreeInfo.orPrec) {
             selectExprMode();
             return term2Rest(t, TreeInfo.orPrec);
         } else {
@@ -1112,7 +1112,7 @@ public class JavacParser implements Parser {
         odStack[0] = t;
         int startPos = token.pos;
         Token topOp = Tokens.DUMMY;
-        while (prec(token.kind) >= minprec) {
+        while (prec(token) >= minprec) {
             opStack[top] = topOp;
 
             if (token.kind == INSTANCEOF) {
@@ -1153,14 +1153,22 @@ public class JavacParser implements Parser {
                     }
                 }
                 odStack[top] = F.at(pos).TypeTest(odStack[top], pattern);
+            } else if (token.kind == IDENTIFIER && token.name().contentEquals("with")) {
+                int pos = token.pos;
+
+                nextToken();
+
+                JCBlock block = block();
+
+                odStack[top] = F.at(pos).Reconstruction(odStack[top], block);
             } else {
                 topOp = token;
                 nextToken();
                 top++;
                 odStack[top] = term3();
             }
-            while (top > 0 && prec(topOp.kind) >= prec(token.kind)) {
-                odStack[top - 1] = F.at(topOp.pos).Binary(optag(topOp.kind), odStack[top - 1], odStack[top]);
+            while (top > 0 && prec(topOp) >= prec(token)) {
+                odStack[top - 1] = F.at(topOp.pos).Binary(optag(topOp), odStack[top - 1], odStack[top]);
                 top--;
                 topOp = opStack[top];
             }
@@ -1201,7 +1209,7 @@ public class JavacParser implements Parser {
                 List<JCExpression> ops = opStack.toList();
                 JCExpression res = ops.head;
                 for (JCExpression op : ops.tail) {
-                    res = F.at(op.getStartPosition()).Binary(optag(TokenKind.PLUS), res, op);
+                    res = F.at(op.getStartPosition()).Binary(Tag.PLUS, res, op);
                     storeEnd(res, getEndPos(op));
                 }
                 return res;
@@ -5200,7 +5208,7 @@ public class JavacParser implements Parser {
     /** Return precedence of operator represented by token,
      *  -1 if token is not a binary operator. @see TreeInfo.opPrec
      */
-    static int prec(TokenKind token) {
+    static int prec(Token token) {
         JCTree.Tag oc = optag(token);
         return (oc != NO_TAG) ? TreeInfo.opPrec(oc) : -1;
     }
@@ -5220,8 +5228,8 @@ public class JavacParser implements Parser {
     /** Return operation tag of binary operator represented by token,
      *  No_TAG if token is not a binary operator.
      */
-    static JCTree.Tag optag(TokenKind token) {
-        switch (token) {
+    static JCTree.Tag optag(Token token) {
+        switch (token.kind) {
         case BARBAR:
             return OR;
         case AMPAMP:
@@ -5284,9 +5292,15 @@ public class JavacParser implements Parser {
             return MOD_ASG;
         case INSTANCEOF:
             return TYPETEST;
+        case IDENTIFIER:
+            if (token.name().contentEquals("with")) {
+                return RECONSTRUCTION;
+            }
+            break;
         default:
-            return NO_TAG;
+            break;
         }
+        return NO_TAG;
     }
 
     /** Return operation tag of unary operator represented by token,

@@ -276,6 +276,11 @@ public class TreeScanner extends Visitor {
         scan(tree.expr);
     }
 
+    public void visitReconstruction(JCReconstruction tree) {
+        scan(tree.expr);
+        scan(tree.block);
+    }
+
     public void visitAssign(JCAssign tree) {
         scan(tree.lhs);
         scan(tree.rhs);

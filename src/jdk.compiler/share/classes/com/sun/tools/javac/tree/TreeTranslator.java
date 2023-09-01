@@ -324,6 +324,13 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    @Override
+    public void visitReconstruction(JCReconstruction tree) {
+        tree.expr = translate(tree.expr);
+        tree.block = translate(tree.block);
+        result = tree;
+    }
+
     public void visitAssign(JCAssign tree) {
         tree.lhs = translate(tree.lhs);
         tree.rhs = translate(tree.rhs);

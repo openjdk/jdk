@@ -3974,6 +3974,33 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), Errors.IllegalParenthesizedExpression);
     }
 
+    @Override
+    public void visitReconstruction(JCReconstruction tree) {
+        Type owntype = attribExpr(tree.expr, env);
+        Env<AttrContext> blockEnv =
+            env.dup(tree, env.info.dup(env.info.scope.dup()));
+
+        try {
+            //TODO: check owntype is a record type!
+            ListBuffer<VarSymbol> outgoingBindings = new ListBuffer<>();
+
+            for (RecordComponent component : ((ClassSymbol) owntype.tsym).getRecordComponents()) {
+                VarSymbol outgoing = new VarSymbol(OUTGOING_BINDING, component.name, types.memberType(owntype, component), env.info.scope.owner);
+
+                outgoingBindings.append(outgoing);
+                blockEnv.info.scope.enter(outgoing);
+            }
+
+            attribStat(tree.block, blockEnv);
+
+            tree.outgoingBindings = outgoingBindings.toList();
+            tree.type = owntype;
+        } finally {
+            blockEnv.info.scope.leave();
+        }
+
+    }
+
     public void visitAssign(JCAssign tree) {
         Type owntype = attribTree(tree.lhs, env.dup(tree), varAssignmentInfo);
         Type capturedType = capture(owntype);

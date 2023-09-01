@@ -102,6 +102,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 import static javax.tools.StandardLocation.ANNOTATION_PROCESSOR_PATH;
 
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
+import com.sun.tools.javac.tree.JCTree.JCReconstruction;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
@@ -1573,6 +1574,12 @@ public class JavaCompiler {
             public void visitSwitchExpression(JCSwitchExpression tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitchExpression(tree);
+            }
+
+            @Override
+            public void visitReconstruction(JCReconstruction tree) {
+                hasPatterns |= true;
+                super.visitReconstruction(tree);
             }
         }
         ScanNested scanner = new ScanNested();

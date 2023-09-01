@@ -98,10 +98,12 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
 import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
+import com.sun.tools.javac.tree.JCTree.JCReconstruction;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.JCTree.JCTry;
+import com.sun.tools.javac.tree.JCTree.JCYield;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -1218,6 +1220,59 @@ public class TransPatterns extends TreeTranslator {
                     new PatternMatchingCatch(patternMatchingCatch, deconstructorCalls);
             deconstructorCalls = null;
         }
+    }
+
+    @Override
+    public void visitReconstruction(JCReconstruction tree) {
+        List<BindingSymbol> newOutgoingBindings = tree.outgoingBindings.map(vs -> new BindingSymbol(0, vs.name, vs.type, vs.owner));
+        Map<VarSymbol, BindingSymbol> old2New = new HashMap<>();
+        List<VarSymbol> outgoingBindingsIt = tree.outgoingBindings;
+        List<BindingSymbol> newOutgoingBindingsIt = newOutgoingBindings;
+
+        while (outgoingBindingsIt.nonEmpty()) {
+            old2New.put(outgoingBindingsIt.head, newOutgoingBindingsIt.head);
+            outgoingBindingsIt = outgoingBindingsIt.tail;
+            newOutgoingBindingsIt = newOutgoingBindingsIt.tail;
+        }
+
+        ClassSymbol recordClass = (ClassSymbol) tree.expr.type.tsym;
+
+        JCRecordPattern pat = make.RecordPattern(make.QualIdent(recordClass), newOutgoingBindings.map(bs -> (JCPattern) make.BindingPattern(make.VarDef(bs, null)).setType(bs.type)));
+
+        pat.record = recordClass;
+        pat.type = tree.type;
+        pat.fullComponentTypes = recordClass.getRecordComponents().map(c -> types.memberType(tree.type, c));
+
+        new TreeScanner() {
+            @Override
+            public void visitIdent(JCIdent tree) {
+                BindingSymbol newSym = old2New.get(tree.sym);
+                if (newSym != null) {
+                    tree.sym = newSym;
+                } 
+                super.visitIdent(tree);
+            }
+        }.scan(tree.block);
+
+        JCNewClass createNew = make.NewClass(null, List.nil(), make.QualIdent(recordClass), newOutgoingBindings.map(bs -> make.Ident(bs)), null);
+
+        createNew.type = tree.type;
+        createNew.constructor = recordClass.members().findFirst(names.init, s -> (s.flags() & Flags.RECORD) != 0); //TODO: more safer test, like "is constructor".
+
+        JCYield yieldResult = make.Yield(createNew);
+        ListBuffer<JCStatement> stats = new ListBuffer<>();
+        stats.appendList(tree.block.stats);
+        stats.append(yieldResult);
+
+        JCCase cse = make.Case(CaseKind.STATEMENT, List.of(make.PatternCaseLabel(pat)), null, stats.toList(), null);
+        JCSwitchExpression mainSwitch = make.SwitchExpression(tree.expr, List.of(
+                cse
+                //implicit default -> throw new MatchException()
+        ));
+        mainSwitch.patternSwitch = true;
+        mainSwitch.type = tree.type;
+        yieldResult.target = mainSwitch;
+        result = translate(mainSwitch);
     }
 
     public JCTree translateTopLevelClass(Env<AttrContext> env, JCTree cdef, TreeMaker make) {

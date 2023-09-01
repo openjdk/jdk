@@ -554,6 +554,20 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @return  the result of {@code defaultAction}
      */
     @Override
+    public R visitReconstruction(ReconstructionTree node, P p) {
+        return defaultAction(node, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
     public R visitAssignment(AssignmentTree node, P p) {
         return defaultAction(node, p);
     }
