@@ -655,6 +655,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _igvn_worklist(nullptr),
                   _types(nullptr),
                   _node_hash(nullptr),
+                  _saved_hashes(),
                   _late_inlines(comp_arena(), 2, 0, nullptr),
                   _string_late_inlines(comp_arena(), 2, 0, nullptr),
                   _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
@@ -727,6 +728,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
+  _saved_hashes = new (comp_arena()) VectorSet(comp_arena());
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
@@ -937,6 +939,7 @@ Compile::Compile( ciEnv* ci_env,
     _igvn_worklist(nullptr),
     _types(nullptr),
     _node_hash(nullptr),
+    _saved_hashes(),
     _number_of_mh_late_inlines(0),
     _print_inlining_stream(new (mtCompiler) stringStream()),
     _print_inlining_list(nullptr),
@@ -971,6 +974,7 @@ Compile::Compile( ciEnv* ci_env,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
+  _saved_hashes = new (comp_arena()) VectorSet(comp_arena());
   {
     PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
@@ -2164,17 +2168,8 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
   }
 }
 
-bool Compile::optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode) {
-  if (_loop_opts_cnt > 0) {
-    while (major_progress() && (_loop_opts_cnt > 0)) {
-      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop::optimize(igvn, mode);
-      _loop_opts_cnt--;
-      if (failing())  return false;
-      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
-    }
-  }
-  return true;
+bool Compile::optimize_loops(PhaseIterGVN& igvn) {
+  return PhaseIdealLoop::optimize_default(igvn, _loop_opts_cnt);
 }
 
 // Remove edges from "root" to each SafePoint at a backward branch.
@@ -2401,7 +2396,7 @@ void Compile::Optimize() {
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
-  if (!optimize_loops(igvn, LoopOptsDefault)) {
+  if (!optimize_loops(igvn)) {
     return;
   }
 
