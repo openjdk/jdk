@@ -91,7 +91,7 @@ class CharacterDataLatin1 extends CharacterData {
     }
 
     boolean isLowerCaseEx(int ch) {
-        return ch >= 'a' && (ch <= 'z' || ch == 181 || (ch >= 223 && ch != 247));
+        return ch >= 'a' && (ch <= 'z' || ch == 0xb5 || (ch >= 0xdf && ch != 0xf7));
     }
 
     @IntrinsicCandidate
