@@ -49,6 +49,9 @@ import java.util.Optional;
  *     <li>When creating an upcall stub, using {@link Linker#upcallStub(MethodHandle, FunctionDescriptor, Arena, Option...)}.
  * </ul>
  *
+ * @implSpec
+ * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ *
  * @see #ADDRESS
  * @see #ADDRESS_UNALIGNED
  * @since 22
