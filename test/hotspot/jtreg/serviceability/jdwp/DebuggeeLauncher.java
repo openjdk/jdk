@@ -63,7 +63,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
 
     /**
      * Starts the debuggee with the necessary JDWP options and handles the
-     * debuggee's stdout output. stderr migth contain jvm output and just printed to the log
+     * debuggee's stdout output. stderr might contain jvm output, which is just printed to the log.
      *
      * @throws Throwable
      */
