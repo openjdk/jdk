@@ -1916,11 +1916,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                 stealCount += ns;         // accumulate steals
             }
             unlockRunState();
-            if (stop == 0 && replaceable)
-                signalWork(); // may replace unless trimmed or uninitialized
         }
-        if (ex != null)
-            ForkJoinTask.rethrow(ex);
+        if ((runState & STOP) == 0) {
+            if (replaceable)
+                signalWork(); // may replace unless trimmed or uninitialized
+            if (ex != null)
+                ForkJoinTask.rethrow(ex);
+        }
     }
 
     /**
@@ -2771,7 +2773,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param now if true, unconditionally terminate, else only
      * if no work and no active workers
      * @param enable if true, terminate when next possible
-     * @return runState (possibly only its status bits) on exit
+     * @return runState on exit
      */
     private int tryTerminate(boolean now, boolean enable) {
         int e, isShutdown;
@@ -2782,43 +2784,45 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
                     getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
                 if (isShutdown != 0 && isQuiescent(true))
-                    e = runState;
+                    e = STOP | SHUTDOWN;
             }
         }
-        if ((e & (STOP | TERMINATED)) == STOP) {
-            boolean alive = false;
-            int r = ThreadLocalRandom.nextSecondarySeed(); // stagger traversals
-            WorkQueue[] qs = queues;
-            int n = (qs == null) ? 0 : qs.length;
-            for (int l = n; l > 0; --l, ++r) {
-                WorkQueue q; Thread o; // cancel tasks; interrupt workers
-                if ((q = qs[r & SMASK & (n - 1)]) != null) {
-                    if ((o = q.owner) != null) {
-                        alive = true;
-                        if (o != Thread.currentThread()) {
+        if ((e & (STOP | TERMINATED)) == STOP) { // similar to isQuiescent
+            for (int r = ThreadLocalRandom.nextSecondarySeed();;) { // stagger
+                int prevRunState = e;
+                WorkQueue[] qs = queues;
+                int n = (qs == null) ? 0 : qs.length;
+                for (int l = n; l > 0; --l, ++r) {
+                    WorkQueue q; Thread o;  // interrupt workers, cancel tasks
+                    if ((q = qs[r & SMASK & (n - 1)]) != null) {
+                        if ((o = q.owner) != null && !o.isInterrupted()) {
                             try {
                                 o.interrupt();
                             } catch (Throwable ignore) {
                             }
                         }
-                    }
-                    for (ForkJoinTask<?> t; (t = q.poll(null)) != null; ) {
-                        try {
-                            t.cancel(false);
-                        } catch (Throwable ignore) {
+                        for (ForkJoinTask<?> t; (t = q.poll(null)) != null; ) {
+                            try {
+                                t.cancel(false);
+                            } catch (Throwable ignore) {
+                            }
                         }
                     }
                 }
-            }
-            if (((e = runState) & TERMINATED) == 0 && !alive && ctl == 0L) {
-                if ((getAndBitwiseOrRunState(TERMINATED) & TERMINATED) == 0) {
-                    CountDownLatch done; SharedThreadContainer ctr;
-                    if ((done = termination) != null)
-                        done.countDown();
-                    if ((ctr = container) != null)
-                        ctr.close();
+                if (((e = runState) & TERMINATED) != 0)
+                    break;
+                if (e == prevRunState && (e & RS_LOCK) == 0) {
+                    if (ctl != 0L)        // another thread will finish
+                        break;
+                    if (casRunState(e, e = (e | TERMINATED) + RS_EPOCH)) {
+                        CountDownLatch done; SharedThreadContainer ctr;
+                        if ((done = termination) != null)
+                            done.countDown();
+                        if ((ctr = container) != null)
+                            ctr.close();
+                        break;
+                    }
                 }
-                e = runState;
             }
         }
         return e;
