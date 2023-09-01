@@ -68,3 +68,4 @@ jlong JfrTime::frequency() {
   return os::elapsed_frequency();
 #endif
 }
+
