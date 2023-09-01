@@ -76,11 +76,6 @@ public class CDSMapTest {
         CDSTestUtils.createArchiveAndCheck(opts);
 
         CDSMapReader.MapFile mapFile = CDSMapReader.read(mapName);
-        int oopFieldCount = CDSMapReader.validate(mapFile);
-        if (mapFile.heapObjectCount() > 0 && oopFieldCount < 10000) {
-            // heapObjectCount() may be zero if the selected GC doesn't support heap object archiving.
-            throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
-                                       " objects but only " + oopFieldCount + " oop field references");
-        }
+        CDSMapReader.validate(mapFile);
     }
 }
