@@ -35,7 +35,7 @@
 
 #define slash           '/'
 
-char* FFS_basePath(const char* path) {
+char* basePath(const char* path) {
     char* last = strrchr(path, slash);
     if (last == NULL) {
         return (char*)path;
@@ -54,7 +54,7 @@ char* FFS_basePath(const char* path) {
     }
 }
 
-int FFS_isAbsolute(const char* path) {
+int isAbsolute(const char* path) {
     return (path[0] == slash) ? 1 : 0;
 }
 
@@ -100,7 +100,7 @@ static char* normalizePath(const char* pathname, int len, int off) {
 /* Check that the given pathname is normal.  If not, invoke the real
    normalizer on the part of the pathname that requires normalization.
    This way we iterate through the whole pathname string only once. */
-char* FFS_normalize(const char* pathname) {
+char* normalize_path(const char* pathname) {
     int i;
     int n = strlen(pathname);
     char prevChar = 0;
@@ -114,7 +114,7 @@ char* FFS_normalize(const char* pathname) {
     return (char*)pathname;
 }
 
-char* FFS_resolve(const char* parent, const char* child) {
+char* resolve(const char* parent, const char* child) {
     int len;
     char* theChars;
     int pn = strlen(parent);
@@ -153,7 +153,7 @@ char* FFS_resolve(const char* parent, const char* child) {
     return theChars;
 }
 
-char* FFS_fromURIPath(const char* path) {
+char* fromURIPath(const char* path) {
     int len = strlen(path);
     if (len > 1 && path[len-1] == slash) {
         // "/foo/" --> "/foo", but "/" --> "/"
