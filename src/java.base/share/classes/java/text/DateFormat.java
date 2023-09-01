@@ -769,7 +769,8 @@ public abstract class DateFormat extends Format {
     /**
      * {@return the hash code for this {@code DateFormat}}
      *
-     * The hash code value is based on the value returned by {@link #getNumberFormat()}.
+     * The hash code value is calculated using any number of fields from the
+     * formatting configuration of this {@code DateFormat} object.
      *
      * @see Object#hashCode()
      */
@@ -780,9 +781,12 @@ public abstract class DateFormat extends Format {
 
     /**
      * Compares the specified object with this {@code DateFormat} for equality.
-     * Returns true if the object is also a {@code DateFormat} and the two formats
-     * represent the same formatting configuration.
+     * Returns true if the object is also a {@code DateFormat} and the
+     * two formats would format any value the same.
      *
+     * @implNote Implementers should be aware that the default implementation does an
+     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * deciding if they should override this method.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DateFormat}
      * @see Object#equals(Object)

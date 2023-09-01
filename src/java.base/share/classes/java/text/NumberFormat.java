@@ -700,8 +700,8 @@ public abstract class NumberFormat extends Format  {
     /**
      * {@return the hash code for this {@code NumberFormat}}
      *
-     * The hash code value is based on the values returned by {@link #getMaximumIntegerDigits()}
-     * and {@link #getMaximumFractionDigits()}.
+     * The hash code value is calculated using any number of fields from the
+     * formatting configuration of this {@code NumberFormat} object.
      *
      * @see Object#hashCode()
      */
@@ -713,9 +713,12 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Compares the specified object with this {@code NumberFormat} for equality.
-     * Returns true if the object is also a {@code NumberFormat} and the two formats
-     * represent the same formatting configuration.
+     * Returns true if the object is also a {@code NumberFormat} and the
+     * two formats would format any value the same.
      *
+     * @implNote Implementers should be aware that the default implementation does an
+     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * deciding if they should override this method.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code NumberFormat}
      * @see Object#equals(Object)

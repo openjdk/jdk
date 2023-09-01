@@ -1142,9 +1142,12 @@ public class MessageFormat extends Format {
 
     /**
      * Compares the specified object with this {@code MessageFormat} for equality.
-     * Returns true if the object is also a {@code MessageFormat} and the two formats
-     * represent the same formatting configuration.
+     * Returns true if the object is also a {@code MessageFormat} and the
+     * two formats would format any value the same.
      *
+     * @implNote Implementers should be aware that the default implementation does an
+     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * deciding if they should override this method.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code MessageFormat}
      * @see Object#equals(Object)
@@ -1167,9 +1170,8 @@ public class MessageFormat extends Format {
     /**
      * {@return the hash code value for this {@code MessageFormat}}
      *
-     * The hash code value is based on the string pattern supplied to this
-     * {@code MessageFormat} either during construction or set by
-     * {@link #applyPattern(String)}.
+     * The hash code value is calculated using any number of fields from the
+     * formatting configuration of this {@code MessageFormat} object.
      *
      * @see Object#hashCode()
      */

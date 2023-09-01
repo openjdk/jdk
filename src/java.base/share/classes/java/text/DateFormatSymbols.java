@@ -689,6 +689,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * Returns true if the object is also a {@code DateFormatSymbols} and the two
      * {@code DateFormatSymbols} objects represent the same date-time formatting data.
      *
+     * @implNote Implementers should be aware that the default implementation does an
+     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * deciding if they should override this method.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DateFormatSymbols}
      * @see Object#equals(Object)

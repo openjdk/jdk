@@ -2345,8 +2345,11 @@ public final class CompactNumberFormat extends NumberFormat {
     /**
      * Compares the specified object with this {@code CompactNumberFormat} for equality.
      * Returns true if the object is also a {@code CompactNumberFormat} and the
-     * two formats represent the same formatting configuration.
+     * two formats would format any value the same.
      *
+     * @implNote Implementers should be aware that the default implementation does an
+     * equality check using {@code getClass} rather than {@code instanceOf} when
+     * deciding if they should override this method.
      * @param obj the object to compare with
      * @return true if this is equal to the other {@code CompactNumberFormat}
      * @see Object#hashCode()
@@ -2375,9 +2378,8 @@ public final class CompactNumberFormat extends NumberFormat {
     /**
      * {@return the hash code for this {@code CompactNumberFormat}}
      *
-     * The hash code value is based on the formatting configuration, which
-     * is represented by a number of fields from this {@code CompactNumberFormat}
-     * object.
+     * The hash code value is calculated using any number of fields from the
+     * formatting configuration of this {@code CompactNumberFormat} object.
      *
      * @see Object#hashCode()
      */
