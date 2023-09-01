@@ -16,6 +16,10 @@ public class ImmutableBitSetPredicate implements IntPredicate {
     private final long[] words;
 
     private ImmutableBitSetPredicate(BitSet original) {
+        // If this class is made public, we need to do
+        // a defensive array copy as certain BitSet implementations
+        // may return a shared array. The spec says the array should be _new_ though but
+        // the consequences might be unspecified for a malicious BitSet.
         this.words = original.toLongArray();
     }
 
