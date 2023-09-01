@@ -32,7 +32,9 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -547,6 +549,13 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            for (int i = 0; i < size; i++) {
+                action.accept(get(i));
+            }
+        }
     }
 
     @jdk.internal.ValueBased
@@ -654,6 +663,15 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            action.accept(e0);
+            if (e1 != EMPTY) {
+                action.accept((E) e1);
+            }
+        }
     }
 
     @jdk.internal.ValueBased
@@ -743,6 +761,13 @@ class ImmutableCollections {
                 }
             }
             return -1;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            for (var e : elements) {
+                action.accept(e);
+            }
         }
     }
 
@@ -893,6 +918,18 @@ class ImmutableCollections {
             }
             return array;
         }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(Consumer<? super E> action) {
+            if (REVERSE && e1 != EMPTY) {
+                action.accept((E) e1);
+            }
+            action.accept(e0);
+            if (!REVERSE && e1 != EMPTY) {
+                action.accept((E) e1);
+            }
+        }
     }
 
 
@@ -945,6 +982,28 @@ class ImmutableCollections {
             return size > 0 && probe(o) >= 0;
         }
 
+        // iteration support
+        private int startIndex() {
+            return (int) ((SALT32L * elements.length) >>> 32);
+        }
+
+        private int nextElement(int idx) {
+            final int len = elements.length;
+            // step to the next element; skip null elements
+            do {
+                if (REVERSE) {
+                    if (++idx >= len) {
+                        idx = 0;
+                    }
+                } else {
+                    if (--idx < 0) {
+                        idx = len - 1;
+                    }
+                }
+            } while (elements[idx] == null);
+            return idx;
+        }
+
         private final class SetNIterator implements Iterator<E> {
 
             private int remaining;
@@ -955,7 +1014,7 @@ class ImmutableCollections {
                 remaining = size;
                 // pick a starting index in the [0 .. element.length-1] range
                 // randomly based on SALT32L
-                idx = (int) ((SALT32L * elements.length) >>> 32);
+                idx = startIndex();
             }
 
             @Override
@@ -966,24 +1025,8 @@ class ImmutableCollections {
             @Override
             public E next() {
                 if (remaining > 0) {
-                    E element;
-                    int idx = this.idx;
-                    int len = elements.length;
-                    // step to the next element; skip null elements
-                    do {
-                        if (REVERSE) {
-                            if (++idx >= len) {
-                                idx = 0;
-                            }
-                        } else {
-                            if (--idx < 0) {
-                                idx = len - 1;
-                            }
-                        }
-                    } while ((element = elements[idx]) == null);
-                    this.idx = idx;
                     remaining--;
-                    return element;
+                    return elements[this.idx = nextElement(this.idx)];
                 } else {
                     throw new NoSuchElementException();
                 }
@@ -1044,9 +1087,9 @@ class ImmutableCollections {
         @Override
         public Object[] toArray() {
             Object[] array = new Object[size];
-            Iterator<E> it = iterator();
-            for (int i = 0; i < size; i++) {
-                array[i] = it.next();
+            for (int idx = startIndex(), i = 0; i < size; i++) {
+                idx = nextElement(idx);
+                array[i] = elements[idx];
             }
             return array;
         }
@@ -1056,14 +1099,22 @@ class ImmutableCollections {
         public <T> T[] toArray(T[] a) {
             T[] array = a.length >= size ? a :
                     (T[])Array.newInstance(a.getClass().getComponentType(), size);
-            Iterator<E> it = iterator();
-            for (int i = 0; i < size; i++) {
-                array[i] = (T)it.next();
+            for (int idx = startIndex(), i = 0; i < size; i++) {
+                idx = nextElement(idx);
+                array[i] = (T) elements[idx];
             }
             if (array.length > size) {
                 array[size] = null; // null-terminate
             }
             return array;
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            for (int idx = startIndex(), i = 0; i < size; i++) {
+                idx = nextElement(idx);
+                action.accept(elements[idx]);
+            }
         }
     }
 
@@ -1155,6 +1206,11 @@ class ImmutableCollections {
         @Override
         public int hashCode() {
             return k0.hashCode() ^ v0.hashCode();
+        }
+
+        @Override
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            action.accept(k0, v0);
         }
     }
 
@@ -1257,6 +1313,26 @@ class ImmutableCollections {
             return size == 0;
         }
 
+        // iteration support
+        private int startIndex() {
+            return (int) ((SALT32L * (table.length >> 1)) >>> 32) << 1;
+        }
+
+        private int nextElement(int idx) {
+            do {
+                if (REVERSE) {
+                    if ((idx += 2) >= table.length) {
+                        idx = 0;
+                    }
+                } else {
+                    if ((idx -= 2) < 0) {
+                        idx = table.length - 2;
+                    }
+                }
+            } while (table[idx] == null);
+            return idx;
+        }
+
         class MapNIterator implements Iterator<Map.Entry<K,V>> {
 
             private int remaining;
@@ -1267,7 +1343,7 @@ class ImmutableCollections {
                 remaining = size;
                 // pick an even starting index in the [0 .. table.length-1]
                 // range randomly based on SALT32L
-                idx = (int) ((SALT32L * (table.length >> 1)) >>> 32) << 1;
+                idx = startIndex();
             }
 
             @Override
@@ -1275,25 +1351,10 @@ class ImmutableCollections {
                 return remaining > 0;
             }
 
-            private int nextIndex() {
-                int idx = this.idx;
-                if (REVERSE) {
-                    if ((idx += 2) >= table.length) {
-                        idx = 0;
-                    }
-                } else {
-                    if ((idx -= 2) < 0) {
-                        idx = table.length - 2;
-                    }
-                }
-                return this.idx = idx;
-            }
-
             @Override
             public Map.Entry<K,V> next() {
                 if (remaining > 0) {
-                    int idx;
-                    while (table[idx = nextIndex()] == null) {}
+                    int idx = this.idx = nextElement(this.idx);
                     @SuppressWarnings("unchecked")
                     Map.Entry<K,V> e =
                             new KeyValueHolder<>((K)table[idx], (V)table[idx+1]);
@@ -1356,6 +1417,15 @@ class ImmutableCollections {
                 }
             }
             return new CollSer(CollSer.IMM_MAP, array);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void forEach(BiConsumer<? super K, ? super V> action) {
+            for (int idx = startIndex(), i = 0; i < size; i++) {
+                idx = nextElement(idx);
+                action.accept((K) table[idx], (V) table[idx + 1]);
+            }
         }
     }
 }
