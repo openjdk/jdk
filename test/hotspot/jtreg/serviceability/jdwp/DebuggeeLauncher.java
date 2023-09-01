@@ -22,7 +22,6 @@
  */
 
 import java.util.StringTokenizer;
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.JDWP;
 import static jdk.test.lib.Asserts.assertFalse;
 import jdk.test.lib.process.ProcessTools;
@@ -54,8 +53,6 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
 
     private Process p;
     private final Listener listener;
-    private StreamHandler inputHandler;
-    private StreamHandler errorHandler;
 
     /**
      * @param listener the listener we report the debuggee events to
@@ -74,8 +71,8 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
 
         ProcessBuilder pb = ProcessTools.createTestJvm(JDWP_OPT, DEBUGGEE);
         p = pb.start();
-        inputHandler = new StreamHandler(p.getInputStream(), this);
-        errorHandler = new StreamHandler(p.getErrorStream(), this);
+        StreamHandler inputHandler = new StreamHandler(p.getInputStream(), this);
+        StreamHandler errorHandler = new StreamHandler(p.getErrorStream(), System.out::println);
         inputHandler.start();
         errorHandler.start();
     }
@@ -100,11 +97,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
     }
 
     @Override
-    public void onStringRead(StreamHandler handler, String line) {
-        processDebuggeeOutput(line);
-    }
-
-    private void processDebuggeeOutput(String line) {
+    public void onStringRead(String line) {
         if (jdwpPort == -1) {
             JDWP.ListenAddress addr = JDWP.parseListenAddress(line);
             if (addr != null) {
