@@ -30,10 +30,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.ValueBased;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class implements a vector of bits that grows as needed. Each
@@ -1396,6 +1399,50 @@ public class BitSet implements Cloneable, java.io.Serializable {
                 return -1;
             word = words[u];
         }
+    }
+
+    /**
+     * {@return a new {@link IntPredicate} representing the {@link BitSet#get(int)} method applied
+     * on an immutable snapshot of the current state of this BitSet}.
+     * <p>
+     * If the returned predicate is invoked with a {@code bitIndex} that is negative, the predicate
+     * will throw an IndexOutOfBoundsException just as the {@link BitSet#get(int)} method would.
+     * <p>
+     * Returned predicates are threadsafe and can be used without external synchronisation.  Furthermore,
+     * they are eligible for constant-folding optimization by the VM.
+     *
+     * @implNote The method is free to return a {@link ValueBased} implementation.
+     *
+     * @since 22
+     */
+    public IntPredicate toPredicate() {
+        return OfImmutable.of(this);
+    }
+
+    @ValueBased
+    private static final class OfImmutable implements IntPredicate {
+
+        @Stable
+        private final long[] words;
+
+        private OfImmutable(BitSet original) {
+            this.words = original.toLongArray();
+        }
+
+        @Override
+        public boolean test(int bitIndex) {
+            if (bitIndex < 0)
+                throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
+
+            int wordIndex = wordIndex(bitIndex);
+            return (wordIndex < words.length)
+                    && ((words[wordIndex] & (1L << bitIndex)) != 0);
+        }
+
+        private static IntPredicate of(BitSet original) {
+            return new OfImmutable(original);
+        }
+
     }
 
 }
