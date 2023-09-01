@@ -133,9 +133,9 @@ import java.util.Arrays;
  * <i>SubPattern:</i>
  *         Limit Relation Format
  * <i>Limit:</i>
- *         {@code String} that can be parsed as a {@code double} / "&infin;" / "-&infin;".
+ *         {@code String} that can be parsed as a {@code double} / "&infin;" ({@code U+221E}) / "-&infin;" (-{@code U+221E}).
  * <i>Relation:</i>
- *         "#" / "&lt;" / "&le;"
+ *         "#" / "&lt;" / "&le;" ({@code U+2264})
  * <i>Format:</i>
  *         {@code String}
  * </pre></blockquote>
