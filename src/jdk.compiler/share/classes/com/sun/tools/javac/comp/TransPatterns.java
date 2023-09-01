@@ -588,11 +588,6 @@ public class TransPatterns extends TreeTranslator {
                         continueSwitch.target = tree;
 
                         if (previousC != null && hasGuard && previousCompletesNormally) {
-                            JCExpression or = make.Literal(false);
-                            for (JCPatternCaseLabel label: labels) {
-                                or = makeBinary(Tag.OR, makeTypeTest(make.Ident(temp), make.Type(label.pat.type)), or);
-                            }
-                            test = makeBinary(Tag.AND, or, test);
                             previousC.stats = previousC.stats.appendList(c.stats); // copying to previous
                         }
 
