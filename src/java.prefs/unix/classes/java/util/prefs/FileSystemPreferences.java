@@ -33,6 +33,7 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import sun.util.logging.PlatformLogger;
 
+
 /**
  * Preferences implementation for Unix.  Preferences are stored in the file
  * system, with one directory per preferences node.  All of the preferences
@@ -701,17 +702,40 @@ class FileSystemPreferences extends AbstractPreferences {
         return new FileSystemPreferences(this, name);
     }
 
+    private static String getErrorString(int errCode) {
+        String os = System.getProperty("os.name");
+        if (errCode == 35 && (os.contains("Mac") || os.contains("Darwin"))) return "EAGAIN";
+        switch (errCode) {
+            case 13: return "EACCES";
+            case 11: return "EAGAIN"; // macOS has for this 35
+            case 9:  return "EBADF";
+            case 16: return "EBUSY";
+            case 17: return "EEXIST";
+            case 14: return "EFAULT";
+            case 4:  return "EINTR";
+            case 22: return "EINVAL";
+            case 24: return "EMFILE";
+            case 19: return "ENODEV";
+            case 2:  return "ENOENT";
+            case 1:  return "EPERM";
+        }
+        return "";
+    }
+
     public void removeNode() throws BackingStoreException {
         synchronized (isUserNode()? userLockFile: systemLockFile) {
             // to remove a node we need an exclusive lock
             int errCode = lockFile(false);
-            if (errCode != 0)
-                throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode));
-           try {
+            if (errCode != 0) {
+                String errStr = getErrorString(errCode);
+                if (! errStr.equals("")) errStr = " (" + errStr + ")";
+                throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr));
+            }
+            try {
                 super.removeNode();
-           } finally {
+            } finally {
                 unlockFile();
-           }
+            }
         }
     }
 
@@ -770,7 +794,9 @@ class FileSystemPreferences extends AbstractPreferences {
            if (errCode != 0) {
                String sharingMode = "shared";
                if (!shared) sharingMode = "nonshared";
-               throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + " mode is " + sharingMode));
+               String errStr = getErrorString(errCode);
+               if (! errStr.equals("")) errStr = " (" + errStr + ")";
+               throw(new BackingStoreException("Couldn't get file lock. errno is " + errCode + errStr + " mode is " + sharingMode));
            }
            final Long newModTime =
                 AccessController.doPrivileged(
