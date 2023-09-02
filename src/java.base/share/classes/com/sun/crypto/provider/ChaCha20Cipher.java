@@ -1371,7 +1371,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
             initAuthenticator();
             initCounterValue = 1;
             counter = initCounterValue;
-            cipherBuf = new ByteArrayOutputStream(CIPHERBUF_BASE);
+            cipherBuf = new JCEBufferedStream();
             tag = new byte[TAG_LENGTH];
         }
 
