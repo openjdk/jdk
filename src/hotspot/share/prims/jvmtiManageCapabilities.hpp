@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,12 @@ private:
   // all capabilities ever acquired
   static jvmtiCapabilities acquired_capabilities;
 
+  // counter for the agents possess can_support_virtual_threads capability
+  static int _can_support_virtual_threads_count;
+
+  // lock to access the class data
+  static Mutex* _capabilities_lock;
+
   // basic intenal operations
   static jvmtiCapabilities *either(const jvmtiCapabilities *a, const jvmtiCapabilities *b, jvmtiCapabilities *result);
   static jvmtiCapabilities *both(const jvmtiCapabilities *a, const jvmtiCapabilities *b, jvmtiCapabilities *result);
@@ -60,6 +66,14 @@ private:
   static jvmtiCapabilities init_onload_capabilities();
   static jvmtiCapabilities init_always_solo_capabilities();
   static jvmtiCapabilities init_onload_solo_capabilities();
+
+  // returns nullptr in onload phase
+  static Mutex* lock();
+
+  // get_potential_capabilities without lock
+  static void get_potential_capabilities_nolock(const jvmtiCapabilities* current,
+                                                const jvmtiCapabilities* prohibited,
+                                                jvmtiCapabilities* result);
 
 public:
   static void initialize();
