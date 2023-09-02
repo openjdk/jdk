@@ -30,7 +30,7 @@ import java.awt.print.PrinterJob;
 public class PlatformPrinterJobProxy {
 
    public static PrinterJob getPrinterJob() {
-       return new sun.awt.windows.WPrinterJob();
+       return new sun.awt.windows.WPrinterJob() ;
    }
 }
 
