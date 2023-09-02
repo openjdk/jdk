@@ -28,7 +28,7 @@ package compiler.c2;
  * @summary Loop increment should not be transformed into unsigned comparison
  *
  * @run main/othervm -Xcomp -XX:+TraceLoopOpts -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,MinValueStrideCountedLoop::test*
+ *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
  *                   compiler.c2.MinValueStrideCountedLoop
  */
 public class MinValueStrideCountedLoop {
