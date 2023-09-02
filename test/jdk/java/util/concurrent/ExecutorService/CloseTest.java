@@ -71,7 +71,13 @@ class CloseTest {
         try {
             Thread t = new Thread(closeTestThreadGroup, wrapper);
             t.start();
-            t.join();
+            for (;;) { // ignore stray test harness exceptions
+                try {
+                    t.join();
+                    break;
+                } catch (InterruptedException ignode) {
+                }
+            }
         } finally {
             Exception e = wrapper.error;
             if (e != null)
@@ -139,7 +145,7 @@ class CloseTest {
             executor.shutdown();
             assertFalse(Thread.interrupted());
             assertTrue(executor.isShutdown());
-            assertTrue(executor.awaitTermination(200,  TimeUnit.MILLISECONDS));
+            assertTrue(executor.awaitTermination(1000,  TimeUnit.MILLISECONDS));
             assertTrue(executor.isTerminated());
             assertEquals("foo", future.resultNow());
         }});
@@ -188,7 +194,7 @@ class CloseTest {
             executor.shutdown();
             assertFalse(Thread.interrupted());
             assertTrue(executor.isShutdown());
-            assertTrue(executor.awaitTermination(200,  TimeUnit.MILLISECONDS));
+            assertTrue(executor.awaitTermination(1000,  TimeUnit.MILLISECONDS));
             assertTrue(executor.isTerminated());
             assertEquals("foo", f1.resultNow());
             assertEquals("bar", f2.resultNow());

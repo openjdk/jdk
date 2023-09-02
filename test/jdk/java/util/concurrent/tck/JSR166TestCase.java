@@ -1675,10 +1675,12 @@ public class JSR166TestCase extends TestCase {
      * the thread (in the hope that it may terminate later) and fails.
      */
     void awaitTermination(Thread thread, long timeoutMillis) {
-        try {
-            thread.join(timeoutMillis);
-        } catch (InterruptedException fail) {
-            threadUnexpectedException(fail);
+        for (;;) { // ignore stray interrupts by test harness
+            try {
+                thread.join(timeoutMillis);
+                break;
+            } catch (InterruptedException ignore) {
+            }
         }
         if (thread.getState() != Thread.State.TERMINATED) {
             String detail = String.format(
