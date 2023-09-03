@@ -1648,8 +1648,22 @@ public class JSR166TestCase extends TestCase {
     }
 
     // Avoids unwanted interrupts when run inder jtreg
+    static ThreadGroup topThreadGroup() {
+        ThreadGroup g = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup p;;) {
+            try {
+                p = g.getParent();
+            } catch (Exception ok) { // possible under SecurityManager
+                break;
+            }
+            if (p == null)
+                break;
+            g = p;
+        }
+        return g;
+    }
     static final ThreadGroup jsr166TestThreadGroup =
-        new ThreadGroup("jsr1666TestThreadGroup");
+        new ThreadGroup(topThreadGroup(), "jsr1666TestThreadGroup");
 
     /**
      * Returns a new started daemon Thread running the given runnable.

@@ -63,9 +63,24 @@ class CloseTest {
             }
         }
     }
+
     // Avoids unwanted interrupts when run inder jtreg
+    static ThreadGroup topThreadGroup() {
+        ThreadGroup g = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup p;;) {
+            try {
+                p = g.getParent();
+            } catch (Exception ok) { // possible under SecurityManager
+                break;
+            }
+            if (p == null)
+                break;
+            g = p;
+        }
+        return g;
+    }
     static final ThreadGroup closeTestThreadGroup =
-        new ThreadGroup("closeTestThreadGroup");
+        new ThreadGroup(topThreadGroup(), "closeTestThreadGroup");
     static void testInNewThread(TestAction a) throws Exception {
         var wrapper =  new CheckedAction(a);
         try {
