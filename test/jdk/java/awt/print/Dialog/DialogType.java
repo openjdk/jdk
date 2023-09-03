@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,53 +21,67 @@
  * questions.
  */
 
-/**
+import java.awt.print.PrinterJob;
+import java.lang.reflect.InvocationTargetException;
+import javax.print.attribute.Attribute;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.DialogTypeSelection;
+import jtreg.SkippedException;
+
+/*
  * @test
  * @bug 6568874
+ * @key printer
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @summary Verify the native dialog works with attribute sets.
- * @run main/manual=yesno DialogType
+ * @run main/manual DialogType
  */
-
-import java.awt.print.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
 
 public class DialogType {
 
-  static String[] instructions = {
-     "This test assumes and requires that you have a printer installed",
-     "It verifies that the dialogs behave properly when using new API",
-     "to optionally select a native dialog where one is present.",
-     "Two dialogs are shown in succession.",
-     "The test passes as long as no exceptions are thrown, *AND*",
-     "if running on Windows only, the first dialog is a native windows",
-     "control which differs in appearance from the second dialog",
-     ""
-  };
+    static String instruction = """
+            This test assumes and requires that you have a printer installed.
+            It verifies that the dialogs behave properly when using new API,
+            to optionally select a native dialog where one is present.
+            Two dialogs are shown in succession.,
+            The test passes as long as no exceptions are thrown, *AND*,
+            if running on Windows only, the first dialog is a native windows,
+            control which differs in appearance from the second dialog.
+            Note: You can either press 'ESCAPE' button or click on the 'Cancel'
+            to close print dialog.
+            """;
 
-  public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException,
+            InvocationTargetException {
 
-      for (int i=0;i<instructions.length;i++) {
-         System.out.println(instructions[i]);
-      }
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new SkippedException("Printer not configured or available."
+                    + " Test cannot continue.");
+        }
 
-      PrinterJob job = PrinterJob.getPrinterJob();
-      if (job.getPrintService() == null) {
-         return;
-      }
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("Test Instructions Frame")
+                .instructions(instruction)
+                .testTimeOut(10)
+                .rows(8)
+                .columns(45)
+                .build();
+        PassFailJFrame.positionTestWindow(null,
+                PassFailJFrame.Position.HORIZONTAL);
 
-      PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
-      aset.add(DialogTypeSelection.NATIVE);
-      job.printDialog(aset);
-      Attribute[] attrs = aset.toArray();
-      for (int i=0;i<attrs.length;i++) {
-          System.out.println(attrs[i]);
-      }
-      aset.add(DialogTypeSelection.COMMON);
-      job.printDialog(aset);
-      attrs = aset.toArray();
-      for (int i=0;i<attrs.length;i++) {
-          System.out.println(attrs[i]);
-      }
-   }
+        PrinterJob job = PrinterJob.getPrinterJob();
+        PrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        aset.add(DialogTypeSelection.NATIVE);
+        job.printDialog(aset);
+
+        aset.add(DialogTypeSelection.COMMON);
+        job.printDialog(aset);
+
+        passFailJFrame.awaitAndCheck();
+    }
 }
+
