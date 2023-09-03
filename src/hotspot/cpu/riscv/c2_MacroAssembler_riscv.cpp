@@ -1380,7 +1380,8 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
 void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
                                           Register tmp1, Register tmp2, Register tmp3) {
 
-  assert_different_registers(dst, src, tmp1, tmp2, tmp3);
+  assert_different_registers(dst, src);
+  assert_different_registers(tmp1, tmp2, tmp3);
 
   // Set rounding mode for conversions
   // Here we use similar modes to double->long and long->double conversions
