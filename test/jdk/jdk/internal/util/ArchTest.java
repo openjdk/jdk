@@ -30,6 +30,7 @@ import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.util.Architecture.AARCH64;
 import static jdk.internal.util.Architecture.ARM;
+import static jdk.internal.util.Architecture.PPC;
 import static jdk.internal.util.Architecture.PPC64;
 import static jdk.internal.util.Architecture.PPC64LE;
 import static jdk.internal.util.Architecture.RISCV64;
@@ -80,6 +81,7 @@ public class ArchTest {
                 Arguments.of("loongarch64", LOONGARCH64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isLOONGARCH64()),
                 Arguments.of("mips64el", MIPS64EL, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isMIPS64EL()),
                 Arguments.of("mipsel", MIPSEL, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isMIPSEL()),
+                Arguments.of("ppc", PPC, 32, ByteOrder.BIG_ENDIAN, Architecture.isPPC()),
                 Arguments.of("ppc64", PPC64, 64, ByteOrder.BIG_ENDIAN, Architecture.isPPC64()),
                 Arguments.of("ppc64le", PPC64LE, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isPPC64LE()),
                 Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isRISCV64()),

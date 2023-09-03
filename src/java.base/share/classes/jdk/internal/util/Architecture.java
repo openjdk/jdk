@@ -49,6 +49,7 @@ public enum Architecture {
     RISCV64(64, ByteOrder.LITTLE_ENDIAN),
     LOONGARCH64(64, ByteOrder.LITTLE_ENDIAN),
     S390(64, ByteOrder.BIG_ENDIAN),
+    PPC(32, ByteOrder.BIG_ENDIAN),
     PPC64(64, ByteOrder.BIG_ENDIAN),
     PPC64LE(64, ByteOrder.LITTLE_ENDIAN),
     MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
@@ -152,6 +153,14 @@ public enum Architecture {
     @ForceInline
     public static boolean isS390() {
         return PlatformProps.TARGET_ARCH_IS_S390;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is PPC, big-endian}
+     */
+    @ForceInline
+    public static boolean isPPC() {
+        return PlatformProps.TARGET_ARCH_IS_PPC;
     }
 
     /**
