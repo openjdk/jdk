@@ -490,7 +490,7 @@ final class StringLatin1 {
 
         // Now check if there are any characters that need to be changed, or are surrogate
         for (first = 0 ; first < len; first++ ) {
-            if (CharacterDataLatin1.instance.isLowerCaseEx(value[first] & 0xff)) {
+            if (CharacterDataLatin1.instance.hasNotUpperCaseEx(value[first] & 0xff)) {
                 break;
             }
         }
