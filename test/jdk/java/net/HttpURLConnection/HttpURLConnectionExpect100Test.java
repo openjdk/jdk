@@ -67,7 +67,7 @@ public class HttpURLConnectionExpect100Test {
     }
 
     @Test
-    public void test() throws Exception {
+    public void expect100ContinueHitCountTest() throws Exception {
         server.resetHitCount();
         URL url = URIBuilder.newBuilder()
                 .scheme("http")
@@ -84,7 +84,7 @@ public class HttpURLConnectionExpect100Test {
     }
 
     @Test
-    public void test1() throws Exception {
+    public void defaultRequestHitCountTest() throws Exception {
         server.resetHitCount();
         URL url = URIBuilder.newBuilder()
                 .scheme("http")
@@ -197,7 +197,7 @@ public class HttpURLConnectionExpect100Test {
         private void handleConnection(Socket client) throws IOException {
             try ( BufferedReader in = new BufferedReader(
                 new InputStreamReader(client.getInputStream()));
-                PrintStream out = new PrintStream(client.getOutputStream());) {
+                PrintStream out = new PrintStream(client.getOutputStream())) {
                 handle_connection(in, out);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
