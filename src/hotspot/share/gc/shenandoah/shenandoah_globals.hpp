@@ -352,9 +352,6 @@
   product(bool, ShenandoahLoadRefBarrier, true, DIAGNOSTIC,                 \
           "Turn on/off load-reference barriers in Shenandoah")              \
                                                                             \
-  product(bool, ShenandoahNMethodBarrier, true, DIAGNOSTIC,                 \
-          "Turn on/off NMethod entry barriers in Shenandoah")               \
-                                                                            \
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \

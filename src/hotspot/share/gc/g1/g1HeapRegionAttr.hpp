@@ -131,9 +131,11 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     get_ref_by_index(index)->set_new_survivor();
   }
 
-  void set_humongous_candidate(uintptr_t index, bool remset_is_tracked) {
+  void set_humongous_candidate(uintptr_t index) {
     assert(get_by_index(index).is_default(),
            "Region attributes at index " INTPTR_FORMAT " should be default but is %s", index, get_by_index(index).get_type_str());
+    // Humongous candidates must have complete remset.
+    const bool remset_is_tracked = true;
     set_by_index(index, G1HeapRegionAttr(G1HeapRegionAttr::HumongousCandidate, remset_is_tracked));
   }
 

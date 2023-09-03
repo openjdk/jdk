@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -37,10 +36,6 @@ import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolException;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
@@ -61,6 +56,10 @@ import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
 import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
 import static jdk.internal.classfile.Classfile.TAG_STRING;
 import static jdk.internal.classfile.Classfile.TAG_UTF8;
+import jdk.internal.classfile.constantpool.MethodHandleEntry;
+import jdk.internal.classfile.constantpool.ModuleEntry;
+import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import jdk.internal.classfile.constantpool.PackageEntry;
 
 public final class ClassReaderImpl
         implements ClassReader {
@@ -144,7 +143,7 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         return constantPoolCount;
     }
 
@@ -156,7 +155,7 @@ public final class ClassReaderImpl
     @Override
     public ClassEntry thisClassEntry() {
         if (thisClass == null) {
-            thisClass = readClassEntry(thisClassPos);
+            thisClass = readEntry(thisClassPos, ClassEntry.class);
         }
         return thisClass;
     }
@@ -189,6 +188,9 @@ public final class ClassReaderImpl
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
+        if (index < 0 || index >= bootstrapMethodCount()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
         return bsmEntries().get(index);
     }
 
@@ -312,6 +314,9 @@ public final class ClassReaderImpl
         PoolEntry info = cp[index];
         if (info == null) {
             int offset = cpOffset[index];
+            if (offset == 0) {
+                throw new ConstantPoolException("Unusable CP index: " + index);
+            }
             int tag = readU1(offset);
             final int q = offset + 1;
             info = switch (tag) {
@@ -386,6 +391,13 @@ public final class ClassReaderImpl
     }
 
     @Override
+    public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
+        var e = readEntry(pos);
+        if (cls.isInstance(e)) return cls.cast(e);
+        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + readU2(pos));
+    }
+
+    @Override
     public PoolEntry readEntryOrNull(int pos) {
         int index = readU2(pos);
         if (index == 0) {
@@ -411,32 +423,27 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        if (readEntry(pos) instanceof ModuleEntry me) return me;
-        throw new ConstantPoolException("Not a module entry at pos: " + pos);
+        return readEntry(pos, ModuleEntry.class);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        if (readEntry(pos) instanceof PackageEntry pe) return pe;
-        throw new ConstantPoolException("Not a package entry at pos: " + pos);
+        return readEntry(pos, PackageEntry.class);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        if (readEntry(pos) instanceof ClassEntry ce) return ce;
-        throw new ConstantPoolException("Not a class entry at pos: " + pos);
+        return readEntry(pos, ClassEntry.class);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        if (readEntry(pos) instanceof NameAndTypeEntry nate) return nate;
-        throw new ConstantPoolException("Not a name and type entry at pos: " + pos);
+        return readEntry(pos, NameAndTypeEntry.class);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
-        throw new ConstantPoolException("Not a method handle entry at pos: " + pos);
+        return readEntry(pos, MethodHandleEntry.class);
     }
 
     @Override

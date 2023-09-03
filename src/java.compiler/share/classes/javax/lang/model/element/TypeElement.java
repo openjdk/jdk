@@ -88,7 +88,7 @@ import javax.lang.model.util.*;
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {
     /**
      * Returns the type defined by this class or interface element,
-     * returning the <i>prototypical</i> type for an element
+     * returning the <dfn>{@index "prototypical type"}</dfn> for an element
      * representing a generic type.
      *
      * <p>A generic element defines a family of types, not just one.
@@ -98,6 +98,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * For example,
      * for the generic class element {@code C<N extends Number>},
      * the parameterized type {@code C<N>} is returned.
+     * Otherwise, for a non-generic class or interface, the
+     * prototypical type mirror corresponds to a use of the type.
+     * None of the components of the prototypical type are annotated,
+     * including the prototypical type itself.
+     *
+     * @apiNote
      * The {@link Types} utility interface has more general methods
      * for obtaining the full range of types defined by an element.
      *
@@ -249,6 +255,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the permitted classes of this class or interface
      * element in declaration order.
+     * Note that for an interface, permitted subclasses and
+     * subinterfaces can be returned.
      *
      * @implSpec The default implementations of this method returns an
      * empty and unmodifiable list.
@@ -256,6 +264,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * @return the permitted classes, or an empty list if there are none
      *
      * @since 17
+     * @jls 8.1.6 Permitted Direct Subclasses
+     * @jls 9.1.4 Permitted Direct Subclasses and Subinterfaces
      */
     default List<? extends TypeMirror> getPermittedSubclasses() {
         return List.of();

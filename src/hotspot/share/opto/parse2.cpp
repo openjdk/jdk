@@ -46,8 +46,8 @@
 #include "runtime/sharedRuntime.hpp"
 
 #ifndef PRODUCT
-extern int explicit_null_checks_inserted,
-           explicit_null_checks_elided;
+extern uint explicit_null_checks_inserted,
+            explicit_null_checks_elided;
 #endif
 
 //---------------------------------array_load----------------------------------
@@ -2785,7 +2785,7 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
+    printer->print_method(buffer, 5);
     printer->set_traverse_outs(old);
   }
 #endif

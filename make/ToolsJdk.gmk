@@ -76,8 +76,8 @@ TOOL_GENERATECACERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_class
     -Dkeystore.pkcs12.macAlgorithm=NONE \
     build.tools.generatecacerts.GenerateCacerts
 
-TOOL_GENERATEEMOJIDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.generateemojidata.GenerateEmojiData
+TOOL_GENERATEEXTRAPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.generateextraproperties.GenerateExtraProperties
 
 TOOL_MAKEZIPREPRODUCIBLE = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.makezipreproducible.MakeZipReproducible
@@ -136,5 +136,8 @@ PANDOC_TROFF_MANPAGE_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-troff-man
 PANDOC_HTML_MANPAGE_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-html-manpage-filter
 
 ##########################################################################################
+
+# Hook to include the corresponding custom post file, if present.
+$(eval $(call IncludeCustomExtension, ToolsJdk-post.gmk))
 
 endif # _TOOLS_GMK

@@ -82,8 +82,8 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <blockquote>
  * {@snippet lang=java :
  * NumberFormat nf = NumberFormat.getInstance();
- * for (int i = 0; i < myNumber.length; ++i) {
- *     output.println(nf.format(myNumber[i]) + "; ");
+ * for (var myNumber : numbers) {
+ *     output.println(nf.format(myNumber) + "; ");
  * }
  * }
  * </blockquote>
@@ -711,13 +711,10 @@ public abstract class NumberFormat extends Format  {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
         if (this == obj) {
             return true;
         }
-        if (getClass() != obj.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
         NumberFormat other = (NumberFormat) obj;

@@ -280,18 +280,21 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
 class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
   G1CollectionSet* _cset;
   size_t _sampled_rs_length;
+  size_t _sampled_code_root_rs_length;
 
 public:
   explicit RemSetSamplingClosure(G1CollectionSet* cset) :
-    _cset(cset), _sampled_rs_length(0) {}
+    _cset(cset), _sampled_rs_length(0), _sampled_code_root_rs_length(0) {}
 
   bool do_heap_region(HeapRegion* r) override {
-    size_t rs_length = r->rem_set()->occupied();
-    _sampled_rs_length += rs_length;
+    HeapRegionRemSet* rem_set = r->rem_set();
+    _sampled_rs_length += rem_set->occupied();
+    _sampled_code_root_rs_length += rem_set->code_roots_list_length();
     return false;
   }
 
   size_t sampled_rs_length() const { return _sampled_rs_length; }
+  size_t sampled_code_root_rs_length() const { return _sampled_code_root_rs_length; }
 };
 
 // Adjust the target length (in regions) of the young gen, based on the the
@@ -311,7 +314,7 @@ void G1ConcurrentRefine::adjust_young_list_target_length() {
     G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
     RemSetSamplingClosure cl{cset};
     cset->iterate(&cl);
-    _policy->revise_young_list_target_length(cl.sampled_rs_length());
+    _policy->revise_young_list_target_length(cl.sampled_rs_length(), cl.sampled_code_root_rs_length());
   }
 }
 

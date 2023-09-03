@@ -29,7 +29,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.sun.tools.classfile.AccessFlags;
+import static jdk.internal.classfile.Classfile.*;
 
 /*
  *  Provides access to javap's options, set via the command line
@@ -54,16 +54,16 @@ public class Options {
     /**
      * Checks access of class, field or method.
      */
-    public boolean checkAccess(AccessFlags flags){
+    public boolean checkAccess(int flags){
 
-        boolean isPublic = flags.is(AccessFlags.ACC_PUBLIC);
-        boolean isProtected = flags.is(AccessFlags.ACC_PROTECTED);
-        boolean isPrivate = flags.is(AccessFlags.ACC_PRIVATE);
+        boolean isPublic = (flags & ACC_PUBLIC) != 0;
+        boolean isProtected = (flags & ACC_PROTECTED) != 0;
+        boolean isPrivate = (flags & ACC_PRIVATE) != 0;
         boolean isPackage = !(isPublic || isProtected || isPrivate);
 
-        if ((showAccess == AccessFlags.ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
+        if ((showAccess == ACC_PUBLIC) && (isProtected || isPrivate || isPackage))
             return false;
-        else if ((showAccess == AccessFlags.ACC_PROTECTED) && (isPrivate || isPackage))
+        else if ((showAccess == ACC_PROTECTED) && (isPrivate || isPackage))
             return false;
         else if ((showAccess == 0) && (isPrivate))
             return false;

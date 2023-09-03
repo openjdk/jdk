@@ -683,6 +683,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * Override equals
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (this == obj) return true;
@@ -695,10 +696,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
                 && Arrays.equals(shortWeekdays, that.shortWeekdays)
                 && Arrays.equals(ampms, that.ampms)
                 && Arrays.deepEquals(getZoneStringsWrapper(), that.getZoneStringsWrapper())
-                && ((localPatternChars != null
-                  && localPatternChars.equals(that.localPatternChars))
-                 || (localPatternChars == null
-                  && that.localPatternChars == null)));
+                && Objects.equals(localPatternChars, that.localPatternChars));
     }
 
     // =======================privates===============================

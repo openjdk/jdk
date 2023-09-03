@@ -26,6 +26,7 @@
  * @test
  * @summary Check secondary error handling
  * @library /test/lib
+ * @requires vm.flagless
  * @requires vm.debug
  * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1372,8 +1372,8 @@ public class UIDefaults extends Hashtable<Object,Object>
             return value;
         }
 
-        String composeKey(String key, int reduce, String sufix) {
-            return key.substring(0, key.length() - reduce) + sufix;
+        String composeKey(String key, int reduce, String suffix) {
+            return key.substring(0, key.length() - reduce) + suffix;
         }
 
         String getTextFromProperty(String text) {

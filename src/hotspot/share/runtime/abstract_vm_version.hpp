@@ -186,6 +186,8 @@ class Abstract_VM_Version: AllStatic {
   // Does this CPU support this intrinsic?
   static bool is_intrinsic_supported(vmIntrinsicID id) { return true; }
 
+  static bool profile_all_receivers_at_type_check() { return true; }
+
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 
  protected:

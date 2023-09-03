@@ -39,6 +39,11 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
  public:
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full description in macroAssembler_riscv.cpp.
+  void fast_lock(Register object, Register box, Register tmp1, Register tmp2);
+  void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, Register tmp3,
@@ -148,6 +153,9 @@
   void minmax_fp(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
+
+  void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                         Register tmp1, Register tmp2, Register tmp3);
 
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,

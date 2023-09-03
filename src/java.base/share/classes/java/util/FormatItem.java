@@ -36,6 +36,9 @@ import java.util.Formatter.FormatSpecifier;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.FormatConcatItem;
+import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.HexDigits;
+import jdk.internal.util.OctalDigits;
 
 import static java.lang.invoke.MethodType.methodType;
 

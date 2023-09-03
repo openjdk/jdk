@@ -26,7 +26,6 @@
 #define CPU_ARM_INTERP_MASM_ARM_HPP
 
 #include "asm/macroAssembler.hpp"
-#include "interpreter/invocationCounter.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "prims/jvmtiExport.hpp"

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
  * @test
  * @summary Test verifies that -XX:HeapDumpGzipLevel=1 works
  * @library /test/lib
+ * @requires vm.flagless
  * @run driver/timeout=240 TestGZippedHeapDumpOnOutOfMemoryError run 1
  */
 

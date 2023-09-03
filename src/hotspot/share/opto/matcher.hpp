@@ -27,6 +27,7 @@
 
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/compressedOops.hpp"
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"

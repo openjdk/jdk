@@ -120,7 +120,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
     @SuppressWarnings("removal")
-    static boolean popupPostionFixDisabled =
+    static boolean popupPositionFixDisabled =
             java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                     "javax.swing.adjustPopupLocationToFit","")).equals("false");
@@ -342,7 +342,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     Point adjustPopupLocationToFitScreen(int xPosition, int yPosition) {
         Point popupLocation = new Point(xPosition, yPosition);
 
-        if(popupPostionFixDisabled == true || GraphicsEnvironment.isHeadless()) {
+        if (popupPositionFixDisabled || GraphicsEnvironment.isHeadless()) {
             return popupLocation;
         }
 

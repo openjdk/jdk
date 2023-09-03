@@ -85,8 +85,6 @@ class TenuredGeneration: public Generation {
  public:
   virtual void compute_new_size();
 
-  virtual void invalidate_remembered_set();
-
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
   // Grow generation to reserved size.

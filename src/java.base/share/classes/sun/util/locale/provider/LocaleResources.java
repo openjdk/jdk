@@ -42,6 +42,7 @@ package sun.util.locale.provider;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.text.ListFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -98,6 +99,7 @@ public class LocaleResources {
     private static final String DATE_TIME_PATTERN = "DTP.";
     private static final String RULES_CACHEKEY = "RULE";
     private static final String SKELETON_PATTERN = "SP.";
+    private static final String LIST_PATTERN = "LP.";
 
     // ResourceBundle key names for skeletons
     private static final String SKELETON_INPUT_REGIONS_KEY = "DateFormatItemInputRegions";
@@ -829,6 +831,32 @@ public class LocaleResources {
         }
 
         return rules;
+    }
+
+    /**
+     * {@return the list patterns for the locale}
+     *
+     * @param type a {@link ListFormat.Type}
+     * @param style a {@link ListFormat.Style}
+     */
+    public String[] getListPatterns(ListFormat.Type type, ListFormat.Style style) {
+        String typeStr = type.toString().toLowerCase(Locale.ROOT);
+        String styleStr = style.toString().toLowerCase(Locale.ROOT);
+        String[] lpArray;
+        String cacheKey = LIST_PATTERN + typeStr;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((lpArray = (String[]) data.get()) == null)) {
+            ResourceBundle rb = localeData.getDateFormatData(locale);
+            lpArray = rb.getStringArray("ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr));
+            if (lpArray == null) {
+                cache.put(cacheKey, new ResourceReference(cacheKey, new String[5], referenceQueue));
+            }
+        }
+
+        return lpArray;
     }
 
     private static class ResourceReference extends SoftReference<Object> {

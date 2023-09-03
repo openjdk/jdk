@@ -29,13 +29,18 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main ImplicitParameters
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.MethodParameters_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.MethodParameterInfo;
+import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import com.sun.tools.javac.code.Flags;
 import toolbox.Assert;
 import toolbox.JavacTask;
@@ -50,9 +55,10 @@ import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class ImplicitParameters extends TestRunner {
-    private static final int CHECKED_FLAGS = Flags.MANDATED | Flags.SYNTHETIC;
+    private static final int CHECKED_FLAGS = Classfile.ACC_MANDATED | Classfile.ACC_SYNTHETIC;
     private static final int NO_FLAGS = 0;
 
     public ImplicitParameters() {
@@ -121,11 +127,11 @@ public class ImplicitParameters extends TestRunner {
                 .writeAll();
     }
 
-    private ClassFile readClassFile(Path classes, Method method) {
+    private ClassModel readClassFile(Path classes, Method method) {
         String className = method.getAnnotation(ClassName.class).value();
         try {
-            return ClassFile.read(classes.resolve("Outer$" + className + ".class"));
-        } catch (IOException | ConstantPoolException e) {
+            return Classfile.of().parse(classes.resolve("Outer$" + className + ".class"));
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -137,16 +143,16 @@ public class ImplicitParameters extends TestRunner {
 
     @Test
     @ClassName("Inner")
-    public void testInnerClassConstructor(ClassFile classFile) {
-        checkParameters(classFile.methods[0], Flags.MANDATED, 0);
+    public void testInnerClassConstructor(ClassModel classFile) {
+        checkParameters(classFile.methods().get(0), Classfile.ACC_MANDATED, 0);
     }
 
     @Test
     @ClassName("1Task")
-    public void testLocalClassConstructor(ClassFile classFile) throws ConstantPoolException {
-        for (com.sun.tools.classfile.Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
-                checkParameters(method, Flags.MANDATED, NO_FLAGS, Flags.SYNTHETIC);
+    public void testLocalClassConstructor(ClassModel classFile) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(ConstantDescs.INIT_NAME)) {
+                checkParameters(method, Classfile.ACC_MANDATED, NO_FLAGS, Classfile.ACC_SYNTHETIC);
                 break;
             }
         }
@@ -154,22 +160,22 @@ public class ImplicitParameters extends TestRunner {
 
     @Test
     @ClassName("1")
-    public void testAnonymousClassExtendingInnerClassConstructor(ClassFile classFile) {
-        checkParameters(classFile.methods[0], Flags.MANDATED, NO_FLAGS, NO_FLAGS);
+    public void testAnonymousClassExtendingInnerClassConstructor(ClassModel classFile) {
+        checkParameters(classFile.methods().get(0), Classfile.ACC_MANDATED, NO_FLAGS, NO_FLAGS);
     }
 
     @Test
     @ClassName("2")
-    public void testAnonymousClassConstructor(ClassFile classFile) {
-        checkParameters(classFile.methods[0], Flags.MANDATED);
+    public void testAnonymousClassConstructor(ClassModel classFile) {
+        checkParameters(classFile.methods().get(0), Classfile.ACC_MANDATED);
     }
 
     @Test
     @ClassName("MyEnum")
-    public void testValueOfInEnum(ClassFile classFile) throws ConstantPoolException {
-        for (com.sun.tools.classfile.Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals("valueOf")) {
-                checkParameters(method, Flags.MANDATED);
+    public void testValueOfInEnum(ClassModel classFile) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString("valueOf")) {
+                checkParameters(method, Classfile.ACC_MANDATED);
                 break;
             }
         }
@@ -177,10 +183,10 @@ public class ImplicitParameters extends TestRunner {
 
     @Test
     @ClassName("MyEnum")
-    public void testEnumClassConstructor(ClassFile classFile) throws ConstantPoolException {
-        for (com.sun.tools.classfile.Method method : classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals(ConstantDescs.INIT_NAME)) {
-                checkParameters(method, Flags.SYNTHETIC, Flags.SYNTHETIC, NO_FLAGS, NO_FLAGS);
+    public void testEnumClassConstructor(ClassModel classFile) {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(ConstantDescs.INIT_NAME)) {
+                checkParameters(method, Classfile.ACC_SYNTHETIC, Classfile.ACC_SYNTHETIC, NO_FLAGS, NO_FLAGS);
                 break;
             }
         }
@@ -188,18 +194,18 @@ public class ImplicitParameters extends TestRunner {
 
     @Test
     @ClassName("MyRecord")
-    public void testCompactConstructor(ClassFile classFile) {
-        checkParameters(classFile.methods[0], Flags.MANDATED, Flags.MANDATED);
+    public void testCompactConstructor(ClassModel classFile) {
+        checkParameters(classFile.methods().get(0), Classfile.ACC_MANDATED, Classfile.ACC_MANDATED);
     }
 
-    private void checkParameters(com.sun.tools.classfile.Method method, int... parametersFlags) {
-        MethodParameters_attribute methodParameters = (MethodParameters_attribute) method.attributes.get("MethodParameters");
+    private void checkParameters(MethodModel method, int... parametersFlags) {
+        MethodParametersAttribute methodParameters = method.findAttribute(Attributes.METHOD_PARAMETERS).orElseThrow();
         Assert.checkNonNull(methodParameters, "MethodParameters attribute must be present");
-        MethodParameters_attribute.Entry[] table = methodParameters.method_parameter_table;
-        Assert.check(table.length == parametersFlags.length, () -> "Expected " + parametersFlags.length
-                + " MethodParameters entries, found " + table.length);
-        for (int i = 0; i < methodParameters.method_parameter_table_length; i++) {
-            int foundFlags = table[i].flags & CHECKED_FLAGS;
+        List<MethodParameterInfo> table = methodParameters.parameters();
+        Assert.check(table.size() == parametersFlags.length, () -> "Expected " + parametersFlags.length
+                + " MethodParameters entries, found " + table.size());
+        for (int i = 0; i < methodParameters.parameters().size(); i++) {
+            int foundFlags = table.get(i).flagsMask() & CHECKED_FLAGS;
             int desiredFlags = parametersFlags[i] & CHECKED_FLAGS;
             Assert.check(foundFlags == desiredFlags, () -> "Expected mandated and synthethic flags to be "
                     + convertFlags(desiredFlags) + ", found " + convertFlags(foundFlags));
@@ -207,6 +213,6 @@ public class ImplicitParameters extends TestRunner {
     }
 
     private static String convertFlags(int flags) {
-        return ((flags & Flags.MANDATED) == Flags.MANDATED) + " and " + ((flags & Flags.SYNTHETIC) == Flags.SYNTHETIC);
+        return ((flags & Classfile.ACC_MANDATED) == Classfile.ACC_MANDATED) + " and " + ((flags & Classfile.ACC_SYNTHETIC) == Classfile.ACC_SYNTHETIC);
     }
 }

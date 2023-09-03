@@ -143,12 +143,6 @@ void TenuredGeneration::shrink(size_t bytes) {
                       name(), old_mem_size/K, new_mem_size/K);
 }
 
-// Objects in this generation may have moved, invalidate this
-// generation's cards.
-void TenuredGeneration::invalidate_remembered_set() {
-  _rs->invalidate(used_region());
-}
-
 void TenuredGeneration::compute_new_size_inner() {
   assert(_shrink_factor <= 100, "invalid shrink factor");
   size_t current_shrink_factor = _shrink_factor;

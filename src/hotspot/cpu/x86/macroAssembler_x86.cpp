@@ -38,6 +38,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -51,6 +52,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -4575,7 +4577,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   if (!IS_A_TEMP(rdi)) { push(rdi); pushed_rdi = true; }
 
 #ifndef PRODUCT
-  int* pst_counter = &SharedRuntime::_partial_subtype_ctr;
+  uint* pst_counter = &SharedRuntime::_partial_subtype_ctr;
   ExternalAddress pst_counter_addr((address) pst_counter);
   NOT_LP64(  incrementl(pst_counter_addr) );
   LP64_ONLY( lea(rcx, pst_counter_addr) );
@@ -9256,6 +9258,17 @@ void MacroAssembler::evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   }
 }
 
+void MacroAssembler::evpaddq(XMMRegister dst, KRegister mask, XMMRegister nds, AddressLiteral src, bool merge, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::evpaddq(dst, mask, nds, as_Address(src), merge, vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evpaddq(dst, mask, nds, Address(rscratch, 0), merge, vector_len);
+  }
+}
+
 void MacroAssembler::evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
@@ -9776,7 +9789,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with unspecified ZF.
 //
@@ -9784,7 +9797,7 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 // hdr: the (pre-loaded) header of the object, must be rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, thread, tmp);
 
@@ -9812,14 +9825,14 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
   movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with unspecified ZF.
 //
 // obj: the object to be unlocked
 // hdr: the (pre-loaded) header of the object, must be rax
 // tmp: a temporary register
-void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
   assert(hdr == rax, "header must be in rax for cmpxchg");
   assert_different_registers(obj, hdr, tmp);
 

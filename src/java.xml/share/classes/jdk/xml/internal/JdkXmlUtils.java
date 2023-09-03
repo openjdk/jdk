@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
+    public static final boolean IS_WINDOWS = SecuritySupport.getSystemProperty("os.name").contains("Windows");
+    public static final String JAVA_HOME = SecuritySupport.getSystemProperty("java.home");
+
     private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
     private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
     private static final String SAX_DRIVER = "org.xml.sax.driver";
@@ -61,7 +64,9 @@ public class JdkXmlUtils {
         Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACES_FEATURE;
     public static final String NAMESPACE_PREFIXES_FEATURE =
         Constants.SAX_FEATURE_PREFIX + Constants.NAMESPACE_PREFIXES_FEATURE;
-
+    /** Property identifier: security manager. */
+    private static final String SECURITY_MANAGER =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
     /**
      * Catalog features
@@ -73,7 +78,10 @@ public class JdkXmlUtils {
     public final static String CATALOG_PREFER = CatalogFeatures.Feature.PREFER.getPropertyName();
     public final static String CATALOG_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
-
+    //values for the Resolve property
+    public static final String RESOLVE_STRICT = "strict";
+    public static final String RESOLVE_CONTINUE = "continue";
+    public static final String RESOLVE_IGNORE = "ignore";
 
     /**
      * Default value of USE_CATALOG. This will read the System property
@@ -162,19 +170,28 @@ public class JdkXmlUtils {
 
         CatalogFeatures.Builder builder = CatalogFeatures.builder();
         if (file != null) {
-            builder = builder.with(CatalogFeatures.Feature.FILES, file);
+            builder = builder.with(Feature.FILES, file);
         }
         if (prefer != null) {
-            builder = builder.with(CatalogFeatures.Feature.PREFER, prefer);
+            builder = builder.with(Feature.PREFER, prefer);
         }
         if (defer != null) {
-            builder = builder.with(CatalogFeatures.Feature.DEFER, defer);
+            builder = builder.with(Feature.DEFER, defer);
         }
         if (resolve != null) {
-            builder = builder.with(CatalogFeatures.Feature.RESOLVE, resolve);
+            builder = builder.with(Feature.RESOLVE, resolve);
         }
 
         return builder.build();
+    }
+
+    /**
+     * Checks whether the RESOLVE feature in the CatalogFeatures is continue.
+     * @param cf the specified CatalogFeatures
+     * @return true if the RESOLVE feature is
+     */
+    public static boolean isResolveContinue(CatalogFeatures cf) {
+        return (cf == null || cf.get(Feature.RESOLVE).equals(RESOLVE_CONTINUE));
     }
 
     /**
@@ -237,17 +254,22 @@ public class JdkXmlUtils {
      * SAXParserFactory or XMLReaderFactory, otherwise use the system-default
      * SAXParserFactory to locate an XMLReader.
      *
+     * Note: parameter useXMLReaderFactory was removed. The method instead checks
+     * the SAX_DRIVER property for whether the XMLReader should be created using
+     * XMLReaderFactory for compatibility.  (see JDK-6490921).
+     *
+     * @param sm the XMLSecurityManager
      * @param overrideDefaultParser a flag indicating whether a 3rd party's
      * parser implementation may be used to override the system-default one
      * @param secureProcessing a flag indicating whether secure processing is
      * requested
-     * @param useXMLReaderFactory a flag indicating when the XMLReader should be
-     * created using XMLReaderFactory. True is a compatibility mode that honors
-     * the property org.xml.sax.driver (see JDK-6490921).
+     * @param useCatalog a flag indicating whether Catalog is enabled
+     * @param catalogFeatures the CatalogFeatures
      * @return an XMLReader instance
      */
-    public static XMLReader getXMLReader(boolean overrideDefaultParser,
-            boolean secureProcessing) {
+    public static XMLReader getXMLReader(XMLSecurityManager sm,
+            boolean overrideDefaultParser, boolean secureProcessing,
+            boolean useCatalog, CatalogFeatures catalogFeatures) {
         SAXParserFactory saxFactory;
         XMLReader reader = null;
         String spSAXDriver = SecuritySupport.getSystemProperty(SAX_DRIVER);
@@ -272,18 +294,61 @@ public class JdkXmlUtils {
             } catch (SAXException se) {
                 // older version of a parser
             }
-            return reader;
-        }
+        } else {
+            // use the system-default
+            saxFactory = defaultSAXFactory;
 
-        // use the system-default
-        saxFactory = defaultSAXFactory;
-
-        try {
+            try {
             reader = saxFactory.newSAXParser().getXMLReader();
-        } catch (ParserConfigurationException | SAXException ex) {
-            // shall not happen with the system-default reader
+            } catch (ParserConfigurationException | SAXException ex) {
+                // shall not happen with the system-default reader
+            }
         }
+
+        setReaderProperty(reader, sm, useCatalog, catalogFeatures);
+
         return reader;
+    }
+
+    /**
+     * Sets properties on the reader, including XMLSecurityManager and Catalog
+     * features.
+     *
+     * @param reader the XMLReader
+     * @param sm the XMLSecurityManager
+     * @param useCatalog the USE_CATALOG property
+     * @param catalogFeatures the Catalog features
+     */
+    public static void setReaderProperty(XMLReader reader, XMLSecurityManager sm,
+            boolean useCatalog, CatalogFeatures catalogFeatures) {
+        if (reader != null) {
+            try {
+                reader.setProperty(SECURITY_MANAGER, sm);
+            } catch (SAXException ex) {
+                // internal setting, shouldn't happen
+            }
+
+            boolean supportCatalog = true;
+            try {
+                reader.setFeature(JdkXmlUtils.USE_CATALOG, useCatalog);
+            }
+            catch (SAXException e) {
+                supportCatalog = false;
+            }
+
+            if (catalogFeatures != null) {
+                CatalogFeatures cf = catalogFeatures;
+                if (supportCatalog && useCatalog) {
+                    try {
+                        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+                            reader.setProperty(f.getPropertyName(), cf.get(f));
+                        }
+                    } catch (SAXException e) {
+                        //shall not happen for internal settings
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -353,10 +418,29 @@ public class JdkXmlUtils {
         return factory;
     }
 
-    public static SAXTransformerFactory getSAXTransformFactory(boolean overrideDefaultParser) {
+    /**
+     * Returns an instance of SAXTransformerFactory with the current XMLSecurityManager
+     * and the setting of the OVERRIDE_PARSER property.
+     * @param sm the XMLSecurityManager
+     * @param overrideDefaultParser the setting of the OVERRIDE_PARSER property
+     * @return an instance of SAXTransformerFactory
+     */
+    public static SAXTransformerFactory getSAXTransformFactory(XMLSecurityManager sm,
+            boolean overrideDefaultParser) {
         SAXTransformerFactory tf = overrideDefaultParser
                 ? (SAXTransformerFactory) SAXTransformerFactory.newInstance()
                 : (SAXTransformerFactory) new TransformerFactoryImpl();
+        if (sm != null) {
+            for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
+                if (sm.isSet(limit)){
+                    tf.setAttribute(limit.apiProperty(), sm.getLimitValueAsString(limit));
+                }
+            }
+            if (sm.printEntityCountInfo()) {
+                tf.setAttribute(JdkConstants.JDK_DEBUG_LIMIT, "yes");
+            }
+        }
+
         try {
             tf.setFeature(OVERRIDE_PARSER, overrideDefaultParser);
         } catch (TransformerConfigurationException ex) {

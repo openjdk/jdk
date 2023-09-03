@@ -134,12 +134,13 @@ int ArrayCopyNode::get_count(PhaseGVN *phase) const {
       assert (ary_src != nullptr, "not an array or instance?");
       // clone passes a length as a rounded number of longs. If we're
       // cloning an array we'll do it element by element. If the
-      // length input to ArrayCopyNode is constant, length of input
-      // array must be too.
-
-      assert((get_length_if_constant(phase) == -1) != ary_src->size()->is_con() ||
+      // length of the input array is constant, ArrayCopyNode::Length
+      // must be too. Note that the opposite does not need to hold,
+      // because different input array lengths (e.g. int arrays with
+      // 3 or 4 elements) might lead to the same length input
+      // (e.g. 2 double-words).
+      assert(!ary_src->size()->is_con() || (get_length_if_constant(phase) >= 0) ||
              phase->is_IterGVN() || phase->C->inlining_incrementally() || StressReflectiveCode, "inconsistent");
-
       if (ary_src->size()->is_con()) {
         return ary_src->size()->get_con();
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -832,7 +832,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + Integer.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            Integer.getChars(i, spaceNeeded, value);
+            StringLatin1.getChars(i, spaceNeeded, value);
         } else {
             StringUTF16.getChars(i, count, spaceNeeded, value);
         }
@@ -857,7 +857,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int spaceNeeded = count + Long.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            Long.getChars(l, spaceNeeded, value);
+            StringLatin1.getChars(l, spaceNeeded, value);
         } else {
             StringUTF16.getChars(l, count, spaceNeeded, value);
         }

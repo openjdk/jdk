@@ -38,6 +38,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -78,6 +79,7 @@ void PhiResolverState::reset() {
 PhiResolver::PhiResolver(LIRGenerator* gen)
  : _gen(gen)
  , _state(gen->resolver_state())
+ , _loop(nullptr)
  , _temp(LIR_OprFact::illegalOpr)
 {
   // reinitialize the shared state arrays

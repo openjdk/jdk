@@ -518,24 +518,9 @@ void ContiguousSpace::verify() const {
   }
 }
 
-void Space::oop_iterate(OopIterateClosure* blk) {
-  ObjectToOopClosure blk2(blk);
-  object_iterate(&blk2);
-}
-
 bool Space::obj_is_alive(const HeapWord* p) const {
   assert (block_is_obj(p), "The address should point to an object");
   return true;
-}
-
-void ContiguousSpace::oop_iterate(OopIterateClosure* blk) {
-  if (is_empty()) return;
-  HeapWord* obj_addr = bottom();
-  HeapWord* t = top();
-  // Could call objects iterate, but this is easier.
-  while (obj_addr < t) {
-    obj_addr += cast_to_oop(obj_addr)->oop_iterate_size(blk);
-  }
 }
 
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {

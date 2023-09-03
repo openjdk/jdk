@@ -37,8 +37,9 @@
 #include "interpreter/bytecodeTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -53,6 +54,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
@@ -465,7 +467,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -521,7 +524,8 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // null last_sp until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -689,7 +693,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved rbp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -770,7 +774,7 @@ void TemplateInterpreterGenerator::lock_method() {
   const Address monitor_block_top(
         rfp,
         frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
   {
@@ -809,7 +813,8 @@ void TemplateInterpreterGenerator::lock_method() {
   __ check_extended_sp();
   __ sub(sp, sp, entry_size); // add space for a monitor entry
   __ sub(esp, esp, entry_size);
-  __ mov(rscratch1, sp);
+  __ sub(rscratch1, sp, rfp);
+  __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
   __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ str(esp, monitor_block_top);  // set new monitor block top
   // store object
@@ -877,15 +882,19 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
     __ andr(rscratch1, rscratch1, -16);
+    __ sub(rscratch2, rscratch1, rfp);
+    __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
     // Store extended SP and mirror
-    __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
+    __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
     // Move SP out of the way
     __ mov(sp, rscratch1);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(rscratch1, sp, 2 * wordSize);
-    __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
+    __ sub(rscratch2, rscratch1, rfp);
+    __ asr(rscratch2, rscratch2, Interpreter::logStackElementSize);
+    __ stp(r10, rscratch2, Address(sp, 4 * wordSize));
     __ mov(sp, rscratch1);
   }
 }
@@ -1867,7 +1876,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* notify_jvmdi */ false);
 
   // Restore the last_sp and null it out
-  __ ldr(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();

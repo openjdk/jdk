@@ -169,11 +169,11 @@ import java.util.stream.Collectors;
  * <i>NegativePattern:</i>
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
- *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      {@linkplain DecimalFormat##special_pattern_character special characters}.
+ *      Any characters except the {@linkplain
+ *      DecimalFormat##special_pattern_character special pattern characters}
  * <i>Suffix:</i>
- *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      {@linkplain DecimalFormat##special_pattern_character special characters}.
+ *      Any characters except the {@linkplain
+ *      DecimalFormat##special_pattern_character special pattern characters}
  * <i>MinimumInteger:</i>
  *      0
  *      0 <i>MinimumInteger</i>
@@ -2354,7 +2354,11 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public boolean equals(Object obj) {
 
-        if (!super.equals(obj)) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (!super.equals(obj)) { // super does null and class checks
             return false;
         }
 
@@ -2369,9 +2373,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Returns the hash code for this {@code CompactNumberFormat} instance.
-     *
-     * @return hash code for this {@code CompactNumberFormat}
+     * {@return the hash code for this {@code CompactNumberFormat} instance}
      */
     @Override
     public int hashCode() {

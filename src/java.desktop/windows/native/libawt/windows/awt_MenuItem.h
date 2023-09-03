@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public:
     virtual BOOL IsTopMenu();
     void DrawCheck(HDC hDC, RECT rect);
 
-    void SetLabel(LPCTSTR sb);
+    void SetLabel();
     virtual void Enable(BOOL isEnabled);
     virtual void UpdateContainerLayout();
     virtual void RedrawMenuBar();

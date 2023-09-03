@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --enable-preview, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
@@ -155,10 +156,10 @@ $(eval $(call SetupTestFilesCompilation, BUILD_MICROBENCHMARK_LIBRARIES, \
 
 # Setup copy of native dependencies to image output dir
 $(eval $(call SetupCopyFiles, COPY_MICROBENCHMARK_NATIVE, \
-    SRC := $(MICROBENCHMARK_NATIVE_OUTPUT), \
+    SRC := $(MICROBENCHMARK_NATIVE_OUTPUT)/lib, \
     DEST := $(MICROBENCHMARK_IMAGE_DIR)/native, \
-    FILES := $(BUILD_MICROBENCHMARK_LIBRARIES), \
-    FLATTEN := true, \
+    FILES := $(filter $(MICROBENCHMARK_NATIVE_OUTPUT)/lib/%, \
+        $(BUILD_MICROBENCHMARK_LIBRARIES)), \
 ))
 
 all: $(MICROBENCHMARK_JAR) $(BUILD_MICROBENCHMARK_LIBRARIES) $(COPY_MICROBENCHMARK_NATIVE)

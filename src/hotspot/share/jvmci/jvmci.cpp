@@ -56,6 +56,11 @@ const char* JVMCI::_fatal_log_filename = nullptr;
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
 bool JVMCI::can_initialize_JVMCI() {
+  if (UseJVMCINativeLibrary) {
+    // Initializing libjvmci does not execute Java code so
+    // can be done any time.
+    return true;
+  }
   // Initializing JVMCI requires the module system to be initialized past phase 3.
   // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
   // JVMCI initialization requires) isn't usable until after phase 3. Testing
@@ -65,6 +70,33 @@ bool JVMCI::can_initialize_JVMCI() {
   }
   assert(Universe::is_module_initialized(), "must be");
   return true;
+}
+
+bool JVMCI::get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal) {
+  if (JVMCILibPath != nullptr) {
+    if (!os::dll_locate_lib(pathbuf, pathlen, JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
+    }
+  } else {
+    if (!os::dll_locate_lib(pathbuf, pathlen, Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library");
+    }
+  }
+  return true;
+}
+
+bool JVMCI::shared_library_exists() {
+  if (_shared_library_handle != nullptr) {
+    return true;
+  }
+  char path[JVM_MAXPATHLEN];
+  return get_shared_library_path(path, sizeof(path), false);
 }
 
 void* JVMCI::get_shared_library(char*& path, bool load) {
@@ -78,15 +110,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
   if (_shared_library_handle == nullptr) {
     char path[JVM_MAXPATHLEN];
     char ebuf[1024];
-    if (JVMCILibPath != nullptr) {
-      if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
-      }
-    } else {
-      if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library");
-      }
-    }
+    get_shared_library_path(path, sizeof(path), true);
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
     if (handle == nullptr) {

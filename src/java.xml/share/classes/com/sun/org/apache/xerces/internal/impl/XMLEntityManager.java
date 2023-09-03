@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,8 +28,6 @@ import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.util.*;
 import com.sun.org.apache.xerces.internal.util.URI;
-import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
@@ -59,8 +57,12 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
+import jdk.xml.internal.XMLLimitAnalyzer;
+import jdk.xml.internal.XMLSecurityManager;
+import jdk.xml.internal.XMLSecurityManager.Limit;
 import org.xml.sax.InputSource;
 
 
@@ -91,7 +93,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Aug 2021
+ * @LastModified: July 2023
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -1544,7 +1546,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             fStaxEntityResolver = null;
         }
 
-        fSupportDTD = ((Boolean)propertyManager.getProperty(XMLInputFactory.SUPPORT_DTD));
         fReplaceEntityReferences = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES));
         fSupportExternalEntities = ((Boolean)propertyManager.getProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES));
 
@@ -1563,6 +1564,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fAccessExternalDTD = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
 
         fSecurityManager = (XMLSecurityManager)propertyManager.getProperty(SECURITY_MANAGER);
+        checkSupportDTD();
 
         fLimitAnalyzer = new XMLLimitAnalyzer();
         //reset fEntityStorage
@@ -1633,7 +1635,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         entityExpansionIndex = fSecurityManager.getIndex(JdkConstants.SP_ENTITY_EXPANSION_LIMIT);
 
         //StAX Property
-        fSupportDTD = true;
+        checkSupportDTD();
         fReplaceEntityReferences = true;
         fSupportExternalEntities = true;
 
@@ -1658,6 +1660,20 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         fEntityStorage.reset(componentManager);
 
     } // reset(XMLComponentManager)
+
+    /**
+     * Checks the supportDTD setting. Use the StAX supportDTD property if it is
+     * set, otherwise the jdk.xml.dtd.support. Refer to the module-summary for
+     * more details.
+     */
+    private void checkSupportDTD() {
+        // SupportDTD set the DTD property, so no longer read from propertyManager
+        fSupportDTD = !fSecurityManager.is(Limit.DTD, JdkConstants.IGNORE);
+        if (fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == JdkProperty.State.APIPROPERTY
+                || fSecurityManager.getState(Limit.STAX_SUPPORT_DTD) == JdkProperty.State.LEGACY_APIPROPERTY) {
+            fSupportDTD = fSecurityManager.is(Limit.STAX_SUPPORT_DTD);
+        }
+    }
 
     // reset general state.  Should not be called other than by
     // a class acting as a component manager but not

@@ -46,10 +46,10 @@ static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFra
   }
 }
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(0), _bci(bci), _type(type) {}
 
-JfrStackFrame::JfrStackFrame(const traceid& id, int bci, int type, int lineno, const InstanceKlass* ik) :
+JfrStackFrame::JfrStackFrame(const traceid& id, int bci, u1 type, int lineno, const InstanceKlass* ik) :
   _klass(ik), _methodid(id), _line(lineno), _bci(bci), _type(type) {}
 
 JfrStackTrace::JfrStackTrace(JfrStackFrame* frames, u4 max_frames) :
@@ -138,9 +138,9 @@ void JfrStackFrame::write(JfrCheckpointWriter& cpw) const {
 
 class JfrVframeStream : public vframeStreamCommon {
  private:
+  bool _vthread;
   const ContinuationEntry* _cont_entry;
   bool _async_mode;
-  bool _vthread;
   bool step_to_sender();
   void next_frame();
  public:
@@ -165,8 +165,9 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
                                  walk_continuation(jt))),
-    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
-    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
+    _vthread(JfrThreadLocal::is_vthread(jt)),
+    _cont_entry(_vthread ? jt->last_continuation() : nullptr),
+    _async_mode(async_mode) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);
   _frame = fr;
@@ -256,7 +257,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
       return false;
     }
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;
@@ -307,7 +308,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
     }
     const Method* method = vfs.method();
     const traceid mid = JfrTraceId::load(method);
-    int type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
+    u1 type = vfs.is_interpreted_frame() ? JfrStackFrame::FRAME_INTERPRETER : JfrStackFrame::FRAME_JIT;
     int bci = 0;
     if (method->is_native()) {
       type = JfrStackFrame::FRAME_NATIVE;

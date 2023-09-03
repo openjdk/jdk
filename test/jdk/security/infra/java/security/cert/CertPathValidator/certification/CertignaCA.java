@@ -23,30 +23,19 @@
 
 /*
  * @test
- * @bug 8245654
- * @summary Interoperability tests with Certigna Root CA from Dhimyotis
+ * @bug 8245654 8256895
+ * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath CertignaCA OCSP
  * @run main/othervm -Djava.security.debug=certpath CertignaCA CRL
  */
-
-/*
- * Obtain TLS test artifacts for Certigna Root CA from:
- *
- * Valid TLS Certificates:
- * https://valid.servicesca.dhimyotis.com/
- *
- * Revoked TLS Certificates:
- * https://revoked.servicesca.dhimyotis.com/
- */
 public class CertignaCA {
-
     // Owner: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
     // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
     // Issuer: CN=Certigna, O=Dhimyotis, C=FR
     // Serial number: 6f82fa28acd6f784bb5b120ba87367ad
     // Valid from: Wed Nov 25 03:33:52 PST 2015 until: Sat Nov 22 03:33:52 PST 2025
-    private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
+    private static final String INT_CERTIGNA = "-----BEGIN CERTIFICATE-----\n" +
             "MIIGFjCCBP6gAwIBAgIQb4L6KKzW94S7WxILqHNnrTANBgkqhkiG9w0BAQsFADA0\n" +
             "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJRGhpbXlvdGlzMREwDwYDVQQDDAhDZXJ0\n" +
             "aWduYTAeFw0xNTExMjUxMTMzNTJaFw0yNTExMjIxMTMzNTJaMH0xCzAJBgNVBAYT\n" +
@@ -82,132 +71,137 @@ public class CertignaCA {
             "DWLv73/xhTmdhWYQ/reo0GbgBoLiltKmIJQ=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: SERIALNUMBER=S230100953, CN=valid.servicesca.dhimyotis.com,
-    // OU=0002 48146308100036, O=DHIMYOTIS, L=VILLENEUVE D'ASCQ, C=FR
-    // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
-    // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
-    // Serial number: 2959798fe2e0e7b43810169ae938bc5f
-    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59 PDT 2023
+    // Owner: SERIALNUMBER=S266241169, CN=valid.servicesca.dhimyotis.com, O=DHIMYOTIS,
+    // L=VILLENEUVE D'ASCQ, C=FR
+    // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036, OU=0002
+    // 48146308100036, O=DHIMYOTIS, C=FR
+    // Serial number: c641ef7b0340c21515d8c462e729dc0e
+    // Valid from: Thu Mar 09 15:00:00 PST 2023 until: Mon Mar 11 15:59:59 PDT 2024
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIIkzCCBnugAwIBAgIQKVl5j+Lg57Q4EBaa6Ti8XzANBgkqhkiG9w0BAQsFADB9\n" +
-            "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJREhJTVlPVElTMRwwGgYDVQQLDBMwMDAy\n" +
-            "IDQ4MTQ2MzA4MTAwMDM2MR0wGwYDVQRhDBROVFJGUi00ODE0NjMwODEwMDAzNjEd\n" +
-            "MBsGA1UEAwwUQ2VydGlnbmEgU2VydmljZXMgQ0EwHhcNMjIwMzEzMjMwMDAwWhcN\n" +
-            "MjMwMzEzMjI1OTU5WjCBmTELMAkGA1UEBhMCRlIxGjAYBgNVBAcMEVZJTExFTkVV\n" +
-            "VkUgRCdBU0NRMRIwEAYDVQQKDAlESElNWU9USVMxHDAaBgNVBAsMEzAwMDIgNDgx\n" +
-            "NDYzMDgxMDAwMzYxJzAlBgNVBAMMHnZhbGlkLnNlcnZpY2VzY2EuZGhpbXlvdGlz\n" +
-            "LmNvbTETMBEGA1UEBRMKUzIzMDEwMDk1MzCCASIwDQYJKoZIhvcNAQEBBQADggEP\n" +
-            "ADCCAQoCggEBALpeGHbzRGnv1C0PdJS0nT+Cx98Pw8ctaw51m9Vlk2j8AFGZRu8r\n" +
-            "lX3noQYX0AIfcbk6KqPAreIvJQV0UgM5jxt3mIQF7iU+55MG4mWmSJgKDDq4b3ck\n" +
-            "WdBy0KpSBqLmB9sHyTNk9NilNu7VwG03HGIltWA2uQFJGC8CkxwAFpMCQ9RVYw2Z\n" +
-            "NkL/SsiPgrRLiCJZjesk1oAcLnLp7hbelfUB2Z71VmuDDlom7CsLvdN8eIG+Lj+V\n" +
-            "wkGmH6AbVGvbFniFDLCNDSJWCQ9AHeO+i0CM/wd2gBRSgm993p2YMxu5mVZjz/rp\n" +
-            "ELaCYjulvNZKvPIFoNe8qsxlXRWeqWaHuPsCAwEAAaOCA/AwggPsMIHkBggrBgEF\n" +
-            "BQcBAQSB1zCB1DA4BggrBgEFBQcwAoYsaHR0cDovL2F1dG9yaXRlLmRoaW15b3Rp\n" +
-            "cy5jb20vc2VydmljZXNjYS5kZXIwNgYIKwYBBQUHMAKGKmh0dHA6Ly9hdXRvcml0\n" +
-            "ZS5jZXJ0aWduYS5mci9zZXJ2aWNlc2NhLmRlcjAwBggrBgEFBQcwAYYkaHR0cDov\n" +
-            "L3NlcnZpY2VzY2Eub2NzcC5kaGlteW90aXMuY29tMC4GCCsGAQUFBzABhiJodHRw\n" +
-            "Oi8vc2VydmljZXNjYS5vY3NwLmNlcnRpZ25hLmZyMB8GA1UdIwQYMBaAFKzsho9L\n" +
-            "Nxy4fxcbGdCu6E7jNFwSMAkGA1UdEwQCMAAwYQYDVR0gBFowWDAIBgZngQwBAgIw\n" +
-            "TAYLKoF6AYExAgUBAQEwPTA7BggrBgEFBQcCARYvaHR0cHM6Ly93d3cuY2VydGln\n" +
-            "bmEuY29tL2F1dG9yaXRlLWNlcnRpZmljYXRpb24wZQYDVR0fBF4wXDAroCmgJ4Yl\n" +
-            "aHR0cDovL2NybC5jZXJ0aWduYS5mci9zZXJ2aWNlc2NhLmNybDAtoCugKYYnaHR0\n" +
-            "cDovL2NybC5kaGlteW90aXMuY29tL3NlcnZpY2VzY2EuY3JsMBMGA1UdJQQMMAoG\n" +
-            "CCsGAQUFBwMBMA4GA1UdDwEB/wQEAwIFoDBIBgNVHREEQTA/gh12YWxpZC5zZXJ2\n" +
-            "aWNlc2NhLmNlcnRpZ25hLmNvbYIedmFsaWQuc2VydmljZXNjYS5kaGlteW90aXMu\n" +
-            "Y29tMB0GA1UdDgQWBBSGQwwMIdxiI7P+CFU/Z968XZaSGzCCAX0GCisGAQQB1nkC\n" +
-            "BAIEggFtBIIBaQFnAHUArfe++nz/EMiLnT2cHj4YarRnKV3PsQwkyoWGNOvcgooA\n" +
-            "AAF/h9eOGgAABAMARjBEAiBaneK2CTn9lH28CUnL2C2/WklUYkvygMiDrtCIUXfw\n" +
-            "gQIgJrGxwgGlsYzUdZyZY/oNWSLByO8/Jb5LXbNibdk5SnAAdwDoPtDaPvUGNTLn\n" +
-            "Vyi8iWvJA9PL0RFr7Otp4Xd9bQa9bgAAAX+H14/NAAAEAwBIMEYCIQCVtuV9p/Ug\n" +
-            "IhwVoMUjPp1KzGte/FmDaKPx432VjOpD+AIhANKWkDEuVnMzPH8sdJCL+eXoB0Q7\n" +
-            "0mpe5dHEiFJS8lTBAHUAs3N3B+GEUPhjhtYFqdwRCUp5LbFnDAuH3PADDnk2pZoA\n" +
-            "AAF/h9eTcQAABAMARjBEAiAjdYhnzPe9lJksk94ngl7PLDRi71tSRN7SslibEyv+\n" +
-            "XAIgLQ5NKQAaJnF8oA7WnHB8gyJ/8kqZi52d1WFgARDLR30wDQYJKoZIhvcNAQEL\n" +
-            "BQADggIBAJhLhW5Gh9yOPKsrMhABd7U5juc5ev97c6s7Az70Yr5/EtH6TlgC6a1N\n" +
-            "i0yzFOeXzAR8Svsq6HzqP9kMJkEFIrdWH8JZdEv871EjYetEzLLnO0m+dNEROJAh\n" +
-            "fcJ2w2LufPNaQ327tGY/DxDH9jdtgquReO01bPlJ0Yc5J3maz4XapeUm/kQ8dRzS\n" +
-            "0UBOxfUlEMpDatZzg7wugy7g9vOndW/VbtbN5Iioq2bjuykPJZfZUx4cCAmLUS7w\n" +
-            "bqPThQ54PnybiPXaF8cH1Gq0Rs/lGB1erzRXRXHgMy61mFY944r13oATnSdTy8Gm\n" +
-            "QoMsVp9w7WBRo8O4PR606Ke8Ufm9Kg2GJ1sHClf70FNFO/OSFlr3BLDG0vEMdgVW\n" +
-            "9QLu6UQXa9PhWMoo030k5fmUySzIUljXnstj3rgcD2HE1UrobTqyRHbbQ8JVWaF0\n" +
-            "PrPR4WDFI9dY0jixVQucKlX6FCqsyNrJF8GWDlZH+Cd8bk+MA9fKUuX/vmoOc2d+\n" +
-            "bvOCliME7YjAJkyclk6yiFIMnqyh+TD0d8WbjE94YC/293Xqb6WGkRhhsCX9RUrk\n" +
-            "I6QbS2uicCFGjRsPmjvMkDDxS00MShRl2K/KpsAx68Cv/Gcw3bv31obwNXTB2IBg\n" +
-            "gI0MfBHnjIp1nmNvCNmVIP52YrGQyC2JE7+GZUWTuwUVeDgBhiEZ\n" +
+            "MIIIdzCCBl+gAwIBAgIRAMZB73sDQMIVFdjEYucp3A4wDQYJKoZIhvcNAQELBQAw\n" +
+            "fTELMAkGA1UEBhMCRlIxEjAQBgNVBAoMCURISU1ZT1RJUzEcMBoGA1UECwwTMDAw\n" +
+            "MiA0ODE0NjMwODEwMDAzNjEdMBsGA1UEYQwUTlRSRlItNDgxNDYzMDgxMDAwMzYx\n" +
+            "HTAbBgNVBAMMFENlcnRpZ25hIFNlcnZpY2VzIENBMB4XDTIzMDMwOTIzMDAwMFoX\n" +
+            "DTI0MDMxMTIyNTk1OVowezELMAkGA1UEBhMCRlIxGjAYBgNVBAcMEVZJTExFTkVV\n" +
+            "VkUgRCdBU0NRMRIwEAYDVQQKDAlESElNWU9USVMxJzAlBgNVBAMMHnZhbGlkLnNl\n" +
+            "cnZpY2VzY2EuZGhpbXlvdGlzLmNvbTETMBEGA1UEBRMKUzI2NjI0MTE2OTCCASIw\n" +
+            "DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJDrFpZWEeBJoMUuG37wEmJ7XVeX\n" +
+            "Jde1bgURpFbLwifRj2TVmMdtfg9hXHL7B7Mh/+I8/e7kJz8mlU9qUYKyH24oAitE\n" +
+            "myXYHAKTydqTseiM3mp92n4PM+DrgsdbT7bpmiirNM0/sqWFNyGUz7kP6Z5E3uuU\n" +
+            "HSlzX1LBBj8S0ORNZWvomQho11gjuZJRS72X4XTnSc0DESwnLp2irUfx7pflBNt0\n" +
+            "sLE8BhpNSSQd91naJVKtCtn0H7df+o4gGBt2ZceCLBwU0NwN8+KXz06KjP8298V4\n" +
+            "P3+eR2QxAw4QBIanRaG6Gd4AmpdIaT7TpiYHotjrJ/Pbx5C8/cmgxxlmtI0CAwEA\n" +
+            "AaOCA/IwggPuMIHkBggrBgEFBQcBAQSB1zCB1DA2BggrBgEFBQcwAoYqaHR0cDov\n" +
+            "L2F1dG9yaXRlLmNlcnRpZ25hLmZyL3NlcnZpY2VzY2EuZGVyMDgGCCsGAQUFBzAC\n" +
+            "hixodHRwOi8vYXV0b3JpdGUuZGhpbXlvdGlzLmNvbS9zZXJ2aWNlc2NhLmRlcjAu\n" +
+            "BggrBgEFBQcwAYYiaHR0cDovL3NlcnZpY2VzY2Eub2NzcC5jZXJ0aWduYS5mcjAw\n" +
+            "BggrBgEFBQcwAYYkaHR0cDovL3NlcnZpY2VzY2Eub2NzcC5kaGlteW90aXMuY29t\n" +
+            "MB8GA1UdIwQYMBaAFKzsho9LNxy4fxcbGdCu6E7jNFwSMAkGA1UdEwQCMAAwYQYD\n" +
+            "VR0gBFowWDAIBgZngQwBAgIwTAYLKoF6AYExAgUBAQEwPTA7BggrBgEFBQcCARYv\n" +
+            "aHR0cHM6Ly93d3cuY2VydGlnbmEuY29tL2F1dG9yaXRlLWNlcnRpZmljYXRpb24w\n" +
+            "ZQYDVR0fBF4wXDAtoCugKYYnaHR0cDovL2NybC5kaGlteW90aXMuY29tL3NlcnZp\n" +
+            "Y2VzY2EuY3JsMCugKaAnhiVodHRwOi8vY3JsLmNlcnRpZ25hLmZyL3NlcnZpY2Vz\n" +
+            "Y2EuY3JsMBMGA1UdJQQMMAoGCCsGAQUFBwMBMA4GA1UdDwEB/wQEAwIFoDBIBgNV\n" +
+            "HREEQTA/gh12YWxpZC5zZXJ2aWNlc2NhLmNlcnRpZ25hLmNvbYIedmFsaWQuc2Vy\n" +
+            "dmljZXNjYS5kaGlteW90aXMuY29tMB0GA1UdDgQWBBSzyYZfPBt65RUDq98+e0AK\n" +
+            "U8pd/jCCAX8GCisGAQQB1nkCBAIEggFvBIIBawFpAHcA7s3QZNXbGs7FXLedtM0T\n" +
+            "ojKHRny87N7DUUhZRnEftZsAAAGGy1ZNXwAABAMASDBGAiEAyG838/RfBOpojEI/\n" +
+            "cx++f0tvuDbc/rVa0WNcd2f9HekCIQDVKV2wI3VkD3wNmO93m022H7kvKD1OBEhw\n" +
+            "Tn6+0ZLA6QB2AHb/iD8KtvuVUcJhzPWHujS0pM27KdxoQgqf5mdMWjp0AAABhstW\n" +
+            "TcYAAAQDAEcwRQIhAOuj/r5G1wHNgFOMg3jsr3uWmWzIIkTmwmp4hJqvsJzzAiBf\n" +
+            "nm/jZCUW8DFY+iC+O/+Hzsk/kVDkKIlBDd6rA3MzJgB2AFWB1MIWkDYBSuoLm1c8\n" +
+            "U/DA5Dh4cCUIFy+jqh0HE9MMAAABhstWTw4AAAQDAEcwRQIgRbCAqI1/nxc6P4de\n" +
+            "Fqg/zc1+ldMDWjeamWjhctciGsgCIQDHQ4OKj0AA7hQKFIe1SVp+00BxRefFGmq7\n" +
+            "ZJ+8q+pRqzANBgkqhkiG9w0BAQsFAAOCAgEAVkzCC9LIHU+iOi+GFeCtWxxa5Fsk\n" +
+            "5gXnDJmtbdoVe2TJvOhrb+VnNI7/Ak+csBv3vxNl3P3DXIbPryB98aelleX7pkfP\n" +
+            "PcKhFAlbwzbII2D3L0mjFLERtVwdnoEJXXKcHsb9hJResKipZ//daMPD8FthHvEE\n" +
+            "HmtOrR0lHLjhbi4ODq0e4xyygbxFXXl5CCjtBw0jBtZaMDQaC3eemK9LkOggLz3h\n" +
+            "qs/+VQ7RyKfcKCuGC5Wb4GJR+IDKH812hFsUWmXe26MPoyTrzLNq6tfQZHSuY5Hj\n" +
+            "K0ZwldEkUZ2Hd7PrRlhCiGdVCp/2kS2yefhUkvX7Z5K5wX6n+LylfzOTvWf6ZPwQ\n" +
+            "1jTI0Js8ig4eHF25GlqgOWrqbyF9j67kLs3f7/c5Kx3FlclJ7/vlL8zEcTmGU7rm\n" +
+            "ZFOhEMDT/UYkitqAOvrgT60oIm9YJ1XTAVTeDbW0FFAb2nFmeBOrw8N3jaCb+jpO\n" +
+            "ysBA/lDaGTiQhMlJK44vwgS+TjbeWHxvmAE5srKa7MWU8Mmku2vuX95lupJo4LmD\n" +
+            "zOsihH00hyhtHFUB1TGXuaf77kFsipE6iycyxpcrpJ1UAWiZrba6PAZ85TbYhEdY\n" +
+            "FDNm7F7CVPU67HV5gE2kDa3Jprd1SjwO095LsRptWhzxUByhee3JI0jljBTaKowy\n" +
+            "jPv8oekm7zqCLzY=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: SERIALNUMBER=S230120951, CN=revoked.servicesca.dhimyotis.com,
-    // OU=0002 48146308100036, O=DHIMYOTIS, L=VILLENEUVE D'ASCQ, C=FR
-    // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
-    // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
-    // Serial number: f88f2566b3dbf73763622db9b2bf9cc
-    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59 PDT 2023
+    // Owner: SERIALNUMBER=S266251168, CN=revoked.servicesca.certigna.com, O=DHIMYOTIS,
+    // L=VILLENEUVE D'ASCQ, C=FR
+    // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036, OU=0002
+    // 48146308100036, O=DHIMYOTIS, C=FR
+    // Serial number: e863f752a23a735e3ccf958abf18565b
+    // Valid from: Thu Mar 09 15:00:00 PST 2023 until: Fri Mar 08 14:59:59 PST 2024
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIImTCCBoGgAwIBAgIQD4jyVms9v3N2NiLbmyv5zDANBgkqhkiG9w0BAQsFADB9\n" +
-            "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJREhJTVlPVElTMRwwGgYDVQQLDBMwMDAy\n" +
-            "IDQ4MTQ2MzA4MTAwMDM2MR0wGwYDVQRhDBROVFJGUi00ODE0NjMwODEwMDAzNjEd\n" +
-            "MBsGA1UEAwwUQ2VydGlnbmEgU2VydmljZXMgQ0EwHhcNMjIwMzEzMjMwMDAwWhcN\n" +
-            "MjMwMzEzMjI1OTU5WjCBmzELMAkGA1UEBhMCRlIxGjAYBgNVBAcMEVZJTExFTkVV\n" +
-            "VkUgRCdBU0NRMRIwEAYDVQQKDAlESElNWU9USVMxHDAaBgNVBAsMEzAwMDIgNDgx\n" +
-            "NDYzMDgxMDAwMzYxKTAnBgNVBAMMIHJldm9rZWQuc2VydmljZXNjYS5kaGlteW90\n" +
-            "aXMuY29tMRMwEQYDVQQFEwpTMjMwMTIwOTUxMIIBIjANBgkqhkiG9w0BAQEFAAOC\n" +
-            "AQ8AMIIBCgKCAQEAouvIzemKChCjYICW+TzRigLkqaTdMLnaPlGaXyCCoEUS6nkK\n" +
-            "QnrwTgebf1X9/mwSAuvTo3Ck7CVgE8AMqsPTluSjezCJuED/F3HYy2YsbIhnVK/i\n" +
-            "uSzKsDGVY3RlVNm2MA2viVTNBbOFhk4kefYqpDCmp3EGvIDOCb7Y5PTuKKQ79s97\n" +
-            "uDm+0WoBnOdwSuZMUg+hvINBgu2JQFwiWP0g/SxoK6Ci9SVokM3zR4KgECkMVArf\n" +
-            "cH0dN+5SYvByaGegQJy7TdKqDsf1lIHM19tUXcxOBNRgV3Rf7WMNIlERtLXjRfke\n" +
-            "IWXf8QtXRVIH/i/PoVTDo2qvQOMnZFY/Eb5dFQIDAQABo4ID9DCCA/AwgeQGCCsG\n" +
-            "AQUFBwEBBIHXMIHUMDgGCCsGAQUFBzAChixodHRwOi8vYXV0b3JpdGUuZGhpbXlv\n" +
-            "dGlzLmNvbS9zZXJ2aWNlc2NhLmRlcjA2BggrBgEFBQcwAoYqaHR0cDovL2F1dG9y\n" +
-            "aXRlLmNlcnRpZ25hLmZyL3NlcnZpY2VzY2EuZGVyMDAGCCsGAQUFBzABhiRodHRw\n" +
-            "Oi8vc2VydmljZXNjYS5vY3NwLmRoaW15b3Rpcy5jb20wLgYIKwYBBQUHMAGGImh0\n" +
-            "dHA6Ly9zZXJ2aWNlc2NhLm9jc3AuY2VydGlnbmEuZnIwHwYDVR0jBBgwFoAUrOyG\n" +
-            "j0s3HLh/FxsZ0K7oTuM0XBIwCQYDVR0TBAIwADBhBgNVHSAEWjBYMAgGBmeBDAEC\n" +
-            "AjBMBgsqgXoBgTECBQEBATA9MDsGCCsGAQUFBwIBFi9odHRwczovL3d3dy5jZXJ0\n" +
-            "aWduYS5jb20vYXV0b3JpdGUtY2VydGlmaWNhdGlvbjBlBgNVHR8EXjBcMCugKaAn\n" +
-            "hiVodHRwOi8vY3JsLmNlcnRpZ25hLmZyL3NlcnZpY2VzY2EuY3JsMC2gK6Aphido\n" +
-            "dHRwOi8vY3JsLmRoaW15b3Rpcy5jb20vc2VydmljZXNjYS5jcmwwEwYDVR0lBAww\n" +
-            "CgYIKwYBBQUHAwEwDgYDVR0PAQH/BAQDAgWgMEwGA1UdEQRFMEOCH3Jldm9rZWQu\n" +
-            "c2VydmljZXNjYS5jZXJ0aWduYS5jb22CIHJldm9rZWQuc2VydmljZXNjYS5kaGlt\n" +
-            "eW90aXMuY29tMB0GA1UdDgQWBBTGIed1eHBS8Z1H3PdMkItpjyjq2TCCAX0GCisG\n" +
-            "AQQB1nkCBAIEggFtBIIBaQFnAHcArfe++nz/EMiLnT2cHj4YarRnKV3PsQwkyoWG\n" +
-            "NOvcgooAAAF/h9g4MAAABAMASDBGAiEAp/1fQB730JrX9YGD3d1Uq7rTAL95tMKe\n" +
-            "G6kgUP1GEWoCIQCzi6feA3cImTH6tVZALNEmve/n8SVFAvD2AvX8ioCD9QB1AOg+\n" +
-            "0No+9QY1MudXKLyJa8kD08vREWvs62nhd31tBr1uAAABf4fYNHcAAAQDAEYwRAIg\n" +
-            "Dnd8oOV7/MuaiyR23qbdRVf1kBSsDxnLp1/vRdD0JTYCIAw7LuZalEVa/0KpuNHs\n" +
-            "NIdUJgV4Vioa2xkb9fdPIhtkAHUAs3N3B+GEUPhjhtYFqdwRCUp5LbFnDAuH3PAD\n" +
-            "Dnk2pZoAAAF/h9g7nwAABAMARjBEAiA80M1W3V3iKjm6Dwn+hKkmvGiuXZoM6o3f\n" +
-            "QJsZ2ZOx0QIgUiS3I83WzoCdD4qO9rlmDQhRD69CeVzCgLtkaTPz3JYwDQYJKoZI\n" +
-            "hvcNAQELBQADggIBADKub0gNyasTvURoYukQCllqDC+SvWA4TURBcmQMNjdVkreJ\n" +
-            "B3O91HZhTyhrCBJxybeIG89zuRI6rjTpHCQGFqtP7968NA3eUlxGGnAPpw6VbN47\n" +
-            "Ake+CRI9XnhxcKmTGm987DjtIBH42BedS59P1T56grZP5ysOog9Hz4eYo2ytbZqt\n" +
-            "P/DHggivymaaiIaBsqup8C7/XN3vVAa/yo1FeLJ48i1d0M9hjGBUFMajd8Y5+pE7\n" +
-            "p6Nb5mT1LXbetORYXMyG3MiJQPBAr1dLnRGnOZxc1Kxa1QwoAFQAFIXFpqfBwfHi\n" +
-            "NaSDdFS/wLbpe7UvtC8FWLq9sgITDEkPqDPCsbu8Vc7OxaMhBJ7HQGaAYMReGADG\n" +
-            "Elx9ffAc+dFR62zFnqMLouaEznZ7FVNmU3cYbrFVBvnGmoDRe0AKUoYv5DCiawUg\n" +
-            "qeQS69DgG7DOE5VIDaWX2Cevy81mz7O8EVQsyS15J/MUxzWfQpRaHUqkge6G9FSH\n" +
-            "hF/Nm48oWgpWop5aIF2O6bA/Bt1VvAWdypUPUr4gtpYIQoOQBzTFgBVWUeOTOImE\n" +
-            "avvpzSwGQfZkB7t5PcAQ+zYGxWq7fr30/qY3geePcXJCGWS6PXyj8lNn4CaJ2sMF\n" +
-            "GKxNJGD49/5uoxi3b3TzGUn/3eG2qP2RZoXZ6ZPLAo+moIy3XLwMoZm3Im8r\n" +
+            "MIIIezCCBmOgAwIBAgIRAOhj91KiOnNePM+Vir8YVlswDQYJKoZIhvcNAQELBQAw\n" +
+            "fTELMAkGA1UEBhMCRlIxEjAQBgNVBAoMCURISU1ZT1RJUzEcMBoGA1UECwwTMDAw\n" +
+            "MiA0ODE0NjMwODEwMDAzNjEdMBsGA1UEYQwUTlRSRlItNDgxNDYzMDgxMDAwMzYx\n" +
+            "HTAbBgNVBAMMFENlcnRpZ25hIFNlcnZpY2VzIENBMB4XDTIzMDMwOTIzMDAwMFoX\n" +
+            "DTI0MDMwODIyNTk1OVowfDELMAkGA1UEBhMCRlIxGjAYBgNVBAcMEVZJTExFTkVV\n" +
+            "VkUgRCdBU0NRMRIwEAYDVQQKDAlESElNWU9USVMxKDAmBgNVBAMMH3Jldm9rZWQu\n" +
+            "c2VydmljZXNjYS5jZXJ0aWduYS5jb20xEzARBgNVBAUTClMyNjYyNTExNjgwggEi\n" +
+            "MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCBqKNjMkHqJ9EQa3CjuZ6EYMz6\n" +
+            "mWODrEucRcJDihYMigaV1oRyquGlFQ82ootXaK5bU+EYSMmUwbRpdZ9G/oZUn2+K\n" +
+            "MKAFDI+MoZoFhQC+2w0AzJycCf/hShUVxcRREKRKdfzv+k5YHj3e8ic16tGlTFXT\n" +
+            "IF1x3y2Uru7mzZARsZJqnRqaqPPghT/QlBpcA04yLi3iSpgO++mRrJxTUoUHlDw/\n" +
+            "a1nhqnDgH2yKN7tSfwFTetnXat6/UVt0CJ/6dJF6oY8bGWO1YB03Xdq735eLdJE4\n" +
+            "t38pV/X8rf5Mc9ZQh8IGrjVW83M8mQmqaX5rbsOl0ZCA/q6RWxRFEF2SwK+dAgMB\n" +
+            "AAGjggP1MIID8TCB5AYIKwYBBQUHAQEEgdcwgdQwNgYIKwYBBQUHMAKGKmh0dHA6\n" +
+            "Ly9hdXRvcml0ZS5jZXJ0aWduYS5mci9zZXJ2aWNlc2NhLmRlcjA4BggrBgEFBQcw\n" +
+            "AoYsaHR0cDovL2F1dG9yaXRlLmRoaW15b3Rpcy5jb20vc2VydmljZXNjYS5kZXIw\n" +
+            "LgYIKwYBBQUHMAGGImh0dHA6Ly9zZXJ2aWNlc2NhLm9jc3AuY2VydGlnbmEuZnIw\n" +
+            "MAYIKwYBBQUHMAGGJGh0dHA6Ly9zZXJ2aWNlc2NhLm9jc3AuZGhpbXlvdGlzLmNv\n" +
+            "bTAfBgNVHSMEGDAWgBSs7IaPSzccuH8XGxnQruhO4zRcEjAJBgNVHRMEAjAAMGEG\n" +
+            "A1UdIARaMFgwCAYGZ4EMAQICMEwGCyqBegGBMQIFAQEBMD0wOwYIKwYBBQUHAgEW\n" +
+            "L2h0dHBzOi8vd3d3LmNlcnRpZ25hLmNvbS9hdXRvcml0ZS1jZXJ0aWZpY2F0aW9u\n" +
+            "MGUGA1UdHwReMFwwLaAroCmGJ2h0dHA6Ly9jcmwuZGhpbXlvdGlzLmNvbS9zZXJ2\n" +
+            "aWNlc2NhLmNybDAroCmgJ4YlaHR0cDovL2NybC5jZXJ0aWduYS5mci9zZXJ2aWNl\n" +
+            "c2NhLmNybDATBgNVHSUEDDAKBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwTAYD\n" +
+            "VR0RBEUwQ4IgcmV2b2tlZC5zZXJ2aWNlc2NhLmRoaW15b3Rpcy5jb22CH3Jldm9r\n" +
+            "ZWQuc2VydmljZXNjYS5jZXJ0aWduYS5jb20wHQYDVR0OBBYEFEQsKyX8x8zVxVC2\n" +
+            "HEK7+bOBLoMkMIIBfgYKKwYBBAHWeQIEAgSCAW4EggFqAWgAdgDuzdBk1dsazsVc\n" +
+            "t520zROiModGfLzs3sNRSFlGcR+1mwAAAYbLTxPnAAAEAwBHMEUCIQD16IHX+8+4\n" +
+            "zWnxIME4rzCgQIA4m5OsEqP6ssgRG5iurwIgdBOGFGlF6+DGPSm5FKuk5ShAA8ZC\n" +
+            "AE+E27CKLkBTnfgAdgB2/4g/Crb7lVHCYcz1h7o0tKTNuyncaEIKn+ZnTFo6dAAA\n" +
+            "AYbLTxRMAAAEAwBHMEUCIDmW9elysDm3zAeIXsgJwmL33EoMTyVhA3ah2jkvMjzv\n" +
+            "AiEA6aIZXtwk2DnFt+GA6gLr4UgswUCuK4wxheDVwbpSw/4AdgA7U3d1Pi25gE6L\n" +
+            "MFsG/kA7Z9hPw/THvQANLXJv4frUFwAAAYbLTxXAAAAEAwBHMEUCIQDGuOg7koEE\n" +
+            "H9K4VkSHaDD9rAndys2BtswdspfRKUFR3QIgVZ7QUX3H56ECuI8wsAkSjBze4lBO\n" +
+            "RgfN2xh3l9xQOK0wDQYJKoZIhvcNAQELBQADggIBAFQTTtyQSoV4Zq3QYMnb0yEp\n" +
+            "u6Hwic/wpYN5L0km+zZoHWuf58vfj8Yg/sfKmftGSZHDdc3NfYSVBlT/0Hl4SDhi\n" +
+            "zHLLyapoX2GNhbg3esu0Y1fch8E16z2A/wAwrFvxI0XrjHpOyDp4CBDYqDADNPiL\n" +
+            "vlEkiwP6r7WHjUdWRb7W0t75uAkcajn46XKpFmaHHie5KBch+KDGsUionuH5ZW8Y\n" +
+            "klh2B34uLWcGZuIR7PeCO9+91mbn/bBNeabGC70qMStaB139lp9P2M+l2WpyREUK\n" +
+            "l7qHwTsrlMmNb8n44zGtY4wL9NSYWTdTfhcU0FAPdPcLlnjoQubJ1O0vPkzfVYns\n" +
+            "WQrslxoCBor6CL6AYMQz3jbzQ0soD3Reb11+uTngWGJZtx4DT09RFB3a+1rcYjiS\n" +
+            "ijCBB+Lqx0xfLQnfBv1A0wjNqUY+gyEe0SpXqB4edqy5uaqawRRKMuNSnb2BVz0/\n" +
+            "keo1Kif/GSak+JUBpJ8hkJWygtrWCETUNfoseQhqo3gism0EGxJ04tBp+DRvfbrz\n" +
+            "X4aBgALRro3jSIR1Ibp+e0fxePwShy715SF2H4SfjvplTAKq5bwztZtQUkPR6fJ7\n" +
+            "5xT0f762c1yytKP1rHFMvzl6k7QWvC6zb2FeG5UqXJw3wFxxWsCuAUu5SPFfXdno\n" +
+            "5lIHTTV5rpZBN+PzTZsz\n" +
             "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
+
+        // Added to test for JDK-8256895
+        System.setProperty("jdk.security.certpath.ocspNonce", "true");
+
+        // OCSP check by default
+        boolean ocspEnabled = args.length < 1 || !"CRL".equalsIgnoreCase(args[0]);
 
         ValidatePathWithParams pathValidator;
         String[] validChainToValidate;
         String[] revChainToValidate;
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+        if (!ocspEnabled) {
             pathValidator = new ValidatePathWithParams(null);
             pathValidator.enableCRLCheck();
 
-            validChainToValidate = new String[]{VALID, INT};
-            revChainToValidate = new String[]{REVOKED, INT};
+            validChainToValidate = new String[]{VALID, INT_CERTIGNA};
+            revChainToValidate = new String[]{REVOKED, INT_CERTIGNA};
         } else {
-            // OCSP check by default
             // int certificate doesn't specify OCSP responder
-            pathValidator = new ValidatePathWithParams(new String[]{INT});
+            pathValidator = new ValidatePathWithParams(new String[]{INT_CERTIGNA});
             pathValidator.enableOCSPCheck();
 
             validChainToValidate = new String[]{VALID};
@@ -221,7 +215,6 @@ public class CertignaCA {
         // Validate Revoked
         pathValidator.validate(revChainToValidate,
                 ValidatePathWithParams.Status.REVOKED,
-                "Mon Mar 14 03:00:16 PDT 2022", System.out);
+                "Fri Mar 10 03:39:51 PST 2023", System.out);
     }
 }
-

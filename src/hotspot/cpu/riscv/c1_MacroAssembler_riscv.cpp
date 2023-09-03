@@ -73,7 +73,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   ld(hdr, Address(obj, hdr_offset));
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    fast_lock(obj, hdr, t0, t1, slow_case);
+    lightweight_lock(obj, hdr, t0, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // and mark it as unlocked
@@ -137,7 +137,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     ld(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
     test_bit(t0, hdr, exact_log2(markWord::monitor_value));
     bnez(t0, slow_case, /* is_far */ true);
-    fast_unlock(obj, hdr, t0, t1, slow_case);
+    lightweight_unlock(obj, hdr, t0, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to

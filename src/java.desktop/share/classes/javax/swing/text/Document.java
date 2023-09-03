@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ public interface Document {
     /**
      * Inserts a string of content.  This will cause a DocumentEvent
      * of type DocumentEvent.EventType.INSERT to be sent to the
-     * registered DocumentListers, unless an exception is thrown.
+     * registered DocumentListeners, unless an exception is thrown.
      * The DocumentEvent will be delivered by calling the
      * insertUpdate method on the DocumentListener.
      * The offset and length of the generated DocumentEvent

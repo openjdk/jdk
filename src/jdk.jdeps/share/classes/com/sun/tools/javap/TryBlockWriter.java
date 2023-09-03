@@ -25,14 +25,13 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Code_attribute.Exception_data;
-import com.sun.tools.classfile.Instruction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.instruction.ExceptionCatch;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 /**
  * Annotate instructions with details about try blocks.
@@ -45,24 +44,24 @@ import java.util.Map;
 public class TryBlockWriter extends InstructionDetailWriter {
     public enum NoteKind {
         START("try") {
-            public boolean match(Exception_data entry, int pc) {
-                return (pc == entry.start_pc);
+            public boolean match(ExceptionCatch entry, int pc, CodeAttribute lr) {
+                return (pc == lr.labelToBci(entry.tryStart()));
             }
         },
         END("end try") {
-            public boolean match(Exception_data entry, int pc) {
-                return (pc == entry.end_pc);
+            public boolean match(ExceptionCatch entry, int pc, CodeAttribute lr) {
+                return (pc == lr.labelToBci(entry.tryEnd()));
             }
         },
         HANDLER("catch") {
-            public boolean match(Exception_data entry, int pc) {
-                return (pc == entry.handler_pc);
+            public boolean match(ExceptionCatch entry, int pc, CodeAttribute lr) {
+                return (pc == lr.labelToBci(entry.handler()));
             }
         };
         NoteKind(String text) {
             this.text = text;
         }
-        public abstract boolean match(Exception_data entry, int pc);
+        public abstract boolean match(ExceptionCatch entry, int pc, CodeAttribute lr);
         public final String text;
     }
 
@@ -79,46 +78,49 @@ public class TryBlockWriter extends InstructionDetailWriter {
         constantWriter = ConstantWriter.instance(context);
     }
 
-    public void reset(Code_attribute attr) {
+    public void reset(CodeAttribute attr) {
         indexMap = new HashMap<>();
         pcMap = new HashMap<>();
-        for (int i = 0; i < attr.exception_table.length; i++) {
-            Exception_data entry = attr.exception_table[i];
+        lr = attr;
+        var excs = attr.exceptionHandlers();
+        for (int i = 0; i < excs.size(); i++) {
+            var entry = excs.get(i);
             indexMap.put(entry, i);
-            put(entry.start_pc, entry);
-            put(entry.end_pc, entry);
-            put(entry.handler_pc, entry);
+            put(lr.labelToBci(entry.tryStart()), entry);
+            put(lr.labelToBci(entry.tryEnd()), entry);
+            put(lr.labelToBci(entry.handler()), entry);
         }
     }
 
-    public void writeDetails(Instruction instr) {
-        writeTrys(instr, NoteKind.END);
-        writeTrys(instr, NoteKind.START);
-        writeTrys(instr, NoteKind.HANDLER);
+    @Override
+    public void writeDetails(int pc, Instruction instr) {
+        writeTrys(pc, instr, NoteKind.END);
+        writeTrys(pc, instr, NoteKind.START);
+        writeTrys(pc, instr, NoteKind.HANDLER);
     }
 
-    public void writeTrys(Instruction instr, NoteKind kind) {
+    public void writeTrys(int pc, Instruction instr, NoteKind kind) {
         String indent = space(2); // get from Options?
-        int pc = instr.getPC();
-        List<Exception_data> entries = pcMap.get(pc);
+        var entries = pcMap.get(pc);
         if (entries != null) {
-            for (ListIterator<Exception_data> iter =
+            for (var iter =
                     entries.listIterator(kind == NoteKind.END ? entries.size() : 0);
                     kind == NoteKind.END ? iter.hasPrevious() : iter.hasNext() ; ) {
-                Exception_data entry =
+                var entry =
                         kind == NoteKind.END ? iter.previous() : iter.next();
-                if (kind.match(entry, pc)) {
+                if (kind.match(entry, pc, lr)) {
                     print(indent);
                     print(kind.text);
                     print("[");
                     print(indexMap.get(entry));
                     print("] ");
-                    if (entry.catch_type == 0)
+                    var ct = entry.catchType();
+                    if (ct.isEmpty())
                         print("finally");
                     else {
-                        print("#" + entry.catch_type);
+                        print("#" + ct.get().index());
                         print(" // ");
-                        constantWriter.write(entry.catch_type);
+                        constantWriter.write(ct.get().index());
                     }
                     println();
                 }
@@ -126,8 +128,8 @@ public class TryBlockWriter extends InstructionDetailWriter {
         }
     }
 
-    private void put(int pc, Exception_data entry) {
-        List<Exception_data> list = pcMap.get(pc);
+    private void put(int pc, ExceptionCatch entry) {
+        var list = pcMap.get(pc);
         if (list == null) {
             list = new ArrayList<>();
             pcMap.put(pc, list);
@@ -136,7 +138,8 @@ public class TryBlockWriter extends InstructionDetailWriter {
             list.add(entry);
     }
 
-    private Map<Integer, List<Exception_data>> pcMap;
-    private Map<Exception_data, Integer> indexMap;
+    private Map<Integer, List<ExceptionCatch>> pcMap;
+    private Map<ExceptionCatch, Integer> indexMap;
     private ConstantWriter constantWriter;
+    private CodeAttribute lr;
 }

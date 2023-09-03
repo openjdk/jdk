@@ -25,21 +25,26 @@
  * @test
  * @bug 8190452
  * @summary javac should not add MethodParameters attributes to v51 and earlier class files
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build LegacyOutputTest
  * @run main LegacyOutputTest
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.MethodParameters_attribute;
-import com.sun.tools.classfile.MethodParameters_attribute.Entry;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.MethodParameterInfo;
+import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
@@ -90,23 +95,22 @@ public class LegacyOutputTest {
         if (!task.call()) {
             throw new AssertionError("compilation failed");
         }
-        ClassFile classFile = ClassFile.read(Paths.get("Test.class"));
-        Method method = getMethod(classFile, "f");
-        MethodParameters_attribute attribute =
-                (MethodParameters_attribute) method.attributes.get("MethodParameters");
+        ClassModel classFile = Classfile.of().parse(Paths.get("Test.class"));
+        MethodModel method = getMethod(classFile, "f");
+        MethodParametersAttribute attribute = method.findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
         if (attribute == null) {
             return null;
         }
         List<String> parameterNames = new ArrayList<>();
-        for (Entry e : attribute.method_parameter_table) {
-            parameterNames.add(classFile.constant_pool.getUTF8Value(e.name_index));
+        for (MethodParameterInfo e : attribute.parameters()) {
+            parameterNames.add(e.name().orElseThrow().stringValue());
         }
         return parameterNames;
     }
 
-    private static Method getMethod(ClassFile classFile, String name) throws Exception {
-        for (Method method : classFile.methods) {
-            if (classFile.constant_pool.getUTF8Value(method.name_index).equals(name)) {
+    private static MethodModel getMethod(ClassModel classFile, String name) throws Exception {
+        for (MethodModel method : classFile.methods()) {
+            if (method.methodName().equalsString(name)) {
                 return method;
             }
         }

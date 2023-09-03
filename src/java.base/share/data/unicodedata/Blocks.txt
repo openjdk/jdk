@@ -1,6 +1,6 @@
-# Blocks-15.0.0.txt
-# Date: 2022-01-28, 20:58:00 GMT [KW]
-# Copyright (c) 2022 Unicode, Inc.
+# Blocks-15.1.0.txt
+# Date: 2023-07-28, 15:47:20 GMT
+# Copyright (c) 2023 Unicode, Inc.
 # For terms of use, see https://www.unicode.org/terms_of_use.html
 #
 # Unicode Character Database
@@ -352,6 +352,7 @@ FFF0..FFFF; Specials
 2B740..2B81F; CJK Unified Ideographs Extension D
 2B820..2CEAF; CJK Unified Ideographs Extension E
 2CEB0..2EBEF; CJK Unified Ideographs Extension F
+2EBF0..2EE5F; CJK Unified Ideographs Extension I
 2F800..2FA1F; CJK Compatibility Ideographs Supplement
 30000..3134F; CJK Unified Ideographs Extension G
 31350..323AF; CJK Unified Ideographs Extension H

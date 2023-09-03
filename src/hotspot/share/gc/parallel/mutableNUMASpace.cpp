@@ -54,17 +54,17 @@ MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), 
 #endif // LINUX
 
   size_t lgrp_limit = os::numa_get_groups_num();
-  int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtGC);
-  int lgrp_num = (int)os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
+  uint *lgrp_ids = NEW_C_HEAP_ARRAY(uint, lgrp_limit, mtGC);
+  size_t lgrp_num = os::numa_get_leaf_groups(reinterpret_cast<int*>(lgrp_ids), lgrp_limit);
   assert(lgrp_num > 0, "There should be at least one locality group");
 
-  lgrp_spaces()->reserve(lgrp_num);
+  lgrp_spaces()->reserve(checked_cast<int>(lgrp_num));
   // Add new spaces for the new nodes
-  for (int i = 0; i < lgrp_num; i++) {
+  for (size_t i = 0; i < lgrp_num; i++) {
     lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment));
   }
 
-  FREE_C_HEAP_ARRAY(int, lgrp_ids);
+  FREE_C_HEAP_ARRAY(uint, lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {
@@ -207,7 +207,7 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
 }
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
-void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
+void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
   HeapWord *start = align_up(mr.start(), page_size());
   HeapWord *end = align_down(mr.end(), page_size());
   if (end > start) {
@@ -224,7 +224,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, int lgrp_id) {
     // size if not using large pages or else this function does nothing.
     os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // And make them local/first-touch biased.
-    os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), lgrp_id);
+    os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));
   }
 }
 
@@ -623,7 +623,7 @@ void MutableNUMASpace::print_short_on(outputStream* st) const {
   MutableSpace::print_short_on(st);
   st->print(" (");
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
-    st->print("lgrp %d: ", lgrp_spaces()->at(i)->lgrp_id());
+    st->print("lgrp %u: ", lgrp_spaces()->at(i)->lgrp_id());
     lgrp_spaces()->at(i)->space()->print_short_on(st);
     if (i < lgrp_spaces()->length() - 1) {
       st->print(", ");
@@ -636,7 +636,7 @@ void MutableNUMASpace::print_on(outputStream* st) const {
   MutableSpace::print_on(st);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    st->print("    lgrp %d", ls->lgrp_id());
+    st->print("    lgrp %u", ls->lgrp_id());
     ls->space()->print_on(st);
     if (NUMAStats) {
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
@@ -679,7 +679,7 @@ void MutableNUMASpace::LGRPSpace::accumulate_statistics(size_t page_size) {
       for (size_t i = 0; i < npages; i++) {
         if (lgrp_ids[i] < 0) {
           space_stats()->_uncommited_space += os::vm_page_size();
-        } else if (lgrp_ids[i] == lgrp_id()) {
+        } else if (checked_cast<uint>(lgrp_ids[i]) == lgrp_id()) {
           space_stats()->_local_space += os::vm_page_size();
         } else {
           space_stats()->_remote_space += os::vm_page_size();
@@ -709,7 +709,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
 
   os::page_info page_expected, page_found;
   page_expected.size = page_size;
-  page_expected.lgrp_id = lgrp_id();
+  page_expected.lgrp_id = checked_cast<uint>(lgrp_id());
 
   char *s = scan_start;
   while (s < scan_end) {
@@ -720,7 +720,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
     if (e != scan_end) {
       assert(e < scan_end, "e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end));
 
-      if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
+      if ((page_expected.size != page_size || checked_cast<uint>(page_expected.lgrp_id) != lgrp_id())
           && page_expected.size != 0) {
         os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
       }

@@ -229,6 +229,7 @@ void ADLParser::instr_parse(void) {
     else if (!strcmp(ident, "opcode"))           instr->_opcode    = opcode_parse(instr);
     else if (!strcmp(ident, "size"))             instr->_size      = size_parse(instr);
     else if (!strcmp(ident, "effect"))           effect_parse(instr);
+    else if (!strcmp(ident, "flag"))             instr->_flag      = flag_parse(instr);
     else if (!strcmp(ident, "expand"))           instr->_exprule   = expand_parse(instr);
     else if (!strcmp(ident, "rewrite"))          instr->_rewrule   = rewrite_parse();
     else if (!strcmp(ident, "constraint")) {
@@ -1153,13 +1154,13 @@ char *ADLParser::parse_one_arg(const char *description) {
     }
     next_char();           // skip the close paren
     if(_curchar != ';') {  // check for semi-colon
-      parse_err(SYNERR, "missing %c in.\n", ';', description);
+      parse_err(SYNERR, "missing %c in %s.\n", ';', description);
       return nullptr;
     }
     next_char();           // skip the semi-colon
   }
   else {
-    parse_err(SYNERR, "Missing %c in.\n", '(', description);
+    parse_err(SYNERR, "Missing %c in %s.\n", '(', description);
     return nullptr;
   }
 
@@ -4126,6 +4127,46 @@ void ADLParser::effect_parse(InstructForm *instr) {
 
 }
 
+//-------------------------------flag_parse------------------------------------
+Flag* ADLParser::flag_parse(InstructForm *instr) {
+  char* ident = nullptr;
+  Flag* result = nullptr;
+
+  skipws();                      // Skip whitespace
+  if (_curchar != '(') {
+    parse_err(SYNERR, "missing '(' in flag definition\n");
+    return nullptr;
+  }
+  do {
+    next_char();
+    skipws();
+    if (_curchar == ')') break;
+
+    ident = get_ident();
+    if (ident == nullptr) {
+      parse_err(SYNERR, "flag name expected at %c\n", _curchar);
+      return nullptr;
+    }
+    Flag* newflag = new Flag(ident);
+    if (result == nullptr) result = newflag;
+    else result->append_flag(newflag);
+    if (_AD._adl_debug > 1) fprintf(stderr, "\tFlag Name: %s\n", ident);
+    skipws();
+  } while (_curchar == ',');
+  if (_curchar != ')') parse_err(SYNERR, "missing ')'\n");
+  else {
+    next_char();  // set current character position past the close paren
+  }
+
+  // Debug Stuff
+  if (_curchar != ';') {
+    parse_err(SYNERR, "missing ';' in Flag definition\n");
+  }
+  // Skip ';'
+  next_char();
+  return result;
+}
+
 //------------------------------expand_parse-----------------------------------
 ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
   char         *ident, *ident2;
@@ -4191,7 +4232,7 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
       if (_curchar == '%') { // Need a constructor for the operand
         c = find_cpp_block("Operand Constructor");
         if (c == nullptr) {
-          parse_err(SYNERR, "Invalid code block for operand constructor\n", _curchar);
+          parse_err(SYNERR, "Invalid code block for operand constructor\n");
           continue;
         }
         // Add constructor to _newopconst Dict

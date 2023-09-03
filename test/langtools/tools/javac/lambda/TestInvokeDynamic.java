@@ -28,7 +28,12 @@
  *  Add back-end support for invokedynamic
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
@@ -41,6 +46,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandleInfo;
 
 import javax.tools.JavaFileObject;
 
@@ -50,14 +56,10 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodHandleSymbol;
@@ -81,73 +83,68 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
     enum StaticArgumentKind implements ComboParameter {
         STRING("Hello!", "String", "Ljava/lang/String;") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_String_info) &&
-                        ((CONSTANT_String_info)cpInfo).getString()
+            boolean check(PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof StringEntry) &&
+                        ((StringEntry)poolEntry).stringValue()
                         .equals(value);
             }
         },
         CLASS(null, "Class<?>", "Ljava/lang/Class;") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_Class_info) &&
-                        ((CONSTANT_Class_info)cpInfo).getName()
-                        .equals("java/lang/String");
+            boolean check(PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof ClassEntry) &&
+                        ((ClassEntry)poolEntry).name()
+                        .equalsString("java/lang/String");
             }
         },
         INTEGER(1, "int", "I") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_Integer_info) &&
-                        ((CONSTANT_Integer_info)cpInfo).value ==
-                        ((Integer)value).intValue();
+            boolean check( PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof IntegerEntry) &&
+                        ((IntegerEntry)poolEntry).intValue() ==
+                                (Integer) value;
             }
         },
         LONG(1L, "long", "J") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_Long_info) &&
-                        ((CONSTANT_Long_info)cpInfo).value ==
-                        ((Long)value).longValue();
+            boolean check( PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof LongEntry) &&
+                        ((LongEntry)poolEntry).longValue() ==
+                                (Long) value;
             }
         },
         FLOAT(1.0f, "float", "F") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_Float_info) &&
-                        ((CONSTANT_Float_info)cpInfo).value ==
-                        ((Float)value).floatValue();
+            boolean check( PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof FloatEntry) &&
+                        ((FloatEntry)poolEntry).floatValue() ==
+                                (Float) value;
             }
         },
         DOUBLE(1.0, "double","D") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_Double_info) &&
-                        ((CONSTANT_Double_info)cpInfo).value ==
-                        ((Double)value).doubleValue();
+            boolean check( PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof DoubleEntry) &&
+                        ((DoubleEntry)poolEntry).doubleValue() ==
+                                (Double) value;
             }
         },
         METHOD_HANDLE(null, "MethodHandle", "Ljava/lang/invoke/MethodHandle;") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                if (!(cpInfo instanceof CONSTANT_MethodHandle_info))
+            boolean check( PoolEntry poolEntry) throws Exception {
+                if (!(poolEntry instanceof MethodHandleEntry handleInfo))
                     return false;
-                CONSTANT_MethodHandle_info handleInfo =
-                        (CONSTANT_MethodHandle_info)cpInfo;
-                return handleInfo.getCPRefInfo().getClassName().equals("Array") &&
-                        handleInfo.reference_kind == RefKind.REF_invokeVirtual &&
-                        handleInfo.getCPRefInfo()
-                        .getNameAndTypeInfo().getName().equals("clone") &&
-                        handleInfo.getCPRefInfo()
-                        .getNameAndTypeInfo().getType().equals("()Ljava/lang/Object;");
+                return handleInfo.reference().owner().name().equalsString("Array") &&
+                        handleInfo.kind() == MethodHandleInfo.REF_invokeVirtual &&
+                        handleInfo.reference().name().equalsString("clone") &&
+                        handleInfo.reference().type().equalsString("()Ljava/lang/Object;");
             }
         },
         METHOD_TYPE(null, "MethodType", "Ljava/lang/invoke/MethodType;") {
             @Override
-            boolean check(CPInfo cpInfo) throws Exception {
-                return (cpInfo instanceof CONSTANT_MethodType_info) &&
-                        ((CONSTANT_MethodType_info)cpInfo).getType()
-                        .equals("()Ljava/lang/Object;");
+            boolean check( PoolEntry poolEntry) throws Exception {
+                return (poolEntry instanceof MethodTypeEntry methodTypeEntry) &&
+                        methodTypeEntry.asSymbol().descriptorString().equals("()Ljava/lang/Object;");
             }
         };
 
@@ -162,29 +159,20 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
             this.bytecodeTypeStr = bytecodeTypeStr;
         }
 
-        abstract boolean check(CPInfo cpInfo) throws Exception;
+        abstract boolean check( PoolEntry poolEntry) throws Exception;
 
         LoadableConstant getValue(Symtab syms) {
-            switch (this) {
-                case STRING:
-                    return LoadableConstant.String((String)value);
-                case INTEGER:
-                    return LoadableConstant.Int((Integer)value);
-                case LONG:
-                    return LoadableConstant.Long((Long)value);
-                case FLOAT:
-                    return LoadableConstant.Float((Float)value);
-                case DOUBLE:
-                    return LoadableConstant.Double((Double)value);
-                case CLASS:
-                    return (ClassType)syms.stringType;
-                case METHOD_HANDLE:
-                    return syms.arrayCloneMethod.asHandle();
-                case METHOD_TYPE:
-                    return ((MethodType)syms.arrayCloneMethod.type);
-                default:
-                    throw new AssertionError();
-            }
+            return switch (this) {
+                case STRING -> LoadableConstant.String((String) value);
+                case INTEGER -> LoadableConstant.Int((Integer) value);
+                case LONG -> LoadableConstant.Long((Long) value);
+                case FLOAT -> LoadableConstant.Float((Float) value);
+                case DOUBLE -> LoadableConstant.Double((Double) value);
+                case CLASS -> (ClassType) syms.stringType;
+                case METHOD_HANDLE -> syms.arrayCloneMethod.asHandle();
+                case METHOD_TYPE -> ((MethodType) syms.arrayCloneMethod.type);
+                default -> throw new AssertionError();
+            };
         }
 
         @Override
@@ -269,10 +257,10 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()){
-            ClassFile cf = ClassFile.read(is);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals("test")) {
+            ClassModel cm = Classfile.of().parse(is.readAllBytes());
+            MethodModel testMethod = null;
+            for (MethodModel m : cm.methods()) {
+                if (m.methodName().equalsString("test")) {
                     testMethod = m;
                     break;
                 }
@@ -281,22 +269,19 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
                 fail("Test method not found");
                 return;
             }
-            Code_attribute ea =
-                    (Code_attribute)testMethod.attributes.get(Attribute.Code);
-            if (testMethod == null) {
+            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
             }
 
             int bsmIdx = -1;
 
-            for (Instruction i : ea.getInstructions()) {
-                if (i.getMnemonic().equals("invokedynamic")) {
-                    CONSTANT_InvokeDynamic_info indyInfo =
-                         (CONSTANT_InvokeDynamic_info)cf
-                            .constant_pool.get(i.getShort(1));
-                    bsmIdx = indyInfo.bootstrap_method_attr_index;
-                    if (!indyInfo.getNameAndTypeInfo().getType().equals("()V")) {
+            for (CodeElement ce : ea.elementList()) {
+                if (ce instanceof InvokeDynamicInstruction indy) {
+                    InvokeDynamicEntry indyEntry = indy.invokedynamic();
+                    bsmIdx = indyEntry.bootstrap().bsmIndex();
+                    if (!indyEntry.type().equalsString("()V")) {
                         fail("type mismatch for CONSTANT_InvokeDynamic_info");
                         return;
                     }
@@ -307,70 +292,62 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
                 return;
             }
 
-            BootstrapMethods_attribute bsm_attr =
-                    (BootstrapMethods_attribute)cf
-                    .getAttribute(Attribute.BootstrapMethods);
-            if (bsm_attr.bootstrap_method_specifiers.length != 1) {
+            BootstrapMethodsAttribute bsm_attr = cm
+                    .findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
                 return;
             }
-            BootstrapMethods_attribute.BootstrapMethodSpecifier bsm_spec =
-                    bsm_attr.bootstrap_method_specifiers[0];
+            BootstrapMethodEntry bsm_spec =
+                    bsm_attr.bootstrapMethods().getFirst();
 
-            if (bsm_spec.bootstrap_arguments.length != arity.arity) {
+            if (bsm_spec.arguments().size() != arity.arity) {
                 fail("Bad number of static invokedynamic args " +
                         "in BootstrapMethod attribute");
                 return;
             }
 
             for (int i = 0 ; i < arity.arity ; i++) {
-                if (!saks[i].check(cf.constant_pool
-                        .get(bsm_spec.bootstrap_arguments[i]))) {
+                if (!saks[i].check(bsm_spec.arguments().get(i))) {
                     fail("Bad static argument value " + saks[i]);
                     return;
                 }
             }
 
-            CONSTANT_MethodHandle_info bsm_handle =
-                    (CONSTANT_MethodHandle_info)cf.constant_pool
-                    .get(bsm_spec.bootstrap_method_ref);
+            MethodHandleEntry bsm_handle = bsm_spec.bootstrapMethod();
 
-            if (bsm_handle.reference_kind != RefKind.REF_invokeStatic) {
+            if (bsm_handle.kind() != MethodHandleInfo.REF_invokeStatic) {
                 fail("Bad kind on boostrap method handle");
                 return;
             }
 
-            CONSTANT_Methodref_info bsm_ref =
-                    (CONSTANT_Methodref_info)cf.constant_pool
-                    .get(bsm_handle.reference_index);
+            MemberRefEntry bsm_ref =bsm_handle.reference();
 
-            if (!bsm_ref.getClassInfo().getName().equals("Bootstrap")) {
+            if (!bsm_ref.owner().name().equalsString("Bootstrap")) {
                 fail("Bad owner of boostrap method");
                 return;
             }
 
-            if (!bsm_ref.getNameAndTypeInfo().getName().equals("bsm")) {
+            if (!bsm_ref.name().equalsString("bsm")) {
                 fail("Bad boostrap method name");
                 return;
             }
 
-            if (!bsm_ref.getNameAndTypeInfo()
-                    .getType().equals(asBSMSignatureString())) {
+            if (!bsm_ref.type().equalsString(asBSMSignatureString())) {
                 fail("Bad boostrap method type" +
-                        bsm_ref.getNameAndTypeInfo().getType() + " " +
+                        bsm_ref.type().stringValue() + " " +
                         asBSMSignatureString());
                 return;
             }
 
-            LineNumberTable_attribute lnt =
-                    (LineNumberTable_attribute)ea.attributes.get(Attribute.LineNumberTable);
+            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
 
             if (lnt == null) {
                 fail("No LineNumberTable attribute");
                 return;
             }
-            if (lnt.line_number_table_length != 3) {
+            if (lnt.lineNumbers().size() != 3) {
                 fail("Wrong number of entries in LineNumberTable");
                 return;
             }

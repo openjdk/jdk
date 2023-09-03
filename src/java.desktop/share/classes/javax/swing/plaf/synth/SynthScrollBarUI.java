@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
             incrGap = style.getInt(context, "ScrollBar.incrementButtonGap", 0);
             decrGap = style.getInt(context, "ScrollBar.decrementButtonGap", 0);
 
-            // handle scaling for sizeVarients for special case components. The
+            // handle scaling for sizeVariants for special case components. The
             // key "JComponent.sizeVariant" scales for large/small/mini
             // components are based on Apples LAF
             String scaleKey = (String)scrollbar.getClientProperty(

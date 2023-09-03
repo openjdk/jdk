@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -545,8 +545,8 @@ public class SynthGraphicsUtils {
              result.height += insets.top + insets.bottom;
          }
 
-         // if the width is even, bump it up one. This is critical
-         // for the focus dash lhne to draw properly
+         // if the width is even, bump it up by one. This is critical
+         // for the focus dash line to draw properly
          if (result.width % 2 == 0) {
              result.width++;
          }

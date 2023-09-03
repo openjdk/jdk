@@ -43,7 +43,7 @@ char* basePath(const char* path);
  * Convert the given pathname string to normal form.  If the string is
  * already in normal form then it is simply returned.
  */
-char* normalize(const char* path);
+char* normalize_path(const char* path);
 
 /**
  * Tell whether or not the given abstract pathname is absolute.

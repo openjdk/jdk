@@ -25,7 +25,7 @@
 
 package com.sun.tools.javap;
 
-import com.sun.tools.classfile.Instruction;
+import jdk.internal.classfile.Instruction;
 
 
 /*
@@ -56,6 +56,6 @@ public abstract class InstructionDetailWriter extends BasicWriter {
         super(context);
     }
 
-    abstract void writeDetails(Instruction instr);
-    void flush() { }
+    abstract void writeDetails(int pc, Instruction instr);
+    void flush(int pc) { }
 }

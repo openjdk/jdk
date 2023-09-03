@@ -34,7 +34,7 @@
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -531,7 +531,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const Register RmaxStack = R2;
 
   // monitor entry size
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved registers, thru expr stack bottom).
   // be sure to change this if you add/subtract anything to/from the overhead area
@@ -570,7 +570,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
 
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   assert ((entry_size % StackAlignmentInBytes) == 0, "should keep stack alignment");
 
   #ifdef ASSERT

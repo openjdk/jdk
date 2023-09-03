@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -104,9 +102,9 @@ class ConstantPoolCopyTest {
         ConstantPool cp = c.constantPool();
         ConstantPoolBuilder cp2 = new SplitConstantPool((ClassReader) cp);
 
-        assertEquals(cp2.entryCount(), cp.entryCount(), "Cloned constant pool must be same size");
+        assertEquals(cp2.size(), cp.size(), "Cloned constant pool must be same size");
 
-        for (int i = 1; i < cp.entryCount();) {
+        for (int i = 1; i < cp.size();) {
             PoolEntry cp1i = cp.entryByIndex(i);
             PoolEntry cp2i = cp2.entryByIndex(i);
             assertTrue(representsTheSame(cp1i, cp2i), cp2i + " does not represent the same constant pool entry as " + cp1i);

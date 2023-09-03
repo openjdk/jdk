@@ -29,6 +29,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_String_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.3 The CONSTANT_String_info Structure
  */
 public sealed interface StringEntry
         extends ConstantValueEntry

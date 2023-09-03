@@ -35,8 +35,9 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -1061,8 +1062,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R0, _ijava_state_neg(oop_tmp), R1_SP); // only used for native_call
 
   // Store sender's SP and this frame's top SP.
-  __ subf(R12_scratch2, Rtop_frame_size, R1_SP);
   __ std(R21_sender_SP, _ijava_state_neg(sender_sp), R1_SP);
+  __ neg(R12_scratch2, Rtop_frame_size);
+  __ sradi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
   __ std(R12_scratch2, _ijava_state_neg(top_frame_sp), R1_SP);
 
   // Push top frame.

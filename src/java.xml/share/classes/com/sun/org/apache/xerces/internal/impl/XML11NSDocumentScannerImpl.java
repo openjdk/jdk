@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,7 +27,6 @@ import com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDValidatorFilter;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
@@ -36,6 +35,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import javax.xml.stream.events.XMLEvent;
+import jdk.xml.internal.XMLSecurityManager;
 
 
 /**
@@ -70,7 +70,7 @@ import javax.xml.stream.events.XMLEvent;
  * @author Michael Glavassevich, IBM
  * @author Sunitha Reddy, Sun Microsystems
  *
- * @LastModified: Nov 2022
+ * @LastModified: July 2023
  */
 public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 

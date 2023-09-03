@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,16 @@ public class PrintingProcessor extends AbstractProcessor {
             NestingKind nestingKind = e.getNestingKind();
 
             if (NestingKind.ANONYMOUS == nestingKind) {
+                // Print nothing for an anonymous class used for an
+                // enum constant body.
+                TypeMirror supertype = e.getSuperclass();
+                if (supertype.getKind() != TypeKind.NONE) {
+                    TypeElement superClass = (TypeElement)(((DeclaredType)supertype).asElement());
+                    if (superClass.getKind() == ENUM) {
+                        return this;
+                    }
+                }
+
                 // Print out an anonymous class in the style of a
                 // class instance creation expression rather than a
                 // class declaration.
@@ -693,6 +703,12 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         private void printPermittedSubclasses(TypeElement e) {
+            if (e.getKind() == ENUM) {
+                // any permitted classes on an enum are anonymous
+                // classes for enum bodies, elide.
+                return;
+            }
+
             List<? extends TypeMirror> subtypes = e.getPermittedSubclasses();
             if (!subtypes.isEmpty()) { // could remove this check with more complicated joining call
                 writer.print(" permits ");

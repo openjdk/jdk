@@ -33,8 +33,44 @@ package jdk.internal.classfile;
  * attributes, clients can define their own {@linkplain AttributeMapper}.
  * Classes that model nonstandard attributes should extend {@link
  * CustomAttribute}.
+ * @param <A> the attribute type
  */
 public interface AttributeMapper<A> {
+
+    /**
+     * Attribute stability indicator
+     */
+    enum AttributeStability {
+
+        /**
+         * The attribute contains only pure data, such as timestamps, and can always be bulk-copied.
+         */
+        STATELESS,
+
+        /**
+         * The attribute contains only pure data and CP refs, so can be bulk-copied when CP sharing is in effect,
+         * and need to be exploded and rewritten when CP sharing is not in effect.
+         */
+        CP_REFS,
+
+        /**
+         * The attribute may contain labels, so need to be exploded and rewritten when the Code array is perturbed.
+         */
+        LABELS,
+
+        /**
+         * The attribute may contain indexes into structured not managed by the library (type variable lists, etc)
+         * and so we consult the {@link Classfile.AttributesProcessingOption} option to determine whether to preserve
+         * or drop it during transformation.
+         */
+        UNSTABLE,
+
+        /**
+         * The attribute is completely unknown and so we consult the {@link Classfile.AttributesProcessingOption} option
+         * to determine whether to preserve or drop it during transformation.
+         */
+        UNKNOWN
+    }
 
     /**
      * {@return the name of the attribute}
@@ -74,4 +110,9 @@ public interface AttributeMapper<A> {
     default boolean allowMultiple() {
         return false;
     }
+
+    /**
+     * {@return attribute stability indicator}
+     */
+    AttributeStability stability();
 }

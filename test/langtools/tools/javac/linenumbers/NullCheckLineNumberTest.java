@@ -2,15 +2,15 @@
  * @test /nodynamiccopyright/
  * @bug 8172880
  * @summary  Wrong LineNumberTable for synthetic null checks
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.LineNumberTable_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -63,15 +63,15 @@ public class NullCheckLineNumberTest {
         }
     }
 
-    static List<Entry> findEntries() throws IOException, ConstantPoolException {
-        ClassFile self = ClassFile.read(NullCheckLineNumberTest.Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class"));
-        for (Method m : self.methods) {
-            if ("<init>".equals(m.getName(self.constant_pool))) {
-                Code_attribute code_attribute = (Code_attribute)m.attributes.get(Attribute.Code);
-                for (Attribute at : code_attribute.attributes) {
-                    if (Attribute.LineNumberTable.equals(at.getName(self.constant_pool))) {
-                        return Arrays.stream(((LineNumberTable_attribute)at).line_number_table)
-                                     .map(e -> new SimpleEntry<> (e.line_number, e.start_pc))
+    static List<Entry> findEntries() throws IOException {
+        ClassModel self = Classfile.of().parse(Objects.requireNonNull(Test.class.getResourceAsStream("NullCheckLineNumberTest$Test.class")).readAllBytes());
+        for (MethodModel m : self.methods()) {
+            if ("<init>".equals(m.methodName().stringValue())) {
+                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();
+                for (Attribute<?> at : code_attribute.attributes()) {
+                    if (at instanceof LineNumberTableAttribute lineAt) {
+                        return lineAt.lineNumbers().stream()
+                                     .map(e -> new SimpleEntry<> (e.lineNumber(), e.startPc()))
                                      .collect(Collectors.toList());
                     }
                 }

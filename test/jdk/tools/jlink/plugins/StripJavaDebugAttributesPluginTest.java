@@ -33,7 +33,11 @@
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.jlink/jdk.tools.jmod
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  *          jdk.compiler
  * @run main StripJavaDebugAttributesPluginTest
  */
@@ -42,19 +46,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Method;
-
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin;
 import jdk.tools.jlink.plugin.Plugin;
@@ -141,21 +137,22 @@ public class StripJavaDebugAttributesPluginTest {
         return resPool.findEntry(classResource.path()).get();
     }
 
-    private void checkDebugAttributes(byte[] strippedClassFile) throws IOException, ConstantPoolException {
-        ClassFile classFile = ClassFile.read(new ByteArrayInputStream(strippedClassFile));
-        String[] debugAttributes = new String[]{
-                Attribute.LineNumberTable,
-                Attribute.LocalVariableTable,
-                Attribute.LocalVariableTypeTable
-        };
-        for (Method method : classFile.methods) {
-            String methodName = method.getName(classFile.constant_pool);
-            Code_attribute code = (Code_attribute) method.attributes.get(Attribute.Code);
-            for (String attr : debugAttributes) {
-                if (code.attributes.get(attr) != null) {
-                    throw new AssertionError("Debug attribute was not removed: " + attr +
-                            " from method " + classFile.getName() + "#" + methodName);
-                }
+    private <T extends Attribute<T>> void checkDebugAttributes(byte[] strippedClassFile) {
+        ClassModel classFile = Classfile.of().parse(strippedClassFile);
+        for (MethodModel method : classFile.methods()) {
+            String methodName = method.methodName().stringValue();
+            CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
+            if (code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null) != null) {
+                throw new AssertionError("Debug attribute was not removed: " + "LINE_NUMBER_TABLE" +
+                        " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
+            }
+            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null) != null) {
+                throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TABLE" +
+                        " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
+            }
+            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null) != null) {
+                throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TYPE_TABLE" +
+                        " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }
         }
     }

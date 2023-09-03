@@ -21,102 +21,126 @@
  * questions.
  */
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.TypeAnnotation;
-import com.sun.tools.classfile.Field;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.RuntimeTypeAnnotations_attribute;
-import com.sun.tools.classfile.ConstantPool.InvalidIndex;
-import com.sun.tools.classfile.ConstantPool.UnexpectedEntry;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import java.util.*;
 
 public class ReferenceInfoUtil {
 
-    public static final int IGNORE_VALUE = -321;
+    public static final int IGNORE_VALUE = Integer.MIN_VALUE;
 
-    public static List<TypeAnnotation> extendedAnnotationsOf(ClassFile cf) {
-        List<TypeAnnotation> annos = new ArrayList<>();
-        findAnnotations(cf, annos);
+    public static List<TAD> extendedAnnotationsOf(ClassModel cm) {
+        List<TAD> annos = new ArrayList<>();
+        findAnnotations(cm, annos);
         return annos;
     }
 
     /////////////////// Extract type annotations //////////////////
-    private static void findAnnotations(ClassFile cf, List<TypeAnnotation> annos) {
-        findAnnotations(cf, Attribute.RuntimeVisibleTypeAnnotations, annos);
-        findAnnotations(cf, Attribute.RuntimeInvisibleTypeAnnotations, annos);
+    private static void findAnnotations(ClassModel cm, List<TAD> annos) {
+        findAnnotations(cm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(cm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
 
-        for (Field f : cf.fields) {
-            findAnnotations(cf, f, annos);
+        for (FieldModel f : cm.fields()) {
+            findAnnotations(f, annos);
         }
-        for (Method m: cf.methods) {
-            findAnnotations(cf, m, annos);
+        for (MethodModel m: cm.methods()) {
+            findAnnotations(m, annos);
         }
     }
 
-    private static void findAnnotations(ClassFile cf, Method m, List<TypeAnnotation> annos) {
-        findAnnotations(cf, m, Attribute.RuntimeVisibleTypeAnnotations, annos);
-        findAnnotations(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, annos);
-    }
-
-    private static void findAnnotations(ClassFile cf, Field m, List<TypeAnnotation> annos) {
-        findAnnotations(cf, m, Attribute.RuntimeVisibleTypeAnnotations, annos);
-        findAnnotations(cf, m, Attribute.RuntimeInvisibleTypeAnnotations, annos);
+    private static void findAnnotations(AttributedElement ae, List<TAD> annos) {
+        findAnnotations(ae, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, annos);
+        findAnnotations(ae, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, annos);
     }
 
     // test the result of Attributes.getIndex according to expectations
     // encoded in the method's name
-    private static void findAnnotations(ClassFile cf, String name, List<TypeAnnotation> annos) {
-        int index = cf.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = cf.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            annos.addAll(Arrays.asList(tAttr.annotations));
+    private static <T extends Attribute<T>> void findAnnotations(ClassModel cm, AttributeMapper<T> attrName, List<TAD> annos) {
+        Attribute<T> attr = cm.findAttribute(attrName).orElse(null);
+        if (attr != null) {
+            if (attr instanceof RuntimeVisibleTypeAnnotationsAttribute tAttr) {
+                annos.addAll(Objects.requireNonNull(generateTADList(tAttr.annotations(), null)));
+            } else if (attr instanceof RuntimeInvisibleTypeAnnotationsAttribute tAttr) {
+                annos.addAll(Objects.requireNonNull(generateTADList(tAttr.annotations(), null)));
+            } else throw new AssertionError();
         }
     }
 
     // test the result of Attributes.getIndex according to expectations
     // encoded in the method's name
-    private static void findAnnotations(ClassFile cf, Method m, String name, List<TypeAnnotation> annos) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            annos.addAll(Arrays.asList(tAttr.annotations));
+    private static <T extends Attribute<T>> void findAnnotations(AttributedElement m, AttributeMapper<T> attrName, List<TAD> annos) {
+        Attribute<T> attr = m.findAttribute(attrName).orElse(null);
+        if (attr != null) {
+            if (attr instanceof RuntimeVisibleTypeAnnotationsAttribute tAttr) {
+                annos.addAll(Objects.requireNonNull(generateTADList(tAttr.annotations(), null)));
+            } else if (attr instanceof RuntimeInvisibleTypeAnnotationsAttribute tAttr) {
+                annos.addAll(Objects.requireNonNull(generateTADList(tAttr.annotations(), null)));
+            } else throw new AssertionError();
         }
-
-        int cindex = m.attributes.getIndex(cf.constant_pool, Attribute.Code);
-        if (cindex != -1) {
-            Attribute cattr = m.attributes.get(cindex);
-            assert cattr instanceof Code_attribute;
-            Code_attribute cAttr = (Code_attribute)cattr;
-            index = cAttr.attributes.getIndex(cf.constant_pool, name);
-            if (index != -1) {
-                Attribute attr = cAttr.attributes.get(index);
-                assert attr instanceof RuntimeTypeAnnotations_attribute;
-                RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-                annos.addAll(Arrays.asList(tAttr.annotations));
+        if (m instanceof MethodModel mm) {
+            CodeAttribute cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+            if (cAttr != null) {
+                Attribute<T> attr2 = cAttr.findAttribute(attrName).orElse(null);;
+                if (attr2 != null) {
+                    if (attr2 instanceof RuntimeVisibleTypeAnnotationsAttribute tAttr2) {
+                        annos.addAll(Objects.requireNonNull(generateTADList(tAttr2.annotations(), cAttr)));
+                    } else if (attr2 instanceof RuntimeInvisibleTypeAnnotationsAttribute tAttr2) {
+                        annos.addAll(Objects.requireNonNull(generateTADList(tAttr2.annotations(), cAttr)));
+                    } else throw new AssertionError();
+                }
             }
         }
     }
 
-    // test the result of Attributes.getIndex according to expectations
-    // encoded in the method's name
-    private static void findAnnotations(ClassFile cf, Field m, String name, List<TypeAnnotation> annos) {
-        int index = m.attributes.getIndex(cf.constant_pool, name);
-        if (index != -1) {
-            Attribute attr = m.attributes.get(index);
-            assert attr instanceof RuntimeTypeAnnotations_attribute;
-            RuntimeTypeAnnotations_attribute tAttr = (RuntimeTypeAnnotations_attribute)attr;
-            annos.addAll(Arrays.asList(tAttr.annotations));
+    // get each target information and wrap with TAD (corresponding with TADescription in driver class)
+    private static List<TAD> generateTADList(List<TypeAnnotation> annos, CodeAttribute cAttr) {
+        List<TAD> result = new ArrayList<>();
+        for (TypeAnnotation anno: annos) {
+            TAD tad = new TAD();
+            tad.annotation = anno.className().stringValue();
+            tad.type = anno.targetInfo().targetType();
+            switch (anno.targetInfo().targetType()) {
+                case CAST, CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, METHOD_INVOCATION_TYPE_ARGUMENT -> {
+                    if (cAttr == null) throw new AssertionError("Invalid Annotation");
+                    tad.typeIndex = ((TypeAnnotation.TypeArgumentTarget) anno.targetInfo()).typeArgumentIndex();
+                    tad.offset = cAttr.labelToBci(((TypeAnnotation.TypeArgumentTarget) anno.targetInfo()).target());
+                }
+                case CLASS_EXTENDS -> tad.typeIndex = ((TypeAnnotation.SupertypeTarget) anno.targetInfo()).supertypeIndex();
+                case CLASS_TYPE_PARAMETER, METHOD_TYPE_PARAMETER -> tad.paramIndex = ((TypeAnnotation.TypeParameterTarget) anno.targetInfo()).typeParameterIndex();
+                case CLASS_TYPE_PARAMETER_BOUND, METHOD_TYPE_PARAMETER_BOUND -> {
+                    tad.paramIndex = ((TypeAnnotation.TypeParameterBoundTarget) anno.targetInfo()).typeParameterIndex();
+                    tad.boundIndex = ((TypeAnnotation.TypeParameterBoundTarget) anno.targetInfo()).boundIndex();
+                }
+                case EXCEPTION_PARAMETER -> tad.exceptionIndex = ((TypeAnnotation.CatchTarget) anno.targetInfo()).exceptionTableIndex();
+                case INSTANCEOF, NEW -> {
+                    if (cAttr == null) throw new AssertionError("Invalid Annotation");
+                    tad.offset = cAttr.labelToBci(((TypeAnnotation.OffsetTarget) anno.targetInfo()).target());
+                }
+                case LOCAL_VARIABLE, RESOURCE_VARIABLE -> {
+                    if (cAttr == null) throw new AssertionError("Invalid Annotation");
+                    TypeAnnotation.LocalVarTarget localTarget = (TypeAnnotation.LocalVarTarget) anno.targetInfo();
+                    for (TypeAnnotation.LocalVarTargetInfo localInfo : localTarget.table()) {
+                        tad.lvarIndex.add(localInfo.index());
+                        tad.lvarOffset.add(cAttr.labelToBci(localInfo.startLabel()));
+                        tad.lvarLength.add(cAttr.labelToBci(localInfo.endLabel()) - cAttr.labelToBci(localInfo.startLabel()));
+                    }
+                }
+                case METHOD_FORMAL_PARAMETER -> tad.paramIndex = ((TypeAnnotation.FormalParameterTarget) anno.targetInfo()).formalParameterIndex();
+                case THROWS -> tad.typeIndex = ((TypeAnnotation.ThrowsTarget) anno.targetInfo()).throwsTargetIndex();
+                default -> {}
+            }
+            for (TypeAnnotation.TypePathComponent pathComponent : anno.targetPath()) {
+                switch (pathComponent.typePathKind()) {
+                    case ARRAY -> tad.genericLocation.add(0);
+                    case INNER_TYPE -> tad.genericLocation.add(1);
+                    case WILDCARD -> tad.genericLocation.add(2);
+                    case TYPE_ARGUMENT -> tad.genericLocation.add(3);
+                }
+                tad.genericLocation.add(pathComponent.typeArgumentIndex());
+            }
+            result.add(tad);
         }
+        return result;
     }
 
     /////////////////////// Equality testing /////////////////////
@@ -124,84 +148,98 @@ public class ReferenceInfoUtil {
         return a == b || a == IGNORE_VALUE || b == IGNORE_VALUE;
     }
 
-    private static boolean areEquals(int[] a, int[] a2) {
+    private static boolean areEquals(List<Integer> a, List<Integer> a2) {
         if (a==a2)
             return true;
         if (a==null || a2==null)
             return false;
 
-        int length = a.length;
-        if (a2.length != length)
+        int length = a.size();
+        if (a2.size() != length)
             return false;
 
         for (int i=0; i<length; i++)
-            if (a[i] != a2[i] && a[i] != IGNORE_VALUE && a2[i] != IGNORE_VALUE)
+            if (!Objects.equals(a.get(i), a2.get(i)) && a.get(i) != IGNORE_VALUE && a2.get(i) != IGNORE_VALUE)
                 return false;
 
         return true;
     }
 
-    public static boolean areEquals(TypeAnnotation.Position p1, TypeAnnotation.Position p2) {
+    public static boolean areEquals(TAD p1, TAD p2) {
         return p1 == p2 || !(p1 == null || p2 == null) &&
                 p1.type == p2.type &&
-                (p1.location.equals(p2.location)) &&
+                areEquals(p1.genericLocation, p2.genericLocation) &&
                 areEquals(p1.offset, p2.offset) &&
                 areEquals(p1.lvarOffset, p2.lvarOffset) &&
                 areEquals(p1.lvarLength, p2.lvarLength) &&
                 areEquals(p1.lvarIndex, p2.lvarIndex) &&
-                areEquals(p1.bound_index, p2.bound_index) &&
-                areEquals(p1.parameter_index, p2.parameter_index) &&
-                areEquals(p1.type_index, p2.type_index) &&
-                areEquals(p1.exception_index, p2.exception_index);
+                areEquals(p1.boundIndex, p2.boundIndex) &&
+                areEquals(p1.paramIndex, p2.paramIndex) &&
+                areEquals(p1.typeIndex, p2.typeIndex) &&
+                areEquals(p1.exceptionIndex, p2.exceptionIndex);
 
     }
 
-    private static TypeAnnotation findAnnotation(String name, List<TypeAnnotation> annotations, ClassFile cf) throws InvalidIndex, UnexpectedEntry {
+    private static TAD findAnnotation(String name, List<TAD> annotations) {
         String properName = "L" + name + ";";
-        for (TypeAnnotation anno : annotations) {
-            String actualName = cf.constant_pool.getUTF8Value(anno.annotation.type_index);
+        for (TAD anno : annotations) {
+            String actualName = anno.annotation;
             if (properName.equals(actualName))
                 return anno;
         }
         return null;
     }
 
-    public static boolean compare(Map<String, TypeAnnotation.Position> expectedAnnos,
-            List<TypeAnnotation> actualAnnos, ClassFile cf) throws InvalidIndex, UnexpectedEntry {
+    public static boolean compare(Map<String, TAD> expectedAnnos,
+            List<TAD> actualAnnos) {
         if (actualAnnos.size() != expectedAnnos.size()) {
             throw new ComparisionException("Wrong number of annotations",
                     expectedAnnos,
                     actualAnnos);
         }
 
-        for (Map.Entry<String, TypeAnnotation.Position> e : expectedAnnos.entrySet()) {
-            String aName = e.getKey();
-            TypeAnnotation.Position expected = e.getValue();
-            TypeAnnotation actual = findAnnotation(aName, actualAnnos, cf);
-            if (actual == null)
+        for (Map.Entry<String, TAD> expectedAno : expectedAnnos.entrySet()) {
+            String aName = expectedAno.getKey();
+            TAD expectedTAD = expectedAno.getValue();
+            TAD actualTAD = findAnnotation(aName, actualAnnos);
+            if (actualTAD == null)
                 throw new ComparisionException("Expected annotation not found: " + aName);
 
-            if (!areEquals(expected, actual.position)) {
+            if (!areEquals(expectedTAD, actualTAD)) {
                 throw new ComparisionException("Unexpected position for annotation : " + aName +
-                        "\n  Expected: " + expected.toString() +
-                        "\n  Found: " + actual.position.toString());
+                        "\n  Expected: " + expectedTAD +
+                        "\n  Found: " + actualTAD);
             }
         }
         return true;
+    }
+    public static class TAD {
+        String annotation;
+        TypeAnnotation.TargetType type;
+        int typeIndex = IGNORE_VALUE, paramIndex = IGNORE_VALUE, boundIndex = IGNORE_VALUE, exceptionIndex = IGNORE_VALUE, offset = IGNORE_VALUE;
+        List<Integer> lvarOffset = new ArrayList<>(), lvarLength = new ArrayList<>(), lvarIndex = new ArrayList<>(), genericLocation = new ArrayList<>();
+        public TAD(String a, TypeAnnotation.TargetType t, int tIdx, int pIndx, int bIdx, int eIdx,
+                   int ofs, List<Integer> lvarOfs, List<Integer> lvarLen, List<Integer> lvarIdx, List<Integer> genericLoc) {
+            annotation = a; type = t; typeIndex = tIdx;
+            paramIndex = pIndx; boundIndex = bIdx; exceptionIndex = eIdx;
+            offset = ofs; lvarOffset = lvarOfs; lvarLength = lvarLen; lvarIndex = lvarIdx;
+            genericLocation = genericLoc;
+        }
+        public TAD() {}
     }
 }
 
 class ComparisionException extends RuntimeException {
     private static final long serialVersionUID = -3930499712333815821L;
 
-    public final Map<String, TypeAnnotation.Position> expected;
-    public final List<TypeAnnotation> found;
+    public final Map<String, ReferenceInfoUtil.TAD> expected;
+    public final List<ReferenceInfoUtil.TAD> found;
 
     public ComparisionException(String message) {
         this(message, null, null);
     }
 
-    public ComparisionException(String message, Map<String, TypeAnnotation.Position> expected, List<TypeAnnotation> found) {
+    public ComparisionException(String message, Map<String, ReferenceInfoUtil.TAD> expected, List<ReferenceInfoUtil.TAD> found) {
         super(message);
         this.expected = expected;
         this.found = found;

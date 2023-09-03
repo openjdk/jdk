@@ -172,13 +172,6 @@ oop Generation::promote(oop obj, size_t obj_size) {
   return new_obj;
 }
 
-Space* Generation::space_containing(const void* p) const {
-  GenerationIsInReservedClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.sp;
-}
-
 // Some of these are mediocre general implementations.  Should be
 // overridden to get better performance.
 
@@ -238,21 +231,6 @@ bool Generation::block_is_obj(const HeapWord* p) const {
   // Cast away const
   ((Generation*)this)->space_iterate(&blk);
   return blk.is_obj;
-}
-
-class GenerationOopIterateClosure : public SpaceClosure {
- public:
-  OopIterateClosure* _cl;
-  virtual void do_space(Space* s) {
-    s->oop_iterate(_cl);
-  }
-  GenerationOopIterateClosure(OopIterateClosure* cl) :
-    _cl(cl) {}
-};
-
-void Generation::oop_iterate(OopIterateClosure* cl) {
-  GenerationOopIterateClosure blk(cl);
-  space_iterate(&blk);
 }
 
 class GenerationObjIterateClosure : public SpaceClosure {

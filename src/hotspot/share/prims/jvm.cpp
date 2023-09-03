@@ -95,6 +95,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
@@ -541,14 +542,28 @@ JVM_END
 JVM_ENTRY(void, JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo))
   Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(stackFrameInfo));
   Handle stack_trace_element(THREAD, JNIHandles::resolve_non_null(element));
-  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, THREAD);
+  java_lang_StackFrameInfo::to_stack_trace_element(stack_frame_info, stack_trace_element, CHECK);
 JVM_END
 
 
 // java.lang.StackWalker //////////////////////////////////////////////////////
+JVM_ENTRY(void, JVM_ExpandStackFrameInfo(JNIEnv *env, jobject obj))
+  Handle stack_frame_info(THREAD, JNIHandles::resolve_non_null(obj));
 
+  bool have_name = (java_lang_StackFrameInfo::name(stack_frame_info()) != nullptr);
+  bool have_type = (java_lang_StackFrameInfo::type(stack_frame_info()) != nullptr);
+  Method* method = java_lang_StackFrameInfo::get_method(stack_frame_info());
+  if (!have_name) {
+    oop name = StringTable::intern(method->name(), CHECK);
+    java_lang_StackFrameInfo::set_name(stack_frame_info(), name);
+  }
+  if (!have_type) {
+    Handle type = java_lang_String::create_from_symbol(method->signature(), CHECK);
+    java_lang_StackFrameInfo::set_type(stack_frame_info(), type());
+  }
+JVM_END
 
-JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jint mode,
                                      jint skip_frames, jobject contScope, jobject cont,
                                      jint frame_count, jint start_index, jobjectArray frames))
   if (!thread->has_last_Java_frame()) {
@@ -558,7 +573,7 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
   Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
   Handle contScope_h(THREAD, JNIHandles::resolve(contScope));
   Handle cont_h(THREAD, JNIHandles::resolve(cont));
-  // frames array is a Class<?>[] array when only getting caller reference,
+  // frames array is a ClassFrameInfo[] array when only getting caller reference,
   // and a StackFrameInfo[] array (or derivative) otherwise. It should never
   // be null.
   objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
@@ -575,10 +590,10 @@ JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mod
 JVM_END
 
 
-JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
+JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jint mode, jlong anchor,
                                   jint frame_count, jint start_index,
                                   jobjectArray frames))
-  // frames array is a Class<?>[] array when only getting caller reference,
+  // frames array is a ClassFrameInfo[] array when only getting caller reference,
   // and a StackFrameInfo[] array (or derivative) otherwise. It should never
   // be null.
   objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
@@ -608,7 +623,8 @@ JVM_END
 
 JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
   // as implemented in the classic virtual machine; return 0 if object is null
-  return handle == nullptr ? 0 : ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)) ;
+  return handle == nullptr ? 0 :
+         checked_cast<jint>(ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)));
 JVM_END
 
 
@@ -1016,8 +1032,11 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                   ik->is_hidden() ? "is hidden" : "is not hidden");
     }
   }
-  assert(Reflection::is_same_class_package(lookup_k, ik),
-         "lookup class and defined class are in different packages");
+
+  if ((!is_hidden || is_nestmate) && !Reflection::is_same_class_package(lookup_k, ik)) {
+    // non-hidden class or nestmate class must be in the same package as the Lookup class
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class and defined class are in different packages");
+  }
 
   if (init) {
     ik->initialize(CHECK_NULL);
@@ -1589,7 +1608,7 @@ static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   int modifiers = java_lang_reflect_Field::modifiers(reflected);
 
   InstanceKlass* ik = InstanceKlass::cast(k);
-  intptr_t offset = ik->field_offset(slot);
+  int offset = ik->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class

@@ -93,6 +93,7 @@
 #include "services/memoryService.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
@@ -366,6 +367,13 @@ WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
 WB_END
 
+WB_ENTRY(jboolean, WB_HasLibgraal(JNIEnv* env, jobject o))
+#if INCLUDE_JVMCI
+  return JVMCI::shared_library_exists();
+#endif
+  return false;
+WB_END
+
 WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -577,12 +585,12 @@ WB_END
 WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1NUMA* numa = G1NUMA::numa();
-    int num_node_ids = (int)numa->num_active_nodes();
-    const int* node_ids = numa->node_ids();
+    int num_node_ids = checked_cast<int>(numa->num_active_nodes());
+    const uint* node_ids = numa->node_ids();
 
     typeArrayOop result = oopFactory::new_intArray(num_node_ids, CHECK_NULL);
     for (int i = 0; i < num_node_ids; i++) {
-      result->int_at_put(i, (jint)node_ids[i]);
+      result->int_at_put(i, checked_cast<jint>(node_ids[i]));
     }
     return (jintArray) JNIHandles::make_local(THREAD, result);
   }
@@ -1375,12 +1383,12 @@ WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolea
 WB_END
 
 WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
-  int result = value;
+  int result = checked_cast<int>(value);
   SetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
-  uint result = value;
+  uint result = checked_cast<uint>(value);
   SetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result);
 WB_END
 
@@ -1866,6 +1874,12 @@ WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass kla
   return cp->cache()->length();
 WB_END
 
+WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass klass))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  objArrayOop resolved_refs= ik->constants()->resolved_references();
+  return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
+WB_END
+
 WB_ENTRY(jint, WB_ConstantPoolRemapInstructionOperandFromCache(JNIEnv* env, jobject wb, jclass klass, jint index))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   ConstantPool* cp = ik->constants();
@@ -1883,6 +1897,24 @@ WB_END
 
 WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint index))
   return ConstantPool::encode_invokedynamic_index(index);
+WB_END
+
+WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == nullptr) {
+    return -1;
+  }
+  return cp->resolved_field_entries_length();
+WB_END
+
+WB_ENTRY(jint, WB_getFieldCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->resolved_field_entry_at(index)->constant_pool_index();
 WB_END
 
 WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
@@ -2580,6 +2612,14 @@ WB_ENTRY(jboolean, WB_SetVirtualThreadsNotifyJvmtiMode(JNIEnv* env, jobject wb, 
   return result;
 WB_END
 
+WB_ENTRY(void, WB_PreTouchMemory(JNIEnv* env, jobject wb, jlong addr, jlong size))
+  void* const from = (void*)addr;
+  void* const to = (void*)(addr + size);
+  if (from > to) {
+    os::pretouch_memory(from, to, os::vm_page_size());
+  }
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2767,10 +2807,13 @@ static JNINativeMethod methods[] = {
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getConstantPoolCacheIndexTag0", CC"()I",  (void*)&WB_GetConstantPoolCacheIndexTag},
   {CC"getConstantPoolCacheLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_GetConstantPoolCacheLength},
+  {CC"getResolvedReferences0", CC"(Ljava/lang/Class;)[Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"remapInstructionOperandFromCPCache0",
       CC"(Ljava/lang/Class;I)I",                      (void*)&WB_ConstantPoolRemapInstructionOperandFromCache},
   {CC"encodeConstantPoolIndyIndex0",
       CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
+  {CC"getFieldEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getFieldEntriesLength},
+  {CC"getFieldCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getFieldCPIndex},
   {CC"getIndyInfoLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getIndyInfoLength},
   {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getIndyCPIndex},
   {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
@@ -2803,6 +2846,7 @@ static JNINativeMethod methods[] = {
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
+  {CC"hasLibgraal",                       CC"()Z",    (void*)&WB_HasLibgraal },
   {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
   {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
@@ -2861,6 +2905,7 @@ static JNINativeMethod methods[] = {
   {CC"lockCritical",    CC"()V",                      (void*)&WB_LockCritical},
   {CC"unlockCritical",  CC"()V",                      (void*)&WB_UnlockCritical},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
+  {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
 };
 
 

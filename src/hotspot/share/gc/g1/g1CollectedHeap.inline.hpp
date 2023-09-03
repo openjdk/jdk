@@ -209,7 +209,7 @@ G1HeapRegionAttr G1CollectedHeap::region_attr(uint idx) const {
 }
 
 void G1CollectedHeap::register_humongous_candidate_region_with_region_attr(uint index) {
-  _region_attr.set_humongous_candidate(index, region_at(index)->rem_set()->is_tracked());
+  _region_attr.set_humongous_candidate(index);
 }
 
 void G1CollectedHeap::register_new_survivor_region_with_region_attr(HeapRegion* r) {

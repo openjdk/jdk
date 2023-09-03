@@ -297,8 +297,12 @@ class Example implements Comparable<Example> {
             // source for import statements or a magic comment
             for (File pf: procFiles) {
                 if (pf.getName().equals("CreateBadClassFile.java")) {
-                    pOpts.add("--add-modules=jdk.jdeps");
-                    pOpts.add("--add-exports=jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.attribute=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.instruction=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.components=ALL-UNNAMED");
+                    pOpts.add("--add-exports=java.base/jdk.internal.classfile.impl=ALL-UNNAMED");
                 }
             }
 

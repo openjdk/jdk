@@ -414,33 +414,6 @@ public final class Integer extends Number
         } while (charPos > 0);
     }
 
-    static final byte[] DigitTens = {
-        '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-        '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-        '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-        '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-        '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-        '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-        '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-        '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-        '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-        '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        } ;
-
-    static final byte[] DigitOnes = {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        } ;
-
-
     /**
      * Returns a {@code String} object representing the
      * specified integer. The argument is converted to signed decimal
@@ -456,7 +429,7 @@ public final class Integer extends Number
         int size = stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            getChars(i, size, buf);
+            StringLatin1.getChars(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
@@ -481,53 +454,6 @@ public final class Integer extends Number
      */
     public static String toUnsignedString(int i) {
         return Long.toString(toUnsignedLong(i));
-    }
-
-    /**
-     * Places characters representing the integer i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
-     * integer.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(int i, int index, byte[] buf) {
-        int q, r;
-        int charPos = index;
-
-        boolean negative = i < 0;
-        if (!negative) {
-            i = -i;
-        }
-
-        // Generate two digits per iteration
-        while (i <= -100) {
-            q = i / 100;
-            r = (q * 100) - i;
-            i = q;
-            buf[--charPos] = DigitOnes[r];
-            buf[--charPos] = DigitTens[r];
-        }
-
-        // We know there are at most two digits left at this point.
-        buf[--charPos] = DigitOnes[-i];
-        if (i < -9) {
-            buf[--charPos] = DigitTens[-i];
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
     }
 
     /**

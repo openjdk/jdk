@@ -101,9 +101,6 @@ final class LambdaProxyClassArchive {
                          boolean isSerializable,
                          Class<?>[] altInterfaces,
                          MethodType[] altMethods) {
-        if (CDS.isDumpingArchive())
-            throw new IllegalStateException("cannot load class from CDS archive at dump time");
-
         if (!loadedByBuiltinLoader(caller) ||
             !CDS.isSharingEnabled() || isSerializable || altInterfaces.length > 0 || altMethods.length > 0)
             return null;

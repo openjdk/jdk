@@ -604,6 +604,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_string_new = dl_symbol("g_string_new");
         fp_g_string_erase = dl_symbol("g_string_erase");
+        fp_g_string_set_size = dl_symbol("g_string_set_size");
         fp_g_string_free = dl_symbol("g_string_free");
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
@@ -2400,9 +2401,12 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
     init_containers();
 
     if (gtk3_version_3_20) {
-        if ((widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD || widget_type == SPINNER_TEXT_FIELD ||
-            widget_type == FORMATTED_TEXT_FIELD) && state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND) {
-            widget_type = TEXT_AREA;
+        if (widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD
+            || widget_type == SPINNER_TEXT_FIELD || widget_type == FORMATTED_TEXT_FIELD) {
+                if ((state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND)
+                    || (state_type == GTK_STATE_INSENSITIVE && color_type == TEXT_FOREGROUND)) {
+                    widget_type = TEXT_AREA;
+                }
         } else if (widget_type == MENU_BAR && state_type == GTK_STATE_INSENSITIVE
             && color_type == FOREGROUND) {
             widget_type = MENU;
@@ -3110,6 +3114,7 @@ static void gtk3_init(GtkApi* gtk) {
 
     gtk->g_string_new = fp_g_string_new;
     gtk->g_string_erase = fp_g_string_erase;
+    gtk->g_string_set_size = fp_g_string_set_size;
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;

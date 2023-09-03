@@ -163,11 +163,6 @@ class Space: public CHeapObj<mtGC> {
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
 
-  // Iterate over all the ref-containing fields of all objects in the
-  // space, calling "cl.do_oop" on each.  Fields in objects allocated by
-  // applications of the closure are not included in the iteration.
-  virtual void oop_iterate(OopIterateClosure* cl);
-
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
@@ -444,7 +439,6 @@ private:
   HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void oop_iterate(OopIterateClosure* cl) override;
   void object_iterate(ObjectClosure* blk) override;
 
   // Compaction support

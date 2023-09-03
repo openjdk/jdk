@@ -243,6 +243,19 @@ bool JvmtiAgentList::is_dynamic_lib_loaded(void* os_lib) {
   }
   return false;
 }
+#ifdef AIX
+bool JvmtiAgentList::is_dynamic_lib_loaded(dev64_t device, ino64_t inode) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (!agent->is_static_lib() && device != 0 && inode != 0 &&
+        agent->device() == device && agent->inode() == inode) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_address) {
   assert(env != nullptr, "invariant");
