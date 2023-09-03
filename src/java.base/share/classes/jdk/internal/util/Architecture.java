@@ -52,7 +52,8 @@ public enum Architecture {
     PPC64(64, ByteOrder.BIG_ENDIAN),
     PPC64LE(64, ByteOrder.LITTLE_ENDIAN),
     MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
-    MIPS64EL(64, ByteOrder.LITTLE_ENDIAN)
+    MIPS64EL(64, ByteOrder.LITTLE_ENDIAN),
+    SPARCV9(64, ByteOrder.BIG_ENDIAN),
     ;
 
     private final int addrSize;
@@ -200,6 +201,14 @@ public enum Architecture {
     @ForceInline
     public static boolean isMIPS64EL() {
         return PlatformProps.TARGET_ARCH_IS_MIPS64EL;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is SPARCV9}
+     */
+    @ForceInline
+    public static boolean isSPARCV9() {
+        return PlatformProps.TARGET_ARCH_IS_SPARCV9;
     }
 
     /**

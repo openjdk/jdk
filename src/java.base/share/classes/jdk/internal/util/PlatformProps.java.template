@@ -63,4 +63,5 @@ class PlatformProps {
     static final boolean TARGET_ARCH_IS_PPC64LE = "@@OPENJDK_TARGET_CPU@@" == "ppc64le";
     static final boolean TARGET_ARCH_IS_MIPSEL  = "@@OPENJDK_TARGET_CPU@@" == "mipsel";
     static final boolean TARGET_ARCH_IS_MIPS64EL= "@@OPENJDK_TARGET_CPU@@" == "mips64el";
+    static final boolean TARGET_ARCH_IS_SPARCV9 = "@@OPENJDK_TARGET_CPU@@" == "sparcv9";
 }
