@@ -234,12 +234,12 @@ class MutexLocker: public MutexLockerImpl {
  public:
    MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(mutex, flag) {
-     assert(mutex != nullptr, "null mutex is not allowed");
+     assert(mutex != nullptr, "null mutex not allowed");
    }
 
    MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(thread, mutex, flag) {
-     assert(mutex != nullptr, "null mutex is not allowed");
+     assert(mutex != nullptr, "null mutex not allowed");
    }
 };
 
@@ -249,19 +249,19 @@ class ConditionalMutexLocker: public MutexLockerImpl {
  public:
    ConditionalMutexLocker(Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(condition ? mutex : nullptr, flag) {
-     assert(!condition || mutex != nullptr, "null mutex is not allowed when locking");
+     assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
 
    ConditionalMutexLocker(Thread* thread, Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
-     assert(!condition || mutex != nullptr, "null mutex is not allowed when locking");
+     assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
  };
 
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
 // It also disallows null.
-class MonitorLocker: public MutexLocker {
+class MonitorLocker: public MutexLockerImpl {
   Mutex::SafepointCheckFlag _flag;
 
  protected:
@@ -271,10 +271,16 @@ class MonitorLocker: public MutexLocker {
 
  public:
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, flag), _flag(flag) {}
+    MutexLockerImpl(monitor, flag), _flag(flag) {
+    // Superclass constructor did locking
+    assert(monitor != nullptr, "null monitor not allowed");
+  }
 
   MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(thread, monitor, flag), _flag(flag) {}
+    MutexLockerImpl(thread, monitor, flag), _flag(flag) {
+    // Superclass constructor did locking
+    assert(monitor != nullptr, "null monitor not allowed");
+  }
 
   bool wait(int64_t timeout = 0) {
     return _flag == Mutex::_safepoint_check_flag ?
