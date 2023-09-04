@@ -702,9 +702,12 @@ class FileSystemPreferences extends AbstractPreferences {
         return new FileSystemPreferences(this, name);
     }
 
+    @SuppressWarnings("removal")
+    private static final String osName = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.name"));
+
     private static String getErrorString(int errCode) {
-        String os = System.getProperty("os.name");
-        if (errCode == 35 && (os.contains("Mac") || os.contains("Darwin"))) return "EAGAIN";
+        if (errCode == 35 && (osName.contains("Mac") || osName.contains("Darwin"))) return "EAGAIN";
         switch (errCode) {
             case 13: return "EACCES";
             case 11: return "EAGAIN"; // macOS has for this 35
