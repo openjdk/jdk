@@ -141,11 +141,13 @@ class JfrVframeStream : public vframeStreamCommon {
   const ContinuationEntry* _cont_entry;
   bool _async_mode;
   bool _vthread;
+  bool _aborted;
   bool step_to_sender();
   void next_frame();
  public:
   JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode);
   void next_vframe();
+  bool aborted() const { return _aborted; }
 };
 
 static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
@@ -166,8 +168,7 @@ JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_j
                                  RegisterMap::ProcessFrames::skip,
                                  walk_continuation(jt))),
     _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
-    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
-  assert(!_vthread || _cont_entry != nullptr, "invariant");
+    _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)), _aborted(false) {
   _reg_map.set_async(async_mode);
   _frame = fr;
   _stop_at_java_call_stub = stop_at_java_call_stub;
@@ -190,6 +191,11 @@ inline void JfrVframeStream::next_frame() {
   u4 loop_count = 0;
   do {
     if (_vthread && Continuation::is_continuation_enterSpecial(_frame)) {
+      if (_cont_entry == nullptr) {
+        _mode = at_end_mode;
+        _aborted = true;
+        return;
+      }
       if (_cont_entry->is_virtual_thread()) {
         // An entry of a vthread continuation is a termination point.
         _mode = at_end_mode;
@@ -279,7 +285,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   }
   _lineno = true;
   _nr_of_frames = count;
-  return count > 0;
+  return count > 0 && !vfs.aborted();
 }
 
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
@@ -329,7 +335,7 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
     count++;
   }
   _nr_of_frames = count;
-  return count > 0;
+  return count > 0 && !vfs.aborted();
 }
 
 bool JfrStackTrace::record(JavaThread* current_thread, int skip) {

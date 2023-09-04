@@ -407,7 +407,7 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
     SystemMemoryBarrier::emit();
   }
   if (JAVA_SAMPLE == type) {
-    if (thread_state_in_java(thread) && !is_vthread_in_transition(thread)) {
+    if (thread_state_in_java(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);
     }
   } else {
