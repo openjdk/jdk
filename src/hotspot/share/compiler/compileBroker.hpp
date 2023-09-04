@@ -209,18 +209,18 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_invalidated_compilation;
   static elapsedTimer _t_bailedout_compilation;
 
-  static int _total_compile_count;
-  static int _total_bailout_count;
-  static int _total_invalidated_count;
-  static int _total_native_compile_count;
-  static int _total_osr_compile_count;
-  static int _total_standard_compile_count;
-  static int _total_compiler_stopped_count;
-  static int _total_compiler_restarted_count;
-  static int _sum_osr_bytes_compiled;
-  static int _sum_standard_bytes_compiled;
-  static int _sum_nmethod_size;
-  static int _sum_nmethod_code_size;
+  static uint _total_compile_count;
+  static uint _total_bailout_count;
+  static uint _total_invalidated_count;
+  static uint _total_native_compile_count;
+  static uint _total_osr_compile_count;
+  static uint _total_standard_compile_count;
+  static uint _total_compiler_stopped_count;
+  static uint _total_compiler_restarted_count;
+  static uint _sum_osr_bytes_compiled;
+  static uint _sum_standard_bytes_compiled;
+  static uint _sum_nmethod_size;
+  static uint _sum_nmethod_code_size;
   static jlong _peak_compilation_time;
 
   static CompilerStatistics _stats_per_level[];

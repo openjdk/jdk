@@ -333,6 +333,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
     _stack =         *other.call_stack();
     _flag  =         other.flag();
+    _committed_regions.clear();
 
     CommittedRegionIterator itr = other.iterate_committed_regions();
     const CommittedMemoryRegion* rgn = itr.next();

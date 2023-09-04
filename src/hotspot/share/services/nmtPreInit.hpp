@@ -31,6 +31,7 @@
 #include "runtime/atomic.hpp"
 #endif
 #include "services/memTracker.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -143,23 +144,26 @@ class NMTPreInitAllocationTable {
   //  VMs with insanely long command lines maybe ~700-1000. Which gives us an expected
   //  load factor of ~.1. Hash collisions should be very rare.
   // ~8000 entries cost us ~64K for this table (64-bit), which is acceptable.
-  static const int table_size = 7919;
+  // We chose 8191, as this is a Mersenne prime (2^x - 1), which for a random
+  //  polynomial modulo p = (2^x - 1) is uniformily distributed in [p], so each
+  //  bit has the same distribution.
+  static const int table_size = 8191; // i.e. 8191==(2^13 - 1);
 
   NMTPreInitAllocation* _entries[table_size];
 
   typedef int index_t;
   const index_t invalid_index = -1;
 
-  static unsigned calculate_hash(const void* p) {
-    uintptr_t tmp = p2i(p);
-    unsigned hash = (unsigned)tmp
-                     LP64_ONLY( ^ (unsigned)(tmp >> 32));
-    return hash;
+  static uint64_t calculate_hash(const void* p) {
+    // Keep hash function simple, the modulo
+    // operation in index function will do the "heavy lifting".
+    return (uint64_t)(p);
   }
 
   static index_t index_for_key(const void* p) {
-    const unsigned hash = calculate_hash(p);
-    return hash % table_size;
+    const uint64_t hash = calculate_hash(p);
+    // "table_size" is a Mersenne prime, so "modulo" is all we need here.
+    return checked_cast<index_t>(hash % table_size);
   }
 
   const NMTPreInitAllocation* const * find_entry(const void* p) const {
