@@ -2662,8 +2662,8 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   uint total_bailout_count = CompileBroker::_total_bailout_count;
   uint total_invalidated_count = CompileBroker::_total_invalidated_count;
 
-  uint nmethods_size = CompileBroker::_sum_nmethod_code_size;
-  uint nmethods_code_size = CompileBroker::_sum_nmethod_size;
+  uint nmethods_code_size = CompileBroker::_sum_nmethod_code_size;
+  uint nmethods_size = CompileBroker::_sum_nmethod_size;
 
   tty->cr();
   tty->print_cr("Accumulated compiler times");
