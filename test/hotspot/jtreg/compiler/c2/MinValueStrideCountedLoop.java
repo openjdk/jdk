@@ -27,7 +27,7 @@ package compiler.c2;
  * @bug 8314191
  * @summary Loop increment should not be transformed into unsigned comparison
  *
- * @run main/othervm -Xcomp -XX:+TraceLoopOpts -XX:-TieredCompilation
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
  *                   compiler.c2.MinValueStrideCountedLoop
  */
