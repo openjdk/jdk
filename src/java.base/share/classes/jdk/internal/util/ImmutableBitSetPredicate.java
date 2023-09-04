@@ -1,3 +1,28 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.internal.util;
 
 import jdk.internal.ValueBased;
@@ -47,8 +72,6 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      * If the returned predicate is invoked with a {@code bitIndex} that is negative, the predicate
      * will throw an IndexOutOfBoundsException just as the {@link BitSet#get(int)} method would.
      * <p>
-     * The method only supports BitSets where the highest bit that is set has an index less than {@link Integer#MAX_VALUE}.
-     * <p>
      * Returned predicates are threadsafe and can be used without external synchronisation.
      *
      * @implNote The method is free to return a {@link ValueBased} implementation.
@@ -56,10 +79,6 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      * @since 22
      */
     public static IntPredicate of(BitSet original) {
-        // Do not propagate the Integer.MAX_VALUE issue
-        if (Integer.toUnsignedLong(original.length()) > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException();
-        }
         return new ImmutableBitSetPredicate(original);
     }
 
