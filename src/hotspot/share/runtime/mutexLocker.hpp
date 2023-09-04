@@ -256,7 +256,7 @@ class ConditionalMutexLocker: public MutexLockerImpl {
      MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
      assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
- };
+};
 
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
