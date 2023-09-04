@@ -1,0 +1,53 @@
+// TODO: comment
+
+function appendTypeInfo(extra_label, phase_type) {
+  var new_extra_label = null;
+  if (extra_label != null && extra_label.length > 0) {
+    new_extra_label = extra_label;
+  }
+  if (phase_type == null) {
+    return new_extra_label;
+  }
+  var callTypeStart = "{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address";
+  if (phase_type.startsWith(callTypeStart)) {
+    phase_type = phase_type.replace(callTypeStart, "").replace("}", "");
+    if (phase_type.length == 0) {
+      return new_extra_label;
+    }
+    phase_type = "{" + phase_type.replace(", ", "") + "}";
+  }
+  if (new_extra_label == null) {
+    new_extra_label = "";
+  } else if (new_extra_label.length > 0) {
+    new_extra_label += " ";
+  }
+  // Clean up interface lists in reference types (too verbose).
+  var m = /(.*)\(.*\)(.*)/.exec(phase_type);
+  if (m != null && typeof m[1] != 'undefined' && typeof m[2] != 'undefined') {
+    var phase_type = m[1] + m[2];
+    phase_type = phase_type.replace(":exact", "");
+    phase_type = phase_type.replace("+any", "");
+    phase_type = phase_type.replace("narrowoop: ", "");
+    phase_type = phase_type.replace("narrowklass: ", "");
+    phase_type = phase_type.replace("[narrow]", "");
+    phase_type = phase_type.replace("precise ", "");
+    phase_type = phase_type.replace("java/lang/", "");
+    phase_type = phase_type.replace("java/util/", "");
+    phase_type = phase_type.replace("java/io/", "");
+    phase_type = phase_type.replace("jdk/internal/misc/", "");
+    phase_type = phase_type.replace("[int:>=0]", "[≥0]");
+    return new_extra_label + phase_type;
+  }
+  new_extra_label += phase_type;
+  return new_extra_label;
+}
+
+editProperty(not(or([matches("name", "Start"),
+                     matches("name", "CreateEx|CreateException"),
+                     matches("phase_type", "control"),
+                     matches("phase_type", ".*0:control, 1:control.*"),
+                     matches("phase_type", "bottom"),
+                     matches("phase_type", "memory"),
+                     matches("phase_type", "abIO")])),
+             ["extra_label", "phase_type"], "extra_label",
+             function(propertyValues) {return appendTypeInfo(propertyValues[0], propertyValues[1]);});

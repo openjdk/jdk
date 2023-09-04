@@ -40,6 +40,7 @@ class Matcher;
 class Node;
 class InlineTree;
 class ciMethod;
+class Type_Array;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
  private:
@@ -89,7 +90,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   outputStream *_output;
   ciMethod *_current_method;
   int _depth;
-  char buffer[128];
+  char buffer[512];
   bool _should_send_method;
   PhaseChaitin* _chaitin;
   bool _traverse_outs;
@@ -98,12 +99,12 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
 
   void print_method(ciMethod *method, int bci, InlineTree *tree);
   void print_inline_tree(InlineTree *tree);
-  void visit_node(Node *n, bool edges, VectorSet* temp_set);
+  void visit_node(Node *n, bool edges, VectorSet* temp_set, const Type_Array* types);
   void print_field(const Node* node);
   ciField* get_field(const Node* node);
   ciField* find_source_field_of_array_access(const Node* node, uint& depth);
   static Node* get_load_node(const Node* node);
-  void walk_nodes(Node *start, bool edges, VectorSet* temp_set);
+  void walk_nodes(Node *start, bool edges, VectorSet* temp_set, const Type_Array* types);
   void begin_elem(const char *s);
   void end_elem();
   void begin_head(const char *s);
@@ -132,7 +133,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void begin_method();
   void end_method();
   void print_method(const char *name, int level = 0);
-  void print(const char *name, Node *root);
+  void print(const char *name, Node *root, const Type_Array* types);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };
