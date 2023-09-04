@@ -1407,13 +1407,14 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   // tmp3 - is a register where we store modified result of double->long conversion
   Label done, bad_val;
 
-  addi(tmp2, zr, 1);
-  slli(tmp2, tmp2, 63);
   // Conversion from double to long
   fcvt_l_d(tmp1, src, rm);
 
   // Generate constant (tmp2)
   // tmp2 = 100...0000
+  addi(tmp2, zr, 1);
+  slli(tmp2, tmp2, 63);
+
   // Prepare converted long (tmp1)
   // as a result when conversion overflow we got:
   // tmp1 = 011...1111 or 100...0000
