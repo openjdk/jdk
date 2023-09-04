@@ -419,17 +419,19 @@ public sealed interface Binding {
             return this;
         }
 
+        // Converts to long if needed then shifts left by the given number of Bytes.
         public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
-            if (type == int.class || isSubIntType(type)) {
+            if (type != long.class) {
                 bindings.add(Binding.cast(type, long.class));
             }
             bindings.add(Binding.shiftLeft(shiftAmount));
             return this;
         }
 
+        // Shifts right by the given number of Bytes then converts from long if needed.
         public Binding.Builder shiftRight(int shiftAmount, Class<?> type) {
             bindings.add(Binding.shiftRight(shiftAmount));
-            if (type == int.class || isSubIntType(type)) {
+            if (type != long.class) {
                 bindings.add(Binding.cast(long.class, type));
             }
             return this;
