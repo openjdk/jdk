@@ -985,14 +985,14 @@ void CodeCache::register_unlinked(nmethod* nm) {
 }
 
 // Flush all the nmethods the GC unlinked
-void CodeCache::flush_unlinked_nmethods() {
+void CodeCache::flush_unlinked_nmethods(bool do_unregister_nmethod) {
   nmethod* nm = _unlinked_head;
   _unlinked_head = nullptr;
   size_t freed_memory = 0;
   while (nm != nullptr) {
     nmethod* next = nm->unlinked_next();
     freed_memory += nm->total_size();
-    nm->flush();
+    nm->flush(do_unregister_nmethod);
     if (next == nm) {
       // Self looped means end of list
       break;

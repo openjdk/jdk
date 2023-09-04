@@ -141,7 +141,7 @@ public:
   static unsigned int align_code_offset(int offset);
 
   // Deletion
-  virtual void flush();
+  virtual void flush(bool do_unregister_nmethod = true);
 
   // Typing
   virtual bool is_buffer_blob() const                 { return false; }

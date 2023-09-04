@@ -60,9 +60,6 @@ TEST_VM_F(G1CodeRootSetTest, g1_code_cache_rem_set) {
           << "After adding in total " << num_to_add << " distinct code roots, "
           "they need to be in the set, but there are only " << root_set.length();
 
-  ASSERT_EQ(root_set._table->table_size(), 512u)
-          << "should have grown to large hashtable";
-
   size_t num_popped = 0;
   for (size_t i = 1; i <= num_to_add; i++) {
     bool removed = root_set.remove((nmethod*) i);

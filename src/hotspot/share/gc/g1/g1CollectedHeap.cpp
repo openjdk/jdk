@@ -2595,6 +2595,36 @@ void G1CollectedHeap::complete_cleaning(bool class_unloading_occurred) {
   workers()->run_task(&unlink_task);
 }
 
+class G1CleanCodeCache : public HeapRegionClosure {
+public:
+  G1CleanCodeCache() { }
+
+  bool do_heap_region(HeapRegion* hr) {
+    hr->rem_set()->remove_dead_entries();
+    return false;
+  }
+};
+
+class G1CleanCodeCacheTask : public WorkerTask {
+  HeapRegionClaimer _hrclaimer;
+  G1CleanCodeCache _cl;
+
+public:
+  G1CleanCodeCacheTask(uint num_workers)
+  : WorkerTask("G1 Clean Code Cache Task"),
+    _hrclaimer(num_workers) { }
+
+  void work(uint worker_id) {
+    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hrclaimer, worker_id);
+  }
+};
+
+void G1CollectedHeap::clean_code_root_sets() {
+  uint num_workers = workers()->active_workers();
+  G1CleanCodeCacheTask clean_task(num_workers);
+  workers()->run_task(&clean_task);
+}
+
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
   assert(obj != nullptr, "must not be null");
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
@@ -3009,8 +3039,8 @@ public:
              " starting at " HR_FORMAT,
              p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
 
-      // HeapRegion::add_code_root_locked() avoids adding duplicate entries.
-      hr->add_code_root_locked(_nm);
+      // HeapRegion::add_code_root() avoids adding duplicate entries.
+      hr->add_code_root(_nm);
     }
   }
 

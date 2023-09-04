@@ -521,8 +521,7 @@ public:
   // Unlink this nmethod from the system
   void unlink();
 
-  // Deallocate this nmethod - called by the GC
-  void flush();
+  void flush(bool do_unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();

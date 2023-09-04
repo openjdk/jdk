@@ -213,7 +213,10 @@ class CodeCache : AllStatic {
   //    nmethod::is_cold.
   static void arm_all_nmethods();
 
-  static void flush_unlinked_nmethods();
+  // do_unregister_nmethod controls whether CollectedHeap::unregister_nmethod is
+  // called for every unlinked nmethod. If false, the caller is responsible to
+  // do an equivalent operation before calling this.
+  static void flush_unlinked_nmethods(bool do_unregister_nmethod = true);
   static void register_unlinked(nmethod* nm);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }

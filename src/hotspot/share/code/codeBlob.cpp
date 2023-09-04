@@ -173,7 +173,7 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
   MemoryService::track_code_cache_memory_usage();
 }
 
-void CodeBlob::flush() {
+void CodeBlob::flush(bool do_unregister_nmethod) {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
   _oop_maps = nullptr;
   NOT_PRODUCT(_asm_remarks.clear());
