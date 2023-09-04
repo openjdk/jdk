@@ -129,8 +129,8 @@ void VM_G1CollectForAllocation::doit() {
     // An allocation has been requested. So, try to do that first.
     // During the execution of this VM operation, there may have been a concurrent active
     // GCLocker, potentially leading to expansion of the Eden space by other mutators.
-    // If the Eden space was expanded, the allocation request might succeed without
-    // triggering a garbage collection.
+    // If the Eden space were expanded, this allocation request might succeed without
+    // the need for triggering a garbage collection.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);
     if (_result != nullptr) {
