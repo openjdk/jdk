@@ -422,7 +422,6 @@ public sealed interface Binding {
         public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
             if (type == int.class || isSubIntType(type)) {
                 bindings.add(Binding.cast(type, long.class));
-                type = long.class;
             }
             bindings.add(Binding.shiftLeft(shiftAmount));
             return this;

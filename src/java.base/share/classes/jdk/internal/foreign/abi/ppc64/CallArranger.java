@@ -219,6 +219,21 @@ public abstract class CallArranger {
             return reg;
         }
 
+        /* The struct is split into 8-byte chunks, and those chunks are passed in registers or on the stack.
+           ABIv1 requires shifting if the struct occupies more than one 8-byte chunk and the last one is not full.
+           Here's an example for passing an 11 byte struct with ABIv1:
+        offset         : 0 .... 32 ..... 64 ..... 96 .... 128
+        values         : xxxxxxxx|yyyyyyyy|zzzzzz??|????????   (can't touch bits 96..128)
+        Load into int  :                  V        +--------+
+                                          |                 |
+                                          +--------+        |
+                                                   V        V
+        In register    :                   ????????|??zzzzzz   (LSBs are zz...z)
+        Shift left     :                   zzzzzz00|00000000   (LSBs are 00...0)
+        Write long     :                  V                 V
+        Result         : xxxxxxxx|yyyyyyyy|zzzzzz00|00000000
+        */
+
         // Regular struct, no HFA.
         VMStorage[] structAlloc(MemoryLayout layout) {
             // Allocate enough gp slots (regs and stack) such that the struct fits in them.
