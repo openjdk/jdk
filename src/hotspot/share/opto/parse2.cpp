@@ -2785,7 +2785,7 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
+    printer->print_method(buffer, 5);
     printer->set_traverse_outs(old);
   }
 #endif

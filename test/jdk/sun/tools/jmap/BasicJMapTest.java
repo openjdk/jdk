@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@ import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.fail;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.List;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
@@ -297,30 +295,9 @@ public class BasicJMapTest {
         output.shouldHaveExitValue(expExitValue);
         output.shouldContain(expOutput);
         if (expExitValue == 0) {
-            verifyDumpFile(file);
+            HprofParser.parseAndVerify(file);
         }
         file.delete();
-    }
-
-    private static void verifyDumpFile(File dump) {
-        assertTrue(dump.exists() && dump.isFile(), "Could not create dump file " + dump.getAbsolutePath());
-        try {
-            File out = HprofParser.parse(dump);
-
-            assertTrue(out != null && out.exists() && out.isFile(),
-                       "Could not find hprof parser output file");
-            List<String> lines = Files.readAllLines(out.toPath());
-            assertTrue(lines.size() > 0, "hprof parser output file is empty");
-            for (String line : lines) {
-                assertFalse(line.matches(".*WARNING(?!.*Failed to resolve " +
-                                         "object.*constantPoolOop.*).*"));
-            }
-
-            out.delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail("Could not parse dump file " + dump.getAbsolutePath());
-        }
     }
 
     private static OutputAnalyzer jmap(String... toolArgs) throws Exception {
