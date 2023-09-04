@@ -49,6 +49,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
       fi
       if test "x$x_libraries" = xNONE; then
         x_libraries="${with_x}/lib"
+        x_libraries_orig="$x_libraries"
       fi
     else
       # Check if the user has specified sysroot, but not --with-x, --x-includes or --x-libraries.
