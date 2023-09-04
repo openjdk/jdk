@@ -276,16 +276,16 @@ public sealed interface Binding {
         return Dup.INSTANCE;
     }
 
-    static ShiftLeft shiftLeft(int shiftAmount, Class<?> type) {
+    static ShiftLeft shiftLeft(int shiftAmount) {
         if (shiftAmount <= 0)
             throw new IllegalArgumentException("shiftAmount must be positive");
-        return new ShiftLeft(shiftAmount, type);
+        return new ShiftLeft(shiftAmount);
     }
 
-    static ShiftRight shiftRight(int shiftAmount, Class<?> type) {
+    static ShiftRight shiftRight(int shiftAmount) {
         if (shiftAmount <= 0)
             throw new IllegalArgumentException("shiftAmount must be positive");
-        return new ShiftRight(shiftAmount, type);
+        return new ShiftRight(shiftAmount);
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
@@ -298,6 +298,8 @@ public sealed interface Binding {
                 return Cast.INT_TO_SHORT;
             } else if (toType == char.class) {
                 return Cast.INT_TO_CHAR;
+            } else if (toType == long.class) {
+                return Cast.INT_TO_LONG;
             }
         } else if (toType == int.class) {
             if (fromType == boolean.class) {
@@ -308,6 +310,24 @@ public sealed interface Binding {
                 return Cast.SHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
+            } else if (fromType == long.class) {
+                return Cast.LONG_TO_INT;
+            }
+        } else if (fromType == long.class) {
+            if (toType == byte.class) {
+                return Cast.LONG_TO_BYTE;
+            } else if (toType == short.class) {
+                return Cast.LONG_TO_SHORT;
+            } else if (toType == char.class) {
+                return Cast.LONG_TO_CHAR;
+            }
+        } else if (toType == long.class) {
+            if (fromType == byte.class) {
+                return Cast.BYTE_TO_LONG;
+            } else if (fromType == short.class) {
+                return Cast.SHORT_TO_LONG;
+            } else if (fromType == char.class) {
+                return Cast.CHAR_TO_LONG;
             }
         }
         throw new IllegalArgumentException("Unknown conversion: " + fromType + " -> " + toType);
@@ -400,18 +420,18 @@ public sealed interface Binding {
         }
 
         public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
-            if (isSubIntType(type)) {
-                bindings.add(Binding.cast(type, int.class));
-                type = int.class;
+            if (type == int.class || isSubIntType(type)) {
+                bindings.add(Binding.cast(type, long.class));
+                type = long.class;
             }
-            bindings.add(Binding.shiftLeft(shiftAmount, type));
+            bindings.add(Binding.shiftLeft(shiftAmount));
             return this;
         }
 
         public Binding.Builder shiftRight(int shiftAmount, Class<?> type) {
-            bindings.add(Binding.shiftRight(shiftAmount, type));
-            if (isSubIntType(type)) {
-                bindings.add(Binding.cast(int.class, type));
+            bindings.add(Binding.shiftRight(shiftAmount));
+            if (type == int.class || isSubIntType(type)) {
+                bindings.add(Binding.cast(long.class, type));
             }
             return this;
         }
@@ -702,26 +722,21 @@ public sealed interface Binding {
     /**
      * ShiftLeft([shiftAmount])
      *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
-     *   Converts int to long if needed and then shifts left by the given number of Bytes.
+     *   Shifts left by the given number of Bytes.
      */
-    record ShiftLeft(int shiftAmount, Class<?> type) implements Binding {
+    record ShiftLeft(int shiftAmount) implements Binding {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
             Class<?> last = stack.pop();
-            SharedUtils.checkType(last, (type == long.class) ? long.class : int.class);
+            SharedUtils.checkType(last, long.class);
             stack.push(long.class);
         }
 
         @Override
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
-            long l;
-            if (type == long.class) {
-                l = (long) stack.pop();
-            } else {
-                l = (long)(int) stack.pop();
-            }
+            long l = (long) stack.pop();
             l <<= (shiftAmount * Byte.SIZE);
             stack.push(l);
         }
@@ -730,15 +745,15 @@ public sealed interface Binding {
     /**
      * ShiftRight([shiftAmount])
      *   Shifts the Bytes on the top of the operand stack (64 bit unsigned).
-     *   Shifts right by the given number of Bytes and then converts long to int if needed.
+     *   Shifts right by the given number of Bytes.
      */
-    record ShiftRight(int shiftAmount, Class<?> type) implements Binding {
+    record ShiftRight(int shiftAmount) implements Binding {
 
         @Override
         public void verify(Deque<Class<?>> stack) {
             Class<?> last = stack.pop();
             SharedUtils.checkType(last, long.class);
-            stack.push((type == long.class) ? long.class : int.class);
+            stack.push(long.class);
         }
 
         @Override
@@ -746,11 +761,7 @@ public sealed interface Binding {
                               LoadFunc loadFunc, SegmentAllocator allocator) {
             long l = (long) stack.pop();
             l >>>= (shiftAmount * Byte.SIZE);
-            if (type == long.class) {
-                stack.push(l);
-            } else {
-                stack.push((int) l);
-            }
+            stack.push(l);
         }
     }
 
@@ -774,10 +785,21 @@ public sealed interface Binding {
         INT_TO_BYTE(int.class, byte.class),
         INT_TO_CHAR(int.class, char.class),
         INT_TO_SHORT(int.class, short.class),
+        INT_TO_LONG(int.class, long.class),
+
         BOOLEAN_TO_INT(boolean.class, int.class),
         BYTE_TO_INT(byte.class, int.class),
         CHAR_TO_INT(char.class, int.class),
-        SHORT_TO_INT(short.class, int.class);
+        SHORT_TO_INT(short.class, int.class),
+        LONG_TO_INT(long.class, int.class),
+
+        LONG_TO_BYTE(long.class, byte.class),
+        LONG_TO_SHORT(long.class, short.class),
+        LONG_TO_CHAR(long.class, char.class),
+
+        BYTE_TO_LONG(byte.class, long.class),
+        SHORT_TO_LONG(short.class, long.class),
+        CHAR_TO_LONG(char.class, long.class);
 
         private final Class<?> fromType;
         private final Class<?> toType;
