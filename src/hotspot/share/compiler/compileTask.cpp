@@ -436,7 +436,6 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
 
   for (int i = 0; i < inline_level; i++)  st->print("  ");
 
-  st->print(kind == InliningKind::SUCCESS ? "+" : "-");
   st->print("@ %d  ", bci);  // print bci
   method->print_short_name(st);
   if (method->is_loaded())
@@ -445,7 +444,9 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
     st->print(" (not loaded)");
 
   if (msg != nullptr) {
-    st->print("   %s", msg);
+    st->print("   %s%s", kind == InliningKind::SUCCESS ? "" : "failed to inline: ", msg);
+  } else if (kind == InliningKind::FAILURE) {
+    st->print("   %s", "failed to inline");
   }
   st->cr();
 }
