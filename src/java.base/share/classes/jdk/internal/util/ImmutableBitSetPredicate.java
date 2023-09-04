@@ -47,6 +47,8 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      * If the returned predicate is invoked with a {@code bitIndex} that is negative, the predicate
      * will throw an IndexOutOfBoundsException just as the {@link BitSet#get(int)} method would.
      * <p>
+     * The method only supports BitSets where the highest bit that is set has an index less than {@link Integer#MAX_VALUE}.
+     * <p>
      * Returned predicates are threadsafe and can be used without external synchronisation.
      *
      * @implNote The method is free to return a {@link ValueBased} implementation.
@@ -54,6 +56,10 @@ public class ImmutableBitSetPredicate implements IntPredicate {
      * @since 22
      */
     public static IntPredicate of(BitSet original) {
+        // Do not propagate the Integer.MAX_VALUE issue
+        if (Integer.toUnsignedLong(original.length()) > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException();
+        }
         return new ImmutableBitSetPredicate(original);
     }
 
