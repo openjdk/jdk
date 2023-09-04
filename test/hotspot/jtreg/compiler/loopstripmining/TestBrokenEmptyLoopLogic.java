@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8315088
+ * @requires vm.compiler2.enabled
  * @summary C2: assert(wq.size() - before == EMPTY_LOOP_SIZE) failed: expect the EMPTY_LOOP_SIZE nodes of this body if empty
  * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,TestBrokenEmptyLoopLogic::* -XX:-TieredCompilation TestBrokenEmptyLoopLogic
  *
