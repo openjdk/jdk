@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,7 @@
  */
 
 import java.io.File;
-import java.io.IOException;
-import java.io.BufferedInputStream;
 import java.util.stream.Collectors;
-import java.io.FileInputStream;
-
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Asserts;
@@ -35,9 +31,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
-import jdk.test.lib.hprof.parser.HprofReader;
-import jdk.test.lib.hprof.parser.PositionDataInputStream;
-import jdk.test.lib.hprof.model.Snapshot;
+import jdk.test.lib.hprof.HprofParser;
 
 /**
  * @test
@@ -54,30 +48,6 @@ import jdk.test.lib.hprof.model.Snapshot;
 public class TestHeapDumpForInvokeDynamic {
 
     private static LingeredAppWithInvokeDynamic theApp = null;
-
-    private static void verifyHeapDump(String heapFile) {
-
-        File heapDumpFile = new File(heapFile);
-        Asserts.assertTrue(heapDumpFile.exists() && heapDumpFile.isFile(),
-                          "Could not create dump file " + heapDumpFile.getAbsolutePath());
-        try (PositionDataInputStream in = new PositionDataInputStream(
-                new BufferedInputStream(new FileInputStream(heapFile)))) {
-            int i = in.readInt();
-            if (HprofReader.verifyMagicNumber(i)) {
-                Snapshot sshot;
-                HprofReader r = new HprofReader(heapFile, in, 0,
-                                                false, 0);
-                sshot = r.read();
-            } else {
-                throw new IOException("Unrecognized magic number: " + i);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Asserts.fail("Could not read dump file " + heapFile);
-        } finally {
-            heapDumpFile.delete();
-        }
-    }
 
     private static void attachDumpAndVerify(String heapDumpFileName,
                                             long lingeredAppPid) throws Exception {
@@ -101,7 +71,7 @@ public class TestHeapDumpForInvokeDynamic {
         SAOutput.shouldContain(heapDumpFileName);
         System.out.println(SAOutput.getOutput());
 
-        verifyHeapDump(heapDumpFileName);
+        HprofParser.parseAndVerify(new File(heapDumpFileName));
     }
 
     public static void main (String... args) throws Exception {

@@ -891,9 +891,12 @@ void PhaseIterGVN::verify_step(Node* n) {
 }
 
 void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
+  const Type* newtype = type_or_null(n);
+  if (nn != n || oldtype != newtype) {
+    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 4, n);
+  }
   if (TraceIterativeGVN) {
     uint wlsize = _worklist.size();
-    const Type* newtype = type_or_null(n);
     if (nn != n) {
       // print old node
       tty->print("< ");
@@ -1021,6 +1024,7 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 void PhaseIterGVN::optimize() {
   DEBUG_ONLY(uint num_processed  = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
+  C->print_method(PHASE_BEFORE_ITER_GVN, 3);
   if (StressIGVN) {
     shuffle_worklist();
   }
@@ -1030,12 +1034,14 @@ void PhaseIterGVN::optimize() {
   // update edge info and put uses on worklist.
   while(_worklist.size()) {
     if (C->check_node_count(NodeLimitFudgeFactor * 2, "Out of nodes")) {
+      C->print_method(PHASE_AFTER_ITER_GVN, 3);
       return;
     }
     Node* n  = _worklist.pop();
     if (loop_count >= K * C->live_nodes()) {
       DEBUG_ONLY(dump_infinite_loop_info(n, "PhaseIterGVN::optimize");)
       C->record_method_not_compilable("infinite loop in PhaseIterGVN::optimize");
+      C->print_method(PHASE_AFTER_ITER_GVN, 3);
       return;
     }
     DEBUG_ONLY(trace_PhaseIterGVN_verbose(n, num_processed++);)
@@ -1050,6 +1056,7 @@ void PhaseIterGVN::optimize() {
     loop_count++;
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
+  C->print_method(PHASE_AFTER_ITER_GVN, 3);
 }
 
 #ifdef ASSERT
