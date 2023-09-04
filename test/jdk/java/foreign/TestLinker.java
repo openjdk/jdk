@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,5 +164,10 @@ public class TestLinker extends NativeTestHelper {
                 { "size_t" },
                 { "wchar_t" },
         };
+    }
+
+    @Test(expectedExceptions=UnsupportedOperationException.class)
+    public void testCanonicalLayoutsUnmodifiable() {
+        LINKER.canonicalLayouts().put("asdf", C_INT);
     }
 }
