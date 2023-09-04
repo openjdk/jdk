@@ -49,7 +49,7 @@ import jdk.internal.vm.annotation.ForceInline;
 /**
  * A memory layout describes the contents of a memory segment.
  * <p>
- * There are two leaves in the layout hierarchy, {@linkplain ValueLayout value layouts}, which are used to represent values of given size and kind (see
+ * There are two leaves in the layout hierarchy, {@linkplain ValueLayout value layouts}, which are used to represent values of given size and kind
  * and {@linkplain PaddingLayout padding layouts} which are used, as the name suggests, to represent a portion of a memory
  * segment whose contents should be ignored, and which are primarily present for alignment reasons.
  * Some common value layout constants, such as {@link ValueLayout#JAVA_INT} and {@link ValueLayout#JAVA_FLOAT_UNALIGNED}
@@ -451,7 +451,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      * according to the {@linkplain #byteAlignment() alignment constraint} of the root layout (this layout), or
      * an {@link IllegalArgumentException} will be issued. Note that the alignment constraint of the root layout
      * can be more strict (but not less) than the alignment constraint of the selected value layout.</li>
-     *     <li>The offset of the access operation (computed as above) must fall fall inside the spatial bounds of the
+     *     <li>The offset of the access operation (computed as above) must fall inside the spatial bounds of the
      * accessed memory segment, or an {@link IndexOutOfBoundsException} is thrown. This is the case when {@code O + A <= S},
      * where {@code O} is the accessed offset (computed as above), {@code A} is the size of the selected layout and {@code S}
      * is the size of the accessed memory segment.</li>

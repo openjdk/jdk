@@ -1067,7 +1067,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the first {@code '\0'} terminator character (assuming one is found).
      * @throws IllegalArgumentException if the size of the string is greater than the largest string supported by the platform.
      * @throws IndexOutOfBoundsException     if {@code offset < 0}.
-     * @throws IndexOutOfBoundsException     if {@code offset} > byteSize() - (B + 1)}, where {@code B} is the size,
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + 1)}, where {@code B} is the size,
      * in bytes, of the string encoded using UTF-8 charset {@code str.getBytes(StandardCharsets.UTF_8).length}).
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      * {@linkplain Scope#isAlive() alive}.
@@ -1092,7 +1092,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * the first {@code '\0'} terminator character (assuming one is found).
      * @throws IllegalArgumentException      if the size of the string is greater than the largest string supported by the platform.
      * @throws IndexOutOfBoundsException     if {@code offset < 0}.
-     * @throws IndexOutOfBoundsException     if {@code offset} > byteSize() - (B + N)}, where:
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + N)}, where:
      * <ul>
      *     <li>{@code B} is the size, in bytes, of the string encoded using the provided charset
      *     (e.g. {@code str.getBytes(charset).length});</li>
@@ -1122,7 +1122,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *               the final address of this write operation can be expressed as {@code address() + offset}.
      * @param str the Java string to be written into this segment.
      * @throws IndexOutOfBoundsException     if {@code offset < 0}.
-     * @throws IndexOutOfBoundsException     if {@code offset} > byteSize() - (B + 1}, where {@code B} is the size,
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + 1)}, where {@code B} is the size,
      * in bytes, of the string encoded using UTF-8 charset {@code str.getBytes(StandardCharsets.UTF_8).length}).
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with this segment is not
      * {@linkplain Scope#isAlive() alive}.
@@ -1153,7 +1153,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param str     the Java string to be written into this segment.
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes.
      * @throws IndexOutOfBoundsException     if {@code offset < 0}.
-     * @throws IndexOutOfBoundsException     if {@code offset} > byteSize() - (B + N)}, where:
+     * @throws IndexOutOfBoundsException     if {@code offset > byteSize() - (B + N)}, where:
      * <ul>
      *     <li>{@code B} is the size, in bytes, of the string encoded using the provided charset
      *     (e.g. {@code str.getBytes(charset).length});</li>
