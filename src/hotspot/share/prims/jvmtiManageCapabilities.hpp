@@ -54,6 +54,15 @@ private:
   // lock to access the class data
   static Mutex* _capabilities_lock;
 
+  // lock, unless called from a detached thread (e.g. can be a call from Agent_OnLoad)
+  class CapabilitiesMutexLocker: public ConditionalMutexLocker {
+    public:
+      CapabilitiesMutexLocker() :
+        ConditionalMutexLocker(_capabilities_lock,
+                               Thread::current_or_null() != nullptr,
+                               Mutex::_no_safepoint_check_flag) {}
+  };
+
   // basic intenal operations
   static jvmtiCapabilities *either(const jvmtiCapabilities *a, const jvmtiCapabilities *b, jvmtiCapabilities *result);
   static jvmtiCapabilities *both(const jvmtiCapabilities *a, const jvmtiCapabilities *b, jvmtiCapabilities *result);
@@ -66,9 +75,6 @@ private:
   static jvmtiCapabilities init_onload_capabilities();
   static jvmtiCapabilities init_always_solo_capabilities();
   static jvmtiCapabilities init_onload_solo_capabilities();
-
-  // returns nullptr in onload phase
-  static Mutex* lock();
 
   // get_potential_capabilities without lock
   static void get_potential_capabilities_nolock(const jvmtiCapabilities* current,
