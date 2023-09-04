@@ -1531,6 +1531,7 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(int i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q, r;
         int charPos = index;
 
@@ -1589,6 +1590,7 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
         int charPos = index;
 
