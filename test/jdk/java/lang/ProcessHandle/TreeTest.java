@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,6 +444,11 @@ public class TreeTest extends ProcessUtil {
                 Assert.assertEquals(0, count, "Extra processes in descendants");
             }
 
+            List<ProcessHandle> subprocesses = getChildren(p1Handle);
+            printf(" children:  %s%n",
+                    subprocesses.stream().map(p -> p.pid())
+                    .collect(Collectors.toList()));
+
             Assert.assertEquals(getChildren(p1Handle).size(),
                     factor, "expected direct children");
             count = getDescendants(p1Handle).size();
@@ -451,9 +456,9 @@ public class TreeTest extends ProcessUtil {
             Assert.assertTrue(count >= totalChildren,
                     "expected at least " + totalChildren + ", actual: " + count);
 
-            List<ProcessHandle> subprocesses = getDescendants(p1Handle);
+            List<ProcessHandle> descSubprocesses = getDescendants(p1Handle);
             printf(" descendants:  %s%n",
-                    subprocesses.stream().map(p -> p.pid())
+                    descSubprocesses.stream().map(p -> p.pid())
                     .collect(Collectors.toList()));
 
             p1.getOutputStream().close();  // Close stdin for the controlling p1

@@ -26,6 +26,7 @@
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -59,7 +60,7 @@ G1FreeIdSet::~G1FreeIdSet() {
 }
 
 uint G1FreeIdSet::head_index(uintx head) const {
-  return head & _head_index_mask;
+  return checked_cast<uint>(head & _head_index_mask);
 }
 
 uintx G1FreeIdSet::make_head(uint index, uintx old_head) const {

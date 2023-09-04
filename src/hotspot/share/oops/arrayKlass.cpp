@@ -175,7 +175,6 @@ void ArrayKlass::remove_java_mirror() {
 }
 
 void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
-  assert(loader_data == ClassLoaderData::the_null_class_loader_data(), "array classes belong to null loader");
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   // Klass recreates the component mirror also
 

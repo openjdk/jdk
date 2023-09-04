@@ -59,6 +59,7 @@
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
@@ -967,7 +968,7 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
   }
 
   // We write the value itself plus a name and a one byte type tag per field.
-  return size + field_count * (sizeof(address) + 1);
+  return checked_cast<u4>(size + field_count * (sizeof(address) + 1));
 }
 
 // dumps static fields of the given class
@@ -1080,7 +1081,7 @@ void DumperSupport::dump_instance_class(AbstractDumpWriter* writer, Klass* k) {
   u4 static_size = get_static_fields_size(ik, static_fields_count);
   u2 instance_fields_count = get_instance_fields_count(ik);
   u4 instance_fields_size = instance_fields_count * (sizeof(address) + 1);
-  u4 size = 1 + sizeof(address) + 4 + 6 * sizeof(address) + 4 + 2 + 2 + static_size + 2 + instance_fields_size;
+  u4 size = checked_cast<u4>(1 + sizeof(address) + 4 + 6 * sizeof(address) + 4 + 2 + 2 + static_size + 2 + instance_fields_size);
 
   writer->start_sub_record(HPROF_GC_CLASS_DUMP, size);
 
@@ -1190,7 +1191,7 @@ void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop ar
   // sizeof(u1) + 2 * sizeof(u4) + sizeof(objectID) + sizeof(classID)
   short header_size = 1 + 2 * 4 + 2 * sizeof(address);
   int length = calculate_array_max_length(writer, array, header_size);
-  u4 size = header_size + length * sizeof(address);
+  u4 size = checked_cast<u4>(header_size + length * sizeof(address));
 
   writer->start_sub_record(HPROF_GC_OBJ_ARRAY_DUMP, size);
   writer->write_objectID(array);
@@ -2153,7 +2154,7 @@ void VM_HeapDumper::dump_stack_traces() {
       depth += extra_frames;
 
       // write HPROF_TRACE record for one thread
-      DumperSupport::write_header(writer(), HPROF_TRACE, 3*sizeof(u4) + depth*oopSize);
+      DumperSupport::write_header(writer(), HPROF_TRACE, checked_cast<u4>(3*sizeof(u4) + depth*oopSize));
       int stack_serial_num = _num_threads + STACK_TRACE_ID;
       writer()->write_u4(stack_serial_num);      // stack trace serial number
       writer()->write_u4((u4) _num_threads);     // thread serial number
