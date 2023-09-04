@@ -436,7 +436,7 @@ public abstract class CallArranger {
                         bindings.dup();
                         if (shiftAmount != 0) {
                             bindings.vmLoad(storage, long.class)
-                                    .shiftLeft(-shiftAmount, type);
+                                    .shiftRight(shiftAmount, type);
                         } else {
                             bindings.vmLoad(storage, type);
                         }

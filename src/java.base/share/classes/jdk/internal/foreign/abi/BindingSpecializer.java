@@ -40,6 +40,7 @@ import jdk.internal.foreign.abi.Binding.Cast;
 import jdk.internal.foreign.abi.Binding.Copy;
 import jdk.internal.foreign.abi.Binding.Dup;
 import jdk.internal.foreign.abi.Binding.ShiftLeft;
+import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.UnboxAddress;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
@@ -464,7 +465,8 @@ public class BindingSpecializer {
                 case BoxAddress boxAddress   -> emitBoxAddress(boxAddress);
                 case UnboxAddress unused     -> emitUnboxAddress();
                 case Dup unused              -> emitDupBinding();
-                case ShiftLeft shiftLeft     -> emitShift(shiftLeft);
+                case ShiftLeft shiftLeft     -> emitShiftLeft(shiftLeft);
+                case ShiftRight shiftRight   -> emitShiftRight(shiftRight);
                 case Cast cast               -> emitCast(cast);
             }
         }
@@ -727,25 +729,23 @@ public class BindingSpecializer {
         pushType(dupType);
     }
 
-    private void emitShift(ShiftLeft shiftLeft) {
-        int shiftAmount = shiftLeft.shiftAmount();
-        Class<?> type = shiftLeft.type();
-        if (shiftAmount > 0) {
-            if (type != long.class) {
-                cb.i2l();
-                typeStack.pop();
-                typeStack.push(long.class);
-            }
-            cb.constantInstruction(shiftAmount * Byte.SIZE);
-            cb.lshl();
-        } else {
-            cb.constantInstruction(-shiftAmount * Byte.SIZE);
-            cb.lushr();
-            if (type != long.class) {
-                cb.l2i();
-                typeStack.pop();
-                typeStack.push(int.class);
-            }
+    private void emitShiftLeft(ShiftLeft shiftLeft) {
+        if (shiftLeft.type() != long.class) {
+            cb.i2l();
+            popType(int.class);
+            pushType(long.class);
+        }
+        cb.constantInstruction(shiftLeft.shiftAmount() * Byte.SIZE);
+        cb.lshl();
+    }
+
+    private void emitShiftRight(ShiftRight shiftRight) {
+        cb.constantInstruction(shiftRight.shiftAmount() * Byte.SIZE);
+        cb.lushr();
+        if (shiftRight.type() != long.class) {
+            cb.l2i();
+            popType(long.class);
+            pushType(int.class);
         }
     }
 
