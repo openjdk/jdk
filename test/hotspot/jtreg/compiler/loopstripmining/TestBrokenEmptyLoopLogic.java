@@ -43,7 +43,7 @@ public class TestBrokenEmptyLoopLogic {
             for (int j = 5; j > 1; j -= 2) {
                 i12 = 1;
                 do {
-                }  while (++i12 < 3);
+                } while (++i12 < 3);
             }
             for (int j = i; j < 5; ++j) {
                 i8 += i12;
