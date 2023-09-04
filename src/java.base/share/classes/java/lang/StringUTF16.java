@@ -1522,7 +1522,7 @@ final class StringUTF16 {
     // been done by the caller.
 
     /**
-     * This is a variant of {@link Integer#getChars(int, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1545,7 +1545,7 @@ final class StringUTF16 {
             r = (q * 100) - i;
             i = q;
 
-            int packed = (int) Integer.PACKED_DIGITS[r];
+            int packed = (int) StringLatin1.PACKED_DIGITS[r];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
@@ -1559,7 +1559,7 @@ final class StringUTF16 {
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
-            int packed = (int) Integer.PACKED_DIGITS[-i];
+            int packed = (int) StringLatin1.PACKED_DIGITS[-i];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
@@ -1580,7 +1580,7 @@ final class StringUTF16 {
     }
 
     /**
-     * This is a variant of {@link Long#getChars(long, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1601,7 +1601,7 @@ final class StringUTF16 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
 
-            int packed = (int) Integer.PACKED_DIGITS[(int)((q * 100) - i)];
+            int packed = (int) StringLatin1.PACKED_DIGITS[(int)((q * 100) - i)];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
@@ -1620,7 +1620,7 @@ final class StringUTF16 {
         while (i2 <= -100) {
             q2 = i2 / 100;
 
-            int packed = (int) Integer.PACKED_DIGITS[(q2 * 100) - i2];
+            int packed = (int) StringLatin1.PACKED_DIGITS[(q2 * 100) - i2];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
@@ -1637,7 +1637,7 @@ final class StringUTF16 {
         if (i2 < -9) {
             charPos -= 2;
 
-            int packed = (int) Integer.PACKED_DIGITS[-i2];
+            int packed = (int) StringLatin1.PACKED_DIGITS[-i2];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";

@@ -250,7 +250,7 @@ final class StringConcatHelper {
      */
     private static long prepend(long indexCoder, byte[] buf, int value) {
         if (indexCoder < UTF16) {
-            return Integer.getChars(value, (int)indexCoder, buf);
+            return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
             return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
         }
@@ -285,7 +285,7 @@ final class StringConcatHelper {
      */
     private static long prepend(long indexCoder, byte[] buf, long value) {
         if (indexCoder < UTF16) {
-            return Long.getChars(value, (int)indexCoder, buf);
+            return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
             return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
         }

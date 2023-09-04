@@ -34,7 +34,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -74,8 +73,6 @@ import static java.lang.String.UTF16;
 @jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     /**
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
@@ -462,7 +459,7 @@ public final class Long extends Number
         int size = stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
-            getChars(i, size, buf);
+            StringLatin1.getChars(i, size, buf);
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[size * 2];
@@ -487,79 +484,6 @@ public final class Long extends Number
      */
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
-    }
-
-    /**
-     * Places characters representing the long i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Long.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Long.MIN_VALUE that overflows
-     * long.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    static int getChars(long i, int index, byte[] buf) {
-        long q;
-        int charPos = index;
-
-        boolean negative = (i < 0);
-        if (!negative) {
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
-            q = i / 100;
-            charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.PACKED_DIGITS[(int)((q * 100) - i)],
-                    false);
-            i = q;
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int)i;
-        while (i2 <= -100) {
-            q2 = i2 / 100;
-            charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.PACKED_DIGITS[(q2 * 100) - i2],
-                    false);
-            i2 = q2;
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i2 < -9) {
-            charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.PACKED_DIGITS[-i2],
-                    false);
-        } else {
-            buf[--charPos] = (byte)('0' - i2);
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
     }
 
     /**
