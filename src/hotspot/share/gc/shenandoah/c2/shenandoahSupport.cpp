@@ -734,7 +734,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
           for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
             Node* u = n->fast_out(j);
             if (u->is_CFG()) {
-              if (!wq.member(u) && !u->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
+              if (!wq.member(u) && !u->as_Proj()->is_uncommon_trap_proj()) {
                 return NodeSentinel;
               }
             }
@@ -743,7 +743,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
       }
     } else  if (c->is_Proj()) {
       if (c->is_IfProj()) {
-        if (c->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) != nullptr) {
+        if (c->as_Proj()->is_uncommon_trap_if_pattern() != nullptr) {
           // continue;
         } else {
           if (!allow_one_proj) {
@@ -1138,7 +1138,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
         if (u_t->meet(TypePtr::NULL_PTR) != u_t &&
             u->in(0)->Opcode() == Op_IfTrue &&
-            u->in(0)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
+            u->in(0)->as_Proj()->is_uncommon_trap_if_pattern() &&
             u->in(0)->in(0)->is_If() &&
             u->in(0)->in(0)->in(1)->Opcode() == Op_Bool &&
             u->in(0)->in(0)->in(1)->as_Bool()->_test._test == BoolTest::ne &&

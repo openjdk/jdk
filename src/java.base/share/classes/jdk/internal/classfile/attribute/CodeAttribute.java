@@ -35,6 +35,10 @@ import jdk.internal.classfile.impl.BoundAttribute;
  * non-abstract methods and contains the bytecode of the method body.  Delivered
  * as a {@link jdk.internal.classfile.MethodElement} when traversing the elements of a
  * {@link jdk.internal.classfile.MethodModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeModel
         permits BoundAttribute.BoundCodeAttribute {
