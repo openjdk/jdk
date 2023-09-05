@@ -65,7 +65,7 @@ final class HexDigits implements Digits {
     }
 
     /**
-     * Return a big-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
+     * Return a little-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
      * {@code b0} is the most significant byte and {@code b1} is the least significant byte.
      * The integer is passed byte-wise to allow reordering of execution.
      */
@@ -74,7 +74,7 @@ final class HexDigits implements Digits {
     }
 
     /**
-     * Return a big-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
+     * Return a little-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
      * {@code b0} is the most significant byte and {@code b3} is the least significant byte.
      * The integer is passed byte-wise to allow reordering of execution.
      */
