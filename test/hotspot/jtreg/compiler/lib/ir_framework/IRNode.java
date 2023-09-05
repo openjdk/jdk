@@ -2119,6 +2119,16 @@ public class IRNode {
         machOnlyNameRegex(X86_LOCK_XADDL, "xaddL");
     }
 
+    public static final String X86_TESTI_REG = PREFIX + "X86_TESTI_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_TESTI_REG, "testI_reg");
+    }
+
+    public static final String X86_TESTL_REG = PREFIX + "X86_TESTL_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
