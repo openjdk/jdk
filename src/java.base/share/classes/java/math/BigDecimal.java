@@ -315,8 +315,8 @@ import java.util.Objects;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
-    static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
-    static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).

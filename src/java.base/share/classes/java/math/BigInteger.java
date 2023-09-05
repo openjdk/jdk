@@ -45,6 +45,8 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.ThreadLocalRandom;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 import jdk.internal.vm.annotation.ForceInline;
@@ -137,6 +139,8 @@ import jdk.internal.vm.annotation.Stable;
  */
 
 public class BigInteger extends Number implements Comparable<BigInteger> {
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
     /**
      * The signum of this BigInteger: -1 for negative, 0 for zero, or
      * 1 for positive.  Note that the BigInteger zero <em>must</em> have
@@ -4101,7 +4105,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD && radix == 10) {
             byte[] buf = smallToString(signum < 0, abs);
             try {
-                return BigDecimal.jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException x) {
                 throw new Error(x);
             }
