@@ -4082,7 +4082,7 @@ public class BasicTreeUI extends TreeUI
                 }
 
                 // Preferably checkForClickInExpandControl could take
-                // the Event to do this it self!
+                // the Event to do this itself!
                 if(SwingUtilities.isLeftMouseButton(e)) {
                     checkForClickInExpandControl(pressedPath, e.getX(), e.getY());
                 }
