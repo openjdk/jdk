@@ -508,6 +508,10 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
+  if (n->is_ParsePredicate()) {
+    C->add_parse_predicate(n->as_ParsePredicate());
+  }
+
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
@@ -608,6 +612,9 @@ void Node::destruct(PhaseValues* phase) {
   }
   if (Opcode() == Op_Opaque4) {
     compile->remove_template_assertion_predicate_opaq(this);
+  }
+  if (is_ParsePredicate()) {
+    compile->remove_parse_predicate(as_ParsePredicate());
   }
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);

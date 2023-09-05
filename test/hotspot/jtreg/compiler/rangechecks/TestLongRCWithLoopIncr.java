@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,26 @@
  * questions.
  */
 
-import jdk.test.lib.dcmd.CommandExecutor;
-
-/*
+/**
  * @test
- * @summary Test of diagnostic command GC.heap_dump -all=true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/timeout=240 HeapDumpAllTest
+ * @bug 8314580
+ * @summary PhaseIdealLoop::transform_long_range_checks fails with assert "was tested before"
+ * @run main/othervm -XX:-BackgroundCompilation TestLongRCWithLoopIncr
+ *
  */
-public class HeapDumpAllTest extends HeapDumpTest {
-    public HeapDumpAllTest() {
-        super();
-        heapDumpArgs = "-all=true";
+
+import java.util.Objects;
+
+public class TestLongRCWithLoopIncr {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(1001);
+        }
     }
 
-    @Override
-    public void run(CommandExecutor executor, boolean overwrite) throws Exception {
-        // Trigger gc by hand, so the created heap dump isnt't too large and
-        // takes too long to parse.
-        System.gc();
-        super.run(executor, overwrite);
+    private static void test(long length) {
+        for (long i = 0; i < 1000; i++) {
+            Objects.checkIndex(i + 1, length);
+        }
     }
-
-    /* See HeapDumpTest for test cases */
 }

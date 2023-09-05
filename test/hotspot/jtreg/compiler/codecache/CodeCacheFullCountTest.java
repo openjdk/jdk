@@ -33,6 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @test
  * @bug 8276036 8277213 8277441
  * @summary test for the value of full_count in the message of insufficient codecache
+ * @requires vm.compMode != "Xint"
  * @library /test/lib
  */
 public class CodeCacheFullCountTest {
@@ -54,7 +55,7 @@ public class CodeCacheFullCountTest {
     }
 
     public static void runTest() throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJvm(
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         // Ignore adapter creation failures

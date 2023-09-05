@@ -3918,7 +3918,7 @@ public class JavacParser implements Parser {
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         boolean isUnnamedClass = false;
-        while (token.kind != EOF) {
+        OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(firstTypeDecl, false, false, false);
@@ -3933,6 +3933,8 @@ public class JavacParser implements Parser {
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
                 semiList.append(toP(F.at(token.pos).Skip()));
                 nextToken();
+                if (token.kind == EOF)
+                    break OUTER;
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty()) {
@@ -3999,7 +4001,7 @@ public class JavacParser implements Parser {
                     checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
                     isUnnamedClass = true;
-                } else if (token.kind != EOF) {
+                } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
                         def = statement.expr;
