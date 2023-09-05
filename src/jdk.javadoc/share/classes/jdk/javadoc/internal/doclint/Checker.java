@@ -1150,9 +1150,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         if (env.customTags != null && !env.customTags.contains(tagName)) {
             var suggestions = DocLint.suggestSimilar(env.customTags, tagName);
             if (suggestions.isEmpty()) {
-                env.messages.error(SYNTAX, tree, "dc.tag.unknown");
+                env.messages.error(SYNTAX, tree, "dc.tag.unknown.javadoc");
             } else {
-                env.messages.error(SYNTAX, tree, "dc.tag.unknown.with.hint",
+                env.messages.error(SYNTAX, tree, "dc.tag.unknown.javadoc.with.hint",
                         String.join(", ", suggestions)); // TODO: revisit after 8041488
             }
         }
