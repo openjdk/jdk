@@ -1556,12 +1556,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
   if (cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
+      !is_cloop_increment(cmp1) &&
       phase->type(cmp1->in(2)) == TypeInt::MIN) {
     if (cmp2_op == Op_ConI) {
       Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddI &&
+               !is_cloop_increment(cmp2) &&
                phase->type(cmp2->in(2)) == TypeInt::MIN) {
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
@@ -1572,12 +1574,14 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
       cmp1_op == Op_AddL &&
+      !is_cloop_increment(cmp1) &&
       phase->type(cmp1->in(2)) == TypeLong::MIN) {
     if (cmp2_op == Op_ConL) {
       Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddL &&
+               !is_cloop_increment(cmp2) &&
                phase->type(cmp2->in(2)) == TypeLong::MIN) {
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
