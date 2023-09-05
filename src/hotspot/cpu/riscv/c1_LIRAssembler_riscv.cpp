@@ -2129,8 +2129,8 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
     data_check(op, &md, &data);
   }
   Label  done;
-  Label *success_target = &done;
-  Label *failure_target = stub->entry();
+  Label* success_target = &done;
+  Label* failure_target = stub->entry();
 
   if (should_profile) {
     profile_object(md, data, value, k_RInfo, klass_RInfo, &done);
