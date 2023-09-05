@@ -56,7 +56,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     .format(List.of("Foo", "Bar", "Baz"))
  * }
  * This will produce the concatenated list string, "Foo, Bar, and Baz" as seen in
- * the following table:
+ * the following:
  * <table class="striped">
  * <caption style="display:none">Formatting examples</caption>
  * <thead>
