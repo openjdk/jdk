@@ -122,6 +122,7 @@ public class URLEncoder {
          * as is Netscape.
          *
          */
+
         var bitSet = new BitSet(128);
         bitSet.set('a', 'z' + 1);
         bitSet.set('A', 'Z' + 1);
@@ -134,6 +135,7 @@ public class URLEncoder {
         bitSet.set('*');
 
         DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
+
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
