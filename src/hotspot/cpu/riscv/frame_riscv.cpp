@@ -337,7 +337,9 @@ void frame::interpreter_frame_set_last_sp(intptr_t* last_sp) {
 }
 
 void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
-  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized extended_sp
+  ptr_at_put(interpreter_frame_extended_sp_offset, (sp - fp()));
 }
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {

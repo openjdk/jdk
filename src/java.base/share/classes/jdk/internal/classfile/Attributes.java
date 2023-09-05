@@ -461,7 +461,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleResolution} attribute */
     public static final AttributeMapper<ModuleResolutionAttribute>
-            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, true, Classfile.JAVA_9_VERSION) {
+            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleResolutionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleResolutionAttribute(cf, this, p);
@@ -475,7 +475,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleTarget} attribute */
     public static final AttributeMapper<ModuleTargetAttribute>
-            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, true, Classfile.JAVA_9_VERSION) {
+            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleTargetAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleTargetAttribute(cf, this, p);
