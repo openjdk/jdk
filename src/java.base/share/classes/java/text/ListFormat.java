@@ -80,8 +80,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     <td>Foo Bar Baz</td>
  * </tbody>
  * </table>
- * Note that the above chart represents the examples in the CLDR definition,
- * and there could be different patterns from other locale providers.
+ * Note: these examples are from CLDR, there could be different patterns from other locale providers.
  * <p>
  * Alternatively, Locale, Type, and/or Style independent instances
  * can be created with {@link #getInstance(String[])}. The String array to the
