@@ -31,9 +31,7 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
-
-import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -78,8 +76,6 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -472,40 +468,34 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         long lsb = leastSigBits;
         long msb = mostSigBits;
         byte[] buf = new byte[36];
-        UNSAFE.putLongUnaligned(
+        ByteArrayLittleEndian.setLong(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET,
-                HexDigits.packDigits((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)),
-                true);
+                0,
+                HexDigits.packDigits((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)));
         buf[8] = '-';
-        UNSAFE.putIntUnaligned(
+        ByteArrayLittleEndian.setInt(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET + 9,
-                HexDigits.packDigits(((int) msb) >> 24, ((int) msb) >> 16),
-                true);
+                9,
+                HexDigits.packDigits(((int) msb) >> 24, ((int) msb) >> 16));
         buf[13] = '-';
-        UNSAFE.putIntUnaligned(
+        ByteArrayLittleEndian.setInt(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET + 14,
-                HexDigits.packDigits(((int) msb) >> 8, (int) msb),
-                true);
+                14,
+                HexDigits.packDigits(((int) msb) >> 8, (int) msb));
         buf[18] = '-';
-        UNSAFE.putIntUnaligned(
+        ByteArrayLittleEndian.setInt(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET + 19,
-                HexDigits.packDigits((int) (lsb >> 56), (int) (lsb >> 48)),
-                true);
+                19,
+                HexDigits.packDigits((int) (lsb >> 56), (int) (lsb >> 48)));
         buf[23] = '-';
-        UNSAFE.putLongUnaligned(
+        ByteArrayLittleEndian.setLong(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET + 24,
-                HexDigits.packDigits(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16),
-                true);
-        UNSAFE.putIntUnaligned(
+                24,
+                HexDigits.packDigits(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16));
+        ByteArrayLittleEndian.setInt(
                 buf,
-                ARRAY_BYTE_BASE_OFFSET + 32,
-                HexDigits.packDigits(((int) lsb) >> 8, (int) lsb),
-                true);
+                32,
+                HexDigits.packDigits(((int) lsb) >> 8, (int) lsb));
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
