@@ -37,8 +37,8 @@ import java.lang.reflect.Modifier;
  */
 abstract class AbstractTest {
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    protected static final int TEST_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10000"));
-    protected static final int WAIT_FOR_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10000"));
+    protected static final int TEST_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10")) * 1000;
+    protected static final int WAIT_FOR_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10")) * 1000;
     protected static final boolean VERIFY_OOPS = (Boolean)WHITE_BOX.getVMFlag("VerifyOops");
 
     protected final int warmupIterations;
@@ -149,10 +149,10 @@ abstract class AbstractTest {
                 break;
             }
             elapsed = System.currentTimeMillis() - started;
-        } while (elapsed < TEST_COMPILATION_TIMEOUT);
-        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT,
+        } while (elapsed < TEST_COMPILATION_TIMEOUT_MS);
+        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT_MS,
                       "Could not compile " + testMethod + " at level " + test.getCompLevel() + " after "
-                      + TEST_COMPILATION_TIMEOUT/1000 + "s. Last compilation level: " + lastCompilationLevel);
+                      + TEST_COMPILATION_TIMEOUT_MS/1000 + "s. Last compilation level: " + lastCompilationLevel);
         checkCompilationLevel(test);
     }
 
@@ -194,9 +194,9 @@ abstract class AbstractTest {
                 // Don't wait for compilation if -Xcomp is enabled or if we are randomly excluding methods from compilation.
                 return;
             }
-        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT);
+        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT_MS);
         throw new TestRunException(testMethod + " not compiled after waiting for "
-                                   + WAIT_FOR_COMPILATION_TIMEOUT/1000 + " s");
+                                   + WAIT_FOR_COMPILATION_TIMEOUT_MS/1000 + " s");
     }
 
     /**

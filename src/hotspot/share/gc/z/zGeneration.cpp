@@ -398,13 +398,19 @@ const char* ZGeneration::phase_to_string() const {
 
 class VM_ZOperation : public VM_Operation {
 private:
-  const uint _gc_id;
-  bool       _success;
+  const uint           _gc_id;
+  const GCCause::Cause _gc_cause;
+  bool                 _success;
 
 public:
-  VM_ZOperation()
+  VM_ZOperation(GCCause::Cause gc_cause)
     : _gc_id(GCId::current()),
+      _gc_cause(gc_cause),
       _success(false) {}
+
+  virtual const char* cause() const {
+    return GCCause::to_string(_gc_cause);
+  }
 
   virtual bool block_jni_critical() const {
     // Blocking JNI critical regions is needed in operations where we change
@@ -558,6 +564,9 @@ void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
 
 class VM_ZMarkStartYoungAndOld : public VM_ZOperation {
 public:
+  VM_ZMarkStartYoungAndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoungAndOld;
   }
@@ -578,7 +587,22 @@ public:
   }
 };
 
-class VM_ZMarkStartYoung : public VM_ZOperation {
+class VM_ZYoungOperation : public VM_ZOperation {
+private:
+  static ZDriver* driver() {
+    if (ZGeneration::young()->type() == ZYoungType::minor) {
+      return ZDriver::minor();
+    } else {
+      return ZDriver::major();
+    }
+  }
+
+public:
+  VM_ZYoungOperation()
+    : VM_ZOperation(driver()->gc_cause()) {}
+};
+
+class VM_ZMarkStartYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoung;
@@ -626,7 +650,7 @@ void ZGenerationYoung::concurrent_mark() {
   mark_follow();
 }
 
-class VM_ZMarkEndYoung : public VM_ZOperation {
+class VM_ZMarkEndYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndYoung;
@@ -785,7 +809,8 @@ void ZGenerationYoung::concurrent_select_relocation_set() {
   select_relocation_set(_id, promote_all);
 }
 
-class VM_ZRelocateStartYoung : public VM_ZOperation {
+class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
+
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartYoung;
@@ -1047,6 +1072,9 @@ void ZGenerationOld::concurrent_mark() {
 
 class VM_ZMarkEndOld : public VM_ZOperation {
 public:
+  VM_ZMarkEndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndOld;
   }
@@ -1125,6 +1153,9 @@ void ZGenerationOld::concurrent_select_relocation_set() {
 
 class VM_ZRelocateStartOld : public VM_ZOperation {
 public:
+  VM_ZRelocateStartOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartOld;
   }

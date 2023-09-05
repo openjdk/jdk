@@ -830,10 +830,6 @@ void DefNewGeneration::collect(bool   full,
 
     adjust_desired_tenuring_threshold();
 
-    // A successful scavenge should restart the GC time limit count which is
-    // for full GC's.
-    AdaptiveSizePolicy* size_policy = heap->size_policy();
-    size_policy->reset_gc_overhead_limit_count();
     assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
@@ -985,27 +981,18 @@ bool DefNewGeneration::no_allocs_since_save_marks() {
   return to()->saved_mark_at_top();
 }
 
-void DefNewGeneration::contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                                         size_t max_alloc_words) {
-  if (requestor == this || _promotion_failed) {
+void DefNewGeneration::contribute_scratch(void*& scratch, size_t& num_words) {
+  if (_promotion_failed) {
     return;
   }
-  assert(GenCollectedHeap::heap()->is_old_gen(requestor), "We should not call our own generation");
 
-  /* $$$ Assert this?  "trace" is a "MarkSweep" function so that's not appropriate.
-  if (to_space->top() > to_space->bottom()) {
-    trace("to_space not empty when contribute_scratch called");
-  }
-  */
+  const size_t MinFreeScratchWords = 100;
 
   ContiguousSpace* to_space = to();
-  assert(to_space->end() >= to_space->top(), "pointers out of order");
-  size_t free_words = pointer_delta(to_space->end(), to_space->top());
+  const size_t free_words = pointer_delta(to_space->end(), to_space->top());
   if (free_words >= MinFreeScratchWords) {
-    ScratchBlock* sb = (ScratchBlock*)to_space->top();
-    sb->num_words = free_words;
-    sb->next = list;
-    list = sb;
+    scratch = to_space->top();
+    num_words = free_words;
   }
 }
 

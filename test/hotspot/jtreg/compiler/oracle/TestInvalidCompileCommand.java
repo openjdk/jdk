@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,7 +91,7 @@ public class TestInvalidCompileCommand {
         }
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
-        out.shouldHaveExitValue(0);
+        out.shouldHaveExitValue(1);
     }
 
     public static void main(String[] args) throws Exception {

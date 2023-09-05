@@ -307,7 +307,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
 
   void load_resolved_indy_entry(Register cache, Register index);
-
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_X86_INTERP_MASM_X86_HPP

@@ -159,7 +159,7 @@ class JfrViewFlightRecordingDCmd : public JfrDCmd {
     return "Medium";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {
@@ -184,7 +184,7 @@ class JfrQueryFlightRecordingDCmd : public JfrDCmd {
     return "Medium";
   }
   static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", nullptr};
     return p;
   }
   virtual const char* javaClass() const {

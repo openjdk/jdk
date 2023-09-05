@@ -32,11 +32,19 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test TestZRelocationSetEvent
- * @requires vm.hasJFR & vm.gc.Z
+ * @test id=ZSinglegen
+ * @requires vm.hasJFR & vm.gc.ZSinglegen
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetEvent
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetEvent
+ */
+
+/**
+ * @test id=ZGenerational
+ * @requires vm.hasJFR & vm.gc.ZGenerational
+ * @key jfr
+ * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZRelocationSetEvent
  */
 
 public class TestZRelocationSetEvent {

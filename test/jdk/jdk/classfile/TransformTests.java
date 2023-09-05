@@ -95,34 +95,37 @@ class TransformTests {
     void testSingleTransform() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar))), "bar");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo))), "foo");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar))), "bar");
     }
 
     @Test
     void testSeq2() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
         ClassTransform transform = transformCode(foo2bar.andThen(bar2baz));
-        assertEquals(invoke(cm.transform(transform)), "baz");
+        assertEquals(invoke(cc.transform(cm, transform)), "baz");
     }
 
     @Test
     void testSeqN() throws Exception {
 
         byte[] bytes = Files.readAllBytes(testClassPath);
-        ClassModel cm = Classfile.parse(bytes);
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(bytes);
 
         assertEquals(invoke(bytes), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
-        assertEquals(invoke(cm.transform(transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
-        assertEquals(invoke(cm.transform(transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2foo)))), "foo");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2bar.andThen(bar2baz).andThen(baz2quux)))), "quux");
+        assertEquals(invoke(cc.transform(cm, transformCode(foo2foo.andThen(foo2bar).andThen(bar2baz)))), "baz");
     }
 
     public static class TestClass {

@@ -21,21 +21,15 @@
  * questions.
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.InnerClasses_attribute;
-import com.sun.tools.classfile.InnerClasses_attribute.Info;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.lang.reflect.AccessFlag;
 
 /**
  * Base class for tests of inner classes attribute.
@@ -199,13 +193,12 @@ public abstract class InnerClassesTestBase extends TestResult {
         printf("Testing :\n%s\n", test.getSource());
         try {
             Map<String, Set<String>> class2Flags = test.getFlags();
-            ClassFile cf = readClassFile(compile(getCompileOptions(), test.getSource())
+            ClassModel cm = readClassFile(compile(getCompileOptions(), test.getSource())
                     .getClasses().get(classToTest));
-            InnerClasses_attribute innerClasses = (InnerClasses_attribute)
-                    cf.getAttribute(Attribute.InnerClasses);
+            InnerClassesAttribute innerClasses = cm.findAttribute(Attributes.INNER_CLASSES).orElse(null);
             int count = 0;
-            for (Attribute a : cf.attributes.attrs) {
-                if (a instanceof InnerClasses_attribute) {
+            for (Attribute<?> a : cm.attributes()) {
+                if (a instanceof InnerClassesAttribute) {
                     ++count;
                 }
             }
@@ -213,21 +206,21 @@ public abstract class InnerClassesTestBase extends TestResult {
             if (!checkNotNull(innerClasses, "InnerClasses attribute should not be null")) {
                 return;
             }
-            checkEquals(cf.constant_pool.
-                    getUTF8Info(innerClasses.attribute_name_index).value, "InnerClasses",
+            checkEquals(innerClasses.attributeName(), "InnerClasses",
                     "innerClasses.attribute_name_index");
             // Inner Classes attribute consists of length (2 bytes)
             // and 8 bytes for each inner class's entry.
-            checkEquals(innerClasses.attribute_length,
+            checkEquals(((BoundAttribute<?>)innerClasses).payloadLen(),
                     2 + 8 * class2Flags.size(), "innerClasses.attribute_length");
-            checkEquals(innerClasses.number_of_classes,
+            checkEquals(innerClasses.classes().size(),
                     class2Flags.size(), "innerClasses.number_of_classes");
             Set<String> visitedClasses = new HashSet<>();
-            for (Info e : innerClasses.classes) {
-                String baseName = cf.constant_pool.getClassInfo(
-                        e.inner_class_info_index).getBaseName();
-                if (cf.major_version >= 51 && e.inner_name_index == 0) {
-                    checkEquals(e.outer_class_info_index, 0,
+            for (InnerClassInfo e : innerClasses.classes()) {
+                String baseName = e.innerClass().asInternalName();
+                if (cm.majorVersion() >= 51 && e.innerClass().index() == 0) {
+                    ClassEntry out = e.outerClass().orElse(null);
+                    // The outer_class_info_index of sun.tools.classfile will return 0 if it is not a member of a class or interface.
+                    checkEquals(out == null? 0: out.index(), 0,
                             "outer_class_info_index "
                                     + "in case of inner_name_index is zero : "
                                     + baseName);
@@ -237,17 +230,21 @@ public abstract class InnerClassesTestBase extends TestResult {
                         className);
                 checkTrue(visitedClasses.add(className),
                         "there are no duplicates in attribute : " + className);
-                checkEquals(e.inner_class_access_flags.getInnerClassFlags(),
-                        class2Flags.get(className),
+                //Convert the Set<string> to Set<AccessFlag>
+                Set<AccessFlag> accFlags = class2Flags.get(className).stream()
+                        .map(str -> AccessFlag.valueOf(str.substring(str.indexOf("_") + 1)))
+                        .collect(Collectors.toSet());
+                checkEquals(e.flags(),
+                        accFlags,
                         "inner_class_access_flags " + className);
                 if (!Arrays.asList(skipClasses).contains(className)) {
+                    checkEquals(
+                            e.innerClass().asInternalName(),
+                            classToTest + "$" + className,
+                            "inner_class_info_index of " + className);
+                    if (e.outerClass().orElse(null) != null && e.outerClass().get().index() > 0) {
                         checkEquals(
-                                cf.constant_pool.getClassInfo(e.inner_class_info_index).getBaseName(),
-                                classToTest + "$" + className,
-                                "inner_class_info_index of " + className);
-                    if (e.outer_class_info_index > 0) {
-                        checkEquals(
-                                cf.constant_pool.getClassInfo(e.outer_class_info_index).getName(),
+                                e.outerClass().get().name().stringValue(),
                                 classToTest,
                                 "outer_class_info_index of " + className);
                     }

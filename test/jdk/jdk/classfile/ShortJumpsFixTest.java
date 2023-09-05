@@ -33,6 +33,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.LinkedList;
 import java.util.List;
+import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.Instruction;
@@ -99,109 +100,114 @@ class ShortJumpsFixTest {
         };
     }
 
+    static final Classfile
+            CC_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FIX_SHORT_JUMPS),
+            CC_Not_Fixed_Jumps = Classfile.of(Classfile.ShortJumpsOption.FAIL_ON_SHORT_JUMPS),
+            CC_No_Stack_No_Patch = Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS,
+                                                        Classfile.DeadCodeOption.KEEP_DEAD_CODE);
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFixFwdJumpsDirectGen(Sample sample) throws Exception {
-        assertFixed(sample, generateFwd(sample, true, Classfile.Option.fixShortJumps(true)));
+        assertFixed(sample,
+                    generateFwd(CC_Fixed_Jumps, sample, true));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFixBackJumpsDirectGen(Sample sample) throws Exception {
-        assertFixed(sample, generateBack(sample, true, Classfile.Option.fixShortJumps(true)));
+        assertFixed(sample,
+                    generateBack(CC_Fixed_Jumps, sample, true));
     }
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () -> generateFwd(sample, true, Classfile.Option.fixShortJumps(false)));
+        assertThrows(IllegalArgumentException.class, () ->
+                     generateFwd(CC_Not_Fixed_Jumps, sample, true));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () -> generateBack(sample, true, Classfile.Option.fixShortJumps(false)));
+        assertThrows(IllegalArgumentException.class, () ->
+                     generateBack(CC_Not_Fixed_Jumps, sample, true));
     }
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFixFwdJumpsTransform(Sample sample) throws Exception {
-        assertFixed(sample, Classfile.parse(
-                generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(true))
-                .transform(overflow()));
+        assertFixed(sample,
+                    CC_Fixed_Jumps.transform(
+                            generateFwd(CC_No_Stack_No_Patch, sample, false),
+                            overflow()));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFixBackJumpsTransform(Sample sample) throws Exception {
-        assertFixed(sample, Classfile.parse(
-                generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(true))
-                .transform(overflow()));
+        assertFixed(sample,
+                    CC_Fixed_Jumps.transform(
+                            generateBack(CC_No_Stack_No_Patch, sample, false),
+                            overflow()));
     }
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
-        Classfile.parse(
-                generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(false))
-                .transform(overflow()));
+        assertThrows(IllegalArgumentException.class, () ->
+                     CC_Not_Fixed_Jumps.transform(
+                            generateFwd(CC_No_Stack_No_Patch, sample, false),
+                            overflow()));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
-        Classfile.parse(
-                generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(false))
-                .transform(overflow()));
+        assertThrows(IllegalArgumentException.class, () ->
+                     CC_Not_Fixed_Jumps.transform(
+                            generateBack(CC_No_Stack_No_Patch, sample, false),
+                            overflow()));
     }
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFixFwdJumpsChainedTransform(Sample sample) throws Exception {
-        assertFixed(sample, Classfile.parse(
-                generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(true))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
+        assertFixed(sample,
+                    CC_Fixed_Jumps.transform(
+                            generateFwd(CC_No_Stack_No_Patch, sample, false),
+                            ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFixBackJumpsChainedTransform(Sample sample) throws Exception {
-        assertFixed(sample, Classfile.parse(
-                generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(true))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
+        assertFixed(sample,
+                    CC_Fixed_Jumps.transform(
+                            generateBack(CC_No_Stack_No_Patch, sample, false),
+                            ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
-        Classfile.parse(
-                generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(false))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
+        assertThrows(IllegalArgumentException.class, () ->
+                     CC_Not_Fixed_Jumps.transform(
+                            generateFwd(CC_No_Stack_No_Patch, sample, false),
+                            ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
-        Classfile.parse(
-                generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
-                Classfile.Option.fixShortJumps(false))
-                .transform(ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
+        assertThrows(IllegalArgumentException.class, () ->
+                     CC_Not_Fixed_Jumps.transform(
+                            generateBack(CC_No_Stack_No_Patch, sample, false),
+                            ClassTransform.ACCEPT_ALL.andThen(overflow()))); //involve BufferedCodeBuilder here
     }
 
-    private static byte[] generateFwd(Sample sample, boolean overflow, Classfile.Option... options) {
-        return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
+    private static ClassModel generateFwd(Classfile cc, Sample sample, boolean overflow) {
+        return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
                                     for (int i = 0; i < sample.expected.length - 4; i++) //cherry-pick XCONST_ instructions from expected output
@@ -212,11 +218,11 @@ class ShortJumpsFixTest {
                                         cob.nopInstruction();
                                     cob.labelBinding(target);
                                     cob.return_();
-                                })));
+                                }))));
     }
 
-    private static byte[] generateBack(Sample sample, boolean overflow, Classfile.Option... options) {
-        return Classfile.build(ClassDesc.of("WhateverClass"), List.of(options),
+    private static ClassModel generateBack(Classfile cc, Sample sample, boolean overflow) {
+        return cc.parse(cc.build(ClassDesc.of("WhateverClass"),
                         cb -> cb.withMethod("whateverMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0,
                                 mb -> mb.withCode(cob -> {
                                     var target = cob.newLabel();
@@ -231,7 +237,7 @@ class ShortJumpsFixTest {
                                         cob.with(ConstantInstruction.ofIntrinsic(sample.expected[i]));
                                     cob.branchInstruction(sample.jumpCode, target);
                                     cob.return_();
-                                })));
+                                }))));
     }
 
     private static ClassTransform overflow() {
@@ -246,8 +252,12 @@ class ShortJumpsFixTest {
     }
 
     private static void assertFixed(Sample sample, byte[] classFile) {
+        assertFixed(sample, Classfile.of().parse(classFile));
+    }
+
+    private static void assertFixed(Sample sample, ClassModel clm) {
         var found = new LinkedList<Opcode>();
-        for (var e : Classfile.parse(classFile).methods().get(0).code().get())
+        for (var e : clm.methods().get(0).code().get())
             if (e instanceof Instruction i && found.peekLast() != i.opcode()) //dedup subsequent (NOPs)
                 found.add(i.opcode());
         assertEquals(found, List.of(sample.expected));

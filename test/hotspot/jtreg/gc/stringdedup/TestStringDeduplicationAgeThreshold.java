@@ -76,16 +76,29 @@ package gc.stringdedup;
  */
 
 /*
- * @test id=Z
+ * @test id=ZSinglegen
  * @summary Test string deduplication age threshold
  * @bug 8029075
- * @requires vm.gc.Z
+ * @requires vm.gc.ZSinglegen
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold Z
+ * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold Z -XX:-ZGenerational
+ */
+
+/*
+ * @test id=ZGenerational
+ * @summary Test string deduplication age threshold
+ * @bug 8029075
+ * @requires vm.gc.ZGenerational
+ * @library /test/lib
+ * @library /
+ * @modules java.base/jdk.internal.misc:open
+ * @modules java.base/java.lang:open
+ *          java.management
+ * @run driver gc.stringdedup.TestStringDeduplicationAgeThreshold Z -XX:+ZGenerational
  */
 
 public class TestStringDeduplicationAgeThreshold {

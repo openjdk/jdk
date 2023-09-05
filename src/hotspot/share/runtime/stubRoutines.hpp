@@ -249,6 +249,7 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _fmod;
 
   static address _f2hf;
   static address _hf2f;
@@ -259,6 +260,8 @@ class StubRoutines: AllStatic {
 
   JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
   JFR_ONLY(static address _jfr_write_checkpoint;)
+  JFR_ONLY(static RuntimeStub* _jfr_return_lease_stub;)
+  JFR_ONLY(static address _jfr_return_lease;)
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
@@ -425,6 +428,7 @@ class StubRoutines: AllStatic {
   static address dlog()                { return _dlog; }
   static address dlog10()              { return _dlog10; }
   static address dpow()                { return _dpow; }
+  static address fmod()                { return _fmod; }
   static address dsin()                { return _dsin; }
   static address dcos()                { return _dcos; }
   static address dlibm_reduce_pi04l()  { return _dlibm_reduce_pi04l; }
@@ -455,6 +459,7 @@ class StubRoutines: AllStatic {
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
+  JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

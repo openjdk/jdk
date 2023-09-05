@@ -44,7 +44,7 @@
 #include "hb-ot-os2-table.hh"
 #include "hb-ot-post-table.hh"
 
-#if !defined(AIX)
+#if !defined(AIX) || defined(AIX_XLC_GE_17)
 #include "hb-ot-post-table-v2subset.hh"
 #endif
 

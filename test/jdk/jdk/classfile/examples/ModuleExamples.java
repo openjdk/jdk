@@ -53,7 +53,7 @@ public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
 
     public void examineModule() throws IOException {
-        ClassModel cm = Classfile.parse(JRT.getPath("modules/java.base/module-info.class"));
+        ClassModel cm = Classfile.of().parse(JRT.getPath("modules/java.base/module-info.class"));
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
 
         ModuleAttribute ma = cm.findAttribute(Attributes.MODULE).orElseThrow();
@@ -61,7 +61,7 @@ public class ModuleExamples {
         System.out.println("Exports: " + ma.exports());
 
         ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
-        System.out.println("Does the module have a MainClassAttribte?: " + (mmca != null));
+        System.out.println("Does the module have a MainClassAttribute?: " + (mmca != null));
 
         ModulePackagesAttribute mmp = cm.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
         System.out.println("Packages?: " + mmp.packages());
@@ -78,7 +78,8 @@ public class ModuleExamples {
         });
 
         // Build it
-        byte[] moduleInfo = Classfile.buildModule(ModuleAttribute.of(moduleName, handler), clb -> {
+        var cc = Classfile.of();
+        byte[] moduleInfo = cc.buildModule(ModuleAttribute.of(moduleName, handler), clb -> {
 
                 // Add an annotation to the module
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljava/lang/Deprecated;"),
@@ -87,7 +88,7 @@ public class ModuleExamples {
         });
 
         // Examine it
-        ClassModel mm = Classfile.parse(moduleInfo);
+        ClassModel mm = cc.parse(moduleInfo);
         System.out.println("Is module info?: " + mm.isModuleInfo());
     }
 }

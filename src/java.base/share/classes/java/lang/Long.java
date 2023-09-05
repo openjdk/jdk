@@ -36,6 +36,7 @@ import java.util.Optional;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -442,39 +443,6 @@ public final class Long extends Number
             StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
             val >>>= shift;
         } while (charPos > offset);
-    }
-
-    static String fastUUID(long lsb, long msb) {
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[36];
-            formatUnsignedLong0(lsb,        4, buf, 24, 12);
-            formatUnsignedLong0(lsb >>> 48, 4, buf, 19, 4);
-            formatUnsignedLong0(msb,        4, buf, 14, 4);
-            formatUnsignedLong0(msb >>> 16, 4, buf, 9,  4);
-            formatUnsignedLong0(msb >>> 32, 4, buf, 0,  8);
-
-            buf[23] = '-';
-            buf[18] = '-';
-            buf[13] = '-';
-            buf[8]  = '-';
-
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[72];
-
-            formatUnsignedLong0UTF16(lsb,        4, buf, 24, 12);
-            formatUnsignedLong0UTF16(lsb >>> 48, 4, buf, 19, 4);
-            formatUnsignedLong0UTF16(msb,        4, buf, 14, 4);
-            formatUnsignedLong0UTF16(msb >>> 16, 4, buf, 9,  4);
-            formatUnsignedLong0UTF16(msb >>> 32, 4, buf, 0,  8);
-
-            StringUTF16.putChar(buf, 23, '-');
-            StringUTF16.putChar(buf, 18, '-');
-            StringUTF16.putChar(buf, 13, '-');
-            StringUTF16.putChar(buf,  8, '-');
-
-            return new String(buf, UTF16);
-        }
     }
 
     /**
@@ -1156,9 +1124,10 @@ public final class Long extends Number
         return Long.valueOf(parseLong(s, 10));
     }
 
-    private static class LongCache {
+    private static final class LongCache {
         private LongCache() {}
 
+        @Stable
         static final Long[] cache;
         static Long[] archivedCache;
 

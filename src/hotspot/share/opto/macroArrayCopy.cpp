@@ -1255,7 +1255,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
     AllocateArrayNode* alloc = nullptr;
     if (ac->is_alloc_tightly_coupled()) {
-      alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
+      alloc = AllocateArrayNode::Ideal_array_allocation(dest);
       assert(alloc != nullptr, "expect alloc");
     }
 
@@ -1273,7 +1273,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
   AllocateArrayNode* alloc = nullptr;
   if (ac->is_alloc_tightly_coupled()) {
-    alloc = AllocateArrayNode::Ideal_array_allocation(dest, &_igvn);
+    alloc = AllocateArrayNode::Ideal_array_allocation(dest);
     assert(alloc != nullptr, "expect alloc");
   }
 

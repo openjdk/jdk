@@ -105,7 +105,7 @@ public final class VerifierImpl {
     static final int MAX_CODE_SIZE = 65535;
 
     public static List<VerifyError> verify(ClassModel classModel, Consumer<String> logger) {
-        return verify(classModel, ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER, logger);
+        return verify(classModel, ClassHierarchyResolver.defaultResolver(), logger);
     }
 
     public static List<VerifyError> verify(ClassModel classModel, ClassHierarchyResolver classHierarchyResolver, Consumer<String> logger) {

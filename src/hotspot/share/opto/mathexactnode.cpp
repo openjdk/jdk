@@ -209,7 +209,7 @@ struct IdealHelper {
     return nullptr;
   }
 
-  static const Type* Value(const OverflowOp* node, PhaseTransform* phase) {
+  static const Type* Value(const OverflowOp* node, PhaseValues* phase) {
     const Type *t1 = phase->type( node->in(1) );
     const Type *t2 = phase->type( node->in(2) );
     if( t1 == Type::TOP ) return Type::TOP;

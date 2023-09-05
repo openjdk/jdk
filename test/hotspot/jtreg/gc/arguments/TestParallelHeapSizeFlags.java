@@ -49,4 +49,3 @@ public class TestParallelHeapSizeFlags {
     TestMaxHeapSizeTools.checkGenMaxHeapErgo(gcName);
   }
 }
-

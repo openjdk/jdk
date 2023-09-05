@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,6 @@ public class Util {
     private Util() {
     }
 
-    public static String arrayOf(CharSequence s) {
-        return "[" + s;
-    }
-
     public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
@@ -84,54 +80,20 @@ public class Util {
         return count;
     }
 
-    public static String toClassString(String desc) {
-        //TODO: this doesn't look right L ... ;
-        return desc.replace('/', '.');
-    }
-
-    public static Iterator<String> parameterTypes(String s) {
-        //TODO: gracefully non-method types
-        return new Iterator<>() {
-            int ch = 1;
-
-            @Override
-            public boolean hasNext() {
-                return s.charAt(ch) != ')';
-            }
-
-            @Override
-            public String next() {
-                char curr = s.charAt(ch);
-                switch (curr) {
-                    case 'C', 'B', 'S', 'I', 'J', 'F', 'D', 'Z':
-                        ch++;
-                        return String.valueOf(curr);
-                    case '[':
-                        ch++;
-                        return "[" + next();
-                    case 'L': {
-                        int start = ch;
-                        while (s.charAt(++ch) != ';') { }
-                        ++ch;
-                        return s.substring(start, ch);
-                    }
-                    default:
-                        throw new AssertionError("cannot parse string: " + s);
-                }
-            }
-        };
-    }
-
-    public static String returnDescriptor(String s) {
-        return s.substring(s.indexOf(')') + 1);
+    /**
+     * Converts a descriptor of classes or interfaces into
+     * a binary name. Rejects primitive types or arrays.
+     * This is an inverse of {@link ClassDesc#of(String)}.
+     */
+    public static String toBinaryName(ClassDesc cd) {
+        return toInternalName(cd).replace('/', '.');
     }
 
     public static String toInternalName(ClassDesc cd) {
         var desc = cd.descriptorString();
-        return switch (desc.charAt(0)) {
-            case 'L' -> desc.substring(1, desc.length() - 1);
-            default -> throw new IllegalArgumentException(desc);
-        };
+        if (desc.charAt(0) == 'L')
+            return desc.substring(1, desc.length() - 1);
+        throw new IllegalArgumentException(desc);
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {

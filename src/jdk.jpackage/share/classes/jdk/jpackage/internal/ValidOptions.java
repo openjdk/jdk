@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 
 import java.util.EnumSet;
 import java.util.HashMap;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.Arguments.CLIOptions;
 
 /**
@@ -94,7 +95,7 @@ class ValidOptions {
         put(CLIOptions.LICENSE_FILE.getId(), USE.INSTALL);
         put(CLIOptions.INSTALL_DIR.getId(), USE.INSTALL);
         put(CLIOptions.PREDEFINED_APP_IMAGE.getId(),
-                (Platform.getPlatform() == Platform.MAC) ?
+                (OperatingSystem.isMacOS()) ?
                         EnumSet.of(USE.INSTALL, USE.SIGN) :
                         EnumSet.of(USE.INSTALL));
         put(CLIOptions.LAUNCHER_AS_SERVICE.getId(), USE.INSTALL);
@@ -102,9 +103,9 @@ class ValidOptions {
         put(CLIOptions.ABOUT_URL.getId(), USE.INSTALL);
 
         put(CLIOptions.FILE_ASSOCIATIONS.getId(),
-            (Platform.getPlatform() == Platform.MAC) ?  USE.ALL : USE.INSTALL);
+            (OperatingSystem.isMacOS()) ? USE.ALL : USE.INSTALL);
 
-        if (Platform.getPlatform() == Platform.WINDOWS) {
+        if (OperatingSystem.isWindows()) {
             put(CLIOptions.WIN_CONSOLE_HINT.getId(), USE.LAUNCHER);
 
             put(CLIOptions.WIN_HELP_URL.getId(), USE.INSTALL);
@@ -120,7 +121,7 @@ class ValidOptions {
                     USE.INSTALL);
         }
 
-        if (Platform.getPlatform() == Platform.MAC) {
+        if (OperatingSystem.isMacOS()) {
             put(CLIOptions.MAC_SIGN.getId(),
                     EnumSet.of(USE.ALL, USE.SIGN));
             put(CLIOptions.MAC_BUNDLE_NAME.getId(), USE.ALL);
@@ -138,7 +139,7 @@ class ValidOptions {
             put(CLIOptions.DMG_CONTENT.getId(), USE.INSTALL);
         }
 
-        if (Platform.getPlatform() == Platform.LINUX) {
+        if (OperatingSystem.isLinux()) {
             put(CLIOptions.LINUX_BUNDLE_NAME.getId(), USE.INSTALL);
             put(CLIOptions.LINUX_DEB_MAINTAINER.getId(), USE.INSTALL);
             put(CLIOptions.LINUX_CATEGORY.getId(), USE.INSTALL);

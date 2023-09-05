@@ -42,8 +42,12 @@ public class ThreadStateTest {
 
     private static native void setSingleSteppingMode(boolean enable);
     private static native void setMonitorContendedMode(boolean enable);
+    private static native void testGetThreadState(Thread thread);
+    private static native void testGetThreadListStackTraces(Thread thread);
 
     final Runnable FOO = () -> {
+        testGetThreadState(Thread.currentThread());
+        testGetThreadListStackTraces(Thread.currentThread());
         Thread.yield();
     };
 
@@ -59,7 +63,9 @@ public class ThreadStateTest {
 
             List<Thread> virtualThreads = new ArrayList<>();
             for (int i = 0; i < VTHREAD_COUNT; i++) {
-                virtualThreads.add(factory.newThread(FOO));
+                Thread vt = factory.newThread(FOO);
+                vt.setName("VT-" + i);
+                virtualThreads.add(vt);
             }
 
             for (Thread t : virtualThreads) {

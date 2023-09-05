@@ -170,7 +170,7 @@ public abstract class Collator
     /**
      * Decomposition mode value. With NO_DECOMPOSITION
      * set, accented characters will not be decomposed for collation. This
-     * is the default setting and provides the fastest collation but
+     * setting provides the fastest collation but
      * will only produce correct results for languages that do not use accents.
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
@@ -244,7 +244,7 @@ public abstract class Collator
      * <tr><th scope="row" style="text-align:left">level2</th>
      *     <td>SECONDARY</td></tr>
      * <tr><th scope="row" style="text-align:left">level3</th>
-     *     <td>TERTIARY</td></tr>
+     *     <td>TERTIARY<sup>*</sup></td></tr>
      * <tr><th scope="row" style="text-align:left">identic</th>
      *     <td>IDENTICAL</td></tr>
      * </tbody>
@@ -256,11 +256,12 @@ public abstract class Collator
      * <tr><th scope="row" style="text-align:left">true</th>
      *     <td>CANONICAL_DECOMPOSITION</td></tr>
      * <tr><th scope="row" style="text-align:left">false</th>
-     *     <td>NO_DECOMPOSITION</td></tr>
+     *     <td>NO_DECOMPOSITION<sup>*</sup></td></tr>
      * </tbody>
      * </table>
+     * Asterisk (<sup>*</sup>) denotes the default value.
      * If the specified setting value is not recognized, the strength and/or
-     * decomposition will not be overridden, as if there were no BCP 47 collation
+     * decomposition is not overridden, as if there were no BCP 47 collation
      * options in the desired locale.
      *
      * @apiNote Implementations of {@code Collator} class may produce
@@ -274,7 +275,7 @@ public abstract class Collator
      * may return a {@code Collator} instance with the Swedish traditional sorting, which
      * gives 'v' and 'w' the same sorting order, while the {@code Collator} instance
      * for the Swedish locale without "co" identifier distinguishes 'v' and 'w'.
-     * @spec https://www.unicode.org/reports/tr35/ Unicode Locale Data Markup Language
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language
      *     (LDML)
      * @param desiredLocale the desired locale.
      * @return the Collator for the desired locale.
@@ -529,10 +530,7 @@ public abstract class Collator
         if (this == that) {
             return true;
         }
-        if (that == null) {
-            return false;
-        }
-        if (getClass() != that.getClass()) {
+        if (that == null || getClass() != that.getClass()) {
             return false;
         }
         Collator other = (Collator) that;

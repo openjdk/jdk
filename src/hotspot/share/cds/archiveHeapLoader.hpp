@@ -102,7 +102,7 @@ public:
   static void fixup_region() NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
-  static void init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift);
+  static void init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift);
 private:
   static bool _is_mapped;
   static bool _is_loaded;
@@ -124,6 +124,7 @@ private:
 
   // is_mapped() only: the mapped address of each region is offset by this amount from
   // their requested address.
+  static uintptr_t _mapped_heap_bottom;
   static ptrdiff_t _mapped_heap_delta;
   static bool      _mapped_heap_relocation_initialized;
 

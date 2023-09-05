@@ -1883,6 +1883,11 @@ public abstract class SunToolkit extends Toolkit
         return false;
     }
 
+    /**
+     * Checks if the system is running Linux with the Wayland server.
+     *
+     * @return true if running on Wayland, false otherwise
+     */
     public boolean isRunningOnWayland() {
         return false;
     }

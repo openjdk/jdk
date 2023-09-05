@@ -61,7 +61,7 @@ class LowJCovAttributeTest {
 
     LowJCovAttributeTest() throws IOException {
         this.path = Paths.get(URI.create(LowJCovAttributeTest.class.getResource(TEST_FILE).toString()));
-        this.classLow = Classfile.parse(path);
+        this.classLow = Classfile.of().parse(path);
     }
 
     @Test

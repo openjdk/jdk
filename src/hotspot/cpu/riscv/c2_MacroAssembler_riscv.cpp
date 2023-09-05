@@ -491,7 +491,9 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
   add(result, haystack, isLL ? nlen_tmp : ch2);
-  ld(ch2, Address(result)); // load 8 bytes from source string
+  // load 8 bytes from source string
+  // if isLL is false then read granularity can be 2
+  load_long_misaligned(ch2, Address(result), ch1, isLL ? 1 : 2); // can use ch1 as temp register here as it will be trashed by next mv anyway
   mv(ch1, tmp6);
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
@@ -679,10 +681,30 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift); // result as tmp
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
+    if (AvoidUnalignedAccesses) {
+      // preload first value, then we will read by 1 character per loop, instead of four
+      // just shifting previous ch2 right by size of character in bits
+      add(tmp3, haystack, hlen_neg);
+      (this->*load_4chr)(ch2, Address(tmp3), noreg);
+      if (isLL) {
+        // need to erase 1 most significant byte in 32-bit value of ch2
+        slli(ch2, ch2, 40);
+        srli(ch2, ch2, 32);
+      } else {
+        slli(ch2, ch2, 16); // 2 most significant bytes will be erased by this operation
+      }
+    }
 
     bind(CH1_LOOP);
-    add(ch2, haystack, hlen_neg);
-    (this->*load_4chr)(ch2, Address(ch2), noreg);
+    add(tmp3, haystack, hlen_neg);
+    if (AvoidUnalignedAccesses) {
+      srli(ch2, ch2, isLL ? 8 : 16);
+      (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 3 : 6), noreg);
+      slli(tmp3, tmp3, isLL ? 24 : 48);
+      add(ch2, ch2, tmp3);
+    } else {
+      (this->*load_4chr)(ch2, Address(tmp3), noreg);
+    }
     beq(ch1, ch2, MATCH);
     add(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
@@ -700,10 +722,23 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
-
+    if (AvoidUnalignedAccesses) {
+      // preload first value, then we will read by 1 character per loop, instead of two
+      // just shifting previous ch2 right by size of character in bits
+      add(tmp3, haystack, hlen_neg);
+      (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+      slli(ch2, ch2, isLL ? 8 : 16);
+    }
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    if (AvoidUnalignedAccesses) {
+      srli(ch2, ch2, isLL ? 8 : 16);
+      (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 1 : 2), noreg);
+      slli(tmp3, tmp3, isLL ? 8 : 16);
+      add(ch2, ch2, tmp3);
+    } else {
+      (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    }
     beq(ch1, ch2, MATCH);
     add(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
@@ -727,7 +762,14 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(FIRST_LOOP);
     add(ch2, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(ch2), noreg);
+    if (AvoidUnalignedAccesses) {
+      (this->*haystack_load_1chr)(tmp2, Address(ch2, isLL ? 1 : 2), noreg); // we need a temp register, we can safely use hlen_tmp here, which is a synonym for tmp2
+      (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+      slli(tmp2, tmp2, isLL ? 8 : 16);
+      add(ch2, ch2, tmp2);
+    } else {
+      (this->*load_2chr)(ch2, Address(ch2), noreg);
+    }
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
@@ -751,10 +793,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     bind(DO1);
     (this->*needle_load_1chr)(ch1, Address(needle), noreg);
     sub(result_tmp, haystack_len, 1);
-    mv(tmp3, result_tmp);
-    if (haystack_chr_shift) {
-      slli(tmp3, result_tmp, haystack_chr_shift);
-    }
+    slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
 
@@ -829,9 +868,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
+      // check if str1 and str2 is same pointer
+      beq(str1, str2, DONE);
       // load 8 bytes once to compare
       ld(tmp1, Address(str1));
-      beq(str1, str2, DONE);
       ld(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
@@ -874,9 +914,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
     }
     addi(cnt2, cnt2, isUL ? 4 : 8);
+    bne(tmp1, tmp2, DIFFERENCE);
     bgez(cnt2, TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
 
     // main loop
     bind(NEXT_WORD);
@@ -905,38 +944,30 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
       addi(cnt2, cnt2, 4);
     }
-    bgez(cnt2, TAIL);
-
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, NEXT_WORD);
-    j(DIFFERENCE);
+    bne(tmp1, tmp2, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
     bind(TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
     if (str1_isL == str2_isL) { // LL or UU
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
     } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_int_misaligned(tmp1, Address(str1), tmp3, false);
+      load_long_misaligned(tmp2, Address(str2), tmp3, 2);
       inflate_lo32(tmp3, tmp1);
       mv(tmp1, tmp3);
     } else { // UL case
-      lwu(tmp2, Address(str2));
-      ld(tmp1, Address(str1));
+      load_int_misaligned(tmp2, Address(str2), tmp3, false);
+      load_long_misaligned(tmp1, Address(str1), tmp3, 2);
       inflate_lo32(tmp3, tmp2);
       mv(tmp2, tmp3);
     }
     bind(TAIL_CHECK);
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, DONE);
+    beq(tmp1, tmp2, DONE);
 
     // Find the first different characters in the longwords and
     // compute their difference.
     bind(DIFFERENCE);
+    xorr(tmp3, tmp1, tmp2);
     ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
@@ -1521,26 +1552,39 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
 
 // Compress char[] array to byte[].
 // result: the array length if every element in array can be encoded; 0, otherwise.
-void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len, Register result, Register tmp) {
+void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len,
+                                              Register result, Register tmp) {
   Label done;
-  encode_iso_array_v(src, dst, len, result, tmp);
+  encode_iso_array_v(src, dst, len, result, tmp, false);
   beqz(len, done);
   mv(result, zr);
   bind(done);
 }
 
-// result: the number of elements had been encoded.
-void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len, Register result, Register tmp) {
-  Label loop, DIFFERENCE, DONE;
+// Intrinsic for
+//
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return zero (0) if copy fails, otherwise 'len'.
+//
+// This version always returns the number of characters copied. A successful
+// copy will complete with the post-condition: 'res' == 'len', while an
+// unsuccessful copy will exit with the post-condition: 0 <= 'res' < 'len'.
+//
+// Clobbers: src, dst, len, result, t0
+void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len,
+                                           Register result, Register tmp, bool ascii) {
+  Label loop, fail, done;
 
   BLOCK_COMMENT("encode_iso_array_v {");
   mv(result, 0);
 
   bind(loop);
-  mv(tmp, 0xff);
+  mv(tmp, ascii ? 0x7f : 0xff);
   vsetvli(t0, len, Assembler::e16, Assembler::m2);
   vle16_v(v2, src);
-  // if element > 0xff, stop
+
   vmsgtu_vx(v1, v2, tmp);
   vfirst_m(tmp, v1);
   vmsbf_m(v0, v1);
@@ -1549,18 +1593,19 @@ void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register 
   vncvt_x_x_w(v1, v2, Assembler::v0_t);
   vse8_v(v1, dst, Assembler::v0_t);
 
-  bgez(tmp, DIFFERENCE);
+  // fail if char > 0x7f/0xff
+  bgez(tmp, fail);
   add(result, result, t0);
   add(dst, dst, t0);
   sub(len, len, t0);
   shadd(src, t0, src, t0, 1);
   bnez(len, loop);
-  j(DONE);
+  j(done);
 
-  bind(DIFFERENCE);
+  bind(fail);
   add(result, result, tmp);
 
-  bind(DONE);
+  bind(done);
   BLOCK_COMMENT("} encode_iso_array_v");
 }
 
@@ -1626,10 +1671,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min, int vector_length) {
+                                    BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1645,9 +1690,9 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length) {
+                                           BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   // Check vector elements of src1 and src2 for NaN.
   vmfeq_vv(tmp1, src1, src1);

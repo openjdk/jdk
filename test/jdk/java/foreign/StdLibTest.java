@@ -378,13 +378,10 @@ public class StdLibTest extends NativeTestHelper {
     }
 
     enum PrintfArg {
-
-        INTEGRAL(int.class, C_INT, "%d", arena -> 42, 42),
-        STRING(MemorySegment.class, C_POINTER, "%s", arena -> {
-            return arena.allocateUtf8String("str");
-        }, "str"),
-        CHAR(byte.class, C_CHAR, "%c", arena -> (byte) 'h', 'h'),
-        DOUBLE(double.class, C_DOUBLE, "%.4f", arena ->1.2345d, 1.2345d);
+        INT(int.class, C_INT, "%d", arena -> 42, 42),
+        LONG(long.class, C_LONG_LONG, "%d", arena -> 84L, 84L),
+        DOUBLE(double.class, C_DOUBLE, "%.4f", arena -> 1.2345d, 1.2345d),
+        STRING(MemorySegment.class, C_POINTER, "%s", arena -> arena.allocateUtf8String("str"), "str");
 
         final Class<?> carrier;
         final ValueLayout layout;

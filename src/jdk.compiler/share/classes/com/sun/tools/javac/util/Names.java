@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ public class Names {
     public final Name module_info;
     public final Name package_info;
     public final Name requireNonNull;
+    public final Name main;
 
     // lambda-related
     public final Name lambda;
@@ -388,6 +389,7 @@ public class Names {
         module_info = fromString("module-info");
         package_info = fromString("package-info");
         requireNonNull = fromString("requireNonNull");
+        main = fromString("main");
 
         //lambda-related
         lambda = fromString("lambda$");
@@ -426,11 +428,25 @@ public class Names {
     }
 
     protected Name.Table createTable(Options options) {
+        boolean useStringTable = options.isSet("useStringTable");
+        if (useStringTable)
+            return newStringNameTable();
         boolean useUnsharedTable = options.isSet("useUnsharedTable");
         if (useUnsharedTable)
-            return UnsharedNameTable.create(this);
-        else
-            return SharedNameTable.create(this);
+            return newUnsharedNameTable();
+        return newSharedNameTable();
+    }
+
+    public StringNameTable newStringNameTable() {
+        return StringNameTable.create(this);
+    }
+
+    public SharedNameTable newSharedNameTable() {
+        return SharedNameTable.create(this);
+    }
+
+    public UnsharedNameTable newUnsharedNameTable() {
+        return UnsharedNameTable.create(this);
     }
 
     public void dispose() {

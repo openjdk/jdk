@@ -35,7 +35,6 @@ import sun.security.action.GetBooleanAction;
 import java.io.Serializable;
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.Modifier;
-import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -93,7 +92,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles
         // or -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles=true
         final String dumpProxyClassesKey = "jdk.invoke.LambdaMetafactory.dumpProxyClassFiles";
-        lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, Path.of("DUMP_LAMBDA_PROXY_CLASS_FILES"));
+        lambdaProxyClassFileDumper = ClassFileDumper.getInstance(dumpProxyClassesKey, "DUMP_LAMBDA_PROXY_CLASS_FILES");
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);

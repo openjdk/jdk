@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
@@ -200,9 +201,9 @@ void ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces() {
   clean_deallocate_lists(walk_all_metadata);
 }
 
-// GC root of class loader data created.
+// List head of all class loader data.
 ClassLoaderData* volatile ClassLoaderDataGraph::_head = nullptr;
-ClassLoaderData* ClassLoaderDataGraph::_unloading = nullptr;
+ClassLoaderData* ClassLoaderDataGraph::_unloading_head = nullptr;
 
 bool ClassLoaderDataGraph::_should_clean_deallocate_lists = false;
 bool ClassLoaderDataGraph::_safepoint_cleanup_needed = false;
@@ -268,16 +269,7 @@ inline void assert_is_safepoint_or_gc() {
          "Must be called by safepoint or GC");
 }
 
-void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
-  assert_is_safepoint_or_gc();
-  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->next()) {
-    assert(cld->is_unloading(), "invariant");
-    cl->do_cld(cld);
-  }
-}
-
-// These are functions called by the GC, which require all of the CLDs, including the
-// unloading ones.
+// These are functions called by the GC, which require all of the CLDs, including not yet unlinked CLDs.
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   assert_is_safepoint_or_gc();
   for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
@@ -430,7 +422,7 @@ void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  for (ClassLoaderData* cld = _unloading; cld != nullptr; cld = cld->next()) {
+  for (ClassLoaderData* cld = _unloading_head; cld != nullptr; cld = cld->unloading_next()) {
     assert(cld->is_unloading(), "invariant");
     cld->classes_do(f);
   }
@@ -501,37 +493,32 @@ bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
 bool ClassLoaderDataGraph::do_unloading() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
-  ClassLoaderData* data = _head;
   ClassLoaderData* prev = nullptr;
   bool seen_dead_loader = false;
   uint loaders_processed = 0;
   uint loaders_removed = 0;
 
-  data = _head;
-  while (data != nullptr) {
+  for (ClassLoaderData* data = _head; data != nullptr; data = data->next()) {
     if (data->is_alive()) {
       prev = data;
-      data = data->next();
       loaders_processed++;
-      continue;
-    }
-    seen_dead_loader = true;
-    loaders_removed++;
-    ClassLoaderData* dead = data;
-    dead->unload();
-    data = data->next();
-    // Remove from loader list.
-    // This class loader data will no longer be found
-    // in the ClassLoaderDataGraph.
-    if (prev != nullptr) {
-      prev->set_next(data);
     } else {
-      assert(dead == _head, "sanity check");
-      // The GC might be walking this concurrently
-      Atomic::store(&_head, data);
+      // Found dead CLD.
+      loaders_removed++;
+      seen_dead_loader = true;
+      data->unload();
+
+      // Move dead CLD to unloading list.
+      if (prev != nullptr) {
+        prev->unlink_next();
+      } else {
+        assert(data == _head, "sanity check");
+        // The GC might be walking this concurrently
+        Atomic::store(&_head, data->next());
+      }
+      data->set_unloading_next(_unloading_head);
+      _unloading_head = data;
     }
-    dead->set_next(_unloading);
-    _unloading = dead;
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
@@ -563,13 +550,13 @@ void ClassLoaderDataGraph::clean_module_and_package_info() {
 }
 
 void ClassLoaderDataGraph::purge(bool at_safepoint) {
-  ClassLoaderData* list = _unloading;
-  _unloading = nullptr;
+  ClassLoaderData* list = _unloading_head;
+  _unloading_head = nullptr;
   ClassLoaderData* next = list;
   bool classes_unloaded = false;
   while (next != nullptr) {
     ClassLoaderData* purge_me = next;
-    next = purge_me->next();
+    next = purge_me->unloading_next();
     delete purge_me;
     classes_unloaded = true;
   }

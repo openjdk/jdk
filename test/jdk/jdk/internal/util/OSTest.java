@@ -33,7 +33,7 @@ import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 
 import jdk.internal.util.StaticProperty;
-import jdk.internal.util.Version;
+import jdk.internal.util.OSVersion;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -89,7 +89,7 @@ public class OSTest {
 
     @Test
     public void checkOsVersion() {
-        Version ver = OperatingSystem.version();
+        OSVersion ver = OSVersion.current();
         String osVersion = StaticProperty.osVersion();
         System.err.printf("os.version: %s, version().toString(): %s%n", osVersion, ver);
         assertTrue(osVersion.startsWith(ver.toString()), "version().toString() is not prefix of vs os.version property");

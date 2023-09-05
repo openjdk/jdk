@@ -113,14 +113,14 @@ public class TestParallelGCThreads {
       }
     }
 
-    // 4294967295 == (unsigned int) -1
-    // So setting ParallelGCThreads=4294967295 should give back 4294967295
+    // Test the max value for ParallelGCThreads
+    // So setting ParallelGCThreads=2147483647 should give back 2147483647
     long count = getParallelGCThreadCount(
         "-XX:+UseSerialGC",
-        "-XX:ParallelGCThreads=4294967295",
+        "-XX:ParallelGCThreads=2147483647",
         "-XX:+PrintFlagsFinal",
         "-version");
-    Asserts.assertEQ(count, 4294967295L, "Specifying ParallelGCThreads=4294967295 does not set the thread count properly!");
+    Asserts.assertEQ(count, 2147483647L, "Specifying ParallelGCThreads=2147483647 does not set the thread count properly!");
   }
 
   public static long getParallelGCThreadCount(String... flags) throws Exception {

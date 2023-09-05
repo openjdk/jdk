@@ -68,6 +68,7 @@ EXCLUDE_FILES += \
 ifeq ($(call isTargetOs, macosx), true)
   # exclude all X11 on Mac.
   EXCLUDES += \
+      sun/awt/screencast \
       sun/awt/X11 \
       sun/java2d/x11 \
       sun/java2d/jules \
@@ -140,8 +141,7 @@ endif
 # pick them up since they aren't generated when the source dirs are
 # searched and they aren't referenced by any other classes so they won't
 # be picked up by implicit compilation. On a rebuild, they are picked up
-# and compiled. Exclude them here to produce the same rt.jar as the old
-# build does when building just once.
+# and compiled.
 EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \

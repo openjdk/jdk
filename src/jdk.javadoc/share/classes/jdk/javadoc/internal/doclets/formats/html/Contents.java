@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -393,7 +392,7 @@ public class Contents {
      */
     public Content getContent(String key, Object o0, Object o1, Object o2) {
         Content c = new ContentBuilder();
-        Pattern p = Pattern.compile("\\{([012])\\}");
+        Pattern p = Pattern.compile("\\{([012])}");
         String text = resources.getText(key); // TODO: cache
         Matcher m = p.matcher(text);
         int start = 0;

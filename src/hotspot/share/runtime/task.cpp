@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/task.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 
 int PeriodicTask::_num_tasks = 0;
@@ -95,10 +96,9 @@ void PeriodicTask::enroll() {
   }
 
   WatcherThread* thread = WatcherThread::watcher_thread();
+  assert(thread != nullptr || !Threads::is_vm_complete(), "vm created but no WatcherThread");
   if (thread != nullptr) {
     thread->unpark();
-  } else {
-    WatcherThread::start();
   }
 }
 

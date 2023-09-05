@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // nullptr if it's native thread
+  static Thread*     _thread;           // null if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
@@ -207,7 +207,7 @@ public:
   DEBUG_ONLY(static void controlled_crash(int how);)
 
   // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
-  static constexpr intptr_t segfault_address = AIX_ONLY(-1) NOT_AIX(1 * K);
+  static const intptr_t segfault_address;
 
   // Max value for the ErrorLogPrintCodeLimit flag.
   static const int max_error_log_print_code = 10;

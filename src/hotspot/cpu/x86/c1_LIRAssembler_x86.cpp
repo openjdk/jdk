@@ -2047,7 +2047,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
   } else {
     Label skip;
-    __ jcc (acond, skip);
+    __ jccb(acond, skip);
     if (opr2->is_cpu_register()) {
       reg2reg(opr2, result);
     } else if (opr2->is_stack()) {
@@ -2834,7 +2834,7 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
     __ cmpptr(left->as_register_lo(), right->as_register_lo());
     __ movl(dest, -1);
     __ jccb(Assembler::less, done);
-    __ set_byte_if_not_zero(dest);
+    __ setb(Assembler::notZero, dest);
     __ movzbl(dest, dest);
     __ bind(done);
 #else

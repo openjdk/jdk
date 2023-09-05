@@ -29,6 +29,7 @@ import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.annotation.Native;
 import java.lang.constant.Constable;
@@ -1005,9 +1006,11 @@ public final class Integer extends Number
      * with new Integer object(s) after initialization.
      */
 
-    private static class IntegerCache {
+    private static final class IntegerCache {
         static final int low = -128;
         static final int high;
+
+        @Stable
         static final Integer[] cache;
         static Integer[] archivedCache;
 

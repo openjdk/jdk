@@ -34,6 +34,7 @@
 
 const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const {
   const TypeKlassPtr* superk = super_t->isa_klassptr();
+  assert(sub_t != Type::TOP && !TypePtr::NULL_PTR->higher_equal(sub_t), "should be not null");
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
   // Oop can't be a subtype of abstract type that has no subclass.
@@ -167,6 +168,15 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
   if (super_t->singleton() && subk != nullptr) {
+    if (obj_or_subklass->bottom_type() == Type::TOP) {
+      // The bottom type of obj_or_subklass is TOP, despite its recorded type
+      // being an OOP or a klass pointer. This can happen for example in
+      // transient scenarios where obj_or_subklass is a projection of the TOP
+      // node. In such cases, skip verification to avoid violating the contract
+      // of LoadKlassNode::make(). This does not weaken the effect of verify(),
+      // as SubTypeCheck nodes with TOP obj_or_subklass inputs are dead anyway.
+      return true;
+    }
     const Type* cached_t = Value(phase); // cache the type to validate consistency
     switch (C->static_subtype_check(superk, subk)) {
       case Compile::SSC_easy_test: {

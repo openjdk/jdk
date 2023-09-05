@@ -76,13 +76,13 @@ class MassAdaptCopyCodeTest {
     }
 
     void copy(String name, byte[] bytes) throws Exception {
-        byte[] newBytes = adaptCopy(Classfile.parse(bytes));
+        byte[] newBytes = adaptCopy(Classfile.of().parse(bytes));
         classNameToClass.put(name, new ByteArrayClassLoader.ClassData(name, newBytes));
         if (name.contains("/")) throw new RuntimeException(name);
     }
 
     public byte[] adaptCopy(ClassModel cm) {
-        return cm.transform((cb, ce) -> {
+        return Classfile.of().transform(cm, (cb, ce) -> {
             if (ce instanceof MethodModel mm) {
                 cb.transformMethod(mm, (mb, me) -> {
                     if (me instanceof CodeModel xm) {

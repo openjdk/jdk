@@ -133,7 +133,10 @@ KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
-KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
+ClassLoaderData* HeapShared::_saved_java_platform_loader_data = nullptr;
+ClassLoaderData* HeapShared::_saved_java_system_loader_data = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -298,10 +301,15 @@ bool HeapShared::archive_object(oop obj) {
       }
       java_lang_Module::set_module_entry(obj, nullptr);
     } else if (java_lang_ClassLoader::is_instance(obj)) {
-      // class_data will be restored explicitly at run time.
+      // class_data will be restored explicitly at run time and after dumptime
       guarantee(obj == SystemDictionary::java_platform_loader() ||
                 obj == SystemDictionary::java_system_loader() ||
                 java_lang_ClassLoader::loader_data(obj) == nullptr, "must be");
+      if (obj == SystemDictionary::java_platform_loader()) {
+        _saved_java_platform_loader_data = java_lang_ClassLoader::loader_data_acquire(SystemDictionary::java_platform_loader());
+      } else if (obj == SystemDictionary::java_system_loader()) {
+        _saved_java_system_loader_data = java_lang_ClassLoader::loader_data_acquire(SystemDictionary::java_system_loader());
+      }
       java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
     }
 
@@ -309,35 +317,49 @@ bool HeapShared::archive_object(oop obj) {
   }
 }
 
-class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
+void HeapShared::restore_loader_data() {
+  log_info(cds)("Restoring java platform and system loaders");
+  java_lang_ClassLoader::release_set_loader_data(SystemDictionary::java_platform_loader(), _saved_java_platform_loader_data);
+  java_lang_ClassLoader::release_set_loader_data(SystemDictionary::java_system_loader(), _saved_java_system_loader_data);
+}
+
+class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared> {
 public:
-  oop get_oop(Klass* k) {
+  oop get_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       return handle->resolve();
     } else {
       return nullptr;
     }
   }
-  void set_oop(Klass* k, oop o) {
+  void set_oop(MetaspaceObj* ptr, oop o) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
     OopHandle handle(Universe::vm_global(), o);
-    bool is_new = put(k, handle);
+    bool is_new = put(ptr, handle);
     assert(is_new, "cannot set twice");
   }
-  void remove_oop(Klass* k) {
+  void remove_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       handle->release(Universe::vm_global());
-      remove(k);
+      remove(ptr);
     }
   }
 };
+
+void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
+  _scratch_references_table->set_oop(src, dest);
+}
+
+objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  return (objArrayOop)_scratch_references_table->get_oop(src);
+}
 
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -347,7 +369,8 @@ void HeapShared::init_scratch_objects(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
+  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
 oop HeapShared::scratch_java_mirror(BasicType t) {
@@ -366,6 +389,9 @@ void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
 
 void HeapShared::remove_scratch_objects(Klass* k) {
   _scratch_java_mirror_table->remove_oop(k);
+  if (k->is_instance_klass()) {
+    _scratch_references_table->remove(InstanceKlass::cast(k)->constants());
+  }
 }
 
 void HeapShared::archive_java_mirrors() {
@@ -832,23 +858,10 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::serialize_root(SerializeClosure* soc) {
-  oop roots_oop = nullptr;
-
-  if (soc->reading()) {
-    soc->do_oop(&roots_oop); // read from archive
-    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
-    // Create an OopHandle only if we have actually mapped or loaded the roots
-    if (roots_oop != nullptr) {
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      _roots = OopHandle(Universe::vm_global(), roots_oop);
-    }
-  } else {
-    // writing
-    if (HeapShared::can_write()) {
-      roots_oop = ArchiveHeapWriter::heap_roots_requested_address();
-    }
-    soc->do_oop(&roots_oop); // write to archive
+void HeapShared::init_roots(oop roots_oop) {
+  if (roots_oop != nullptr) {
+    assert(ArchiveHeapLoader::is_in_use(), "must be");
+    _roots = OopHandle(Universe::vm_global(), roots_oop);
   }
 }
 
@@ -1669,8 +1682,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
-      // Note: HeapShared::to_requested_address() is not necessary because
-      // the heap always starts at a deterministic address with UseCompressedOops==true.
       size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
@@ -1691,33 +1702,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   int num_null_oops()  const { return _num_null_oops; }
 };
 #endif
-
-address HeapShared::to_requested_address(address dumptime_addr) {
-  assert(DumpSharedSpaces, "static dump time only");
-  if (dumptime_addr == nullptr || UseCompressedOops) {
-    return dumptime_addr;
-  }
-
-  // With UseCompressedOops==false, actual_base is selected by the OS so
-  // it's different across -Xshare:dump runs.
-  address actual_base = (address)G1CollectedHeap::heap()->reserved().start();
-  address actual_end  = (address)G1CollectedHeap::heap()->reserved().end();
-  assert(actual_base <= dumptime_addr && dumptime_addr <= actual_end, "must be an address in the heap");
-
-  // We always write the objects as if the heap started at this address. This
-  // makes the heap content deterministic.
-  //
-  // Note that at runtime, the heap address is also selected by the OS, so
-  // the archive heap will not be mapped at 0x10000000. Instead, we will call
-  // HeapShared::patch_embedded_pointers() to relocate the heap contents
-  // accordingly.
-  const address REQUESTED_BASE = (address)0x10000000;
-  intx delta = REQUESTED_BASE - actual_base;
-
-  address requested_addr = dumptime_addr + delta;
-  assert(REQUESTED_BASE != 0 && requested_addr != nullptr, "sanity");
-  return requested_addr;
-}
 
 #ifndef PRODUCT
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {

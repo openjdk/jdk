@@ -378,17 +378,6 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
         return JNI_EVERSION;  // unsupported major version number
       }
   }
-  if (Continuations::enabled()) {
-    // Virtual threads support. There is a performance impact when VTMS transitions are enabled.
-    if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
-        ThreadInVMfromNative __tiv(JavaThread::current());
-        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
-      }
-    } else {
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
-    }
-  }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
     JavaThread* current_thread = JavaThread::current();
@@ -399,12 +388,26 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
+
+    if (Continuations::enabled()) {
+      // Virtual threads support for agents loaded into running VM.
+      // There is a performance impact when VTMS transitions are enabled.
+      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+        JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
+      }
+    }
     return JNI_OK;
 
   } else if (JvmtiEnv::get_phase() == JVMTI_PHASE_ONLOAD) {
     // not live, no thread to transition
     JvmtiEnv *jvmti_env = JvmtiEnv::create_a_jvmti(version);
     *penv = jvmti_env->jvmti_external();  // actual type is jvmtiEnv* -- not to be confused with JvmtiEnv*
+
+    if (Continuations::enabled()) {
+      // Virtual threads support for agents loaded at startup.
+      // There is a performance impact when VTMS transitions are enabled.
+      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+    }
     return JNI_OK;
 
   } else {
@@ -910,7 +913,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _data_ptr = data_ptr;
     _end_ptr = end_ptr;
     _thread = JavaThread::current();
-    _curr_len = *end_ptr - *data_ptr;
+    _curr_len = pointer_delta_as_int(*end_ptr, *data_ptr);
     _curr_data = *data_ptr;
     _curr_env = nullptr;
     _cached_class_file_ptr = cache_ptr;
@@ -1062,6 +1065,9 @@ bool JvmtiExport::has_early_class_hook_env() {
 }
 
 bool JvmtiExport::_should_post_class_file_load_hook = false;
+
+// This flag is read by C2 during VM internal objects allocation
+int JvmtiExport::_should_notify_object_alloc = 0;
 
 // this entry is for class file load hook on class load, redefine and retransform
 bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,

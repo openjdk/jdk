@@ -148,6 +148,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _jmethod_ids(nullptr),
   _deallocate_list(nullptr),
   _next(nullptr),
+  _unloading_next(nullptr),
   _class_loader_klass(nullptr), _name(nullptr), _name_and_id(nullptr) {
 
   if (!h_class_loader.is_null()) {
@@ -300,6 +301,46 @@ bool ClassLoaderData::try_claim(int claim) {
   }
 }
 
+void ClassLoaderData::demote_strong_roots() {
+  // The oop handle area contains strong roots that the GC traces from. We are about
+  // to demote them to strong native oops that the GC does *not* trace from. Conceptually,
+  // we are retiring a rather normal strong root, and creating a strong non-root handle,
+  // which happens to reuse the same address as the normal strong root had.
+  // Unless we invoke the right barriers, the GC might not notice that a strong root
+  // has been pulled from the system, and is left unprocessed by the GC. There can be
+  // several consequences:
+  // 1. A concurrently marking snapshot-at-the-beginning GC might assume that the contents
+  //    of all strong roots get processed by the GC in order to keep them alive. Without
+  //    barriers, some objects might not be kept alive.
+  // 2. A concurrently relocating GC might assume that after moving an object, a subsequent
+  //    tracing from all roots can fix all the pointers in the system, which doesn't play
+  //    well with roots racingly being pulled.
+  // 3. A concurrent GC using colored pointers, might assume that tracing the object graph
+  //    from roots results in all pointers getting some particular color, which also doesn't
+  //    play well with roots being pulled out from the system concurrently.
+
+  class TransitionRootsOopClosure : public OopClosure {
+  public:
+    virtual void do_oop(oop* p) {
+      // By loading the strong root with the access API, we can use the right barriers to
+      // store the oop as a strong non-root handle, that happens to reuse the same memory
+      // address as the strong root. The barriered store ensures that:
+      // 1. The concurrent SATB marking properties are satisfied as the store will keep
+      //    the oop alive.
+      // 2. The concurrent object movement properties are satisfied as we store the address
+      //    of the new location of the object, if any.
+      // 3. The colors if any will be stored as the new good colors.
+      oop obj = NativeAccess<>::oop_load(p); // Load the strong root
+      NativeAccess<>::oop_store(p, obj); // Store the strong non-root
+    }
+
+    virtual void do_oop(narrowOop* p) {
+      ShouldNotReachHere();
+    }
+  } cl;
+  oops_do(&cl, ClassLoaderData::_claim_none, false /* clear_mod_oops */);
+}
+
 // Non-strong hidden classes have their own ClassLoaderData that is marked to keep alive
 // while the class is being parsed, and if the class appears on the module fixup list.
 // Due to the uniqueness that no other class shares the hidden class' name or
@@ -315,6 +356,14 @@ void ClassLoaderData::inc_keep_alive() {
 void ClassLoaderData::dec_keep_alive() {
   if (has_class_mirror_holder()) {
     assert(_keep_alive > 0, "Invalid keep alive decrement count");
+    if (_keep_alive == 1) {
+      // When the keep_alive counter is 1, the oop handle area is a strong root,
+      // acting as input to the GC tracing. Such strong roots are part of the
+      // snapshot-at-the-beginning, and can not just be pulled out from the
+      // system when concurrent GCs are running at the same time, without
+      // invoking the right barriers.
+      demote_strong_roots();
+    }
     _keep_alive--;
   }
 }

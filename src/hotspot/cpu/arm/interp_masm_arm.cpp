@@ -37,6 +37,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -814,7 +815,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   {
     Label loop;
 
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     const Register Rbottom = R3;
     const Register Rcur_obj = Rtemp;
 

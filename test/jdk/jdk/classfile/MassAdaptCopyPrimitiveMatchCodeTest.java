@@ -96,11 +96,12 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
 
     void copy(String name, byte[] bytes) throws Exception {
         //System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest - %s%n", name);
-        ClassModel cm =(Classfile.parse(bytes));
+        var cc = Classfile.of();
+        ClassModel cm =cc.parse(bytes);
         Map<String, byte[]> m2b = new HashMap<>();
         Map<String, CodeAttribute> m2c = new HashMap<>();
         byte[] resultBytes =
-                cm.transform((cb, e) -> {
+                cc.transform(cm, (cb, e) -> {
                     if (e instanceof MethodModel mm) {
                         Optional<CodeModel> code = mm.code();
                         if (code.isPresent()) {
@@ -125,7 +126,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
             System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest: Ignored because it is a record%n         - %s%n", name);
             return;
         }
-        ClassModel rcm = Classfile.parse(resultBytes);
+        ClassModel rcm = cc.parse(resultBytes);
         for (MethodModel rmm : rcm.methods()) {
             Optional<CodeModel> code = rmm.code();
             if (code.isPresent()) {

@@ -128,7 +128,7 @@ class SignaturesTest {
                 .flatMap(p -> p)
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
             try {
-                var cm = Classfile.parse(path);
+                var cm = Classfile.of().parse(path);
                 cm.findAttribute(Attributes.SIGNATURE).ifPresent(csig -> {
                     assertEquals(
                             ClassSignature.parseFrom(csig.signature().stringValue()).signatureString(),

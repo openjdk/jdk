@@ -879,6 +879,8 @@ public final class ProcessTools {
         }
     }
 
+    public static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
+
     // ProcessTools as a wrapper
     // It executes method main in a separate virtual or platform thread
     public static void main(String[] args) throws Throwable {
@@ -894,7 +896,7 @@ public final class ProcessTools {
             // MainThreadGroup used just as a container for exceptions
             // when main is executed in virtual thread
             MainThreadGroup tg = new MainThreadGroup();
-            Thread vthread = startVirtualThread(() -> {
+            Thread vthread = Thread.ofVirtual().unstarted(() -> {
                     try {
                         mainMethod.invoke(null, new Object[] { classArgs });
                     } catch (InvocationTargetException e) {
@@ -903,6 +905,9 @@ public final class ProcessTools {
                         tg.uncaughtThrowable = error;
                     }
                 });
+            Thread.currentThread().setName(OLD_MAIN_THREAD_NAME);
+            vthread.setName("main");
+            vthread.start();
             vthread.join();
             if (tg.uncaughtThrowable != null) {
                 throw tg.uncaughtThrowable;
@@ -938,18 +943,5 @@ public final class ProcessTools {
             uncaughtThrowable = e;
         }
         Throwable uncaughtThrowable = null;
-    }
-
-    static Thread startVirtualThread(Runnable task) {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            Method start = clazz.getMethod("start", Runnable.class);
-            return (Thread) start.invoke(builder, task);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
