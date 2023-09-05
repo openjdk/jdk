@@ -37,6 +37,7 @@ markWord markWord::displaced_mark_helper() const {
     return markWord(value());
   }
   if (has_locker()) {  // has a stack lock
+    assert(LockingMode != LM_LIGHTWEIGHT, "should not call this");
     BasicLock* locker = this->locker();
     return locker->displaced_header();
   }
@@ -54,6 +55,7 @@ void markWord::set_displaced_mark_helper(markWord m) const {
     return;
   }
   if (has_locker()) {  // has a stack lock
+    assert(LockingMode != LM_LIGHTWEIGHT, "should not call this");
     BasicLock* locker = this->locker();
     locker->set_displaced_header(m);
     return;
@@ -67,17 +69,22 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
-    st->print(" monitor(" INTPTR_FORMAT ")=", value());
-#if 0
+    st->print(" monitor(");
     if (print_monitor_info) {
-      ObjectMonitor* mon = monitor();
+      ObjectMonitor* mon = ObjectSynchronizer::read_monitor(Thread::current(), oop(this)); // hack
       if (mon == nullptr) {
         st->print("null (this should never be seen!)");
       } else {
+        st->print(PTR_FORMAT, p2i(mon));
         mon->print_on(st);
       }
     }
-#endif
+    if (has_no_hash()) {
+      st->print(" no_hash");
+    } else {
+      st->print(" hash=" INTPTR_FORMAT, hash());
+    }
+    st->print(" age=%d)", age());
   } else if (is_locked()) {  // last bits != 01 => 00
     // thin locked
     st->print(" locked(" INTPTR_FORMAT ")", value());

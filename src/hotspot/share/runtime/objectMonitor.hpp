@@ -138,8 +138,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   WeakHandle _object;               // backward object pointer
-public:
-  WeakHandle* whandle() { return &_object; }
 private:
   // Separate _header and _owner on different cache lines since both can
   // have busy multi-threaded access. _header and _object are set at initial

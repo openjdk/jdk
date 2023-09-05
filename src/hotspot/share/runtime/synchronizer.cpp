@@ -66,16 +66,12 @@
 
 // CHT storing our ObjectMonitors
 class ObjectMonitorWorld : public CHeapObj<mtThread> {
-  struct Entry : public CHeapObj<mtThread> {
-    ObjectMonitor* mon;
-    WeakHandle* obj;
-    Entry(ObjectMonitor* mon, WeakHandle* obj)  : mon(mon), obj(obj) {}
-  };
+
   class Config {
   public:
-    using Value = Entry*;
+    using Value = ObjectMonitor*;
     static uintx get_hash(Value const& value, bool* is_dead) {
-      return (uintx)value->mon->header().hash();
+      return (uintx)value->header().hash();
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
       return AllocateHeap(size, mtThread);
@@ -96,15 +92,11 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
       assert(hash != 0, "should have a hash");
       return hash;
     }
-    bool equals(Entry** value, bool* is_dead) {
+    bool equals(ObjectMonitor** value, bool* is_dead) {
       // The entry is going to be removed soon.
-      if ((*value)->obj->is_null()) {
-        *is_dead = true;
-        return false;
-      }
-      oop woop = (*value)->obj->peek();
+      // Never set is_dead, monitor deflation will remove these entries.
+      oop woop = (*value)->object_peek();
       if (woop == nullptr) {
-        *is_dead = true;
         return false;
       }
       return woop == _obj;
@@ -118,8 +110,8 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
     uintx get_hash() const {
       return _monitor->header().hash();
     }
-    bool equals(Entry** value, bool* is_dead) {
-      return (*value)->mon == _monitor;
+    bool equals(ObjectMonitor** value, bool* is_dead) {
+      return (*value) == _monitor;
     }
   };
 
@@ -127,8 +119,21 @@ public:
   ObjectMonitorWorld() : _table(new ConcurrentTable()) {}
   ObjectMonitor* monitor_for(Thread* current, oop obj);
   void monitor_put(Thread* current, ObjectMonitor* monitor, oop obj);
-  void clean_dead_entries(Thread* current);
   void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
+
+  void print_on(outputStream* st) {
+    auto printer = [&] (ObjectMonitor** entry) {
+       st->print("monitor " PTR_FORMAT " ", p2i((*entry)));
+       st->print("object " PTR_FORMAT, p2i((*entry)->object_peek()));
+       st->cr();
+       return true;
+    };
+    if (SafepointSynchronize::is_at_safepoint()) {
+      _table->do_safepoint_scan(printer);
+    } else {
+      _table->do_scan(Thread::current(), printer);
+    }
+  }
 };
 
 ObjectMonitorWorld* _omworld = nullptr;
@@ -136,8 +141,8 @@ ObjectMonitorWorld* _omworld = nullptr;
 ObjectMonitor* ObjectMonitorWorld::monitor_for(Thread* current, oop obj) {
   ObjectMonitor* result = nullptr;
   Lookup l(obj);
-  auto found = [&](Entry** found) {
-    result = (*found)->mon;
+  auto found = [&](ObjectMonitor** found) {
+    result = *found;
   };
   _table->get(current, l, found);
   return result;
@@ -146,9 +151,9 @@ ObjectMonitor* ObjectMonitorWorld::monitor_for(Thread* current, oop obj) {
 // Add the hashcode to the monitor to match the object and put it in the hashtable.
 void ObjectMonitorWorld::monitor_put(Thread* current, ObjectMonitor* monitor, oop obj) {
   // Enter the monitor into the concurrent hashtable.
-  Entry* e = new Entry(monitor, monitor->whandle());
+  // Entry* e = new Entry{monitor};
   Lookup l(obj);
-  bool b = _table->insert(current, l, e);
+  bool b = _table->insert(current, l, monitor);
   assert(b == true, "also a must");
 }
 
@@ -171,6 +176,7 @@ ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
     }
     count++;
   }
+  _omworld->print_on(tty);
   fatal("OM not found for " PTR_FORMAT, p2i(obj));
 }
 
@@ -186,6 +192,7 @@ static void add_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
 
   markWord temp = mark.copy_set_hash(hash);  // merge the hash into header
   monitor->set_header(temp);
+  assert(monitor->header().is_neutral(), "should still be neutral, but now has hash");
 
   _omworld->monitor_put(current, monitor, obj);
 }
@@ -1077,28 +1084,27 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       temp = monitor->header();
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
       hash = temp.hash();
-      if (hash != 0) {
-        // It has a hash.
+      // It has a hash.
+      assert(hash != 0, "hash is installed with monitor");
+      assert(obj->mark().hash() == hash, "hash is also the same in the object");
 
-        // Separate load of dmw/header above from the loads in
-        // is_being_async_deflated().
+      // Separate load of dmw/header above from the loads in
+      // is_being_async_deflated().
 
-        // dmw/header and _contentions may get written by different threads.
-        // Make sure to observe them in the same order when having several observers.
-        OrderAccess::loadload_for_IRIW();
+      // dmw/header and _contentions may get written by different threads.
+      // Make sure to observe them in the same order when having several observers.
+      OrderAccess::loadload_for_IRIW();
 
-        if (monitor->is_being_async_deflated()) {
-          // But we can't safely use the hash if we detect that async
-          // deflation has occurred. So we attempt to restore the
-          // header/dmw to the object's header so that we only retry
-          // once if the deflater thread happens to be slow.
-          monitor->install_displaced_markword_in_object(obj);
-          continue;
-        }
-        return hash;
+      if (monitor->is_being_async_deflated()) {
+        // But we can't safely use the hash if we detect that async
+        // deflation has occurred. So we attempt to restore the
+        // header/dmw to the object's header so that we only retry
+        // once if the deflater thread happens to be slow.
+        monitor->install_displaced_markword_in_object(obj);
+        continue;
       }
-      // Fall thru so we only have one place that installs the hash in
-      // the ObjectMonitor.
+      return hash;
+
     } else if (LockingMode == LM_LIGHTWEIGHT && mark.is_fast_locked() && is_lock_owned(current, obj)) {
       // This is a fast-lock owned by the calling thread so use the
       // markWord from the object.
@@ -1569,6 +1575,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // We do this before the CAS in order to minimize the length of time
       // in which INFLATING appears in the mark.
 
+      ShouldNotReachHere();
       markWord cmp = object->cas_set_mark(markWord::INFLATING(), mark);
       if (cmp != mark) {
         delete m;

@@ -639,7 +639,6 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
   // The dmw has to be neutral (not null, not locked and not marked).
   assert(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
 
-#if 0
   // Install displaced mark word if the object's header still points
   // to this ObjectMonitor. More than one racing caller to this function
   // can rarely reach this point, but only one can win.
@@ -652,7 +651,6 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
                                dmw.value(), obj->mark().set_has_monitor().value(),
                                res.value());
   }
-#endif
 
   // Note: It does not matter which thread restored the header/dmw
   // into the object's header. The thread deflating the monitor just
