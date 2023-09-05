@@ -6872,8 +6872,8 @@ instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
 
   ins_encode %{
     __ mulhu(as_Register($dst$$reg),
-            as_Register($src1$$reg),
-            as_Register($src2$$reg));
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
   %}
 
   ins_pipe(lmul_reg_reg);
