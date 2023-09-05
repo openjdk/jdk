@@ -24,6 +24,7 @@
  /*
  * @test
  * @summary Turning off NMT should not result in an error
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

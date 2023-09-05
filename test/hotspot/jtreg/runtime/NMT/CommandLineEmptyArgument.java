@@ -24,6 +24,7 @@
  /*
  * @test
  * @summary Empty argument to NMT should result in an informative error message
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

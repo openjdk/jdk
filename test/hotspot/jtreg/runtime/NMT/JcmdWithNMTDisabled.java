@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Verify that jcmd correctly reports that NMT is not enabled
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

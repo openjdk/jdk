@@ -24,6 +24,7 @@
  /*
  * @test
  * @summary Trying to enable PrintNMTStatistics should result in a warning
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
