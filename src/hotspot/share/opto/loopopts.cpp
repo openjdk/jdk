@@ -1799,6 +1799,14 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   if (n_loop->is_member(u_loop)) {
     return false; // Found use in inner loop
   }
+  // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
+  // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
+  // test of the pre loop above the point in the graph where it's pinned.
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop() &&
+      u_loop->_head->is_CountedLoop() && u_loop->_head->as_CountedLoop()->is_main_loop() &&
+      n_loop->_next == get_loop(u_loop->_head->as_CountedLoop()->skip_strip_mined())) {
+    return false;
+  }
   return true;
 }
 
