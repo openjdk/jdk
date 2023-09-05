@@ -1851,8 +1851,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
     Label done;
-    Label *success_target = &done;
-    Label *failure_target = stub->entry();
+    Label* success_target = &done;
+    Label* failure_target = stub->entry();
 
     __ cmpptr(value, NULL_WORD);
     if (op->should_profile()) {
