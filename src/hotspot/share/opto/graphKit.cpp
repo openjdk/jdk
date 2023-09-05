@@ -2780,10 +2780,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   if (might_be_cache && method != nullptr && VM_Version::profile_all_receivers_at_type_check()) {
     ciCallProfile profile = method->call_profile_at_bci(bci);
     float total_prob = 0;
-    for (int i = 0; ; ++i) {
-      if (!profile.has_receiver(i)) {
-        break;
-      }
+    for (int i = 0; profile.has_receiver(i); ++i) {
       float prob = profile.receiver_prob(i);
       total_prob += prob;
     }
