@@ -222,9 +222,9 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ movptr(parameters,   c_rarg5); // parameters
   __ movptr(entry_point,  c_rarg4); // entry_point
 #endif
-
+  static_assert(sizeof(BasicType) == 1, "Unexpected BasicType size");
   __ movptr(method,       c_rarg3); // method
-  __ movl(result_type,  c_rarg2);   // result type
+  __ movb(result_type,  c_rarg2);   // result type
   __ movptr(result,       c_rarg1); // result
   __ movptr(call_wrapper, c_rarg0); // call wrapper
 
@@ -317,14 +317,14 @@ address StubGenerator::generate_call_stub(address& return_address) {
   // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
   __ movptr(c_rarg0, result);
   Label is_long, is_float, is_double, exit;
-  __ movl(c_rarg1, result_type);
-  __ cmpl(c_rarg1, T_OBJECT);
+  __ movb(c_rarg1, result_type);
+  __ cmpb(c_rarg1, T_OBJECT);
   __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_LONG);
+  __ cmpb(c_rarg1, T_LONG);
   __ jcc(Assembler::equal, is_long);
-  __ cmpl(c_rarg1, T_FLOAT);
+  __ cmpb(c_rarg1, T_FLOAT);
   __ jcc(Assembler::equal, is_float);
-  __ cmpl(c_rarg1, T_DOUBLE);
+  __ cmpb(c_rarg1, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
 
   // handle T_INT case

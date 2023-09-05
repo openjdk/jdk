@@ -1759,6 +1759,11 @@ void Assembler::cmpb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::cmpb(Register dst, int imm8) {
+  prefix(dst);
+  emit_arith_b(0x80, 0xF8, dst, imm8);
+}
+
 void Assembler::cmpl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);

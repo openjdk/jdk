@@ -1108,6 +1108,7 @@ private:
 
 
   void cmpb(Address dst, int imm8);
+  void cmpb(Register dst, int imm8);
 
   void cmpl(Address dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
