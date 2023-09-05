@@ -430,6 +430,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AbortVMOnSafepointTimeout, false, DIAGNOSTIC,               \
           "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
+  product(uint64_t, AbortVMOnSafepointTimeoutDelay, 0, DIAGNOSTIC,          \
+          "Delay in milliseconds for option AbortVMOnSafepointTimeout")     \
+          range(0, max_jlong)                                               \
+                                                                            \
   product(bool, AbortVMOnVMOperationTimeout, false, DIAGNOSTIC,             \
           "Abort upon failure to complete VM operation promptly")           \
                                                                             \
