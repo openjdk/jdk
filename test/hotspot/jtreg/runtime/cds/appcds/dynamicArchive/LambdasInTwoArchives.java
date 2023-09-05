@@ -55,6 +55,8 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
     static final String loadFromStatic =
         ".*class.load.*LambdasWithSameKey[$][$]Lambda/0x.*source:.*shared.*objects.*file";
     static final String loadFromTop = loadFromStatic + ".*(top).*";
+    static final String usedAllStatic =
+        "Used all static archived lambda proxy classes for: LambdasWithSameKey";
 
     public static void main(String[] args) throws Exception {
         runTest(LambdasInTwoArchives::test);
@@ -85,7 +87,7 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
         // Generate a class list for static dump.
         // Note that the class list contains one less lambda proxy class comparing
         // with running the LambdasWithSameKey app with the "run" argument.
-        String[] launchArgs  = {
+        String[] launchArgs = {
                 "-Xshare:off",
                 "-XX:DumpLoadedClassList=" + classListFileName,
                 "-Xlog:cds",
@@ -114,7 +116,10 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
                  "-cp", appJar, mainClass, "run")
             // Expects only 1 lambda proxy class with LambdasWithSameKey as the
             // caller class in the dynamic dump log.
-            .assertNormalExit(output -> checkLambdas(output, lambdaPattern, 1));
+            .assertNormalExit(output -> checkLambdas(output, lambdaPattern, 1))
+            .assertNormalExit(output -> {
+                output.shouldContain(usedAllStatic);
+            });
 
         // Run with both static and dynamic archives.
         run2(baseArchiveName, topArchiveName,
@@ -122,6 +127,7 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
             "-cp", appJar, mainClass, "run")
             // Two lambda proxy classes should be loaded from the static archive.
             .assertNormalExit(output -> checkLambdas(output, loadFromStatic, 2))
+            .assertNormalExit(output -> { output.shouldContain(usedAllStatic); })
             // One lambda proxy class should be loaded from the dynamic archive.
             .assertNormalExit(output -> checkLambdas(output, loadFromTop, 1));
     }
