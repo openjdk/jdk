@@ -58,8 +58,7 @@ public class EmptyUTF8ForInnerClassNameTest {
     void checkClassFile(final Path path) throws Exception {
         ClassModel classFile = Classfile.of().parse(
                 new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
-        for (int i = 1; i < classFile.constantPool().entryCount(); ++i) {
-            PoolEntry pe = classFile.constantPool().entryByIndex(i);
+        for (PoolEntry pe : classFile.constantPool()) {
             if (pe instanceof Utf8Entry utf8Info) {
                 Assert.check(utf8Info.stringValue().length() > 0,
                         "UTF8 with length 0 found at class " + classFile.thisClass().name());
