@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,29 @@
  * questions.
  */
 
-import jdk.test.lib.dcmd.CommandExecutor;
-
-/*
+/**
  * @test
- * @summary Test of diagnostic command GC.heap_dump -all=true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.compiler
- *          java.management
- *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/timeout=240 HeapDumpAllTest
+ * @bug 8313323
+ * @summary Verify javac does not produce incorrect LocalVariableTable
+ * @enablePreview
+ * @compile -g UnnamedLocalVariableTable.java
+ * @run main UnnamedLocalVariableTable
  */
-public class HeapDumpAllTest extends HeapDumpTest {
-    public HeapDumpAllTest() {
-        super();
-        heapDumpArgs = "-all=true";
+public class UnnamedLocalVariableTable {
+    public static void main(String... args) {
+        try {
+            int _ = 0;
+            if (args[0] instanceof String _) {
+                System.err.println("1");
+            }
+            I i = _ -> {};
+            java.util.List<String> _ = null;
+        } catch (Exception _) {
+            System.err.println("2");
+        }
     }
 
-    @Override
-    public void run(CommandExecutor executor, boolean overwrite) throws Exception {
-        // Trigger gc by hand, so the created heap dump isnt't too large and
-        // takes too long to parse.
-        System.gc();
-        super.run(executor, overwrite);
+    interface I {
+        public void test(String s);
     }
-
-    /* See HeapDumpTest for test cases */
 }

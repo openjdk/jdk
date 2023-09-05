@@ -40,6 +40,10 @@ import jdk.internal.classfile.impl.Util;
  * methods, and records the exceptions declared to be thrown by this method.
  * Delivered as a {@link MethodElement} when traversing the elements of a
  * {@link jdk.internal.classfile.MethodModel}.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface ExceptionsAttribute
         extends Attribute<ExceptionsAttribute>, MethodElement
