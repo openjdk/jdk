@@ -155,7 +155,8 @@ public final class StringCharacterIterator implements CharacterIterator
     /**
      * Implements CharacterIterator.setIndex() for String.
      *
-     * @throws IllegalArgumentException if {@code p} is an invalid index
+     * @throws IllegalArgumentException if {@code p} is not within the bounds
+     * (inclusive) of {@link #getBeginIndex()} to {@link #getEndIndex()}
      * @see CharacterIterator#setIndex
      */
     public char setIndex(int p)
