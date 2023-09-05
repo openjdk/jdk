@@ -836,8 +836,8 @@ public class LocaleResources {
     /**
      * {@return the list patterns for the locale}
      *
-     * @param type type. one of {@link ListFormat.Type}
-     * @param style Style. one of {@link ListFormat.Style}
+     * @param type a {@link ListFormat.Type}
+     * @param style a {@link ListFormat.Style}
      */
     public String[] getListPatterns(ListFormat.Type type, ListFormat.Style style) {
         String typeStr = type.toString().toLowerCase(Locale.ROOT);
