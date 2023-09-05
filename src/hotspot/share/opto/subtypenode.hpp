@@ -61,7 +61,7 @@ public:
 #endif
 
 private:
-  // method/bci that for this subtype check so profile data can be retrieved after parsing is over
+  // method/bci for this subtype check so profile data can be retrieved after parsing is over
   ciMethod* _method;
   int _bci;
 #ifdef ASSERT
