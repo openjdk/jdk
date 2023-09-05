@@ -2786,10 +2786,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     }
     if (total_prob * 100. >= TypeProfileSubTypeCheckCommonThreshold) {
       const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
-      for (int i = 0; ; ++i) {
-        if (!profile.has_receiver(i)) {
-          break;
-        }
+      for (int i = 0; profile.has_receiver(i); ++i) {
         ciKlass* klass = profile.receiver(i);
         const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
         Compile::SubTypeCheckResult result = C->static_subtype_check(superk, klass_t);
