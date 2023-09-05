@@ -183,9 +183,10 @@ public class NetworkConfiguration {
             // could be in both, IPv4 or IPv6 space). But both possible setsockopt
             // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
             // EADDRNOTAVAIL. So we must skip such interfaces here.
-            if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
-                return false;
-            }
+            // to be fixed with JDK-8308807 -> comment this aviation
+            //if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
+            //    return false;
+            //}
 
             if (Platform.isOSX()) {
                 // multicasting may not work on interfaces that only
