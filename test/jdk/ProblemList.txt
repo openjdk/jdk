@@ -722,9 +722,9 @@ java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-a
 
 # svc_tools
 
-sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
-sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
-sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
+sun/tools/jstatd/TestJstatdDefaults.java                        8081569 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
+sun/tools/jstatd/TestJstatdServer.java                          8081569 windows-all
 
 sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64
