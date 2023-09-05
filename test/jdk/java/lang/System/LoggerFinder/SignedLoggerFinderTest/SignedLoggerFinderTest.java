@@ -25,6 +25,7 @@
  * @test
  * @bug 8314263
  * @summary Signed jars triggering Logger finder recursion and StackOverflowError
+ * @modules java.base/jdk.internal.logger:+open
  * @library /test/lib
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.process.*
@@ -47,6 +48,7 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.BootstrapLoggerUtils;
 import jdk.test.lib.util.JarUtils;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -146,6 +148,8 @@ public class SignedLoggerFinderTest {
 
             // LoggerFinder should be initialized, trigger a simple log call
             Security.setProperty("test_2", "test");
+            // allow time to let bootstrap logger flush data
+            BootstrapLoggerUtils.awaitPending();
         }
     }
 
@@ -165,6 +169,8 @@ public class SignedLoggerFinderTest {
                 System.getProperty("test.classes")));
         }
         cmds.addAll(List.of(
+            // allow test to access internal bootstrap logger functionality
+            "--add-opens=java.base/jdk.internal.logger=ALL-UNNAMED",
             // following debug property seems useful to tickle the issue
             "-Dsun.misc.URLClassPath.debug=true",
             // console logger level to capture event output
