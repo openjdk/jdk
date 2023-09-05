@@ -103,6 +103,9 @@ public:
   bool is_c1   ()                                { return false; }
   bool is_c2   ()                                { return false; }
 
+  virtual bool is_hidden_from_external_view() const { return UseJVMCINativeLibrary && LibJVMCICompilerThreadHidden; }
+
+
   bool needs_stubs            () { return false; }
 
   // Initialization

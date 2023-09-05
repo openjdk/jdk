@@ -176,6 +176,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern See the class description.
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      */
     public void applyPattern(String newPattern) {
         StringBuilder[] segments = new StringBuilder[2];
@@ -315,6 +317,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
@@ -328,6 +332,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param formats corresponding format strings
      * @throws    NullPointerException if {@code limits} or {@code formats}
      *            is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
@@ -343,17 +349,15 @@ public class ChoiceFormat extends NumberFormat {
      * If the limit array is not in ascending order, the results of formatting
      * will be incorrect.
      * @param formats are the formats you want to use for each limit.
-     * They can be either Format objects or Strings.
-     * When formatting with object Y,
-     * if the object is a NumberFormat, then ((NumberFormat) Y).format(X)
-     * is called. Otherwise Y.toString() is called.
      * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      */
     public void setChoices(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
-                "Array and limit arrays must be of the same length.");
+                    "Input arrays must be of the same length.");
         }
         choiceLimits = Arrays.copyOf(limits, limits.length);
         choiceFormats = Arrays.copyOf(formats, formats.length);
@@ -501,6 +505,7 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Generates a hash code for the message format object.
      */
+    @Override
     public int hashCode() {
         int result = choiceLimits.length;
         if (choiceFormats.length > 0) {
@@ -513,11 +518,11 @@ public class ChoiceFormat extends NumberFormat {
     /**
      * Equality comparison between two
      */
+    @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
         if (this == obj)                      // quick check
             return true;
-        if (getClass() != obj.getClass())
+        if (obj == null || getClass() != obj.getClass())
             return false;
         ChoiceFormat other = (ChoiceFormat) obj;
         return (Arrays.equals(choiceLimits, other.choiceLimits)
