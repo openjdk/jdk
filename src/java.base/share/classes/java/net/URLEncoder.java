@@ -81,7 +81,6 @@ import jdk.internal.util.StaticProperty;
  * @since   1.0
  */
 public class URLEncoder {
-
     private static final IntPredicate DONT_NEED_ENCODING;
     private static final String DEFAULT_ENCODING_NAME;
 
