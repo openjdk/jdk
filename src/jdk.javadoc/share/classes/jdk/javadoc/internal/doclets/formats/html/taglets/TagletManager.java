@@ -337,8 +337,6 @@ public class TagletManager {
         unseenCustomTags.remove(name);
     }
 
-    private boolean reportedHelpOnUnknownTag;
-
     /**
      * Given a series of {@code DocTree}s, check for misuse and spelling mistakes.
      *
@@ -360,14 +358,10 @@ public class TagletManager {
                     var ch = utils.getCommentHelper(element);
                     List<String> suggestions = DocLint.suggestSimilar(allTaglets.keySet(), name);
                     if (!suggestions.isEmpty()) {
-                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagWithHint", ch.getTagName(tag),
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTagWithHint",
                                 String.join(", ", suggestions)); // TODO: revisit after 8041488
                     } else {
-                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag", ch.getTagName(tag));
-                    }
-                    if (!reportedHelpOnUnknownTag) {
-                        reportedHelpOnUnknownTag = true;
-                        messages.notice("doclet.UnknownTagHelp");
+                        messages.warning(ch.getDocTreePath(tag), "doclet.UnknownTag");
                     }
                 }
                 continue; // unknown tag

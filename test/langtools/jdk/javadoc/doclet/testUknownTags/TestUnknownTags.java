@@ -71,7 +71,7 @@ public class TestUnknownTags extends JavadocTester {
                     "x");
             new OutputChecker(Output.OUT)
                     .setExpectFound(true)
-                    .checkUnique(Pattern.compile("unknown tag[.;:]")); // specific enough not to catch "helpful note"
+                    .checkUnique(Pattern.compile("unknown tag."));
         }
         // DocLint is default
         javadoc("-d", base.resolve("out").toString(),
@@ -79,7 +79,7 @@ public class TestUnknownTags extends JavadocTester {
                 "x");
         new OutputChecker(Output.OUT)
                 .setExpectFound(true)
-                .checkUnique(Pattern.compile("unknown tag[.;:]")); // specific enough not to catch "helpful note"
+                .checkUnique(Pattern.compile("unknown tag."));
     }
 
     // Disabled simple tags are treated as known tags, but aren't checked
@@ -226,12 +226,6 @@ public class TestUnknownTags extends JavadocTester {
 
             javadoc(args.toArray(new String[]{}));
 
-            new OutputChecker(Output.OUT)
-                    .setExpectFound(true)
-                    .checkUnique( /* "helpful note" */ """
-                            An unknown tag has been reported. Mistyped? \
-                            Forgot to add a custom tag or register a taglet?
-                            """);
             new OutputChecker(Output.OUT)
                     .setExpectFound(true)
                     .setExpectOrdered(false)
