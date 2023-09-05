@@ -915,9 +915,9 @@ abstract class UnixFileSystem
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
             } else if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
-                // Ensure source can be moved
+                // ensure source can be moved
                 try {
-                    access(source, W_OK);
+                    access(source, R_OK|W_OK);
                 } catch (UnixException exc) {
                     exc.rethrowAsIOException(source);
                 }
@@ -1045,9 +1045,14 @@ abstract class UnixFileSystem
             if (!flags.replaceExisting)
                 throw new FileAlreadyExistsException(
                     target.getPathForExceptionMessage());
-            else if (!sourceAttrs.isSymbolicLink() || flags.followLinks)
-                // Ensure source can be read
-                provider.checkAccess(source, AccessMode.READ);
+            else if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
+                // ensure source can be moved
+                try {
+                    access(source, R_OK);
+                } catch (UnixException exc) {
+                    exc.rethrowAsIOException(source);
+                }
+            }
 
             try {
                 if (targetAttrs.isDirectory()) {

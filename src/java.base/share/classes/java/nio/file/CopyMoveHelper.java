@@ -131,9 +131,8 @@ class CopyMoveHelper {
 
         // delete target if it exists and REPLACE_EXISTING is specified
         if (opts.replaceExisting) {
-            // First ensure source can be read
-            source.getFileSystem().provider().checkAccess(source,
-                                                          AccessMode.READ);
+            // first ensure source can be read
+            source.getFileSystem().provider().checkAccess(source, AccessMode.READ);
 
             Files.deleteIfExists(target);
         } else if (Files.exists(target))
