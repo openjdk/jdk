@@ -2770,7 +2770,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   }
 
   // Gather the various success & failures here
-  RegionNode *r_not_subtype = new RegionNode(3);
+  RegionNode* r_not_subtype = new RegionNode(3);
   gvn.record_for_igvn(r_not_subtype);
   RegionNode *r_ok_subtype = new RegionNode(4);
   gvn.record_for_igvn(r_ok_subtype);
