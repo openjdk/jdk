@@ -1486,10 +1486,15 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
-  const char* features = VM_Version::features_string();
   ThreadToNativeFromVM ttn(thread);
-  jstring features_string = env->NewStringUTF(features);
 
+  const char* features = VM_Version::features_string();
+
+  // The features string is used in jtreg requires tag.
+  // The 'parsable' string have seperators to better to support easy regexps.
+  RISCV64_ONLY(features = VM_Version::parsable_features_string());
+
+  jstring features_string = env->NewStringUTF(features);
   CHECK_JNI_EXCEPTION_(env, nullptr);
 
   return features_string;

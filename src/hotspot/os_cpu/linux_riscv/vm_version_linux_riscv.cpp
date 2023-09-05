@@ -105,13 +105,18 @@ void VM_Version::setup_cpu_available_features() {
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
+  // pretty print features string
   char buf[1024] = {};
+  // parsable features string
+  char buf_pfs[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
     snprintf(buf, sizeof(buf)/2, "%s,", uarch);
+    snprintf(buf_pfs, sizeof(buf_pfs)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
   strcat(buf, "rv64");
+  strcat(buf_pfs, "rv64");
   int i = 0;
   while (_feature_list[i] != nullptr) {
     if (_feature_list[i]->enabled()) {
@@ -123,6 +128,10 @@ void VM_Version::setup_cpu_available_features() {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
           strcat(buf, tmp);
+
+          // parsable features string seperator
+          strcat(buf_pfs, " ");
+          strcat(buf_pfs, tmp);
         } else {
           // Feature string is expected to be lower case.
           // Turn Zxxx into zxxx
@@ -132,6 +141,11 @@ void VM_Version::setup_cpu_available_features() {
           prebuf[1] = (char)tolower(tmp[0]);
           strcat(buf, prebuf);
           strcat(buf, &tmp[1]);
+
+          // parsable features string seperator
+          prebuf[0] = ' ';
+          strcat(buf_pfs, prebuf);
+          strcat(buf_pfs, &tmp[1]);
         }
       }
       // Feature bit
@@ -145,6 +159,7 @@ void VM_Version::setup_cpu_available_features() {
   }
 
   _features_string = os::strdup(buf);
+  _parsable_features_string = os::strdup(buf);
 }
 
 void VM_Version::os_aux_features() {

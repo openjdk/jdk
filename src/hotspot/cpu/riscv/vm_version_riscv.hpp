@@ -189,10 +189,11 @@ class VM_Version : public Abstract_VM_Version {
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
+  static const char* _parsable_features_string;
+
 #ifdef COMPILER2
   static void c2_initialize();
 #endif // COMPILER2
-
  public:
   // Initialization
   static void initialize();
@@ -201,6 +202,9 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
+
+  // Have a space separator between all features.
+  static const char* parsable_features_string() { return _parsable_features_string; }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
