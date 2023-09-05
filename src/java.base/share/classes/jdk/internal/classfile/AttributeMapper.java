@@ -33,7 +33,7 @@ package jdk.internal.classfile;
  * attributes, clients can define their own {@linkplain AttributeMapper}.
  * Classes that model nonstandard attributes should extend {@link
  * CustomAttribute}.
- * @param <A> attribute type
+ * @param <A> the attribute type
  */
 public interface AttributeMapper<A> {
 

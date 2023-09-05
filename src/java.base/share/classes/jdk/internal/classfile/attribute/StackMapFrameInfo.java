@@ -41,30 +41,30 @@ public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
     /**
-     * {@return frame compact form type}
+     * {@return the frame compact form type}
      */
     int frameType();
 
     /**
-     * {@return frame target label}
+     * {@return the frame target label}
      */
     Label target();
 
     /**
-     * {@return expanded local variable types}
+     * {@return the expanded local variable types}
      */
     List<VerificationTypeInfo> locals();
 
     /**
-     * {@return expanded stack types}
+     * {@return the expanded stack types}
      */
     List<VerificationTypeInfo> stack();
 
     /**
-     * {@return new stack map frame}
-     * @param target location of the frame
-     * @param locals complete list of frame locals
-     * @param stack complete frame stack
+     * {@return a new stack map frame}
+     * @param target the location of the frame
+     * @param locals the complete list of frame locals
+     * @param stack the complete frame stack
      */
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
@@ -79,7 +79,7 @@ public sealed interface StackMapFrameInfo
     sealed interface VerificationTypeInfo {
 
         /**
-         * {@return tag of the type info}
+         * {@return the tag of the type info}
          */
         int tag();
     }
@@ -130,16 +130,16 @@ public sealed interface StackMapFrameInfo
             permits StackMapDecoder.ObjectVerificationTypeInfoImpl {
 
         /**
-         * {@return new object verification type info}
-         * @param className class of the object
+         * {@return a new object verification type info}
+         * @param className the class of the object
          */
         public static ObjectVerificationTypeInfo of(ClassEntry className) {
             return new StackMapDecoder.ObjectVerificationTypeInfoImpl(className);
         }
 
         /**
-         * {@return new object verification type info}
-         * @param classDesc class of the object
+         * {@return a new object verification type info}
+         * @param classDesc the class of the object
          */
         public static ObjectVerificationTypeInfo of(ClassDesc classDesc) {
             return of(TemporaryConstantPool.INSTANCE.classEntry(classDesc));
@@ -165,13 +165,13 @@ public sealed interface StackMapFrameInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
 
         /**
-         * {@return {@code new} instruction position that creates this unitialized object}
+         * {@return the {@code new} instruction position that creates this unitialized object}
          */
         Label newTarget();
 
         /**
-         * {@return unitialized verification type info}
-         * @param newTarget {@code new} instruction position that creates this unitialized object
+         * {@return an unitialized verification type info}
+         * @param newTarget the {@code new} instruction position that creates this unitialized object
          */
         public static UninitializedVerificationTypeInfo of(Label newTarget) {
             return new StackMapDecoder.UninitializedVerificationTypeInfoImpl(newTarget);

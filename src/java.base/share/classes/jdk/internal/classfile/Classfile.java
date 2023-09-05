@@ -97,7 +97,7 @@ public sealed interface Classfile
         }
 
         /**
-         * {@return function mapping attribute names to attribute mappers}
+         * {@return the function mapping attribute names to attribute mappers}
          */
         Function<Utf8Entry, AttributeMapper<?>> attributeMapper();
     }
@@ -400,7 +400,7 @@ public sealed interface Classfile
      *                     b -> b.transform(model, transform));
      * }
      *
-     * @param model class model to transform
+     * @param model the class model to transform
      * @param transform the transform
      * @return the bytes of the new class
      */
@@ -415,7 +415,7 @@ public sealed interface Classfile
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
      *
-     * @param model class model to transform
+     * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class
@@ -438,7 +438,7 @@ public sealed interface Classfile
      *                     b -> b.transform(model, transform));
      * }
      *
-     * @param model class model to transform
+     * @param model the class model to transform
      * @param newClassName new class name
      * @param transform the transform
      * @return the bytes of the new class

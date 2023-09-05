@@ -41,8 +41,7 @@ public sealed interface LabelTarget extends PseudoInstruction
         permits LabelImpl {
 
     /**
-     *
-     * {@return label corresponding to this target}
+     * {@return the label corresponding to this target}
      */
     Label label();
 }
