@@ -37,18 +37,20 @@ import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
- * {@code ListFormat} produces or parses a list of concatenated
- * strings in a locale-sensitive way. Use {@code ListFormat} to construct a list
- * of strings displayed for end users. For example, displaying 3 weekdays
- * as "Monday, Wednesday, and Friday". This class provides the functionality
- * defined in Unicode Consortium's LDML specification for
+ * {@code ListFormat} formats or parses a list of strings in a locale-sensitive way.
+ * Use {@code ListFormat} to construct a list of strings displayed for end users.
+ * For example, displaying a list of 3 weekdays, e.g. "Monday", "Wednesday", "Friday"
+ * as "Monday, Wednesday, and Friday" in an inclusive list type. This class provides
+ * the functionality defined in Unicode Consortium's LDML specification for
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
- * Three types of concatenation are provided: {@link Type#STANDARD STANDARD},
- * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
+ * Three formatting types are provided: {@link Type#STANDARD STANDARD}, {@link Type#OR OR},
+ * and {@link Type#UNIT UNIT}, which determines the punctuation
+ * between the strings and the connecting words if any. Also, three formatting styles for each
  * type are provided: {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
- * {@link Style#NARROW NARROW}. The following snippet is an example of formatting
+ * {@link Style#NARROW NARROW}, suitable for how the strings are abbreviated (or not).
+ * The following snippet is an example of formatting
  * the list of Strings {@code "Foo", "Bar", "Baz"} in US English with
  * {@code STANDARD} type and {@code FULL} style:
  * {@snippet lang=java :
@@ -80,7 +82,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *     <td>Foo Bar Baz</td>
  * </tbody>
  * </table>
- * Note: these examples are from CLDR, there could be different patterns from other locale providers.
+ * Note: these examples are from CLDR, there could be different results from other locale providers.
  * <p>
  * Alternatively, Locale, Type, and/or Style independent instances
  * can be created with {@link #getInstance(String[])}. The String array to the
@@ -316,6 +318,8 @@ public class ListFormat extends Format {
     /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns of this {@code ListFormat}}
+     * @apiNote Formatting the string from an excessively long list may exceed memory
+     *          or string sizes.
      * @param input The list of input strings to format. There should at least
      *              one String element in this list, otherwise an {@code IllegalArgumentException}
      *              is thrown.
@@ -333,6 +337,8 @@ public class ListFormat extends Format {
      * Formats an object and appends the resulting text to a given string
      * buffer. The object should either be a List or an array of Objects.
      *
+     * @apiNote Formatting the string from an excessively long list or array
+     *          may exceed memory or string sizes.
      * @param obj    The object to format. Must be a List or an array
      *               of Object.
      * @param toAppendTo    where the text is to be appended
@@ -537,24 +543,25 @@ public class ListFormat extends Format {
      * {@link #UNIT UNIT}.
      * <p>
      * {@code Type} is an enum which represents the type for formatting
-     * a list within a given {@code ListFormat} instance.
+     * a list within a given {@code ListFormat} instance. It determines
+     * the punctuation and the connecting words in the formatted text.
      */
     public enum Type {
 
         /**
-         * The {@code STANDARD} ListFormat style. This is the default
+         * The {@code STANDARD} ListFormat type. This is the default
          * type, which concatenates elements in "and" enumeration.
          */
         STANDARD,
 
         /**
-         * The {@code OR} ListFormat style. This style concatenates
+         * The {@code OR} ListFormat type. This type concatenates
          * elements in "or" enumeration.
          */
         OR,
 
         /**
-         * The {@code UNIT} ListFormat style. This style concatenates
+         * The {@code UNIT} ListFormat type. This type concatenates
          * elements, useful for enumerating units.
          */
         UNIT
