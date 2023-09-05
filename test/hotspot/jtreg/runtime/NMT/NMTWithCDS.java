@@ -38,7 +38,7 @@ public class NMTWithCDS {
 
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb;
-    pb = ProcessTools.(
+    pb = ProcessTools.createTestJvm(
         "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./NMTWithCDS.jsa", "-Xshare:dump", "-Xlog:cds");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     try {
