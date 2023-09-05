@@ -55,7 +55,7 @@ void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak
   output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
   if (peak != 0) {
-    output()->print(", largets_committed=" SIZE_FORMAT "%s", amount_in_current_scale(peak), scale);
+    output()->print(", largest_committed=" SIZE_FORMAT "%s", amount_in_current_scale(peak), scale);
   }
 }
 
