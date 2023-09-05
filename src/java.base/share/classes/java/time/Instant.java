@@ -1272,8 +1272,11 @@ public final class Instant
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherInstant  the other instant to compare to, not null
-     * @return the comparator value, negative if less, positive if greater
+     * @return the comparator value, that is less than zero if this instant is before {@code otherInstant},
+     *          zero if they are equal, or greater than zero if this instant is after {@code otherInstant}
      * @throws NullPointerException if otherInstant is null
+     * @see #isBefore
+     * @see #isAfter
      */
     @Override
     public int compareTo(Instant otherInstant) {

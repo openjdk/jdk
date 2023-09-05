@@ -132,7 +132,8 @@ public:
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   void remove_unreachable_subgraph(PhaseIterGVN* igvn);
   virtual const RegMask &out_RegMask() const;
-  bool try_clean_mem_phi(PhaseGVN* phase);
+  bool is_diamond() const;
+  void try_clean_mem_phis(PhaseIterGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
   NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
@@ -233,7 +234,8 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
-  int  is_diamond_phi(bool check_control_only = false) const;
+  int is_diamond_phi() const;
+  bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
@@ -453,8 +455,9 @@ public:
 };
 
 // Special node that denotes a Parse Predicate added during parsing. A Parse Predicate serves as placeholder to later
-// create Runtime Predicates above it. They all share the same uncommon trap. The Parse Predicate will follow the
-// Runtime Predicates. Together they form a Regular Predicate Block. There are three kinds of Parse Predicates:
+// create Regular Predicates (Runtime Predicates with possible Assertion Predicates) above it. Together they form a
+// Predicate Block. The Parse Predicate and Regular Predicates share the same uncommon trap.
+// There are three kinds of Parse Predicates:
 // Loop Parse Predicate, Profiled Loop Parse Predicate (both used by Loop Predication), and Loop Limit Check Parse
 // Predicate (used for integer overflow checks when creating a counted loop).
 // More information about predicates can be found in loopPredicate.cpp.
@@ -468,6 +471,8 @@ class ParsePredicateNode : public IfNode {
   Deoptimization::DeoptReason deopt_reason() const {
     return _deopt_reason;
   }
+
+  Node* uncommon_trap() const;
 
   NOT_PRODUCT(void dump_spec(outputStream* st) const;)
 };

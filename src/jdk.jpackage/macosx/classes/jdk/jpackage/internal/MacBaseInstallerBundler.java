@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,12 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                     !AppImageFile.load(predefinedImage).isSigned()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayout.macAppImage().resolveAt(appDir));
+                // We need to re-sign app image after adding ".package" to it.
+                // We only do this if app image was not signed which means it is
+                // signed with ad-hoc signature. App bundles with ad-hoc
+                // signature are sealed, but without a signing identity, so we
+                // need to re-sign it after modification.
+                MacAppImageBuilder.signAppBundle(params, appDir, "-", null, null);
             }
         } else {
             appDir = appImageBundler.execute(params, appImageRoot);
@@ -199,48 +205,6 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     @Override
     public String getBundleType() {
         return "INSTALLER";
-    }
-
-    public static String findKey(String keyPrefix, String teamName, String keychainName) {
-
-        boolean useAsIs = teamName.startsWith(keyPrefix)
-                || teamName.startsWith("Developer ID")
-                || teamName.startsWith("3rd Party Mac");
-
-        String key = (useAsIs) ? teamName : (keyPrefix + teamName);
-
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                PrintStream ps = new PrintStream(baos)) {
-            List<String> searchOptions = new ArrayList<>();
-            searchOptions.add("/usr/bin/security");
-            searchOptions.add("find-certificate");
-            searchOptions.add("-c");
-            searchOptions.add(key);
-            searchOptions.add("-a");
-            if (keychainName != null && !keychainName.isEmpty()) {
-                searchOptions.add(keychainName);
-            }
-
-            ProcessBuilder pb = new ProcessBuilder(searchOptions);
-
-            IOUtils.exec(pb, false, ps);
-            Pattern p = Pattern.compile("\"alis\"<blob>=\"([^\"]+)\"");
-            Matcher m = p.matcher(baos.toString());
-            if (!m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.cert.not.found"), key, keychainName));
-                return null;
-            }
-            String matchedKey = m.group(1);
-            if (m.find()) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "error.multiple.certs.found"), key, keychainName));
-            }
-            return matchedKey;
-        } catch (IOException ioe) {
-            Log.verbose(ioe);
-            return null;
-        }
     }
 
     private final Bundler appImageBundler;

@@ -242,7 +242,7 @@
                 </nbjpdastart>
                 <property
                     name="@{jpda.jvmargs.property}"
-                    value="-Xdebug -Xrunjdwp:transport=dt_socket,address=${jpda.address}"
+                    value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"
                 />
             </sequential>
         </macrodef>
