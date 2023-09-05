@@ -776,8 +776,8 @@
           "Verify receiver types at runtime")                               \
                                                                             \
   product(intx, TypeProfileSubTypeCheckCommonThreshold, 50,                 \
-          "Use profile data at type check if together profiled types"       \
-          "account for more than this threshold")                           \
+          "Use profile data at type check if profiled types account for"    \
+          "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
 

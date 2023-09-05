@@ -1717,8 +1717,6 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   if (TypeProfileWidth == 0) {
     increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
   } else {
-    int non_profiled_offset = in_bytes(CounterData::count_offset());
-
     record_item_in_profile_helper(receiver, mdp, reg2, 0, done, TypeProfileWidth,
                                   &VirtualCallData::receiver_offset, &VirtualCallData::receiver_count_offset);
   }

@@ -1594,8 +1594,7 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   if (dom_bool == this_bool) {
     return true;
   }
-  // If the comparison is a subtype check, then SubTypeCheck nodes may have profile data attached to them and may be
-  // different nodes even-though they perform the same subtype check
+
   if (dom_bool == nullptr || !dom_bool->is_Bool() ||
       this_bool == nullptr || !this_bool->is_Bool()) {
     return false;
@@ -1603,6 +1602,8 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   Node* dom_cmp = dom_bool->in(1);
   Node* this_cmp = this_bool->in(1);
 
+  // If the comparison is a subtype check, then SubTypeCheck nodes may have profile data attached to them and may be
+  // different nodes even-though they perform the same subtype check
   if (dom_cmp == nullptr || !dom_cmp->is_SubTypeCheck() ||
       this_cmp == nullptr || !this_cmp->is_SubTypeCheck()) {
     return false;
