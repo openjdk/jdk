@@ -394,7 +394,19 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
   // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
   // evac and update phases.
   size_t old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
-  assert(old_available >= old_consumed, "Cannot consume more than is available");
+
+  if (old_available < old_consumed) {
+    // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
+    // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
+    assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
+           "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
+           young_advance_promoted_reserve_used, old_available - old_evacuated_committed);
+    young_advance_promoted_reserve_used = old_available - old_evacuated_committed;
+    old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
+  }
+
+  assert(old_available >= old_consumed, "Cannot consume (" SIZE_FORMAT ") more than is available (" SIZE_FORMAT ")",
+         old_consumed, old_available);
   size_t excess_old = old_available - old_consumed;
   size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
   size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
@@ -599,6 +611,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
   if (candidates > 0) {
+    size_t selected_regions = 0;
+    size_t selected_live = 0;
     QuickSort::sort<AgedRegionData>(sorted_regions, candidates, compare_by_aged_live, false);
     for (size_t i = 0; i < candidates; i++) {
       size_t region_live_data = sorted_regions[i]._live_data;
@@ -607,6 +621,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
         ShenandoahHeapRegion* region = sorted_regions[i]._region;
         old_consumed += promotion_need;
         candidate_regions_for_promotion_by_copy[region->index()] = true;
+        selected_regions++;
+        selected_live += region_live_data;
       } else {
         // We rejected this promotable region from the collection set because we had no room to hold its copy.
         // Add this region to promo potential for next GC.
@@ -615,6 +631,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t nu
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
+    log_info(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
+                 " consuming: " SIZE_FORMAT " of budgeted: " SIZE_FORMAT,
+                 selected_regions, selected_live, old_consumed, old_available);
   }
   heap->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->set_promotion_potential(promo_potential);
