@@ -138,7 +138,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Enforced by the assert() in header_addr().
   volatile markWord _header;        // displaced object header word - mark
   WeakHandle _object;               // backward object pointer
-private:
   // Separate _header and _owner on different cache lines since both can
   // have busy multi-threaded access. _header and _object are set at initial
   // inflation. The _object does not change, so it is a good choice to share
@@ -265,9 +264,7 @@ private:
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
-  bool      is_being_async_deflated() const;
-  // Returns true if 'this' is being async deflated or is already deflated.
-  inline bool is_deflated() const;
+  bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.
   void      release_clear_owner(void* old_value);
   // Simply set _owner field to new_value; current value must match old_value.

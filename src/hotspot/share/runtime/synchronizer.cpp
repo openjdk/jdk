@@ -93,8 +93,7 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
       return hash;
     }
     bool equals(ObjectMonitor** value, bool* is_dead) {
-      // The entry is going to be removed soon.
-      // Never set is_dead, monitor deflation will remove these entries.
+      // Never set is_dead, monitor deflation will remove deflated entries.
       oop woop = (*value)->object_peek();
       if (woop == nullptr) {
         return false;
