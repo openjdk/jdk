@@ -33,9 +33,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException ;
 import java.util.BitSet;
 import java.util.Objects;
+import java.util.function.IntPredicate;
 
+import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.util.StaticProperty;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -81,8 +82,7 @@ import jdk.internal.vm.annotation.Stable;
  */
 public class URLEncoder {
 
-    @Stable
-    private static final boolean[] DONT_NEED_ENCODING = new boolean[128];
+    private static final IntPredicate DONT_NEED_ENCODING;
     private static final String DEFAULT_ENCODING_NAME;
 
     static {
@@ -122,23 +122,18 @@ public class URLEncoder {
          * as is Netscape.
          *
          */
+        var bitSet = new BitSet(128);
+        bitSet.set('a', 'z' + 1);
+        bitSet.set('A', 'Z' + 1);
+        bitSet.set('0', '9' + 1);
+        bitSet.set(' '); /* encoding a space to a + is done
+                                    * in the encode() method */
+        bitSet.set('-');
+        bitSet.set('_');
+        bitSet.set('.');
+        bitSet.set('*');
 
-         for (int i = 'a'; i <= 'z'; i++) {
-             DONT_NEED_ENCODING[i] = true;
-         }
-         for (int i = 'A'; i <= 'Z'; i++) {
-             DONT_NEED_ENCODING[i] = true;
-         }
-         for (int i = '0'; i <= '9'; i++) {
-             DONT_NEED_ENCODING[i] = true;
-         }
-         // encoding a space to a + is done in the encode() method
-         DONT_NEED_ENCODING[' '] = true;
-         DONT_NEED_ENCODING['-'] = true;
-         DONT_NEED_ENCODING['_'] = true;
-         DONT_NEED_ENCODING['.'] = true;
-         DONT_NEED_ENCODING['*'] = true;
-
+        DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
         DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
@@ -247,7 +242,7 @@ public class URLEncoder {
         int i;
         for (i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c >= 128 || !DONT_NEED_ENCODING[c] || c == ' ') {
+            if (c >= 128 || !DONT_NEED_ENCODING.test(c) || c == ' ') {
                 break;
             }
         }
@@ -263,7 +258,7 @@ public class URLEncoder {
 
         while (i < s.length()) {
             char c = s.charAt(i);
-            if (c < 128 && DONT_NEED_ENCODING[c]) {
+            if (DONT_NEED_ENCODING.test(c)) {
                 if (c == ' ') {
                     c = '+';
                 }
@@ -291,7 +286,7 @@ public class URLEncoder {
                         }
                     }
                     i++;
-                } while (i < s.length() && ((c = s.charAt(i)) >= 128 || !DONT_NEED_ENCODING[c]));
+                } while (i < s.length() && !DONT_NEED_ENCODING.test((c = s.charAt(i))));
 
                 String str = charArrayWriter.toString();
                 byte[] ba = str.getBytes(charset);

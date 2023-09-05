@@ -880,7 +880,7 @@ instruct vmla(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (AddVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (AddVL dst_src1 (MulVL src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vmla $dst_src1, $dst_src1, src2, src3" %}
+  format %{ "vmla $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
@@ -916,7 +916,7 @@ instruct vmls(vReg dst_src1, vReg src2, vReg src3) %{
   match(Set dst_src1 (SubVI dst_src1 (MulVI src2 src3)));
   match(Set dst_src1 (SubVL dst_src1 (MulVL src2 src3)));
   ins_cost(VEC_COST);
-  format %{ "vmls $dst_src1, $dst_src1, src2, src3" %}
+  format %{ "vmls $dst_src1, $dst_src1, $src2, $src3" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
