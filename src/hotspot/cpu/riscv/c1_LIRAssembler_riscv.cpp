@@ -1180,8 +1180,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (should_profile) {
     data_check(op, &md, &data);
   }
-  Label *success_target = success;
-  Label *failure_target = failure;
+  Label* success_target = success;
+  Label* failure_target = failure;
 
   if (obj == k_RInfo) {
     k_RInfo = dst;
