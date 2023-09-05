@@ -41,6 +41,10 @@ import jdk.internal.classfile.impl.Util;
  */
 public sealed interface ReturnInstruction extends Instruction
         permits AbstractInstruction.UnboundReturnInstruction {
+
+    /**
+     * {@return the type of the return instruction}
+     */
     TypeKind typeKind();
 
     /**
