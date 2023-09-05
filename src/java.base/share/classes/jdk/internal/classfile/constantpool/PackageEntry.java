@@ -30,6 +30,7 @@ import java.lang.constant.PackageDesc;
 /**
  * Models a {@code CONSTANT_Package_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.12 The CONSTANT_Package_info Structure
  */
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {

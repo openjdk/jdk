@@ -144,7 +144,7 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         return constantPoolCount;
     }
 
@@ -189,6 +189,9 @@ public final class ClassReaderImpl
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
+        if (index < 0 || index >= bootstrapMethodCount()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
         return bsmEntries().get(index);
     }
 
@@ -312,6 +315,9 @@ public final class ClassReaderImpl
         PoolEntry info = cp[index];
         if (info == null) {
             int offset = cpOffset[index];
+            if (offset == 0) {
+                throw new ConstantPoolException("Unusable CP index: " + index);
+            }
             int tag = readU1(offset);
             final int q = offset + 1;
             info = switch (tag) {

@@ -166,7 +166,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         throw new UnsupportedOperationException();
     }
 

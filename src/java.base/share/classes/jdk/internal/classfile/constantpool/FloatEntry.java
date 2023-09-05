@@ -30,6 +30,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_Float_info} constant in the constant pool of a
  * classfile.
+ * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
  */
 public sealed interface FloatEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry

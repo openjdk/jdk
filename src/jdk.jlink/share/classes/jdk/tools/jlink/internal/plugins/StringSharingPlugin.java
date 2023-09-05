@@ -175,9 +175,8 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
             private void scanConstantPool(Set<Integer> utf8Descriptors)
                     throws Exception {
-                for (int i = 1; i < cm.constantPool().entryCount(); i += cm.constantPool().entryByIndex(i).width()) {
-                    try {
-                        PoolEntry info = cm.constantPool().entryByIndex(i);
+                try {
+                    for (PoolEntry info : cm.constantPool()) {
                         switch (info) {
                             case NameAndTypeEntry nameAndType ->
                                 utf8Descriptors.add(nameAndType.type().index());
@@ -185,9 +184,9 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                                 utf8Descriptors.add(mt.descriptor().index());
                             default -> {}
                         }
-                    } catch (ConstantPoolException ex) {
-                        throw new IOException(ex);
                     }
+                } catch (ConstantPoolException ex) {
+                    throw new IOException(ex);
                 }
             }
         }
