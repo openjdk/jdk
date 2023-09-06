@@ -74,6 +74,10 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _options(copy_string(options)),
   _os_lib(nullptr),
   _os_lib_path(nullptr),
+#ifdef AIX
+  _inode(0),
+  _device(0),
+#endif
   _jplis(nullptr),
   _loaded(false),
   _absolute_path(is_absolute_path),
@@ -117,6 +121,24 @@ void JvmtiAgent::set_os_lib_path(const char* path) {
 const char* JvmtiAgent::os_lib_path() const {
   return _os_lib_path;
 }
+
+#ifdef AIX
+void JvmtiAgent::set_inode(long inode) {
+  _inode = inode;
+}
+
+void JvmtiAgent::set_device(long device) {
+  _device = device;
+}
+
+long JvmtiAgent::inode() const {
+  return _inode;
+}
+
+long JvmtiAgent::device() const {
+  return _device;
+}
+#endif
 
 bool JvmtiAgent::is_loaded() const {
   return _loaded;
@@ -272,6 +294,38 @@ static bool load_agent_from_executable(JvmtiAgent* agent, const char* on_load_sy
   return os::find_builtin_agent(agent, &on_load_symbols[0], num_symbol_entries);
 }
 
+#ifdef AIX
+static int stat64x_LIBPATH(const char* path, struct stat64x* stat)
+{
+  // Simulate the library search algorithm of dlopen() (in os::dll_load)
+  if (path[0] == '/' ||
+      (path[0] == '.' && (path[1] == '/' ||
+                          (path[1] == '.' && path[2] == '/')))) {
+    return stat64x(path, stat);
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr || *env == 0)
+    return -1;
+
+  int ret = -1;
+  size_t libpathlen = strlen(env);
+  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) +1, mtServiceability);
+  char *saveptr, *token;
+  strcpy(libpath, env);
+  for( token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr) ) {
+    sprintf(combined, "%s/%s", token, path);
+    if (0 == (ret = stat64x(combined, stat)))
+      break;
+  }
+
+  FREE_C_HEAP_ARRAY(char*, combined);
+  FREE_C_HEAP_ARRAY(char*, libpath);
+  return ret;
+}
+#endif
+
 // Load the library from the absolute path of the agent, if available.
 static void* load_agent_from_absolute_path(JvmtiAgent* agent, bool vm_exit_on_error) {
   DEBUG_ONLY(assert_preload(agent);)
@@ -281,6 +335,18 @@ static void* load_agent_from_absolute_path(JvmtiAgent* agent, bool vm_exit_on_er
   if (library == nullptr && vm_exit_on_error) {
     vm_exit(agent, " in absolute path, with error: ", nullptr);
   }
+  #ifdef AIX
+  if (library != nullptr) {
+    struct stat64x libstat;
+    if (0 == stat64x_LIBPATH(agent->name(), &libstat)) {
+      agent->set_inode(libstat.st_ino);
+      agent->set_device(libstat.st_dev);
+    }
+    else {
+      assert(false, "stat64x failed 1");
+    }
+  }
+  #endif
   return library;
 }
 
@@ -293,11 +359,33 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
   // Try to load the agent from the standard dll directory
   if (os::dll_locate_lib(&buffer[0], sizeof buffer, Arguments::get_dll_dir(), name)) {
     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
+    #ifdef AIX
+    if (library != nullptr) {
+      struct stat64x libstat;
+      if (0 == stat64x_LIBPATH(&buffer[0], &libstat)) {
+        agent->set_inode(libstat.st_ino);
+        agent->set_device(libstat.st_dev);
+      }
+      else {
+        assert(false, "stat64x failed 3");
+      }
+    }
+    #endif
   }
   if (library == nullptr && os::dll_build_name(&buffer[0], sizeof buffer, name)) {
     // Try the library path directory.
     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
     if (library != nullptr) {
+      #ifdef AIX
+      struct stat64x libstat;
+      if (0 == stat64x_LIBPATH(&buffer[0], &libstat)) {
+        agent->set_inode(libstat.st_ino);
+        agent->set_device(libstat.st_dev);
+      }
+      else {
+        assert(false, "stat64x failed-2");
+      }
+      #endif
       return library;
     }
     if (vm_exit_on_error) {
@@ -515,7 +603,11 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
     agent->set_os_lib_path(&buffer[0]);
     agent->set_os_lib(library);
     agent->set_loaded();
+  #ifdef AIX
+    previously_loaded = JvmtiAgentList::is_dynamic_lib_loaded(agent->device(), agent->inode());
+  #else
     previously_loaded = JvmtiAgentList::is_dynamic_lib_loaded(library);
+  #endif
   }
 
   // Print warning if agent was not previously loaded and EnableDynamicAgentLoading not enabled on the command line.
