@@ -26,7 +26,7 @@
  * @bug 4357975
  * @summary  Tests if InsertUnorderedListItem generates the proper tag sequence
  * @run main bug4357975
-*/
+ */
 
 import java.awt.event.ActionEvent;
 
@@ -44,7 +44,6 @@ import javax.swing.text.html.HTMLDocument;
 public class bug4357975 {
 
     public static void main(String[] args) throws Exception {
-
         JEditorPane jep = new JEditorPane();
         HTMLEditorKit kit = new HTMLEditorKit();
         jep.setEditorKit(kit);
@@ -60,8 +59,7 @@ public class bug4357975 {
 
                 Element el = doc.getCharacterElement(offset + 1);
                 AttributeSet attrs = el.getAttributes();
-                Object name = attrs.getAttribute(
-                                    StyleConstants.NameAttribute);
+                Object name = attrs.getAttribute(StyleConstants.NameAttribute);
                 boolean passed = (name == HTML.Tag.CONTENT);
 
                 el = el.getParentElement();

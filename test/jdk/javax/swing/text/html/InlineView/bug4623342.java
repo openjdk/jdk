@@ -39,7 +39,7 @@ import javax.swing.text.html.HTMLEditorKit;
 
 public class bug4623342 {
 
-    private static volatile boolean passed = false;
+    private static volatile boolean passed;
 
     private JEditorPane jep;
     private static JFrame f;

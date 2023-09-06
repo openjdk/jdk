@@ -21,11 +21,12 @@
  * questions.
  */
 
-/* @test
-   @bug 4329185
-   @summary  Tests if vertical image alignment is working
-   @key headful
-   @run main bug4329185
+/*
+ * @test
+ * @bug 4329185
+ * @summary  Tests if vertical image alignment is working
+ * @key headful
+ * @run main bug4329185
 */
 
 import java.awt.Robot;

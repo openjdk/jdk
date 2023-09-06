@@ -27,7 +27,7 @@
  * @summary  Tests if HTML tags are correctly shown for
              StyleEditorKit.ForegroundAction() in JTextPane output.
  * @run main bug4841760
-*/
+ */
 
 import javax.swing.JTextPane;
 import javax.swing.text.SimpleAttributeSet;
@@ -42,7 +42,7 @@ public class bug4841760 {
         jep.setText("<html><head></head><body><font size=3>hellojavaworld</font></body></html>");
 
         SimpleAttributeSet set = new SimpleAttributeSet();
-        StyleConstants.setForeground(set, java.awt.Color.blue);
+        StyleConstants.setForeground(set, java.awt.Color.BLUE);
         jep.getStyledDocument().setCharacterAttributes(3, 5, set, false);
 
         String gotText = jep.getText();
