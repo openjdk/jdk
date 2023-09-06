@@ -741,7 +741,6 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
   // Calling conventions for C runtime calls and calls to JNI native methods.
   //
@@ -807,13 +806,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   // significant word of an argument slot.
   const int float_offset_in_slots = AIX_ONLY(0) NOT_AIX(1);
 #endif
-  // We fill-out regs AND regs2 if an argument must be passed in a
-  // register AND in a stack slot. If regs2 is null in such a
-  // situation, we bail-out with a fatal error.
   for (int i = 0; i < total_args_passed; ++i, ++arg) {
-    // Initialize regs2 to BAD.
-    if (regs2 != nullptr) regs2[i].set_bad();
-
     switch(sig_bt[i]) {
 
     //
@@ -2174,7 +2167,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // - *_slot_offset Indicates offset from SP in number of stack slots.
   // - *_offset      Indicates offset from SP in bytes.
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args) + // 1+2)
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args) + // 1+2)
                     SharedRuntime::out_preserve_stack_slots(); // See c_calling_convention.
 
   // Now the space for the inbound oop handle area.

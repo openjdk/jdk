@@ -1232,7 +1232,7 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
 
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
-  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
