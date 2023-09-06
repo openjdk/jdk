@@ -694,6 +694,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
 #if INCLUDE_JVMCI
   bool force_JVMCI_initialization = false;
+  bool forced_JVMCI_initialization_must_succeed = true;
   if (EnableJVMCI) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
@@ -703,6 +704,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
       // compilations via JVMCI will not actually block until JVMCI is initialized.
       force_JVMCI_initialization = UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation);
+      forced_JVMCI_initialization_must_succeed = false;
     }
   }
 #endif
@@ -756,6 +758,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #if INCLUDE_JVMCI
   if (force_JVMCI_initialization) {
     JVMCI::initialize_compiler(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      if (forced_JVMCI_initialization_must_succeed) {
+        return JNI_ERR;
+      } else {
+        ResourceMark rm(THREAD);
+        stringStream st;
+        java_lang_Throwable::print(PENDING_EXCEPTION, &st);
+        CLEAR_PENDING_EXCEPTION;
+        JVMCI_event_1("Error during eager JVMCI initialization: %s", st.as_string());
+      }
+    }
     CompileBroker::compilation_init_phase2();
   }
 #endif
