@@ -4090,8 +4090,8 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
-  if(VM_Version::supports_avx2()) {
-    generate_string_indexof(); // ASGASG
+  if ((UseAVX == 2) && VM_Version::supports_avx2()) {
+    StubRoutines::_string_indexof = generate_string_indexof(); // ASGASG
   }
 
   if (UseAdler32Intrinsics) {

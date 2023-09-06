@@ -39,7 +39,7 @@
 #define __ _masm->
 
 address StubGenerator::generate_string_indexof() {
-  StubCodeMark mark(this, "StubRoutines", "indexof");
+  StubCodeMark mark(this, "StubRoutines", "stringIndexOf");
   address jmp_table[13];
   int jmp_ndx = 0;
   __ align(CodeEntryAlignment);
@@ -63,7 +63,7 @@ address StubGenerator::generate_string_indexof() {
     Label L_outer7, L_mid7, L_inner7, L_outer8, L_mid8, L_inner8;
     Label L_outer9, L_mid9, L_inner9, L_outer10, L_mid10, L_inner10;
     Label L_outer11, L_mid11, L_inner11, L_outer12, L_mid12, L_inner12;
-    Label L_inner_mid11, L_inner_mid12,L_0x404f26;
+    Label L_inner_mid11, L_inner_mid12,L_0x404f26, L_tail_8;
 
     Label L_begin;
 
@@ -157,7 +157,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404b11 <+225>:   mov    rdx,r13
 //   0x0000000000404b14 <+228>:   vzeroupper
 //   0x0000000000404b17 <+231>:   call   0x4021e0 <bcmp@plt> memcmp
-    __ xorl(rbx, rbx);
+    //__ xorl(rbx, rbx);
     __ tzcntl(rbx, r15);
     __ leaq(rdi, Address(r14, rbx, Address::times_1));
     __ movq(rbp, r11);
@@ -330,7 +330,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404c61 <+561>:   blsr   ecx,ecx
 //   0x0000000000404c66 <+566>:   jne    0x404c50 <_Z14avx2_strstr_v2PKcmS0_m+544> L_inner3
 //   0x0000000000404c68 <+568>:   jmp    0x404c0d <_Z14avx2_strstr_v2PKcmS0_m+477> L_outer3
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpb(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je(L_0x404f26);
@@ -390,7 +390,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404cc1 <+657>:   blsr   ecx,ecx
 //   0x0000000000404cc6 <+662>:   jne    0x404cb0 <_Z14avx2_strstr_v2PKcmS0_m+640> L_inner4
 //   0x0000000000404cc8 <+664>:   jmp    0x404c79 <_Z14avx2_strstr_v2PKcmS0_m+585> L_outer4
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpw(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je(L_0x404f26);
@@ -449,7 +449,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404d20 <+752>:   blsr   ecx,ecx
 //   0x0000000000404d25 <+757>:   jne    0x404d10 <_Z14avx2_strstr_v2PKcmS0_m+736> L_inner5
 //   0x0000000000404d27 <+759>:   jmp    0x404cd9 <_Z14avx2_strstr_v2PKcmS0_m+681> L_outer5
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpl(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je(L_0x404f26);
@@ -508,7 +508,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404d80 <+848>:   blsr   ecx,ecx
 //   0x0000000000404d85 <+853>:   jne    0x404d70 <_Z14avx2_strstr_v2PKcmS0_m+832> L_inner6
 //   0x0000000000404d87 <+855>:   jmp    0x404d38 <_Z14avx2_strstr_v2PKcmS0_m+776> L_outer6
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpl(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je(L_0x404f26);
@@ -569,7 +569,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404de8 <+952>:   blsr   ecx,ecx
 //   0x0000000000404ded <+957>:   jne    0x404dd0 <_Z14avx2_strstr_v2PKcmS0_m+928> L_inner7
 //   0x0000000000404def <+959>:   jmp    0x404d98 <_Z14avx2_strstr_v2PKcmS0_m+872> L_outer7
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ movq(r8, Address(rdx, rdi, Address::times_1, 0x1));
     __ xorq(r8, rsi);
@@ -632,7 +632,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404e58 <+1064>:  blsr   ecx,ecx
 //   0x0000000000404e5d <+1069>:  jne    0x404e40 <_Z14avx2_strstr_v2PKcmS0_m+1040> L_inner8
 //   0x0000000000404e5f <+1071>:  jmp    0x404e00 <_Z14avx2_strstr_v2PKcmS0_m+976> L_outer8
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ movq(r8, Address(rdx, rdi, Address::times_1, 0x1));
     __ xorq(r8, rsi);
@@ -693,7 +693,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404ebd <+1165>:  blsr   ecx,ecx
 //   0x0000000000404ec2 <+1170>:  jne    0x404eb0 <_Z14avx2_strstr_v2PKcmS0_m+1152> L_inner9
 //   0x0000000000404ec4 <+1172>:  jmp    0x404e70 <_Z14avx2_strstr_v2PKcmS0_m+1088> L_outer9
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpq(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je_b(L_0x404f26);
@@ -752,7 +752,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404f1d <+1261>:  blsr   ecx,ecx
 //   0x0000000000404f22 <+1266>:  jne    0x404f10 <_Z14avx2_strstr_v2PKcmS0_m+1248> L_inner10
 //   0x0000000000404f24 <+1268>:  jmp    0x404ed5 <_Z14avx2_strstr_v2PKcmS0_m+1189> L_outer10
-    __ xorl(rdi, rdi);
+    //__ xorl(rdi, rdi);
     __ tzcntl(rdi, rcx);
     __ cmpq(Address(rdx, rdi, Address::times_1, 0x1), rsi);
     __ je_b(L_0x404f26);
@@ -764,7 +764,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404f26 <+1270>:  mov    ecx,edi
 //   0x0000000000404f28 <+1272>:  jmp    0x405011 <_Z14avx2_strstr_v2PKcmS0_m+1505> L_tail_10_12
     __ movl(rcx, rdi);
-    __ jmp(L_tail_10_12);
+    __ jmp(L_tail_8);
 
     __ bind(L_str2_len_11);
     jmp_table[jmp_ndx++] = __ pc();
@@ -827,7 +827,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404f96 <+1382>:  cmp    BYTE PTR [rdx+r8*1+0x9],dil
 //   0x0000000000404f9b <+1387>:  jne    0x404f80 <_Z14avx2_strstr_v2PKcmS0_m+1360> L_inner11
 //   0x0000000000404f9d <+1389>:  jmp    0x40500e <_Z14avx2_strstr_v2PKcmS0_m+1502> L_tail_10_12
-    __ xorl(r8, r8);
+    //__ xorl(r8, r8);
     __ tzcntl(r8, rcx);
     __ cmpq(Address(rdx, r8, Address::times_1, 0x1), rsi);
     __ jne_b(L_inner11);
@@ -895,7 +895,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000405004 <+1492>:  jne    0x404ff0 <_Z14avx2_strstr_v2PKcmS0_m+1472> L_inner12
 //   0x0000000000405006 <+1494>:  cmp    WORD PTR [rdx+r8*1+0x9],di
 //   0x000000000040500c <+1500>:  jne    0x404ff0 <_Z14avx2_strstr_v2PKcmS0_m+1472> L_inner12
-    __ xorl(r8, r8);
+    //__ xorl(r8, r8);
     __ tzcntl(r8, rcx);
     __ cmpq(Address(rdx, r8, Address::times_1, 0x1), rsi);
     __ jne_b(L_inner12);
@@ -907,6 +907,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000405011 <+1505>:  add    rax,rcx
 //   0x0000000000405014 <+1508>:  mov    rcx,rax
     __ movl(rcx, r8);
+    __ bind(L_tail_8);
     __ addq(rax, rcx);
     __ movq(rcx, rax);
 
@@ -929,12 +930,12 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000405033 <+1539>:  vzeroupper
 //   0x0000000000405036 <+1542>:  ret
     __ addptr(rsp, 0x68);
+    __ pop(rbp);
     __ pop(rbx);
     __ pop(r12);
     __ pop(r13);
     __ pop(r14);
     __ pop(r15);
-    __ pop(rbp);
     __ vzeroupper();
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -963,7 +964,7 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000405050 <+1568>:  tzcnt  ecx,esi
 //   0x0000000000405054 <+1572>:  or     rcx,rdx
 //   0x0000000000405057 <+1575>:  jmp    0x405017 <_Z14avx2_strstr_v2PKcmS0_m+1511> L_tail_3_9
-    __ xorl(rcx, rcx);
+    //__ xorl(rcx, rcx);
     __ tzcntl(rcx, rsi);
     __ orq(rcx, rdx);
     __ jmpb(L_tail_3_9);
@@ -989,12 +990,12 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000404a45 <+21>:    mov    r9,rsi
 //   0x0000000000404a48 <+24>:    sub    r9,rcx
 //   0x0000000000404a4b <+27>:    jb     0x405025 <_Z14avx2_strstr_v2PKcmS0_m+1525> L_exit
-    __ push(rbp);
     __ push(r15);
     __ push(r14);
     __ push(r13);
     __ push(r12);
     __ push(rbx);
+    __ push(rbp);
     __ subptr(rsp, 0x68);
     __ movq(rax, -1);
     __ movq(r9, rsi);
@@ -1017,7 +1018,7 @@ address StubGenerator::generate_string_indexof() {
     __ mov64(rax, (int64_t) jump_table);
     __ shlq(r12, 0x3);
     __ addq(rax, r12);
-    __ jmp(rax);
+    __ jmp(Address(rax, 0));
 
   __ align(CodeEntryAlignment);
     __ bind(memcmp_avx2);
@@ -1462,7 +1463,7 @@ address StubGenerator::generate_string_indexof() {
 // 221             jnz     L(return_vec_2)
 //    0x00007ffff7d99d5b <+347>:   f3 0f bc c9     tzcnt  ecx,ecx
     __ bind(L_return_vec_3);
-    __ tzcntl(rax, rax);
+    __ tzcntl(rcx, rcx);
 
 // 222     L(return_vec_3):
 // 223             tzcntl  %ecx, %ecx

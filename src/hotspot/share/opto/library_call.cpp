@@ -293,21 +293,21 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
+  case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL); // ASGASG memcmp()
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
   case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
   case vmIntrinsics::_compareToUL:              return inline_string_compareTo(StrIntrinsicNode::UL);
 
-  case vmIntrinsics::_indexOfL:                 return inline_string_indexOf(StrIntrinsicNode::LL);
+  case vmIntrinsics::_indexOfL:                 return inline_string_indexOf(StrIntrinsicNode::LL); // ASGASG strstr()
   case vmIntrinsics::_indexOfU:                 return inline_string_indexOf(StrIntrinsicNode::UU);
   case vmIntrinsics::_indexOfUL:                return inline_string_indexOf(StrIntrinsicNode::UL);
-  case vmIntrinsics::_indexOfIL:                return inline_string_indexOfI(StrIntrinsicNode::LL);
+  case vmIntrinsics::_indexOfIL:                return inline_string_indexOfI(StrIntrinsicNode::LL); // ASGASG strchr()???
   case vmIntrinsics::_indexOfIU:                return inline_string_indexOfI(StrIntrinsicNode::UU);
   case vmIntrinsics::_indexOfIUL:               return inline_string_indexOfI(StrIntrinsicNode::UL);
   case vmIntrinsics::_indexOfU_char:            return inline_string_indexOfChar(StrIntrinsicNode::U);
-  case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L);
+  case vmIntrinsics::_indexOfL_char:            return inline_string_indexOfChar(StrIntrinsicNode::L); // ASGASG strchr()
 
-  case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
+  case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL); // ASGASG memcmp()
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
 
   case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
@@ -1194,6 +1194,8 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
   Node* tgt_count = load_array_length(tgt);
 
+  Node* result = nullptr;
+
   if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
     // Divide src size by 2 if String is UTF16 encoded
     src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
@@ -1203,7 +1205,16 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
     tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
   }
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, result_rgn, result_phi, ae);
+    // ASGASG if AVX2 && ptr != null and LL, make runtime call - like base64
+  if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::string_indexof(), "stringIndexOf", TypePtr::BOTTOM,
+                                   src_start, src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, result_rgn, result_phi, ae);
+  }
   if (result != nullptr) {
     result_phi->init_req(3, result);
     result_rgn->init_req(3, control());
@@ -1248,8 +1259,18 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
 
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
+  Node* result = nullptr;
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, region, phi, ae);
+    // ASGASG if AVX2 && ptr != null and LL, make runtime call - like base64
+  if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
+    Node* call = make_runtime_call(RC_LEAF,
+                                   OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::string_indexof(), "stringIndexOf", TypePtr::BOTTOM,
+                                   src_start, src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, region, phi, ae);
+  }
   if (result != nullptr) {
     // The result is index relative to from_index if substring was found, -1 otherwise.
     // Generate code which will fold into cmove.
