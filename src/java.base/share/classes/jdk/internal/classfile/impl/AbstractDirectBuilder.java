@@ -27,8 +27,6 @@ package jdk.internal.classfile.impl;
 import java.util.Optional;
 
 import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Classfile;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
@@ -54,9 +52,7 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        if (a instanceof UnboundAttribute ||
-            5 - a.attributeMapper().attributeStability().ordinal()
-                    > context.attributesProcessingOption().ordinal()) {
+        if (Util.isAttributeAllowed(a, context.attributesProcessingOption())) {
             attributes.withAttribute(a);
         }
     }
