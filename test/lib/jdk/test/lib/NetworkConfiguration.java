@@ -176,18 +176,6 @@ public class NetworkConfiguration {
                 return false;
             }
 
-            // On AIX there is a bug:
-            // When IPv6 is enabled on the system, the JDK opens sockets as AF_INET6.
-            // If there's an interface configured with IPv4 addresses only, it should
-            // be able to become the network interface for a multicast socket (that
-            // could be in both, IPv4 or IPv6 space). But both possible setsockopt
-            // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
-            // EADDRNOTAVAIL. So we must skip such interfaces here.
-            // to be fixed with JDK-8308807 -> comment this aviation
-            //if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
-            //    return false;
-            //}
-
             if (Platform.isOSX()) {
                 // multicasting may not work on interfaces that only
                 // have link local addresses
