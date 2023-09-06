@@ -205,6 +205,30 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         this.depth = previousStage.depth + 1;
     }
 
+    /**
+     * Constructor for replacing an intermediate operation stage onto an
+     * existing pipeline.
+     *
+     * @param previousPreviousStage the upstream pipeline stage of the upstream pipeline stage
+     * @param previousStage the upstream pipeline stage
+     * @param opFlags the operation flags for the new stage, described in
+     * {@link StreamOpFlag}
+     */
+    protected AbstractPipeline(AbstractPipeline<?, E_IN, ?> previousPreviousStage, AbstractPipeline<?, E_IN, ?> previousStage, int opFlags) {
+        if (previousStage.linkedOrConsumed || !previousPreviousStage.linkedOrConsumed || previousPreviousStage.nextStage != previousStage || previousStage.previousStage != previousPreviousStage)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+
+        previousStage.linkedOrConsumed = true;
+
+        previousPreviousStage.nextStage = this;
+
+        this.previousStage = previousPreviousStage;
+        this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
+        this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousPreviousStage.combinedFlags);
+        this.sourceStage = previousPreviousStage.sourceStage;
+        this.depth = previousPreviousStage.depth + 1;
+    }
+
 
     // Terminal evaluation methods
 

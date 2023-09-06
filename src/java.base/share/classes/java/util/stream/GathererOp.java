@@ -47,7 +47,17 @@ import java.util.stream.Gatherer.Integrator;
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
 
+    // When this is `true`, consecutive invocations to `Stream.gather` will fuse into a single,
+    // composed, gatherer operation.
+    private final static boolean AUTOCOMPOSITION_ENABLED = true;
+
     static <P_IN, P_OUT, R> Stream<R> of(ReferencePipeline<P_IN,P_OUT> upstream, Gatherer<P_OUT,?,R> gatherer) {
+        if (AUTOCOMPOSITION_ENABLED && upstream.getClass() == GathererOp.class) {
+            final var upStreamGathererOp = (GathererOp<P_IN,?,P_OUT>)upstream;
+            // Subsequent .gather()-invocations uses this method to pre-compose the Gatherers and package them as a single step
+            final var fusedGatherer = upStreamGathererOp.gatherer.andThen(gatherer);
+            return new GathererOp<>(upStreamGathererOp, fusedGatherer);
+        } else
             return new GathererOp<>(upstream, gatherer);
     }
 
@@ -183,6 +193,14 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         this.previousStage = upstream;
     }
 
+    // This constructor is used when fusing subsequent .gather() invocations
+    @SuppressWarnings("unchecked")
+    private GathererOp(GathererOp<T,?,?> upstream, Gatherer<T, A, R> gatherer) {
+        super(upstream.previousStage, (AbstractPipeline<?, T, ?>) upstream, opFlagsFor(gatherer.integrator()));
+        this.gatherer = gatherer;
+        this.previousStage = upstream.previousStage;
+    }
+
     // This allows internal access to the previous stage,
     // which we need since we want to be able to fuse `gather` followed by `collect`.
    // @SuppressWarnings("unchecked")
@@ -191,6 +209,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     }
 
     @Override boolean opIsStateful() {
+        //return !(gatherer.initializer() == Gatherers.initializerNotNeeded && gatherer.combiner() != Gatherers.combinerNotPossible && gatherer.finisher() == Gatherers.finisherNotNeeded);
         return true;
     }
 

@@ -96,6 +96,16 @@ abstract class ReferencePipeline<P_IN, P_OUT>
         super(upstream, opFlags);
     }
 
+     /**
+      * Constructor for appending an intermediate operation onto an existing
+      * pipeline.
+      *
+      * @param upstream the upstream element source.
+      */
+     protected ReferencePipeline(AbstractPipeline<?, P_IN, ?> upupstream, AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
+         super(upupstream, upstream, opFlags);
+     }
+
     // Shape-specific methods
 
     @Override
