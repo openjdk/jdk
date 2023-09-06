@@ -246,33 +246,20 @@ public class PathOps {
     }
 
     PathOps equals(String other) {
-        out.println("check equals");
+        out.format("test equals %s\n", other);        
         checkPath();
-        Path thisFile = path;
-        Path thatFile = Path.of(other);
 
-        check(thisFile.equals(thisFile), true);
-        check(thisFile.equals(thatFile), false);
+        Path that = Path.of(other);
+        check(that, path.toString());
+        check(path.hashCode() == that.hashCode(), true);
 
-        check(thisFile.equals(null), false);
-        check(thisFile.equals(new Object()), false);
+        return this;
+    }
 
-        String s = thisFile.toString();
-        Path likeThis;
-        if (Character.isLowerCase(s.charAt(0))) {
-            likeThis = Path.of(s.toUpperCase());
-        } else {
-            likeThis = Path.of(s.toLowerCase());
-        }
-
-        if (Platform.isWindows()) {
-            // case insensitive
-            check(thisFile.equals(likeThis), true);
-            check(thisFile.hashCode() == likeThis.hashCode(), true);
-        } else {
-            // case sensitive
-            check(thisFile.equals(likeThis), false);
-        }
+    PathOps notEquals(Object other) {
+        out.format("test not equals %s\n", other);        
+        checkPath();
+        check(path.equals(other), false);
 
         return this;
     }
@@ -1493,7 +1480,11 @@ public class PathOps {
 
         // equals
         test("this")
-            .equals("that");
+            .equals("this")
+            .notEquals(Path.of("that"))
+            .notEquals(null)
+            .notEquals(new Object())
+            .equals(Path.of("This"));
 
         // toFile
         test("C:\\foo\\bar\\gus")
@@ -2178,7 +2169,11 @@ public class PathOps {
 
         // equals
         test("this")
-            .equals("that");
+            .equals("this")
+            .notEquals(Path.of("that"))
+            .notEquals(null)
+            .notEquals(new Object())
+            .notEquals(Path.of("This"));
 
         // toFile
         test("/foo/bar/gus")
