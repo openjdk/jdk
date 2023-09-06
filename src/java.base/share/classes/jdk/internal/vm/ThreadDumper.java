@@ -24,6 +24,7 @@
  */
 package jdk.internal.vm;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -110,7 +111,8 @@ public class ThreadDumper {
                 : new OpenOption[] { StandardOpenOption.CREATE_NEW };
         String reply;
         try (OutputStream out = Files.newOutputStream(path, options);
-             PrintStream ps = new PrintStream(out, false, StandardCharsets.UTF_8)) {
+             BufferedOutputStream bos = new BufferedOutputStream(out);
+             PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8)) {
             if (json) {
                 dumpThreadsToJson(ps);
             } else {
