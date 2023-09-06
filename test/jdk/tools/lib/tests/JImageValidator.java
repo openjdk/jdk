@@ -221,7 +221,13 @@ public class JImageValidator {
         return moduleExecutionTime;
     }
 
-    public static void readClass(byte[] clazz) throws IOException {
-        Classfile.of().parse(clazz);
-    }
+    public static void readClass(byte[] clazz) throws IOException{
+        var errors = Classfile.of().parse(clazz).verify(null);
+        if (!errors.isEmpty()) {
+            var itr = errors.iterator();
+            var thrown = itr.next();
+            itr.forEachRemaining(thrown::addSuppressed);
+            throw new IOException(thrown);
+        }
+	}
 }

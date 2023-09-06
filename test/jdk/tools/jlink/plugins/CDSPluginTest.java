@@ -43,7 +43,6 @@ import jtreg.SkippedException;
  *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.classfile.instruction
  *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage

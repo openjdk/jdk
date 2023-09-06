@@ -66,7 +66,6 @@ import tests.JImageGenerator;
  *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.classfile.instruction
  *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jlink/jdk.tools.jlink.builder
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins

@@ -39,7 +39,6 @@ import tests.JImageGenerator;
  *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.classfile.instruction
  *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build HijrahConfigCheck tests.*
