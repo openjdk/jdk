@@ -71,7 +71,7 @@ void markWord::print_on(outputStream* st, bool print_monitor_info) const {
     // have to check has_monitor() before is_locked()
     st->print(" monitor(");
     if (print_monitor_info) {
-      ObjectMonitor* mon = ObjectSynchronizer::read_monitor(Thread::current(), oop(this)); // hack
+      ObjectMonitor* mon = ObjectSynchronizer::read_monitor(Thread::current(), cast_to_oop(this)); // hack
       if (mon == nullptr) {
         st->print("null (this should never be seen!)");
       } else {
