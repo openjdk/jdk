@@ -668,6 +668,11 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    public final <R> Stream<R> gather(Gatherer<P_OUT,?,R> gatherer) {
+        return GathererOp.of(this, gatherer);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
         A container;

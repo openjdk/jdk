@@ -1052,6 +1052,21 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
                  BinaryOperator<U> combiner);
 
     /**
+     * Returns a stream consisting of the results of applying the given
+     * gatherer to the elements of this stream.
+     *
+     * <p>This is an <a href="package-summary.html#Extensibility">extension point</a>
+     * for <a href="package-summary.html#StreamOps">intermediate operations</a>.
+     *
+     * @param <R> The element type of the new stream
+     * @param gatherer a gatherer
+     * @return the new stream
+     */
+    default <R> Stream<R> gather(Gatherer<T,?,R> gatherer) {
+        throw new UnsupportedOperationException("gather");
+    }
+
+    /**
      * Performs a <a href="package-summary.html#MutableReduction">mutable
      * reduction</a> operation on the elements of this stream.  A mutable
      * reduction is one in which the reduced value is a mutable result container,
