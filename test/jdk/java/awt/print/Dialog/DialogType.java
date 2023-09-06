@@ -23,7 +23,6 @@
 
 import java.awt.print.PrinterJob;
 import java.lang.reflect.InvocationTargetException;
-import javax.print.attribute.Attribute;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.DialogTypeSelection;
@@ -45,11 +44,11 @@ public class DialogType {
 
     static String instruction = """
             This test assumes and requires that you have a printer installed.
-            It verifies that the dialogs behave properly when using new API,
+            It verifies that the dialogs behave properly when using new API
             to optionally select a native dialog where one is present.
-            Two dialogs are shown in succession.,
+            Two dialogs are shown in succession.
             The test passes as long as no exceptions are thrown, *AND*,
-            if running on Windows only, the first dialog is a native windows,
+            if running on Windows only, the first dialog is a native windows
             control which differs in appearance from the second dialog.
             Note: You can either press 'ESCAPE' button or click on the 'Cancel'
             to close print dialog.
