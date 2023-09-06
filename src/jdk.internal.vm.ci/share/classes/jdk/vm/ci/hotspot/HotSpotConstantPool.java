@@ -584,8 +584,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
-    public int bootstrapArgumentIndexAt(int index) {
-        return compilerToVM().bootstrapArgumentIndexAt(this, index);
+    public int bootstrapArgumentIndexAt(int cpi, int index) {
+        return compilerToVM().bootstrapArgumentIndexAt(this, cpi, index);
     }
 
     @Override

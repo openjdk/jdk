@@ -171,13 +171,15 @@ public interface ConstantPool {
     }
 
     /**
-     * Gets the constant pool index of the pool entry associated with the
-     * index in the static arguments list of a bootstrap method.
+     * Gets the constant pool index of a static argument of a bootstrap specifier. Used when the list
+     * of static arguments in the {@link BootstrapMethodInvocation} is an {@code int[]}. The list has
+     * two elements. The first one is the number of arguments and the second one is the {@code cpi}.
      *
-     * @param index a constant pool index
+     * @param cpi the index of a bootstrap specifier in the constant pool
+     * @param index the index of the static argument in the list of static arguments
      * @return the constant pool index associated with the static argument
      */
-    default int bootstrapArgumentIndexAt(int index) {
+    default int bootstrapArgumentIndexAt(int cpi, int index) {
         throw new UnsupportedOperationException();
     }
 

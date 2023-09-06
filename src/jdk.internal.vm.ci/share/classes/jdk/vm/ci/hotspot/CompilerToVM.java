@@ -476,11 +476,20 @@ final class CompilerToVM {
 
     private native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
-    int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, int cpi) {
-        return bootstrapArgumentIndexAt(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    /**
+     * Gets the constant pool index of a static argument of a bootstrap specifier. Used when the list
+     * of static arguments in the {@link BootstrapMethodInvocation} is an {@code int[]}. The list has
+     * two elements. The first one is the number of arguments and the second one is the {@code cpi}.
+     *
+     * @param cpi the index of a bootstrap specifier in the constant pool
+     * @param index the index of the static argument in the list of static arguments
+     * @return the constant pool index associated with the static argument
+     */
+    int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, int cpi, int index) {
+        return bootstrapArgumentIndexAt(constantPool, constantPool.getConstantPoolPointer(), cpi, index);
     }
 
-    private native int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi, int index);
 
     /**
      * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
