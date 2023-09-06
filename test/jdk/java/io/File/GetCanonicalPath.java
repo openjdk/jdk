@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,66 @@
  */
 
 /* @test
-   @bug 4899022
-   @summary Look for erroneous representation of drive letter
+ * @bug 4899022
+ * @requires (os.family == "windows")
+ * @summary Look for erroneous representation of drive letter
+ * @run junit GetCanonicalPath
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GetCanonicalPath {
-    public static void main(String[] args) throws Exception {
-        if (File.separatorChar == '\\') {
-            testDriveLetter();
-        }
+    private static Stream<Arguments> pathProvider() {
+        File dir = new File(System.getProperty("user.dir", "."));
+        List<Arguments> list = new ArrayList<Arguments>();
+
+        String pathname = "C:\\";
+        list.add(Arguments.of(pathname, pathname));
+        pathname = "C:";
+        list.add(Arguments.of(pathname, dir.toString()));
+
+        pathname = "foo\\bar\\gus";
+        list.add(Arguments.of(pathname, new File(dir, pathname).toString()));
+
+        pathname = "C:\\foo\\bar\\gus";
+        list.add(Arguments.of(pathname, pathname));
+
+        pathname = "\\\\server\\share\\foo\\bar\\gus";
+        list.add(Arguments.of(pathname, pathname));
+
+        pathname = "\\\\localhost\\C$\\Users\\file.dat";
+        list.add(Arguments.of(pathname, pathname));
+
+        list.add(Arguments.of("\\\\?\\C:\\Users\\file.dat",
+                              "C:\\Users\\file.dat"));
+        list.add(Arguments.of("\\\\?\\UNC\\localhost\\C$\\Users\\file.dat",
+                              "\\\\localhost\\C$\\Users\\file.dat"));
+
+        return list.stream();
     }
-    private static void testDriveLetter() throws Exception {
+
+    @Test
+    void testDriveLetter() throws IOException {
         String path = new File("c:/").getCanonicalPath();
-        if (path.length() > 3)
-            throw new RuntimeException("Drive letter incorrectly represented");
+        assertFalse(path.length() > 3, "Drive letter incorrectly represented");
+    }
+
+    @ParameterizedTest
+    @MethodSource("pathProvider")
+    void testCanonicalPath(String pathname, String expected) throws IOException {
+        File file = new File(pathname);
+        String canonicalPath = file.getCanonicalPath();
+        assertEquals(expected, canonicalPath);
     }
 }

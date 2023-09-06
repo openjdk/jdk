@@ -440,6 +440,15 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public String canonicalize(String path) throws IOException {
+        // if a prefix is present, remove it
+        if (path.startsWith("\\\\?\\")) {
+            if (path.startsWith("UNC\\", 4)) {
+                path = "\\\\" + path.substring(8);
+            } else {
+                path = path.substring(4);
+            }
+        }
+
         // If path is a drive letter only then skip canonicalization
         int len = path.length();
         if ((len == 2) &&
