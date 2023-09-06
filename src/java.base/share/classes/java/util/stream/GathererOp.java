@@ -51,6 +51,10 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     // composed, gatherer operation.
     private final static boolean AUTOCOMPOSITION_ENABLED = true;
 
+    // When this is `true`, immediate calls to `collect` after `gather` will execute as the
+    // equivalent of a terminal operation instead of delegating to the default `collect`-implementation.
+    private final static boolean COLLECT_FASTPATH_ENABLED = true;
+
     static <P_IN, P_OUT, R> Stream<R> of(ReferencePipeline<P_IN,P_OUT> upstream, Gatherer<P_OUT,?,R> gatherer) {
         if (AUTOCOMPOSITION_ENABLED && upstream.getClass() == GathererOp.class) {
             final var upStreamGathererOp = (GathererOp<P_IN,?,P_OUT>)upstream;
@@ -209,7 +213,6 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     }
 
     @Override boolean opIsStateful() {
-        //return !(gatherer.initializer() == Gatherers.initializerNotNeeded && gatherer.combiner() != Gatherers.combinerNotPossible && gatherer.finisher() == Gatherers.finisherNotNeeded);
         return true;
     }
 
@@ -238,6 +241,56 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         // There's a very small subset of possible Gatherers which would be expressible as Spliterators directly,
         // specifically STATELESS + `finisherNotNeeded` + having a `combiner` which is *NOT* `combinerNotPossible`.
         return opEvaluateParallel(null, spliterator, null).spliterator();
+    }
+
+    // Overriding collect() is not strictly needed, but will avoid an extra collection step
+    // collect()-invocations immediately following a gather()-invocation fuses the collection
+    // with the gathering
+    @Override
+    public <CR,CA> CR collect(Collector<? super R, CA, CR> collector) {
+        if (!COLLECT_FASTPATH_ENABLED)
+            return super.collect(collector);
+
+        if (collector.getClass() != Gatherer.ThenCollector.class) { // Implicit null-check of collector
+            return collect(gatherer, collector);
+        } else {
+            @SuppressWarnings("unchecked") final var thenCollector = (Gatherer.ThenCollector<R, ?, Object, Object, CR, CA>) collector;
+            return collect(gatherer.andThen(thenCollector.gatherer()), thenCollector.collector());
+        }
+    }
+
+    // .collect()-invocations immediately following .gather()-invocations fuses the collection with the gathering
+    @Override
+    public <RR> RR collect(Supplier<RR> supplier, BiConsumer<RR, ? super R> accumulator, BiConsumer<RR, RR> combiner) {
+        if (!COLLECT_FASTPATH_ENABLED)
+            return super.collect(supplier, accumulator, combiner);
+
+        linkOrConsume();
+        final var parallel = isParallel();
+        return evaluate(
+                    upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
+                    parallel,
+                    gatherer,
+                    supplier,
+                    accumulator,
+                    parallel ? (l, r) -> { combiner.accept(l, r); return l; } : null,
+                    null
+        );
+    }
+
+    @ForceInline
+    private <A,R,CA,CR> CR collect(Gatherer<T,A,R> g, Collector<? super R,CA,CR> c) {
+        linkOrConsume(); // Important to make sure the same Stream cannot be consumed more than once
+        final var parallel = isParallel();
+        return evaluate(
+                upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
+                parallel,
+                g,
+                c.supplier(),
+                c.accumulator(),
+                parallel ? c.combiner() : null,
+                c.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH) ? null : c.finisher()
+        );
     }
 
     // evaluate(...) is the primary execution mechanism besides opWrapSink()

@@ -684,7 +684,12 @@ abstract class ReferencePipeline<P_IN, P_OUT>
 
     @Override
     @SuppressWarnings("unchecked")
-    public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
+    public <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
+        if (collector instanceof Gatherer.ThenCollector<?,?,?,?,?,?>) {
+            var thenCollector = (Gatherer.ThenCollector<P_OUT, ?, R, ?, R, ?>) collector;
+            return gather(thenCollector.gatherer()).collect(thenCollector.collector());
+        }
+        
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
@@ -702,7 +707,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> supplier,
+    public <R> R collect(Supplier<R> supplier,
                                BiConsumer<R, ? super P_OUT> accumulator,
                                BiConsumer<R, R> combiner) {
         return evaluate(ReduceOps.makeRef(supplier, accumulator, combiner));

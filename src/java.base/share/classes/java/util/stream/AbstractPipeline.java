@@ -229,6 +229,15 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         this.depth = previousPreviousStage.depth + 1;
     }
 
+    /**
+     * Checks that the current stage has not been already linked or consumed,
+     * and then sets this stage as being linked or consumed.
+     */
+    protected void linkOrConsume() {
+        if (linkedOrConsumed)
+            throw new IllegalStateException(MSG_STREAM_LINKED);
+        linkedOrConsumed = true;
+    }
 
     // Terminal evaluation methods
 
@@ -426,7 +435,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * operation.
      */
     @SuppressWarnings("unchecked")
-    private Spliterator<?> sourceSpliterator(int terminalFlags) {
+    protected Spliterator<?> sourceSpliterator(int terminalFlags) {
         // Get the source spliterator of the pipeline
         Spliterator<?> spliterator = null;
         if (sourceStage.sourceSpliterator != null) {
