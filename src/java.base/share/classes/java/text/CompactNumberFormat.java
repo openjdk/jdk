@@ -2347,9 +2347,9 @@ public final class CompactNumberFormat extends NumberFormat {
      * Returns true if the object is also a {@code CompactNumberFormat} and the
      * two formats would format any value the same.
      *
-     * @implNote Implementers should be aware that the default implementation does an
-     * equality check using {@code getClass} rather than {@code instanceof} when
-     * deciding if they should override this method.
+     * @implSpec The default implementation performs an equality check with a
+     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * overriding methods should do so as well.
      * @param obj the object to compare with
      * @return true if this is equal to the other {@code CompactNumberFormat}
      * @see Object#hashCode()

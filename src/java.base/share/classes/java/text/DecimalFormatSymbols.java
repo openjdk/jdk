@@ -741,9 +741,9 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * Returns true if the object is also a {@code DecimalFormatSymbols} and the two
      * {@code DecimalFormatSymbols} objects represent the same set of symbols.
      *
-     * @implNote Implementers should be aware that the default implementation does an
-     * equality check using {@code getClass} rather than {@code instanceof} when
-     * deciding if they should override this method.
+     * @implSpec The default implementation performs an equality check with a
+     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * overriding methods should do so as well.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DecimalFormatSymbols}
      * @see Object#equals(Object)
