@@ -77,7 +77,7 @@ public class bug4210354 {
             if (r.width != r2.width) {
                 throw new RuntimeException("Test failed");
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.err.println("Exception: FixedHeightLayoutCache.getBounds returns bad Rectangle");}
         }
 
