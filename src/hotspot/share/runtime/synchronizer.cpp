@@ -142,8 +142,11 @@ public:
 
   void print_on(outputStream* st) {
     auto printer = [&] (ObjectMonitor** entry) {
-       st->print("monitor " PTR_FORMAT " ", p2i((*entry)));
-       st->print("object " PTR_FORMAT, p2i((*entry)->object_peek()));
+       ObjectMonitor* om = *entry;
+       oop obj = om->object_peek();
+       st->print("monitor " PTR_FORMAT " ", p2i(om));
+       st->print("object " PTR_FORMAT, p2i(obj));
+       assert(obj->mark().hash() == om->header().hash(), "hash must match");
        st->cr();
        return true;
     };
@@ -160,18 +163,22 @@ ObjectMonitorWorld* _omworld = nullptr;
 // The thread that wins the CAS to set has_monitor() gets to add the monitor to the CHT.
 // Reading the monitor can only be done by another thread if has_monitor() is true, but the
 // second thread might have to wait for the monitor to be added to the hashtable.
-// Will we need a yield?
 ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
-  int count = 0;
-  while (count < 100) {
+  uint count = 0;
+  const uint spin_limit = 100 * SpinYield::default_spin_limit;
+  SpinYield spin;
+  while (count < spin_limit) {
     ObjectMonitor* monitor = _omworld->monitor_for(current, obj);
     if (monitor != nullptr) {
       return monitor;
     }
     count++;
+    spin.wait();
   }
   _omworld->print_on(tty);
-  fatal("OM not found for " PTR_FORMAT, p2i(obj));
+  ObjectMonitor* last_try = _omworld->monitor_for(current, obj);
+  spin.report(tty);
+  fatal("OM not found for " PTR_FORMAT " last try " PTR_FORMAT, p2i(obj), p2i(last_try));
 }
 
 // Add the hashcode to the monitor to match the object and put it in the hashtable.
