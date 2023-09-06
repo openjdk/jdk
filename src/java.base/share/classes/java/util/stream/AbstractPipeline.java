@@ -740,6 +740,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     @SuppressWarnings("unchecked")
     <P_IN> Spliterator<E_OUT> opEvaluateParallelLazy(PipelineHelper<E_OUT> helper,
                                                      Spliterator<P_IN> spliterator) {
-        return opEvaluateParallel(helper, spliterator, i -> (E_OUT[]) new Object[i]).spliterator();
+        return opEvaluateParallel(helper, spliterator, Nodes.castingArray()).spliterator();
     }
 }
