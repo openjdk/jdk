@@ -770,9 +770,11 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   }
   // Get the indy entry based on CP index
   int indy_index = -1;
-  for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
-    if (cp->resolved_indy_entry_at(i)->constant_pool_index() == index) {
-      indy_index = i;
+  if (is_indy) {
+    for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
+      if (cp->resolved_indy_entry_at(i)->constant_pool_index() == index) {
+        indy_index = i;
+      }
     }
   }
   // Resolve the bootstrap specifier, its name, type, and static arguments
@@ -836,6 +838,11 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
     }
   }
   return JVMCIENV->get_jobjectArray(bsmi);
+C2V_END
+
+C2V_VMENTRY_0(jint, bootstrapArgumentIndexAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
+  return cp->bootstrap_argument_index_at(index, 0);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
@@ -3134,6 +3141,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(constantPoolRemapInstructionOperandFromCache)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
+  {CC "bootstrapArgumentIndexAt",                     CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(bootstrapArgumentIndexAt)},
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL2 "I)" HS_KLASS,                                               FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL2 "I" HS_METHOD2 "B[I)" HS_KLASS,                              FN_PTR(resolveFieldInPool)},

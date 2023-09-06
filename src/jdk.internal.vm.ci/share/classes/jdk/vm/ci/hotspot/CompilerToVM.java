@@ -476,6 +476,12 @@ final class CompilerToVM {
 
     private native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
+    int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, int cpi) {
+        return bootstrapArgumentIndexAt(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    }
+
+    private native int bootstrapArgumentIndexAt(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+
     /**
      * If {@code cpi} denotes an entry representing a signature polymorphic method ({@jvms 2.9}),
      * this method ensures that the type referenced by the entry is loaded and initialized. It

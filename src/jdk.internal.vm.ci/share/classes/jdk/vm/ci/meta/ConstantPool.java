@@ -171,6 +171,17 @@ public interface ConstantPool {
     }
 
     /**
+     * Gets the constant pool index of the pool entry associated with the
+     * index in the static arguments list of a bootstrap method.
+     *
+     * @param index a constant pool index
+     * @return the constant pool index associated with the static argument
+     */
+    default int bootstrapArgumentIndexAt(int index) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Gets the details for invoking a bootstrap method associated with the
      * {@code CONSTANT_Dynamic_info} or {@code CONSTANT_InvokeDynamic_info} pool entry
      * in the constant pool.
@@ -182,8 +193,6 @@ public interface ConstantPool {
      *            {@code index} was not decoded from a bytecode stream
      * @return the bootstrap method invocation details or {@code null} if the entry specified by {@code index}
      *         is not a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info}
-     * @throws IllegalArgumentException if the bootstrap method invocation makes use of
-     *             {@code java.lang.invoke.BootstrapCallInfo}
      * @jvms 4.7.23 The {@code BootstrapMethods} Attribute
      */
     default BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {

@@ -584,6 +584,11 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
+    public int bootstrapArgumentIndexAt(int index) {
+        return compilerToVM().bootstrapArgumentIndexAt(this, index);
+    }
+
+    @Override
     public BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
         int cpi = opcode == -1 ? index : indyIndexConstantPoolIndex(index, opcode);
         final JvmConstant tag = getTagAt(cpi);
@@ -604,8 +609,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     staticArgumentsList = List.of((JavaConstant[]) staticArguments);
                 } else {
                     int[] bsciArgs = (int[]) staticArguments;
-                    String message = String.format("Resolving bootstrap static arguments for %s using BootstrapCallInfo %s not supported", method.format("%H.%n(%p)"), Arrays.toString(bsciArgs));
-                    throw new IllegalArgumentException(message);
+                    staticArgumentsList = List.of(Arrays.stream(bsciArgs).mapToObj(i -> JavaConstant.forInt(i)).toArray(JavaConstant[]::new));
                 }
                 return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
             default:
