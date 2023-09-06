@@ -693,23 +693,23 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // initialize compiler(s)
 #if defined(COMPILER1) || COMPILER2_OR_JVMCI
 #if INCLUDE_JVMCI
-  bool force_JVMCI_intialization = false;
+  bool force_JVMCI_initialization = false;
   if (EnableJVMCI) {
     // Initialize JVMCI eagerly when it is explicitly requested.
     // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
-    force_JVMCI_intialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
+    force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
 
-    if (!force_JVMCI_intialization) {
+    if (!force_JVMCI_initialization) {
       // 8145270: Force initialization of JVMCI runtime otherwise requests for blocking
       // compilations via JVMCI will not actually block until JVMCI is initialized.
-      force_JVMCI_intialization = UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation);
+      force_JVMCI_initialization = UseJVMCICompiler && (!UseInterpreter || !BackgroundCompilation);
     }
   }
 #endif
   CompileBroker::compilation_init_phase1(CHECK_JNI_ERR);
   // Postpone completion of compiler initialization to after JVMCI
   // is initialized to avoid timeouts of blocking compilations.
-  if (JVMCI_ONLY(!force_JVMCI_intialization) NOT_JVMCI(true)) {
+  if (JVMCI_ONLY(!force_JVMCI_initialization) NOT_JVMCI(true)) {
     CompileBroker::compilation_init_phase2();
   }
 #endif
@@ -754,8 +754,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
 #if INCLUDE_JVMCI
-  if (force_JVMCI_intialization) {
-    JVMCI::initialize_compiler(CHECK_JNI_ERR);
+  if (force_JVMCI_initialization) {
+    JVMCI::initialize_compiler(THREAD);
     CompileBroker::compilation_init_phase2();
   }
 #endif
