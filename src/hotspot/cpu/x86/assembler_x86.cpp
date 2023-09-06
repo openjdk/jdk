@@ -1759,12 +1759,6 @@ void Assembler::cmpb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
-void Assembler::cmpb(Register dst, int imm8) {
-  NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
-  (void) prefix_and_encode(dst->encoding(), true);
-  emit_arith_b(0x80, 0xF8, dst, imm8);
-}
-
 void Assembler::cmpl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
