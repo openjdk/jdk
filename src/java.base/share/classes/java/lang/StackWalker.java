@@ -111,7 +111,7 @@ public final class StackWalker {
      */
     public interface StackFrame {
         /**
-         * {@return the <a href="ClassLoader.html#binary-name">binary name</a>
+         * {@return the {@linkplain ClassLoader##binary-name binary name}
          * of the declaring class of the method represented by this stack frame}
          *
          * @jls 13.1 The Form of a Binary
