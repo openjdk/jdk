@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +20,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.foreign.abi.ppc64;
+package compiler.c2;
 
-/**
- * PPC64 CallArranger specialized for ABI v2.
+/*
+ * @test
+ * @bug 8314191
+ * @summary Loop increment should not be transformed into unsigned comparison
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
+ *                   compiler.c2.MinValueStrideCountedLoop
  */
-public class ABIv2CallArranger extends CallArranger {
+public class MinValueStrideCountedLoop {
+    static int limit = 0;
+    static int res = 0;
 
-    @Override
-    protected boolean useABIv2() {
-        return true;
+    static void test() {
+        for (int i = 0; i >= limit + -2147483647; i += -2147483648) {
+            res += 42;
+        }
+    }
+
+    public static void main(String[] args) {
+        test();
     }
 }
