@@ -246,7 +246,7 @@ public class ConstantPoolTest {
     @Test
     public void lookupMethodTest_dynamic() throws Exception {
         concatString1("aaa", "bbb"); // force the indy to be resolved
-        
+
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
         ResolvedJavaType type = metaAccess.lookupJavaType(ConstantPoolTest.class);
         Signature methodSig = metaAccess.parseMethodDescriptor("(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
@@ -302,7 +302,7 @@ public class ConstantPoolTest {
         Assert.assertTrue(callee.toString().startsWith("jdk.vm.ci.meta.UnresolvedJavaMethod"),
                           "wrong method: " + callee);
     }
- 
+
     @Test
     public void lookupMethodTest_virtual() throws Exception {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
