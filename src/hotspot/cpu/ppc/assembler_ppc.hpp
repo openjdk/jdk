@@ -136,9 +136,7 @@ class Argument {
     n_int_register_parameters_c = 8,
     // The first thirteen float arguments are passed in float regs.
     n_float_register_parameters_c = 13,
-    // Only the first 8 parameters are not placed on the stack. Aix disassembly
-    // shows that xlC places all float args after argument 8 on the stack AND
-    // in a register. This is not documented, but we follow this convention, too.
+    // The first 8 double-words are never passed on stack.
     n_regs_not_on_stack_c = 8,
 
     n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers

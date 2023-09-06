@@ -798,9 +798,14 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 #if defined(ABI_ELFv2)
   assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 96,
          "passing C arguments in wrong stack slots");
+  // Floats are in the least significant word of an argument slot.
+  const int float_offset_in_slots = 0;
 #else
   assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 112,
          "passing C arguments in wrong stack slots");
+  // Although AIX runs on big endian CPU, float is in the most
+  // significant word of an argument slot.
+  const int float_offset_in_slots = AIX_ONLY(0) NOT_AIX(1);
 #endif
   // We fill-out regs AND regs2 if an argument must be passed in a
   // register AND in a stack slot. If regs2 is null in such a
@@ -844,42 +849,17 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     // in farg_reg[j] if argument i is the j-th float argument of this call.
     //
     case T_FLOAT:
-#if defined(LINUX)
-      // Linux uses ELF ABI. Both original ELF and ELFv2 ABIs have float
-      // in the least significant word of an argument slot.
-#if defined(VM_LITTLE_ENDIAN)
-#define FLOAT_WORD_OFFSET_IN_SLOT 0
-#else
-#define FLOAT_WORD_OFFSET_IN_SLOT 1
-#endif
-#elif defined(AIX)
-      // Although AIX runs on big endian CPU, float is in the most
-      // significant word of an argument slot.
-#define FLOAT_WORD_OFFSET_IN_SLOT 0
-#else
-#error "unknown OS"
-#endif
       if (freg < Argument::n_float_register_parameters_c) {
         // Put float in register ...
         reg = farg_reg[freg];
         ++freg;
-
-        // Argument i for i > 8 is placed on the stack even if it's
-        // placed in a register (if it's a float arg). Aix disassembly
-        // shows that xlC places these float args on the stack AND in
-        // a register. This is not documented, but we follow this
-        // convention, too.
         if (arg >= Argument::n_regs_not_on_stack_c) {
-          // ... and on the stack.
-          guarantee(regs2 != nullptr, "must pass float in register and stack slot");
-          VMReg reg2 = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
-          regs2[i].set1(reg2);
+          // Reserve additional spill slot on stack (Parameter Save Area).
           stk += inc_stk_for_intfloat;
         }
-
       } else {
         // Put float on stack.
-        reg = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
+        reg = VMRegImpl::stack2reg(stk + float_offset_in_slots);
         stk += inc_stk_for_intfloat;
       }
       regs[i].set1(reg);
@@ -890,17 +870,8 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         // Put double in register ...
         reg = farg_reg[freg];
         ++freg;
-
-        // Argument i for i > 8 is placed on the stack even if it's
-        // placed in a register (if it's a double arg). Aix disassembly
-        // shows that xlC places these float args on the stack AND in
-        // a register. This is not documented, but we follow this
-        // convention, too.
         if (arg >= Argument::n_regs_not_on_stack_c) {
-          // ... and on the stack.
-          guarantee(regs2 != nullptr, "must pass float in register and stack slot");
-          VMReg reg2 = VMRegImpl::stack2reg(stk);
-          regs2[i].set2(reg2);
+          // Reserve additional spill slot on stack (Parameter Save Area).
           stk += inc_stk_for_longdouble;
         }
       } else {
@@ -921,7 +892,18 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return align_up(stk, 2);
+  // Return size of the stack frame excluding the jit_out_preserve part in single-word slots.
+#if defined(ABI_ELFv2)
+  // ABIv2 allows omitting the Parameter Save Area if the callee's prototype
+  // indicates that all parameters can be passed in registers.
+  STATIC_ASSERT((int)frame::native_abi_minframe_size == (int)frame::jit_out_preserve_size); // no correction needed
+  return ((arg > Argument::n_regs_not_on_stack_c) ? arg : 0) * 2;
+#else
+  // The Parameter Save Area needs to be at least 8 double-word slots for ABIv1.
+  // We have to add extra slots because ABIv1 uses a larger header. See initial "stk" computation above.
+  return (MAX2(arg, (int)Argument::n_regs_not_on_stack_c) * 2) +
+         ((frame::native_abi_minframe_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size);
+#endif
 }
 #endif // COMPILER2
 
@@ -2140,7 +2122,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  VMRegPair *out_regs2  = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
   BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
@@ -2193,7 +2174,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // - *_slot_offset Indicates offset from SP in number of stack slots.
   // - *_offset      Indicates offset from SP in bytes.
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, out_regs2, total_c_args) + // 1+2)
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args) + // 1+2)
                     SharedRuntime::out_preserve_stack_slots(); // See c_calling_convention.
 
   // Now the space for the inbound oop handle area.
@@ -2358,11 +2339,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     } else if (out_regs[out].first()->is_FloatRegister()) {
       freg_destroyed[out_regs[out].first()->as_FloatRegister()->encoding()] = true;
     }
-    if (out_regs2[out].first()->is_Register()) {
-      reg_destroyed[out_regs2[out].first()->as_Register()->encoding()] = true;
-    } else if (out_regs2[out].first()->is_FloatRegister()) {
-      freg_destroyed[out_regs2[out].first()->as_FloatRegister()->encoding()] = true;
-    }
 #endif // ASSERT
 
     switch (in_sig_bt[in]) {
@@ -2389,15 +2365,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
         break;
       case T_FLOAT:
         float_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
-        if (out_regs2[out].first()->is_valid()) {
-          float_move(masm, in_regs[in], out_regs2[out], r_callers_sp, r_temp_1);
-        }
         break;
       case T_DOUBLE:
         double_move(masm, in_regs[in], out_regs[out], r_callers_sp, r_temp_1);
-        if (out_regs2[out].first()->is_valid()) {
-          double_move(masm, in_regs[in], out_regs2[out], r_callers_sp, r_temp_1);
-        }
         break;
       case T_ADDRESS:
         fatal("found type (T_ADDRESS) in java args");
@@ -2475,7 +2445,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Save argument registers and leave room for C-compatible ABI_REG_ARGS.
     int frame_size = frame::native_abi_reg_args_size + align_up(total_c_args * wordSize, frame::alignment_in_bytes);
     __ mr(R11_scratch1, R1_SP);
-    RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs, out_regs2);
+    RegisterSaver::push_frame_and_save_argument_registers(masm, R12_scratch2, frame_size, total_c_args, out_regs);
 
     // Do the call.
     __ set_last_Java_frame(R11_scratch1, r_return_pc);
@@ -2483,7 +2453,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), r_oop, r_box, R16_thread);
     __ reset_last_Java_frame();
 
-    RegisterSaver::restore_argument_registers_and_pop_frame(masm, frame_size, total_c_args, out_regs, out_regs2);
+    RegisterSaver::restore_argument_registers_and_pop_frame(masm, frame_size, total_c_args, out_regs);
 
     __ asm_assert_mem8_is_zero(thread_(pending_exception),
        "no pending exception allowed on exit from SharedRuntime::complete_monitor_locking_C");
