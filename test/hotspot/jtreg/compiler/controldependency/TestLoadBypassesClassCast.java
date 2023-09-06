@@ -77,7 +77,7 @@ public class TestLoadBypassesClassCast {
         int ret = (int)array[2];
         if (o == null) {
         }
-        saved_o = o;
+        saved_o = o;  // (CastPP o): cast to not null
 
         // A.objectField load from o hosted here even though o was not checked to be of type A
         // result of the load doesn't hold an oop if o is not an A
@@ -89,30 +89,42 @@ public class TestLoadBypassesClassCast {
 
             if (flag3) {
             } else {
-                saved_casted_o = (A) o;
+                saved_casted_o = (A) o;  // (CheckCastPP (CastPP o)): cast to not null A
 
                 int j;
                 for (j = 1; j < 2; j *= 2) {
 
                 }
 
-                testHelper3(flag, j);
+                testHelper3(flag, j);  // goes away after CCP
 
                 int i;
                 for (i = 0; i < 2; i++) {
                 }
+                 // array[2] after one round of loop opts, control
+                 // dependent on range check, range check replaced by
+                 // array[2] range check above, control dependent
+                 // nodes become control dependent on that range check
                 ret += array[i];
 
                 Object o2;
                 if (flag) {
-                    o2 = saved_casted_o;
+                    o2 = saved_casted_o; // (CheckCastPP (CastPP o)): cast to to not null A
                 } else {
-                    o2 = testHelper2(i);
+                    o2 = testHelper2(i); // (CastPP o) after 1 round of loop opts: cast to not null
                 }
+                // subtype check split thru Phi. CheckCastPP becomes control dependent on merge point
+                // phi becomes (CastPP o) after 1 round of loop opts: cast to not null
+                // subtype check from split thru phi in one branch of the if replaced by dominating one
+                // empty if blocks, if goes away. CheckCastPP becomes control dependent on range check above
+                // CastPP replaced by dominating CastPP for null check
                 A a = (A) o2;
                 ret += a.objectField.intField;
             }
         } else {
+            // same logic as above so if this a.objectField load and
+            // the one above lose their dependency on the type check
+            // they common above all ifs
             saved_casted_o = (A) o;
 
             int j;
