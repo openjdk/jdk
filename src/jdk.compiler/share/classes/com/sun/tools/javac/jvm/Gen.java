@@ -1278,7 +1278,7 @@ public class Gen extends JCTree.Visitor {
     }
     //where:
         private boolean hasTry(JCSwitchExpression tree) {
-            var scan = new TreeScanner() {
+            class HasTryScanner extends TreeScanner {
                 private boolean hasTry;
 
                 @Override
@@ -1299,8 +1299,11 @@ public class Gen extends JCTree.Visitor {
                 public void visitLambda(JCLambda tree) {
                 }
             };
-            scan.scan(tree);
-            return scan.hasTry;
+
+            HasTryScanner hasTryScanner = new HasTryScanner();
+
+            hasTryScanner.scan(tree);
+            return hasTryScanner.hasTry;
         }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
