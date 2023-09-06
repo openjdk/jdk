@@ -26,7 +26,7 @@
  * @bug 4706533
  * @summary UndoManager.setLimit(0) doesn't correctly trim the UndoManager size
  * @run main bug4706533
-*/
+ */
 
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotUndoException;
