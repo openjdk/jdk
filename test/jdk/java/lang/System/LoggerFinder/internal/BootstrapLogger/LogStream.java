@@ -25,8 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import jdk.test.lib.util.BootstrapLoggerUtils;
-
 /**
  * We use an instance of this class to check what the logging system has printed
  * on System.err.

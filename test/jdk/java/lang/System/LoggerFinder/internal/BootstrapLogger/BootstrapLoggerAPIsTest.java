@@ -33,14 +33,12 @@ import java.util.ResourceBundle;
 import jdk.internal.logger.BootstrapLogger;
 import jdk.internal.logger.LazyLoggers;
 
-import jdk.test.lib.util.BootstrapLoggerUtils;
-
 /*
  * @test
  * @bug     8144460 8144214
  * @summary Cover the logXX and LogEvent.valueOf APIs of BootstrapLogger
  *          and logXX APIs of SimpleConsoleLogger.
- * @library /test/lib
+ * @library ../../lib
  * @modules java.base/jdk.internal.logger:+open
  *          java.base/sun.util.logging
  * @build LogStream

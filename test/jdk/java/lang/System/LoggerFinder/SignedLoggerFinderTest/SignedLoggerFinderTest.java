@@ -26,7 +26,7 @@
  * @bug 8314263
  * @summary Signed jars triggering Logger finder recursion and StackOverflowError
  * @modules java.base/jdk.internal.logger:+open
- * @library /test/lib
+ * @library /test/lib ../lib
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.process.*
  *        jdk.test.lib.util.JarUtils
@@ -48,7 +48,6 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.util.BootstrapLoggerUtils;
 import jdk.test.lib.util.JarUtils;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;

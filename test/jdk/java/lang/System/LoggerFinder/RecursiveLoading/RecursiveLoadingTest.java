@@ -27,7 +27,7 @@
  * @summary Creating a logger while loading the Logger finder
  *          triggers recursion and StackOverflowError
  * @modules java.base/jdk.internal.logger:+open
- * @library /test/lib
+ * @library ../lib
  * @compile RecursiveLoadingTest.java SimpleLoggerFinder.java
  * @run main/othervm RecursiveLoadingTest
  */
@@ -36,8 +36,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.LogRecord;
-
-import jdk.test.lib.util.BootstrapLoggerUtils;
 
 public class RecursiveLoadingTest {
 

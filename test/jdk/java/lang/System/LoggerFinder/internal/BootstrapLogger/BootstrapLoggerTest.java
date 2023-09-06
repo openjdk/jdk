@@ -46,8 +46,6 @@ import java.util.stream.Stream;
 import jdk.internal.logger.BootstrapLogger;
 import jdk.internal.logger.LazyLoggers;
 
-import jdk.test.lib.util.BootstrapLoggerUtils;
-
 /*
  * @test
  * @bug     8140364 8189291
@@ -55,7 +53,7 @@ import jdk.test.lib.util.BootstrapLoggerUtils;
  * @summary JDK implementation specific unit test for JDK internal artifacts.
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
- * @library /test/lib
+ * @library ../../lib
  * @modules java.base/jdk.internal.logger:+open
  *          java.logging
  * @build LogStream
