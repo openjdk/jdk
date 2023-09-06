@@ -742,7 +742,7 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
 
   if (WizardMode) {
      // print header
-     obj->mark().print_on(st);
+     obj->mark().print_on(st, obj);
      st->cr();
   }
 

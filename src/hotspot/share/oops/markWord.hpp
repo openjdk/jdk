@@ -259,7 +259,7 @@ class markWord {
   }
 
   // Debugging
-  void print_on(outputStream* st, bool print_monitor_info = true) const;
+  void print_on(outputStream* st, oop obj, bool print_monitor_info = true) const;
 
   // Prepare address of oop for placement into mark
   inline static markWord encode_pointer_as_mark(void* p) { return from_pointer(p).set_marked(); }

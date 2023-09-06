@@ -64,14 +64,14 @@ void markWord::set_displaced_mark_helper(markWord m) const {
   fatal("bad header=" INTPTR_FORMAT, value());
 }
 
-void markWord::print_on(outputStream* st, bool print_monitor_info) const {
+void markWord::print_on(outputStream* st, oop obj, bool print_monitor_info) const {
   if (is_marked()) {  // last bits = 11
     st->print(" marked(" INTPTR_FORMAT ")", value());
   } else if (has_monitor()) {  // last bits = 10
     // have to check has_monitor() before is_locked()
     st->print(" monitor(");
     if (print_monitor_info) {
-      ObjectMonitor* mon = ObjectSynchronizer::read_monitor(Thread::current(), cast_to_oop(this)); // hack
+      ObjectMonitor* mon = ObjectSynchronizer::read_monitor(Thread::current(), obj);
       if (mon == nullptr) {
         st->print("null (this should never be seen!)");
       } else {

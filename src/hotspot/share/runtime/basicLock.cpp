@@ -33,7 +33,7 @@ void BasicLock::print_on(outputStream* st, oop owner) const {
   if (mark_word.value() != 0) {
     // Print monitor info if there's an owning oop and it refers to this BasicLock.
     bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
-    mark_word.print_on(st, print_monitor_info);
+    mark_word.print_on(st, owner, print_monitor_info);
   }
 }
 
