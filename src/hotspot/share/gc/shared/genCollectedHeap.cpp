@@ -1069,16 +1069,3 @@ void GenCollectedHeap::record_gen_tops_before_GC() {
   }
 }
 #endif  // not PRODUCT
-
-class GenEnsureParsabilityClosure: public GenCollectedHeap::GenClosure {
- public:
-  void do_generation(Generation* gen) {
-    gen->ensure_parsability();
-  }
-};
-
-void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
-  CollectedHeap::ensure_parsability(retire_tlabs);
-  GenEnsureParsabilityClosure ep_cl;
-  generation_iterate(&ep_cl, false);
-}
