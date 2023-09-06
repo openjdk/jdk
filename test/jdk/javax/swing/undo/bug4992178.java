@@ -28,10 +28,10 @@
  * @run main bug4992178
  */
 
-import javax.swing.undo.UndoManager;
 import javax.swing.undo.AbstractUndoableEdit;
-import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.undo.UndoManager;
 
 public class bug4992178 {
 

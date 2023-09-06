@@ -30,10 +30,9 @@
 
 import java.awt.Rectangle;
 
-import javax.swing.SwingUtilities;
 import javax.swing.tree.AbstractLayoutCache;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.FixedHeightLayoutCache;
 import javax.swing.tree.TreePath;
 
