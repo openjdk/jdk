@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package compiler.c2;
 
-#ifndef CPU_X86_PEEPHOLE_X86_64_HPP
-#define CPU_X86_PEEPHOLE_X86_64_HPP
+/*
+ * @test
+ * @bug 8314191
+ * @summary Loop increment should not be transformed into unsigned comparison
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
+ *                   compiler.c2.MinValueStrideCountedLoop
+ */
+public class MinValueStrideCountedLoop {
+    static int limit = 0;
+    static int res = 0;
 
-#include "opto/machnode.hpp"
-#include "opto/regalloc.hpp"
+    static void test() {
+        for (int i = 0; i >= limit + -2147483647; i += -2147483648) {
+            res += 42;
+        }
+    }
 
-class Peephole {
-public:
-  static bool lea_coalesce_reg(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                               MachNode* (*new_root)(), uint inst0_rule);
-  static bool lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                               MachNode* (*new_root)(), uint inst0_rule);
-  static bool test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                              MachNode* (*new_root)(), uint inst0_rule);
-};
-
-#endif // CPU_X86_PEEPHOLE_X86_64_HPP
+    public static void main(String[] args) {
+        test();
+    }
+}
