@@ -1278,16 +1278,17 @@ public class Gen extends JCTree.Visitor {
     }
     //where:
         private boolean hasTry(JCSwitchExpression tree) {
-            boolean[] hasTry = new boolean[1];
-            new TreeScanner() {
+            var scan = new TreeScanner() {
+                private boolean hasTry;
+
                 @Override
                 public void visitTry(JCTry tree) {
-                    hasTry[0] = true;
+                    hasTry = true;
                 }
 
                 @Override
                 public void visitSynchronized(JCSynchronized tree) {
-                    hasTry[0] = true;
+                    hasTry = true;
                 }
 
                 @Override
@@ -1297,8 +1298,9 @@ public class Gen extends JCTree.Visitor {
                 @Override
                 public void visitLambda(JCLambda tree) {
                 }
-            }.scan(tree);
-            return hasTry[0];
+            };
+            scan.scan(tree);
+            return scan.hasTry;
         }
 
     private void handleSwitch(JCTree swtch, JCExpression selector, List<JCCase> cases,
