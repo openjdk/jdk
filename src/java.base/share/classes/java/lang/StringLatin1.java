@@ -32,8 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 
@@ -77,8 +77,6 @@ final class StringLatin1 {
             0x3038, 0x3138, 0x3238, 0x3338, 0x3438, 0x3538, 0x3638, 0x3738, 0x3838, 0x3938,
             0x3039, 0x3139, 0x3239, 0x3339, 0x3439, 0x3539, 0x3639, 0x3739, 0x3839, 0x3939
     };
-
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     public static char charAt(byte[] value, int index) {
         checkIndex(index, value.length);
@@ -150,15 +148,13 @@ final class StringLatin1 {
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[r], false);
+            ByteArrayLittleEndian.setShort(buf, charPos, PACKED_DIGITS[r]);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[-i], false);
+            ByteArrayLittleEndian.setShort(buf, charPos, PACKED_DIGITS[-i]);
         } else {
             buf[--charPos] = (byte)('0' - i);
         }
@@ -200,12 +196,7 @@ final class StringLatin1 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    PACKED_DIGITS[(int)((q * 100) - i)],
-                    false);
+            ByteArrayLittleEndian.setShort(buf, charPos, PACKED_DIGITS[(int)((q * 100) - i)]);
             i = q;
         }
 
@@ -215,24 +206,14 @@ final class StringLatin1 {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    PACKED_DIGITS[(q2 * 100) - i2],
-                    false);
+            ByteArrayLittleEndian.setShort(buf, charPos, PACKED_DIGITS[(q2 * 100) - i2]);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putShortUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    PACKED_DIGITS[-i2],
-                    false);
+            ByteArrayLittleEndian.setShort(buf, charPos, PACKED_DIGITS[-i2]);
         } else {
             buf[--charPos] = (byte)('0' - i2);
         }

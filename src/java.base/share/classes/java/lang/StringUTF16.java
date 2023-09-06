@@ -32,8 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1514,8 +1514,6 @@ final class StringUTF16 {
         }
     }
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
     // Used by trusted callers.  Assumes all necessary bounds checks have
@@ -1550,12 +1548,7 @@ final class StringUTF16 {
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putIntUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    inflated,
-                    false);
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
         }
 
         // We know there are at most two digits left at this point.
@@ -1564,12 +1557,7 @@ final class StringUTF16 {
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putIntUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    inflated,
-                    false);
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
         } else {
             putChar(buf, --charPos, '0' - i);
         }
@@ -1607,12 +1595,7 @@ final class StringUTF16 {
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putIntUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    inflated,
-                    false);
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
             i = q;
         }
 
@@ -1626,12 +1609,7 @@ final class StringUTF16 {
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
             charPos -= 2;
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putIntUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    inflated,
-                    false);
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
             i2 = q2;
         }
 
@@ -1642,12 +1620,7 @@ final class StringUTF16 {
             int packed = (int) StringLatin1.PACKED_DIGITS[-i2];
             int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
 
-            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
-            UNSAFE.putIntUnaligned(
-                    buf,
-                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    inflated,
-                    false);
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
         } else {
             putChar(buf, --charPos, '0' - i2);
         }
