@@ -298,7 +298,23 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   // do not add to the update-refs burden of GC.
 
   size_t old_promo_reserve;
-  if (old_heuristics->unprocessed_old_collection_candidates() > 0) {
+  if (is_global()) {
+    // Global GC is typically triggered by user invocation of System.gc(), and typically indicates that there is lots
+    // of garbage to be reclaimed because we are starting a new phase of execution.  Marking for global GC may take
+    // significantly longer than typical young marking because we must mark through all old objects.  To expedite
+    // evacuation and update-refs, we give emphasis to reclaiming garbage first, wherever that garbage is found.
+    // Global GC will adjust generation sizes to accommodate the collection set it chooses.
+
+    // Set old_promo_reserve to enforce that no regions are preselected for promotion.  Such regions typically
+    // have relatively high memory utilization.  We still call select_aged_regions() because this will prepare for
+    // promotions in place, if relevant.
+    old_promo_reserve = 0;
+
+    // Dedicate all available old memory to old_evacuation reserve.  This may be small, because old-gen is only
+    // expanded based on an existing mixed evacuation workload at the end of the previous GC cycle.  We'll expand
+    // the budget for evacuation of old during GLOBAL cset selection.
+    old_evacuation_reserve = maximum_old_evacuation_reserve;
+  } else if (old_heuristics->unprocessed_old_collection_candidates() > 0) {
     // We reserved all old-gen memory at end of previous GC to hold anticipated evacuations to old-gen.  If this is
     // mixed evacuation, reserve all of this memory for compaction of old-gen and do not promote.  Prioritize compaction
     // over promotion in order to defragment OLD so that it will be better prepared to efficiently receive promoted memory.
@@ -319,21 +335,25 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
     size_t delta = old_evacuation_reserve - old_free_unfragmented;
     old_evacuation_reserve -= delta;
 
-    // Let promo consume fragments of old-gen memory.
-    old_promo_reserve += delta;
+    // Let promo consume fragments of old-gen memory if not global
+    if (!is_global()) {
+      old_promo_reserve += delta;
+    }
   }
   collection_set->establish_preselected(preselected_regions);
   consumed_by_advance_promotion = select_aged_regions(old_promo_reserve, num_regions, preselected_regions);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
-  if (consumed_by_advance_promotion < old_promo_reserve) {
-    // If we're in a global collection, this memory can be used for old evacuations
-    old_evacuation_reserve += old_promo_reserve - consumed_by_advance_promotion;
-  }
+
+  // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
+  // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
+  // of old evacuatino failure.
+
   heap->set_young_evac_reserve(young_evacuation_reserve);
   heap->set_old_evac_reserve(old_evacuation_reserve);
   heap->set_promoted_reserve(consumed_by_advance_promotion);
 
-  // There is no need to expand OLD because all memory used here was set aside at end of previous GC
+  // There is no need to expand OLD because all memory used here was set aside at end of previous GC, except in the
+  // case of a GLOBAL gc.  During choose_collection_set() of GLOBAL, old will be expanded on demand.
 }
 
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
