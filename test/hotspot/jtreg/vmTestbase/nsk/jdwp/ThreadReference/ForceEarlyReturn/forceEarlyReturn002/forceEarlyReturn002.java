@@ -141,14 +141,14 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
 
     // get thread ID for "startNewThread" command
     private long getNewThreadId() throws Exception {
-		final String debugeeClassSig = "L" + getDebugeeClassName().replace('.', '/') + ";";
+        final String debugeeClassSig = "L" + getDebugeeClassName().replace('.', '/') + ";";
         log.display("  getting classID for " + debugeeClassSig);
         long classID = debuggee.getReferenceTypeID(debugeeClassSig);
         log.display("  got classID: " + classID);
 
         log.display("  getting testNewThread field value");
         JDWP.Value value = debuggee.getStaticFieldValue(classID, "testNewThread", JDWP.Tag.THREAD);
-		
+
         long threadID = ((Long)value.getValue()).longValue();
         log.display("  got threadID: " + threadID);
         return threadID;
