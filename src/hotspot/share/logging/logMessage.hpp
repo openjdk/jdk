@@ -60,15 +60,16 @@
 #define LogMessage(...) LogMessageTemplate<LOG_TAGS(__VA_ARGS__)>
 
 class LogMessageImpl : public LogMessageBuffer {
+  friend class NonInterleavingLogStream;
 private:
   LogTagSet& _tagset;
   bool _has_content;
 
-public:
+protected:
   LogMessageImpl(LogTagSet& tagset)
     : _tagset(tagset),
       _has_content(false) {};
-
+public:
   ~LogMessageImpl() {
     if (_has_content) {
       flush();

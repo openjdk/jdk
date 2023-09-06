@@ -137,8 +137,14 @@ public:
 };
 
 class LogMessageHandle {
+  friend class NonInterleavingLogStream;
   const LogLevelType _level;
   LogMessageImpl* _lm;
+
+protected:
+  void set_lm(LogMessageImpl* lm) {
+    _lm = lm;
+  }
 
 public:
   LogMessageHandle(const LogLevelType level, LogMessageImpl* lm)
@@ -155,10 +161,6 @@ public:
       _lm->vwrite(_level, fmt, args);
     }
     va_end(args);
-  }
-
-  void set_lm(LogMessageImpl* lm) {
-    _lm = lm;
   }
 };
 
