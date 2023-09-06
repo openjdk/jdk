@@ -545,7 +545,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   void do_claimed_block(uint const region_idx, CardValue* const dirty_l, CardValue* const dirty_r) {
     _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
-    size_t num_cards = dirty_r - dirty_l;
+    size_t num_cards = pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
