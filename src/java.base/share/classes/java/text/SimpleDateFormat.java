@@ -2411,8 +2411,8 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * {@return the hash code value for this {@code SimpleDateFormat}}
      *
-     * The hash code value is calculated using any number of fields from the
-     * formatting configuration of this {@code SimpleDateFormat} object.
+     * The hash code value is calculated using the value returned by
+     * {@link #toPattern()}.
      *
      * @see Object#hashCode()
      */
@@ -2429,7 +2429,7 @@ public class SimpleDateFormat extends DateFormat {
      * two formats would format any value the same.
      *
      * @implSpec The default implementation performs an equality check with a
-     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * notion of class identity based on {@code getClass()}, not {@code instanceof};
      * overriding methods should do so as well.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code SimpleDateFormat}

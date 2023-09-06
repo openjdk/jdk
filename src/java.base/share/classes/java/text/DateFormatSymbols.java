@@ -157,6 +157,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     private DateFormatSymbols(boolean flag) {
     }
 
+    // Non-transient / non-static fields should be added to hashCode impl
+
     /**
      * Era strings. For example: "AD" and "BC".  An array of 2 strings,
      * indexed by {@code Calendar.BC} and {@code Calendar.AD}.
@@ -658,8 +660,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * {@return the hash code for this {@code DateFormatSymbols}}
      *
-     * The hash code value is based on the date-time formatting data, which is
-     * represented by a number of fields from this {@code DateFormatSymbols} object.
+     * All fields of this class that are non-transient and non-static are used
+     * to calculate the hash code value.
      *
      * @see Object#hashCode()
      */
@@ -690,7 +692,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * {@code DateFormatSymbols} objects represent the same date-time formatting data.
      *
      * @implSpec The default implementation performs an equality check with a
-     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * notion of class identity based on {@code getClass()}, not {@code instanceof};
      * overriding methods should do so as well.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DateFormatSymbols}

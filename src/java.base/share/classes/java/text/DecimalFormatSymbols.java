@@ -742,7 +742,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@code DecimalFormatSymbols} objects represent the same set of symbols.
      *
      * @implSpec The default implementation performs an equality check with a
-     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * notion of class identity based on {@code getClass()}, not {@code instanceof};
      * overriding methods should do so as well.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DecimalFormatSymbols}
@@ -778,8 +778,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * {@return the hash code for this {@code DecimalFormatSymbols}}
      *
-     * The hash code value is based on the set of symbols, which is represented
-     * by a number of fields from this {@code DecimalFormatSymbols} object.
+     * All fields of this class that are non-transient and non-static are used
+     * to calculate the hash code value.
      *
      * @see Object#hashCode()
      */
@@ -992,6 +992,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             currencyInitialized = true;
         }
     }
+
+    // Non-transient / non-static fields should be added to hashCode impl
 
     /**
      * Character used for zero.

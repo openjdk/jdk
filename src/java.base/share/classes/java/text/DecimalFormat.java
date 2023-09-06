@@ -2918,7 +2918,7 @@ public class DecimalFormat extends NumberFormat {
      * two formats would format any value the same.
      *
      * @implSpec The default implementation performs an equality check with a
-     * class identity notion based on {@code getClass()}, not {@code instanceof};
+     * notion of class identity based on {@code getClass()}, not {@code instanceof};
      * overriding methods should do so as well.
      * @param  obj object to be compared for equality
      * @return {@code true} if the specified object is equal to this {@code DecimalFormat}
@@ -2969,8 +2969,8 @@ public class DecimalFormat extends NumberFormat {
     /**
      * {@return the hash code for this {@code DecimalFormat}}
      *
-     * The hash code value is calculated using any number of fields from the
-     * formatting configuration of this {@code DecimalFormat} object.
+     * The hash code value is calculated using the values returned from
+     * {@link #getPositivePrefix()} and {@link NumberFormat#hashCode()}.
      *
      * @see Object#hashCode()
      * @see NumberFormat#hashCode()
