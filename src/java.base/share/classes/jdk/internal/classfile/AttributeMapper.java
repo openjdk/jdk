@@ -49,24 +49,25 @@ public interface AttributeMapper<A> {
 
         /**
          * The attribute contains only pure data and CP refs, so can be bulk-copied when CP sharing is in effect,
-         * and exploded/rewritten when CP sharing is not in effect.
+         * and need to be exploded and rewritten when CP sharing is not in effect.
          */
         CP_REFS,
 
         /**
-         * The attribute may contain labels, so should always be exploded/rewritten.
+         * The attribute may contain labels, so need to be exploded and rewritten when the Code array is perturbed.
          */
         LABELS,
 
         /**
          * The attribute may contain indexes into structured not managed by the library (type variable lists, etc)
-         * and so we consult the {@link Classfile.AttributesProcessingOption} option to determine whether to preserve or drop it.
+         * and so we consult the {@link Classfile.AttributesProcessingOption} option to determine whether to preserve
+         * or drop it during transformation.
          */
-        HAZMAT,
+        UNSTABLE,
 
         /**
          * The attribute is completely unknown and so we consult the {@link Classfile.AttributesProcessingOption} option
-         * to determine whether to preserve or drop it.
+         * to determine whether to preserve or drop it during transformation.
          */
         UNKNOWN
     }

@@ -797,7 +797,7 @@ public class Attributes {
 
                 @Override
                 public AttributeMapper.AttributeStability attributeStability() {
-                    return AttributeStability.HAZMAT;
+                    return AttributeStability.UNSTABLE;
                 }
             };
 
@@ -857,7 +857,7 @@ public class Attributes {
 
                 @Override
                 public AttributeMapper.AttributeStability attributeStability() {
-                    return AttributeStability.HAZMAT;
+                    return AttributeStability.UNSTABLE;
                 }
             };
 

@@ -241,29 +241,23 @@ public sealed interface Classfile
     }
 
     /**
-     * Option describing whether to process or discard unrecognized or problematic attributes.
-     * Default is {@code PASS_ALL_ATTRIBUTES} to process all attributes present
-     * in the classfile. Unrecognized attributes are deliver as instances of
+     * Option describing whether to process or discard unrecognized or problematic
+     * attributes when the enclosing {@link AttributedElement} is transformed.
+     * Default is {@code PASS_ALL_ATTRIBUTES} to process all attributes during
+     * transformation. Unrecognized attributes are deliver as instances of
      * {@link UnknownAttribute}.
+     * @see AttributeMapper.AttributeStability
      */
     enum AttributesProcessingOption implements Option {
 
-        /** Process all attributes */
+        /** Process all attributes during transformation */
         PASS_ALL_ATTRIBUTES,
 
-        /** Drop unknown attributes */
+        /** Drop unknown attributes during transformation */
         DROP_UNKNOWN_ATTRIBUTES,
 
-        /** Drop unknown and hazmat attributes, @see AttributeMapper.AttributeStability#HAZMAT */
-        DROP_HAZMAT_ATRIBUTES;
-
-        /**
-         * {@return true if attributes of given stability are allowed to process}
-         * @param stability stability of the attribute
-         */
-        public boolean isAllowed(AttributeMapper.AttributeStability stability) {
-            return 5 - stability.ordinal() > ordinal();
-        }
+        /** Drop unknown and unstable attributes during transformation */
+        DROP_UNSTABLE_ATRIBUTES;
     }
 
     /**

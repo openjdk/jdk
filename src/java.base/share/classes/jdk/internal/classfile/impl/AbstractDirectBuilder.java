@@ -54,7 +54,9 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        if (context.attributesProcessingOption().isAllowed(a.attributeMapper().attributeStability())) {
+        if (a instanceof UnboundAttribute ||
+            5 - a.attributeMapper().attributeStability().ordinal()
+                    > context.attributesProcessingOption().ordinal()) {
             attributes.withAttribute(a);
         }
     }

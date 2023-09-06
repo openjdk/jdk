@@ -69,18 +69,11 @@ class OptionsTest {
                 .toArray(Path[]::new);
     }
 
-
-    @ParameterizedTest
-    @MethodSource("corpus")
-    void testAttributesProcessingOptionOnParse(Path path) throws Exception {
-        testNoHazmat(path, Classfile.of(Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES).parse(path));
-    }
-
     @ParameterizedTest
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
-        testNoHazmat(path, Classfile.of().parse(
-                Classfile.of(Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES).transform(
+        testNoUnstable(path, Classfile.of().parse(
+                Classfile.of(Classfile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transform(
                             Classfile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
@@ -124,9 +117,6 @@ class OptionsTest {
         //test default
         assertFalse(Classfile.of().parse(classBytes).attributes().isEmpty());
 
-        //test drop unknown at parse
-        assertTrue(Classfile.of(Classfile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).parse(classBytes).attributes().isEmpty());
-
         //test drop unknown at transform
         assertTrue(Classfile.of().parse(
                 Classfile.of(Classfile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
@@ -134,10 +124,10 @@ class OptionsTest {
                         ClassTransform.ACCEPT_ALL)).attributes().isEmpty());
     }
 
-    void testNoHazmat(Path path, ClassfileElement e) {
+    void testNoUnstable(Path path, ClassfileElement e) {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
-                assertTrue(AttributeMapper.AttributeStability.HAZMAT.ordinal() >= a.attributeMapper().attributeStability().ordinal(),
+                assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().attributeStability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoHazmat(path, (ClassfileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassfileElement)ee));
     }
 }
