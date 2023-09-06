@@ -29,9 +29,9 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.annotation.*;
-import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -67,7 +67,7 @@ public class Driver {
         // Find methods
         for (Method method : clazz.getMethods()) {
             try {
-                Map<String, TypeAnnotation> expected = expectedOf(method);
+                Map<String, ReferenceInfoUtil.TAD> expected = expectedOf(method);
                 if (expected == null)
                     continue;
                 if (method.getReturnType() != String.class)
@@ -84,7 +84,7 @@ public class Driver {
                     for (String[] extraParams : extraParamsCombinations) {
                         try {
                             ClassModel cm = compileAndReturn(fullFile, testClass, extraParams);
-                            List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cm);
+                            List<ReferenceInfoUtil.TAD> actual = ReferenceInfoUtil.extendedAnnotationsOf(cm);
                             ReferenceInfoUtil.compare(expected, actual);
                             out.format("PASSED:  %s %s%n", testClassName, Arrays.toString(extraParams));
                             ++passed;
@@ -115,127 +115,35 @@ public class Driver {
             throw new RuntimeException(failed + " tests failed");
     }
 
-    private Map<String, TypeAnnotation> expectedOf(Method m) {
+    private Map<String, ReferenceInfoUtil.TAD> expectedOf(Method m) {
         TADescription ta = m.getAnnotation(TADescription.class);
         TADescriptions tas = m.getAnnotation(TADescriptions.class);
 
         if (ta == null && tas == null)
             return null;
 
-        Map<String, TypeAnnotation> result =
+        Map<String, ReferenceInfoUtil.TAD> result =
             new HashMap<>();
 
         if (ta != null)
-            result.putAll(expectedOf(ta));
+            result.put(ta.annotation(), wrapTADescription(ta));
 
         if (tas != null) {
             for (TADescription a : tas.value()) {
-                result.putAll(expectedOf(a));
+                result.put(a.annotation(), wrapTADescription(a));
             }
         }
 
         return result;
     }
-
-    private Map<String, TypeAnnotation> expectedOf(TADescription d) {
-        String annoName = d.annotation();
-        TypeAnnotation.TargetInfo p = null;
-        Label label = null;
-        switch (d.type()) {
-            case CAST -> {
-                p = TypeAnnotation.TargetInfo.ofCastExpr(null, d.typeIndex());
-            }
-            case CLASS_EXTENDS -> {
-                p = TypeAnnotation.TargetInfo.ofClassExtends(d.typeIndex());
-            }
-            case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT -> {
-                p = TypeAnnotation.TargetInfo.ofConstructorInvocationTypeArgument(null, d.typeIndex());
-            }
-            case CLASS_TYPE_PARAMETER -> {
-                p = TypeAnnotation.TargetInfo.ofClassTypeParameter(d.paramIndex());
-            }
-            case CLASS_TYPE_PARAMETER_BOUND -> {
-                p = TypeAnnotation.TargetInfo.ofClassTypeParameterBound(d.paramIndex(), d.boundIndex());
-            }
-            case EXCEPTION_PARAMETER -> {
-                p = TypeAnnotation.TargetInfo.ofExceptionParameter(d.exceptionIndex());
-            }
-            case FIELD -> {
-                p = TypeAnnotation.TargetInfo.ofField();
-            }
-            case INSTANCEOF -> {
-                p = TypeAnnotation.TargetInfo.ofInstanceofExpr(null);
-            }
-            case LOCAL_VARIABLE -> {
-                List<TypeAnnotation.LocalVarTargetInfo> table = new ArrayList<>();
-                for (int idx = 0; idx < d.lvarOffset().length; ++idx)
-                    table.add(TypeAnnotation.LocalVarTargetInfo.of(null, null, d.lvarIndex()[idx]));
-                p = TypeAnnotation.TargetInfo.ofLocalVariable(table);
-            }
-            case METHOD_FORMAL_PARAMETER -> {
-                p = TypeAnnotation.TargetInfo.ofMethodFormalParameter(d.paramIndex());
-            }
-            case METHOD_INVOCATION_TYPE_ARGUMENT -> {
-                p = TypeAnnotation.TargetInfo.ofMethodInvocationTypeArgument(null, d.typeIndex());
-            }
-            case METHOD_RECEIVER -> {
-                p = TypeAnnotation.TargetInfo.ofMethodReceiver();
-            }
-            case METHOD_RETURN -> {
-                p = TypeAnnotation.TargetInfo.ofMethodReturn();
-            }
-            case METHOD_TYPE_PARAMETER -> {
-                p = TypeAnnotation.TargetInfo.ofMethodTypeParameter(d.paramIndex());
-            }
-            case METHOD_TYPE_PARAMETER_BOUND -> {
-                p = TypeAnnotation.TargetInfo.ofMethodTypeParameterBound(d.paramIndex(), d.boundIndex());
-            }
-            case NEW -> {
-                p = TypeAnnotation.TargetInfo.ofNewExpr(null);
-            }
-            case RESOURCE_VARIABLE -> {
-                List<TypeAnnotation.LocalVarTargetInfo> table = new ArrayList<>();
-                for (int idx = 0; idx < d.lvarOffset().length; ++idx)
-                    table.add(TypeAnnotation.LocalVarTargetInfo.of(null, null, d.lvarIndex()[idx]));
-                p = TypeAnnotation.TargetInfo.ofResourceVariable(table);
-            }
-            case THROWS -> {
-                p = TypeAnnotation.TargetInfo.ofThrows(d.typeIndex());
-            }
-            case CONSTRUCTOR_REFERENCE, CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, METHOD_REFERENCE, METHOD_REFERENCE_TYPE_ARGUMENT -> {
-            }
-        }
-        List<Integer> numPaths = wrapIntArray(d.genericLocation());
-        List<TypeAnnotation.TypePathComponent> targetPaths = new ArrayList<>(numPaths.size()/2);
-        int idx = 0;
-        while (idx < numPaths.size()) {
-            if (idx + 1 == numPaths.size()) throw new AssertionError("Could not decode type path: " + numPaths);
-            targetPaths.add(fromBinary(numPaths.get(idx), numPaths.get(idx + 1)));
-            idx += 2;
-        }
-        TypeAnnotation t = TypeAnnotation.of(p, targetPaths, ClassDesc.of(d.annotation()), AnnotationElement.ofInt("annotation", 0));
-        return Collections.singletonMap(annoName, t);
-    }
-
-    private TypeAnnotation.TypePathComponent fromBinary(int tag, int arg) {
-        if (arg != 0 && tag != 3) {
-            throw new AssertionError("Invalid TypePathEntry tag/arg: " + tag + "/" + arg);
-        } else {
-            return switch (tag) {
-                case 0 -> TypeAnnotation.TypePathComponent.ARRAY;
-                case 1 -> TypeAnnotation.TypePathComponent.INNER_TYPE;
-                case 2 -> TypeAnnotation.TypePathComponent.WILDCARD;
-                case 3 -> TypeAnnotation.TypePathComponent.of(TypeAnnotation.TypePathComponent.Kind.TYPE_ARGUMENT, arg);
-                default -> throw new AssertionError("Invalid TypePathEntryKind tag: " + tag);
-            };
-        }
-    }
-
-    private List<Integer> wrapIntArray(int[] ints) {
-        List<Integer> list = new ArrayList<>(ints.length);
-        for (int i : ints)
-            list.add(i);
-        return list;
+    private ReferenceInfoUtil.TAD wrapTADescription(TADescription taD) {
+        List<Integer> genericLocation = Arrays.stream(taD.genericLocation()).boxed().collect(Collectors.toList());
+        List<Integer> lvarIndex = Arrays.stream(taD.lvarIndex()).boxed().collect(Collectors.toList());
+        List<Integer> lvarLength = Arrays.stream(taD.lvarLength()).boxed().collect(Collectors.toList());
+        List<Integer> lvarOffset = Arrays.stream(taD.lvarOffset()).boxed().collect(Collectors.toList());
+        return new ReferenceInfoUtil.TAD(taD.annotation(), taD.type(), taD.typeIndex(),
+                taD.paramIndex(), taD.boundIndex(), taD.exceptionIndex(), taD.offset(),
+                lvarOffset, lvarLength, lvarIndex, genericLocation);
     }
 
     private String getTestClassName(Method m, String retentionPolicy) {
@@ -271,10 +179,9 @@ public class Driver {
     }
 
     protected File compileTestFile(File f, String testClass, String... extraParams) {
-        List<String> options = new ArrayList<>();
-        options.addAll(Arrays.asList(extraParams));
+        List<String> options = new ArrayList<>(Arrays.asList(extraParams));
         options.add(f.getPath());
-        int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[options.size()]));
+        int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[0]));
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);
         String path = f.getParent() != null ? f.getParent() : "";
