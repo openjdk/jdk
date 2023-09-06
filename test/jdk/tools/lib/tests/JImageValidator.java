@@ -229,5 +229,5 @@ public class JImageValidator {
             itr.forEachRemaining(thrown::addSuppressed);
             throw new IOException(thrown);
         }
-	}
+    }
 }
