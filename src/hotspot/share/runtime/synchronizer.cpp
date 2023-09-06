@@ -116,9 +116,29 @@ class ObjectMonitorWorld : public CHeapObj<mtThread> {
 
 public:
   ObjectMonitorWorld() : _table(new ConcurrentTable()) {}
-  ObjectMonitor* monitor_for(Thread* current, oop obj);
-  void monitor_put(Thread* current, ObjectMonitor* monitor, oop obj);
-  void remove_monitor_entry(Thread* current, ObjectMonitor* monitor);
+
+  ObjectMonitor* monitor_for(Thread* current, oop obj) {
+    ObjectMonitor* result = nullptr;
+    Lookup l(obj);
+    auto found = [&](ObjectMonitor** found) {
+      result = *found;
+    };
+    _table->get(current, l, found);
+    return result;
+  }
+
+  void monitor_put(ObjectMonitor* monitor, oop obj) {
+    // Enter the monitor into the concurrent hashtable.
+    Lookup l(obj);
+    bool b = _table->insert(Thread::current(), l, monitor);
+    assert(b == true, "also a must");
+  }
+
+  void remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
+    LookupMonitor lm(monitor);
+    bool removed = _table->remove(current, lm);
+    assert(removed, "we should have found this one");
+  }
 
   void print_on(outputStream* st) {
     auto printer = [&] (ObjectMonitor** entry) {
@@ -137,31 +157,6 @@ public:
 
 ObjectMonitorWorld* _omworld = nullptr;
 
-ObjectMonitor* ObjectMonitorWorld::monitor_for(Thread* current, oop obj) {
-  ObjectMonitor* result = nullptr;
-  Lookup l(obj);
-  auto found = [&](ObjectMonitor** found) {
-    result = *found;
-  };
-  _table->get(current, l, found);
-  return result;
-}
-
-// Add the hashcode to the monitor to match the object and put it in the hashtable.
-void ObjectMonitorWorld::monitor_put(Thread* current, ObjectMonitor* monitor, oop obj) {
-  // Enter the monitor into the concurrent hashtable.
-  // Entry* e = new Entry{monitor};
-  Lookup l(obj);
-  bool b = _table->insert(current, l, monitor);
-  assert(b == true, "also a must");
-}
-
-void ObjectMonitorWorld::remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
-  LookupMonitor lm(monitor);
-  bool removed = _table->remove(current, lm);
-  assert(removed, "we should have found this one");
-}
-
 // The thread that wins the CAS to set has_monitor() gets to add the monitor to the CHT.
 // Reading the monitor can only be done by another thread if has_monitor() is true, but the
 // second thread might have to wait for the monitor to be added to the hashtable.
@@ -179,7 +174,8 @@ ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
   fatal("OM not found for " PTR_FORMAT, p2i(obj));
 }
 
-static void add_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
+// Add the hashcode to the monitor to match the object and put it in the hashtable.
+static void add_monitor(ObjectMonitor* monitor, oop obj) {
   assert(obj->mark().has_monitor(), "this object must have a monitor");
   assert(obj == monitor->object(), "must be");
 
@@ -193,7 +189,7 @@ static void add_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
   monitor->set_header(temp);
   assert(monitor->header().is_neutral(), "should still be neutral, but now has hash");
 
-  _omworld->monitor_put(current, monitor, obj);
+  _omworld->monitor_put(monitor, obj);
 }
 
 class ObjectMonitorsHashtable::PtrList :
@@ -1534,7 +1530,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       markWord old_mark = object->cas_set_mark(set_hash_and_has_monitor(current, mark, object), mark);
       if (old_mark == mark) {
         // Success! Return inflated monitor.
-        add_monitor(current, monitor, object);
+        add_monitor(monitor, object);
         if (own) {
           JavaThread::cast(current)->lock_stack().remove(object);
         }
@@ -1632,7 +1628,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       guarantee(object->mark() == markWord::INFLATING(), "invariant");
       // Release semantics so that above set_object() is seen first.
       object->release_set_mark(set_hash_and_has_monitor(current, mark, object));
-      add_monitor(current, m, object);
+      add_monitor(m, object);
 
       // Once ObjectMonitor is configured and the object is associated
       // with the ObjectMonitor, it is safe to allow async deflation:
@@ -1673,7 +1669,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
       // live-lock -- "Inflated" is an absorbing state.
     }
 
-    add_monitor(current, m, object);
+    add_monitor(m, object);
 
     // Once the ObjectMonitor is configured and object is associated
     // with the ObjectMonitor, it is safe to allow async deflation:
