@@ -85,7 +85,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      * The "upstream" pipeline, or null if this is the source stage.
      */
     @SuppressWarnings("rawtypes")
-    private final AbstractPipeline previousStage;
+    protected final AbstractPipeline previousStage;
 
     /**
      * The operation flags for the intermediate operation represented by this

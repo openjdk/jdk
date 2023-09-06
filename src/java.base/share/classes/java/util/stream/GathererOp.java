@@ -188,28 +188,25 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             DEFAULT_FLAGS;
 
     final Gatherer<T,A,R> gatherer;
-    final AbstractPipeline<?, T, ?> previousStage; // FIXME replace with accessing super.previousStage
 
     // This constructor is used for initial .gather() invocations
     private GathererOp(AbstractPipeline<?, T, ?> upstream, Gatherer<T, A, R> gatherer) {
         super(upstream, opFlagsFor(gatherer.integrator())); // TODO change to not call integrator() more than once
         this.gatherer = gatherer;
-        this.previousStage = upstream;
     }
 
     // This constructor is used when fusing subsequent .gather() invocations
     @SuppressWarnings("unchecked")
     private GathererOp(GathererOp<T,?,?> upstream, Gatherer<T, A, R> gatherer) {
-        super(upstream.previousStage, (AbstractPipeline<?, T, ?>) upstream, opFlagsFor(gatherer.integrator()));
+        super(upstream.upstream(), (AbstractPipeline<?, T, ?>) upstream, opFlagsFor(gatherer.integrator()));
         this.gatherer = gatherer;
-        this.previousStage = upstream.previousStage;
     }
 
     // This allows internal access to the previous stage,
     // which we need since we want to be able to fuse `gather` followed by `collect`.
-   // @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     private AbstractPipeline<?, T, ?> upstream() {
-        return previousStage;
+        return (AbstractPipeline<?, T, ?>)super.previousStage;
     }
 
     @Override boolean opIsStateful() {

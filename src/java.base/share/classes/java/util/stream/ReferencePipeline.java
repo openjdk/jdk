@@ -689,7 +689,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
             var thenCollector = (Gatherer.ThenCollector<P_OUT, ?, R, ?, R, ?>) collector;
             return gather(thenCollector.gatherer()).collect(thenCollector.collector());
         }
-        
+
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
