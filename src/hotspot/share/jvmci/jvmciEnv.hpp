@@ -157,9 +157,9 @@ class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
 
   // Initializes the _env, _mode and _runtime fields.
-  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool jni_enomem_is_fatal = true);
+  void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env);
 
-  void init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line);
+  void init(JavaThread* thread, bool is_hotspot, const char* file, int line);
 
   JNIEnv*                 _env;  // JNI env for calling into shared library
   bool     _pop_frame_on_close;  // Must pop frame on close?
@@ -169,9 +169,9 @@ class JVMCIEnv : public ResourceObj {
   bool        _throw_to_caller;  // Propagate an exception raised in this env to the caller?
   const char*            _file;  // The file and ...
   int                    _line;  // ... line where this JNIEnv was created
-  bool             _jni_enomem;  // JNI_ENOMEM returned when creating or attaching to a libjvmci isolate.
-                                 // If true, the JVMCIEnv is invalid and should not be used apart from
-                                 // calling has_jni_enomem().
+  int              _init_error;  // JNI code returned when creating or attaching to a libjvmci isolate.
+                                 // If not JNI_OK, the JVMCIEnv is invalid and should not be used apart from
+                                 // calling init_error().
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -185,11 +185,12 @@ class JVMCIEnv : public ResourceObj {
 
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
+  // The `parent_env` argument must not be null.
   // An exception occurring within the scope is left pending when the
   // scope closes so that it will be propagated back to Java.
   // The JVMCIEnv destructor translates the exception object for the
   // Java runtime if necessary.
-  JVMCIEnv(JavaThread* thread, JNIEnv* env, const char* file, int line);
+  JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line);
 
   // Opens a JVMCIEnv scope for a compilation scheduled by the CompileBroker.
   // An exception occurring within the scope must not be propagated back to
@@ -200,34 +201,32 @@ public:
   // within the scope must not be propagated back to the caller.
   JVMCIEnv(JavaThread* env, const char* file, int line);
 
-  // Opens a JNIEnv scope for accessing `for_object`. An exception occurring
-  // within the scope must not be propagated back to the caller.
-  JVMCIEnv(JavaThread* thread, JVMCIObject for_object, const char* file, int line) {
-    // A JNI call to access an object in the shared library heap
-    // can block or take a long time so do not allow such access
-    // on the VM thread.
-    assert(for_object.is_hotspot() || !Thread::current()->is_VM_thread(),
-        "cannot open JVMCIEnv scope when in the VM thread for accessing a shared library heap object");
-    bool jni_enomem_is_fatal = true;
-    init(thread, for_object.is_hotspot(), jni_enomem_is_fatal, file, line);
-  }
-
   // Opens a JNIEnv scope for the HotSpot runtime if `is_hotspot` is true
   // otherwise for the shared library runtime. An exception occurring
   // within the scope must not be propagated back to the caller.
-  JVMCIEnv(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line) {
-    init(thread, is_hotspot, jni_enomem_is_fatal, file, line);
+  JVMCIEnv(JavaThread* thread, bool is_hotspot, const char* file, int line) {
+    init(thread, is_hotspot, file, line);
   }
 
   ~JVMCIEnv();
 
-  // Determines if a JNI_ENOMEM occurred while trying to create a libjvmci
-  // isolate or attach to it within the scope of a JVMCIEnv constructor.
-  bool has_jni_enomem() {
-    return _jni_enomem;
+  // Gets the JNI result code returned when creating or attaching to a libjvmci isolate.
+  // If not JNI_OK, the JVMCIEnv is invalid and the caller must abort the operation
+  // this JVMCIEnv context was created for.
+  int init_error() {
+    return _init_error;
   }
 
+  // Checks the value of init_error() and throws an exception in `JVMCI_TRAPS`
+  // (which must not be this) if it is not JNI_OK.
+  void check_init(JVMCI_TRAPS);
+
+  // Checks the value of init_error() and throws an exception in `TRAPS`
+  // if it is not JNI_OK.
+  void check_init(TRAPS);
+
   JVMCIRuntime* runtime() {
+    guarantee(_init_error == 0, "invalid JVMCIEnv: %d", _init_error);
     return _runtime;
   }
 

@@ -2203,7 +2203,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      failure_reason = compile_state.failure_reason();
+      if (env.init_error() != JNI_OK) {
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d)", env.init_error()), mtJVMCI);
+        bool reason_on_C_heap = true;
+        // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
+        // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+        bool retryable = env.init_error() == JNI_ENOMEM;
+        compile_state.set_failure(retryable, failure_reason, reason_on_C_heap);
+      }
       if (failure_reason == nullptr) {
         if (WhiteBoxAPI && WhiteBox::compilation_locked) {
           // Must switch to native to block
