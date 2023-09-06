@@ -3518,10 +3518,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     @SuppressWarnings("deprecation")
     private static String getValueString(BigInteger intVal, int scale) {
-        if (scale == 0) {
-            return intVal.toString(10);
-        }
-
         final boolean negative;
         final BigInteger intValAbs;
         if (intVal.signum < 0) {
@@ -4461,6 +4457,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     long rem = intCompactAbs - div * power;
                     getChars(div, off + sig, buf);
                     buf[off + sig] = '.';
+                    for (int i = sig, end = coeffLen - stringSize(rem) - sig + 1; i < end; ++i) {
+                        buf[off + sig + i] = '0';
+                    }
                     getChars(rem, off + coeffLen + 1, buf);
                     off += coeffLen + 1;
                 }
