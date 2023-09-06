@@ -501,7 +501,7 @@ PerfDataList::~PerfDataList() {
 
 }
 
-bool PerfDataList::by_name(void* name, PerfData* pd) {
+bool PerfDataList::by_name(void* name, PerfData* const& pd) {
 
   if (pd == nullptr)
     return false;

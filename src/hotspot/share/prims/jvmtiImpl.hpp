@@ -66,9 +66,9 @@ class JvmtiBreakpoints;
 class GrowableElement : public CHeapObj<mtInternal> {
 public:
   virtual ~GrowableElement() {}
-  virtual address getCacheValue()          =0;
-  virtual bool equals(GrowableElement* e)  =0;
-  virtual GrowableElement *clone()         =0;
+  virtual address getCacheValue()                =0;
+  virtual bool equals(const GrowableElement* e)  =0;
+  virtual GrowableElement *clone()               =0;
 };
 
 class GrowableCache {
@@ -88,7 +88,7 @@ private:
   // (but NOT when cached elements are recomputed).
   void (*_listener_fun)(void *, address*);
 
-  static bool equals(GrowableElement*, GrowableElement*);
+  static bool equals(GrowableElement*, GrowableElement* const&);
 
   // recache all elements after size change, notify listener
   void recache();
@@ -177,7 +177,7 @@ public:
 
   // GrowableElement implementation
   address getCacheValue()         { return getBcp(); }
-  bool equals(GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
+  bool equals(const GrowableElement* e) { return equals((JvmtiBreakpoint&) *e); }
 
   GrowableElement *clone()        {
     JvmtiBreakpoint *bp = new JvmtiBreakpoint();

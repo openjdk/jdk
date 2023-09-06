@@ -96,7 +96,7 @@ class MutableNUMASpace : public MutableSpace {
       delete _alloc_rate;
     }
 
-    static bool equals(int* lgrp_id_value, LGRPSpace* p) {
+    static bool equals(int* lgrp_id_value, LGRPSpace* const& p) {
       return *lgrp_id_value == p->lgrp_id();
     }
 

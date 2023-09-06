@@ -146,7 +146,7 @@ public:
   int num_arguments() const         { return _num_arguments; }
   bool is_enabled() const           { return _is_enabled; }
 
-  static bool by_name(void* name, DCmdInfo* info);
+  static bool by_name(void* name, DCmdInfo* const& info);
 };
 
 // A DCmdArgumentInfo instance provides a description of a diagnostic command

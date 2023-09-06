@@ -72,8 +72,8 @@ void UnhandledOops::register_unhandled_oop(oop* op) {
 }
 
 
-bool match_oop_entry(oop *op, UnhandledOopEntry e) {
-  return (e.oop_ptr() == op);
+bool match_oop_entry(oop *op, const UnhandledOopEntry& e) {
+  return (const_cast<UnhandledOopEntry&>(e).oop_ptr() == op);
 }
 
 // Mark unhandled oop as okay for GC - the containing struct has an oops_do and
