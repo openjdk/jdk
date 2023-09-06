@@ -42,7 +42,6 @@ public class StringSupport {
             case SINGLE_BYTE -> readFast_byte(segment, offset, charset);
             case DOUBLE_BYTE -> readFast_short(segment, offset, charset);
             case QUAD_BYTE -> readFast_int(segment, offset, charset);
-            default -> throw new UnsupportedOperationException("Unsupported charset: " + charset);
         };
     }
 
@@ -51,7 +50,6 @@ public class StringSupport {
             case SINGLE_BYTE -> writeFast_byte(segment, offset, charset, string);
             case DOUBLE_BYTE -> writeFast_short(segment, offset, charset, string);
             case QUAD_BYTE -> writeFast_int(segment, offset, charset, string);
-            default -> throw new UnsupportedOperationException("Unsupported charset: " + charset);
         }
     }
     private static String readFast_byte(MemorySegment segment, long offset, Charset charset) {

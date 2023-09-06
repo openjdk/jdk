@@ -436,11 +436,11 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     in which the open path elements occur in the provided layout path.
      * </ul>
      * <p>
-     * If the provided layout path {@code P} contains no dereference elements, then the offset of the access operation is
-     * computed as follows:
+     * If the provided layout path {@code P} contains no dereference elements, then the offset {@code O} of the access
+     * operation is computed as follows:
      *
      * {@snippet lang = "java":
-     * offset = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
+     * O = this.offsetHandle(P).invokeExact(B, I1, I2, ... In);
      * }
      * <p>
      * Accessing a memory segment using the var handle returned by this method is subject to the following checks:
@@ -533,7 +533,7 @@ public sealed interface MemoryLayout permits SequenceLayout, GroupLayout, Paddin
      *     elements occur in the provided layout path.
      * </ul>
      * <p>
-     * The offset of the returned segment is computed as if by a call to a
+     * The offset {@code O} of the returned segment is computed as if by a call to a
      * {@linkplain #byteOffsetHandle(PathElement...) byte offset handle} constructed using the given path elements.
      * <p>
      * Computing a slice of a memory segment using the method handle returned by this method is subject to the following checks:

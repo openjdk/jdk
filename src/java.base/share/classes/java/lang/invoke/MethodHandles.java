@@ -26,8 +26,6 @@
 package java.lang.invoke;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.Utils;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -45,10 +43,6 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 import java.lang.constant.ConstantDescs;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.LambdaForm.BasicType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
