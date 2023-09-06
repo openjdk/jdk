@@ -134,12 +134,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
      */
     private boolean linkedOrConsumed;
 
-    /**
-     * True if there are any stateful ops in the pipeline; only valid for the
-     * source stage.
-     */
-    private boolean sourceAnyStateful;
-
     private Runnable sourceCloseAction;
 
     /**
@@ -208,8 +202,6 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
         this.sourceOrOpFlags = opFlags & StreamOpFlag.OP_MASK;
         this.combinedFlags = StreamOpFlag.combineOpFlags(opFlags, previousStage.combinedFlags);
         this.sourceStage = previousStage.sourceStage;
-        if (opIsStateful())
-            sourceStage.sourceAnyStateful = true;
         this.depth = previousStage.depth + 1;
     }
 
@@ -387,6 +379,21 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
     }
 
     /**
+     * Returns whether any of the stages of the current segment is stateful
+     * or not.
+     * @return {@code true} if any stage in this segment is stateful,
+     *         {@code false} if not.
+     */
+    protected final boolean hasAnyStateful() {
+         var result = false;
+         for (var u = sourceStage.nextStage;
+              u != null && !(result = u.opIsStateful()) && u != this;
+              u = u.nextStage) {
+         }
+         return result;
+     }
+
+    /**
      * Get the source spliterator for this pipeline stage.  For a sequential or
      * stateless parallel pipeline, this is the source spliterator.  For a
      * stateful parallel pipeline, this is a spliterator describing the results
@@ -409,7 +416,7 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
             throw new IllegalStateException(MSG_CONSUMED);
         }
 
-        if (isParallel() && sourceStage.sourceAnyStateful) {
+        if (isParallel() && hasAnyStateful()) {
             // Adapt the source spliterator, evaluating each stateful op
             // in the pipeline up to and including this pipeline stage.
             // The depth and flags of each pipeline stage are adjusted accordingly.
