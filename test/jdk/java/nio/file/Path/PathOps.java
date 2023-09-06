@@ -246,7 +246,7 @@ public class PathOps {
     }
 
     PathOps equals(String other) {
-        out.format("test equals %s\n", other);        
+        out.format("test equals %s\n", other);
         checkPath();
 
         Path that = Path.of(other);
@@ -257,7 +257,7 @@ public class PathOps {
     }
 
     PathOps notEquals(Object other) {
-        out.format("test not equals %s\n", other);        
+        out.format("test not equals %s\n", other);
         checkPath();
         check(path.equals(other), false);
 
