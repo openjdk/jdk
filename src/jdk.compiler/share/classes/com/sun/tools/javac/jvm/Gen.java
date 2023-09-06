@@ -1286,6 +1286,11 @@ public class Gen extends JCTree.Visitor {
                 }
 
                 @Override
+                public void visitSynchronized(JCSynchronized tree) {
+                    hasTry[0] = true;
+                }
+
+                @Override
                 public void visitClassDef(JCClassDecl tree) {
                 }
 
