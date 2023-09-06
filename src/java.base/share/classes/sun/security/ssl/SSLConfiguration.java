@@ -108,9 +108,8 @@ final class SSLConfiguration implements Cloneable {
     static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.maxHandshakeMessageSize", 32768);
 
-    // Set the max certificate chain length to 10
-    static final int maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
-            "jdk.tls.maxCertificateChainLength", 10);
+    // Maximum allowed certificate chain length
+    static final int maxCertificateChainLength;
 
     // Limit the maximum certificate chain length accepted from clients
     static final int maxClientCertificateChainLength;
@@ -139,23 +138,34 @@ final class SSLConfiguration implements Cloneable {
         useExtendedMasterSecret = supportExtendedMasterSecret;
     }
 
-    /*
-     * If the jdk.tls.maxClientCertificateChainLength or jdk.tls.maxServerCertificateChainLength
-     * system property is not set, it will default to the value of the
-     * jdk.tls.maxCertificateChainLength system property. If either of them is
-     * set, it will supersede the value of the jdk.tls.maxCertificateChainLength
-     * system property.
-     */
     static {
-        Integer clientLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxClientCertificateChainLength");
-        maxClientCertificateChainLength = (clientLen != null) ?
-                clientLen : maxCertificateChainLength;
+        int certLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxCertificateChainLength", 10);
+        if (certLen < 0) {
+            certLen = 10;
+        }
+        maxCertificateChainLength = certLen;
 
-        Integer serverLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.maxServerCertificateChainLength");
-        maxServerCertificateChainLength = (serverLen != null) ?
-                serverLen : maxCertificateChainLength;
+        /*
+         * If the jdk.tls.maxClientCertificateChainLength or jdk.tls.maxServerCertificateChainLength
+         * system property is not set, it will default to the value of the
+         * jdk.tls.maxCertificateChainLength system property. If either of them is
+         * set, it will supersede the value of the jdk.tls.maxCertificateChainLength
+         * system property.
+         */
+        int clientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxClientCertificateChainLength", maxCertificateChainLength);
+        if (clientLen < 0) {
+            clientLen = maxCertificateChainLength;
+        }
+        maxClientCertificateChainLength = clientLen;
+
+        int serverLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxServerCertificateChainLength", maxCertificateChainLength);
+        if (serverLen < 0) {
+            serverLen = maxCertificateChainLength;
+        }
+        maxServerCertificateChainLength = serverLen;
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
