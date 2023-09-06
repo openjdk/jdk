@@ -311,7 +311,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -331,7 +331,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -351,7 +351,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -371,7 +371,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -391,7 +391,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -411,7 +411,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
@@ -431,7 +431,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation is equivalent to:
      * {@snippet lang=java :
      *  int size = Objects.requireNonNull(elements).length;
-     *  MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
+     *  MemorySegment seg = allocate(Objects.requireNonNull(elementLayout), size);
      *  MemorySegment.copy(elements, 0, seg, elementLayout, 0, size);
      *  return seg;
      * }
