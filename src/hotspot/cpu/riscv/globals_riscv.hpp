@@ -101,10 +101,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
   product(bool, UseRVC, false, "Use RVC instructions")                           \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
-  product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \
-  product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
-  product(bool, UseZbb, false, EXPERIMENTAL, "Use Zbb instructions")             \
-  product(bool, UseZbs, false, EXPERIMENTAL, "Use Zbs instructions")             \
+  product(bool, UseRVV, false, "Use RVV instructions")                           \
+  product(bool, UseZba, false, "Use Zba instructions")                           \
+  product(bool, UseZbb, false, "Use Zbb instructions")                           \
+  product(bool, UseZbs, false, "Use Zbs instructions")                           \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
