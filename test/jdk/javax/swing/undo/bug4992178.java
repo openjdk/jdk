@@ -26,7 +26,7 @@
  * @bug 4992178
  * @summary REGRESSION: Allow unlimited number of edits in an UndoManager
  * @run main bug4992178
-*/
+ */
 
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.AbstractUndoableEdit;
@@ -58,7 +58,9 @@ public class bug4992178 {
     }
 
     static class MyUndoableEdit extends AbstractUndoableEdit {
+        @Override
         public void undo() throws CannotUndoException {}
+        @Override
         public void redo() throws CannotRedoException {}
     }
 

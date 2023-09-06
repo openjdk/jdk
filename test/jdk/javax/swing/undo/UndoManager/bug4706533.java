@@ -21,10 +21,11 @@
  * questions.
  */
 
-/* @test
-   @bug 4706533
-   @summary UndoManager.setLimit(0) doesn't correctly trim the UndoManager size
-   @run main bug4706533
+/*
+ * @test
+ * @bug 4706533
+ * @summary UndoManager.setLimit(0) doesn't correctly trim the UndoManager size
+ * @run main bug4706533
 */
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -34,11 +35,8 @@ import javax.swing.undo.UndoManager;
 
 public class bug4706533 {
 
-    static UndoManager manager;
-    AbstractUndoableEdit edit[] = new AbstractUndoableEdit[10];
-
     public static void main(String[] args) throws Exception {
-        manager = new UndoManager();
+        UndoManager manager = new UndoManager();
         manager.setLimit(1);
         AbstractUndoableEdit edit = new MyUndoableEdit();
         manager.addEdit(edit);
@@ -46,11 +44,15 @@ public class bug4706533 {
         try {
             manager.undo();
             throw new RuntimeException("The limit should be zero");
-        } catch (CannotUndoException e) {}
+        } catch (CannotUndoException e) {
+            //Expected to be thrown
+        }
     }
 
     static class MyUndoableEdit extends AbstractUndoableEdit {
+        @Override
         public void undo() throws CannotUndoException {}
+        @Override
         public void redo() throws CannotRedoException {}
     }
 }

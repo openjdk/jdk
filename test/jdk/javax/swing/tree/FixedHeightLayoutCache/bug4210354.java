@@ -26,7 +26,7 @@
  * @bug 4210354
  * @summary Tests whether method FixedHeightLayoutCache.getBounds returns bad Rectangle
  * @run main bug4210354
-*/
+ */
 
 import java.awt.Rectangle;
 
@@ -50,7 +50,7 @@ public class bug4210354 {
         }
 
         /* create the TreeModel of depth 1 with specified num of children */
-        public static DefaultTreeModel getTreeModelILike(int childrenCount) {
+        public DefaultTreeModel getTreeModelILike(int childrenCount) {
             DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
             for (int i = 0; i < childrenCount; i++) {
                 DefaultMutableTreeNode child =
@@ -73,16 +73,13 @@ public class bug4210354 {
         TreePath path = fhlc.getPathForRow(row);
         Rectangle r = fhlc.getBounds(path, new Rectangle());
         Rectangle r2 = new Rectangle(x, row * h, dx, h);
-        try {
-            if (r.width != r2.width) {
-                throw new RuntimeException("Test failed");
-            }
-        } catch (Exception e) {
-            System.err.println("Exception: FixedHeightLayoutCache.getBounds returns bad Rectangle");}
+        if (r.width != r2.width) {
+            throw new RuntimeException("FixedHeightLayoutCache.getBounds returns bad Rectangle");
         }
+    }
 
     public static void main(String[] args) throws Exception {
         bug4210354 b = new bug4210354();
-        SwingUtilities.invokeAndWait(() -> b.init());
+        b.init();
     }
 }
