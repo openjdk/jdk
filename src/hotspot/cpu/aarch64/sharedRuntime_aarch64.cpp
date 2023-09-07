@@ -390,9 +390,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mov(c_rarg0, rmethod);
   __ mov(c_rarg1, lr);
-  // Note that registers r0~r29 and v0~v31 (with T1D arrangement) are saved on
-  // stack by push_CPU_state(), using 30+32=62 * wordSize stack space.
-  __ authenticate_return_address(c_rarg1, rscratch1, sp, 62 * wordSize);
+  __ authenticate_return_address(c_rarg1);
   __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)));
   __ blr(rscratch1);
 
@@ -1169,7 +1167,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
       continuation_enter_cleanup(masm);
 
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
-      __ authenticate_return_address(c_rarg1, rscratch1, rfp);
+      __ authenticate_return_address(c_rarg1);
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
@@ -2335,7 +2333,7 @@ void SharedRuntime::generate_deopt_blob() {
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
   __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
-  __ protect_return_address(r3, rscratch1, rfp);
+  __ protect_return_address(r3);
   __ str(r3, Address(rfp, wordSize));
   __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
 
@@ -2802,7 +2800,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     // it later to determine if someone changed the return address for
     // us!
     __ ldr(r20, Address(rthread, JavaThread::saved_exception_pc_offset()));
-    __ protect_return_address(r20, rscratch1, rfp);
+    __ protect_return_address(r20);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -2843,7 +2841,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ ldr(rscratch1, Address(rfp, wordSize));
     __ cmp(r20, rscratch1);
     __ br(Assembler::NE, no_adjust);
-    __ authenticate_return_address(r20, rscratch1, rfp);
+    __ authenticate_return_address(r20);
 
 #ifdef ASSERT
     // Verify the correct encoding of the poll we're about to skip.
@@ -2858,7 +2856,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 #endif
     // Adjust return pc forward to step over the safepoint poll instruction
     __ add(r20, r20, NativeInstruction::instruction_size);
-    __ protect_return_address(r20, rscratch1, rfp);
+    __ protect_return_address(r20);
     __ str(r20, Address(rfp, wordSize));
   }
 
@@ -3073,7 +3071,7 @@ void OptoRuntime::generate_exception_blob() {
   // there are no callee save registers now that adapter frames are gone.
   // and we dont' expect an arg reg save area
   __ ldp(rfp, r3, Address(__ post(sp, 2 * wordSize)));
-  __ authenticate_return_address(r3, rscratch1, sp, -2 * wordSize);
+  __ authenticate_return_address(r3);
 
   // r0: exception handler
 

@@ -50,7 +50,7 @@ inline Method* ContinuationHelper::Frame::frame_method(const frame& f) {
 }
 
 inline address ContinuationHelper::Frame::return_pc(const frame& f) {
-  return return_address_at((intptr_t *)return_pc_address(f), f.is_heap_frame());
+  return return_address_at((intptr_t *)return_pc_address(f));
 }
 
 #ifdef ASSERT
@@ -79,7 +79,7 @@ inline bool ContinuationHelper::InterpretedFrame::is_instance(const frame& f) {
 }
 
 inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
-  return return_address_at((intptr_t *)return_pc_address(f), f.is_heap_frame());
+  return return_address_at((intptr_t *)return_pc_address(f));
 }
 
 inline int ContinuationHelper::InterpretedFrame::size(const frame&f) {

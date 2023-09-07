@@ -68,11 +68,11 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
-inline address ContinuationHelper::return_address_at(intptr_t* sp, bool on_heap) {
+inline address ContinuationHelper::return_address_at(intptr_t* sp) {
   return *(address*)sp;
 }
 
-inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc, bool on_heap) {
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
   *(address*)sp = pc;
 }
 

@@ -256,13 +256,7 @@ public class AArch64TestAssembler extends TestAssembler {
         emitNop();
         if (config.ropProtection) {
             code.emitInt(0xf94003df);  // ldr xzr, [x30]
-            code.emitInt(0xa9bf7fe8);  // stp x8, xzr, [sp, #-16]!
-            // Note that hard coded value 1424 denotes the byte
-            // offset of field _cont_entry in JavaThread object.
-            code.emitInt(0xf942cb88);  // ldr x8, [x28, #1424]
-            code.emitInt(0xcb2863e8);  // sub x8, sp, x8
-            code.emitInt(0xdac1011e);  // pacia x30, x8
-            code.emitInt(0xa8c17fe8);  // ldp x8, xzr, [sp], #16
+            code.emitInt(0xd503231f);  // paciaz
         }
         code.emitInt(0xa9bf7bfd);      // stp x29, x30, [sp, #-16]!
         code.emitInt(0x910003fd);      // mov x29, sp
@@ -478,16 +472,10 @@ public class AArch64TestAssembler extends TestAssembler {
         code.emitInt(0x910003bf);      // mov sp, x29
         code.emitInt(0xa8c17bfd);      // ldp x29, x30, [sp], #16
         if (config.ropProtection) {
-            code.emitInt(0xa9bf7fe8);  // stp x8, xzr, [sp, #-16]!
-            // Note that hard coded value 1424 denotes the byte
-            // offset of field _cont_entry in JavaThread object.
-            code.emitInt(0xf942cb88);  // ldr x8, [x28, #1424]
-            code.emitInt(0xcb2863e8);  // sub x8, sp, x8
-            code.emitInt(0xdac1111e);  // autia x30, x8
-            code.emitInt(0xa8c17fe8);  // ldp x8, xzr, [sp], #16
+            code.emitInt(0xd503239f);  // autiaz
             code.emitInt(0xf94003df);  // ldr xzr, [x30]
         }
-        code.emitInt(0xd65f03c0);  // ret
+        code.emitInt(0xd65f03c0);      // ret
     }
 
     @Override
@@ -496,16 +484,10 @@ public class AArch64TestAssembler extends TestAssembler {
         code.emitInt(0x910003bf);      // mov sp, x29
         code.emitInt(0xa8c17bfd);      // ldp x29, x30, [sp], #16
         if (config.ropProtection) {
-            code.emitInt(0xa9bf7fe8);  // stp x8, xzr, [sp, #-16]!
-            // Note that hard coded value 1424 denotes the byte
-            // offset of field _cont_entry in JavaThread object.
-            code.emitInt(0xf942cb88);  // ldr x8, [x28, #1424]
-            code.emitInt(0xcb2863e8);  // sub x8, sp, x8
-            code.emitInt(0xdac1111e);  // autia x30, x8
-            code.emitInt(0xa8c17fe8);  // ldp x8, xzr, [sp], #16
+            code.emitInt(0xd503239f);  // autiaz
             code.emitInt(0xf94003df);  // ldr xzr, [x30]
         }
-        code.emitInt(0xd65f03c0);  // ret
+        code.emitInt(0xd65f03c0);      // ret
     }
 
     @Override
