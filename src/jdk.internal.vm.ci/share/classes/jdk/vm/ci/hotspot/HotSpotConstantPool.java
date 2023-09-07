@@ -27,6 +27,8 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.PrimitiveConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
@@ -526,6 +529,37 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolFlagsOffset);
     }
 
+    static class CachedBSMArgs extends AbstractList<JavaConstant> {
+        private final JavaConstant[] cache;
+        private final HotSpotConstantPool cp;
+        private final int bssIndex;
+
+        CachedBSMArgs(HotSpotConstantPool cp, int bssIndex, int size) {
+            this.cp = cp;
+            this.bssIndex = bssIndex;
+            this.cache = new JavaConstant[size];
+        }
+
+        @Override
+        public JavaConstant get(int index) {
+            JavaConstant res = cache[index];
+            if (res == null) {
+                int argCpi = compilerToVM().bootstrapArgumentIndexAt(cp, bssIndex, index);
+                res = compilerToVM().lookupConstantInPool(cp, argCpi, false);
+                if (res == null) {
+                    res = JavaConstant.forInt(argCpi);
+                }
+                cache[index] = res;
+            }
+            return res;
+        }
+
+        @Override
+        public int size() {
+            return cache.length;
+        }
+    }
+
     static class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
         private final boolean indy;
         private final ResolvedJavaMethod method;
@@ -584,11 +618,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     @Override
-    public int bootstrapArgumentIndexAt(int cpi, int index) {
-        return compilerToVM().bootstrapArgumentIndexAt(this, cpi, index);
-    }
-
-    @Override
     public BootstrapMethodInvocation lookupBootstrapMethodInvocation(int index, int opcode) {
         int cpi = opcode == -1 ? index : indyIndexConstantPoolIndex(index, opcode);
         final JvmConstant tag = getTagAt(cpi);
@@ -609,7 +638,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                     staticArgumentsList = List.of((JavaConstant[]) staticArguments);
                 } else {
                     int[] bsciArgs = (int[]) staticArguments;
-                    staticArgumentsList = List.of(Arrays.stream(bsciArgs).mapToObj(i -> JavaConstant.forInt(i)).toArray(JavaConstant[]::new));
+                    int argCount = bsciArgs[0];
+                    int bss_index = bsciArgs[1];
+                    staticArgumentsList = new CachedBSMArgs(this, bss_index, argCount);
                 }
                 return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
             default:
