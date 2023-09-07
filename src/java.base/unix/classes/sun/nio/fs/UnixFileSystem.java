@@ -917,7 +917,7 @@ abstract class UnixFileSystem
             } else if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
                 // ensure source can be moved
                 try {
-                    access(source, R_OK|W_OK);
+                    access(source, R_OK);
                 } catch (UnixException exc) {
                     exc.rethrowAsIOException(source);
                 }
