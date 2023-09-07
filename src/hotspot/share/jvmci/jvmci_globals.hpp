@@ -175,7 +175,19 @@ class fileStream;
           "Enables intrinsification of BigInteger.montgomeryMultiply()"))   \
                                                                             \
   NOT_COMPILER2(product(bool, UseMontgomerySquareIntrinsic, false, DIAGNOSTIC, \
-          "Enables intrinsification of BigInteger.montgomerySquare()"))
+          "Enables intrinsification of BigInteger.montgomerySquare()"))     \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorSupport, false, EXPERIMENTAL,     \
+          "Enables VectorSupport intrinsics"))                              \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorReboxing, false, EXPERIMENTAL,    \
+          "Enables reboxing of vectors"))                                   \
+                                                                            \
+  NOT_COMPILER2(product(bool, EnableVectorAggressiveReboxing, false, EXPERIMENTAL, \
+          "Enables aggressive reboxing of vectors"))                        \
+                                                                            \
+  NOT_COMPILER2(product(bool, UseVectorStubs, false, EXPERIMENTAL,          \
+          "Use stubs for vector transcendental operations"))                \
 
 // end of JVMCI_FLAGS
 

@@ -38,7 +38,50 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/resourceHash.hpp"
 
-// Implementation Classes for Loader Constraints
+// Overview
+//
+// The LoaderConstraintTable controls whether two ClassLoaders can resolve the same class name N
+// to different InstanceKlasses.
+//
+//     The design of the algorithm can be found in the OOPSLA'98 paper "Dynamic Class Loading in
+//     the Java Virtual Machine" by Sheng Liang and Gilad Bracha.
+//
+//     To understand the implementation, start with LoaderConstraintTable::{add_entry, check_or_update}
+//
+// When a class name N is entered into the LoaderConstraintTable, it's mapped to a ConstraintSet which
+// contains one or more LoaderConstraints:
+//
+//   LoaderConstraint_a = { _klass_a, loader_a1, loader_a2, ...}
+//   LoaderConstraint_b = { _klass_b, loader_b1, loader_b2, ...}
+//   LoaderConstraint_c = { _klass_c, loader_c1, loader_c2, ...}
+//   ...
+//
+// If _klass_<m> is null, when the first loader_<m><n> resolves the name N to a class K,
+// we assign _klass_<m> = K.
+//
+// if _klass_<m> is non-null, when a loader loader_<m><n> tries to resolve the name N to a class K,
+// where _klass_<m> != K, a LinkageError is thrown, and the resolution fails.
+//
+// Management of LoaderConstraints
+//
+// When the SystemDictionary decides that loader_x and loader_y must resolve the name N to the same class:
+// For the name N, find two LoaderConstraints such that:
+//
+//     - LoaderConstraint_x contains loader_x
+//     - LoaderConstraint_y contains loader_y
+//
+//       (Note that no class loader will appear in more than one LoaderConstraint for
+//        each name N, as enforced by the following steps).
+//
+// If neither LoaderConstraint_x nor LoaderConstraint_y exist, add a new LoaderConstraint that contains
+// both loader_x and loader_y.
+//
+// Otherwise if LoaderConstraint_x exists but LoaderConstraint_y doesn't exist, add loader_y to LoaderConstraint_x,
+// or vice versa.
+//
+// Otherwise if both LoaderConstraints have different values for _klass, a LinkageError is thrown.
+//
+// Otherwise the two LoaderConstraints are merged into one.
 
 class LoaderConstraint : public CHeapObj<mtClass> {
   InstanceKlass*         _klass;
