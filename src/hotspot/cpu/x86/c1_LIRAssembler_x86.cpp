@@ -1713,7 +1713,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-  __ cmpptr(obj, NULL_WORD);
+  __ testptr(obj, obj);
   if (op->should_profile()) {
     Label not_null;
     __ jccb(Assembler::notEqual, not_null);
@@ -1792,7 +1792,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         __ pop(klass_RInfo);
         __ pop(klass_RInfo);
         // result is a boolean
-        __ cmpl(klass_RInfo, 0);
+        __ testl(klass_RInfo, klass_RInfo);
         __ jcc(Assembler::equal, *failure_target);
         // successful cast, fall through to profile or jump
       }
@@ -1806,7 +1806,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ pop(klass_RInfo);
       __ pop(k_RInfo);
       // result is a boolean
-      __ cmpl(k_RInfo, 0);
+      __ testl(k_RInfo, k_RInfo);
       __ jcc(Assembler::equal, *failure_target);
       // successful cast, fall through to profile or jump
     }
@@ -1859,7 +1859,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     Label *success_target = op->should_profile() ? &profile_cast_success : &done;
     Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
 
-    __ cmpptr(value, NULL_WORD);
+    __ testptr(value, value);
     if (op->should_profile()) {
       Label not_null;
       __ jccb(Assembler::notEqual, not_null);
@@ -1890,7 +1890,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ pop(klass_RInfo);
     __ pop(k_RInfo);
     // result is a boolean
-    __ cmpl(k_RInfo, 0);
+    __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
     // fall through to the success case
 
@@ -2047,7 +2047,7 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 
   } else {
     Label skip;
-    __ jcc (acond, skip);
+    __ jccb(acond, skip);
     if (opr2->is_cpu_register()) {
       reg2reg(opr2, result);
     } else if (opr2->is_stack()) {
@@ -2664,13 +2664,18 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
       // cpu register - constant
       LIR_Const* c = opr2->as_constant_ptr();
       if (c->type() == T_INT) {
-        __ cmpl(reg1, c->as_jint());
+        jint i = c->as_jint();
+        if (i == 0) {
+          __ testl(reg1, reg1);
+        } else {
+          __ cmpl(reg1, i);
+        }
       } else if (c->type() == T_METADATA) {
         // All we need for now is a comparison with null for equality.
         assert(condition == lir_cond_equal || condition == lir_cond_notEqual, "oops");
         Metadata* m = c->as_metadata();
         if (m == nullptr) {
-          __ cmpptr(reg1, NULL_WORD);
+          __ testptr(reg1, reg1);
         } else {
           ShouldNotReachHere();
         }
@@ -2678,7 +2683,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         // In 64bit oops are single register
         jobject o = c->as_jobject();
         if (o == nullptr) {
-          __ cmpptr(reg1, NULL_WORD);
+          __ testptr(reg1, reg1);
         } else {
           __ cmpoop(reg1, o, rscratch1);
         }
@@ -3146,7 +3151,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #endif // _LP64
 
-    __ cmpl(rax, 0);
+    __ testl(rax, rax);
     __ jcc(Assembler::equal, *stub->continuation());
 
     __ mov(tmp, rax);
@@ -3288,7 +3293,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ pop(dst);
       __ pop(src);
 
-      __ cmpl(src, 0);
+      __ testl(src, src);
       __ jcc(Assembler::notEqual, cont);
 
       __ bind(slow);

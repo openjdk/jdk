@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1174,13 +1174,17 @@ public class JavacTrees extends DocTrees {
         printMessage(kind, msg, ((DCTree) t).pos((DCDocComment) c), root);
     }
 
+    public void printMessage(Diagnostic.Kind kind, CharSequence msg) {
+        printMessage(kind, msg, (JCDiagnostic.DiagnosticPosition) null, null);
+    }
+
     private void printMessage(Diagnostic.Kind kind, CharSequence msg,
             JCDiagnostic.DiagnosticPosition pos,
             com.sun.source.tree.CompilationUnitTree root) {
         JavaFileObject oldSource = null;
         JavaFileObject newSource = null;
 
-        newSource = root.getSourceFile();
+        newSource = root == null ? null : root.getSourceFile();
         if (newSource == null) {
             pos = null;
         } else {
