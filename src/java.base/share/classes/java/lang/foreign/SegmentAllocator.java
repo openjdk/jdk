@@ -311,7 +311,12 @@ public interface SegmentAllocator {
      * {@code elementCount*elementLayout.byteSize()} initialized with the contents of the provided {@code source} segment
      * as specified by the provided {@code elementLayout} (i.e. byte ordering, alignment and size)}
      *
-     * @implSpec the default implementation for this method calls {@code this.allocate(elementLayout, elementCount)}.
+     * @implSpec the default implementation for this method is equivalent to the following code:
+     * {@snippet lang = java:
+     * MemorySegment dest = this.allocate(elementLayout, elementCount);
+     * MemorySegment.copy(source, sourceElementLayout, sourceOffset, dest, elementLayout, 0, elementCount);
+     * return dest;
+     * }
      * @param elementLayout the element layout of the allocated array.
      * @param source the source segment.
      * @param sourceElementLayout the element layout of the source segment.
