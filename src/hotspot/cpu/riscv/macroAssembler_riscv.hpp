@@ -376,8 +376,18 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
+  void fence(uint32_t predecessor, uint32_t successor) {
+    if (UseZtso) {
+      // do not emit fence if it's not at least a StoreLoad fence
+      if (!((predecessor & w) && (successor & r))) {
+        return;
+      }
+    }
+    Assembler::fence(predecessor, successor);
+  }
+
   void pause() {
-    fence(w, 0);
+    Assembler::fence(w, 0);
   }
 
   // prints msg, dumps registers and stops execution
