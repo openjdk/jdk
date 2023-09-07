@@ -133,7 +133,17 @@ import java.util.Arrays;
  * <i>SubPattern:</i>
  *         Limit Relation Format
  * <i>Limit:</i>
- *         {@code String} that can be parsed as a {@code double} / "&infin;" ({@code U+221E}) / "-&infin;" (-{@code U+221E}).
+ *          Number / "&infin;" ({@code U+221E}) / "-&infin;" (-{@code U+221E}).
+ * <i>Number:</i>
+ *         *(Digit) [Decimal] *(Digit) [Exponent]
+ * <i>Decimal:</i>
+ *         Digit "." / "." Digit
+ * <i>Digit:</i>
+ *         0 - 9
+ * <i>Exponent:</i>
+ *         *(Digit) Digit ExponentSymbol Digit *(Digit)
+ * <i>ExponentSymbol:</i>
+ *         "e" / "E"
  * <i>Relation:</i>
  *         "#" / "&lt;" / "&le;" ({@code U+2264})
  * <i>Format:</i>
@@ -148,26 +158,17 @@ import java.util.Arrays;
  * ChoiceFormat fmt = new ChoiceFormat(
  *      "-1#is negative| 0#is zero or fraction | 1#is one |1.0<is 1+ |2#is two |2<is more than 2.");
  *
- * System.out.println("Format with -INF : " + fmt.format(Double.NEGATIVE_INFINITY));
- * // ...
- * System.out.println("Format with NaN : " + fmt.format(Double.NaN));
- * System.out.println("Format with +INF : " + fmt.format(Double.POSITIVE_INFINITY));
+ * System.out.println(fmt.format(Double.NEGATIVE_INFINITY)); // outputs "is negative"
+ * System.out.println(fmt.format(-1.0)); // outputs "is negative"
+ * System.out.println(fmt.format(0)); // outputs "is zero or fraction"
+ * System.out.println(fmt.format(0.9)); // outputs "is zero or fraction"
+ * System.out.println(fmt.format(1)); // outputs "is one"
+ * System.out.println(fmt.format(1.5)); // outputs "is 1+"
+ * System.out.println(fmt.format(2)); // outputs "is two"
+ * System.out.println(fmt.format(2.1)); // outputs "is more than 2."
+ * System.out.println(fmt.format(Double.NaN)); // outputs "is negative"
+ * System.out.println(fmt.format(Double.POSITIVE_INFINITY)); // outputs "is more than 2."
  * }
- * </blockquote>
- * Would output the following:
- * <blockquote>
- * <pre>{@code
- * Format with -INF : is negative
- * Format with -1.0 : is negative
- * Format with 0 : is zero or fraction
- * Format with 0.9 : is zero or fraction
- * Format with 1.0 : is one
- * Format with 1.5 : is 1+
- * Format with 2 : is two
- * Format with 2.1 : is more than 2.
- * Format with NaN : is negative
- * Format with +INF : is more than 2.
- * }</pre>
  * </blockquote>
  *
  * <h2><a id="synchronization">Synchronization</a></h2>
@@ -340,7 +341,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Constructs this ChoiceFormat with limits and corresponding formats
+     * Constructs a ChoiceFormat with limits and corresponding formats
      * based on the pattern.
      * The syntax for the ChoiceFormat pattern can be seen in the {@linkplain
      * ##patterns Patterns} section.
@@ -395,8 +396,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Get the limits of this ChoiceFormat.
-     * @return the limits.
+     * {@return the limits of this ChoiceFormat}
      */
     public double[] getLimits() {
         double[] newLimits = Arrays.copyOf(choiceLimits, choiceLimits.length);
@@ -404,8 +404,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     /**
-     * Get the formats of this ChoiceFormat.
-     * @return the formats.
+     * {@return the formats of this ChoiceFormat}
      */
     public Object[] getFormats() {
         Object[] newFormats = Arrays.copyOf(choiceFormats, choiceFormats.length);
