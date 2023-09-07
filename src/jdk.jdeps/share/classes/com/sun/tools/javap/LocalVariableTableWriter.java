@@ -43,7 +43,7 @@ import jdk.internal.classfile.attribute.LocalVariableInfo;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class LocalVariableTableWriter extends  InstructionDetailWriter {
+public class LocalVariableTableWriter extends InstructionDetailWriter {
     public enum NoteKind {
         START("start") {
             @Override

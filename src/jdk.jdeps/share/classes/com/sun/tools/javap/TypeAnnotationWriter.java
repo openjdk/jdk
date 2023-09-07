@@ -74,7 +74,7 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
     public void reset(CodeAttribute attr) {
         MethodModel m = attr.parent().get();
         pcMap = new HashMap<>();
-        lr = attr;
+        codeAttribute = attr;
         check(NoteKind.VISIBLE,
                 m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
                         .map(a -> a.annotations()));
@@ -94,13 +94,13 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
                     for (var lvar : p.table()) {
                         if (note == null)
                             note = new Note(kind, anno);
-                        addNote(lr.labelToBci(lvar.startLabel()), note);
+                        addNote(codeAttribute.labelToBci(lvar.startLabel()), note);
                     }
                 }
                 case TypeAnnotation.OffsetTarget p ->
-                    addNote(lr.labelToBci(p.target()), new Note(kind, anno));
+                    addNote(codeAttribute.labelToBci(p.target()), new Note(kind, anno));
                 case TypeAnnotation.TypeArgumentTarget p ->
-                    addNote(lr.labelToBci(p.target()), new Note(kind, anno));
+                    addNote(codeAttribute.labelToBci(p.target()), new Note(kind, anno));
                 default -> {}
             }
         }
@@ -121,7 +121,7 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
             for (Note n: notes) {
                 print(indent);
                 print("@");
-                annotationWriter.write(n.anno, false, true, lr);
+                annotationWriter.write(n.anno, false, true, codeAttribute);
                 print(", ");
                 println(n.kind.toString().toLowerCase(Locale.US));
             }
@@ -131,5 +131,5 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
     private AnnotationWriter annotationWriter;
     private ClassWriter classWriter;
     private Map<Integer, List<Note>> pcMap;
-    private CodeAttribute lr;
+    private CodeAttribute codeAttribute;
 }
