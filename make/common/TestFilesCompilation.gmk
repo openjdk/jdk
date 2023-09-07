@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ define SetupTestFilesCompilationBody
         LIBS := $$($1_LIBS_$$(name)), \
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
-        COPY_DEBUG_SYMBOLS := false, \
+        COPY_DEBUG_SYMBOLS := $$(if $$($1_COPY_DEBUG_SYMBOLS_$$(name)),$$($1_COPY_DEBUG_SYMBOLS_$$(name)),false), \
         STRIP_SYMBOLS := $$(if $$($1_STRIP_SYMBOLS_$$(name)),$$($1_STRIP_SYMBOLS_$$(name)),false), \
         BUILD_INFO_LOG_MACRO := LogInfo, \
     )) \

@@ -1241,8 +1241,8 @@ Node* GraphKit::array_ideal_length(AllocateArrayNode* alloc,
 // the incoming address with null casted away.  You are allowed to use the
 // not-null value only if you are control dependent on the test.
 #ifndef PRODUCT
-extern int explicit_null_checks_inserted,
-           explicit_null_checks_elided;
+extern uint explicit_null_checks_inserted,
+            explicit_null_checks_elided;
 #endif
 Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   // optional arguments for variations:
@@ -3996,11 +3996,7 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     return;
   }
 
-  Node* cont = _gvn.intcon(1);
-  Node* opaq = _gvn.transform(new Opaque1Node(C, cont));
-  C->add_parse_predicate_opaq(opaq);
-  Node* bol = _gvn.transform(new Conv2BNode(opaq));
-  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), bol, reason);
+  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), reason, &_gvn);
   _gvn.set_type(parse_predicate, parse_predicate->Value(&_gvn));
   Node* if_false = _gvn.transform(new IfFalseNode(parse_predicate));
   {

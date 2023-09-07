@@ -90,7 +90,7 @@ private:
   bool                  _need_method_info;
 
 public:
-  JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont);
+  JavaFrameStream(JavaThread* thread, jlong mode, Handle cont_scope, Handle cont);
 
   const RegisterMap* reg_map() override { return _vfst.reg_map(); };
 
@@ -147,21 +147,21 @@ private:
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
-  static inline bool get_caller_class(int mode) {
+  static inline bool get_caller_class(jlong mode) {
     return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
   }
-  static inline bool skip_hidden_frames(int mode) {
+  static inline bool skip_hidden_frames(jlong mode) {
     return (mode & JVM_STACKWALK_SHOW_HIDDEN_FRAMES) == 0;
   }
-  static inline bool live_frame_info(int mode) {
+  static inline bool live_frame_info(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_LIVE_STACK_FRAMES) != 0;
   }
 
 public:
-  static inline bool need_method_info(int mode) {
+  static inline bool need_method_info(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
-  static inline bool use_frames_array(int mode) {
+  static inline bool use_frames_array(jlong mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
   static oop walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,

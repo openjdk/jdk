@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,12 @@ public class Attrs implements Attributes {
      * Number of attributes in the attributes string array.
      */
     private char mLength;
-    /**
-     * current index
-     */
-    private char mAttrIdx = 0;
 
     /**
      * Constructor.
      */
     public Attrs() {
-        //              The default number of attributies capacity is 8.
+        //              The default number of attributes capacity is 8.
         mItems = new String[(8 << 3)];
     }
 
@@ -136,7 +132,7 @@ public class Attrs implements Attributes {
      *
      * <p>If the parser has not read a declaration for the attribute, or if the
      * parser does not report attribute types, then it must return the value
-     * "CDATA" as stated in the XML 1.0 Recommentation (clause 3.3.3,
+     * "CDATA" as stated in the XML 1.0 Recommendation (clause 3.3.3,
      * "Attribute-Value Normalization").</p>
      *
      * <p>For an enumerated attribute that is not a notation, the parser will

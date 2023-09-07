@@ -75,10 +75,6 @@ class UnixUriUtils {
         int pos = 0;
         while (pos < len) {
             char c = p.charAt(pos++);
-            if ((c == '/') && (pos < len) && (p.charAt(pos) == '/')) {
-                // skip redundant slashes
-                continue;
-            }
             byte b;
             if (c == '%') {
                 assert (pos+2) <= len;
@@ -91,6 +87,10 @@ class UnixUriUtils {
                 if (c == 0 || c >= 0x80)
                     throw new IllegalArgumentException("Bad escape");
                 b = (byte)c;
+            }
+            if (b == '/' && rlen > 0 && result[rlen-1] == '/') {
+                // skip redundant slashes
+                continue;
             }
             result[rlen++] = b;
         }

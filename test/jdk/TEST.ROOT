@@ -31,7 +31,7 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-com/sun/net/httpserver/simpleserver
+com/sun/net/httpserver/simpleserver sun/tools/jhsdb
 
 # Group definitions
 groups=TEST.groups
@@ -72,6 +72,7 @@ requires.properties= \
     vm.hasSA \
     vm.hasJFR \
     vm.jvmci \
+    vm.jvmci.enabled \
     vm.jvmti \
     docker.support \
     release.implementor \
@@ -79,7 +80,7 @@ requires.properties= \
     jdk.foreign.linker
 
 # Minimum jtreg version
-requiredVersion=7.2+1
+requiredVersion=7.3.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

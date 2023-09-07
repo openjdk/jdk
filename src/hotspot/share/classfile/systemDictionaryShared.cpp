@@ -597,9 +597,9 @@ public:
     ClassLoaderData* loader_b = b[0]->class_loader_data();
 
     if (loader_a != loader_b) {
-      return intx(loader_a) - intx(loader_b);
+      return primitive_compare(loader_a, loader_b);
     } else {
-      return intx(a[0]) - intx(b[0]);
+      return primitive_compare(a[0], b[0]);
     }
   }
 

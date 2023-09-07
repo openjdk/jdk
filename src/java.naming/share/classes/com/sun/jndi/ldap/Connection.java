@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,79 +280,79 @@ public final class Connection implements Runnable {
     private Socket createSocket(String host, int port, String socketFactory,
             int connectTimeout) throws Exception {
 
-        Socket socket = null;
+        SocketFactory factory = getSocketFactory(socketFactory);
+        assert factory != null;
+        Socket socket = createConnectionSocket(host, port, factory, connectTimeout);
 
-        if (socketFactory != null) {
-
-            // create the factory
-
-            @SuppressWarnings("unchecked")
-            Class<? extends SocketFactory> socketFactoryClass =
-                (Class<? extends SocketFactory>)Obj.helper.loadClass(socketFactory);
-            Method getDefault =
-                socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
-            SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
-
-            // create the socket
-
-            if (connectTimeout > 0) {
-
-                InetSocketAddress endpoint =
-                        createInetSocketAddress(host, port);
-
-                // unconnected socket
-                socket = factory.createSocket();
-
-                if (debug) {
-                    System.err.println("Connection: creating socket with " +
-                            "a timeout using supplied socket factory");
-                }
-
-                // connected socket
-                socket.connect(endpoint, connectTimeout);
-            }
-
-            // continue (but ignore connectTimeout)
-            if (socket == null) {
-                if (debug) {
-                    System.err.println("Connection: creating socket using " +
-                        "supplied socket factory");
-                }
-                // connected socket
-                socket = factory.createSocket(host, port);
-            }
-        } else {
-
-            if (connectTimeout > 0) {
-
-                    InetSocketAddress endpoint = createInetSocketAddress(host, port);
-
-                    socket = new Socket();
-
-                    if (debug) {
-                        System.err.println("Connection: creating socket with " +
-                            "a timeout");
-                    }
-                    socket.connect(endpoint, connectTimeout);
-            }
-
-            // continue (but ignore connectTimeout)
-
-            if (socket == null) {
-                if (debug) {
-                    System.err.println("Connection: creating socket");
-                }
-                // connected socket
-                socket = new Socket(host, port);
+        // the handshake for SSL connection with server and reset timeout for the socket
+        if (socket instanceof SSLSocket sslSocket) {
+            try {
+                initialSSLHandshake(sslSocket, connectTimeout);
+            } catch (Exception e) {
+                // 8314063 the socket is not closed after the failure of handshake
+                // close the socket while the error happened
+                closeOpenedSocket(socket);
+                throw e;
             }
         }
+        return socket;
+    }
 
-        // For LDAP connect timeouts on LDAP over SSL connections must treat
-        // the SSL handshake following socket connection as part of the timeout.
-        // So explicitly set a socket read timeout, trigger the SSL handshake,
-        // then reset the timeout.
-        if (socket instanceof SSLSocket) {
-            SSLSocket sslSocket = (SSLSocket) socket;
+    private SocketFactory getSocketFactory(String socketFactoryName) throws Exception {
+        if (socketFactoryName == null) {
+            if (debug) {
+                System.err.println("Connection: using default SocketFactory");
+            }
+            return SocketFactory.getDefault();
+        } else {
+            if (debug) {
+                System.err.println("Connection: loading supplied SocketFactory: " + socketFactoryName);
+            }
+            @SuppressWarnings("unchecked")
+            Class<? extends SocketFactory> socketFactoryClass =
+                    (Class<? extends SocketFactory>) Obj.helper.loadClass(socketFactoryName);
+            Method getDefault =
+                    socketFactoryClass.getMethod("getDefault");
+            SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
+            return factory;
+        }
+    }
+
+    private Socket createConnectionSocket(String host, int port, SocketFactory factory,
+                                          int connectTimeout) throws Exception {
+        Socket socket = null;
+
+        if (connectTimeout > 0) {
+            // create unconnected socket and then connect it if timeout
+            // is supplied
+            InetSocketAddress endpoint =
+                    createInetSocketAddress(host, port);
+            // unconnected socket
+            socket = factory.createSocket();
+            // connect socket with a timeout
+            socket.connect(endpoint, connectTimeout);
+            if (debug) {
+                System.err.println("Connection: creating socket with " +
+                        "a connect timeout");
+            }
+        }
+        if (socket == null) {
+            // create connected socket
+            socket = factory.createSocket(host, port);
+            if (debug) {
+                System.err.println("Connection: creating connected socket with" +
+                        " no connect timeout");
+            }
+        }
+        return socket;
+    }
+
+    // For LDAP connect timeouts on LDAP over SSL connections must treat
+    // the SSL handshake following socket connection as part of the timeout.
+    // So explicitly set a socket read timeout, trigger the SSL handshake,
+    // then reset the timeout.
+    private void initialSSLHandshake(SSLSocket sslSocket , int connectTimeout) throws Exception {
+
             if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
                 SSLParameters param = sslSocket.getSSLParameters();
                 param.setEndpointIdentificationAlgorithm("LDAPS");
@@ -365,8 +365,6 @@ public final class Connection implements Runnable {
                 sslSocket.startHandshake();
                 sslSocket.setSoTimeout(socketTimeout);
             }
-        }
-        return socket;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -643,14 +641,12 @@ public final class Connection implements Runnable {
                         ldapUnbind(reqCtls);
                     }
                 } finally {
-                    try {
-                        outStream.flush();
-                        sock.close();
-                        unpauseReader();
-                    } catch (IOException ie) {
-                        if (debug)
-                            System.err.println("Connection: problem closing socket: " + ie);
-                    }
+
+                    flushAndCloseOutputStream();
+                    // 8313657 socket is not closed until GC is run
+                    closeOpenedSocket(sock);
+                    tryUnpauseReader();
+
                     if (!notifyParent) {
                         LdapRequest ldr = pendingRequests;
                         while (ldr != null) {
@@ -684,6 +680,44 @@ public final class Connection implements Runnable {
         }
     }
 
+    // flush and close output stream
+    private void flushAndCloseOutputStream() {
+        try {
+            outStream.flush();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
+        }
+        try {
+            outStream.close();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
+        }
+    }
+
+    // close socket
+    private void closeOpenedSocket(Socket socket) {
+        try {
+            if (socket != null && !socket.isClosed())
+                socket.close();
+        } catch (IOException ioEx) {
+            if (debug) {
+                System.err.println("Connection.closeConnectionSocket: Socket close problem: " + ioEx);
+                System.err.println("Socket isClosed: " + sock.isClosed());
+            }
+        }
+    }
+
+    // unpause reader
+    private void tryUnpauseReader() {
+        try {
+            unpauseReader();
+        } catch (IOException ioEx) {
+            if (debug)
+                System.err.println("Connection.tryUnpauseReader: unpauseReader problem " + ioEx);
+        }
+    }
 
     // Assume everything is "quiet"
     // "synchronize" might lead to deadlock so don't synchronize method

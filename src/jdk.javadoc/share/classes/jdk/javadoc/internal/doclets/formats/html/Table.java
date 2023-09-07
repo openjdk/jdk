@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
  * An HTML container used to display summary tables for various kinds of elements
@@ -353,6 +352,7 @@ public class Table<T> extends Content {
      *
      * @return true if the table has no rows
      */
+    @Override
     public boolean isEmpty() {
         return bodyRows.isEmpty();
     }

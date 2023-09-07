@@ -35,7 +35,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 
@@ -77,7 +76,7 @@ public class HtmlLinkInfo {
         /**
          * Link with optional type parameters and bounds rendered as separate links.
          */
-        LINK_TYPE_PARAMS_AND_BOUNDS;
+        LINK_TYPE_PARAMS_AND_BOUNDS
     }
 
     private final HtmlConfiguration configuration;

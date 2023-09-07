@@ -151,6 +151,18 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native int getFieldEntriesLength0(Class<?> aClass);
+  public         int getFieldEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getFieldEntriesLength0(aClass);
+  }
+
+  private native int getFieldCPIndex0(Class<?> aClass, int index);
+  public         int getFieldCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getFieldCPIndex0(aClass, index);
+  }
+
   private native int getIndyInfoLength0(Class<?> aClass);
   public         int getIndyInfoLength(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -303,6 +315,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
@@ -764,4 +779,6 @@ public class WhiteBox {
   public native void unlockCritical();
 
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
 }

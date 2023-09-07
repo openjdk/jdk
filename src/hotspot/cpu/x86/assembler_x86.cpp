@@ -26,15 +26,16 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef PRODUCT
@@ -2434,7 +2435,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
 
     const int short_size = 2;
     const int long_size = 6;
-    intptr_t offs = (intptr_t)dst - (intptr_t)pc();
+    int offs = checked_cast<int>((intptr_t)dst - (intptr_t)pc());
     if (maybe_short && is8bit(offs - short_size)) {
       // 0111 tttn #8-bit disp
       emit_int16(0x70 | cc, (offs - short_size) & 0xFF);
@@ -2461,14 +2462,14 @@ void Assembler::jccb_0(Condition cc, Label& L, const char* file, int line) {
     const int short_size = 2;
     address entry = target(L);
 #ifdef ASSERT
-    intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
-    intptr_t delta = short_branch_delta();
+    int dist = checked_cast<int>((intptr_t)entry - (intptr_t)(pc() + short_size));
+    int delta = short_branch_delta();
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
-    assert(is8bit(dist), "Dispacement too large for a short jmp at %s:%d", file, line);
+    assert(is8bit(dist), "Displacement too large for a short jmp at %s:%d", file, line);
 #endif
-    intptr_t offs = (intptr_t)entry - (intptr_t)pc();
+    int offs = checked_cast<int>((intptr_t)entry - (intptr_t)pc());
     // 0111 tttn #8-bit disp
     emit_int16(0x70 | cc, (offs - short_size) & 0xFF);
   } else {
@@ -2492,7 +2493,7 @@ void Assembler::jmp(Label& L, bool maybe_short) {
     InstructionMark im(this);
     const int short_size = 2;
     const int long_size = 5;
-    intptr_t offs = entry - pc();
+    int offs = checked_cast<int>(entry - pc());
     if (maybe_short && is8bit(offs - short_size)) {
       emit_int16((unsigned char)0xEB, ((offs - short_size) & 0xFF));
     } else {
@@ -2531,12 +2532,12 @@ void Assembler::jmpb_0(Label& L, const char* file, int line) {
     address entry = target(L);
     assert(entry != nullptr, "jmp most probably wrong");
 #ifdef ASSERT
-    intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
-    intptr_t delta = short_branch_delta();
+    int dist = checked_cast<int>((intptr_t)entry - (intptr_t)(pc() + short_size));
+    int delta = short_branch_delta();
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
-    assert(is8bit(dist), "Dispacement too large for a short jmp at %s:%d", file, line);
+    assert(is8bit(dist), "Displacement too large for a short jmp at %s:%d", file, line);
 #endif
     intptr_t offs = entry - pc();
     emit_int16((unsigned char)0xEB, (offs - short_size) & 0xFF);
@@ -4431,6 +4432,14 @@ void Assembler::evpcmpuw(KRegister kdst, XMMRegister nds, XMMRegister src, Compa
   emit_int24(0x3E, (0xC0 | encode), vcc);
 }
 
+void Assembler::evpcmpuq(KRegister kdst, XMMRegister nds, XMMRegister src, ComparisonPredicate vcc, int vector_len) {
+  assert(VM_Version::supports_avx512vl(), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(kdst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x1E, (0xC0 | encode), vcc);
+}
+
 void Assembler::evpcmpuw(KRegister kdst, XMMRegister nds, Address src, ComparisonPredicate vcc, int vector_len) {
   assert(VM_Version::supports_avx512vlbw(), "");
   InstructionMark im(this);
@@ -6223,11 +6232,17 @@ void Assembler::subss(XMMRegister dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
-void Assembler::testb(Register dst, int imm8) {
+void Assembler::testb(Register dst, int imm8, bool use_ral) {
   NOT_LP64(assert(dst->has_byte_register(), "must have byte register"));
   if (dst == rax) {
-    emit_int8((unsigned char)0xA8);
-    emit_int8(imm8);
+    if (use_ral) {
+      emit_int8((unsigned char)0xA8);
+      emit_int8(imm8);
+    } else {
+      emit_int8((unsigned char)0xF6);
+      emit_int8((unsigned char)0xC4);
+      emit_int8(imm8);
+    }
   } else {
     (void) prefix_and_encode(dst->encoding(), true);
     emit_arith_b(0xF6, 0xC0, dst, imm8);
@@ -6379,7 +6394,7 @@ void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
   if (abort.is_bound()) {
     address entry = target(abort);
     assert(entry != nullptr, "abort entry null");
-    intptr_t offset = entry - pc();
+    int offset = checked_cast<int>(entry - pc());
     emit_int16((unsigned char)0xC7, (unsigned char)0xF8);
     emit_int32(offset - 6); // 2 opcode + 4 address
   } else {
@@ -10958,6 +10973,36 @@ void Assembler::emit_operand32(Register reg, Address adr, int post_addr_length) 
   emit_operand(reg, adr._base, adr._index, adr._scale, adr._disp, adr._rspec, post_addr_length);
 }
 
+void Assembler::fld_d(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDD);
+  emit_operand32(rax, adr, 0);
+}
+
+void Assembler::fprem() {
+  emit_int16((unsigned char)0xD9, (unsigned char)0xF8);
+}
+
+void Assembler::fnstsw_ax() {
+  emit_int16((unsigned char)0xDF, (unsigned char)0xE0);
+}
+
+void Assembler::fstp_d(Address adr) {
+  InstructionMark im(this);
+  emit_int8((unsigned char)0xDD);
+  emit_operand32(rbx, adr, 0);
+}
+
+void Assembler::fstp_d(int index) {
+  emit_farith(0xDD, 0xD8, index);
+}
+
+void Assembler::emit_farith(int b1, int b2, int i) {
+  assert(isByte(b1) && isByte(b2), "wrong opcode");
+  assert(0 <= i &&  i < 8, "illegal stack offset");
+  emit_int16(b1, b2 + i);
+}
+
 #ifndef _LP64
 // 32bit only pieces of the assembler
 
@@ -11000,12 +11045,6 @@ void Assembler::decl(Register dst) {
 }
 
 // 64bit doesn't use the x87
-
-void Assembler::emit_farith(int b1, int b2, int i) {
-  assert(isByte(b1) && isByte(b2), "wrong opcode");
-  assert(0 <= i &&  i < 8, "illegal stack offset");
-  emit_int16(b1, b2 + i);
-}
 
 void Assembler::fabs() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xE1);
@@ -11168,12 +11207,6 @@ void Assembler::fld1() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xE8);
 }
 
-void Assembler::fld_d(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDD);
-  emit_operand32(rax, adr, 0);
-}
-
 void Assembler::fld_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
@@ -11257,14 +11290,6 @@ void Assembler::fnstcw(Address src) {
   emit_operand32(rdi, src, 0);
 }
 
-void Assembler::fnstsw_ax() {
-  emit_int16((unsigned char)0xDF, (unsigned char)0xE0);
-}
-
-void Assembler::fprem() {
-  emit_int16((unsigned char)0xD9, (unsigned char)0xF8);
-}
-
 void Assembler::fprem1() {
   emit_int16((unsigned char)0xD9, (unsigned char)0xF5);
 }
@@ -11293,16 +11318,6 @@ void Assembler::fst_s(Address adr) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xD9);
   emit_operand32(rdx, adr, 0);
-}
-
-void Assembler::fstp_d(Address adr) {
-  InstructionMark im(this);
-  emit_int8((unsigned char)0xDD);
-  emit_operand32(rbx, adr, 0);
-}
-
-void Assembler::fstp_d(int index) {
-  emit_farith(0xDD, 0xD8, index);
 }
 
 void Assembler::fstp_s(Address adr) {

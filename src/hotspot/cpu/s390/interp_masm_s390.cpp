@@ -839,7 +839,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   // Check that all monitors are unlocked.
   {
     NearLabel loop, exception, entry, restart;
-    const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+    const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
     // We use Z_ARG2 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly.
     Register R_current_monitor = Z_ARG2;
@@ -2039,7 +2039,7 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool     stack_is_empty,
 
   const Register Rcurr_slot = Rtemp1;
   const Register Rlimit     = Rtemp2;
-  const jint delta = -frame::interpreter_frame_monitor_size() * wordSize;
+  const jint delta = -frame::interpreter_frame_monitor_size_in_bytes();
 
   assert((delta & LongAlignmentMask) == 0,
          "sizeof BasicObjectLock must be even number of doublewords");

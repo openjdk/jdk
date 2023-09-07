@@ -78,6 +78,7 @@ void PhiResolverState::reset() {
 PhiResolver::PhiResolver(LIRGenerator* gen)
  : _gen(gen)
  , _state(gen->resolver_state())
+ , _loop(nullptr)
  , _temp(LIR_OprFact::illegalOpr)
 {
   // reinitialize the shared state arrays

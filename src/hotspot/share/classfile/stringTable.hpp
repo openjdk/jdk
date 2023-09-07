@@ -66,7 +66,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static void gc_notification(size_t num_dead);
   static void trigger_concurrent_work();
 
-  static size_t item_added();
+  static void item_added();
   static void item_removed();
 
   static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);

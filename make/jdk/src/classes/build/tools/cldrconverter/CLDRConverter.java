@@ -114,6 +114,7 @@ public class CLDRConverter {
 
     private static Set<String> AVAILABLE_TZIDS;
     static int copyrightYear;
+    static String jdkHeaderTemplate;
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
@@ -229,6 +230,10 @@ public class CLDRConverter {
                         tzDataDir = args[++i];
                         break;
 
+                    case "-jdk-header-template":
+                        jdkHeaderTemplate = Files.readString(Paths.get(args[++i]));
+                        break;
+
                     case "-help":
                         usage();
                         System.exit(0);
@@ -304,7 +309,9 @@ public class CLDRConverter {
                 + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
-                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
+                + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n"
+                + "\t-jdk-header-template <file>%n"
+                + "\t\t       override default GPL header with contents of file%n");
     }
 
     static void info(String fmt, Object... args) {
