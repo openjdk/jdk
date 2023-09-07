@@ -28,13 +28,13 @@
  * @summary Checks that stubs to the interpreter can be shared for static or final method.
  * @library /test/lib
  * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @requires vm.debug
  * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:TieredStopAtLevel=1
  *
  * @test id=C2
  * @requires vm.opt.TieredStopAtLevel == null & vm.opt.TieredCompilation == null
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="i386" | os.arch=="x86" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires vm.simpleArch == "x86" | vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @requires vm.debug
  * @run driver compiler.sharedstubs.SharedStubToInterpTest -XX:-TieredCompilation
  *
