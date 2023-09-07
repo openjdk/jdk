@@ -210,7 +210,7 @@ void VM_Version::initialize() {
       unaligned_access.value() == MISALIGNED_FAST);
   }
 
-#if TARGET_ZTSO
+#if defined(TARGET_ZTSO) && TARGET_ZTSO
   // Hotspot is compiled with TSO support, it will only run on hardware which
   // supports Ztso
   if (FLAG_IS_DEFAULT(UseZtso)) {
