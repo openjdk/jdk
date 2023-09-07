@@ -75,7 +75,7 @@ public class StackWalkBench {
     // @Param({"4"})
     public int mark = 4;
 
-    @Param({"default", "class_only"})
+    @Param({"class+method", "class_only"})
     public String walker;
 
     /** Build a call stack of a given size, then run trigger code in it.
