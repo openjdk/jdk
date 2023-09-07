@@ -25,30 +25,33 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  * @clean ClassRefDupInConstantPoolTest$Duplicates
  * @run main ClassRefDupInConstantPoolTest
  */
 
 import java.util.TreeSet;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.*;
 
 public class ClassRefDupInConstantPoolTest {
     public static void main(String[] args) throws Exception {
-        ClassFile cls = ClassFile.read(ClassRefDupInConstantPoolTest.class.
-                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class"));
-        ConstantPool pool = cls.constant_pool;
+        ClassModel cls = Classfile.of().parse(ClassRefDupInConstantPoolTest.class.
+                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class").readAllBytes());
+        ConstantPool pool = cls.constantPool();
 
         int duplicates = 0;
-        TreeSet<Integer> set = new TreeSet<>();
-        for (CPInfo i : pool.entries()) {
-            if (i.getTag() == ConstantPool.CONSTANT_Class) {
-                CONSTANT_Class_info ci = (CONSTANT_Class_info)i;
-                if (!set.add(ci.name_index)) {
+        TreeSet<String> set = new TreeSet<>();
+        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).width()) {
+            if (pool.entryByIndex(i) instanceof ClassEntry ce) {
+                if (!set.add(ce.asInternalName())) {
                     duplicates++;
-                    System.out.println("DUPLICATE CLASS REF " + ci.getName());
+                    System.out.println("DUPLICATE CLASS REF " + ce.asInternalName());
                 }
             }
         }
