@@ -264,7 +264,7 @@ CollectedHeap::CollectedHeap() :
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
   NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
 
-  if (UsePerfData) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
 
     // create the gc cause jvmstat counters

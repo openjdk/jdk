@@ -124,9 +124,6 @@ class VMThread: public NamedThread {
   static PerfCounter* perf_accumulated_vm_operation_time() {
     return _perf_accumulated_vm_operation_time;
   }
-  static PerfVariable* perf_vm_thread_cpu_time() {
-    return _perf_vm_thread_cpu_time;
-  }
 
   // Entry for starting vm thread
   virtual void run();

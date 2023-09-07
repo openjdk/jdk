@@ -131,7 +131,7 @@ void VMThread::create() {
 
   _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
 
-  if (UsePerfData) {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
     // jvmstat performance counters
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
     _perf_accumulated_vm_operation_time =
@@ -296,8 +296,8 @@ void VMThread::evaluate_operation(VM_Operation* op) {
     assert(Thread::current() == static_cast<Thread*>(this),
            "Must be called from VM thread");
     // Update vm_thread_cpu_time after each VM operation.
-    // perf_vm_thread_cpu_time()->set_value(os::current_thread_cpu_time());
-    ThreadTotalCPUTimeClosure tttc(perf_vm_thread_cpu_time());
+    // _perf_vm_thread_cpu_time->set_value(os::current_thread_cpu_time());
+    ThreadTotalCPUTimeClosure tttc(_perf_vm_thread_cpu_time);
     tttc.do_thread(this);
   }
 }

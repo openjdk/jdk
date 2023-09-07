@@ -46,6 +46,7 @@
 
 OopStorage* StringDedup::Processor::_storages[2] = {};
 
+PerfVariable* StringDedup::Processor::_g1_concurrent_dedup_thread_cpu_time = NULL;
 StringDedup::StorageUse* volatile StringDedup::Processor::_storage_for_requests = nullptr;
 StringDedup::StorageUse* StringDedup::Processor::_storage_for_processing = nullptr;
 
@@ -187,6 +188,10 @@ void StringDedup::Processor::run(JavaThread* thread) {
     cleanup_table(false /* grow_only */, StringDeduplicationResizeALot /* force */);
     _cur_stat.report_active_end();
     log_statistics();
+    if (UsePerfData && os::is_thread_cpu_time_supported()) {
+      ThreadTotalCPUTimeClosure tttc(_g1_concurrent_dedup_thread_cpu_time);
+      tttc.do_thread(thread);
+    }
   }
 }
 

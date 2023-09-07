@@ -40,9 +40,6 @@
 class StringDedupThread : public JavaThread {
   friend class VMStructs;
 
-  // Perf data for CPU time consumed by the string dedup thread.
-  static PerfVariable* _g1_concurrent_dedup_thread_cpu_time;
-
   StringDedupThread();
   ~StringDedupThread() = default;
 
