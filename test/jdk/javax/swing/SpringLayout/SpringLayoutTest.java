@@ -78,5 +78,4 @@ public class SpringLayoutTest {
                             ", should be "+buttonPreferredSize);
         }
     }
-
 }
