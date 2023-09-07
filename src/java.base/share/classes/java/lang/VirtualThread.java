@@ -292,6 +292,7 @@ final class VirtualThread extends BaseVirtualThread {
     /**
      * Runs a task in the context of this virtual thread.
      */
+    @ChangesCurrentThread
     private void run(Runnable task) {
         assert Thread.currentThread() == this && state == RUNNING;
 
