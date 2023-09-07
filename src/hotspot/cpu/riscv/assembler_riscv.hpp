@@ -27,6 +27,7 @@
 #ifndef CPU_RISCV_ASSEMBLER_RISCV_HPP
 #define CPU_RISCV_ASSEMBLER_RISCV_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
 #include "metaprogramming/enableIf.hpp"

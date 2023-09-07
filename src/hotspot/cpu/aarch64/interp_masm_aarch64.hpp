@@ -86,6 +86,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_sp_after_call() {
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
 #ifdef ASSERT
     cbnz(rscratch1, L);
     stop("SP is null");
@@ -98,6 +99,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #ifdef ASSERT
     Label L;
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    lea(rscratch1, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
     cmp(sp, rscratch1);
     br(EQ, L);
     stop(msg);
@@ -321,6 +323,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void load_resolved_indy_entry(Register cache, Register index);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_AARCH64_INTERP_MASM_AARCH64_HPP

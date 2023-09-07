@@ -28,6 +28,7 @@
 #include "oops/cpCache.hpp"
 
 #include "oops/oopHandle.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "runtime/atomic.hpp"
 
@@ -88,11 +89,13 @@ inline bool ConstantPoolCacheEntry::indy_resolution_failed() const {
 inline ConstantPoolCache::ConstantPoolCache(int length,
                                             const intStack& inverse_index_map,
                                             const intStack& invokedynamic_references_map,
-                                            Array<ResolvedIndyEntry>* invokedynamic_info) :
+                                            Array<ResolvedIndyEntry>* invokedynamic_info,
+                                            Array<ResolvedFieldEntry>* field_entries) :
                                                   _length(length),
                                                   _constant_pool(nullptr),
                                                   _gc_epoch(0),
-                                                  _resolved_indy_entries(invokedynamic_info) {
+                                                  _resolved_indy_entries(invokedynamic_info),
+                                                  _resolved_field_entries(field_entries) {
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map,
              invokedynamic_references_map);
@@ -105,6 +108,14 @@ inline objArrayOop ConstantPoolCache::resolved_references() {
   oop obj = _resolved_references.resolve();
   assert(obj == nullptr || obj->is_objArray(), "should be objArray");
   return (objArrayOop)obj;
+}
+
+inline ResolvedFieldEntry* ConstantPoolCache::resolved_field_entry_at(int field_index) const {
+  return _resolved_field_entries->adr_at(field_index);
+}
+
+inline int ConstantPoolCache::resolved_field_entries_length() const {
+  return _resolved_field_entries->length();
 }
 
 inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) const {

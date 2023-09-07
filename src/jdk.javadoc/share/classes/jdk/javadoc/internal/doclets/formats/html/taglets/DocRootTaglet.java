@@ -34,7 +34,7 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * An inline taglet representing {@code {@docRoot}}.  This taglet is

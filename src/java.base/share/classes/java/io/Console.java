@@ -344,16 +344,33 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         throw newUnsupportedOperationException();
     }
 
+    /**
+     * {@return {@code true} if the {@code Console} instance is a terminal}
+     * <p>
+     * This method returns {@code true} if the console device, associated with the current
+     * Java virtual machine, is a terminal, typically an interactive command line
+     * connected to a keyboard and display.
+     *
+     * @implNote The default implementation returns the value equivalent to calling
+     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
+     * descriptors are character devices or not on Windows.
+     *
+     * @since 22
+     */
+    public boolean isTerminal() {
+        return istty;
+    }
+
     private static UnsupportedOperationException newUnsupportedOperationException() {
         return new UnsupportedOperationException(
                 "Console class itself does not provide implementation");
     }
 
     private static native String encoding();
+    private static final boolean istty = istty();
     static final Charset CHARSET;
     static {
         Charset cs = null;
-        boolean istty = istty();
 
         if (istty) {
             String csname = encoding();

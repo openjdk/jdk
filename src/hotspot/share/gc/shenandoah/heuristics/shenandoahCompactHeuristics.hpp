@@ -27,9 +27,13 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
+/*
+ * This heuristic has simpler triggers than the adaptive heuristic. The
+ * size of the collection set is limited to 3/4 of available memory.
+ */
 class ShenandoahCompactHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahCompactHeuristics();
+  ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual bool should_start_gc();
 

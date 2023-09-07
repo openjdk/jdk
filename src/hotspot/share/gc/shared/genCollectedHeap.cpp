@@ -905,56 +905,6 @@ HeapWord* GenCollectedHeap::allocate_new_tlab(size_t min_size,
   return result;
 }
 
-// Requires "*prev_ptr" to be non-null.  Deletes and a block of minimal size
-// from the list headed by "*prev_ptr".
-static ScratchBlock *removeSmallestScratch(ScratchBlock **prev_ptr) {
-  bool first = true;
-  size_t min_size = 0;   // "first" makes this conceptually infinite.
-  ScratchBlock **smallest_ptr, *smallest;
-  ScratchBlock  *cur = *prev_ptr;
-  while (cur) {
-    assert(*prev_ptr == cur, "just checking");
-    if (first || cur->num_words < min_size) {
-      smallest_ptr = prev_ptr;
-      smallest     = cur;
-      min_size     = smallest->num_words;
-      first        = false;
-    }
-    prev_ptr = &cur->next;
-    cur     =  cur->next;
-  }
-  smallest      = *smallest_ptr;
-  *smallest_ptr = smallest->next;
-  return smallest;
-}
-
-// Sort the scratch block list headed by res into decreasing size order,
-// and set "res" to the result.
-static void sort_scratch_list(ScratchBlock*& list) {
-  ScratchBlock* sorted = nullptr;
-  ScratchBlock* unsorted = list;
-  while (unsorted) {
-    ScratchBlock *smallest = removeSmallestScratch(&unsorted);
-    smallest->next  = sorted;
-    sorted          = smallest;
-  }
-  list = sorted;
-}
-
-ScratchBlock* GenCollectedHeap::gather_scratch(Generation* requestor,
-                                               size_t max_alloc_words) {
-  ScratchBlock* res = nullptr;
-  _young_gen->contribute_scratch(res, requestor, max_alloc_words);
-  _old_gen->contribute_scratch(res, requestor, max_alloc_words);
-  sort_scratch_list(res);
-  return res;
-}
-
-void GenCollectedHeap::release_scratch() {
-  _young_gen->reset_scratch();
-  _old_gen->reset_scratch();
-}
-
 void GenCollectedHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
 }

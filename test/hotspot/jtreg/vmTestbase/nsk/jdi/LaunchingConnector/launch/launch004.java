@@ -133,7 +133,7 @@ public class launch004 {
             Connector.Argument a = (Connector.Argument) cava[i];
             if (a.name().equals("command"))
                 a.setValue(java +
-                " -Xdebug -Xrunjdwp:suspend=y,transport=" +
+                " -Xrunjdwp:suspend=y,transport=" +
                 TRANSPORT_NAME +
                 ",address=" + name +
                 " " + DEBUGEE_CLASS);

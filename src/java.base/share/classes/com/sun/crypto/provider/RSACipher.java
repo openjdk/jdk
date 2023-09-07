@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,21 +349,38 @@ public final class RSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 paddingCopy = padding.pad(buffer, 0, bufOfs);
-                result = RSACore.rsa(paddingCopy, privateKey, true);
+                if (paddingCopy != null) {
+                    result = RSACore.rsa(paddingCopy, privateKey, true);
+                } else {
+                    throw new BadPaddingException("Padding error in signing");
+                }
                 break;
             case MODE_VERIFY:
                 byte[] verifyBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(verifyBuffer, publicKey);
                 result = padding.unpad(paddingCopy);
+                if (result == null) {
+                    throw new BadPaddingException
+                            ("Padding error in verification");
+                }
                 break;
             case MODE_ENCRYPT:
                 paddingCopy = padding.pad(buffer, 0, bufOfs);
-                result = RSACore.rsa(paddingCopy, publicKey);
+                if (paddingCopy != null) {
+                    result = RSACore.rsa(paddingCopy, publicKey);
+                } else {
+                    throw new BadPaddingException
+                            ("Padding error in encryption");
+                }
                 break;
             case MODE_DECRYPT:
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
                 result = padding.unpad(paddingCopy);
+                if (result == null) {
+                    throw new BadPaddingException
+                            ("Padding error in decryption");
+                }
                 break;
             default:
                 throw new AssertionError("Internal error");
@@ -372,9 +389,9 @@ public final class RSACipher extends CipherSpi {
         } finally {
             Arrays.fill(buffer, 0, bufOfs, (byte)0);
             bufOfs = 0;
-            if (paddingCopy != null             // will not happen
+            if (paddingCopy != null
                     && paddingCopy != buffer    // already cleaned
-                    && paddingCopy != result) { // DO NOT CLEAN, THIS IS RESULT!
+                    && paddingCopy != result) { // DO NOT CLEAN, THIS IS RESULT
                 Arrays.fill(paddingCopy, (byte)0);
             }
         }

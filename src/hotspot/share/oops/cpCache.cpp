@@ -46,6 +46,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -640,28 +641,35 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 
 // Implementation of ConstantPoolCache
 
+template <class T>
+static Array<T>* initialize_resolved_entries_array(ClassLoaderData* loader_data, GrowableArray<T> entries, TRAPS) {
+  Array<T>* resolved_entries;
+  if (entries.length() != 0) {
+    resolved_entries = MetadataFactory::new_array<T>(loader_data, entries.length(), CHECK_NULL);
+    for (int i = 0; i < entries.length(); i++) {
+      resolved_entries->at_put(i, entries.at(i));
+    }
+    return resolved_entries;
+  }
+  return nullptr;
+}
+
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
                                      const intStack& invokedynamic_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
+                                     const GrowableArray<ResolvedFieldEntry> field_entries,
                                      TRAPS) {
 
   const int length = index_map.length();
   int size = ConstantPoolCache::size(length);
 
-  // Initialize ResolvedIndyEntry array with available data
-  Array<ResolvedIndyEntry>* resolved_indy_entries;
-  if (indy_entries.length()) {
-    resolved_indy_entries = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, indy_entries.length(), CHECK_NULL);
-    for (int i = 0; i < indy_entries.length(); i++) {
-      resolved_indy_entries->at_put(i, indy_entries.at(i));
-    }
-  } else {
-    resolved_indy_entries = nullptr;
-  }
+  // Initialize resolved entry arrays with available data
+  Array<ResolvedFieldEntry>* resolved_field_entries = initialize_resolved_entries_array(loader_data, field_entries, CHECK_NULL);
+  Array<ResolvedIndyEntry>* resolved_indy_entries = initialize_resolved_entries_array(loader_data, indy_entries, CHECK_NULL);
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-              ConstantPoolCache(length, index_map, invokedynamic_map, resolved_indy_entries);
+              ConstantPoolCache(length, index_map, invokedynamic_map, resolved_indy_entries, resolved_field_entries);
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
@@ -714,6 +722,11 @@ void ConstantPoolCache::remove_unshareable_info() {
       resolved_indy_entry_at(i)->remove_unshareable_info();
     }
   }
+  if (_resolved_field_entries != nullptr) {
+    for (int i = 0; i < _resolved_field_entries->length(); i++) {
+      resolved_field_entry_at(i)->remove_unshareable_info();
+    }
+  }
 }
 #endif // INCLUDE_CDS
 
@@ -727,8 +740,14 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != nullptr) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    if (_resolved_indy_entries)
+    if (_resolved_indy_entries) {
       MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
+      _resolved_indy_entries = nullptr;
+    }
+    if (_resolved_field_entries) {
+      MetadataFactory::free_array<ResolvedFieldEntry>(data, _resolved_field_entries);
+      _resolved_field_entries = nullptr;
+    }
     _initial_entries = nullptr;
   }
 #endif
@@ -830,6 +849,9 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   if (_resolved_indy_entries != nullptr) {
     it->push(&_resolved_indy_entries, MetaspaceClosure::_writable);
   }
+  if (_resolved_field_entries != nullptr) {
+    it->push(&_resolved_field_entries, MetaspaceClosure::_writable);
+  }
 }
 
 bool ConstantPoolCache::save_and_throw_indy_exc(
@@ -924,14 +946,8 @@ void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
-  for (int i = 0; i < resolved_indy_entries_length(); i++) {
-    ResolvedIndyEntry* indy_entry = resolved_indy_entry_at(i);
-    indy_entry->print_on(st);
-    if (indy_entry->has_appendix()) {
-      st->print("  appendix: ");
-      constant_pool()->resolved_reference_from_indy(i)->print_on(st);
-    }
-  }
+  print_resolved_field_entries(st);
+  print_resolved_indy_entries(st);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {
@@ -942,9 +958,20 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
 }
 
 
-void ConstantPoolCache::print_resolved_indy_entries(outputStream* st)   const {
-  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
-    _resolved_indy_entries->at(i).print_on(st);
+void ConstantPoolCache::print_resolved_field_entries(outputStream* st) const {
+  for (int field_index = 0; field_index < resolved_field_entries_length(); field_index++) {
+    resolved_field_entry_at(field_index)->print_on(st);
+  }
+}
+
+void ConstantPoolCache::print_resolved_indy_entries(outputStream* st) const {
+  for (int indy_index = 0; indy_index < resolved_indy_entries_length(); indy_index++) {
+    ResolvedIndyEntry* indy_entry = resolved_indy_entry_at(indy_index);
+    indy_entry->print_on(st);
+    if (indy_entry->has_appendix()) {
+      st->print("  appendix: ");
+      constant_pool()->resolved_reference_from_indy(indy_index)->print_on(st);
+    }
   }
 }
 

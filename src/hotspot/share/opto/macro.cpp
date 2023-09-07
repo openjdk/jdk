@@ -537,7 +537,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
     } else if (mem->is_ArrayCopy()) {
       Node* ctl = mem->in(0);
       Node* m = mem->in(TypeFunc::Memory);
-      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
+      if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj()) {
         // pin the loads in the uncommon trap path
         ctl = sfpt_ctl;
         m = sfpt_mem;

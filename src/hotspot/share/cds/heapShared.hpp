@@ -43,7 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
-class KlassToOopHandleTable;
+class MetaspaceObjToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
@@ -280,7 +280,11 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static KlassToOopHandleTable* _scratch_java_mirror_table;
+  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
+  static MetaspaceObjToOopHandleTable* _scratch_references_table;
+
+  static ClassLoaderData* _saved_java_platform_loader_data;
+  static ClassLoaderData* _saved_java_system_loader_data;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
@@ -381,6 +385,7 @@ private:
   // Dump-time only. Returns the index of the root, which can be used at run time to read
   // the root using get_root(index, ...).
   static int append_root(oop obj);
+  static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
   static objArrayOop roots();
@@ -393,7 +398,10 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static objArrayOop scratch_resolved_references(ConstantPool* src);
+  static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void restore_loader_data() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);

@@ -95,6 +95,7 @@
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
@@ -608,7 +609,8 @@ JVM_END
 
 JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
   // as implemented in the classic virtual machine; return 0 if object is null
-  return handle == nullptr ? 0 : ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)) ;
+  return handle == nullptr ? 0 :
+         checked_cast<jint>(ObjectSynchronizer::FastHashCode (THREAD, JNIHandles::resolve_non_null(handle)));
 JVM_END
 
 
@@ -1592,7 +1594,7 @@ static bool jvm_get_field_common(jobject field, fieldDescriptor& fd) {
   int modifiers = java_lang_reflect_Field::modifiers(reflected);
 
   InstanceKlass* ik = InstanceKlass::cast(k);
-  intptr_t offset = ik->field_offset(slot);
+  int offset = ik->field_offset(slot);
 
   if (modifiers & JVM_ACC_STATIC) {
     // for static fields we only look in the current class

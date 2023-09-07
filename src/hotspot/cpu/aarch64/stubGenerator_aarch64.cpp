@@ -51,6 +51,7 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
@@ -83,7 +84,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(counter) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
+  void inc_counter_np_(uint& counter) {
     __ lea(rscratch2, ExternalAddress((address)&counter));
     __ ldrw(rscratch1, Address(rscratch2));
     __ addw(rscratch1, rscratch1, 1);

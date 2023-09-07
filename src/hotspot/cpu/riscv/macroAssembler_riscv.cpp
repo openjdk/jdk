@@ -1654,6 +1654,28 @@ void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   sign_extend(Rd, Rd, 32);
 }
 
+// Rd = Rs1 & (~Rd2)
+void MacroAssembler::andn(Register Rd, Register Rs1, Register Rs2) {
+  if (UseZbb) {
+    Assembler::andn(Rd, Rs1, Rs2);
+    return;
+  }
+
+  notr(Rd, Rs2);
+  andr(Rd, Rs1, Rd);
+}
+
+// Rd = Rs1 | (~Rd2)
+void MacroAssembler::orn(Register Rd, Register Rs1, Register Rs2) {
+  if (UseZbb) {
+    Assembler::orn(Rd, Rs1, Rs2);
+    return;
+  }
+
+  notr(Rd, Rs2);
+  orr(Rd, Rs1, Rd);
+}
+
 // Note: load_unsigned_short used to be called load_unsigned_word.
 int MacroAssembler::load_unsigned_short(Register dst, Address src) {
   int off = offset();
@@ -1965,6 +1987,22 @@ void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Registe
   assert(shift < 64, "shift amount must be < 64");
   slli(tmp, src, 64 - shift);
   srli(dst, src, shift);
+  orr(dst, dst, tmp);
+}
+
+// rotate left with shift bits, 32-bit version
+void MacroAssembler::rolw_imm(Register dst, Register src, uint32_t shift, Register tmp) {
+  if (UseZbb) {
+    // no roliw available
+    roriw(dst, src, 32 - shift);
+    return;
+  }
+
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
+  assert(shift < 32, "shift amount must be < 32");
+  srliw(tmp, src, 32 - shift);
+  slliw(dst, src, shift);
   orr(dst, dst, tmp);
 }
 
@@ -3967,18 +4005,17 @@ void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1
 void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
 
-  mv(tmp1, 0xFF);
-  mv(Rd, zr);
-  for (int i = 0; i <= 3; i++) {
+  mv(tmp1, 0xFF000000); // first byte mask at lower word
+  andr(Rd, Rs, tmp1);
+  for (int i = 0; i < 2; i++) {
+    slli(Rd, Rd, wordSize);
+    srli(tmp1, tmp1, wordSize);
     andr(tmp2, Rs, tmp1);
-    if (i) {
-      slli(tmp2, tmp2, i * 8);
-    }
     orr(Rd, Rd, tmp2);
-    if (i != 3) {
-      slli(tmp1, tmp1, 8);
-    }
   }
+  slli(Rd, Rd, wordSize);
+  andi(tmp2, Rs, 0xFF); // last byte mask at lower word
+  orr(Rd, Rd, tmp2);
 }
 
 // This instruction reads adjacent 4 bytes from the upper half of source register,
@@ -3987,17 +4024,8 @@ void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Regis
 // Rd: 00A700A600A500A4
 void MacroAssembler::inflate_hi32(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   assert_different_registers(Rd, Rs, tmp1, tmp2);
-
-  mv(tmp1, 0xFF00000000);
-  mv(Rd, zr);
-  for (int i = 0; i <= 3; i++) {
-    andr(tmp2, Rs, tmp1);
-    orr(Rd, Rd, tmp2);
-    srli(Rd, Rd, 8);
-    if (i != 3) {
-      slli(tmp1, tmp1, 8);
-    }
-  }
+  srli(Rs, Rs, 32);   // only upper 32 bits are needed
+  inflate_lo32(Rd, Rs, tmp1, tmp2);
 }
 
 // The size of the blocks erased by the zero_blocks stub.  We must

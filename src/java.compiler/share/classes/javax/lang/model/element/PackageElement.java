@@ -127,8 +127,6 @@ public interface PackageElement extends Element, QualifiedNameable {
      * processing environment configured for a {@linkplain
      * javax.annotation.processing.ProcessingEnvironment#getSourceVersion
      * source version} without modules.
-     *
-     * @revised 9
      */
     @Override
     Element getEnclosingElement();

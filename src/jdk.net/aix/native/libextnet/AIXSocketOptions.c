@@ -150,10 +150,10 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_keepAliveOptionsSupport
 
 /*
  * Class:     jdk_net_AIXSocketOptions
- * Method:    setTcpkeepAliveProbes0
+ * Method:    setTcpKeepAliveProbes0
  * Signature: (II)V
  */
-JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpkeepAliveProbes0
+JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd, jint optval) {
     jint rv = setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &optval, sizeof (optval));
     handleError(env, rv, "set option TCP_KEEPCNT failed");
@@ -183,10 +183,10 @@ JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setTcpKeepAliveIntvl0
 
 /*
  * Class:     jdk_net_AIXSocketOptions
- * Method:    getTcpkeepAliveProbes0
+ * Method:    getTcpKeepAliveProbes0
  * Signature: (I)I;
  */
-JNIEXPORT jint JNICALL Java_jdk_net_AIXSocketOptions_getTcpkeepAliveProbes0
+JNIEXPORT jint JNICALL Java_jdk_net_AIXSocketOptions_getTcpKeepAliveProbes0
 (JNIEnv *env, jobject unused, jint fd) {
     jint optval, rv;
     socklen_t sz = sizeof (optval);

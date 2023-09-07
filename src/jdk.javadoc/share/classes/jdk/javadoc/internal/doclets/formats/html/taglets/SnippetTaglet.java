@@ -59,7 +59,7 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -222,7 +222,8 @@ public class SnippetTaglet extends BaseTaglet {
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
                         .add(new HtmlTree(TagName.IMG)
-                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                                             .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))
                         .addStyle(HtmlStyle.copy)
                         .addStyle(HtmlStyle.snippetCopy)
