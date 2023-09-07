@@ -351,27 +351,22 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         Set<K> ks = keySet;
         if (ks == null) {
             ks = new AbstractSet<>() {
-                @Override
                 public Iterator<K> iterator() {
                     return new KeyIterator();
                 }
 
-                @Override
                 public int size() {
                     return AbstractMap.this.size();
                 }
 
-                @Override
                 public boolean isEmpty() {
                     return AbstractMap.this.isEmpty();
                 }
 
-                @Override
                 public void clear() {
                     AbstractMap.this.clear();
                 }
 
-                @Override
                 public boolean contains(Object k) {
                     return AbstractMap.this.containsKey(k);
                 }
@@ -401,27 +396,22 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         Collection<V> vals = values;
         if (vals == null) {
             vals = new AbstractCollection<>() {
-                @Override
                 public Iterator<V> iterator() {
                     return new ValueIterator();
                 }
 
-                @Override
                 public int size() {
                     return AbstractMap.this.size();
                 }
 
-                @Override
                 public boolean isEmpty() {
                     return AbstractMap.this.isEmpty();
                 }
 
-                @Override
                 public void clear() {
                     AbstractMap.this.clear();
                 }
 
-                @Override
                 public boolean contains(Object v) {
                     return AbstractMap.this.containsValue(v);
                 }
