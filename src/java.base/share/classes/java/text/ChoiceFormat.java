@@ -130,14 +130,15 @@ import java.util.Arrays;
  * <blockquote><pre>
  * <i>Pattern:</i>
  *         SubPattern *("|" SubPattern)
+ *         <i>Note: Each additional subPattern must have a limit greater than the previous subPattern's limit</i>
  * <i>SubPattern:</i>
  *         Limit Relation Format
  * <i>Limit:</i>
- *          Number / "&infin;" ({@code U+221E}) / "-&infin;" (-{@code U+221E}).
+ *          Number / "&infin;" / "-&infin;"
  * <i>Number:</i>
- *         *(Digit) [Decimal] *(Digit) [Exponent]
+ *         *(Digit) 1*(Decimal / Digit) *(Digit) [Exponent]
  * <i>Decimal:</i>
- *         Digit "." / "." Digit
+ *         1*(Digit ".") / 1*("." Digit)
  * <i>Digit:</i>
  *         0 - 9
  * <i>Exponent:</i>
@@ -145,7 +146,7 @@ import java.util.Arrays;
  * <i>ExponentSymbol:</i>
  *         "e" / "E"
  * <i>Relation:</i>
- *         "#" / "&lt;" / "&le;" ({@code U+2264})
+ *         "#" / "&lt;" / "&le;"
  * <i>Format:</i>
  *         {@code String}
  * </pre></blockquote>
