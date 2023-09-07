@@ -131,7 +131,24 @@ public interface ConstantPool {
 
     /**
      * The details for invoking a bootstrap method associated with a {@code CONSTANT_Dynamic_info}
-     * or {@code CONSTANT_InvokeDynamic_info} pool entry .
+     * or {@code CONSTANT_InvokeDynamic_info} pool entry.
+     *
+     * The procedure to obtain and use a {@link BootstrapMethodInvocation} is the following:
+     *
+     * <pre>
+     * bsmInvocation = lookupBootstrapMethodInvocation(index, opcode);
+     * staticArguments = bsmInvocation.getStaticArguments();
+     * if staticArguments are PrimitiveConstant {
+     *     argCount = staticArguments.get(0).asInt();
+     *     cpi = staticArguments.get(1).asInt();
+     *     for (int i = 0; i < argCount; ++i) {
+     *         arguments[i] = lookupConstant(cpi, i);
+     *     }
+     *     call bootstrap method with newly resolved arguments
+     * } else {
+     *     call bootstrap method with provided arguments
+     * }
+     * </pre>
      *
      * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code CONSTANT_InvokeDynamic_info}
      *       Structures
@@ -171,9 +188,12 @@ public interface ConstantPool {
     }
 
     /**
-     * Gets the constant pool index of a static argument of a bootstrap specifier. Used when the list
-     * of static arguments in the {@link BootstrapMethodInvocation} is an {@code int[]}. The list has
-     * two elements. The first one is the number of arguments and the second one is the {@code cpi}.
+     * Gets the constant pool index of a static argument of a bootstrap specifier (a constant pool entry
+     * containing information about a bootstrap method). Used when the list of static arguments in the
+     * {@link BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
+     * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved and that
+     * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
+     * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
      *
      * @param cpi the index of a bootstrap specifier in the constant pool
      * @param index the index of the static argument in the list of static arguments

@@ -477,9 +477,12 @@ final class CompilerToVM {
     private native Object[] resolveBootstrapMethod(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
 
     /**
-     * Gets the constant pool index of a static argument of a bootstrap specifier. Used when the list
-     * of static arguments in the {@link BootstrapMethodInvocation} is an {@code int[]}. The list has
-     * two elements. The first one is the number of arguments and the second one is the {@code cpi}.
+     * Gets the constant pool index of a static argument of a bootstrap specifier (a constant pool entry
+     * containing information about a bootstrap method). Used when the list of static arguments in the
+     * {@link BootstrapMethodInvocation} is a {@code List<PrimitiveConstant>} of the form
+     * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved and that
+     * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
+     * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
      *
      * @param cpi the index of a bootstrap specifier in the constant pool
      * @param index the index of the static argument in the list of static arguments
