@@ -134,11 +134,12 @@ public class ThreadDumper {
      * This method is invoked by HotSpotDiagnosticMXBean.dumpThreads.
      */
     public static void dumpThreads(OutputStream out) {
-        PrintStream ps = new PrintStream(out, false, StandardCharsets.UTF_8);
+        BufferedOutputStream bos = new BufferedOutputStream(out);
+        PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8);
         try {
             dumpThreads(ps);
         } finally {
-            ps.flush();
+            ps.flush();  // flushes underlying stream
         }
     }
 
@@ -162,7 +163,8 @@ public class ThreadDumper {
         String suffix = thread.isVirtual() ? " virtual" : "";
         ps.println("#" + thread.threadId() + " \"" + thread.getName() + "\"" + suffix);
         for (StackTraceElement ste : thread.getStackTrace()) {
-            ps.println("      " + ste);
+            ps.print("      ");
+            ps.println(ste);
         }
         ps.println();
     }
@@ -173,11 +175,12 @@ public class ThreadDumper {
      * This method is invoked by HotSpotDiagnosticMXBean.dumpThreads.
      */
     public static void dumpThreadsToJson(OutputStream out) {
-        PrintStream ps = new PrintStream(out, false, StandardCharsets.UTF_8);
+        BufferedOutputStream bos = new BufferedOutputStream(out);
+        PrintStream ps = new PrintStream(bos, false, StandardCharsets.UTF_8);
         try {
             dumpThreadsToJson(ps);
         } finally {
-            ps.flush();
+            ps.flush();  // flushes underlying stream
         }
     }
 
@@ -266,7 +269,9 @@ public class ThreadDumper {
         int i = 0;
         StackTraceElement[] stackTrace = thread.getStackTrace();
         while (i < stackTrace.length) {
-            out.print("              \"" + escape(stackTrace[i].toString()) + "\"");
+            out.print("              \"");
+            out.print(escape(stackTrace[i].toString()));
+            out.print("\"");
             i++;
             if (i < stackTrace.length) {
                 out.println(",");

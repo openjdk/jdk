@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package com.sun.management.internal;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -174,10 +173,9 @@ public class HotSpotDiagnostic implements HotSpotDiagnosticMXBean {
         if (sm != null)
             Util.checkControlAccess();
 
-        try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW);
-             BufferedOutputStream bos = new BufferedOutputStream(out)) {
+        try (OutputStream out = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW)) {
             PrivilegedExceptionAction<Void> pa = () -> {
-                dumpThreads(bos, format);
+                dumpThreads(out, format);
                 return null;
             };
             try {
