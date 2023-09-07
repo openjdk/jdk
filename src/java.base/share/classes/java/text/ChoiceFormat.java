@@ -176,6 +176,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern See the class description.
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      */
     public void applyPattern(String newPattern) {
         StringBuilder[] segments = new StringBuilder[2];
@@ -315,6 +317,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
+     * @throws    IllegalArgumentException if {@code newPattern}
+     *            is invalid
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
@@ -328,6 +332,8 @@ public class ChoiceFormat extends NumberFormat {
      * @param formats corresponding format strings
      * @throws    NullPointerException if {@code limits} or {@code formats}
      *            is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      * @see #setChoices
      */
     public ChoiceFormat(double[] limits, String[] formats) {
@@ -345,11 +351,13 @@ public class ChoiceFormat extends NumberFormat {
      * @param formats are the formats you want to use for each limit.
      * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
+     * @throws    IllegalArgumentException if the length of {@code limits}
+     *            and {@code formats} are not equal
      */
     public void setChoices(double[] limits, String[] formats) {
         if (limits.length != formats.length) {
             throw new IllegalArgumentException(
-                "Array and limit arrays must be of the same length.");
+                    "Input arrays must be of the same length.");
         }
         choiceLimits = Arrays.copyOf(limits, limits.length);
         choiceFormats = Arrays.copyOf(formats, formats.length);

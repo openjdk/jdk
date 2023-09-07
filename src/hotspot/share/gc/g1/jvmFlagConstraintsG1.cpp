@@ -91,13 +91,13 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1NewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value > G1MaxNewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1NewSizePercent (" UINTX_FORMAT ") must be "
-                        "less than or equal to G1MaxNewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1NewSizePercent (%u) must be "
+                        "less than or equal to G1MaxNewSizePercent (%u)\n",
                         value, G1MaxNewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -105,13 +105,13 @@ JVMFlag::Error G1NewSizePercentConstraintFunc(uintx value, bool verbose) {
   }
 }
 
-JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
   if (!UseG1GC) return JVMFlag::SUCCESS;
 
   if (value < G1NewSizePercent) {
     JVMFlag::printError(verbose,
-                        "G1MaxNewSizePercent (" UINTX_FORMAT ") must be "
-                        "greater than or equal to G1NewSizePercent (" UINTX_FORMAT ")\n",
+                        "G1MaxNewSizePercent (%u) must be "
+                        "greater than or equal to G1NewSizePercent (%u)\n",
                         value, G1NewSizePercent);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {

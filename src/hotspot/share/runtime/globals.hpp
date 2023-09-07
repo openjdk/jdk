@@ -430,6 +430,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, AbortVMOnSafepointTimeout, false, DIAGNOSTIC,               \
           "Abort upon failure to reach safepoint (see SafepointTimeout)")   \
                                                                             \
+  product(uint64_t, AbortVMOnSafepointTimeoutDelay, 0, DIAGNOSTIC,          \
+          "Delay in milliseconds for option AbortVMOnSafepointTimeout")     \
+          range(0, max_jlong)                                               \
+                                                                            \
   product(bool, AbortVMOnVMOperationTimeout, false, DIAGNOSTIC,             \
           "Abort upon failure to complete VM operation promptly")           \
                                                                             \
@@ -1419,6 +1423,9 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
+  develop(bool, RandomizeClassSpaceLocation, true,                          \
+          "Randomize location of class space.")                             \
+                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
@@ -1979,7 +1986,7 @@ const int ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  product(int, LockingMode, LM_LEGACY, EXPERIMENTAL,                        \
+  product(int, LockingMode, LM_LEGACY,                                      \
           "Select locking mode: "                                           \
           "0: monitors only (LM_MONITOR), "                                 \
           "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \

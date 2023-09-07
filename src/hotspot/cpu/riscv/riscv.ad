@@ -6864,6 +6864,21 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(IMUL_COST);
+  format %{ "mulhu  $dst, $src1, $src2\t# umulhi, #@umulHiL_rReg" %}
+
+  ins_encode %{
+    __ mulhu(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
