@@ -136,8 +136,6 @@ class Argument {
     n_int_register_parameters_c = 8,
     // The first thirteen float arguments are passed in float regs.
     n_float_register_parameters_c = 13,
-    // The first 8 double-words are never passed on stack.
-    n_regs_not_on_stack_c = 8,
 
     n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers
     n_float_register_parameters_j = 13, // num_java_farg_registers

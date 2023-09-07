@@ -781,34 +781,28 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
          sizeof(farg_reg) / sizeof(farg_reg[0]) == Argument::n_float_register_parameters_c,
          "consistency");
 
-  // `Stk' counts stack slots. Due to alignment, 32 bit values occupy
-  // 2 such slots, like 64 bit values do.
-  const int inc_stk_for_intfloat   = 2; // 2 slots for ints and floats
-  const int inc_stk_for_longdouble = 2; // 2 slots for longs and doubles
+  const int additional_frame_header_slots = ((frame::native_abi_minframe_size - frame::jit_out_preserve_size)
+                                            / VMRegImpl::stack_slot_size);
 
-  int i;
-  VMReg reg;
-  // Leave room for C-compatible ABI_REG_ARGS.
-  int stk = (frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size;
-  int arg = 0;
-  int freg = 0;
-
-  // Avoid passing C arguments in the wrong stack slots.
-#if defined(ABI_ELFv2)
-  assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 96,
-         "passing C arguments in wrong stack slots");
+#ifdef VM_LITTLE_ENDIAN
   // Floats are in the least significant word of an argument slot.
   const int float_offset_in_slots = 0;
 #else
-  assert((SharedRuntime::out_preserve_stack_slots() + stk) * VMRegImpl::stack_slot_size == 112,
-         "passing C arguments in wrong stack slots");
   // Although AIX runs on big endian CPU, float is in the most
   // significant word of an argument slot.
   const int float_offset_in_slots = AIX_ONLY(0) NOT_AIX(1);
 #endif
-  for (int i = 0; i < total_args_passed; ++i, ++arg) {
-    switch(sig_bt[i]) {
 
+  VMReg reg;
+  int arg = 0;
+  int freg = 0;
+  bool stack_used = false;
+
+  for (int i = 0; i < total_args_passed; ++i, ++arg) {
+    // Each argument corresponds to a slot in the Parameter Save Area (if not omitted)
+    int stk = (arg * 2) + additional_frame_header_slots;
+
+    switch(sig_bt[i]) {
     //
     // If arguments 0-7 are integers, they are passed in integer registers.
     // Argument i is placed in iarg_reg[i].
@@ -830,7 +824,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         reg = iarg_reg[arg];
       } else {
         reg = VMRegImpl::stack2reg(stk);
-        stk += inc_stk_for_longdouble;
+        stack_used = true;
       }
       regs[i].set2(reg);
       break;
@@ -846,14 +840,10 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         // Put float in register ...
         reg = farg_reg[freg];
         ++freg;
-        if (arg >= Argument::n_regs_not_on_stack_c) {
-          // Reserve additional spill slot on stack (Parameter Save Area).
-          stk += inc_stk_for_intfloat;
-        }
       } else {
         // Put float on stack.
         reg = VMRegImpl::stack2reg(stk + float_offset_in_slots);
-        stk += inc_stk_for_intfloat;
+        stack_used = true;
       }
       regs[i].set1(reg);
       break;
@@ -863,14 +853,10 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         // Put double in register ...
         reg = farg_reg[freg];
         ++freg;
-        if (arg >= Argument::n_regs_not_on_stack_c) {
-          // Reserve additional spill slot on stack (Parameter Save Area).
-          stk += inc_stk_for_longdouble;
-        }
       } else {
         // Put double on stack.
         reg = VMRegImpl::stack2reg(stk);
-        stk += inc_stk_for_longdouble;
+        stack_used = true;
       }
       regs[i].set2(reg);
       break;
@@ -887,15 +873,14 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
   // Return size of the stack frame excluding the jit_out_preserve part in single-word slots.
 #if defined(ABI_ELFv2)
+  assert(additional_frame_header_slots == 0, "ABIv2 shouldn't use extra slots");
   // ABIv2 allows omitting the Parameter Save Area if the callee's prototype
   // indicates that all parameters can be passed in registers.
-  STATIC_ASSERT((int)frame::native_abi_minframe_size == (int)frame::jit_out_preserve_size); // no correction needed
-  return ((arg > Argument::n_regs_not_on_stack_c) ? arg : 0) * 2;
+  return stack_used ? (arg * 2) : 0;
 #else
   // The Parameter Save Area needs to be at least 8 double-word slots for ABIv1.
-  // We have to add extra slots because ABIv1 uses a larger header. See initial "stk" computation above.
-  return (MAX2(arg, (int)Argument::n_regs_not_on_stack_c) * 2) +
-         ((frame::native_abi_minframe_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size);
+  // We have to add extra slots because ABIv1 uses a larger header.
+  return MAX2(arg, 8) * 2 + additional_frame_header_slots;
 #endif
 }
 #endif // COMPILER2
