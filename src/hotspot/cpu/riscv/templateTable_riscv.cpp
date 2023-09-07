@@ -3799,7 +3799,7 @@ void TemplateTable::monitorenter() {
          fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
    const Address monitor_block_bot(
          fp, frame::interpreter_frame_initial_sp_offset * wordSize);
-   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
    Label allocated;
 
@@ -3897,7 +3897,7 @@ void TemplateTable::monitorexit() {
         fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
         fp, frame::interpreter_frame_initial_sp_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   Label found;
 

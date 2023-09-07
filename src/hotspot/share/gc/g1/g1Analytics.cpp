@@ -94,7 +94,7 @@ G1Analytics::G1Analytics(const G1Predictions* predictor) :
   _recent_prev_end_times_for_all_gcs_sec.add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
-  int index = MIN2(ParallelGCThreads - 1, 7u);
+  uint index = MIN2(ParallelGCThreads - 1, 7u);
 
   // Start with inverse of maximum STW cost.
   _concurrent_refine_rate_ms_seq.add(1/cost_per_logged_card_ms_defaults[0]);

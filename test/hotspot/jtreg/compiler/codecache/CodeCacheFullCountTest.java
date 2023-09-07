@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,11 @@ public class CodeCacheFullCountTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
           "-XX:ReservedCodeCacheSize=2496k", "-XX:-UseCodeCacheFlushing", "-XX:-MethodFlushing", "CodeCacheFullCountTest", "WasteCodeCache");
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-        oa.shouldHaveExitValue(0);
+        // Ignore adapter creation failures
+        if (oa.getExitValue() != 0 && !oa.getStderr().contains("Out of space in CodeCache for adapters")) {
+            oa.reportDiagnosticSummary();
+            throw new RuntimeException("VM finished with exit code " + oa.getExitValue());
+        }
         String stdout = oa.getStdout();
 
         Pattern pattern = Pattern.compile("full_count=(\\d)");

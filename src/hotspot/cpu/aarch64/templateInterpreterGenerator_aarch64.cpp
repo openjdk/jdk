@@ -53,6 +53,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
@@ -691,7 +692,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved rbp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -772,7 +773,7 @@ void TemplateInterpreterGenerator::lock_method() {
   const Address monitor_block_top(
         rfp,
         frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
   {
