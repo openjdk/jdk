@@ -634,6 +634,11 @@ public class IRNode {
         beforeMatchingNameRegex(LOAD_NKLASS, "LoadNKlass");
     }
 
+    public static final String LOAD_KLASS_OR_NKLASS = PREFIX + "LOAD_KLASS_OR_NKLASS" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_KLASS_OR_NKLASS, "LoadN?Klass");
+    }
+
     public static final String LOAD_L = PREFIX + "LOAD_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_L, "LoadL");
