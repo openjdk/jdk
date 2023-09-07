@@ -113,9 +113,13 @@ void ShenandoahMmuTracker::record_young(ShenandoahGeneration* generation, size_t
   update_utilization(generation, gcid, "Concurrent Young GC");
 }
 
+void ShenandoahMmuTracker::record_global(ShenandoahGeneration* generation, size_t gcid) {
+  update_utilization(generation, gcid, "Concurrent Global GC");
+}
+
 void ShenandoahMmuTracker::record_bootstrap(ShenandoahGeneration* generation, size_t gcid, bool candidates_for_mixed) {
   // Not likely that this will represent an "ideal" GCU, but doesn't hurt to try
-  update_utilization(generation, gcid, "Bootstrap Old GC");
+  update_utilization(generation, gcid, "Concurrent Bootstrap GC");
 }
 
 void ShenandoahMmuTracker::record_old_marking_increment(ShenandoahGeneration* generation, size_t gcid, bool old_marking_done,

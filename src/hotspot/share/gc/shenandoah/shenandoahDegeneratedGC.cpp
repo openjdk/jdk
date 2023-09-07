@@ -57,10 +57,10 @@ bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
   vmop_degenerated();
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    bool is_bootstrap_gc = heap->is_concurrent_old_mark_in_progress() && _generation->is_young();
+    bool is_bootstrap_gc = heap->old_generation()->state() == ShenandoahOldGeneration::BOOTSTRAPPING;
     heap->mmu_tracker()->record_degenerated(_generation, GCId::current(), is_bootstrap_gc,
                                             !heap->collection_set()->has_old_regions());
-    const char* msg = is_bootstrap_gc? "At end of Degenerated Boostrap Old GC": "At end of Degenerated GC";
+    const char* msg = is_bootstrap_gc? "At end of Degenerated Bootstrap Old GC": "At end of Degenerated Young GC";
     heap->log_heap_status(msg);
   }
   return true;

@@ -91,6 +91,7 @@ public:
   // both record_full() and record_degenerated() with the same value of gcid.  record_full() is called first and the log
   // reports such a cycle as a FULL cycle.
   void record_young(ShenandoahGeneration* generation, size_t gcid);
+  void record_global(ShenandoahGeneration* generation, size_t gcid);
   void record_bootstrap(ShenandoahGeneration* generation, size_t gcid, bool has_old_candidates);
   void record_old_marking_increment(ShenandoahGeneration* generation, size_t gcid, bool old_marking_done, bool has_old_candidates);
   void record_mixed(ShenandoahGeneration* generation, size_t gcid, bool is_mixed_done);
