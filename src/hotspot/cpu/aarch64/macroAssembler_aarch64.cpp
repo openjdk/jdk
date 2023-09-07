@@ -1220,7 +1220,6 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   int itable_offset_entry_size = itableOffsetEntry::size() * wordSize;
   int ioffset = in_bytes(itableOffsetEntry::interface_offset());
   int ooffset = in_bytes(itableOffsetEntry::offset_offset());
-  assert(vtableEntry::size_in_bytes() == wordSize, "else adjust times_vte_scale");
 
   Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
 
@@ -1229,7 +1228,7 @@ void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
   // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
   // temp_itbl_klass = itable[0]._interface;
   int vtblEntrySize = vtableEntry::size_in_bytes();
-  assert(vtblEntrySize == wordSize, "ldr shift amount must be lsl#3");
+  assert(vtblEntrySize == wordSize, "ldr lsl shift amount must be 3");
   ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
   mov(holder_offset, zr);
   // scan_temp = &(itable[0]._interface)
