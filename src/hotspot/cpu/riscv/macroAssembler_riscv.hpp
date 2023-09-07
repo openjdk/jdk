@@ -382,12 +382,13 @@ class MacroAssembler: public Assembler {
         // TSO allows for stores to be reordered after loads. When the compiler
         // generates a fence to disallow that, we are required to generate the
         // fence for correctness.
+        Assembler::fence(predecessor, successor);
       } else {
         // TSO guarantees other fences already.
-        return;
       }
+    } else {
+      Assembler::fence(predecessor, successor);
     }
-    Assembler::fence(predecessor, successor);
   }
 
   void pause() {
