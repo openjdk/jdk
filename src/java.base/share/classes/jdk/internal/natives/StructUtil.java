@@ -216,6 +216,19 @@ public final class StructUtil {
         public List<T> ofElements(MemorySegment segment) {
             return ofElements(Math.toIntExact(segment.byteSize() / layout.byteSize()), segment);
         }
+
+        @Override
+        public <F extends HasSegment> T castFrom(F other) {
+            return of(other.segment());
+        }
+
+        @Override
+        public <F extends HasSegment> T castFromRestricted(F other) {
+            if (layout.byteSize() > other.segment().byteSize()) {
+                return of(other.segment().reinterpret(layout.byteSize()));
+            }
+            return castFrom(other);
+        }
     }
 
 }

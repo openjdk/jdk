@@ -60,6 +60,8 @@ public final class SockIoUtil {
     public static int SIOCGIFNETMASK = _IOWR('i', 37, IfConf.LAYOUT);   /* get net addr mask */
     public static int SIOCGIFMTU     = _IOWR('i', 51, IfReq.LAYOUT);    /* get IF mtu */
 
+    // https://mail-index.netbsd.org/tech-net/2013/04/22/msg004016.html
+    // public static int SIOCGIFINDEX   = _IOWR('i', 140, IfReq.LAYOUT);   /* get ifnet */
 
     private static int _IOWR(char type, int number, MemoryLayout data_type) {
         return _IOC(IOC_INOUT, (byte) type, (byte) number, Math.toIntExact(data_type.byteSize()));

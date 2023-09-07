@@ -53,6 +53,8 @@ public interface IfAddrs extends HasSegment, HasCopyFrom<IfAddrs> {
 
     String ifa_name();
 
+    MemorySegment ifa_nameAsSegment();
+
     int ifa_flags();
 
     SockAddr ifa_addr();

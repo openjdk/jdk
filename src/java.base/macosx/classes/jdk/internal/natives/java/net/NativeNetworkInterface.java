@@ -6,7 +6,9 @@ import jdk.internal.natives.include.IfConf;
 import jdk.internal.natives.include.IfReq;
 import jdk.internal.natives.include.SockAddr;
 import jdk.internal.natives.include.UniStdUtil;
+import jdk.internal.natives.include.net.IfUtil;
 import jdk.internal.natives.include.netinet.SockAddrIn;
+import jdk.internal.natives.include.netinet6.SockAddrIn6;
 import jdk.internal.natives.include.sys.SocketUtil;
 import jdk.internal.natives.java.NetUtil;
 
@@ -220,6 +222,52 @@ public final class NativeNetworkInterface {
         } finally {
             IfAddrsUtil.freeifaddrs(head);
         }
+    }
+
+    public static void enumIPv6Interfaces(Arena arena,
+                                          Fd socket,
+                                          List<NetworkInterface2> interfaces) {
+
+        var ptr = arena.allocate(ADDRESS.withTargetLayout(IfAddrs.LAYOUT));
+        if (IfAddrsUtil.getifaddrs(ptr) != 0) {
+            return;
+        }
+
+        IfAddrs head = IfAddrs.dereference(ptr);
+        try {
+            for (var ifa = head; ifa != null; ifa = ifa.ifa_next()) {
+                SockAddr broadaddr = null;
+                // ignore non IPv6 addresses
+                SockAddr ifa_addr = ifa.ifa_addr();
+                if (ifa_addr == null || ifa_addr.sa_family() != AF_INET6) {
+                    continue;
+                }
+
+                String name = ifa.ifa_name();
+
+                // set scope ID to interface index
+                SockAddrIn6.MAPPER.castFromRestricted(ifa_addr)
+                        .sin6_scope_id(getIndex(arena, socket, ifa.ifa_nameAsSegment()));
+
+                // set ifa_broadaddr, if there is one
+                if ((ifa.ifa_flags() & IFF_POINTOPOINT) == 0 &&
+                        (ifa.ifa_flags() & IFF_BROADCAST) != 0) {
+                    broadaddr = ifa.ifa_dstaddr();
+                }
+                interfaces.add(create(socket, name, ifa_addr, broadaddr, AF_INET, (short) 0, interfaces.size()));
+            }
+        } finally {
+            IfAddrsUtil.freeifaddrs(head);
+        }
+    }
+
+    /*
+     * Try to get the interface index.
+     */
+    private static int getIndex(Arena arena, Fd sock, MemorySegment namePtr) {
+        // Todo: What if __FreeBSD__ ?
+        int index = IfUtil.if_nametoindex(namePtr);
+        return (index == 0) ? -1 : index;
     }
 
     private static NetworkInterface2 create(Fd socket,

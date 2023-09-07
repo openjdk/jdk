@@ -863,7 +863,6 @@ static netif *enumInterfaces(JNIEnv *env) {
 
     // enumerate IPv4 addresses
     if (sock >= 0) {
-        printf("  sock >= 0\n");
         ifs = enumIPv4Interfaces(env, sock, ifs);
         close(sock);
 
@@ -1692,8 +1691,6 @@ static int openSocketWithFallback(JNIEnv *env, const char *ifname) {
 static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct ifaddrs *ifa, *origifa;
 
-    printf("enumIPv4Interfaces on BSD(...%d...)\n", sock);
-
     if (getifaddrs(&origifa) != 0) {
         JNU_ThrowByNameWithMessageAndLastError
             (env, JNU_JAVANETPKG "SocketException", "getifaddrs() failed");
@@ -1738,8 +1735,6 @@ static netif *enumIPv4Interfaces(JNIEnv *env, int sock, netif *ifs) {
 static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
     struct ifaddrs *ifa, *origifa;
 
-    printf("enumIPv6Interfaces on BSD(...%d...)\n", sock);
-
     if (getifaddrs(&origifa) != 0) {
         JNU_ThrowByNameWithMessageAndLastError
             (env, JNU_JAVANETPKG "SocketException", "getifaddrs() failed");
@@ -1751,9 +1746,11 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
         if (ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_INET6)
             continue;
 
+        int index = getIndex(sock, ifa->ifa_name);
+        printf("index for %s is %d\n", ifa->ifa_name, index);
+
         // set scope ID to interface index
-        ((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_scope_id =
-            getIndex(sock, ifa->ifa_name);
+        ((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_scope_id = index;
 
         // add interface to the list
         ifs = addif(env, sock, ifa->ifa_name, ifs, ifa->ifa_addr, NULL,

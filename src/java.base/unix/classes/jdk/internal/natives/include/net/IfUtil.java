@@ -1,5 +1,14 @@
 package jdk.internal.natives.include.net;
 
+import jdk.internal.foreign.support.LookupUtil;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
+
+import static jdk.internal.foreign.support.InvokeUtil.newInternalError;
+import static jdk.internal.natives.CLayouts.C_INT;
+import static jdk.internal.natives.CLayouts.C_STRING;
+
 public final class IfUtil {
 
     private IfUtil() {}
@@ -115,5 +124,15 @@ public final class IfUtil {
      * }
      */
     public static int IFF_MULTICAST = 32768;
+
+    private static final MethodHandle IF_NAME_TO_INDEX = LookupUtil.downcall("if_nametoindex", C_INT, C_STRING);
+
+    public static int  if_nametoindex(MemorySegment segment) {
+        try {
+            return (int) IF_NAME_TO_INDEX.invokeExact(segment);
+        } catch (Throwable ex$) {
+            throw newInternalError(IF_NAME_TO_INDEX, ex$);
+        }
+    }
 
 }

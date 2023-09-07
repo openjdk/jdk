@@ -111,6 +111,11 @@ public final class IfReqImpl implements IfReq {
         }
 
         @Override
+        public short ifru_index() {
+            return (short) C_SHORT.varHandle().get(segment);
+        }
+
+        @Override
         public boolean equals(Object o) {
             return o instanceof IfrU other
                     && StructUtil.equals(this.segment, other.segment());

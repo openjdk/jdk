@@ -1,5 +1,7 @@
 package jdk.internal.natives;
 
+import jdk.internal.reflect.CallerSensitive;
+
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -48,6 +50,34 @@ public interface StructMapper<T> {
      */
     List<T> ofElements(MemorySegment segment);
 
+    /**
+     * {@return a new instance of T that is backed by the same segment as the provided {@code other}}
+     * <p>
+     * The method is free to return {@link jdk.internal.ValueBased} instances.
+     *
+     * @param <F> other type
+     * @param other from which the backing store shall be shared
+     * @throws java.lang.IllegalArgumentException if the content of the provided {@code other} does
+     *                                            not fit the original layout for this mapper.
+     */
+    <F extends HasSegment> T castFrom(F other);
+
+    /**
+     * {@return a new instance of T that is backed by the same segment as the provided {@code other}
+     * unsafely expanding the backing segment of the provided {@code other} if needed}
+     * <p>
+     * The method is free to return {@link jdk.internal.ValueBased} instances.
+     * <p>
+     * This method is <em>restricted</em>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @param <F> other type
+     * @param other from which the backing store shall be shared
+     */
+    @CallerSensitive
+    <F extends HasSegment> T castFromRestricted(F other);
 
     /**
      * {@return a new struct mapper}

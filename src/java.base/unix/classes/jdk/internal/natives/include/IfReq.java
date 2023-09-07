@@ -77,6 +77,7 @@ public interface IfReq extends HasSegment, HasCopyFrom<IfReq> {
                 SockAddr.LAYOUT.withName("ifru_broadaddr"),
                 SockAddr.LAYOUT.withName("ifru_netmask"), // Added manually
                 C_SHORT.withName("ifru_flags"),
+                C_SHORT.withName("ifru_index"), // Added manually
                 C_INT.withName("ifru_metric"),
                 C_INT.withName("ifru_mtu"),
                 C_INT.withName("ifru_phys"),
@@ -115,6 +116,8 @@ public interface IfReq extends HasSegment, HasCopyFrom<IfReq> {
         short ifru_flags();
 
         int ifru_mtu();
+
+        short ifru_index();
 
         static IfrU of(MemorySegment segment) {
             return MAPPER.of(segment);

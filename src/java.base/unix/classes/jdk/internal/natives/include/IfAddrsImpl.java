@@ -11,6 +11,7 @@ import java.util.Objects;
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static jdk.internal.natives.CLayouts.C_STRING;
 import static jdk.internal.natives.StructUtil.getUtf8StringOrNull;
 
 @ValueBased
@@ -42,6 +43,11 @@ public final class IfAddrsImpl implements IfAddrs {
     @Override
     public String ifa_name() {
         return getUtf8StringOrNull(segment, IFA_NAME_OFFSET);
+    }
+
+    @Override
+    public MemorySegment ifa_nameAsSegment() {
+        return segment.get(C_STRING, IFA_NAME_OFFSET);
     }
 
     @Override
