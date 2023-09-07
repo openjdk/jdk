@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,11 @@ import java.util.TreeSet;
 public class TrustAnchors extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
+
+        double version = getNSSVersion();
+        if (version == 0.0 || version >= 3.55) {
+            useSqlite(true);
+        }
         if (initSecmod() == false) {
             return;
         }
