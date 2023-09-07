@@ -160,4 +160,12 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
             super();                    // this should FAIL
         };
     }
+
+    public SuperInitFails(int[][] z) {
+        super((Runnable)() -> x);       // this should FAIL
+    }
+
+    public SuperInitFails(long[][] z) {
+        super(new Inner1());            // this should FAIL
+    }
 }

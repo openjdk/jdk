@@ -3881,7 +3881,7 @@ public class Resolve {
         Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
                          : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if ((env.info.isSelfCall || env.info.ctorPrologue) && thisType.tsym == env.enclClass.sym) {
+        if (env.info.ctorPrologue && thisType.tsym == env.enclClass.sym) {
             log.error(pos, Errors.CantRefBeforeCtorCalled(names._this));
         }
         return thisType;

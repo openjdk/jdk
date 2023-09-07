@@ -1886,8 +1886,7 @@ public class Lower extends TreeTranslator {
         Symbol c = sym.owner;
         List<VarSymbol> ots = outerThisStack;
         if (ots.isEmpty()) {
-            log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
-            Assert.error();
+            chk.earlyRefError(pos, c);
             return makeNull();
         }
         VarSymbol ot = ots.head;
@@ -1898,8 +1897,7 @@ public class Lower extends TreeTranslator {
             do {
                 ots = ots.tail;
                 if (ots.isEmpty()) {
-                    log.error(pos, Errors.NoEnclInstanceOfTypeInScope(c));
-                    Assert.error();
+                    chk.earlyRefError(pos, c);
                     return tree;
                 }
                 ot = ots.head;

@@ -152,18 +152,6 @@ public class TreeInfo {
         return null;
     }
 
-    /** Is this a call to this or super?
-     */
-    public static boolean isSelfCall(JCTree tree) {
-        Name name = calledMethodName(tree);
-        if (name != null) {
-            Names names = name.table.names;
-            return name==names._this || name==names._super;
-        } else {
-            return false;
-        }
-    }
-
     /** Is this tree a 'this' identifier?
      */
     public static boolean isThisQualifier(JCTree tree) {

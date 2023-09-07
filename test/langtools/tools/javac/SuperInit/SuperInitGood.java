@@ -420,6 +420,19 @@ public class SuperInitGood {
         }
     }
 
+    // local class inside super() parameter list
+    public static class Test21 extends AtomicReference<Object> {
+        private int x;
+        public Test21() {
+            super(switch ("foo".hashCode()) {
+                default -> {
+                    class Nested {{ System.out.println(x); }}       // class is NOT instantiated - OK
+                    yield "bar";
+                }
+            });
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -462,5 +475,6 @@ public class SuperInitGood {
         }
         new Test19(123);
         new Test20();
+        new Test21();
     }
 }

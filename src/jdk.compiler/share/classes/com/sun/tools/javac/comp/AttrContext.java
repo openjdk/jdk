@@ -49,10 +49,6 @@ public class AttrContext {
      */
     int staticLevel = 0;
 
-    /** Is this an environment for a this(...) or super(...) call?
-     */
-    boolean isSelfCall = false;
-
     /** are we analyzing the arguments for a constructor invocation?
      */
     boolean constructorArgs = false;
@@ -140,7 +136,6 @@ public class AttrContext {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
-        info.isSelfCall = isSelfCall;
         info.constructorArgs = constructorArgs;
         info.ctorPrologue = ctorPrologue;
         info.selectSuper = selectSuper;

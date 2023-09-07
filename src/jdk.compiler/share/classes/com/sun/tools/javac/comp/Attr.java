@@ -961,12 +961,10 @@ public class Attr extends JCTree.Visitor {
                 // make sure class has been completed:
                 c.complete();
 
-                // If this class appears as an anonymous class
-                // in a superclass constructor call
-                // disable implicit outer instance from being passed.
+                // If this class appears as an anonymous class in a constructor
+                // prologue, disable implicit outer instance from being passed.
                 // (This would be an illegal access to "this before super").
-                if (env.info.isSelfCall &&
-                        env.tree.hasTag(NEWCLASS)) {
+                if (ctorProloguePrev && env.tree.hasTag(NEWCLASS)) {
                     c.flags_field |= NOOUTERTHIS;
                 }
                 attribClass(tree.pos(), c);
@@ -2510,12 +2508,6 @@ public class Attr extends JCTree.Visitor {
 
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
         if (isConstructorCall) {
-            // We are seeing a this()/super() call. End of constructor prologue.
-            env.info.ctorPrologue = false;
-
-            // Record the fact
-            // that this is a constructor call (using isSelfCall).
-            localEnv.info.isSelfCall = true;
 
             // Attribute arguments, yielding list of argument types.
             localEnv.info.constructorArgs = true;
@@ -2523,6 +2515,9 @@ public class Attr extends JCTree.Visitor {
             localEnv.info.constructorArgs = false;
             argtypes = argtypesBuf.toList();
             typeargtypes = attribTypes(tree.typeargs, localEnv);
+
+            // Done with this()/super() parameters. End of constructor prologue.
+            env.info.ctorPrologue = false;
 
             // Variable `site' points to the class in which the called
             // constructor is defined.
@@ -4324,16 +4319,6 @@ public class Attr extends JCTree.Visitor {
                 checkAssignable(tree.pos(), v, null, env);
         }
 
-        // In a constructor body,
-        // if symbol is a field or instance method, check that it is
-        // not accessed before the supertype constructor is called.
-        if (symEnv.info.isSelfCall &&
-            sym.kind.matches(KindSelector.VAL_MTH) &&
-            sym.owner.kind == TYP &&
-            (sym.flags() & STATIC) == 0) {
-            chk.earlyRefError(tree.pos(), sym.kind == VAR ?
-                                          sym : thisSym(tree.pos(), env));
-        }
         Env<AttrContext> env1 = env;
         if (sym.kind != ERR && sym.kind != TYP &&
             sym.owner != null && sym.owner != env1.enclClass.sym) {
@@ -4445,18 +4430,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         if (isType(sitesym)) {
-            if (sym.name == names._this || sym.name == names._super) {
-                // If `C' is the currently compiled class, check that
-                // `C.this' does not appear in an explicit call to a constructor
-                // also make sure that `super` is not used in constructor invocations
-                if (env.info.isSelfCall &&
-                        ((sym.name == names._this &&
-                        site.tsym == env.enclClass.sym) ||
-                        sym.name == names._super && env.info.constructorArgs &&
-                        (sitesym.isInterface() || site.tsym == env.enclClass.sym))) {
-                    chk.earlyRefError(tree.pos(), sym);
-                }
-            } else {
+            if (sym.name != names._this && sym.name != names._super) {
                 // Check if type-qualified fields or methods are static (JLS)
                 if ((sym.flags() & STATIC) == 0 &&
                     sym.name != names._super &&

@@ -201,7 +201,6 @@ public class Enter extends JCTree.Visitor {
             env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
         localEnv.enclClass = tree;
         localEnv.outer = env;
-        localEnv.info.isSelfCall = false;
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         localEnv.info.isAnonymousDiamond = TreeInfo.isDiamond(env.tree);
@@ -254,7 +253,6 @@ public class Enter extends JCTree.Visitor {
             env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
         localEnv.enclClass = predefClassDef;
         localEnv.outer = env;
-        localEnv.info.isSelfCall = false;
         localEnv.info.lint = null; // leave this to be filled in by Attr,
                                    // when annotations have been processed
         return localEnv;
