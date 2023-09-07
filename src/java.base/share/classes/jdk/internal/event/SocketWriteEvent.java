@@ -26,7 +26,6 @@
 package jdk.internal.event;
 
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
@@ -101,14 +100,18 @@ public class SocketWriteEvent extends Event {
     }
 
     /**
-     * Execute the standard boilerplate that proceeds a potential call to the generated
-     * commit method.
+     * Helper method to offer the data needed to potentially commit an event.
+     * The duration of the operation is computed using the current
+     * timestamp and the given start time.  If the duration is meets
+     * or exceeds the configured value (determined by calling the generated method
+     * {@link #shouldCommit(long)}), an event will be emitted by calling
+     * {@link #commit(long, long, String, String, int, long)}.
      *
      * @param start  the start time
      * @param bytesWritten  how many bytes were sent
      * @param remote  the address of the remote socket being written to
      */
-    public static void checkForCommit(long start, long bytesWritten, SocketAddress remote) {
+    public static void offer(long start, long bytesWritten, SocketAddress remote) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
             long bytes = bytesWritten < 0 ? 0 : bytesWritten;

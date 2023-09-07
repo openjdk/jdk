@@ -41,7 +41,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
-
 /**
  * This class implements client sockets (also called just
  * "sockets"). A socket is an endpoint for communication
@@ -1079,9 +1078,6 @@ public class Socket implements java.io.Closeable {
     /**
      * An InputStream that delegates read/available operations to an underlying
      * input stream. The close method is overridden to close the Socket.
-     *
-     * This class is instrumented by Java Flight Recorder (JFR) to get socket
-     * I/O events.
      */
     private static class SocketInputStream extends InputStream {
         private final Socket parent;
@@ -1101,13 +1097,9 @@ public class Socket implements java.io.Closeable {
             if (!SocketReadEvent.enabled()) {
                 return implRead(b, off, len);
             }
-            int nbytes = 0;
             long start = SocketReadEvent.timestamp();
-            try {
-                nbytes = implRead(b, off, len);
-            } finally {
-                SocketReadEvent.checkForCommit(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            }
+            int nbytes = implRead(b, off, len);
+            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             return nbytes;
         }
 
@@ -1200,9 +1192,6 @@ public class Socket implements java.io.Closeable {
     /**
      * An OutputStream that delegates write operations to an underlying output
      * stream. The close method is overridden to close the Socket.
-     *
-     * This class is instrumented by Java Flight Recorder (JFR) to get socket
-     * I/O events.
      */
     private static class SocketOutputStream extends OutputStream {
         private final Socket parent;
@@ -1222,13 +1211,9 @@ public class Socket implements java.io.Closeable {
                 implWrite(b, off, len);
                 return;
             }
-            long start = 0;
-            try {
-                start = SocketWriteEvent.timestamp();
-                implWrite(b, off, len);
-            } finally {
-                SocketWriteEvent.checkForCommit(start, len, parent.getRemoteSocketAddress());
-            }
+            long start = SocketWriteEvent.timestamp();
+            implWrite(b, off, len);
+            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {

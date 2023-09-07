@@ -137,7 +137,7 @@ public class SocketEventOverhead {
             try {
                 nbytes = write0();
             } finally {
-                SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
+                SocketWriteEvent.offer(start, nbytes, getRemoteAddress());
             }
             return nbytes;
         }
@@ -155,7 +155,7 @@ public class SocketEventOverhead {
             try {
                 nbytes = read0();
             } finally {
-                SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
+                SocketReadEvent.offer(start, nbytes, getRemoteAddress(), 0);
             }
             return nbytes;
         }

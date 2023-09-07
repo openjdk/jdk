@@ -26,7 +26,6 @@
 package jdk.internal.event;
 
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnixDomainSocketAddress;
@@ -106,15 +105,19 @@ public class SocketReadEvent extends Event {
     }
 
     /**
-     * Execute the standard boilerplate that proceeds a potential call to the machine generated
-     * commit method.
+     * Helper method to offer the data needed to potentially commit an event.
+     * The duration of the operation is computed using the current
+     * timestamp and the given start time.  If the duration is meets
+     * or exceeds the configured value (determined by calling the generated method
+     * {@link #shouldCommit(long)}), an event will be emitted by calling
+     * {@link #commit(long, long, String, String, int, long, long, boolean)}.
      *
      * @param start  the start time
      * @param nbytes  how many bytes were transferred
      * @param remote  the address of the remote socket
      * @param timeout  maximum time to wait
      */
-    public static void checkForCommit(long start, long nbytes, SocketAddress remote, long timeout) {
+    public static void offer(long start, long nbytes, SocketAddress remote, long timeout) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
             boolean eof = nbytes < 0 ? true : false;

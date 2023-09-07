@@ -403,21 +403,6 @@ class SocketChannelImpl
         throw new SocketException("Connection reset");
     }
 
-    @Override
-    public int read(ByteBuffer buf) throws IOException {
-        if (!SocketReadEvent.enabled()) {
-            return implRead(buf);
-        }
-        int nbytes = 0;
-        long start = SocketReadEvent.timestamp();
-        try {
-            nbytes = implRead(buf);
-        } finally {
-            SocketReadEvent.checkForCommit(start, nbytes, remoteAddress(), 0);
-        }
-        return nbytes;
-    }
-
     private int implRead(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
 
@@ -457,23 +442,6 @@ class SocketChannelImpl
         } finally {
             readLock.unlock();
         }
-    }
-
-    @Override
-    public long read(ByteBuffer[] dsts, int offset, int length)
-        throws IOException
-    {
-        if (!SocketReadEvent.enabled()) {
-            return implRead(dsts, offset, length);
-        }
-        long nbytes = 0;
-        long start = SocketReadEvent.timestamp();
-        try {
-            nbytes = implRead(dsts, offset, length);
-        } finally {
-            SocketReadEvent.checkForCommit(start, nbytes, remoteAddress(), 0);
-        }
-        return nbytes;
     }
 
     private long implRead(ByteBuffer[] dsts, int offset, int length)
@@ -519,6 +487,31 @@ class SocketChannelImpl
         }
     }
 
+    @Override
+    public int read(ByteBuffer buf) throws IOException {
+        if (!SocketReadEvent.enabled()) {
+            return implRead(buf);
+        }
+        long start = SocketReadEvent.timestamp();
+        int nbytes = implRead(buf);
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        return nbytes;
+    }
+
+
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length)
+        throws IOException
+    {
+        if (!SocketReadEvent.enabled()) {
+            return implRead(dsts, offset, length);
+        }
+        long start = SocketReadEvent.timestamp();
+        long nbytes = implRead(dsts, offset, length);
+        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+        return nbytes;
+    }
+
     /**
      * Marks the beginning of a write operation that might block.
      *
@@ -560,21 +553,6 @@ class SocketChannelImpl
         }
     }
 
-    @Override
-    public int write(ByteBuffer buf) throws IOException {
-        if (!SocketWriteEvent.enabled()) {
-            return implWrite(buf);
-        }
-        int nbytes = 0;
-        long start = SocketWriteEvent.timestamp();
-        try {
-            nbytes = implWrite(buf);
-        } finally {
-            SocketWriteEvent.checkForCommit(start, nbytes, remoteAddress());
-        }
-        return nbytes;
-    }
-
     private int implWrite(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
         writeLock.lock();
@@ -601,23 +579,6 @@ class SocketChannelImpl
         } finally {
             writeLock.unlock();
         }
-    }
-
-    @Override
-    public long write(ByteBuffer[] srcs, int offset, int length)
-        throws IOException
-    {
-        if (!SocketWriteEvent.enabled()) {
-            return implWrite(srcs, offset, length);
-        }
-        long nbytes = 0;
-        long start = SocketWriteEvent.timestamp();
-        try {
-            nbytes = implWrite(srcs, offset, length);
-        } finally {
-            SocketWriteEvent.checkForCommit(start, nbytes, remoteAddress());
-        }
-        return nbytes;
     }
 
     private long implWrite(ByteBuffer[] srcs, int offset, int length)
@@ -649,6 +610,30 @@ class SocketChannelImpl
         } finally {
             writeLock.unlock();
         }
+    }
+
+    @Override
+    public int write(ByteBuffer buf) throws IOException {
+        if (!SocketWriteEvent.enabled()) {
+            return implWrite(buf);
+        }
+        long start = SocketWriteEvent.timestamp();
+        int nbytes = implWrite(buf);
+        SocketWriteEvent.offer(start, nbytes, remoteAddress());
+        return nbytes;
+    }
+
+    @Override
+    public long write(ByteBuffer[] srcs, int offset, int length)
+        throws IOException
+    {
+        if (!SocketWriteEvent.enabled()) {
+            return implWrite(srcs, offset, length);
+        }
+        long start = SocketWriteEvent.timestamp();
+        long nbytes = implWrite(srcs, offset, length);
+        SocketWriteEvent.offer(start, nbytes, remoteAddress());
+        return nbytes;
     }
 
     /**
