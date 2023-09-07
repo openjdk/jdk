@@ -378,7 +378,7 @@ class MacroAssembler: public Assembler {
 
   void fence(uint32_t predecessor, uint32_t successor) {
     if (UseZtso) {
-      if (pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) {
+      if ((pred_succ_to_membar_mask(predecessor, successor) & StoreLoad) != 0) {
         // TSO allows for stores to be reordered after loads. When the compiler
         // generates a fence to disallow that, we are required to generate the
         // fence for correctness.
