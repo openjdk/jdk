@@ -35,7 +35,7 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary JSR-166 tck tests, in a number of variations.
  *          The first is the conformance testing variant,
  *          while others also test implementation details.
@@ -43,11 +43,12 @@
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
  * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
- * @run junit/othervm/timeout=1000
- *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
- *      --add-opens java.base/java.lang=ALL-UNNAMED
- *      -Djsr166.testImplementationDetails=true
- *      JSR166TestCase
+ */
+
+/*
+ * @test id=forkjoinpool-common-parallelism
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
@@ -61,12 +62,24 @@
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -Djava.util.secureRandomSeed=true
  *      JSR166TestCase
+ */
+
+/*
+ * @test id=others
+ * @build *
+ * @modules java.management
+ * @run junit/othervm/timeout=1000
+ *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
+ *      --add-opens java.base/java.lang=ALL-UNNAMED
+ *      -Djsr166.testImplementationDetails=true
+ *      JSR166TestCase
  * @run junit/othervm/timeout=1000/policy=tck.policy
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
  *      -Djsr166.testImplementationDetails=true
  *      JSR166TestCase
  */
+
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
