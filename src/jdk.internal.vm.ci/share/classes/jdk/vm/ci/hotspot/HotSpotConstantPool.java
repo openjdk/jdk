@@ -397,18 +397,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     }
 
     /**
-     * Gets the name of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by another
-     * entry denoted by {@code which}.
-     *
-     * @param rawIndex rewritten index in the bytecode stream
-     * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return name as {@link String}
-     */
-    private String getNameOf(int rawIndex, int opcode) {
-        return compilerToVM().lookupNameInPool(this, rawIndex, opcode);
-    }
-
-    /**
      * Gets the name reference index of a {@code JVM_CONSTANT_NameAndType} constant pool entry at
      * index {@code index}.
      *
@@ -421,17 +409,6 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return refIndex & 0xFFFF;
     }
 
-    /**
-     * Gets the signature of a {@code JVM_CONSTANT_NameAndType} constant pool entry referenced by
-     * another entry denoted by {@code which}.
-     *
-     * @param rawIndex rewritten index in the bytecode stream
-     * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return signature as {@link String}
-     */
-    private String getSignatureOf(int rawIndex, int opcode) {
-        return compilerToVM().lookupSignatureInPool(this, rawIndex, opcode);
-    }
 
     /**
      * Gets the signature reference index of a {@code JVM_CONSTANT_NameAndType} constant pool entry
@@ -449,12 +426,13 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
     /**
      * Gets the klass reference index constant pool entry at index {@code index}.
      *
-     * @param rawIndex rewritten index in the bytecode stream
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      * @param opcode the opcode of the instruction for which the lookup is being performed
      * @return klass reference index
      */
-    private int getKlassRefIndexAt(int rawIndex, int opcode) {
-        return compilerToVM().lookupKlassRefIndexInPool(this, rawIndex, opcode);
+    private int getKlassRefIndexAt(int which, int opcode) {
+        return compilerToVM().lookupKlassRefIndexInPool(this, which, opcode);
     }
 
     /**
@@ -719,18 +697,26 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public JavaMethod lookupMethod(int rawIndex, int opcode, ResolvedJavaMethod caller) {
-        final int cpci = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
-        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, cpci, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
+        int which; // interpretation depends on opcode
+        if (opcode == Bytecodes.INVOKEDYNAMIC) {
+            if (!isInvokedynamicIndex(rawIndex)) {
+                throw new IllegalArgumentException("expected a raw index for INVOKEDYNAMIC but got " + rawIndex);
+            }
+            which = rawIndex;
+        } else {
+            which = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
+        }
+        final HotSpotResolvedJavaMethod method = compilerToVM().lookupMethodInPool(this, which, (byte) opcode, (HotSpotResolvedJavaMethodImpl) caller);
         if (method != null) {
             return method;
         } else {
             // Get the method's name and signature.
-            String name = getNameOf(cpci, opcode);
-            HotSpotSignature signature = new HotSpotSignature(runtime(), getSignatureOf(cpci, opcode));
+            String name = compilerToVM().lookupNameInPool(this, which, opcode);
+            HotSpotSignature signature = new HotSpotSignature(runtime(), compilerToVM().lookupSignatureInPool(this, which, opcode));
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 return new UnresolvedJavaMethod(name, signature, runtime().getMethodHandleClass());
             } else {
-                final int klassIndex = getKlassRefIndexAt(cpci, opcode);
+                final int klassIndex = getKlassRefIndexAt(which, opcode);
                 final Object type = compilerToVM().lookupKlassInPool(this, klassIndex);
                 return new UnresolvedJavaMethod(name, signature, getJavaType(type));
             }

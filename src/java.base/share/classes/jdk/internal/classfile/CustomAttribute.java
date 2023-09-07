@@ -31,6 +31,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * this class to provide an implementation class for non-standard attributes,
  * and provide an {@link AttributeMapper} to mediate between the classfile
  * format and the {@linkplain CustomAttribute} representation.
+ * @param <T> the custom attribute type
  */
 @SuppressWarnings("exports")
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
