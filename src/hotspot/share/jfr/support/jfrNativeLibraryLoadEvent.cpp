@@ -29,39 +29,45 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-JfrNativeLibraryEventImpl::JfrNativeLibraryEventImpl(const char* name) : _name(name), _error_msg(nullptr), _start_time(nullptr) {}
+JfrNativeLibraryEventBase::JfrNativeLibraryEventBase(const char* name) : _name(name), _error_msg(nullptr), _start_time(nullptr) {}
 
-JfrNativeLibraryEventImpl::~JfrNativeLibraryEventImpl() {
+JfrNativeLibraryEventBase::~JfrNativeLibraryEventBase() {
   delete _start_time;
 }
 
-const char* JfrNativeLibraryEventImpl::name() const {
+const char* JfrNativeLibraryEventBase::name() const {
   return _name;
 }
 
-JfrTicksWrapper* JfrNativeLibraryEventImpl::start_time() const {
+JfrTicksWrapper* JfrNativeLibraryEventBase::start_time() const {
   return _start_time;
 }
 
-bool JfrNativeLibraryEventImpl::has_start_time() const {
+bool JfrNativeLibraryEventBase::has_start_time() const {
   return _start_time != nullptr;
 }
 
-const char* JfrNativeLibraryEventImpl::error_msg() const {
+const char* JfrNativeLibraryEventBase::error_msg() const {
   return _error_msg;
 }
 
-void JfrNativeLibraryEventImpl::set_error_msg(const char* error_msg) {
+void JfrNativeLibraryEventBase::set_error_msg(const char* error_msg) {
   assert(_error_msg == nullptr, "invariant");
   _error_msg = error_msg;
 }
 
+/*
+ * The JfrTicks value is heap allocated inside an object of type JfrTicksWrapper.
+ * The reason is that a raw value object of type Ticks is not possible at this
+ * location because this code runs as part of early VM bootstrap, at a moment
+ * where Ticks support is not yet initialized.
+ */
 template <typename EventType>
 static inline JfrTicksWrapper* allocate_start_time() {
   return EventType::is_enabled() ? new JfrTicksWrapper() : nullptr;
 }
 
-NativeLibraryLoadEvent::NativeLibraryLoadEvent(const char* name, void** result) : JfrNativeLibraryEventImpl(name), _result(result) {
+NativeLibraryLoadEvent::NativeLibraryLoadEvent(const char* name, void** result) : JfrNativeLibraryEventBase(name), _result(result) {
   assert(_result != nullptr, "invariant");
   _start_time = allocate_start_time<EventNativeLibraryLoad>();
 }
@@ -70,7 +76,7 @@ bool NativeLibraryLoadEvent::success() const {
   return *_result != nullptr;
 }
 
-NativeLibraryUnloadEvent::NativeLibraryUnloadEvent(const char* name) : JfrNativeLibraryEventImpl(name), _result(false) {
+NativeLibraryUnloadEvent::NativeLibraryUnloadEvent(const char* name) : JfrNativeLibraryEventBase(name), _result(false) {
   _start_time = allocate_start_time<EventNativeLibraryUnload>();
 }
 
@@ -82,17 +88,17 @@ void NativeLibraryUnloadEvent::set_result(bool result) {
   _result = result;
 }
 
-template <typename EventType, typename Type>
-static void commit(Type& type) {
-  if (!type.has_start_time()) {
+template <typename EventType, typename HelperType>
+static void commit(HelperType& helper) {
+  if (!helper.has_start_time()) {
     return;
   }
   EventType event(UNTIMED);
   event.set_endtime(JfrTicks::now());
-  event.set_starttime(*type.start_time());
-  event.set_name(type.name());
-  event.set_errorMessage(type.error_msg());
-  event.set_success(type.success());
+  event.set_starttime(*helper.start_time());
+  event.set_name(helper.name());
+  event.set_errorMessage(helper.error_msg());
+  event.set_success(helper.success());
   Thread* thread = Thread::current();
   assert(thread != nullptr, "invariant");
   if (thread->is_Java_thread()) {

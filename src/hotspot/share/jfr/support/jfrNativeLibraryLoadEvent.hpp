@@ -29,13 +29,18 @@
 
 class JfrTicksWrapper;
 
-class JfrNativeLibraryEventImpl : public StackObj {
+/*
+ * Helper types for populating NativeLibrary events.
+ * Event commit is run as part of destructors.
+ */
+
+class JfrNativeLibraryEventBase : public StackObj {
  protected:
   const char* _name;
   const char* _error_msg;
   JfrTicksWrapper* _start_time;
-  JfrNativeLibraryEventImpl(const char* name);
-  ~JfrNativeLibraryEventImpl();
+  JfrNativeLibraryEventBase(const char* name);
+  ~JfrNativeLibraryEventBase();
  public:
   const char* name() const;
   const char* error_msg() const;
@@ -44,7 +49,7 @@ class JfrNativeLibraryEventImpl : public StackObj {
   bool has_start_time() const;
 };
 
-class NativeLibraryLoadEvent : public JfrNativeLibraryEventImpl {
+class NativeLibraryLoadEvent : public JfrNativeLibraryEventBase {
  private:
   void** _result;
  public:
@@ -53,7 +58,7 @@ class NativeLibraryLoadEvent : public JfrNativeLibraryEventImpl {
   bool success() const;
 };
 
-class NativeLibraryUnloadEvent : public JfrNativeLibraryEventImpl {
+class NativeLibraryUnloadEvent : public JfrNativeLibraryEventBase {
  private:
   bool _result;
  public:
