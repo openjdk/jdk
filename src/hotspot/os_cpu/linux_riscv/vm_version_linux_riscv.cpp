@@ -159,7 +159,7 @@ void VM_Version::setup_cpu_available_features() {
   }
 
   _features_string = os::strdup(buf);
-  _parsable_features_string = os::strdup(buf);
+  _parsable_features_string = os::strdup(buf_pfs);
 }
 
 void VM_Version::os_aux_features() {
