@@ -64,6 +64,7 @@ address StubGenerator::generate_string_indexof() {
     Label L_outer9, L_mid9, L_inner9, L_outer10, L_mid10, L_inner10;
     Label L_outer11, L_mid11, L_inner11, L_outer12, L_mid12, L_inner12;
     Label L_inner_mid11, L_inner_mid12,L_0x404f26, L_tail_8;
+    Label L_inner1, L_outer1, L_done1;
 
     Label L_begin;
 
@@ -181,6 +182,7 @@ address StubGenerator::generate_string_indexof() {
 
     __ bind(L_str2_len_1);
     jmp_table[jmp_ndx++] = __ pc();
+#if 0
 //   0x0000000000404b33 <+259>:   movsx  esi,BYTE PTR [r11]
 //   0x0000000000404b37 <+263>:   mov    rdi,rbx
 //   0x0000000000404b3a <+266>:   call   0x408f80 <__strchr_avx2>
@@ -202,6 +204,51 @@ address StubGenerator::generate_string_indexof() {
     __ cmpq(rcx, 0x1);
     __ sbbq(rax, rax);
     __ orq(rax, rdx);
+    __ jmp(L_exit);
+#endif
+
+// => 0x0000555555558058 <+232>:   c4 e2 7d 78 0b  vpbroadcastb ymm1,BYTE PTR [rbx]
+//    0x000055555555805d <+237>:   31 c0   xor    eax,eax
+//    0x000055555555805f <+239>:   eb 10   jmp    0x555555558071 <_Z14avx2_strstr_v2PKcmS0_m+257>
+//    0x0000555555558061 <+241>:   0f 1f 80 00 00 00 00    nop    DWORD PTR [rax+0x0]
+//    0x0000555555558068 <+248>:   48 83 c0 20     add    rax,0x20
+//    0x000055555555806c <+252>:   49 39 c5        cmp    r13,rax
+//    0x000055555555806f <+255>:   76 75   jbe    0x5555555580e6 <_Z14avx2_strstr_v2PKcmS0_m+374>
+//    0x0000555555558071 <+257>:   c4 c1 75 74 04 06       vpcmpeqb ymm0,ymm1,YMMWORD PTR [r14+rax*1]
+//    0x0000555555558077 <+263>:   c5 7d d7 e0     vpmovmskb r12d,ymm0
+//    0x000055555555807b <+267>:   45 85 e4        test   r12d,r12d
+//    0x000055555555807e <+270>:   74 e8   je     0x555555558068 <_Z14avx2_strstr_v2PKcmS0_m+248>
+//    0x0000555555558080 <+272>:   f3 45 0f bc e4  tzcnt  r12d,r12d
+//    0x0000555555558085 <+277>:   49 01 c4        add    r12,rax
+//    0x0000555555558088 <+280>:   c5 f8 77        vzeroupper
+//    0x000055555555808b <+283>:   eb 96   jmp    0x555555558023 <_Z14avx2_strstr_v2PKcmS0_m+179>
+    __ vpbroadcastb(xmm1, Address(r11, 0), Assembler::AVX_256bit);
+    __ xorl(rax, rax);
+    __ jmpb(L_inner1);
+
+    __ align(8);
+    __ bind(L_outer1);
+    __ addq(rax, 0x20);
+    __ cmpq(r10, rax);
+    __ jbe_b(L_done1);
+
+    __ bind(L_inner1);
+    __ vpcmpeqb(xmm0, xmm1, Address(rbx, rax, Address::times_1), Assembler::AVX_256bit);
+    __ vpmovmskb(r9, xmm0);
+    __ testl(r9, r9);
+    __ je_b(L_outer1);
+    __ tzcntl(r9, r9);
+    __ addq(r9, rax);
+
+    __ subq(rsi, rcx);
+    __ cmpq(rsi, r9);
+    __ jb_b(L_done1);
+
+    __ movq(rax, r9);
+    __ jmp(L_exit);
+
+    __ bind(L_done1);
+    __ movq(rax, -1);
     __ jmp(L_exit);
 
     __ bind(L_str2_len_2);
@@ -930,6 +977,10 @@ address StubGenerator::generate_string_indexof() {
 //   0x0000000000405033 <+1539>:  vzeroupper
 //   0x0000000000405036 <+1542>:  ret
     __ addptr(rsp, 0x68);
+#ifdef _WIN64
+    __ pop(rdi);
+    __ pop(rsi);
+#endif
     __ pop(rbp);
     __ pop(rbx);
     __ pop(r12);
@@ -996,6 +1047,16 @@ address StubGenerator::generate_string_indexof() {
     __ push(r12);
     __ push(rbx);
     __ push(rbp);
+#ifdef _WIN64
+    __ push(rsi);
+    __ push(rdi);
+
+    __ movq(rdi, rcx);
+    __ movq(rsi, rdx);
+    __ movq(rdx, r8);
+    __ movq(rcx, r9);
+#endif
+
     __ subptr(rsp, 0x68);
     __ movq(rax, -1);
     __ movq(r9, rsi);
