@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,17 +23,15 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8157464 8210375
- * @summary Basic test for StackWalker.getCallerClass()
- * @library src
- * @modules java.base/jdk.internal.reflect
- * @build java.base/java.util.CSM csm/*
- * @run main/othervm csm/jdk.test.CallerSensitiveTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames csm/jdk.test.CallerSensitiveTest
- * @run main/othervm -Djava.security.manager=allow csm/jdk.test.CallerSensitiveTest sm
- */
-public class Main {
-}
+#include <stdio.h>
+#include <signal.h>
 
+#include "jni.h"
+#include "jvm.h"
+
+#include "java_lang_StackFrameInfo.h"
+
+JNIEXPORT void JNICALL Java_java_lang_StackFrameInfo_expandStackFrameInfo
+  (JNIEnv *env, jobject obj) {
+     JVM_ExpandStackFrameInfo(env, obj);
+}
