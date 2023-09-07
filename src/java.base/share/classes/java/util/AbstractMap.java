@@ -301,36 +301,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         entrySet().clear();
     }
 
-
-    // Views
-
-    /**
-     * Each of these fields are initialized to contain an instance of the
-     * appropriate view the first time this view is requested.  The views are
-     * stateless, so there's no reason to create more than one of each.
-     *
-     * <p>Since there is no synchronization performed while accessing these fields,
-     * it is expected that java.util.Map view classes using these fields have
-     * no non-final fields (or any fields at all except for outer-this). Adhering
-     * to this rule would make the races on these fields benign.
-     *
-     * <p>It is also imperative that implementations read the field only once,
-     * as in:
-     *
-     * <pre> {@code
-     * public Set<K> keySet() {
-     *   Set<K> ks = keySet;  // single racy read
-     *   if (ks == null) {
-     *     ks = new KeySet();
-     *     keySet = ks;
-     *   }
-     *   return ks;
-     * }
-     *}</pre>
-     */
-    transient Set<K>        keySet;
-    transient Collection<V> values;
-
     /**
      * {@inheritDoc}
      *
@@ -348,46 +318,41 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * method will not all return the same set.
      */
     public Set<K> keySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            ks = new AbstractSet<K>() {
-                public Iterator<K> iterator() {
-                    return new Iterator<K>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
+        return new AbstractSet<>() {
+            public Iterator<K> iterator() {
+                return new Iterator<>() {
+                    private final Iterator<Entry<K, V>> i = entrySet().iterator();
 
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
+                    public boolean hasNext() {
+                        return i.hasNext();
+                    }
 
-                        public K next() {
-                            return i.next().getKey();
-                        }
+                    public K next() {
+                        return i.next().getKey();
+                    }
 
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
-                }
+                    public void remove() {
+                        i.remove();
+                    }
+                };
+            }
 
-                public int size() {
-                    return AbstractMap.this.size();
-                }
+            public int size() {
+                return AbstractMap.this.size();
+            }
 
-                public boolean isEmpty() {
-                    return AbstractMap.this.isEmpty();
-                }
+            public boolean isEmpty() {
+                return AbstractMap.this.isEmpty();
+            }
 
-                public void clear() {
-                    AbstractMap.this.clear();
-                }
+            public void clear() {
+                AbstractMap.this.clear();
+            }
 
-                public boolean contains(Object k) {
-                    return AbstractMap.this.containsKey(k);
-                }
-            };
-            keySet = ks;
-        }
-        return ks;
+            public boolean contains(Object k) {
+                return AbstractMap.this.containsKey(k);
+            }
+        };
     }
 
     /**
@@ -407,46 +372,41 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * method will not all return the same collection.
      */
     public Collection<V> values() {
-        Collection<V> vals = values;
-        if (vals == null) {
-            vals = new AbstractCollection<V>() {
-                public Iterator<V> iterator() {
-                    return new Iterator<V>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
+        return new AbstractCollection<>() {
+            public Iterator<V> iterator() {
+                return new Iterator<>() {
+                    private final Iterator<Entry<K, V>> i = entrySet().iterator();
 
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
+                    public boolean hasNext() {
+                        return i.hasNext();
+                    }
 
-                        public V next() {
-                            return i.next().getValue();
-                        }
+                    public V next() {
+                        return i.next().getValue();
+                    }
 
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
-                }
+                    public void remove() {
+                        i.remove();
+                    }
+                };
+            }
 
-                public int size() {
-                    return AbstractMap.this.size();
-                }
+            public int size() {
+                return AbstractMap.this.size();
+            }
 
-                public boolean isEmpty() {
-                    return AbstractMap.this.isEmpty();
-                }
+            public boolean isEmpty() {
+                return AbstractMap.this.isEmpty();
+            }
 
-                public void clear() {
-                    AbstractMap.this.clear();
-                }
+            public void clear() {
+                AbstractMap.this.clear();
+            }
 
-                public boolean contains(Object v) {
-                    return AbstractMap.this.containsValue(v);
-                }
-            };
-            values = vals;
-        }
-        return vals;
+            public boolean contains(Object v) {
+                return AbstractMap.this.containsValue(v);
+            }
+        };
     }
 
     public abstract Set<Entry<K,V>> entrySet();
@@ -569,8 +529,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      */
     protected Object clone() throws CloneNotSupportedException {
         AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
-        result.keySet = null;
-        result.values = null;
         return result;
     }
 

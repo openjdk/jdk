@@ -1166,12 +1166,7 @@ public class TreeMap<K,V>
      * support the {@code add} or {@code addAll} operations.
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new Values();
-            values = vs;
-        }
-        return vs;
+        return new Values();
     }
 
     /**
