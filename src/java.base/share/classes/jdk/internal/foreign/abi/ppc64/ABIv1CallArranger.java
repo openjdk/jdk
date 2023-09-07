@@ -26,12 +26,12 @@
 package jdk.internal.foreign.abi.ppc64;
 
 /**
- * PPC64 CallArranger specialized for ABI v2.
+ * PPC64 CallArranger specialized for ABI v1.
  */
-public class ABIv2CallArranger extends CallArranger {
+public class ABIv1CallArranger extends CallArranger {
 
     @Override
     protected boolean useABIv2() {
-        return true;
+        return false;
     }
 }

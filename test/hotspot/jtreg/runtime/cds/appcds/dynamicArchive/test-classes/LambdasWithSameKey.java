@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,16 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.internal.foreign.abi.ppc64;
 
-/**
- * PPC64 CallArranger specialized for ABI v2.
+/*
+ * This class is for generating lambda proxy classes with the same invoke dynamic
+ * info such as: caller class, invoked name, invoked type, method type, etc.
+ *
  */
-public class ABIv2CallArranger extends CallArranger {
 
-    @Override
-    protected boolean useABIv2() {
-        return true;
+public class LambdasWithSameKey {
+    public static void main(String args[]) {
+        boolean isRun = (args.length == 1 && args[0].equals("run")) ? true : false;
+        {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
+        {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
+        if (isRun) {
+            {Runnable run1 = LambdasWithSameKey::myrun; run1.run();}
+        }
+    }
+
+    static void myrun() {
+        System.out.println("myrun");
     }
 }
