@@ -1534,7 +1534,6 @@ private:
   int _dump_seq;
 
 private:
-  LINUX_ONLY(void merge_file_fast(char* path);)
   void merge_file(char* path);
   void merge_done();
   void set_error(const char* msg);
@@ -1566,7 +1565,10 @@ void DumpMerger::set_error(const char* msg) {
 }
 
 #ifdef LINUX
-void DumpMerger::merge_file_fast(char* path) {
+// Merge segmented heap files via sendfile, it's more efficient than the
+// read+write combination, which would require transferring data to and from
+// user space.
+void DumpMerger::merge_file(char* path) {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file directly", TRACETIME_LOG(Info, heapdump));
 
@@ -1602,8 +1604,8 @@ void DumpMerger::merge_file_fast(char* path) {
   _writer->set_bytes_written(accum);
   ::close(segment_fd);
 }
-#endif
-
+#else
+// Generic implementation using read+write
 void DumpMerger::merge_file(char* path) {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
@@ -1627,6 +1629,7 @@ void DumpMerger::merge_file(char* path) {
     set_error("Merged heap dump is incomplete");
   }
 }
+#endif
 
 void DumpMerger::do_merge() {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
@@ -1644,15 +1647,7 @@ void DumpMerger::do_merge() {
     memset(path, 0, JVM_MAXPATHLEN);
     os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", _path, i);
     if (!_has_error) {
-#ifdef LINUX
-      // Merge segmented heap files via sendfile, it's more efficient than the
-      // read+write combination, which would require transferring data to and from
-      // user space.
-      merge_file_fast(path);
-#else
-      // Otherwise, fallback to using read+write combination for file merging
       merge_file(path);
-#endif
     }
     // Delete selected segmented heap file nevertheless
     remove(path);
