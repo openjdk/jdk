@@ -42,31 +42,21 @@ TEST_VM(ConstantPoolCache, print_on) {
   klass->constants()->cache()->print_on(&ss);
 
   const char* output = ss.freeze();
-  // method entry test
-  ASSERT_TRUE(strstr(output, "this") != NULL) << "must have \"this\"";
-  ASSERT_TRUE(strstr(output, "bytecode 1:") != NULL) << "must have \"bytecode 1\"";
-  ASSERT_TRUE(strstr(output, "bytecode 2:") != NULL) << "must have \"bytecode 2\"";
-  ASSERT_TRUE(strstr(output, "cp index:") != NULL) << "must have constant pool index";
-  ASSERT_TRUE(strstr(output, "F1:") != NULL) << "must have F1 value";
-  ASSERT_TRUE(strstr(output, "F2:") != NULL) << "must have F2 value";
-  ASSERT_TRUE(strstr(output, "method:") != NULL) << "must have a method";
-  ASSERT_TRUE(strstr(output, "flag values:") != NULL) << "must have a flag";
-  ASSERT_TRUE(strstr(output, "tos:") != NULL) << "must have result type";
-  ASSERT_TRUE(strstr(output, "local signature:") != NULL) << "must have local signature flag";
-  ASSERT_TRUE(strstr(output, "has appendix:") != NULL) << "must have appendix flag";
-  ASSERT_TRUE(strstr(output, "forced virtual:") != NULL) << "must have forced virtual flag";
-  ASSERT_TRUE(strstr(output, "final:") != NULL) << "must have final flag";
-  ASSERT_TRUE(strstr(output, "virtual final:") != NULL) << "must have virtual final flag";
-  ASSERT_TRUE(strstr(output, "resolution failed:") != NULL) << "must have resolution failed flag";
-  ASSERT_TRUE(strstr(output, "num parameters:") != NULL) << "must have number of parameters";
+  static const char* const expected_strings[] = {
+    // Method entry tests:
+    "this", "bytecode 1:", "bytecode 2:", "cp index:", "F1:", "F2:",
+    "method:", "flag values:", "tos:", "local signature:", "has appendix:",
+    "forced virtual:", "final:", "virtual final:", "resolution failed:",
+    "num parameters:",
 
-  // field entry test
-  ASSERT_TRUE(strstr(output, "Offset:") != NULL) << "must have field offset";
-  ASSERT_TRUE(strstr(output, "Field Index:") != NULL) << "must have field index";
-  ASSERT_TRUE(strstr(output, "CP Index:") != NULL) << "must have constant pool index";
-  ASSERT_TRUE(strstr(output, "TOS:") != NULL) << "must have type";
-  ASSERT_TRUE(strstr(output, "Is Final:") != NULL) << "must have final flag";
-  ASSERT_TRUE(strstr(output, "Is Volatile:") != NULL) << "must have volatile flag";
-  ASSERT_TRUE(strstr(output, "Put Bytecode:") != NULL) << "must have \"put code\"";
-  ASSERT_TRUE(strstr(output, "Get Bytecode:") != NULL) << "must have \"get code\"";
+    // field entry test
+    "Offset:", "Field Index:", "CP Index:", "TOS:", "Is Final:", "Is Volatile:",
+    "Put Bytecode:", "Get Bytecode:",
+    nullptr
+  };
+
+  for (int i = 0; expected_strings[i] != nullptr; i++) {
+    ASSERT_THAT(output, testing::HasSubstr(expected_strings[i]));
+  }
+
 }

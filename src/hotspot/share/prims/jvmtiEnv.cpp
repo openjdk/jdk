@@ -1009,7 +1009,7 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
 
 jvmtiError
 JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list) {
-  if (!JvmtiExport::can_support_virtual_threads()) {
+  if (get_capabilities()->can_support_virtual_threads == 0) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   JavaThread* current = JavaThread::current();
@@ -1127,7 +1127,7 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
 
 jvmtiError
 JvmtiEnv::ResumeAllVirtualThreads(jint except_count, const jthread* except_list) {
-  if (!JvmtiExport::can_support_virtual_threads()) {
+  if (get_capabilities()->can_support_virtual_threads == 0) {
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);

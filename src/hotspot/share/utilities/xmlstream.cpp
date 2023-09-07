@@ -160,7 +160,7 @@ void xmlStream::see_tag(const char* tag, bool push) {
   char* old_low  = _element_close_stack_low;
   char* push_ptr = old_ptr - (tag_len+1);
   if (push_ptr < old_low) {
-    int old_len = _element_close_stack_high - old_ptr;
+    int old_len = pointer_delta_as_int(_element_close_stack_high, old_ptr);
     int new_len = old_len * 2;
     if (new_len < 100)  new_len = 100;
     char* new_low  = NEW_C_HEAP_ARRAY(char, new_len, mtInternal);

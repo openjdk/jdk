@@ -31,6 +31,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/threadHeapSampler.hpp"
+#include "utilities/checkedCast.hpp"
 
 // Cheap random number generator.
 uint64_t ThreadHeapSampler::_rnd;

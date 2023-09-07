@@ -243,7 +243,7 @@ final class CompilerToVM {
      * @param accessingClass the class loader of this class is used for resolution. Must not be null.
      * @param resolve force resolution to a {@link ResolvedJavaType}. If true, this method will
      *            either return a {@link ResolvedJavaType} or throw an exception
-     * @return the type for {@code name} or 0 if resolution failed and {@code resolve == false}
+     * @return the type for {@code name} or {@code null} if resolution failed and {@code resolve == false}
      * @throws NoClassDefFoundError if {@code resolve == true} and the resolution failed
      */
     HotSpotResolvedJavaType lookupType(String name, HotSpotResolvedObjectTypeImpl accessingClass, boolean resolve) throws NoClassDefFoundError {
@@ -560,14 +560,17 @@ final class CompilerToVM {
     private native int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, long constantPoolPointer, int cpci);
 
     /**
-     * Gets the appendix object (if any) associated with the entry at index {@code cpi} in
-     * {@code constantPool}.
+     * Gets the appendix object (if any) associated with the entry identified by {@code which}.
+     *
+     * @param which if negative, is treated as an encoded indy index for INVOKEDYNAMIC;
+     *              Otherwise, it's treated as a constant pool cache index (returned by HotSpotConstantPool::rawIndexToConstantPoolCacheIndex)
+     *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
-    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int cpi) {
-        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which) {
+        return lookupAppendixInPool(constantPool, constantPool.getConstantPoolPointer(), which);
     }
 
-    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which);
 
     /**
      * Installs the result of a compilation into the code cache.

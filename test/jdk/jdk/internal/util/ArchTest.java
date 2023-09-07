@@ -39,6 +39,7 @@ import static jdk.internal.util.Architecture.X64;
 import static jdk.internal.util.Architecture.X86;
 import static jdk.internal.util.Architecture.MIPSEL;
 import static jdk.internal.util.Architecture.MIPS64EL;
+import static jdk.internal.util.Architecture.SPARCV9;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -85,6 +86,7 @@ public class ArchTest {
                 Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isRISCV64()),
                 Arguments.of("s390", S390, 64, ByteOrder.BIG_ENDIAN, Architecture.isS390()),
                 Arguments.of("s390x", S390, 64, ByteOrder.BIG_ENDIAN, Architecture.isS390()),
+                Arguments.of("sparcv9", SPARCV9, 64, ByteOrder.BIG_ENDIAN, Architecture.isSPARCV9()),
                 Arguments.of("x64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64()),
                 Arguments.of("x86", X86, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isX86()),
                 Arguments.of("x86_64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64())
