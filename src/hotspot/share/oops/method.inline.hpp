@@ -139,7 +139,7 @@ inline void Method::clear_number_of_breakpoints() {
     mcs->clear_number_of_breakpoints();
   }
 }
-#endif
+#endif // INCLUDE_JVMTI
 
 #if COMPILER2_OR_JVMCI
 inline void Method::interpreter_throwout_increment(Thread* current) {
