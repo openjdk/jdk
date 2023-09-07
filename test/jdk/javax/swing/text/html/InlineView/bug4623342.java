@@ -21,12 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 4623342
-   @summary  Tests if InlineView causes extra spacing around images in JTable
-   @key headful
-   @run main bug4623342
-*/
+/*
+ * @test
+ * @bug 4623342
+ * @summary  Tests if InlineView causes extra spacing around images in JTable
+ * @key headful
+ * @run main bug4623342
+ */
 
 import java.awt.Robot;
 import java.awt.Shape;
@@ -93,7 +94,7 @@ public class bug4623342 {
         int tableHeight = 0;
         while (!(v instanceof javax.swing.text.html.ParagraphView)) {
             int n = v.getViewCount();
-            Shape sh = v.getChildAllocation(n - 1,  r);
+            Shape sh = v.getChildAllocation(n - 1, r);
             String viewName = v.getClass().getName();
             if (viewName.endsWith("TableView")) {
                 tableHeight = r.getBounds().height;

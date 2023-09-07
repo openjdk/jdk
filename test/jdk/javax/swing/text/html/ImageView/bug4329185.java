@@ -27,7 +27,7 @@
  * @summary  Tests if vertical image alignment is working
  * @key headful
  * @run main bug4329185
-*/
+ */
 
 import java.awt.Robot;
 
