@@ -387,6 +387,7 @@ class MacroAssembler: public Assembler {
         // TSO guarantees other fences already.
       }
     } else {
+      // always generate fence for RVWMO
       Assembler::fence(predecessor, successor);
     }
   }
