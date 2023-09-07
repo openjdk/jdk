@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,17 +72,23 @@ public class GetCanonicalPath {
         return list.stream();
     }
 
-    @Test
-    void testDriveLetter() throws IOException {
-        String path = new File("c:/").getCanonicalPath();
-        assertFalse(path.length() > 3, "Drive letter incorrectly represented");
+    @ParameterizedTest
+    @ValueSource(strings = {"\\\\?", "\\\\?\\", "\\\\?\\UNC", "\\\\?\\UNC\\"})
+    void badPaths(String pathname) {
+        assertThrows(IOException.class, () -> new File(pathname).getCanonicalPath());
     }
 
     @ParameterizedTest
     @MethodSource("pathProvider")
-    void testCanonicalPath(String pathname, String expected) throws IOException {
+    void goodPaths(String pathname, String expected) throws IOException {
         File file = new File(pathname);
         String canonicalPath = file.getCanonicalPath();
         assertEquals(expected, canonicalPath);
+    }
+
+    @Test
+    void driveLetter() throws IOException {
+        String path = new File("c:/").getCanonicalPath();
+        assertFalse(path.length() > 3, "Drive letter incorrectly represented");
     }
 }

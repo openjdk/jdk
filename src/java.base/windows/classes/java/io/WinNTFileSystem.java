@@ -446,6 +446,10 @@ final class WinNTFileSystem extends FileSystem {
                 path = "\\\\" + path.substring(8);
             } else {
                 path = path.substring(4);
+                // if only "UNC" remains, a trailing "\\" was likely removed
+                if (path.equals("UNC")) {
+                    path = "\\\\";
+                }
             }
         }
 
