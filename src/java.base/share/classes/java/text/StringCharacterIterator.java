@@ -46,7 +46,8 @@ import java.util.Objects;
  * {@code StringCharacterIterator} implements the
  * {@code CharacterIterator} protocol for a {@code String}.
  * The {@code StringCharacterIterator} class iterates over the
- * entire {@code String}.
+ * entire {@code String}. All constructors throw {@code NullPointerException}
+ * if {@code text} is {@code null}.
  *
  * @see CharacterIterator
  * @since 1.1
@@ -64,7 +65,6 @@ public final class StringCharacterIterator implements CharacterIterator
      * Constructs an iterator with an initial index of 0.
      *
      * @param text the {@code String} to be iterated over
-     * @throws NullPointerException if {@code text} is {@code null}
      */
     public StringCharacterIterator(String text) {
         this(text, 0);
@@ -75,7 +75,6 @@ public final class StringCharacterIterator implements CharacterIterator
      *
      * @param  text   The String to be iterated over
      * @param  pos    Initial iterator position
-     * @throws NullPointerException if {@code text} is {@code null}
      * @throws IllegalArgumentException if {@code pos} is not within the bounds of
      * range (inclusive) from {@code 0} to the length of {@code text}
      */
@@ -91,7 +90,6 @@ public final class StringCharacterIterator implements CharacterIterator
      * @param  begin  Index of the first character
      * @param  end    Index of the character following the last character
      * @param  pos    Initial iterator position
-     * @throws NullPointerException if {@code text} is {@code null}
      * @throws IllegalArgumentException if {@code begin} and {@code end} are not
      * within the bounds of range (inclusive) from {@code 0} to the length of {@code text},
      * {@code begin} is greater than {@code end}, or {@code pos} is not within
