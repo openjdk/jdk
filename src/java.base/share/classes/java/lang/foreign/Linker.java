@@ -148,7 +148,8 @@ import java.util.stream.Stream;
  * the C type {@code unsigned long} maps to the layout constant {@link ValueLayout#JAVA_LONG} on Linux/x64, but maps to
  * the layout constant {@link ValueLayout#JAVA_INT} on Windows/x64.
  * <p>
- * The following table shows some examples of how C types are modelled in Linux/x64 (all the examples provided
+ * The following table shows some examples of how C types are modelled in Linux/x64 according to the
+ * "System V Application Binary Interface - AMD64 Architecture Processor Supplement" (all the examples provided
  * here will assume these platform-dependent mappings):
  *
  * <blockquote><table class="plain">
