@@ -47,7 +47,7 @@ class ASN1FormatterTest {
     private static final String DIR = System.getProperty("test.src", ".");
 
     @Test
-    static void testPEM() throws IOException {
+    void testPEM() throws IOException {
         String certFile = "openssl.p12.pem";
         Path certPath = Path.of(DIR, certFile);
         System.out.println("certPath: " + certPath);
@@ -73,7 +73,7 @@ class ASN1FormatterTest {
     }
 
     @Test
-    static void dumpPEM() throws IOException {
+    void dumpPEM() throws IOException {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);
         System.out.println("path: " + path);
@@ -101,7 +101,7 @@ class ASN1FormatterTest {
     }
 
     @Test
-    static void testIndefinite() {
+    void testIndefinite() {
         byte[] bytes = {0x24, (byte) 0x80, 4, 2, 'a', 'b', 4, 2, 'c', 'd', 0, 0};
         HexPrinter p = HexPrinter.simple()
                 .formatter(ASN1Formatter.formatter(), "; ", 100);
@@ -117,7 +117,7 @@ class ASN1FormatterTest {
     }
 
     @Test
-    static void testMain() {
+    void testMain() {
         String file = "openssl.p12.pem";
         Path path = Path.of(DIR, file);
         String[] args = { path.toString() };

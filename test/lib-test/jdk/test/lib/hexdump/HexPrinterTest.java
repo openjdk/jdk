@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class HexPrinterTest {
 
     @Test
-    static void testMinimalToStringByteArray() {
+    void testMinimalToStringByteArray() {
         int len = 16;
         byte[] bytes = genData(len);
         StringBuilder expected = new StringBuilder(bytes.length * 2);
@@ -166,7 +166,7 @@ class HexPrinterTest {
     }
 
     @Test
-    static void testPrintable() {
+    void testPrintable() {
         String expected =
                 "................................" +
                 " !\"#$%&'()*+,-./0123456789:;<=>?" +
@@ -187,7 +187,7 @@ class HexPrinterTest {
     }
 
     @Test
-    static void testASCII() {
+    void testASCII() {
         String expected = "\\nul\\soh\\stx\\etx\\eot\\enq\\ack\\bel\\b\\t\\n\\vt\\f\\r\\so\\si\\dle" +
                 "\\dc1\\dc2\\dc3\\dc4\\nak\\syn\\etb\\can\\em\\sub\\esc\\fs\\gs\\rs\\us" +
                 " !\"#$%&'()*+,-./0123456789:;<=>?" +
@@ -256,7 +256,7 @@ class HexPrinterTest {
 
     @ParameterizedTest
     @MethodSource("formatterParams")
-    static void testHexPrinterPrimFormatter(Class<?> primClass, String fmtString) {
+    void testHexPrinterPrimFormatter(Class<?> primClass, String fmtString) {
         // Create a byte array with data for two lines
         int colWidth = 8;
         byte[] bytes = genData(colWidth);

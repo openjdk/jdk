@@ -137,7 +137,7 @@ class ObjectStreamPrinterTest {
      */
     @ParameterizedTest
     @MethodSource("serializables")
-    static void standAlonePrinter(Object[] objs, int descriptors, int objects, int strings) throws IOException{
+    void standAlonePrinter(Object[] objs, int descriptors, int objects, int strings) throws IOException{
         byte[] bytes = serializeObjects(objs);
         StringBuilder sb = new StringBuilder();
 
@@ -175,7 +175,7 @@ class ObjectStreamPrinterTest {
      */
     @ParameterizedTest
     @MethodSource("sources")
-    static void singleObjects(String label, Object o, int descriptors, int objects, int strings) throws IOException {
+    void singleObjects(String label, Object o, int descriptors, int objects, int strings) throws IOException {
         if (DEBUG)
             System.out.println("Case: " + label);
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
@@ -202,7 +202,7 @@ class ObjectStreamPrinterTest {
      * @throws IOException if any I/O exception occurs
      */
     @Test
-    static void longString() throws IOException {
+    void longString() throws IOException {
         String large = " 123456789abcedf".repeat(0x1000);
 
         ByteArrayOutputStream boas = new ByteArrayOutputStream();
@@ -234,7 +234,7 @@ class ObjectStreamPrinterTest {
      * @throws IOException if an I/O exception occurs
      */
     @Test
-    static void testMain() throws IOException {
+    void testMain() throws IOException {
         Object[] objs = {genList()};
         byte[] bytes = serializeObjects(objs);   // A serialized List
         Path p = Path.of("scratch.tmp");

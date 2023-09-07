@@ -128,7 +128,7 @@ class StreamDumpTest {
      */
     @ParameterizedTest
     @MethodSource("serializables")
-    static void testStreamDump(String[] args, int expectedStatus, int expectedStdout, int expectedStderr) throws IOException {
+    void testStreamDump(String[] args, int expectedStatus, int expectedStdout, int expectedStderr) throws IOException {
         List<String> argList = new ArrayList<>();
         argList.add(testJDK + "/bin/" + "java");
         argList.add("-classpath");
