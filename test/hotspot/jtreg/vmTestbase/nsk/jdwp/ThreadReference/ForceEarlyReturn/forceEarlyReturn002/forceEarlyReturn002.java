@@ -161,7 +161,9 @@ public class forceEarlyReturn002 extends TestDebuggerType1 {
             CommandPacket command = new CommandPacket(JDWP.Command.EventRequest.Set);
             command.addByte(JDWP.EventKind.THREAD_START);
             command.addByte(JDWP.SuspendPolicy.ALL);
-            // THREAD_ONLY modifier
+            // we want the THREAD_START event only for the test thread
+            // and not any others that might be started by debuggee VM,
+            // so add THREAD_ONLY modifier
             command.addInt(1);
             command.addByte(JDWP.EventModifierKind.THREAD_ONLY);
             command.addObjectID(newThreadId);
