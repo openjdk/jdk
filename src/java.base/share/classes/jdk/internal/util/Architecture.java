@@ -49,7 +49,7 @@ public enum Architecture {
     RISCV64(64, ByteOrder.LITTLE_ENDIAN),
     LOONGARCH64(64, ByteOrder.LITTLE_ENDIAN),
     S390(64, ByteOrder.BIG_ENDIAN),
-    PPC(32, ByteOrder.BIG_ENDIAN),
+    PPC32(32, ByteOrder.BIG_ENDIAN),
     PPC64(64, ByteOrder.BIG_ENDIAN),
     PPC64LE(64, ByteOrder.LITTLE_ENDIAN),
     MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
@@ -157,11 +157,11 @@ public enum Architecture {
     }
 
     /**
-     * {@return {@code true} if the current architecture is PPC, big-endian}
+     * {@return {@code true} if the current architecture is PPC32, big-endian}
      */
     @ForceInline
-    public static boolean isPPC() {
-        return PlatformProps.TARGET_ARCH_IS_PPC;
+    public static boolean isPPC32() {
+        return PlatformProps.TARGET_ARCH_IS_PPC32;
     }
 
     /**
