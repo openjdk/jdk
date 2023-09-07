@@ -91,8 +91,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * elements. Refer to the method description for more detail.
  * <p>
  * On parsing, if some ambiguity is found in the input string, such as delimiting
- * sequences being found in the input string, may produce the result that when formatted is not a
- * round-trip with the corresponding formatting. For example, a two element String list
+ * sequences in the input string, the result, when formatted with the same formatting, does not
+ * re-produce the input string. For example, a two element String list
  * "a, b,", "c" will be formatted as "a, b, and c", but may be parsed as three elements
  * "a", "b", "c".
  *
