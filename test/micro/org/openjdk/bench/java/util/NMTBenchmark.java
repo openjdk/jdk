@@ -27,6 +27,7 @@ import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import jdk.internal.misc.Unsafe;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The purpose of these microbenchmarks is to get the overhead of NMT in disable/summary/detail mode.
@@ -129,6 +130,8 @@ public abstract class NMTBenchmark {
         }
       }
     } else { // No threads used.
+      if (THREADS != 2)
+        return;
       for (int i = 0; i < N; i++) {
         addresses[i] = unsafe.allocateMemory(S);
         //Mixing alloc/free
