@@ -926,10 +926,10 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
 
-    LIR_Opr data_offset_reg = new_pointer_register();
+    LIR_Opr data_offset_reg = new_register(T_INT);
     __ cmove(lir_cond(cond),
-             LIR_OprFact::intptrConst(taken_count_offset),
-             LIR_OprFact::intptrConst(not_taken_count_offset),
+             LIR_OprFact::intConst(taken_count_offset),
+             LIR_OprFact::intConst(not_taken_count_offset),
              data_offset_reg, as_BasicType(if_instr->x()->type()));
 
     // MDO cells are intptr_t, so the data_reg width is arch-dependent.
@@ -2329,16 +2329,16 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
     int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
-    LIR_Opr data_offset_reg = new_pointer_register();
-    LIR_Opr tmp_reg = new_pointer_register();
+    LIR_Opr data_offset_reg = new_register(T_INT);
+    LIR_Opr tmp_reg = new_register(T_INT);
 
-    __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
+    __ move(LIR_OprFact::intConst(default_count_offset), data_offset_reg);
     for (int i = 0; i < len; i++) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, i + lo_key);
       __ move(data_offset_reg, tmp_reg);
       __ cmove(lir_cond_equal,
-               LIR_OprFact::intptrConst(count_offset),
+               LIR_OprFact::intConst(count_offset),
                tmp_reg,
                data_offset_reg, T_INT);
     }
@@ -2387,16 +2387,16 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
     int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
     LIR_Opr md_reg = new_register(T_METADATA);
     __ metadata2reg(md->constant_encoding(), md_reg);
-    LIR_Opr data_offset_reg = new_pointer_register();
-    LIR_Opr tmp_reg = new_pointer_register();
+    LIR_Opr data_offset_reg = new_register(T_INT);
+    LIR_Opr tmp_reg = new_register(T_INT);
 
-    __ move(LIR_OprFact::intptrConst(default_count_offset), data_offset_reg);
+    __ move(LIR_OprFact::intConst(default_count_offset), data_offset_reg);
     for (int i = 0; i < len; i++) {
       int count_offset = md->byte_offset_of_slot(data, MultiBranchData::case_count_offset(i));
       __ cmp(lir_cond_equal, value, x->key_at(i));
       __ move(data_offset_reg, tmp_reg);
       __ cmove(lir_cond_equal,
-               LIR_OprFact::intptrConst(count_offset),
+               LIR_OprFact::intConst(count_offset),
                tmp_reg,
                data_offset_reg, T_INT);
     }
