@@ -29,6 +29,11 @@ import jdk.internal.vm.ContinuationScope;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
 
+/**
+ * StackFrameInfo is an implementation of StackFrame that contains the
+ * class and method information.  This is used by stack walker configured
+ * without StackWalker.Option#DROP_METHOD_INFO.
+ */
 class StackFrameInfo extends ClassFrameInfo {
     private String name;
     private Object type;          // String or MethodType

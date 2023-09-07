@@ -28,12 +28,28 @@ import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import java.lang.StackWalker.StackFrame;
 
+/**
+ * ClassFrameInfo is an implementation of StackFrame that contains only
+ * the class name and declaring class.
+ *
+ * Methods that access the method information such as method name,
+ * will throw UnsupportedOperationException.
+ *
+ * @see StackWalker.Option#DROP_METHOD_INFO
+ */
 class ClassFrameInfo implements StackFrame {
     static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
     Object classOrMemberName;    // Class or ResolvedMemberName initialized by VM
     int flags;                   // updated by VM to set hidden and caller-sensitive bits
 
+    /*
+     * Construct an empty ClassFrameInfo object that will be filled by the VM
+     * during stack walking.
+     *
+     * @see StackStreamFactory.AbstractStackWalker#callStackWalk
+     * @see StackStreamFactory.AbstractStackWalker#fetchStackFrames
+     */
     ClassFrameInfo(StackWalker walker) {
         this.flags = walker.retainClassRef ? RETAIN_CLASS_REF_BIT : 0;
     }

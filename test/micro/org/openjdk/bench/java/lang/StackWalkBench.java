@@ -57,7 +57,7 @@ public class StackWalkBench {
 
     static StackWalker walker(String name) {
         return switch (name) {
-            case "default" -> WALKER;
+            case "class+method" -> WALKER;
             case "class_only" -> WALKER_CLASS_ONLY;
             default -> throw new IllegalArgumentException(name);
         };
