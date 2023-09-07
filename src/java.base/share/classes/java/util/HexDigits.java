@@ -47,11 +47,11 @@ final class HexDigits implements Digits {
         short[] digits = new short[16 * 16];
 
         for (int i = 0; i < 16; i++) {
-            short hi = (short) (i < 10 ? i + '0' : i - 10 + 'a');
+            short lo = (short) (i < 10 ? i + '0' : i - 10 + 'a');
 
             for (int j = 0; j < 16; j++) {
-                short lo = (short) ((j < 10 ? j + '0' : j - 10 + 'a') << 8);
-                digits[(i << 4) + j] = (short) (hi | lo);
+                short hi = (short) ((j < 10 ? j + '0' : j - 10 + 'a') << 8);
+                digits[(i << 4) + j] = (short) (lo | hi);
             }
         }
 
