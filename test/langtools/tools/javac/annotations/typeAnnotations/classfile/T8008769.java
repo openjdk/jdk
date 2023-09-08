@@ -26,12 +26,17 @@
  * @summary Repeated type-annotations on type parm of local variable
  *          are not written to classfile.
  * @bug 8008769
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 
 public class T8008769 extends ClassfileTestHelper{
     public static void main(String[] args) throws Exception {
@@ -40,9 +45,9 @@ public class T8008769 extends ClassfileTestHelper{
 
     public void run() throws Exception {
         expected_tvisibles = 4;
-        ClassFile cf = getClassFile("T8008769$Test.class");
-        for (Method m : cf.methods) {
-            test(cf, m, true);
+        ClassModel cm = getClassFile("T8008769$Test.class");
+        for (MethodModel mm : cm.methods()) {
+            test(mm, true);
         }
         countAnnotations();
 

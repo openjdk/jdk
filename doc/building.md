@@ -884,11 +884,11 @@ Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 Building of Hotspot Gtest suite requires the source code of Google
 Test framework.  The top directory, which contains both `googletest`
 and `googlemock` directories, should be specified via `--with-gtest`.
-The minimum supported version of Google Test is 1.13.0, whose source
+The minimum supported version of Google Test is 1.14.0, whose source
 code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
- * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.14.0)
+ * or by checking out `v1.14.0` tag of `googletest` project: `git clone -b v1.14.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -2032,20 +2032,7 @@ First of all: Thank you! We gladly welcome your contribution.
 However, please bear in mind that the JDK is a massive project, and we must ask
 you to follow our rules and guidelines to be able to accept your contribution.
 
-The official place to start is the ['How to contribute' page](
-http://openjdk.org/contribute/). There is also an official (but somewhat
-outdated and skimpy on details) [Developer's Guide](
-http://openjdk.org/guide/).
-
-If this seems overwhelming to you, the Adoption Group is there to help you! A
-good place to start is their ['New Contributor' page](
-https://wiki.openjdk.org/display/Adoption/New+Contributor), or start
-reading the comprehensive [Getting Started Kit](
-https://adoptopenjdk.gitbooks.io/adoptopenjdk-getting-started-kit/en/). The
-Adoption Group will also happily answer any questions you have about
-contributing. Contact them by [mail](
-http://mail.openjdk.org/mailman/listinfo/adoption-discuss) or [IRC](
-http://openjdk.org/irc/).
+The official place to start is the [OpenJDK Developers’ Guide](https://openjdk.org/guide/).
 
 ## Editing this document
 

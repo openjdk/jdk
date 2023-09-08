@@ -118,7 +118,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).options().processLineNumbers)
+            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == Classfile.LineNumbersOption.PASS_LINE_NUMBERS)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -150,6 +150,7 @@ public final class CodeImpl
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
+                                    ((BufWriterImpl)buf).context(),
                                     null).writeTo(buf);
         }
     }
@@ -166,7 +167,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (((ClassReaderImpl)classReader).options().processDebug)
+        if (((ClassReaderImpl)classReader).context().debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)

@@ -419,4 +419,3 @@ public class HttpClientLocalAddrTest implements HttpServerAdapters {
         }
     }
 }
-

@@ -69,8 +69,6 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
-compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
-
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
 #############################################################################
@@ -104,6 +102,8 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
+runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
+runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -121,13 +121,13 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
-serviceability/sa/ClhsdbCDSCore.java 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
@@ -151,13 +151,12 @@ vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
 vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach002a/TestDescription.java 8307462 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI05/ji05t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/jni_interception/JI06/ji06t001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/SetJNIFunctionTable/setjniftab001/TestDescription.java 8219652 aix-ppc64
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
-vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-x64
+vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
 

@@ -478,6 +478,27 @@ endif
 
 ################################################################################
 
+ifneq ($(filter static-libs-graal-bundles, $(MAKECMDGOALS)), )
+  STATIC_LIBS_GRAAL_BUNDLE_FILES := $(call FindFiles, $(STATIC_LIBS_GRAAL_IMAGE_DIR))
+
+  ifeq ($(OPENJDK_TARGET_OS)-$(DEBUG_LEVEL), macosx-release)
+    STATIC_LIBS_GRAAL_BUNDLE_SUBDIR := $(JDK_MACOSX_CONTENTS_SUBDIR)/Home
+  else
+    STATIC_LIBS_GRAAL_BUNDLE_SUBDIR := $(JDK_BUNDLE_SUBDIR)
+  endif
+
+  $(eval $(call SetupBundleFile, BUILD_STATIC_LIBS_GRAAL_BUNDLE, \
+      BUNDLE_NAME := $(STATIC_LIBS_GRAAL_BUNDLE_NAME), \
+      FILES := $(STATIC_LIBS_GRAAL_BUNDLE_FILES), \
+      BASE_DIRS := $(STATIC_LIBS_GRAAL_IMAGE_DIR), \
+      SUBDIR := $(STATIC_LIBS_GRAAL_BUNDLE_SUBDIR), \
+  ))
+
+  STATIC_LIBS_GRAAL_TARGETS += $(BUILD_STATIC_LIBS_GRAAL_BUNDLE)
+endif
+
+################################################################################
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, Bundles.gmk))
 
@@ -490,8 +511,9 @@ docs-jdk-bundles: $(DOCS_JDK_TARGETS)
 docs-javase-bundles: $(DOCS_JAVASE_TARGETS)
 docs-reference-bundles: $(DOCS_REFERENCE_TARGETS)
 static-libs-bundles: $(STATIC_LIBS_TARGETS)
+static-libs-graal-bundles: $(STATIC_LIBS_GRAAL_TARGETS)
 jcov-bundles: $(JCOV_TARGETS)
 
 .PHONY: all default product-bundles test-bundles \
     docs-jdk-bundles docs-javase-bundles docs-reference-bundles \
-    static-libs-bundles jcov-bundles
+    static-libs-bundles static-libs-graal-bundles jcov-bundles

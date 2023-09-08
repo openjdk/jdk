@@ -74,6 +74,10 @@ public:
 
   // Does the write. Returns null on success and a static error message otherwise.
   virtual char const* write_buf(char* buf, ssize_t size);
+
+  const char* get_file_path() { return _path; }
+
+  bool is_overwrite() const { return _overwrite; }
 };
 
 
@@ -96,146 +100,5 @@ public:
   virtual char const* compress(char* in, size_t in_size, char* out, size_t out_size,
                                char* tmp, size_t tmp_size, size_t* compressed_size);
 };
-
-
-// The data needed to write a single buffer (and compress it optionally).
-struct WriteWork {
-  // The id of the work.
-  int64_t _id;
-
-  // The input buffer where the raw data is
-  char* _in;
-  size_t _in_used;
-  size_t _in_max;
-
-  // The output buffer where the compressed data is. Is null when compression is disabled.
-  char* _out;
-  size_t _out_used;
-  size_t _out_max;
-
-  // The temporary space needed for compression. Is null when compression is disabled.
-  char* _tmp;
-  size_t _tmp_max;
-
-  // Used to link WriteWorks into lists.
-  WriteWork* _next;
-  WriteWork* _prev;
-};
-
-// A list for works.
-class WorkList {
-private:
-  WriteWork _head;
-
-  void insert(WriteWork* before, WriteWork* work);
-  WriteWork* remove(WriteWork* work);
-
-public:
-  WorkList();
-
-  // Return true if the list is empty.
-  bool is_empty() { return _head._next == &_head; }
-
-  // Adds to the beginning of the list.
-  void add_first(WriteWork* work) { insert(&_head, work); }
-
-  // Adds to the end of the list.
-  void add_last(WriteWork* work) { insert(_head._prev, work); }
-
-  // Adds so the ids are ordered.
-  void add_by_id(WriteWork* work);
-
-  // Returns the first element.
-  WriteWork* first() { return is_empty() ? nullptr : _head._next; }
-
-  // Returns the last element.
-  WriteWork* last() { return is_empty() ? nullptr : _head._prev; }
-
-  // Removes the first element. Returns null if empty.
-  WriteWork* remove_first() { return remove(first()); }
-
-  // Removes the last element. Returns null if empty.
-  WriteWork* remove_last() { return remove(first()); }
-};
-
-
-class Monitor;
-
-// This class is used by the DumpWriter class. It supplies the DumpWriter with
-// chunks of memory to write the heap dump data into. When the DumpWriter needs a
-// new memory chunk, it calls get_new_buffer(), which commits the old chunk used
-// and returns a new chunk. The old chunk is then added to a queue to be compressed
-// and then written in the background.
-class CompressionBackend : StackObj {
-  bool _active;
-  char const * _err;
-
-  int _nr_of_threads;
-  int _works_created;
-  bool _work_creation_failed;
-
-  int64_t _id_to_write;
-  int64_t _next_id;
-
-  size_t _in_size;
-  size_t _max_waste;
-  size_t _out_size;
-  size_t _tmp_size;
-
-  size_t _written;
-
-  AbstractWriter* const _writer;
-  AbstractCompressor* const _compressor;
-
-  Monitor* const _lock;
-
-  WriteWork* _current;
-  WorkList _to_compress;
-  WorkList _unused;
-  WorkList _finished;
-
-  void set_error(char const* new_error);
-
-  WriteWork* allocate_work(size_t in_size, size_t out_size, size_t tmp_size);
-  void free_work(WriteWork* work);
-  void free_work_list(WorkList* list);
-
-  void do_foreground_work();
-  WriteWork* get_work();
-  void do_compress(WriteWork* work);
-  void finish_work(WriteWork* work);
-  void flush_buffer(MonitorLocker* ml);
-
-public:
-  // compressor can be null if no compression is used.
-  // Takes ownership of the writer and compressor.
-  // block_size is the buffer size of a WriteWork.
-  // max_waste is the maximum number of bytes to leave
-  // empty in the buffer when it is written.
-  CompressionBackend(AbstractWriter* writer, AbstractCompressor* compressor,
-    size_t block_size, size_t max_waste);
-
-  ~CompressionBackend();
-
-  size_t get_written() const { return _written; }
-
-  char const* error() const { return _err; }
-
-  // Sets up an internal buffer, fills with external buffer, and sends to compressor.
-  void flush_external_buffer(char* buffer, size_t used, size_t max);
-
-  // Commits the old buffer (using the value in *used) and sets up a new one.
-  void get_new_buffer(char** buffer, size_t* used, size_t* max, bool force_reset = false);
-
-  // The entry point for a worker thread.
-  void thread_loop();
-
-  // Shuts down the backend, releasing all threads.
-  void deactivate();
-
-  // Flush all compressed data in buffer to file
-  void flush_buffer();
-};
-
 
 #endif // SHARE_SERVICES_HEAPDUMPERCOMPRESSION_HPP

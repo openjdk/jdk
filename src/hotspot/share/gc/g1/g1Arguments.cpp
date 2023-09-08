@@ -30,6 +30,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -131,11 +132,13 @@ void G1Arguments::initialize_mark_stack_size() {
 void G1Arguments::initialize_card_set_configuration() {
   assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
-  const int LOG_M = 20;
-  uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
+  const uint LOG_M = 20;
+  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
+  uint region_size_log_mb = HeapRegion::LogOfHRGrainBytes - LOG_M;
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift());
+    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogCardsPerRegion);
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
@@ -229,7 +232,7 @@ void G1Arguments::initialize() {
 
   // By default do not let the target stack size to be more than 1/4 of the entries
   if (FLAG_IS_DEFAULT(GCDrainStackTargetSize)) {
-    FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, (uintx)TASKQUEUE_SIZE / 4));
+    FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, TASKQUEUE_SIZE / 4));
   }
 
 #ifdef COMPILER2
@@ -265,4 +268,3 @@ CollectedHeap* G1Arguments::create_heap() {
 size_t G1Arguments::heap_reserved_size_bytes() {
   return MaxHeapSize;
 }
-

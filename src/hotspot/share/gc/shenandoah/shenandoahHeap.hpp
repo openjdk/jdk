@@ -29,6 +29,7 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
@@ -116,7 +117,7 @@ typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
 // See ShenandoahControlThread for GC cycle structure.
 //
-class ShenandoahHeap : public CollectedHeap {
+class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahAsserts;
   friend class VMStructs;
   friend class ShenandoahGCSession;
@@ -191,16 +192,17 @@ public:
   void decrease_committed(size_t bytes);
   void increase_allocated(size_t bytes);
 
-  size_t bytes_allocated_since_gc_start();
+  size_t bytes_allocated_since_gc_start() const override;
   void reset_bytes_allocated_since_gc_start();
 
   size_t min_capacity()      const;
   size_t max_capacity()      const override;
-  size_t soft_max_capacity() const;
+  size_t soft_max_capacity() const override;
   size_t initial_capacity()  const;
   size_t capacity()          const override;
   size_t used()              const override;
   size_t committed()         const;
+  size_t available()         const override;
 
   void set_soft_max_capacity(size_t v);
 
@@ -236,10 +238,10 @@ public:
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
 
-  inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
+  inline ShenandoahHeapRegion* heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
 
-  inline ShenandoahHeapRegion* const get_region(size_t region_idx) const;
+  inline ShenandoahHeapRegion* get_region(size_t region_idx) const;
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;

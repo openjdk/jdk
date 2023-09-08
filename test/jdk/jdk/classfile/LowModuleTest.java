@@ -68,7 +68,7 @@ class LowModuleTest {
     void testRead(Path path, TestInfo test) throws Exception {
         try {
             printf("%nCHECK %s%n", test.getDisplayName());
-            ClassModel classLow = Classfile.parse(path);
+            ClassModel classLow = Classfile.of().parse(path);
             testRead0(classLow);
         } catch(Exception ex) {
             System.err.printf("%nFAIL %s - %s%n", path, ex);

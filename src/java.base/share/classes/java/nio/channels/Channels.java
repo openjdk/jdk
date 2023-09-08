@@ -260,8 +260,10 @@ public final class Channels {
      * Constructs a channel that reads bytes from the given stream.
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
-     * its I/O operations to the given stream.  Closing the channel will in
-     * turn cause the stream to be closed.  </p>
+     * its I/O operations to the given stream. Reading from the resulting
+     * channel will read from the input stream and thus block until input is
+     * available or end of file is reached. Closing the channel will in turn
+     * cause the stream to be closed.  </p>
      *
      * @param  in
      *         The stream from which bytes are to be read

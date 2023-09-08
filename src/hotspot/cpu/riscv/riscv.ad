@@ -1872,7 +1872,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -1907,6 +1907,11 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.
@@ -1921,7 +1926,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1954,7 +1959,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
@@ -1969,11 +1974,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
@@ -1988,12 +1993,12 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   assert(MaxVectorSize >= len, "");
   if (UseRVV) {
     return Op_VecA;
@@ -2003,7 +2008,7 @@ const uint Matcher::vector_ideal_reg(int len) {
   return 0;
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -2176,7 +2181,7 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
 encode %{
   // BEGIN Non-volatile memory access
 
-  enc_class riscv_enc_li_imm(iRegIorL dst, immIorL src) %{
+  enc_class riscv_enc_mov_imm(iRegIorL dst, immIorL src) %{
     C2_MacroAssembler _masm(&cbuf);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
@@ -4965,9 +4970,9 @@ instruct loadConI(iRegINoSp dst, immI src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# int, #@loadConI" %}
+  format %{ "mv $dst, $src\t# int, #@loadConI" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -4978,9 +4983,9 @@ instruct loadConL(iRegLNoSp dst, immL src)
   match(Set dst src);
 
   ins_cost(ALU_COST);
-  format %{ "li $dst, $src\t# long, #@loadConL" %}
+  format %{ "mv $dst, $src\t# long, #@loadConL" %}
 
-  ins_encode(riscv_enc_li_imm(dst, src));
+  ins_encode(riscv_enc_mov_imm(dst, src));
 
   ins_pipe(ialu_imm);
 %}
@@ -6859,6 +6864,21 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(IMUL_COST);
+  format %{ "mulhu  $dst, $src1, $src2\t# umulhi, #@umulHiL_rReg" %}
+
+  ins_encode %{
+    __ mulhu(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
@@ -7271,13 +7291,13 @@ instruct mulD_reg_reg(fRegD dst, fRegD src1, fRegD src2) %{
 
 // src1 * src2 + src3
 instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF src3 (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fmadd.s  $dst, $src1, $src2, $src3\t#@maddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7289,13 +7309,13 @@ instruct maddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 + src3
 instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fmadd.d  $dst, $src1, $src2, $src3\t#@maddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7307,13 +7327,13 @@ instruct maddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
 
 // src1 * src2 - src3
 instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fmsub.s  $dst, $src1, $src2, $src3\t#@msubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_s(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7325,13 +7345,13 @@ instruct msubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
 
 // src1 * src2 - src3
 instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fmsub.d  $dst, $src1, $src2, $src3\t#@msubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub_d(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -7341,16 +7361,16 @@ instruct msubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fnmsub.s  $dst, $src1, $src2, $src3\t#@nmsubF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7360,16 +7380,16 @@ instruct nmsubF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fnmsub.d  $dst, $src1, $src2, $src3\t#@nmsubD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7379,16 +7399,16 @@ instruct nmsubD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   ins_cost(FMUL_SINGLE_COST);
   format %{ "fnmadd.s  $dst, $src1, $src2, $src3\t#@nmaddF_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_s(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7398,16 +7418,16 @@ instruct nmaddF_reg_reg(fRegF dst, fRegF src1, fRegF src2, fRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct nmaddD_reg_reg(fRegD dst, fRegD src1, fRegD src2, fRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   ins_cost(FMUL_DOUBLE_COST);
   format %{ "fnmadd.d  $dst, $src1, $src2, $src3\t#@nmaddD_reg_reg" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd_d(as_FloatRegister($dst$$reg),
                 as_FloatRegister($src1$$reg),
                 as_FloatRegister($src2$$reg),
@@ -7687,6 +7707,20 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
   %}
 
   ins_pipe(fp_sqrt_d);
+%}
+
+// Round Instruction
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(2 * XFER_COST + BRANCH_COST);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "RoundDoubleMode $src, $rmode" %}
+  ins_encode %{
+    __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Arithmetic Instructions End

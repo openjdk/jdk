@@ -118,6 +118,8 @@ import java.util.function.BiFunction;
  * SymbolLookup stdlib = nativeLinker.defaultLookup();
  * MemorySegment malloc = stdlib.find("malloc").orElseThrow();
  *}
+ *
+ * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 @FunctionalInterface

@@ -156,7 +156,7 @@ void NamedThread::print_on(outputStream* st) const {
 // timer interrupts exists on the platform.
 
 WatcherThread* WatcherThread::_watcher_thread   = nullptr;
-bool WatcherThread::_startable = false;
+bool WatcherThread::_run_all_tasks = false;
 volatile bool  WatcherThread::_should_terminate = false;
 
 WatcherThread::WatcherThread() : NonJavaThread() {
@@ -183,6 +183,11 @@ int WatcherThread::sleep() const {
   if (_should_terminate) {
     // check for termination before we do any housekeeping or wait
     return 0;  // we did not sleep.
+  }
+
+  if (!_run_all_tasks) {
+    ml.wait(100);
+    return 0;
   }
 
   // remaining will be zero if there are no tasks,
@@ -280,7 +285,10 @@ void WatcherThread::run() {
       break;
     }
 
-    PeriodicTask::real_time_tick(time_waited);
+    // Don't process enrolled tasks until VM is fully initialized.
+    if (_run_all_tasks) {
+      PeriodicTask::real_time_tick(time_waited);
+    }
   }
 
   // Signal that it is terminated
@@ -293,18 +301,16 @@ void WatcherThread::run() {
 }
 
 void WatcherThread::start() {
-  assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
-
-  if (watcher_thread() == nullptr && _startable) {
-    _should_terminate = false;
-    // Create the single instance of WatcherThread
-    new WatcherThread();
-  }
+  MonitorLocker ml(PeriodicTask_lock);
+  _should_terminate = false;
+  // Create the single instance of WatcherThread
+  new WatcherThread();
 }
 
-void WatcherThread::make_startable() {
-  assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
-  _startable = true;
+void WatcherThread::run_all_tasks() {
+  MonitorLocker ml(PeriodicTask_lock);
+  _run_all_tasks = true;
+  ml.notify();
 }
 
 void WatcherThread::stop() {

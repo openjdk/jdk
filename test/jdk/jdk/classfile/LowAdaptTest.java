@@ -56,7 +56,8 @@ class LowAdaptTest {
 
     @Test
     void testAdapt() throws Exception {
-        ClassModel cl = Classfile.parse(Paths.get(URI.create(LowAdaptTest.class.getResource(test + ".class").toString())));
+        var cc = Classfile.of();
+        ClassModel cl = cc.parse(Paths.get(URI.create(LowAdaptTest.class.getResource(test + ".class").toString())));
 
         DirectMethodHandleDesc bsm = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC,
                                                                ClassDesc.of("java.lang.invoke.LambdaMetafactory"),
@@ -73,7 +74,7 @@ class LowAdaptTest {
                                                           MethodHandleDesc.of(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of(test), "fib", "(I)I"),
                                                           MethodTypeDesc.ofDescriptor("(I)I"));
 
-        byte[] clazz = Classfile.build(ClassDesc.of(test), cb -> {
+        byte[] clazz = cc.build(ClassDesc.of(test), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of("/some/madeup/TestClass.java"));
             cl.methods().forEach(m -> ((DirectClassBuilder) cb).withMethod(m));

@@ -30,7 +30,9 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interp_masm_ppc.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -487,8 +489,25 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
 
   // Get address of invokedynamic array
   ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   sldi(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  add(cache, cache, index);
+}
+
+void InterpreterMacroAssembler::load_field_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  // Take shortcut if the size is a power of 2
+  if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
+    // Scale index by power of 2
+    sldi(index, index, log2i_exact(sizeof(ResolvedFieldEntry)));
+  } else {
+    // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
+    mulli(index, index, sizeof(ResolvedFieldEntry));
+  }
+  // Get address of field entries array
+  ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
+  addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
@@ -888,6 +907,12 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // Test if reserved zone needs to be enabled.
     Label no_reserved_zone_enabling;
 
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    lwz(R0, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
+    cmpwi(CCR0, R0, StackOverflow::stack_guard_enabled);
+    beq_predict_taken(CCR0, no_reserved_zone_enabling);
+
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent
     // call could have a smaller SP, so that this compare succeeds for an
@@ -1217,6 +1242,9 @@ void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, R
   save_interpreter_state(Rscratch2);
 #ifdef ASSERT
   ld(Rscratch1, _ijava_state_neg(top_frame_sp), Rscratch2); // Rscratch2 contains fp
+  sldi(Rscratch1, Rscratch1, Interpreter::logStackElementSize);
+  add(Rscratch1, Rscratch1, Rscratch2); // Rscratch2 contains fp
+  // Compare sender_sp with the derelativized top_frame_sp
   cmpd(CCR0, R21_sender_SP, Rscratch1);
   asm_assert_eq("top_frame_sp incorrect");
 #endif
@@ -1991,7 +2019,10 @@ void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Regist
          "size of a monitor must respect alignment of SP");
 
   resize_frame(-monitor_size, /*temp*/esp); // Allocate space for new monitor
-  std(R1_SP, _ijava_state_neg(top_frame_sp), esp); // esp contains fp
+  subf(Rtemp2, esp, R1_SP); // esp contains fp
+  sradi(Rtemp2, Rtemp2, Interpreter::logStackElementSize);
+  // Store relativized top_frame_sp
+  std(Rtemp2, _ijava_state_neg(top_frame_sp), esp); // esp contains fp
 
   // Shuffle expression stack down. Recall that stack_base points
   // just above the new expression stack bottom. Old_tos and new_tos
@@ -2227,6 +2258,9 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     Register tfsp = R18_locals;
     Register scratch2 = R26_monitor;
     ld(tfsp, _ijava_state_neg(top_frame_sp), scratch);
+    // Derelativize top_frame_sp
+    sldi(tfsp, tfsp, Interpreter::logStackElementSize);
+    add(tfsp, tfsp, scratch);
     resize_frame_absolute(tfsp, scratch2, R0);
   }
   ld(R14_bcp, _ijava_state_neg(bcp), scratch); // Changed by VM code (exception).

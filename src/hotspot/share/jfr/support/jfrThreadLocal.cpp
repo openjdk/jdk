@@ -63,12 +63,12 @@ JfrThreadLocal::JfrThreadLocal() :
   _thread_id_alias(max_julong),
   _data_lost(0),
   _stack_trace_id(max_julong),
+  _stack_trace_hash(0),
   _parent_trace_id(0),
   _last_allocated_bytes(0),
   _user_time(0),
   _cpu_time(0),
   _wallclock_time(os::javaTimeNanos()),
-  _stack_trace_hash(0),
   _stackdepth(0),
   _entering_suspend_flag(0),
   _critical_section(0),
@@ -76,6 +76,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
   _vthread(false),
+  _notified(false),
   _dead(false) {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
@@ -247,6 +248,10 @@ ByteSize JfrThreadLocal::java_event_writer_offset() {
   return byte_offset_of(JfrThreadLocal, _java_event_writer);
 }
 
+ByteSize JfrThreadLocal::java_buffer_offset() {
+  return byte_offset_of(JfrThreadLocal, _java_buffer);
+}
+
 ByteSize JfrThreadLocal::vthread_id_offset() {
   return byte_offset_of(JfrThreadLocal, _vthread_id);
 }
@@ -261,6 +266,10 @@ ByteSize JfrThreadLocal::vthread_epoch_offset() {
 
 ByteSize JfrThreadLocal::vthread_excluded_offset() {
   return byte_offset_of(JfrThreadLocal, _vthread_excluded);
+}
+
+ByteSize JfrThreadLocal::notified_offset() {
+  return byte_offset_of(JfrThreadLocal, _notified);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {

@@ -422,7 +422,7 @@ class FormatItem {
         }
     }
 
-    protected static abstract sealed class FormatItemModifier implements FormatConcatItem
+    static abstract sealed class FormatItemModifier implements FormatConcatItem
         permits FormatItemFillLeft,
                 FormatItemFillRight
     {

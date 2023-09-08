@@ -22,17 +22,28 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
+ * @requires !vm.debug | vm.gc != "Z"
  * @run main/othervm/timeout=300 -Xmx1g Skynet
  */
 
 /*
- * @test
+ * @test id=ZSinglegen
  * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.Z
+ * @requires vm.gc.ZSinglegen
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+UseZGC -XX:-ZGenerational
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ */
+
+/*
+ * @test id=ZGenerational
+ * @requires vm.debug == true & vm.continuations
+ * @requires vm.gc.ZGenerational
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+UseZGC -XX:+ZGenerational
  *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */
 

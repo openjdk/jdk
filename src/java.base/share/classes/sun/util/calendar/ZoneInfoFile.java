@@ -468,10 +468,9 @@ public final class ZoneInfoFile {
             }
             if (i < savingsInstantTransitions.length) {
                 // javazic writes the last GMT offset into index 0!
-                if (i < savingsInstantTransitions.length) {
-                    offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
-                    nOffsets = 1;
-                }
+                offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
+                nOffsets = 1;
+
                 // ZoneInfo has a beginning entry for 1900.
                 // Only add it if this is not the only one in table
                 nOffsets = addTrans(transitions, nTrans++,

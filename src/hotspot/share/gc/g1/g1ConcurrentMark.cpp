@@ -325,6 +325,15 @@ uint G1CMRootMemRegions::num_root_regions() const {
   return (uint)_num_root_regions;
 }
 
+bool G1CMRootMemRegions::contains(const MemRegion mr) const {
+  for (uint i = 0; i < _num_root_regions; i++) {
+    if (_root_regions[i].equals(mr)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void G1CMRootMemRegions::notify_scan_done() {
   MutexLocker x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
   _scan_in_progress = false;
@@ -381,8 +390,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   // _num_active_tasks set in set_non_marking_state()
   // _tasks set inside the constructor
 
-  _task_queues(new G1CMTaskQueueSet((int) _max_num_tasks)),
-  _terminator((int) _max_num_tasks, _task_queues),
+  _task_queues(new G1CMTaskQueueSet(_max_num_tasks)),
+  _terminator(_max_num_tasks, _task_queues),
 
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
@@ -427,11 +436,11 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
-  _num_concurrent_workers = ConcGCThreads;
-  _max_concurrent_workers = _num_concurrent_workers;
+  _max_concurrent_workers = ConcGCThreads;
 
   _concurrent_workers = new WorkerThreads("G1 Conc", _max_concurrent_workers);
   _concurrent_workers->initialize_workers();
+  _num_concurrent_workers = _concurrent_workers->active_workers();
 
   if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
@@ -531,8 +540,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers((int) active_tasks);
-  _second_overflow_barrier_sync.set_n_workers((int) active_tasks);
+  _first_overflow_barrier_sync.set_n_workers(active_tasks);
+  _second_overflow_barrier_sync.set_n_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -967,17 +976,14 @@ void G1ConcurrentMark::scan_root_regions() {
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
 
-    _num_concurrent_workers = MIN2(calc_active_marking_workers(),
-                                   // We distribute work on a per-region basis, so starting
-                                   // more threads than that is useless.
-                                   root_regions()->num_root_regions());
-    assert(_num_concurrent_workers <= _max_concurrent_workers,
-           "Maximum number of marking threads exceeded");
+    // Assign one worker to each root-region but subject to the max constraint.
+    const uint num_workers = MIN2(root_regions()->num_root_regions(),
+                                  _max_concurrent_workers);
 
     G1CMRootRegionScanTask task(this);
     log_debug(gc, ergo)("Running %s using %u workers for %u work units.",
-                        task.name(), _num_concurrent_workers, root_regions()->num_root_regions());
-    _concurrent_workers->run_task(&task, _num_concurrent_workers);
+                        task.name(), num_workers, root_regions()->num_root_regions());
+    _concurrent_workers->run_task(&task, num_workers);
 
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
@@ -992,6 +998,10 @@ bool G1ConcurrentMark::wait_until_root_region_scan_finished() {
 
 void G1ConcurrentMark::add_root_region(HeapRegion* r) {
   root_regions()->add(r->top_at_mark_start(), r->top());
+}
+
+bool G1ConcurrentMark::is_root_region(HeapRegion* r) {
+  return root_regions()->contains(MemRegion(r->top_at_mark_start(), r->top()));
 }
 
 void G1ConcurrentMark::root_region_scan_abort_and_wait() {
@@ -1033,15 +1043,15 @@ void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
 void G1ConcurrentMark::mark_from_roots() {
   _restart_for_overflow = false;
 
-  _num_concurrent_workers = calc_active_marking_workers();
-
-  uint active_workers = MAX2(1U, _num_concurrent_workers);
+  uint active_workers = calc_active_marking_workers();
 
   // Setting active workers is not guaranteed since fewer
   // worker threads may currently exist and more may not be
   // available.
   active_workers = _concurrent_workers->set_active_workers(active_workers);
   log_info(gc, task)("Using %u workers of %u for marking", active_workers, _concurrent_workers->max_workers());
+
+  _num_concurrent_workers = active_workers;
 
   // Parallel task terminator is set in "set_concurrency_and_phase()"
   set_concurrency_and_phase(active_workers, true /* concurrent */);
@@ -1339,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
@@ -1357,13 +1366,13 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
       _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
-    const uint old_regions_removed() { return _old_regions_removed; }
-    const uint humongous_regions_removed() { return _humongous_regions_removed; }
+    uint old_regions_removed() { return _old_regions_removed; }
+    uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
-        log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
-                      hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
+        log_trace(gc, marking)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
+                               hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
         hr->set_containing_set(nullptr);
         if (hr->is_humongous()) {
@@ -1867,6 +1876,7 @@ HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
       HeapWord* bottom = curr_region->bottom();
       HeapWord* limit = curr_region->top_at_mark_start();
 
+      log_trace(gc, marking)("Claim region %u bottom " PTR_FORMAT " tams " PTR_FORMAT, curr_region->hrm_index(), p2i(curr_region->bottom()), p2i(curr_region->top_at_mark_start()));
       // notice that _finger == end cannot be guaranteed here since,
       // someone else might have moved the finger even further
       assert(_finger >= end, "the finger should have moved forward");
@@ -2306,9 +2316,9 @@ void G1CMTask::drain_local_queue(bool partially) {
   // Decide what the target size is, depending whether we're going to
   // drain it partially (so that other tasks can steal if they run out
   // of things to do) or totally (at the very end).
-  size_t target_size;
+  uint target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, (size_t)GCDrainStackTargetSize);
+    target_size = MIN2(_task_queue->max_elems() / 3, GCDrainStackTargetSize);
   } else {
     target_size = 0;
   }

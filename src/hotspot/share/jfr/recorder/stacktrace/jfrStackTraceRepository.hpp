@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ class JfrStackTraceRepository : public JfrCHeapObj {
   static size_t clear(JfrStackTraceRepository& repo);
   size_t write(JfrChunkWriter& cw, bool clear);
 
-  static const JfrStackTrace* lookup_for_leak_profiler(unsigned int hash, traceid id);
+  static const JfrStackTrace* lookup_for_leak_profiler(traceid hash, traceid id);
   static void record_for_leak_profiler(JavaThread* thread, int skip = 0);
   static void clear_leak_profiler();
 

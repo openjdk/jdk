@@ -37,7 +37,7 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -53,6 +53,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include <sys/types.h>
@@ -426,7 +427,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -483,7 +485,8 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_sp_after_call();  // Restore SP to extended SP
 
   // Restore expression stack pointer
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
   // null last_sp until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -601,7 +604,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
   // total overhead size: entry_size + (saved fp through expr stack
   // bottom).  be sure to change this if you add/subtract anything
@@ -674,7 +677,7 @@ void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags(xmethod, Method::access_flags_offset());
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
   __ lwu(x10, access_flags);
@@ -707,7 +710,9 @@ void TemplateInterpreterGenerator::lock_method() {
   __ check_extended_sp();
   __ add(sp, sp, - entry_size); // add space for a monitor entry
   __ add(esp, esp, - entry_size);
-  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sub(t0, sp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
@@ -782,15 +787,19 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
     // Store extended SP
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sd(t1, Address(sp, 5 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(t0, sp, 2 * wordSize);
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
+    __ sd(t1, Address(sp, 5 * wordSize));
     __ mv(sp, t0);
   }
 }
@@ -1604,7 +1613,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
                        /* notify_jvmdi */ false);
 
   // Restore the last_sp and null it out
-  __ ld(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp,  t0,  LogBytesPerWord);
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();
@@ -1787,8 +1797,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   //   _counters[_index] ++;
   Register counter_addr = t1;
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
-  __ slli(index, index, LogBytesPerInt);
-  __ add(counter_addr, x7, index);
+  __ shadd(counter_addr, index, x7, counter_addr, LogBytesPerInt);
   __ atomic_addw(noreg, 1, counter_addr);
  }
 

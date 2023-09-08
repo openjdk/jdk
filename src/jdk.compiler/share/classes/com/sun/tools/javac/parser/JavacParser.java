@@ -879,6 +879,7 @@ public class JavacParser implements Parser {
         JCExpression e;
         if (token.kind == UNDERSCORE && parsedType == null) {
             nextToken();
+            checkSourceLevel(Feature.UNNAMED_VARIABLES);
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {
@@ -3309,6 +3310,8 @@ public class JavacParser implements Parser {
                         } else {
                             pendingResult = PatternResult.PATTERN;
                         }
+                    } else if (typeDepth == 0 && parenDepth == 0 && (peekToken(lookahead, tk -> tk == ARROW || tk == COMMA))) {
+                        return PatternResult.EXPRESSION;
                     }
                     break;
                 case UNDERSCORE:
@@ -3915,7 +3918,7 @@ public class JavacParser implements Parser {
 
         boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         boolean isUnnamedClass = false;
-        while (token.kind != EOF) {
+        OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(firstTypeDecl, false, false, false);
@@ -3931,7 +3934,7 @@ public class JavacParser implements Parser {
                 semiList.append(toP(F.at(token.pos).Skip()));
                 nextToken();
                 if (token.kind == EOF)
-                    break;
+                    break OUTER;
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty()) {
@@ -3995,6 +3998,7 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
+                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
                     isUnnamedClass = true;
                 } else {
@@ -4025,8 +4029,6 @@ public class JavacParser implements Parser {
 
     // Restructure top level to be an unnamed class.
     private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
-        checkSourceLevel(Feature.UNNAMED_CLASSES);
-
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
@@ -4040,7 +4042,7 @@ public class JavacParser implements Parser {
             }
         }
 
-        int primaryPos = defs.first().pos;
+        int primaryPos = getStartPos(defs.first());
         String simplename = PathFileObject.getSimpleName(log.currentSourceFile());
 
         if (simplename.endsWith(".java")) {
@@ -4051,7 +4053,7 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers unnamedMods = F.at(primaryPos)
+        JCModifiers unnamedMods = F.at(Position.NOPOS)
                 .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
         JCClassDecl unnamed = F.at(primaryPos).ClassDef(
                 unnamedMods, name, List.nil(), null, List.nil(), List.nil(),

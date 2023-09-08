@@ -868,9 +868,10 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   // load first parts of strings and finish initialization while loading
   {
     if (str1_isL == str2_isL) { // LL or UU
+      // check if str1 and str2 is same pointer
+      beq(str1, str2, DONE);
       // load 8 bytes once to compare
       ld(tmp1, Address(str1));
-      beq(str1, str2, DONE);
       ld(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
@@ -913,9 +914,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
     }
     addi(cnt2, cnt2, isUL ? 4 : 8);
+    bne(tmp1, tmp2, DIFFERENCE);
     bgez(cnt2, TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
 
     // main loop
     bind(NEXT_WORD);
@@ -944,38 +944,30 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       addi(cnt1, cnt1, 8);
       addi(cnt2, cnt2, 4);
     }
-    bgez(cnt2, TAIL);
-
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, NEXT_WORD);
-    j(DIFFERENCE);
+    bne(tmp1, tmp2, DIFFERENCE);
+    bltz(cnt2, NEXT_WORD);
     bind(TAIL);
-    xorr(tmp3, tmp1, tmp2);
-    bnez(tmp3, DIFFERENCE);
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
     if (str1_isL == str2_isL) { // LL or UU
-      ld(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
     } else if (isLU) { // LU case
-      lwu(tmp1, Address(str1));
-      ld(tmp2, Address(str2));
+      load_int_misaligned(tmp1, Address(str1), tmp3, false);
+      load_long_misaligned(tmp2, Address(str2), tmp3, 2);
       inflate_lo32(tmp3, tmp1);
       mv(tmp1, tmp3);
     } else { // UL case
-      lwu(tmp2, Address(str2));
-      ld(tmp1, Address(str1));
+      load_int_misaligned(tmp2, Address(str2), tmp3, false);
+      load_long_misaligned(tmp1, Address(str1), tmp3, 2);
       inflate_lo32(tmp3, tmp2);
       mv(tmp2, tmp3);
     }
     bind(TAIL_CHECK);
-    xorr(tmp3, tmp1, tmp2);
-    beqz(tmp3, DONE);
+    beq(tmp1, tmp2, DONE);
 
     // Find the first different characters in the longwords and
     // compute their difference.
     bind(DIFFERENCE);
+    xorr(tmp3, tmp1, tmp2);
     ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
@@ -1380,6 +1372,70 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   bind(Done);
 }
 
+// According to Java SE specification, for floating-point round operations, if
+// the input is NaN, +/-infinity, or +/-0, the same input is returned as the
+// rounded result; this differs from behavior of RISC-V fcvt instructions (which
+// round out-of-range values to the nearest max or min value), therefore special
+// handling is needed by NaN, +/-Infinity, +/-0.
+void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                                          Register tmp1, Register tmp2, Register tmp3) {
+
+  assert_different_registers(dst, src);
+  assert_different_registers(tmp1, tmp2, tmp3);
+
+  // Set rounding mode for conversions
+  // Here we use similar modes to double->long and long->double conversions
+  // Different mode for long->double conversion matter only if long value was not representable as double,
+  // we got long value as a result of double->long conversion so, it is definitely representable
+  RoundingMode rm;
+  switch (round_mode) {
+    case RoundDoubleModeNode::rmode_ceil:
+      rm = RoundingMode::rup;
+      break;
+    case RoundDoubleModeNode::rmode_floor:
+      rm = RoundingMode::rdn;
+      break;
+    case RoundDoubleModeNode::rmode_rint:
+      rm = RoundingMode::rne;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  // tmp1 - is a register to store double converted to long int
+  // tmp2 - is a register to create constant for comparison
+  // tmp3 - is a register where we store modified result of double->long conversion
+  Label done, bad_val;
+
+  // Conversion from double to long
+  fcvt_l_d(tmp1, src, rm);
+
+  // Generate constant (tmp2)
+  // tmp2 = 100...0000
+  addi(tmp2, zr, 1);
+  slli(tmp2, tmp2, 63);
+
+  // Prepare converted long (tmp1)
+  // as a result when conversion overflow we got:
+  // tmp1 = 011...1111 or 100...0000
+  // Convert it to: tmp3 = 100...0000
+  addi(tmp3, tmp1, 1);
+  andi(tmp3, tmp3, -2);
+  beq(tmp3, tmp2, bad_val);
+
+  // Conversion from long to double
+  fcvt_d_l(dst, tmp1, rm);
+  // Add sign of input value to result for +/- 0 cases
+  fsgnj_d(dst, dst, src);
+  j(done);
+
+  // If got conversion overflow return src
+  bind(bad_val);
+  fmv_d(dst, src);
+
+  bind(done);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
   Label loop;
@@ -1679,10 +1735,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min, int vector_length) {
+                                    BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1698,9 +1754,9 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length) {
+                                           BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   // Check vector elements of src1 and src2 for NaN.
   vmfeq_vv(tmp1, src1, src1);

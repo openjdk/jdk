@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <strsafe.h>
 #include <stdio.h>
+#include <malloc.h>
 
 #include <jni.h>
 #include <jni_util.h>
@@ -516,15 +517,9 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                                                 GdiFontMapInfo *fmi,
                                                 jobject fontToFileMap)
 {
-#define MAX_BUFFER (FILENAME_MAX+1)
-    const wchar_t wname[MAX_BUFFER];
-    const char data[MAX_BUFFER];
-
     DWORD type;
     LONG ret;
     HKEY hkeyFonts;
-    DWORD dwNameSize;
-    DWORD dwDataValueSize;
     DWORD nval;
     DWORD dwNumValues, dwMaxValueNameLen, dwMaxValueDataLen;
 
@@ -539,16 +534,17 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
                            &dwNumValues, &dwMaxValueNameLen,
                            &dwMaxValueDataLen, NULL, NULL);
 
-    if (ret != ERROR_SUCCESS ||
-        dwMaxValueNameLen >= MAX_BUFFER ||
-        dwMaxValueDataLen >= MAX_BUFFER) {
+    if (ret != ERROR_SUCCESS) {
         RegCloseKey(hkeyFonts);
         return;
     }
+    dwMaxValueNameLen++; /* Account for NULL-terminator */
+    wchar_t *wname = (wchar_t*)malloc(dwMaxValueNameLen * sizeof(wchar_t));
+    wchar_t *data = (wchar_t*)malloc(dwMaxValueDataLen);
     for (nval = 0; nval < dwNumValues; nval++ ) {
-        dwNameSize = MAX_BUFFER;
-        dwDataValueSize = MAX_BUFFER;
-        ret = RegEnumValueW(hkeyFonts, nval, (LPWSTR)wname, &dwNameSize,
+        DWORD dwNameSize = dwMaxValueNameLen;
+        DWORD dwDataValueSize = dwMaxValueDataLen;
+        ret = RegEnumValueW(hkeyFonts, nval, wname, &dwNameSize,
                             NULL, &type, (LPBYTE)data, &dwDataValueSize);
 
         if (ret != ERROR_SUCCESS) {
@@ -558,20 +554,22 @@ static void populateFontFileNameFromRegistryKey(HKEY regKey,
             continue;
         }
 
-        if (!RegistryToBaseTTNameW((LPWSTR)wname) ) {
+        if (!RegistryToBaseTTNameW(wname) ) {
             /* If the filename ends with ".ttf" or ".otf" also accept it.
              * Not expecting to need to do this for .ttc files.
              * Also note this code is not mirrored in the "A" (win9x) path.
              */
-            LPWSTR dot = wcsrchr((LPWSTR)data, L'.');
+            LPWSTR dot = wcsrchr(data, L'.');
             if (dot == NULL || ((wcsicmp(dot, L".ttf") != 0)
                                   && (wcsicmp(dot, L".otf") != 0))) {
                 continue;  /* not a TT font... */
             }
         }
-        registerFontW(fmi, fontToFileMap, (LPWSTR)wname, (LPWSTR)data);
+        registerFontW(fmi, fontToFileMap, wname, data);
     }
 
+    free(wname);
+    free(data);
     RegCloseKey(hkeyFonts);
 }
 

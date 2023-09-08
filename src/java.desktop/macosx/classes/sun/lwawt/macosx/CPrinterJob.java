@@ -45,6 +45,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.Sides;
 import javax.print.attribute.Attribute;
 
 import sun.java2d.*;
@@ -682,6 +683,24 @@ public final class CPrinterJob extends RasterPrinterJob {
                     page.getImageableWidth(),
                     page.getImageableHeight());
         return pageFormatArea;
+    }
+
+    private int getSides() {
+        return (this.sidesAttr == null) ? -1 : this.sidesAttr.getValue();
+    }
+
+    private void setSides(int sides) {
+        if (attributes == null) {
+            return;
+        }
+
+        final Sides[] sidesTable = new Sides[] {Sides.ONE_SIDED, Sides.TWO_SIDED_LONG_EDGE, Sides.TWO_SIDED_SHORT_EDGE};
+
+        if (sides >= 0 && sides < sidesTable.length) {
+            Sides s = sidesTable[sides];
+            attributes.add(s);
+            this.sidesAttr = s;
+        }
     }
 
     private boolean cancelCheck() {

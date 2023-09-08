@@ -30,6 +30,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "utilities/checkedCast.hpp"
 
 class CmpNode;
 class BaseCountedLoopEndNode;
@@ -38,7 +39,7 @@ class IdealLoopTree;
 class LoopNode;
 class Node;
 class OuterStripMinedLoopEndNode;
-class ParsePredicates;
+class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
 class CountedLoopReserveKit;
@@ -72,16 +73,13 @@ protected:
          DoUnrollOnly          = 1<<9,
          VectorizedLoop        = 1<<10,
          HasAtomicPostLoop     = 1<<11,
-         IsMultiversioned      = 1<<12,
-         StripMined            = 1<<13,
-         SubwordLoop           = 1<<14,
-         ProfileTripFailed     = 1<<15,
-         LoopNestInnerLoop     = 1<<16,
-         LoopNestLongOuterLoop = 1<<17};
+         StripMined            = 1<<12,
+         SubwordLoop           = 1<<13,
+         ProfileTripFailed     = 1<<14,
+         LoopNestInnerLoop     = 1<<15,
+         LoopNestLongOuterLoop = 1<<16 };
   char _unswitch_count;
   enum { _unswitch_max=3 };
-  char _postloop_flags;
-  enum { RCEPostLoop = 1 };
 
   // Expected trip count from profile data
   float _profile_trip_cnt;
@@ -93,7 +91,6 @@ public:
   bool is_inner_loop() const { return _loop_flags & InnerLoop; }
   void set_inner_loop() { _loop_flags |= InnerLoop; }
 
-  bool is_multiversioned() const { return _loop_flags & IsMultiversioned; }
   bool is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
   bool is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
   void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
@@ -110,7 +107,6 @@ public:
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
   void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
-  void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
@@ -120,9 +116,6 @@ public:
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
-
-  int is_rce_post_loop() const { return _postloop_flags & RCEPostLoop; }
-  void set_is_rce_post_loop() { _postloop_flags |= RCEPostLoop; }
 
   void set_unswitch_count(int val) {
     assert (val <= unswitch_max(), "too many unswitches");
@@ -134,7 +127,7 @@ public:
 
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
-      _postloop_flags(0), _profile_trip_cnt(COUNT_UNKNOWN)  {
+      _profile_trip_cnt(COUNT_UNKNOWN) {
     init_class_id(Class_Loop);
     init_req(EntryControl, entry);
     init_req(LoopBackControl, backedge);
@@ -322,8 +315,6 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
-  void set_slp_pack_count(int pack_count)    { _slp_vector_pack_count = pack_count; }
-  int  slp_pack_count() const                { return _slp_vector_pack_count; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -332,11 +323,7 @@ public:
   virtual IfFalseNode* outer_loop_exit() const;
   virtual SafePointNode* outer_safepoint() const;
 
-  // If this is a main loop in a pre/main/post loop nest, walk over
-  // the predicates that were inserted by
-  // duplicate_predicates()/add_range_check_predicate()
-  static Node* skip_predicates_from_entry(Node* ctrl);
-  Node* skip_predicates();
+  Node* skip_assertion_predicates_with_halt();
 
   virtual BasicType bt() const {
     return T_INT;
@@ -347,8 +334,6 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
-
-  static bool is_zero_trip_guard_if(const IfNode* iff);
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
@@ -661,6 +646,7 @@ public:
   // Perform optimization to use the loop predicates for null checks and range checks.
   // Applies to any loop level (not just the innermost one)
   bool loop_predication( PhaseIdealLoop *phase);
+  bool can_apply_loop_predication();
 
   // Perform iteration-splitting on inner loops.  Split iterations to
   // avoid range checks or one-shot null checks.  Returns false if the
@@ -945,11 +931,11 @@ private:
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
-  void copy_assertion_predicates_to_main_loop_helper(Node* predicate, Node* init, Node* stride, IdealLoopTree* outer_loop,
-                                                     LoopNode* outer_main_head, uint dd_main_head,
-                                                     uint idx_before_pre_post, uint idx_after_post_before_pre,
-                                                     Node* zero_trip_guard_proj_main, Node* zero_trip_guard_proj_post,
-                                                     const Node_List &old_new);
+  void copy_assertion_predicates_to_main_loop_helper(const PredicateBlock* predicate_block, Node* init, Node* stride,
+                                                     IdealLoopTree* outer_loop, LoopNode* outer_main_head,
+                                                     uint dd_main_head, uint idx_before_pre_post,
+                                                     uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
+                                                     Node* zero_trip_guard_proj_post, const Node_List &old_new);
   void copy_assertion_predicates_to_main_loop(CountedLoopNode* pre_head, Node* init, Node* stride, IdealLoopTree* outer_loop,
                                               LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
@@ -966,9 +952,9 @@ private:
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
   void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init,
                                               Node* stride);
-  void initialize_assertion_predicates_for_peeled_loop(IfProjNode* predicate_proj, LoopNode* outer_loop_head,
-                                                       const int dd_outer_loop_head, Node* init, Node* stride,
-                                                       IdealLoopTree* outer_loop, const uint idx_before_clone,
+  void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
+                                                       int dd_outer_loop_head, Node* init, Node* stride,
+                                                       IdealLoopTree* outer_loop, uint idx_before_clone,
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
@@ -1305,9 +1291,6 @@ public:
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                          Node*& incr, Node* limit, CountedLoopNode*& post_head);
 
-  // Add an RCE'd post loop which we will multi-version adapt for run time test path usage
-  void insert_scalar_rced_post_loop( IdealLoopTree *loop, Node_List &old_new );
-
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
   // If Node n lives in the back_ctrl block, we clone a private version of n
@@ -1348,9 +1331,9 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(IfProjNode* cont_proj, Node* new_entry, Deoptimization::DeoptReason reason,
-                                          int opcode, bool rewire_uncommon_proj_phi_inputs = false,
-                                          bool if_cont_is_true_proj = true);
+  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+                                          Deoptimization::DeoptReason reason, int opcode,
+                                          bool rewire_uncommon_proj_phi_inputs = false);
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1371,24 +1354,42 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
+
+ private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
                                     Invariance& invar, Deoptimization::DeoptReason reason);
-  bool loop_predication_should_follow_branches(IdealLoopTree* loop, IfProjNode* predicate_proj, float& loop_trip_cnt);
+  bool can_create_loop_predicates(const PredicateBlock* profiled_loop_predicate_block) const;
+  bool loop_predication_should_follow_branches(IdealLoopTree* loop, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj, IfProjNode* predicate_proj,
+  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+                                               ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
                                                         Node* offset, Node* limit, jint stride_con, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
   void eliminate_useless_predicates();
+
+  void eliminate_useless_parse_predicates();
+  void mark_all_parse_predicates_useless() const;
+  void mark_loop_associated_parse_predicates_useful();
+  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
+  void add_useless_parse_predicates_to_igvn_worklist();
+
+  void eliminate_useless_template_assertion_predicates();
+  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
+  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+
   void eliminate_useless_zero_trip_guard();
 
+  bool has_control_dependencies_from_predicates(LoopNode* head) const;
+  void verify_fast_loop(LoopNode* head, const ProjNode* proj_true) const NOT_DEBUG_RETURN;
+ public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
   // execution of the expensive node. Return true if progress.
@@ -1401,13 +1402,6 @@ public:
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   void do_range_check(IdealLoopTree *loop, Node_List &old_new);
-
-  // Process post loops which have range checks and try to build a multi-version
-  // guard to safely determine if we can execute the post loop which was RCE'd.
-  bool multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoopTree *legacy_loop);
-
-  // Cause the rce'd post loop to optimized away, this happens if we cannot complete multiverioning
-  void poison_rce_post_loop(IdealLoopTree *rce_loop);
 
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.
@@ -1635,14 +1629,21 @@ private:
   // Clone Parse Predicates to slow and fast loop when unswitching a loop
   void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
-  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* predicate_proj, Node* new_entry,
+  void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
+                                                            const PredicateBlock* predicate_block,
+                                                            Deoptimization::DeoptReason reason, IfProjNode*& iffast_pred,
+                                                            IfProjNode*& ifslow_pred);
+  void clone_parse_predicate_to_unswitched_loops(const PredicateBlock* predicate_block, Deoptimization::DeoptReason reason,
+                                                 IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+  IfProjNode* clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
                                                        Deoptimization::DeoptReason reason, bool slow_loop);
   void clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
-                                                     IfProjNode* iffast_pred, IfProjNode* ifslow_pred);
+                                                     ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
+                                                     ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
   IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
-                                                             IfProjNode* output_proj);
+                                                             ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;
@@ -1737,6 +1738,11 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+
+
+  Node* similar_subtype_check(const Node* x, Node* r_in);
+
+  void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 };
 
 
@@ -1915,63 +1921,4 @@ public:
   float to(Node* n);
 };
 
-// Utility class to work on predicates.
-class Predicates {
- public:
-  static Node* skip_all_predicates(Node* node);
-  static Node* skip_all_predicates(ParsePredicates& parse_predicates);
-  static Node* skip_predicates_in_block(ParsePredicateSuccessProj* parse_predicate_success_proj);
-  static IfProjNode* next_predicate_proj_in_block(IfProjNode* proj);
-  static bool has_profiled_loop_predicates(ParsePredicates& parse_predicates);
-};
-
-// Class representing the Parse Predicates that are added during parsing with ParsePredicateNodes.
-class ParsePredicates {
- private:
-  ParsePredicateSuccessProj* _loop_predicate_proj = nullptr;
-  ParsePredicateSuccessProj* _profiled_loop_predicate_proj = nullptr;
-  ParsePredicateSuccessProj* _loop_limit_check_predicate_proj = nullptr;
-  // The success projection of the Parse Predicate that comes first when starting from root.
-  ParsePredicateSuccessProj* _top_predicate_proj;
-  ParsePredicateSuccessProj* _starting_proj;
-
-  void find_parse_predicate_projections();
-  static bool is_uct_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
-  static ParsePredicateNode* get_parse_predicate_or_null(Node* proj);
-  bool assign_predicate_proj(ParsePredicateSuccessProj* parse_predicate_proj);
- public:
-  ParsePredicates(Node* starting_proj);
-
-  // Success projection of Loop Parse Predicate.
-  ParsePredicateSuccessProj* loop_predicate_proj() {
-    return _loop_predicate_proj;
-  }
-
-  // Success proj of Profiled Loop Parse Predicate.
-  ParsePredicateSuccessProj* profiled_loop_predicate_proj() {
-    return _profiled_loop_predicate_proj;
-  }
-
-  // Success proj of Loop Limit Check Parse Predicate.
-  ParsePredicateSuccessProj* loop_limit_check_predicate_proj() {
-    return _loop_limit_check_predicate_proj;
-  }
-
-  // Return the success projection of the Parse Predicate that comes first when starting from root.
-  ParsePredicateSuccessProj* get_top_predicate_proj() {
-    return _top_predicate_proj;
-  }
-
-  static bool is_success_proj(Node* node);
-
-  // Are there any Parse Predicates?
-  bool has_any() const {
-    return _top_predicate_proj != nullptr;
-  }
-
-  static bool is_loop_limit_check_predicate_proj(Node* node) {
-    ParsePredicateNode* parse_predicate = get_parse_predicate_or_null(node);
-    return parse_predicate != nullptr && parse_predicate->deopt_reason() == Deoptimization::DeoptReason::Reason_loop_limit_check;
-  }
-};
 #endif // SHARE_OPTO_LOOPNODE_HPP

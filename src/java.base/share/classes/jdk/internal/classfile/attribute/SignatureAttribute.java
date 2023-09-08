@@ -43,6 +43,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement}, or
  * {@link jdk.internal.classfile.MethodElement} when traversing
  * the corresponding model type.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface SignatureAttribute
         extends Attribute<SignatureAttribute>,
@@ -55,7 +59,7 @@ public sealed interface SignatureAttribute
     Utf8Entry signature();
 
     /**
-     * Parse the siganture as a class signature.
+     * Parse the signature as a class signature.
      * @return the class signature
      */
     default ClassSignature asClassSignature() {
@@ -71,7 +75,7 @@ public sealed interface SignatureAttribute
     }
 
     /**
-     * Parse the siganture as a type signature.
+     * Parse the signature as a type signature.
      * @return the type signature
      */
     default Signature asTypeSignature() {

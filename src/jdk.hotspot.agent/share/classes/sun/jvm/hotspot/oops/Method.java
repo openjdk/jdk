@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.PrintStream;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
+import sun.jvm.hotspot.utilities.U1Array;
 
 import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
@@ -39,6 +40,7 @@ import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.utilities.U1Array;
 
 // A Method represents a Java method
 
@@ -117,6 +119,12 @@ public class Method extends Metadata {
   }
   public ConstantPool getConstants()                  {
     return getConstMethod().getConstants();
+  }
+  public boolean      hasStackMapTable()              {
+    return getConstMethod().hasStackMapTable();
+  }
+  public U1Array      getStackMapData()               {
+    return getConstMethod().getStackMapData();
   }
   public MethodData   getMethodData()                 {
     Address addr = methodData.getValue(getAddress());
@@ -368,5 +376,21 @@ public class Method extends Metadata {
     return getMethodHolder().getName().asString() + " " +
       OopUtilities.escapeString(getName().asString()) + " " +
       getSignature().asString();
+  }
+
+  public U1Array getAnnotations() {
+    return getConstMethod().getMethodAnnotations();
+  }
+
+  public U1Array getParameterAnnotations() {
+    return getConstMethod().getParameterAnnotations();
+  }
+
+  public U1Array getTypeAnnotations() {
+    return getConstMethod().getTypeAnnotations();
+  }
+
+  public U1Array getAnnotationDefault() {
+    return getConstMethod().getDefaultAnnotations();
   }
 }

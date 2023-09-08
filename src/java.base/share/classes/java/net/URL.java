@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1433,7 +1433,7 @@ public final class URL implements java.io.Serializable {
     private static URLStreamHandler lookupViaProperty(String protocol) {
         String packagePrefixList =
                 GetPropertyAction.privilegedGetProperty(protocolPathProp);
-        if (packagePrefixList == null) {
+        if (packagePrefixList == null || packagePrefixList.isEmpty()) {
             // not set
             return null;
         }
@@ -1442,6 +1442,9 @@ public final class URL implements java.io.Serializable {
         URLStreamHandler handler = null;
         for (int i=0; handler == null && i<packagePrefixes.length; i++) {
             String packagePrefix = packagePrefixes[i].trim();
+            if (packagePrefix.isEmpty()) {
+                continue;
+            }
             try {
                 String clsName = packagePrefix + "." + protocol + ".Handler";
                 Class<?> cls = null;

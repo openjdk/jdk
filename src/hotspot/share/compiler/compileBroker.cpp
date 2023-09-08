@@ -174,18 +174,18 @@ elapsedTimer CompileBroker::_t_standard_compilation;
 elapsedTimer CompileBroker::_t_invalidated_compilation;
 elapsedTimer CompileBroker::_t_bailedout_compilation;
 
-int CompileBroker::_total_bailout_count            = 0;
-int CompileBroker::_total_invalidated_count        = 0;
-int CompileBroker::_total_compile_count            = 0;
-int CompileBroker::_total_osr_compile_count        = 0;
-int CompileBroker::_total_standard_compile_count   = 0;
-int CompileBroker::_total_compiler_stopped_count   = 0;
-int CompileBroker::_total_compiler_restarted_count = 0;
+uint CompileBroker::_total_bailout_count            = 0;
+uint CompileBroker::_total_invalidated_count        = 0;
+uint CompileBroker::_total_compile_count            = 0;
+uint CompileBroker::_total_osr_compile_count        = 0;
+uint CompileBroker::_total_standard_compile_count   = 0;
+uint CompileBroker::_total_compiler_stopped_count   = 0;
+uint CompileBroker::_total_compiler_restarted_count = 0;
 
-int CompileBroker::_sum_osr_bytes_compiled         = 0;
-int CompileBroker::_sum_standard_bytes_compiled    = 0;
-int CompileBroker::_sum_nmethod_size               = 0;
-int CompileBroker::_sum_nmethod_code_size          = 0;
+uint CompileBroker::_sum_osr_bytes_compiled         = 0;
+uint CompileBroker::_sum_standard_bytes_compiled    = 0;
+uint CompileBroker::_sum_nmethod_size               = 0;
+uint CompileBroker::_sum_nmethod_code_size          = 0;
 
 jlong CompileBroker::_peak_compilation_time        = 0;
 
@@ -1320,6 +1320,13 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
+    // JVMCI compilation is not yet initializable.
+    return nullptr;
+  }
+#endif
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
@@ -1347,12 +1354,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
-
-#if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
-    return nullptr;
-  }
-#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
@@ -2114,6 +2115,15 @@ int DirectivesStack::_depth = 0;
 CompilerDirectives* DirectivesStack::_top = nullptr;
 CompilerDirectives* DirectivesStack::_bottom = nullptr;
 
+// Acquires Compilation_lock and waits for it to be notified
+// as long as WhiteBox::compilation_locked is true.
+static void whitebox_lock_compilation() {
+  MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
+  while (WhiteBox::compilation_locked) {
+    locker.wait();
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -2194,8 +2204,20 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      failure_reason = compile_state.failure_reason();
+      if (env.init_error() != JNI_OK) {
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d)", env.init_error()), mtJVMCI);
+        bool reason_on_C_heap = true;
+        // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
+        // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+        bool retryable = env.init_error() == JNI_ENOMEM;
+        compile_state.set_failure(retryable, failure_reason, reason_on_C_heap);
+      }
       if (failure_reason == nullptr) {
+        if (WhiteBoxAPI && WhiteBox::compilation_locked) {
+          // Must switch to native to block
+          ThreadToNativeFromVM ttn(thread);
+          whitebox_lock_compilation();
+        }
         methodHandle method(thread, target_handle);
         runtime = env.runtime();
         runtime->compile_method(&env, jvmci, method, osr_bci);
@@ -2211,7 +2233,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         }
       }
     }
-    if (!task->is_success()) {
+    if (!task->is_success() && !JVMCI::in_shutdown()) {
       handle_compile_error(thread, task, nullptr, compilable, failure_reason);
     }
     if (event.should_commit()) {
@@ -2257,10 +2279,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("no compiler");
     } else if (!ci_env.failing()) {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
-        MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
-        while (WhiteBox::compilation_locked) {
-          locker.wait();
-        }
+        whitebox_lock_compilation();
       }
       comp->compile_method(&ci_env, target, osr_bci, true, directive);
 
@@ -2599,7 +2618,7 @@ jlong CompileBroker::total_compilation_ticks() {
 }
 
 void CompileBroker::print_times(const char* name, CompilerStatistics* stats) {
-  tty->print_cr("  %s {speed: %6.3f bytes/s; standard: %6.3f s, %d bytes, %d methods; osr: %6.3f s, %d bytes, %d methods; nmethods_size: %d bytes; nmethods_code_size: %d bytes}",
+  tty->print_cr("  %s {speed: %6.3f bytes/s; standard: %6.3f s, %u bytes, %u methods; osr: %6.3f s, %u bytes, %u methods; nmethods_size: %u bytes; nmethods_code_size: %u bytes}",
                 name, stats->bytes_per_second(),
                 stats->_standard._time.seconds(), stats->_standard._bytes, stats->_standard._count,
                 stats->_osr._time.seconds(), stats->_osr._bytes, stats->_osr._count,
@@ -2642,17 +2661,17 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   elapsedTimer osr_compilation = CompileBroker::_t_osr_compilation;
   elapsedTimer total_compilation = CompileBroker::_t_total_compilation;
 
-  int standard_bytes_compiled = CompileBroker::_sum_standard_bytes_compiled;
-  int osr_bytes_compiled = CompileBroker::_sum_osr_bytes_compiled;
+  uint standard_bytes_compiled = CompileBroker::_sum_standard_bytes_compiled;
+  uint osr_bytes_compiled = CompileBroker::_sum_osr_bytes_compiled;
 
-  int standard_compile_count = CompileBroker::_total_standard_compile_count;
-  int osr_compile_count = CompileBroker::_total_osr_compile_count;
-  int total_compile_count = CompileBroker::_total_compile_count;
-  int total_bailout_count = CompileBroker::_total_bailout_count;
-  int total_invalidated_count = CompileBroker::_total_invalidated_count;
+  uint standard_compile_count = CompileBroker::_total_standard_compile_count;
+  uint osr_compile_count = CompileBroker::_total_osr_compile_count;
+  uint total_compile_count = CompileBroker::_total_compile_count;
+  uint total_bailout_count = CompileBroker::_total_bailout_count;
+  uint total_invalidated_count = CompileBroker::_total_invalidated_count;
 
-  int nmethods_size = CompileBroker::_sum_nmethod_code_size;
-  int nmethods_code_size = CompileBroker::_sum_nmethod_size;
+  uint nmethods_code_size = CompileBroker::_sum_nmethod_code_size;
+  uint nmethods_size = CompileBroker::_sum_nmethod_size;
 
   tty->cr();
   tty->print_cr("Accumulated compiler times");
@@ -2694,19 +2713,19 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
 #endif
 
   tty->cr();
-  tty->print_cr("  Total compiled methods    : %8d methods", total_compile_count);
-  tty->print_cr("    Standard compilation    : %8d methods", standard_compile_count);
-  tty->print_cr("    On stack replacement    : %8d methods", osr_compile_count);
-  int tcb = osr_bytes_compiled + standard_bytes_compiled;
-  tty->print_cr("  Total compiled bytecodes  : %8d bytes", tcb);
-  tty->print_cr("    Standard compilation    : %8d bytes", standard_bytes_compiled);
-  tty->print_cr("    On stack replacement    : %8d bytes", osr_bytes_compiled);
+  tty->print_cr("  Total compiled methods    : %8u methods", total_compile_count);
+  tty->print_cr("    Standard compilation    : %8u methods", standard_compile_count);
+  tty->print_cr("    On stack replacement    : %8u methods", osr_compile_count);
+  uint tcb = osr_bytes_compiled + standard_bytes_compiled;
+  tty->print_cr("  Total compiled bytecodes  : %8u bytes", tcb);
+  tty->print_cr("    Standard compilation    : %8u bytes", standard_bytes_compiled);
+  tty->print_cr("    On stack replacement    : %8u bytes", osr_bytes_compiled);
   double tcs = total_compilation.seconds();
-  int bps = tcs == 0.0 ? 0 : (int)(tcb / tcs);
-  tty->print_cr("  Average compilation speed : %8d bytes/s", bps);
+  uint bps = tcs == 0.0 ? 0 : (uint)(tcb / tcs);
+  tty->print_cr("  Average compilation speed : %8u bytes/s", bps);
   tty->cr();
-  tty->print_cr("  nmethod code size         : %8d bytes", nmethods_code_size);
-  tty->print_cr("  nmethod total size        : %8d bytes", nmethods_size);
+  tty->print_cr("  nmethod code size         : %8u bytes", nmethods_code_size);
+  tty->print_cr("  nmethod total size        : %8u bytes", nmethods_size);
 }
 
 // Print general/accumulated JIT information.

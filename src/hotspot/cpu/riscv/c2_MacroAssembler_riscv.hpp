@@ -149,6 +149,9 @@
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
+  void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                         Register tmp1, Register tmp2, Register tmp3);
+
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
@@ -187,11 +190,11 @@
 
  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int vector_length);
+                  BasicType bt, bool is_min, int vector_length);
 
  void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                          VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length);
+                         BasicType bt, bool is_min, int vector_length);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,

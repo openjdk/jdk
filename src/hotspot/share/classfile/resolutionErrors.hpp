@@ -35,6 +35,7 @@ class ResolutionErrorEntry;
 class ResolutionErrorTable : AllStatic {
 
 public:
+  static void initialize();
   static void add_entry(const constantPoolHandle& pool, int which, Symbol* error, Symbol* message,
                         Symbol* cause, Symbol* cause_msg);
 

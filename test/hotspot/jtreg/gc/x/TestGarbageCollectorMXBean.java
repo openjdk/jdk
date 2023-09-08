@@ -25,7 +25,7 @@ package gc.x;
 
 /**
  * @test TestGarbageCollectorMXBean
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC garbage collector MXBean
  * @modules java.management
  * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xms256M -Xmx512M -Xlog:gc gc.x.TestGarbageCollectorMXBean 256 512

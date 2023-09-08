@@ -33,6 +33,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -61,7 +62,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
@@ -69,6 +70,7 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -86,7 +88,6 @@
 
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
-bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
 void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
@@ -365,7 +366,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore miscellaneous metadata.
   JavaClasses::serialize_offsets(soc);
-  HeapShared::serialize_root(soc);
   Universe::serialize(soc);
   soc->do_tag(--tag);
 
@@ -503,6 +503,9 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
+  // Initialize random for updating the hash of symbols
+  os::init_random(0x12345678);
+
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
@@ -543,8 +546,6 @@ void VM_PopulateDumpSharedSpace::doit() {
     log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
-
-  MetaspaceShared::exit_after_static_dump();
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -661,11 +662,14 @@ void MetaspaceShared::preload_and_dump() {
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
-  } else {
-    // On success, the VM_PopulateDumpSharedSpace op should have
-    // exited the VM.
-    ShouldNotReachHere();
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // Restore the java loaders that were cleared at dump time
+  if (use_full_module_graph()) {
+    HeapShared::restore_loader_data();
+  }
+#endif
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
@@ -731,7 +735,6 @@ void MetaspaceShared::preload_classes(TRAPS) {
   }
 
   log_info(cds)("Loading classes to share ...");
-  _has_error_classes = false;
   int class_count = ClassListParser::parse_classlist(classlist_path,
                                                      ClassListParser::_parse_all, CHECK);
   if (ExtraSharedClassListFile) {
@@ -794,7 +797,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
@@ -814,7 +817,6 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
-      _has_error_classes = true;
     }
     ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
@@ -873,6 +875,14 @@ bool MetaspaceShared::is_shared_dynamic(void* p) {
   }
 }
 
+bool MetaspaceShared::is_shared_static(void* p) {
+  if (is_in_shared_metaspace(p) && !is_shared_dynamic(p)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // This function is called when the JVM is unable to load the specified archive(s) due to one
 // of the following conditions.
 // - There's an error that indicates that the archive(s) files were corrupt or otherwise damaged.
@@ -894,14 +904,6 @@ void MetaspaceShared::unrecoverable_writing_error(const char* message) {
     log_error(cds)("%s", message);
   }
   vm_direct_exit(1);
-}
-
-// We have finished dumping the static archive. At this point, there may be pending VM
-// operations. We have changed some global states (such as vmClasses::_klasses) that
-// may cause these VM operations to fail. For safety, forget these operations and
-// exit the VM directly.
-void MetaspaceShared::exit_after_static_dump() {
-  os::_exit(0);
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
@@ -1136,7 +1138,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   if (result == MAP_ARCHIVE_SUCCESS) {
     SharedBaseAddress = (size_t)mapped_base_address;
-    LP64_ONLY({
+#ifdef _LP64
         if (Metaspace::using_class_space()) {
           // Set up ccs in metaspace.
           Metaspace::initialize_class_space(class_space_rs);
@@ -1146,13 +1148,24 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
           assert(ccs_end > cds_base, "Sanity check");
-          CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
-
+#if INCLUDE_CDS_JAVA_HEAP
+          // We archived objects with pre-computed narrow Klass id. Set up encoding such that these Ids stay valid.
+          address precomputed_narrow_klass_base = cds_base;
+          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+          CompressedKlassPointers::initialize_for_given_encoding(
+            cds_base, ccs_end - cds_base, // Klass range
+            precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
+            );
+#else
+          CompressedKlassPointers::initialize (
+            cds_base, ccs_end - cds_base // Klass range
+            );
+#endif // INCLUDE_CDS_JAVA_HEAP
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
         }
-      });
+#endif // _LP64
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
@@ -1241,10 +1254,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   if (base_address != nullptr) {
     assert(is_aligned(base_address, archive_space_alignment),
            "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
+#ifdef _LP64
     if (Metaspace::using_class_space()) {
       assert(CompressedKlassPointers::is_valid_base(base_address),
              "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
     }
+#endif
   }
 
   if (!Metaspace::using_class_space()) {
@@ -1313,8 +1328,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       total_space_rs = ReservedSpace(total_range_size, archive_space_alignment,
                                      os::vm_page_size(), (char*) base_address);
     } else {
-      // Reserve at any address, but leave it up to the platform to choose a good one.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size);
+      // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
+      // case we reserve whereever possible, but the start address needs to be encodable as narrow Klass
+      // encoding base since the archived heap objects contain nKlass IDs precalculated toward the start
+      // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
+      // try allocating in low-address regions.
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* try_in_low_address_ranges */);
     }
 
     if (!total_space_rs.is_reserved()) {
@@ -1456,8 +1475,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer);
-    SymbolTable::serialize_shared_table_header(&rc, false);
-    SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
+    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }

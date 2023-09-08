@@ -64,7 +64,6 @@ import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
-import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -145,16 +144,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
-    private Platform platform;
+    private final Platform platform;
 
     /**
      * Default image builder constructor.
      *
      * @param root The image root directory.
+     * @param launchers mapping of launcher command name to their module/main class
+     * @param targetPlatform target platform of the image
      * @throws IOException
+     * @throws NullPointerException If any of the params is null
      */
-    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
+    public DefaultImageBuilder(Path root, Map<String, String> launchers, Platform targetPlatform)
+            throws IOException {
         this.root = Objects.requireNonNull(root);
+        this.platform = Objects.requireNonNull(targetPlatform);
         this.launchers = Objects.requireNonNull(launchers);
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
@@ -168,19 +172,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            String value = files.moduleView()
-                                .findModule("java.base")
-                                .map(ResourcePoolModule::targetPlatform)
-                                .orElse(null);
-            if (value == null) {
-                throw new PluginException("ModuleTarget attribute is missing for java.base module");
-            }
-            try {
-                this.platform = Platform.parsePlatform(value);
-            } catch (IllegalArgumentException iae) {
-                throw new PluginException("ModuleTarget is malformed: " + iae.getMessage());
-            }
-
             checkResourcePool(files);
 
             Path bin = root.resolve(BIN_DIRNAME);

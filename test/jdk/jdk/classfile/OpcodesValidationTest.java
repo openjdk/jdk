@@ -105,7 +105,7 @@ public class OpcodesValidationTest {
     }
 
     private void testPositiveCase(Opcode opcode, Object constant) {
-        Classfile.build(ClassDesc.of("MyClass"),
+        Classfile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                                       mb -> mb.withCode(
@@ -122,7 +122,7 @@ public class OpcodesValidationTest {
     }
 
     private void testNegativeCase(Opcode opcode, Object constant) {
-        Classfile.build(ClassDesc.of("MyClass"),
+        Classfile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                         mb -> mb .withCode(

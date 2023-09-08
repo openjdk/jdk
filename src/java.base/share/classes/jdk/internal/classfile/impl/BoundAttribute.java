@@ -144,7 +144,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             }
             if (mapper != null) {
                 filled[i] = mapper.readAttribute(enclosing, reader, p);
-            } else if (((ClassReaderImpl)reader).options().processUnknownAttributes) {
+            } else if (((ClassReaderImpl)reader).context().unknownAttributesOption() == Classfile.UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES) {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public String name() {

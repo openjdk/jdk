@@ -91,41 +91,113 @@ import jdk.internal.classfile.impl.StackMapDecoder;
  * @see AttributeMapper
  */
 public class Attributes {
+
+    /** AnnotationDefault */
     public static final String NAME_ANNOTATION_DEFAULT = "AnnotationDefault";
+
+    /** BootstrapMethods */
     public static final String NAME_BOOTSTRAP_METHODS = "BootstrapMethods";
+
+    /** CharacterRangeTable */
     public static final String NAME_CHARACTER_RANGE_TABLE = "CharacterRangeTable";
+
+    /** Code */
     public static final String NAME_CODE = "Code";
+
+    /** CompilationID */
     public static final String NAME_COMPILATION_ID = "CompilationID";
+
+    /** ConstantValue */
     public static final String NAME_CONSTANT_VALUE = "ConstantValue";
+
+    /** Deprecated */
     public static final String NAME_DEPRECATED = "Deprecated";
+
+    /** EnclosingMethod */
     public static final String NAME_ENCLOSING_METHOD = "EnclosingMethod";
+
+    /** Exceptions */
     public static final String NAME_EXCEPTIONS = "Exceptions";
+
+    /** InnerClasses */
     public static final String NAME_INNER_CLASSES = "InnerClasses";
+
+    /** LineNumberTable */
     public static final String NAME_LINE_NUMBER_TABLE = "LineNumberTable";
+
+    /** LocalVariableTable */
     public static final String NAME_LOCAL_VARIABLE_TABLE = "LocalVariableTable";
+
+    /** LocalVariableTypeTable */
     public static final String NAME_LOCAL_VARIABLE_TYPE_TABLE = "LocalVariableTypeTable";
+
+    /** MethodParameters */
     public static final String NAME_METHOD_PARAMETERS = "MethodParameters";
+
+    /** Module */
     public static final String NAME_MODULE = "Module";
+
+    /** ModuleHashes */
     public static final String NAME_MODULE_HASHES = "ModuleHashes";
+
+    /** ModuleMainClass */
     public static final String NAME_MODULE_MAIN_CLASS = "ModuleMainClass";
+
+    /** ModulePackages */
     public static final String NAME_MODULE_PACKAGES = "ModulePackages";
+
+    /** ModuleResolution */
     public static final String NAME_MODULE_RESOLUTION = "ModuleResolution";
+
+    /** ModuleTarget */
     public static final String NAME_MODULE_TARGET = "ModuleTarget";
+
+    /** NestHost */
     public static final String NAME_NEST_HOST = "NestHost";
+
+    /** NestMembers */
     public static final String NAME_NEST_MEMBERS = "NestMembers";
+
+    /** PermittedSubclasses */
     public static final String NAME_PERMITTED_SUBCLASSES = "PermittedSubclasses";
+
+    /** Record */
     public static final String NAME_RECORD = "Record";
+
+    /** RuntimeInvisibleAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_ANNOTATIONS = "RuntimeInvisibleAnnotations";
+
+    /** RuntimeInvisibleTypeAnnotations */
     public static final String NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = "RuntimeInvisibleParameterAnnotations";
+
+    /**  */
     public static final String NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS = "RuntimeInvisibleTypeAnnotations";
+
+    /** RuntimeVisibleAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_ANNOTATIONS = "RuntimeVisibleAnnotations";
+
+    /** RuntimeVisibleParameterAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS = "RuntimeVisibleParameterAnnotations";
+
+    /** RuntimeVisibleTypeAnnotations */
     public static final String NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS = "RuntimeVisibleTypeAnnotations";
+
+    /** Signature */
     public static final String NAME_SIGNATURE = "Signature";
+
+    /** SourceDebugExtension */
     public static final String NAME_SOURCE_DEBUG_EXTENSION = "SourceDebugExtension";
+
+    /** SourceFile */
     public static final String NAME_SOURCE_FILE = "SourceFile";
+
+    /** SourceID */
     public static final String NAME_SOURCE_ID = "SourceID";
+
+    /** StackMapTable */
     public static final String NAME_STACK_MAP_TABLE = "StackMapTable";
+
+    /** Synthetic */
     public static final String NAME_SYNTHETIC = "Synthetic";
 
     private Attributes() {
@@ -461,7 +533,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleResolution} attribute */
     public static final AttributeMapper<ModuleResolutionAttribute>
-            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, true, Classfile.JAVA_9_VERSION) {
+            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleResolutionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleResolutionAttribute(cf, this, p);
@@ -475,7 +547,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleTarget} attribute */
     public static final AttributeMapper<ModuleTargetAttribute>
-            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, true, Classfile.JAVA_9_VERSION) {
+            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleTargetAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleTargetAttribute(cf, this, p);
@@ -653,7 +725,7 @@ public class Attributes {
                 }
             };
 
-    /** Attribute mapper for the {@code SourceDebug} attribute */
+    /** Attribute mapper for the {@code SourceDebugExtension} attribute */
     public static final AttributeMapper<SourceDebugExtensionAttribute>
             SOURCE_DEBUG_EXTENSION = new AbstractAttributeMapper<>(NAME_SOURCE_DEBUG_EXTENSION, Classfile.JAVA_5_VERSION) {
                 @Override
@@ -712,7 +784,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Synthetic} attribute */
     public static final AttributeMapper<SyntheticAttribute>
-            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC) {
+            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC, true) {
                 @Override
                 public SyntheticAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSyntheticAttribute(cf, this, p);

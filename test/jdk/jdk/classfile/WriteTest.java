@@ -52,7 +52,7 @@ class WriteTest {
     @Test
     void testJavapWrite() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -94,7 +94,7 @@ class WriteTest {
     @Test
     void testPrimitiveWrite() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
