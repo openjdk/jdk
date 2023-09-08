@@ -105,9 +105,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <i>NegativePattern:</i>
  *         <i>Prefix<sub>opt</sub></i> <i>Number</i> <i>Suffix<sub>opt</sub></i>
  * <i>Prefix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any Unicode characters except the special characters
  * <i>Suffix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any Unicode characters except the special characters
  * <i>Number:</i>
  *         <i>Integer</i> <i>Exponent<sub>opt</sub></i>
  *         <i>Integer</i> . <i>Fraction</i> <i>Exponent<sub>opt</sub></i>
