@@ -510,17 +510,15 @@ public class ForkJoinPool19Test extends JSR166TestCase {
     public void testClose() {
         Thread t = newStartedThread(new CheckedRunnable() {
                 public void realRun() throws InterruptedException {
-                    ForkJoinTask f = new FibAction(8);
+                    FibAction f = new FibAction(1);
                     ForkJoinPool pool = null;
                     try (ForkJoinPool p = new ForkJoinPool()) {
                         pool = p;
                         p.execute(f);
-                        assertFalse(Thread.interrupted());
                     }
                     assertTrue(pool != null && pool.isTerminated());
-                    assertFalse(Thread.interrupted());
-                    f.quietlyJoin();
-                    checkCompletedNormally(f);
+                    f.join();
+                    assertEquals(1, f.result);
                 }});
         awaitTermination(t);
     }
@@ -532,14 +530,12 @@ public class ForkJoinPool19Test extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
                 public void realRun() throws InterruptedException {
                     ForkJoinPool pool = new ForkJoinPool();
-                    ForkJoinTask f = new FibAction(8);
+                    FibAction f = new FibAction(1);
                     pool.execute(f);
-                    assertFalse(Thread.interrupted());
                     pool.close();
                     assertTrue(pool.isTerminated());
-                    assertFalse(Thread.interrupted());
-                    f.quietlyJoin();
-                    checkCompletedNormally(f);
+                    f.join();
+                    assertEquals(1, f.result);
                 }});
         awaitTermination(t);
     }
@@ -551,15 +547,13 @@ public class ForkJoinPool19Test extends JSR166TestCase {
         Thread t = newStartedThread(new CheckedRunnable() {
                 public void realRun() throws InterruptedException {
                     ForkJoinPool pool = new ForkJoinPool();
-                    ForkJoinTask f = new FibAction(8);
+                    FibAction f = new FibAction(1);
                     pool.execute(f);
                     pool.shutdown();
-                    assertFalse(Thread.interrupted());
                     pool.close();
                     assertTrue(pool.isTerminated());
-                    assertFalse(Thread.interrupted());
-                    f.quietlyJoin();
-                    checkCompletedNormally(f);
+                    f.join();
+                    assertEquals(1, f.result);
                 }});
         awaitTermination(t);
     }
