@@ -4635,11 +4635,11 @@ public class Check {
                 if (previousCompletessNormally &&
                     c.stats.nonEmpty() &&
                     c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                    hasBindings(patternLabel.pat)) {
+                    (hasBindings(patternLabel.pat) || hasBindings(c.guard))) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughToPattern);
                 } else if (c.stats.isEmpty() &&
                            c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                           hasBindings(patternLabel.pat) &&
+                           (hasBindings(patternLabel.pat) || hasBindings(c.guard)) &&
                            hasStatements(l.tail)) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughFromPattern);
                 }
@@ -4648,7 +4648,7 @@ public class Check {
         }
     }
 
-    boolean hasBindings(JCPattern p) {
+    boolean hasBindings(JCTree p) {
         boolean[] bindings = new boolean[1];
 
         new TreeScanner() {
