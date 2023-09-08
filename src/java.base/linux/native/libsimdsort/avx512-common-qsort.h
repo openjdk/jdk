@@ -371,23 +371,21 @@ static inline int64_t partition_avx512_unrolled(type_t *arr, int64_t left,
     return l_store;
 }
 
-// right = to_index (exclusive)
+// to_index (exclusive)
 template <typename vtype, typename type_t>
-static int64_t vectorized_partition(type_t *arr, int64_t left, int64_t right, type_t pivot, bool use_gt) {
+static int64_t vectorized_partition(type_t *arr, int64_t from_index, int64_t to_index, type_t pivot, bool use_gt) {
     type_t smallest = vtype::type_max();
     type_t biggest = vtype::type_min();
     int64_t pivot_index = partition_avx512_unrolled<vtype, 2>(
-            arr, left, right, pivot, &smallest, &biggest, use_gt);
+            arr, from_index, to_index, pivot, &smallest, &biggest, use_gt);
     return pivot_index;
 }
 
 // partitioning functions
 template <typename T>
-void avx512_dual_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices){
-    const int64_t pidx1 = pivot_indices[0];
-    const int64_t pidx2 = pivot_indices[1];
-    const T pivot1 = arr[pidx1];
-    const T pivot2 = arr[pidx2];
+void avx512_dual_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot1, int64_t index_pivot2){
+    const T pivot1 = arr[index_pivot1];
+    const T pivot2 = arr[index_pivot2];
 
     const int64_t low = from_index;
     const int64_t high = to_index;
@@ -395,13 +393,20 @@ void avx512_dual_pivot_partition(T *arr, int64_t from_index, int64_t to_index, i
     const int64_t end = high - 1;
 
 
-    std::swap(arr[pidx1], arr[low]);
-    std::swap(arr[pidx2], arr[end]);
+    std::swap(arr[index_pivot1], arr[low]);
+    std::swap(arr[index_pivot2], arr[end]);
 
 
     const int64_t pivot_index2 = vectorized_partition<zmm_vector<T>, T>(arr, start, end, pivot2, true); // use_gt = true
     std::swap(arr[end], arr[pivot_index2]);
     int64_t upper = pivot_index2;
+
+    // if all other elements are greater than pivot2 (and pivot1), no need to do further partitioning
+    if (upper == start) {
+        pivot_indices[0] = low;
+        pivot_indices[1] = upper;
+        return;
+    }
 
     const int64_t pivot_index1 = vectorized_partition<zmm_vector<T>, T>(arr, start, upper, pivot1, false); // use_ge (use_gt = false)
     int64_t lower = pivot_index1 - 1;
@@ -412,13 +417,11 @@ void avx512_dual_pivot_partition(T *arr, int64_t from_index, int64_t to_index, i
 }
 
 template <typename T>
-void avx512_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices){
-    const int64_t pidx = pivot_indices[0];
-    const T pivot = arr[pidx];
+void avx512_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot){
+    const T pivot = arr[index_pivot];
 
     const int64_t low = from_index;
     const int64_t high = to_index;
-    //const int64_t start = low + 1;
     const int64_t end = high - 1;
 
 
@@ -433,9 +436,35 @@ void avx512_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index,
 }
 
 template <typename T>
-inline void avx512_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pviot) {
+void inline avx512_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pviot) {
     if(is_dual_pviot) avx512_dual_pivot_partition<T>(arr, from_index, to_index, pivot_indices);
         else avx512_single_pivot_partition<T>(arr, from_index, to_index, pivot_indices);
+}
+
+template <typename T>
+void inline insertion_sort(T *arr, int32_t from_index, int32_t to_index) {
+    for (int i, k = from_index; ++k < to_index; ) {
+        T ai = arr[i = k];
+
+        if (ai < arr[i - 1]) {
+            while (--i >= from_index && ai < arr[i]) {
+                arr[i + 1] = arr[i];
+            }
+            arr[i + 1] = ai;
+        }
+    }
+}
+
+template <typename T>
+void inline avx512_fastsort(T *arr, int64_t from_index, int64_t to_index, const int32_t INS_SORT_THRESHOLD) {
+    int32_t size = to_index - from_index;
+
+    if (size <= INS_SORT_THRESHOLD) {
+        insertion_sort<T>(arr, from_index, to_index);
+    }
+    else {
+        avx512_qsort<T>(arr, from_index, to_index);
+    }
 }
 
 

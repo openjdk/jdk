@@ -341,13 +341,19 @@ class methodHandle;
    do_name(     copyOf_name,                                     "copyOf")                                              \
    do_signature(copyOf_signature,             "([Ljava/lang/Object;ILjava/lang/Class;)[Ljava/lang/Object;")             \
                                                                                                                         \
-  do_intrinsic(_arraySort,                java_util_DualPivotQuicksort,       arraySort_name, arraySort_signature, F_S) \
-   do_name(     arraySort_name,                                  "arraySort")                                           \
-   do_signature(arraySort_signature,          "(Ljava/lang/Class;Ljava/lang/Object;JIII)V")                             \
+  do_intrinsic(_arraySortMI, java_util_DualPivotQuicksort, arraySortMI_name, arraySortMI_signature, F_S)                \
+   do_name(     arraySortMI_name,                                  "mixedInsertionSort")                                \
+   do_signature(arraySortMI_signature,          "(Ljava/lang/Class;Ljava/lang/Object;JIII)V")                            \
+  do_intrinsic(_arraySortI, java_util_DualPivotQuicksort, arraySortI_name, arraySortI_signature, F_S)                   \
+   do_name(     arraySortI_name,                                   "insertionSort")                                     \
+   do_signature(arraySortI_signature,          "(Ljava/lang/Class;Ljava/lang/Object;JII)V")                             \
                                                                                                                         \
-  do_intrinsic(_arrayPartition, java_util_DualPivotQuicksort, arrayPartition_name, arrayPartition_signature, F_S)       \
-   do_name(     arrayPartition_name,                             "arrayPartition")                                      \
-  do_signature(arrayPartition_signature,      "(Ljava/lang/Class;Ljava/lang/Object;JII[IZ)V")                           \
+  do_intrinsic(_arrayPartitionSP, java_util_DualPivotQuicksort, arrayPartitionSP_name, arrayPartitionSP_signature, F_S) \
+   do_name(     arrayPartitionSP_name,                             "partitionSinglePivot")                              \
+  do_signature(arrayPartitionSP_signature,      "(Ljava/lang/Class;Ljava/lang/Object;JIII)[I")                          \
+  do_intrinsic(_arrayPartitionDP, java_util_DualPivotQuicksort, arrayPartitionDP_name, arrayPartitionDP_signature, F_S) \
+   do_name(     arrayPartitionDP_name,                             "partitionDualPivot")                                \
+  do_signature(arrayPartitionDP_signature,      "(Ljava/lang/Class;Ljava/lang/Object;JIIII)[I")                         \
                                                                                                                         \
                                                                                                                         \
   do_intrinsic(_copyOfRange,              java_util_Arrays,       copyOfRange_name, copyOfRange_signature,       F_S)   \

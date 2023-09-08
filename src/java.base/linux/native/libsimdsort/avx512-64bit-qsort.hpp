@@ -754,7 +754,7 @@ static void qsort_64bit_(type_t *arr, int64_t left, int64_t right,
 }
 
 template <>
-inline void avx512_qsort<int64_t>(int64_t *arr, int64_t fromIndex, int64_t toIndex) {
+void inline avx512_qsort<int64_t>(int64_t *arr, int64_t fromIndex, int64_t toIndex) {
     int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
         qsort_64bit_<zmm_vector<int64_t>, int64_t>(arr, fromIndex, toIndex - 1,
@@ -763,7 +763,7 @@ inline void avx512_qsort<int64_t>(int64_t *arr, int64_t fromIndex, int64_t toInd
 }
 
 template <>
-inline void avx512_qsort<double>(double *arr, int64_t fromIndex, int64_t toIndex) {
+void inline avx512_qsort<double>(double *arr, int64_t fromIndex, int64_t toIndex) {
     int64_t arrsize = toIndex - fromIndex;
     if (arrsize > 1) {
         qsort_64bit_<zmm_vector<double>, double>(arr, fromIndex, toIndex - 1,

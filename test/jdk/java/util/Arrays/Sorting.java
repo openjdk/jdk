@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@
  * @compile/module=java.base java/util/SortingHelper.java
  * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297
  * @build Sorting
- * @run main Sorting -shortrun
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySortI,_arraySortMI,_arrayPartitionSP,_arrayPartitionDP Sorting -shortrun
+ * @run main/othervm -XX:CompileThreshold=1 -XX:-TieredCompilation Sorting -shortrun
  * @summary Exercise Arrays.sort, Arrays.parallelSort
  *
  * @author Vladimir Yaroslavskiy
@@ -46,7 +47,7 @@ public class Sorting {
 
     // Array lengths used in a long run (default)
     private static final int[] LONG_RUN_LENGTHS = {
-        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000 };
+        1, 3, 8, 21, 55, 100, 1_000, 10_000, 100_000};
 
     // Array lengths used in a short run
     private static final int[] SHORT_RUN_LENGTHS = {

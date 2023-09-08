@@ -293,8 +293,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySort:                return inline_arraysort();
-  case vmIntrinsics::_arrayPartition:           return inline_array_partition();
+  case vmIntrinsics::_arraySortMI:
+  case vmIntrinsics::_arraySortI:               return inline_arraysort();
+
+  case vmIntrinsics::_arrayPartitionSP:         return inline_array_partition(false /* single pivot*/);
+  case vmIntrinsics::_arrayPartitionDP:         return inline_array_partition(true /* dual pivot*/);
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5367,7 +5370,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 }
 
 //------------------------------inline_array_partition-----------------------
-bool LibraryCallKit::inline_array_partition() {
+bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
 
   address stubAddr = nullptr;
   const char *stubName;
@@ -5378,32 +5381,41 @@ bool LibraryCallKit::inline_array_partition() {
   Node* offset          = argument(2);
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
-  Node* pivot_indices   = argument(6);
-  Node* isDualPivot     = argument(7);
+  Node* indexPivot1     = argument(6);
+  Node* indexPivot2     = is_dual_pivot? argument(7) : nullptr;
 
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
-  stubAddr = StubRoutines::select_array_partition_function(bt);
-  if (stubAddr == nullptr) return false;
-
+  stubAddr = StubRoutines::select_array_partition_function(bt, is_dual_pivot);
+  // stub not loaded
+  if (stubAddr == nullptr) {
+    return false;
+  }
+  // get the address of the array
   const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
     return false; // failed input validation
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
 
-  pivot_indices = must_be_not_null(pivot_indices, true);
-  const TypeAryPtr* pivot_indices_type = pivot_indices->Value(&_gvn)->isa_aryptr();
-  if (pivot_indices_type == nullptr || pivot_indices_type->elem() == Type::BOTTOM ) {
-    return false; // failed input validation
-  }
-  Node* pivot_indices_adr = array_element_address(pivot_indices, intcon(0), T_INT);
+  // create the pivotIndices array of type int and size = 2
+  Node* pivotIndices = nullptr;
+  Node* size = intcon(2);
+  Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_INT)));
+  pivotIndices = new_array(klass_node, size, 0);  // no arguments to push
+  AllocateArrayNode* alloc = tightly_coupled_allocation(pivotIndices);
+  guarantee(alloc != nullptr, "created above");
+  Node* pivotIndices_adr = basic_plus_adr(pivotIndices, arrayOopDesc::base_offset_in_bytes(T_INT));
 
-  // Call the stub.
-  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
+  // Call the stub
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(is_dual_pivot),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    obj_adr, fromIndex, toIndex, pivot_indices_adr, isDualPivot);
+                    obj_adr, fromIndex, toIndex, pivotIndices_adr, indexPivot1, indexPivot2);
+
+  if (!stopped()) {
+    set_result(pivotIndices);
+  }
 
   return true;
 }
@@ -5426,13 +5438,18 @@ bool LibraryCallKit::inline_arraysort() {
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
   stubAddr = StubRoutines::select_arraysort_function(bt);
-  if (stubAddr == nullptr) return false;
+  //stub not loaded
+  if (stubAddr == nullptr) {
+    return false;
+  }
 
+  // get address of the array
   const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
   if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
     return false; // failed input validation
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
+
   // Call the stub.
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_sort_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,

@@ -180,10 +180,14 @@ address StubRoutines::_arraysort_int = nullptr;
 address StubRoutines::_arraysort_long = nullptr;
 address StubRoutines::_arraysort_float = nullptr;
 address StubRoutines::_arraysort_double = nullptr;
-address StubRoutines::_array_partition_int  = nullptr;
-address StubRoutines::_array_partition_long = nullptr;
-address StubRoutines::_array_partition_float = nullptr;
-address StubRoutines::_array_partition_double = nullptr;
+address StubRoutines::_array_partition_single_int  = nullptr;
+address StubRoutines::_array_partition_dual_int  = nullptr;
+address StubRoutines::_array_partition_single_long = nullptr;
+address StubRoutines::_array_partition_dual_long = nullptr;
+address StubRoutines::_array_partition_single_float = nullptr;
+address StubRoutines::_array_partition_dual_float = nullptr;
+address StubRoutines::_array_partition_single_double = nullptr;
+address StubRoutines::_array_partition_dual_double = nullptr;
 
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
@@ -553,12 +557,12 @@ address StubRoutines::select_arraysort_function(BasicType t) {
   }
 }
 
-address StubRoutines::select_array_partition_function(BasicType t) {
+address StubRoutines::select_array_partition_function(BasicType t, bool is_dual_pivot) {
   switch(t) {
-    case T_INT:    return _array_partition_int;
-    case T_LONG:   return _array_partition_long;
-    case T_FLOAT:  return _array_partition_float;
-    case T_DOUBLE: return _array_partition_double;
+    case T_INT:    return is_dual_pivot ? _array_partition_dual_int : _array_partition_single_int;
+    case T_LONG:   return is_dual_pivot ? _array_partition_dual_long : _array_partition_single_long;
+    case T_FLOAT:  return is_dual_pivot ? _array_partition_dual_float : _array_partition_single_float;
+    case T_DOUBLE: return is_dual_pivot ? _array_partition_dual_double : _array_partition_single_double;
   default:
     ShouldNotReachHere();
     return nullptr;

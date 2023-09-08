@@ -388,10 +388,11 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         } args[6];
       } calls[] = {
         "array_partition_stub",
-        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+3, ShenandoahStore }, { -1, ShenandoahNone },
-          { -1, ShenandoahNone }, { -1, ShenandoahNone } },
+        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+3, ShenandoahStore },   { -1, ShenandoahNone },
+          { -1, ShenandoahNone },                { -1, ShenandoahNone },                  { -1, ShenandoahNone } },
         "arraysort_stub",
-        { { TypeFunc::Parms, ShenandoahStore }, { -1, ShenandoahNone }, { -1, ShenandoahNone } },
+        { { TypeFunc::Parms, ShenandoahStore },  { -1, ShenandoahNone },                  { -1, ShenandoahNone },
+          { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
         "aescrypt_encryptBlock",
         { { TypeFunc::Parms, ShenandoahLoad },   { TypeFunc::Parms+1, ShenandoahStore },  { TypeFunc::Parms+2, ShenandoahLoad },
           { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
