@@ -65,6 +65,12 @@ StringDedup::Processor::Processor() : _thread(nullptr) {}
 
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    EXCEPTION_MARK;
+    _concurrent_dedup_thread_cpu_time =
+        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_dedup_thread.cpu_time",
+                                         PerfData::U_Ticks, CHECK);
+  }
 }
 
 void StringDedup::Processor::wait_for_requests() const {
