@@ -3844,7 +3844,9 @@ void TemplateTable::monitorenter() {
 
      __ check_extended_sp();
      __ sub(sp, sp, entry_size);           // make room for the monitor
-     __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+     __ sub(t0, sp, fp);
+     __ srai(t0, t0, Interpreter::logStackElementSize);
+     __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
 
      __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
      __ sub(esp, esp, entry_size);         // move expression stack top
