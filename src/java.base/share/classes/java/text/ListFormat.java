@@ -101,7 +101,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
  * @since 22
  */
-public class ListFormat extends Format {
+public final class ListFormat extends Format {
 
     @Serial
     private static final long serialVersionUID = 5272525550078071946L;
@@ -552,6 +552,8 @@ public class ListFormat extends Format {
      * {@code Type} is an enum which represents the type for formatting
      * a list within a given {@code ListFormat} instance. It determines
      * the punctuation and the connecting words in the formatted text.
+     *
+     * @since 22
      */
     public enum Type {
 
@@ -580,6 +582,8 @@ public class ListFormat extends Format {
      * <p>
      * {@code Style} is an enum which represents the style for formatting
      * a list within a given {@code ListFormat} instance.
+     *
+     * @since 22
      */
     public enum Style {
 
