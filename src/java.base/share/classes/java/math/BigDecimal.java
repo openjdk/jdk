@@ -4258,7 +4258,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         boolean negative = intCompact < 0;
 
         int coeffLen = jla.stringSize(Math.abs(intCompact));
-        int adjusted = coeffLen - scale - 1;
+        long adjusted = -(long)scale + (coeffLen -1);
 
         byte[] buf;
         if ((scale >= 0) && (adjusted >= -6)) {
@@ -4298,7 +4298,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static byte[] layoutCharsCompact(
             boolean sci,
             int coeffLen,
-            int adjusted,
+            long adjusted,
             boolean negative,
             long intCompact
     ) {
@@ -4334,7 +4334,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 buf[off++] = (byte) (intCompactAbs + '0');
             }
         } else {
-            int sig = adjusted % 3;
+            int sig = (int) (adjusted % 3);
             if (sig < 0) {
                 sig += 3;                // [adjusted was negative]
             }
