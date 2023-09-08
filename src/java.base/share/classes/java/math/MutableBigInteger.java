@@ -45,6 +45,7 @@ package java.math;
 import static java.math.BigDecimal.INFLATED;
 import static java.math.BigInteger.LONG_MASK;
 import java.util.Arrays;
+import jdk.internal.vm.annotation.Stable;
 
 class MutableBigInteger {
     /**
@@ -278,6 +279,31 @@ class MutableBigInteger {
                 return -1;
             if (b1 > b2)
                 return 1;
+        }
+        return 0;
+    }
+
+
+    private final int compare(int[] bval) {
+        if (intLen < bval.length) {
+            return -1;
+        }
+
+        if (intLen > bval.length) {
+            return 1;
+        }
+
+        // Add Integer.MIN_VALUE to make the comparison act as unsigned integer
+        // comparison.
+        for (int i = offset, j = 0; i < intLen + offset; i++, j++) {
+            int b1 = value[i] + 0x80000000;
+            int b2 = bval[j] + 0x80000000;
+            if (b1 < b2) {
+                return -1;
+            }
+            if (b1 > b2) {
+                return 1;
+            }
         }
         return 0;
     }
@@ -634,6 +660,16 @@ class MutableBigInteger {
         return (int)carry;
     }
 
+    private int divaddSmall(int[] result, int offset) {
+        long sum = (RADIX_10_DIVISOR_1 & LONG_MASK) + (result[1 + offset] & LONG_MASK);
+        result[1 + offset] = (int) sum;
+
+        sum = (RADIX_10_DIVISOR_0 & LONG_MASK) + (result[offset] & LONG_MASK) + (sum >>> 32);
+        result[offset] = (int) sum;
+
+        return (int) sum >>> 32;
+    }
+
     /**
      * This method is used for division. It multiplies an n word input a by one
      * word input x, and subtracts the n word product from q. This is needed
@@ -653,6 +689,23 @@ class MutableBigInteger {
                          (((~(int)product) & LONG_MASK))) ? 1:0);
         }
         return (int)carry;
+    }
+
+    private int mulsubSmall(int[] q, int x, int offset) {
+        long xLong = x & LONG_MASK;
+        offset += 2;
+
+        long product = RADIX_10_DIVISOR_1 * xLong;
+        long difference = q[offset] - product;
+        q[offset--] = (int) difference;
+        product = (RADIX_10_DIVISOR_0 & LONG_MASK) * xLong + (product >>> 32)
+                + (((difference & LONG_MASK) >
+                (((~(int) product) & LONG_MASK))) ? 1 : 0);
+        difference = q[offset] - product;
+        q[offset] = (int) difference;
+        return (int) ((product >>> 32)
+                + (((difference & LONG_MASK) >
+                (((~(int) product) & LONG_MASK))) ? 1 : 0));
     }
 
     /**
@@ -1232,6 +1285,50 @@ class MutableBigInteger {
         return divideMagnitude(b, quotient, needRemainder);
     }
 
+    @Stable
+    private static final int[] RADIX_10_SMALL_VALUE;
+
+    private static final int RADIX_10_DIVISOR_0;
+    private static final int RADIX_10_DIVISOR_1;
+
+    static {
+        RADIX_10_SMALL_VALUE = BigInteger.longRadix[10].mag;
+
+        int[] value = RADIX_10_SMALL_VALUE;
+        int[] divisor = new int[value.length];
+        int shift = Integer.numberOfLeadingZeros(value[0]);
+        copyAndShift(value, 0, value.length, divisor, 0, shift);
+
+        RADIX_10_DIVISOR_0 = divisor[0];
+        RADIX_10_DIVISOR_1 = divisor[1];
+    }
+
+    MutableBigInteger divideKnuthSmall(MutableBigInteger quotient) {
+        // Dividend is zero
+        if (intLen == 0) {
+            quotient.intLen = quotient.offset = 0;
+            return new MutableBigInteger();
+        }
+
+        int cmp = compare(RADIX_10_SMALL_VALUE);
+        // Dividend less than divisor
+        if (cmp < 0) {
+            quotient.intLen = quotient.offset = 0;
+            return new MutableBigInteger(this);
+        }
+
+        // Dividend equal to divisor
+        if (cmp == 0) {
+            quotient.value[0] = quotient.intLen = 1;
+            quotient.offset = 0;
+            return new MutableBigInteger();
+        }
+
+        quotient.clear();
+
+        return divideMagnitudeSmall(quotient);
+    }
+
     /**
      * Computes {@code this/b} and {@code this%b} using the
      * <a href="http://cr.yp.to/bib/1998/burnikel.ps"> Burnikel-Ziegler algorithm</a>.
@@ -1673,6 +1770,184 @@ class MutableBigInteger {
         }
         quotient.normalize();
         return needRemainder ? rem : null;
+    }
+
+    private MutableBigInteger divideMagnitudeSmall(MutableBigInteger quotient) {
+        // assert div.intLen > 1
+        // D1 normalize the divisor
+        MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
+
+        if (Integer.numberOfLeadingZeros(value[offset]) >= 4) {
+            int[] remarr = new int[intLen + 1];
+            rem = new MutableBigInteger(remarr);
+            rem.intLen = intLen;
+            rem.offset = 1;
+            copyAndShift(value, offset, intLen, remarr, 1, 4);
+        } else {
+            int[] remarr = new int[intLen + 2];
+            rem = new MutableBigInteger(remarr);
+            rem.intLen = intLen + 1;
+            rem.offset = 1;
+            int rFrom = offset;
+            int c = 0;
+            int n2 = 28;
+            for (int i = 1; i < intLen + 1; i++, rFrom++) {
+                int b = c;
+                c = value[rFrom];
+                remarr[i] = (b << 4) | (c >>> n2);
+            }
+            remarr[intLen + 1] = c << 4;
+        }
+
+        int nlen = rem.intLen;
+
+        // Set the quotient size
+        final int limit = nlen - 2 + 1;
+        if (quotient.value.length < limit) {
+            quotient.value = new int[limit];
+            quotient.offset = 0;
+        }
+        quotient.intLen = limit;
+        int[] q = quotient.value;
+
+        // Insert leading 0 in rem
+        rem.offset = 0;
+        rem.value[0] = 0;
+        rem.intLen++;
+
+        final int dh = RADIX_10_DIVISOR_0;
+        long dhLong = dh & LONG_MASK;
+        final int dl = RADIX_10_DIVISOR_1;
+
+        // D2 Initialize j
+        for (int j = 0; j < limit - 1; j++) {
+            // D3 Calculate qhat
+            // estimate qhat
+            int qhat = 0;
+            int qrem = 0;
+            boolean skipCorrection = false;
+            int nh = rem.value[j + rem.offset];
+            int nh2 = nh + 0x80000000;
+            int nm = rem.value[j + 1 + rem.offset];
+
+            if (nh == dh) {
+                qhat = ~0;
+                qrem = nh + nm;
+                skipCorrection = qrem + 0x80000000 < nh2;
+            } else {
+                long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
+                if (nChunk >= 0) {
+                    qhat = (int) (nChunk / dhLong);
+                    qrem = (int) (nChunk - (qhat * dhLong));
+                } else {
+                    long tmp = divWord(nChunk, dh);
+                    qhat = (int) (tmp & LONG_MASK);
+                    qrem = (int) (tmp >>> 32);
+                }
+            }
+
+            if (qhat == 0) {
+                continue;
+            }
+
+            if (!skipCorrection) { // Correct qhat
+                long nl = rem.value[j + 2 + rem.offset] & LONG_MASK;
+                long rs = ((qrem & LONG_MASK) << 32) | nl;
+                long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+
+                if (unsignedLongCompare(estProduct, rs)) {
+                    qhat--;
+                    qrem = (int) ((qrem & LONG_MASK) + dhLong);
+                    if ((qrem & LONG_MASK) >= dhLong) {
+                        estProduct -= (dl & LONG_MASK);
+                        rs = ((qrem & LONG_MASK) << 32) | nl;
+                        if (unsignedLongCompare(estProduct, rs)) {
+                            qhat--;
+                        }
+                    }
+                }
+            }
+
+            // D4 Multiply and subtract
+            rem.value[j + rem.offset] = 0;
+            int borrow = mulsubSmall(rem.value, qhat, j + rem.offset);
+
+            // D5 Test remainder
+            if (borrow + 0x80000000 > nh2) {
+                // D6 Add back
+                divaddSmall(rem.value, j + 1 + rem.offset);
+                qhat--;
+            }
+
+            // Store the quotient digit
+            q[j] = qhat;
+        } // D7 loop on j
+        // D3 Calculate qhat
+        // estimate qhat
+        int qhat = 0;
+        int qrem = 0;
+        boolean skipCorrection = false;
+        int nh = rem.value[limit - 1 + rem.offset];
+        int nh2 = nh + 0x80000000;
+        int nm = rem.value[limit + rem.offset];
+
+        if (nh == dh) {
+            qhat = ~0;
+            qrem = nh + nm;
+            skipCorrection = qrem + 0x80000000 < nh2;
+        } else {
+            long nChunk = (((long) nh) << 32) | (nm & LONG_MASK);
+            if (nChunk >= 0) {
+                qhat = (int) (nChunk / dhLong);
+                qrem = (int) (nChunk - (qhat * dhLong));
+            } else {
+                long tmp = divWord(nChunk, dh);
+                qhat = (int) (tmp & LONG_MASK);
+                qrem = (int) (tmp >>> 32);
+            }
+        }
+        if (qhat != 0) {
+            if (!skipCorrection) { // Correct qhat
+                long nl = rem.value[limit + 1 + rem.offset] & LONG_MASK;
+                long rs = ((qrem & LONG_MASK) << 32) | nl;
+                long estProduct = (dl & LONG_MASK) * (qhat & LONG_MASK);
+
+                if (unsignedLongCompare(estProduct, rs)) {
+                    qhat--;
+                    qrem = (int) ((qrem & LONG_MASK) + dhLong);
+                    if ((qrem & LONG_MASK) >= dhLong) {
+                        estProduct -= (dl & LONG_MASK);
+                        rs = ((qrem & LONG_MASK) << 32) | nl;
+                        if (unsignedLongCompare(estProduct, rs)) {
+                            qhat--;
+                        }
+                    }
+                }
+            }
+
+
+            // D4 Multiply and subtract
+            int borrow;
+            rem.value[limit - 1 + rem.offset] = 0;
+            borrow = mulsubSmall(rem.value, qhat, limit - 1 + rem.offset);
+
+            // D5 Test remainder
+            if (borrow + 0x80000000 > nh2) {
+                // D6 Add back
+                divaddSmall(rem.value, limit - 1 + 1 + rem.offset);
+                qhat--;
+            }
+
+            // Store the quotient digit
+            q[(limit - 1)] = qhat;
+        }
+
+        // D8 Unnormalize
+        rem.rightShift(4);
+        rem.normalize();
+
+        quotient.normalize();
+        return rem;
     }
 
     /**

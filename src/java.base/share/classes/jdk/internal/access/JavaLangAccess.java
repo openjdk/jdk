@@ -334,6 +334,45 @@ public interface JavaLangAccess {
     byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
+     * Returns a new string by decoding from the given latin1 bytes array.
+     *
+     * The caller of this method shall relinquish and transfer the ownership of
+     * the byte array to the callee since the later will not make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     * @throws IllegalArgumentException for malformed or unmappable bytes.
+     */
+    String newStringLatin1NoRepl(byte[] bytes);
+
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     *
+     */
+    int stringSize(long i);
+
+    /**
+     * Pack the two ascii characters corresponding to the value from 0 to 100 into a short
+     */
+    short digit(int i);
+
+    /**
+     * Places characters representing the long i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     */
+    void getChars(long i, int index, byte[] buf);
+
+    /**
      * Returns a new string by decoding from the given utf8 bytes array.
      *
      * @param off the index of the first byte to decode

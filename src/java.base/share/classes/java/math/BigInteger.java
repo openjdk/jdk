@@ -4103,12 +4103,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger abs = this.abs();
 
         if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD && radix == 10) {
-            byte[] buf = smallToString(signum < 0, abs);
-            try {
-                return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException x) {
-                throw new Error(x);
-            }
+            return jla.newStringLatin1NoRepl(
+                    smallToString(signum < 0, abs)
+            );
         }
 
         // Ensure buffer capacity sufficient to contain string representation
@@ -4217,40 +4214,38 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         while (tmp.signum != 0) {
             MutableBigInteger q = new MutableBigInteger();
             MutableBigInteger a = new MutableBigInteger(tmp.mag);
-            MutableBigInteger b = new MutableBigInteger(longRadix10Mag);
-            digitGroups[numGroups++] = a.divideKnuth(b, q, true).toLong();
+            digitGroups[numGroups++] = a.divideKnuthSmall(q).toLong();
             tmp = q.toBigInteger(1);
         }
 
         // Get string version of first digit group
         long digit = digitGroups[numGroups - 1];
-        int digitSize = BigDecimal.stringSize(digit);
+        int digitSize = jla.stringSize(digit);
 
         final int digitsPerLong = 18;
         int bufSize = digitSize + (negative ? 1 : 0) + digitsPerLong * (numGroups - 1);
 
         byte[] buf = new byte[bufSize];
         int off = 0;
-//        StringBuilder buf = new StringBuilder(bufSize);
         if (negative) {
             buf[off] = '-';
             off = 1;
         }
 
         // Put first digit group into result buffer
-        BigDecimal.getChars(digit, digitSize + off, buf);
+        jla.getChars(digit, digitSize + off, buf);
         off += digitSize;
 
         // Append remaining digit groups each padded with leading zeros
         for (int i = numGroups - 2; i >= 0; i--) {
             // Prepend (any) leading zeros for this digit group
             digit = digitGroups[i];
-            digitSize = BigDecimal.stringSize(digit);
+            digitSize = jla.stringSize(digit);
             int numLeadingZeros = digitsPerLong - digitSize;
             for (int j = 0; j < numLeadingZeros; j++) {
                 buf[off + j] = '0';
             }
-            BigDecimal.getChars(digit, digitsPerLong + off, buf);
+            jla.getChars(digit, digitsPerLong + off, buf);
             off += digitsPerLong;
         }
 
@@ -4752,7 +4747,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         62, 39, 31, 27, 24, 22, 20, 19, 18, 18, 17, 17, 16, 16, 15, 15, 15, 14,
         14, 14, 14, 13, 13, 13, 13, 13, 13, 12, 12, 12, 12, 12, 12, 12, 12};
 
-    private static BigInteger longRadix[] = {null, null,
+    static final BigInteger longRadix[] = {null, null,
         valueOf(0x4000000000000000L), valueOf(0x383d9170b85ff80bL),
         valueOf(0x4000000000000000L), valueOf(0x6765c793fa10079dL),
         valueOf(0x41c21cb8e1000000L), valueOf(0x3642798750226111L),
@@ -4771,9 +4766,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         valueOf(0x1000000000000000L), valueOf(0x172588ad4f5f0981L),
         valueOf(0x211e44f7d02c1000L), valueOf(0x2ee56725f06e5c71L),
         valueOf(0x41c21cb8e1000000L)};
-
-    @Stable
-    static final int[] longRadix10Mag = new int[]{232830643, -1486618624};
 
     /*
      * These two arrays are the integer analogue of above.
