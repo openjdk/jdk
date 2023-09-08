@@ -34,7 +34,6 @@
 #include <ctype.h>
 
 uint32_t VM_Version::_initial_vector_length = 0;
-const char* VM_Version::_parsable_features_string = 0;
 
 #define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
 VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
