@@ -1824,7 +1824,7 @@ void Assembler::cmpw(Address dst, Register reg) {
   emit_int8(0x66);
   prefix(dst, reg);
   emit_int8((unsigned char)0x39);
-  emit_operand(rsi, dst, 1);
+  emit_operand(reg, dst, 1);
 }
 
 // The 32-bit cmpxchg compares the value at adr with the contents of rax,

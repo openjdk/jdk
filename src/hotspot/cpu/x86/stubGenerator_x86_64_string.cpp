@@ -64,7 +64,7 @@ address StubGenerator::generate_string_indexof() {
     Label L_outer9, L_mid9, L_inner9, L_outer10, L_mid10, L_inner10;
     Label L_outer11, L_mid11, L_inner11, L_outer12, L_mid12, L_inner12;
     Label L_inner_mid11, L_inner_mid12,L_0x404f26, L_tail_8;
-    Label L_inner1, L_outer1, L_done1;
+    Label L_inner1, L_outer1;
 
     Label L_begin;
 
@@ -223,31 +223,27 @@ address StubGenerator::generate_string_indexof() {
 //    0x0000555555558088 <+280>:   c5 f8 77        vzeroupper
 //    0x000055555555808b <+283>:   eb 96   jmp    0x555555558023 <_Z14avx2_strstr_v2PKcmS0_m+179>
     __ vpbroadcastb(xmm1, Address(r11, 0), Assembler::AVX_256bit);
-    __ xorl(rax, rax);
+    __ movq(rax, -1);
+    __ xorl(r14, r14);
     __ jmpb(L_inner1);
 
     __ align(8);
     __ bind(L_outer1);
-    __ addq(rax, 0x20);
-    __ cmpq(r10, rax);
-    __ jbe_b(L_done1);
+    __ addq(r14, 0x20);
+    __ cmpq(r10, r14);
+    __ jbe(L_exit); // rax already == -1
 
     __ bind(L_inner1);
-    __ vpcmpeqb(xmm0, xmm1, Address(rbx, rax, Address::times_1), Assembler::AVX_256bit);
-    __ vpmovmskb(r9, xmm0);
-    __ testl(r9, r9);
+    __ vpcmpeqb(xmm0, xmm1, Address(rbx, r14, Address::times_1), Assembler::AVX_256bit);
+    __ vpmovmskb(r13, xmm0);
+    __ testl(r13, r13);
     __ je_b(L_outer1);
-    __ tzcntl(r9, r9);
-    __ addq(r9, rax);
+    __ tzcntl(rax, r13);
+    __ addq(rax, r14);
 
-    __ subq(rsi, rcx);
-    __ cmpq(rsi, r9);
-    __ jb_b(L_done1);
+    __ cmpq(r9, rax);
+    __ jae(L_exit);
 
-    __ movq(rax, r9);
-    __ jmp(L_exit);
-
-    __ bind(L_done1);
     __ movq(rax, -1);
     __ jmp(L_exit);
 
@@ -1024,7 +1020,7 @@ address StubGenerator::generate_string_indexof() {
 
     jump_table = __ pc();
 
-    for(jmp_ndx = 0; jmp_ndx < 12; jmp_ndx++) {
+    for(jmp_ndx = 0; jmp_ndx < 13; jmp_ndx++) {
       __ emit_address(jmp_table[jmp_ndx]);
     }
 

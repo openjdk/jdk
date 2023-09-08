@@ -156,30 +156,39 @@ public class IndexOf {
             int sAnswer = testString.indexOf(fragment);
             int sbAnswer = testBuffer.indexOf(fragment);
 
-            if (sAnswer != sbAnswer)
+            if (sAnswer != sbAnswer) {
+		System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = " + testString.length() + " len Buffer = " + testBuffer.length());
+		System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
                 failCount++;
+	    }
 
             int testIndex = getRandomIndex(-100, 100);
 
             sAnswer = testString.indexOf(fragment, testIndex);
             sbAnswer = testBuffer.indexOf(fragment, testIndex);
 
-            if (sAnswer != sbAnswer)
+            if (sAnswer != sbAnswer) {
+		System.err.println("IndexOf fragment '" + fragment + "' index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
                 failCount++;
+	    }
 
             sAnswer = testString.lastIndexOf(fragment);
             sbAnswer = testBuffer.lastIndexOf(fragment);
 
-            if (sAnswer != sbAnswer)
+            if (sAnswer != sbAnswer) {
+		System.err.println("lastIndexOf fragment '" + fragment + "' len String = " + testString.length() + " len Buffer = " + testBuffer.length());
                 failCount++;
+	    }
 
             testIndex = getRandomIndex(-100, 100);
 
             sAnswer = testString.lastIndexOf(fragment, testIndex);
             sbAnswer = testBuffer.lastIndexOf(fragment, testIndex);
 
-            if (sAnswer != sbAnswer)
+            if (sAnswer != sbAnswer) {
+		System.err.println("lastIndexOf fragment '" + fragment + "' index = " + testIndex + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
                 failCount++;
+	    }
         }
 
         report("String vs StringBuffer       ", failCount);
