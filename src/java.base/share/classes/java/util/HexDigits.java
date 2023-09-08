@@ -35,6 +35,33 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 final class HexDigits implements Digits {
+    /**
+     * Each element of the array represents the ascii encoded
+     * hex relative to its index, for example:<p>
+     * <pre>
+     *       0 -> '00' -> '0' | ('0' << 8) -> 0x3030
+     *       1 -> '01' -> '0' | ('1' << 8) -> 0x3130
+     *       2 -> '02' -> '0' | ('2' << 8) -> 0x3230
+     *
+     *     ...
+     *
+     *      10 -> '0a' -> '0' | ('a' << 8) -> 0x6130
+     *      11 -> '0b' -> '0' | ('b' << 8) -> 0x6230
+     *      12 -> '0c' -> '0' | ('b' << 8) -> 0x6330
+     *
+     *     ...
+     *
+     *      26 -> '1a' -> '1' | ('a' << 8) -> 0x6131
+     *      27 -> '1b' -> '1' | ('b' << 8) -> 0x6231
+     *      28 -> '1c' -> '1' | ('c' << 8) -> 0x6331
+     *
+     *     ...
+     *
+     *     253 -> 'fd' -> 'f' | ('d' << 8) -> 0x6466
+     *     254 -> 'fe' -> 'f' | ('e' << 8) -> 0x6566
+     *     255 -> 'ff' -> 'f' | ('f' << 8) -> 0x6666
+     * </pre>
+     */
     @Stable
     private static final short[] DIGITS;
 
