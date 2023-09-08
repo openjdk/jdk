@@ -727,7 +727,6 @@
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
-  declare_constant(ReceiverTypeData::nonprofiled_count_off_set)           \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
   declare_constant(ReceiverTypeData::count0_offset)                       \
