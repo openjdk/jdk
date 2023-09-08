@@ -130,9 +130,12 @@ public abstract class FontConfiguration {
      * default uses the system properties os.name and os.version;
      * subclasses may override.
      */
+    @SuppressWarnings("removal")
     protected void setOsNameAndVersion() {
-        osName = System.getProperty("os.name");
-        osVersion = System.getProperty("os.version");
+        osName = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.name"));
+        osVersion = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.version"));
     }
 
     private void setEncoding() {

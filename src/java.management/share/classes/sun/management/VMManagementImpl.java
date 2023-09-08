@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,29 +151,53 @@ class VMManagementImpl implements VMManagement {
     private native int getProcessId();
 
     public String   getVmName() {
-        return System.getProperty("java.vm.name");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.name"));
+        return sh;
     }
 
     public String   getVmVendor() {
-        return System.getProperty("java.vm.vendor");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.vendor"));
+        return sh;
     }
     public String   getVmVersion() {
-        return System.getProperty("java.vm.version");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.version"));
+        return sh;
     }
     public String   getVmSpecName()  {
-        return System.getProperty("java.vm.specification.name");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.specification.name"));
+        return sh;
     }
     public String   getVmSpecVendor() {
-        return System.getProperty("java.vm.specification.vendor");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.specification.vendor"));
+        return sh;
     }
     public String   getVmSpecVersion() {
-        return System.getProperty("java.vm.specification.version");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.vm.specification.version"));
+        return sh;
     }
     public String   getClassPath() {
-        return System.getProperty("java.class.path");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.class.path"));
+        return sh;
     }
     public String   getLibraryPath()  {
-        return System.getProperty("java.library.path");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("java.library.path"));
+        return sh;
     }
 
     public String   getBootClassPath( ) {
@@ -204,13 +228,9 @@ class VMManagementImpl implements VMManagement {
     // Compilation Subsystem
     public String   getCompilerName() {
         @SuppressWarnings("removal")
-        String name =  AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public String run() {
-                    return System.getProperty("sun.management.compiler");
-                }
-            });
-        return name;
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("sun.management.compiler"));
+        return sh;
     }
     public native long getTotalCompileTime();
 
@@ -222,13 +242,22 @@ class VMManagementImpl implements VMManagement {
 
     // Operating System
     public String getOsName() {
-        return System.getProperty("os.name");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.name"));
+        return sh;
     }
     public String getOsArch() {
-        return System.getProperty("os.arch");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.arch"));
+        return sh;
     }
     public String getOsVersion() {
-        return System.getProperty("os.version");
+        @SuppressWarnings("removal")
+        String sh = AccessController.doPrivileged(
+          (PrivilegedAction<String>)()->System.getProperty("os.version"));
+        return sh;
     }
 
     // Hotspot-specific runtime support
