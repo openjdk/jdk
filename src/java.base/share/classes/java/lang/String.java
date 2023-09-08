@@ -696,13 +696,6 @@ public final class String
         }
     }
 
-    static String newStringLatin1NoRepl(byte[] bytes) {
-        if (COMPACT_STRINGS) {
-            return new String(bytes, LATIN1);
-        }
-        return new String(StringLatin1.inflate(bytes, 0, bytes.length), UTF16);
-    }
-
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
      *

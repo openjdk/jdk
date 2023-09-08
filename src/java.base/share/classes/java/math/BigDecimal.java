@@ -3524,7 +3524,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             }
 
-            return jla.newStringLatin1NoRepl(buf);
+            try {
+                return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            } catch (CharacterCodingException e) {
+                throw new AssertionError(e);
+            }
         }
 
         return getValueString(intVal, scale);
@@ -3591,7 +3595,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        return jla.newStringLatin1NoRepl(buf);
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /**
@@ -4244,7 +4252,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         highIntSize + 1,
                         jla.digitPair((int) Math.abs(intCompact - highInt * 100)));
 
-                return jla.newStringLatin1NoRepl(buf);
+                try {
+                    return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException e) {
+                    throw new AssertionError(e);
+                }
             }
 
             return layoutCharsCompact(intCompact, scale, sci);
@@ -4292,7 +4304,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             buf = layoutCharsCompact(sci, coeffLen, adjusted, negative, intCompact);
         }
 
-        return jla.newStringLatin1NoRepl(buf);
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private static byte[] layoutCharsCompact(
@@ -4565,7 +4581,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        return jla.newStringLatin1NoRepl(buf);
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /**

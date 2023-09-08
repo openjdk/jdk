@@ -4103,9 +4103,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         BigInteger abs = this.abs();
 
         if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD && radix == 10) {
-            return jla.newStringLatin1NoRepl(
-                    smallToString(signum < 0, abs)
-            );
+            try {
+                return jla.newStringNoRepl(smallToString(signum < 0, abs), StandardCharsets.ISO_8859_1);
+            } catch (CharacterCodingException e) {
+                throw new AssertionError(e);
+            }
         }
 
         // Ensure buffer capacity sufficient to contain string representation

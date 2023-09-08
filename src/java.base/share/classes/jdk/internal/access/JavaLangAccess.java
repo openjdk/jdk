@@ -334,18 +334,6 @@ public interface JavaLangAccess {
     byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns a new string by decoding from the given latin1 bytes array.
-     *
-     * The caller of this method shall relinquish and transfer the ownership of
-     * the byte array to the callee since the later will not make a copy.
-     *
-     * @param bytes the byte array source
-     * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes.
-     */
-    String newStringLatin1NoRepl(byte[] bytes);
-
-    /**
      * Returns the string representation size for a given long value.
      *
      * @param x long value
