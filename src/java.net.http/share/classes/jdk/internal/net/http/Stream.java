@@ -187,7 +187,13 @@ class Stream<T> extends ExchangeImpl<T> {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    handleReset(rf, subscriber);
+                    if (endStreamReceived()) {
+                        // If END_STREAM is already received, we should not receive any new RST_STREAM frames and
+                        // close the connection gracefully by processing all remaining frames in the inputQ.
+                        requestBodyCF.complete(null);
+                    } else {
+                        handleReset(rf, subscriber);
+                    }
                     return;
                 }
                 DataFrame df = (DataFrame)frame;
@@ -201,7 +207,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     connection.ensureWindowUpdated(df); // must update connection window
                     Log.logTrace("responseSubscriber.onComplete");
                     if (debug.on()) debug.log("incoming: onComplete");
-                    sched.stop();
+                    if (inputQ.isEmpty()) sched.stop();
                     connection.decrementStreamsCount(streamid);
                     subscriber.onComplete();
                     onCompleteCalled = true;
@@ -220,7 +226,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     if (consumed(df)) {
                         Log.logTrace("responseSubscriber.onComplete");
                         if (debug.on()) debug.log("incoming: onComplete");
-                        sched.stop();
+                        if (inputQ.isEmpty()) sched.stop();
                         connection.decrementStreamsCount(streamid);
                         subscriber.onComplete();
                         onCompleteCalled = true;
@@ -567,7 +573,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
     void incoming_reset(ResetFrame frame) {
         Log.logTrace("Received RST_STREAM on stream {0}", streamid);
-        if (endStreamReceived()) {
+        if (endStreamReceived() && requestBodyCF.isDone()) {
             Log.logTrace("Ignoring RST_STREAM frame received on remotely closed stream {0}", streamid);
         } else if (closed) {
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
