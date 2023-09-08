@@ -142,6 +142,13 @@ public class ListFormat extends Format {
     }
 
     private void init() {
+        // check for null pattern elements
+        for (String elem : patterns) {
+            if (elem == null) {
+                throw new IllegalArgumentException("patterns array contains one or more null elements");
+            }
+        }
+
         // get pattern strings
         var m = PARSE_START.matcher(patterns[START]);
         String startBefore;
@@ -169,14 +176,14 @@ public class ListFormat extends Format {
         }
 
         // Validate two/three patterns, if given. Otherwise, generate them
-        if (patterns[TWO] != null && !patterns[TWO].isEmpty()) {
+        if (!patterns[TWO].isEmpty()) {
             if (!PARSE_TWO.matcher(patterns[TWO]).matches()) {
                 throw new IllegalArgumentException("pattern for two is incorrect: " + patterns[TWO]);
             }
         } else {
             patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
         }
-        if (patterns[THREE] != null && !patterns[THREE].isEmpty()) {
+        if (!patterns[THREE].isEmpty()) {
             if (!PARSE_THREE.matcher(patterns[THREE]).matches()) {
                 throw new IllegalArgumentException("pattern for three is incorrect: " + patterns[THREE]);
             }

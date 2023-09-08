@@ -101,6 +101,13 @@ public class TestListFormat {
             "",
             "{0}error{1}",
     };
+    private static final String[] CUSTOM_PATTERNS_IAE_NULL = {
+            null,
+            null,
+            null,
+            null,
+            null,
+    };
 
 
     @Test
@@ -135,6 +142,7 @@ public class TestListFormat {
                 arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect: error {0} ebet {1}"),
                 arguments(CUSTOM_PATTERNS_IAE_TWO, "pattern for two is incorrect: {1}error{0}"),
                 arguments(CUSTOM_PATTERNS_IAE_THREE, "pattern for three is incorrect: {0}error{1}"),
+                arguments(CUSTOM_PATTERNS_IAE_NULL, "patterns array contains one or more null elements"),
         };
     }
 
