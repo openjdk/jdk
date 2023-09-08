@@ -910,9 +910,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     final class ValueIterator implements Iterator<V> {
         private final Iterator<Entry<K,V>> i = entrySet().iterator();
         public boolean hasNext() { return i.hasNext(); }
-        public void remove() {
-            i.remove();
-        }
+        public void remove() { i.remove(); }
         public V next() { return i.next().getValue(); }
     }
 }
