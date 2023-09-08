@@ -1918,6 +1918,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head->set_normal_loop();
   post_head->set_post_loop(main_head);
 
+  main_exit = outer_main_end->proj_out(false);
+
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
   post_end->_prob = PROB_FAIR;
