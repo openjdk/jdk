@@ -680,15 +680,30 @@ public class TransPatterns extends TreeTranslator {
     //     ...
     // }
     private static void patchCompletingNormallyCases(List<JCCase> cases) {
-        for (int j = cases.size() - 1; j >= 0; j--) {
-            var currentCase = cases.get(j);
+        while (cases.nonEmpty()) {
+            var currentCase = cases.head;
 
-            if (currentCase != cases.last() && (currentCase.guard != null || TreeInfo.isNullCaseLabel(currentCase.labels.head)) &&
-                    currentCase.caseKind == CaseKind.STATEMENT &&
-                    currentCase.completesNormally) {
-                var nextCase = cases.get(j + 1);
-                currentCase.stats = currentCase.stats.appendList(nextCase.stats);
+            if (currentCase.caseKind == CaseKind.STATEMENT &&
+                currentCase.completesNormally &&
+                cases.tail.nonEmpty() &&
+                cases.tail.head.guard != null) {
+                ListBuffer<JCStatement> newStatements = new ListBuffer<>();
+                List<JCCase> copyFrom = cases;
+
+                while (copyFrom.nonEmpty()) {
+                    newStatements.appendList(copyFrom.head.stats);
+
+                    if (!copyFrom.head.completesNormally) {
+                        break;
+                    }
+
+                    copyFrom = copyFrom.tail;
+                };
+
+                currentCase.stats = newStatements.toList();
             }
+
+            cases = cases.tail;
         }
     }
 

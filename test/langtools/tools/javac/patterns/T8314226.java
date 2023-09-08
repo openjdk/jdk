@@ -108,15 +108,21 @@ public class T8314226 {
     }
 
     int multipleCasesWithLoop(Object obj) {
+        int i = 0;
         switch (obj) {
             case Integer _ when ((Integer) obj) > 0:
             case String _ when !((String) obj).isEmpty():
-                return 1;
+                i = i + 1;
             case null:
-                while (true) {break;}
+                while (true) {
+                    i = i + 10;
+                    break;
+                }
             default:
-                return 3;
+                i = i + 100;
         }
+
+        return i;
     }
 
     public static void main(String[] args) {
@@ -147,10 +153,10 @@ public class T8314226 {
         assertEquals(111, multipleCasesWithEffectNoReturn("test"));
         assertEquals(110, multipleCasesWithEffectNoReturn(null));
         assertEquals(100, multipleCasesWithEffectNoReturn(""));
-        assertEquals(1, multipleCasesWithLoop(42));
-        assertEquals(1, multipleCasesWithLoop("test"));
-        assertEquals(3, multipleCasesWithLoop(null));
-        assertEquals(3, multipleCasesWithLoop(""));
+        assertEquals(111, multipleCasesWithLoop(42));
+        assertEquals(111, multipleCasesWithLoop("test"));
+        assertEquals(110, multipleCasesWithLoop(null));
+        assertEquals(100, multipleCasesWithLoop(""));
     }
 
     void assertEquals(Object expected, Object actual) {
