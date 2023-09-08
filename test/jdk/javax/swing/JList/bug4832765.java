@@ -38,12 +38,11 @@ import javax.swing.SwingUtilities;
 
 public class bug4832765 {
 
-    static String[] data = {"One", "Two", "Three", "Four",
-                            "Five", "Six ", "Seven", "Eight",
-                            "Nine", "Ten", "Eleven", "Twelv"};
-
     public static void main(String[] argv) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
+            String[] data = {"One", "Two", "Three", "Four",
+                    "Five", "Six ", "Seven", "Eight",
+                    "Nine", "Ten", "Eleven", "Twelv"};
             JList<String> list = new JList<>(data);
             list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
 
