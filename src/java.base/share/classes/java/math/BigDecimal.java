@@ -4290,8 +4290,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long power = MathUtils.pow10(scale);
                 long div = intCompact / power;
                 rem = Math.abs(intCompact - div * power);
-                jla.getChars(div, off + coeffLen - scale, buf);
-                off += coeffLen - scale;
+                off += coeffLen - scale + (negative ? 1 : 0);
+                jla.getChars(div, off, buf);
 
                 pad = scale - jla.stringSize(rem);
             }
