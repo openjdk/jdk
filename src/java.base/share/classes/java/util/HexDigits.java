@@ -78,7 +78,7 @@ final class HexDigits implements Digits {
 
             for (int j = 0; j < 16; j++) {
                 short hi = (short) ((j < 10 ? j + '0' : j - 10 + 'a') << 8);
-                digits[(i << 4) + j] = (short) (lo | hi);
+                digits[(i << 4) + j] = (short) (hi | lo);
             }
         }
 
