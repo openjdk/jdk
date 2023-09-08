@@ -63,6 +63,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  *
  * }
  * } </pre>
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface ModuleHashesAttribute
         extends Attribute<ModuleHashesAttribute>, ClassElement

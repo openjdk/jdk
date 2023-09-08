@@ -27,14 +27,20 @@
  * @summary need test program to validate javac resource bundles
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.resources:open
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.tools.*;
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 
 /**
@@ -490,10 +496,10 @@ public class CheckResourceKeys {
      */
     void scan(JavaFileObject fo, Set<String> results) throws IOException {
         try (InputStream in = fo.openInputStream()) {
-            ClassFile cf = ClassFile.read(in);
-            for (ConstantPool.CPInfo cpinfo: cf.constant_pool.entries()) {
-                if (cpinfo.getTag() == ConstantPool.CONSTANT_Utf8) {
-                    String v = ((ConstantPool.CONSTANT_Utf8_info) cpinfo).value;
+            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            for (int i = 1; i < cm.constantPool().entryCount(); ++i) {
+                if (cm.constantPool().entryByIndex(i) instanceof Utf8Entry entry) {
+                    String v = entry.stringValue();
                     if (v.matches("[A-Za-z0-9-_.]+"))
                         results.add(v);
                 }
