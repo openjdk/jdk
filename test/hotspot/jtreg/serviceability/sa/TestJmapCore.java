@@ -73,6 +73,7 @@ public class TestJmapCore {
     static void test(String type) throws Throwable {
         ProcessBuilder pb = ProcessTools.createTestJvm("-XX:+CreateCoredumpOnCrash",
                 "-Xmx512m", "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError",
+                "-XX:-VerifyDependencies", "-XX:+IgnoreUnrecognizedVMOptions",
                 CoreUtils.getAlwaysPretouchArg(true),
                 TestJmapCore.class.getName(), type);
 
