@@ -201,7 +201,7 @@ public class ChoiceFormat extends NumberFormat {
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
      * @throws    IllegalArgumentException if {@code newPattern}
-     *            is invalid
+     *            violates the pattern syntax
      * @see #ChoiceFormat(String)
      */
     public void applyPattern(String newPattern) {
@@ -351,7 +351,7 @@ public class ChoiceFormat extends NumberFormat {
      * @throws    NullPointerException if {@code newPattern} is
      *            {@code null}
      * @throws    IllegalArgumentException if {@code newPattern}
-     *            is invalid
+     *            violates the pattern syntax
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
