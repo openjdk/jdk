@@ -31,6 +31,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/deoptimization.hpp"

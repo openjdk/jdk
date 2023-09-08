@@ -939,14 +939,14 @@
     <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
   </Event>
 
-  <Event name="NativeLibraryLoad" category="Java Virtual Machine, Runtime" label="Native Library Load" thread="false" stackTrace="true" startTime="true"
+  <Event name="NativeLibraryLoad" category="Java Virtual Machine, Runtime" label="Native Library Load" thread="true" stackTrace="true" startTime="true"
     description="Information about a dynamic library or other native image load operation">
     <Field type="string" name="name" label="Name" />
     <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
     <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
   </Event>
 
-  <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="false" stackTrace="true" startTime="true"
+  <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="true" stackTrace="true" startTime="true"
     description="Information about a dynamic library or other native image unload operation">
     <Field type="string" name="name" label="Name" />
     <Field type="boolean" name="success" label="Success" description="Success or failure of the unload operation" />

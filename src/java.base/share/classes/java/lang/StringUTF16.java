@@ -33,6 +33,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1519,7 +1520,7 @@ final class StringUTF16 {
     // been done by the caller.
 
     /**
-     * This is a variant of {@link Integer#getChars(int, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1528,6 +1529,7 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(int i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q, r;
         int charPos = index;
 
@@ -1541,14 +1543,23 @@ final class StringUTF16 {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
+
+            int packed = (int) StringLatin1.PACKED_DIGITS[r];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
+            charPos -= 2;
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i]);
         if (i < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i]);
+            int packed = (int) StringLatin1.PACKED_DIGITS[-i];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
+            charPos -= 2;
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+        } else {
+            putChar(buf, --charPos, '0' - i);
         }
 
         if (negative) {
@@ -1558,7 +1569,7 @@ final class StringUTF16 {
     }
 
     /**
-     * This is a variant of {@link Long#getChars(long, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1567,8 +1578,8 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
-        int r;
         int charPos = index;
 
         boolean negative = (i < 0);
@@ -1579,10 +1590,13 @@ final class StringUTF16 {
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            r = (int)((q * 100) - i);
+
+            int packed = (int) StringLatin1.PACKED_DIGITS[(int)((q * 100) - i)];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
+            charPos -= 2;
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
         }
 
         // Get 2 digits/iteration using ints
@@ -1590,16 +1604,25 @@ final class StringUTF16 {
         int i2 = (int)i;
         while (i2 <= -100) {
             q2 = i2 / 100;
-            r  = (q2 * 100) - i2;
+
+            int packed = (int) StringLatin1.PACKED_DIGITS[(q2 * 100) - i2];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
+            charPos -= 2;
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
             i2 = q2;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i2]);
         if (i2 < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i2]);
+            charPos -= 2;
+
+            int packed = (int) StringLatin1.PACKED_DIGITS[-i2];
+            int inflated = ((packed & 0xFF00) << 8) | (packed & 0xFF);
+
+            ByteArrayLittleEndian.setInt(buf, charPos << 1, inflated);
+        } else {
+            putChar(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
