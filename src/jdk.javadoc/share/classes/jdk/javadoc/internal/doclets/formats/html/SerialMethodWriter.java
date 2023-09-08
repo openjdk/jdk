@@ -49,7 +49,7 @@ public class SerialMethodWriter extends MethodWriter {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    protected Content getMethodsContentHeader(boolean isLastContent) {
+    protected Content getMethodsContentHeader() {
         return new HtmlTree(TagName.LI);
     }
 

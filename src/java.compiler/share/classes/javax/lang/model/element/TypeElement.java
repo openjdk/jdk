@@ -88,7 +88,7 @@ import javax.lang.model.util.*;
 public interface TypeElement extends Element, Parameterizable, QualifiedNameable {
     /**
      * Returns the type defined by this class or interface element,
-     * returning the <i>prototypical</i> type for an element
+     * returning the <dfn>{@index "prototypical type"}</dfn> for an element
      * representing a generic type.
      *
      * <p>A generic element defines a family of types, not just one.
@@ -98,6 +98,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * For example,
      * for the generic class element {@code C<N extends Number>},
      * the parameterized type {@code C<N>} is returned.
+     * Otherwise, for a non-generic class or interface, the
+     * prototypical type mirror corresponds to a use of the type.
+     * None of the components of the prototypical type are annotated,
+     * including the prototypical type itself.
+     *
+     * @apiNote
      * The {@link Types} utility interface has more general methods
      * for obtaining the full range of types defined by an element.
      *

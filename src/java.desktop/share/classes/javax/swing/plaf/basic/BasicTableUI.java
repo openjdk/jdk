@@ -437,7 +437,7 @@ public class BasicTableUI extends TableUI
                         return;
                     }
 
-                    Dimension delta = table.getParent().getSize();
+                    Dimension delta = SwingUtilities.getUnwrappedParent(table).getSize();
 
                     if (vertically) {
                         Rectangle r = table.getCellRect(leadRow, 0, true);

@@ -21,9 +21,7 @@
  * questions.
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
+import jdk.internal.classfile.Attribute;
 
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -105,7 +103,7 @@ public abstract class AnnotationsTestBase extends TestResult {
     public abstract List<TestCase> generateTestCases();
 
     public abstract void test(TestCase testCase, Map<String, ? extends JavaFileObject> classes)
-            throws IOException, ConstantPoolException, Descriptor.InvalidDescriptor;
+            throws IOException;
 
     /**
      * The method is used to create a repeatable annotation.
@@ -176,7 +174,7 @@ public abstract class AnnotationsTestBase extends TestResult {
             combinations.addAll(list.stream()
                     .map(Collections::singletonList)
                     .map(TestAnnotationInfos::new)
-                    .collect(Collectors.toList()));
+                    .toList());
 
             // add cases with a repeatable annotation
             for (Annotations annotationName2 : Annotations.values()) {
@@ -203,9 +201,9 @@ public abstract class AnnotationsTestBase extends TestResult {
         throw new IllegalArgumentException(name);
     }
 
-    protected long countNumberOfAttributes(Attribute[] attrs,
-                                               Class<? extends Attribute> clazz) {
-        return Stream.of(attrs)
+    protected long countNumberOfAttributes(List<Attribute<?>> attrs,
+                                           Class<? extends Attribute<?>> clazz) {
+        return attrs.stream()
                 .filter(clazz::isInstance)
                 .count();
     }

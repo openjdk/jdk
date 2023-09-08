@@ -948,20 +948,16 @@ public class MessageFormat extends Format {
      * @since 1.4
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
+        Objects.requireNonNull(arguments, "arguments must not be null");
         StringBuffer result = new StringBuffer();
         ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
-        if (arguments == null) {
-            throw new NullPointerException(
-                   "formatToCharacterIterator must be passed non-null object");
-        }
         subformat((Object[]) arguments, result, null, iterators);
         if (iterators.size() == 0) {
             return createAttributedCharacterIterator("");
         }
         return createAttributedCharacterIterator(
-                     iterators.toArray(
-                     new AttributedCharacterIterator[iterators.size()]));
+                iterators.toArray(new AttributedCharacterIterator[0]));
     }
 
     /**

@@ -263,8 +263,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
       case Bytecodes._getstatic:
       case Bytecodes._putfield:
       case Bytecodes._putstatic:
-        // TODO: handle resolved field entries with new structure
-        // i = ....
+        return getCache().getFieldEntryAt(index).getConstantPoolIndex();
       case Bytecodes._invokeinterface:
       case Bytecodes._invokehandle:
       case Bytecodes._invokespecial:

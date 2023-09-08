@@ -289,16 +289,15 @@ public:
   // there's clearing to be done ourselves. We also always mangle the space.
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
-  static int    LogOfHRGrainBytes;
-  static int    LogCardsPerRegion;
+  static uint   LogOfHRGrainBytes;
+  static uint   LogCardsPerRegion;
 
   static size_t GrainBytes;
   static size_t GrainWords;
   static size_t CardsPerRegion;
 
   static size_t align_up_to_region_byte_size(size_t sz) {
-    return (sz + (size_t) GrainBytes - 1) &
-                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+    return align_up(sz, GrainBytes);
   }
 
   // Returns whether a field is in the same region as the obj it points to.
@@ -483,7 +482,7 @@ public:
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
-  void note_evacuation_failure(bool during_concurrent_start);
+  void note_evacuation_failure();
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
@@ -529,7 +528,7 @@ public:
   }
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure();
+  void handle_evacuation_failure(bool retain);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for

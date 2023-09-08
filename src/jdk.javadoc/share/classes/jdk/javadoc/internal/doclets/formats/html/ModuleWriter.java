@@ -165,12 +165,8 @@ public class ModuleWriter extends HtmlDocletWriter {
         computeModulesData();
     }
 
-    /**
-     * Build the module summary.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildModuleDoc();
     }
 
@@ -186,7 +182,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
         addModuleFooter();
         printDocument(content);
-        var docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
+        var docFilesHandler = configuration.getWriterFactory().newDocFilesHandler(mdle);
         docFilesHandler.copyDocFiles();
     }
 
@@ -609,7 +605,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     /**
      * Add the package summary for the module.
      *
-     * @param li
+     * @param li the tree to which the summary will be added
      */
     public void addPackageSummary(HtmlTree li) {
         var table = new Table<PackageElement>(HtmlStyle.summaryTable)
@@ -681,6 +677,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            // TODO: consider deprecation info, addPackageDeprecationInfo
             addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);

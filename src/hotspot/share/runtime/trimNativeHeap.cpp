@@ -116,8 +116,8 @@ class NativeHeapTrimmerThread : public NamedThread {
             ml.wait(0); // infinite
           } else if (next_trim_time > tnow) {
             times_waited ++;
-            const int64_t wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
-            ml.wait(wait_ms);
+            const double wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
+            ml.wait((int64_t)wait_ms);
           } else if (at_or_nearing_safepoint()) {
             times_safepoint ++;
             const int64_t wait_ms = MIN2<int64_t>(TrimNativeHeapInterval, safepoint_poll_ms);

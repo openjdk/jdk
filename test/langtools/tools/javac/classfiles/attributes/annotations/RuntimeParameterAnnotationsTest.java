@@ -25,7 +25,12 @@
  * @test
  * @bug 8044411
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
@@ -85,7 +90,7 @@ public class RuntimeParameterAnnotationsTest extends RuntimeParameterAnnotations
      * @param mods an array of modifiers
      */
     private void initMethod(TestAnnotationInfos annotations, TestCase.TestClassInfo clazz, String methodName, String...mods) {
-        String methodDescriptor = methodName + "(int, double, java.lang.String)";
+        String methodDescriptor = methodName + "(int,double,String)";
         TestCase.TestMethodInfo method = clazz.addMethodInfo(methodDescriptor, mods);
         TestCase.TestParameterInfo p1 = method.addParameter("int", "a");
         annotations.annotate(p1);

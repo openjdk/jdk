@@ -1778,7 +1778,6 @@ void InstanceKlass::print_nonstatic_fields(FieldClosure* cl) {
   if (i > 0) {
     int length = i;
     assert(length == fields_sorted.length(), "duh");
-    // _sort_Fn is defined in growableArray.hpp.
     fields_sorted.sort(compare_fields_by_offset);
     for (int i = 0; i < length; i++) {
       fd.reinitialize(this, fields_sorted.at(i).second);
@@ -2704,10 +2703,11 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (array_klasses() != nullptr) {
     // To get a consistent list of classes we need MultiArray_lock to ensure
     // array classes aren't observed while they are being restored.
-     MutexLocker ml(MultiArray_lock);
+    MutexLocker ml(MultiArray_lock);
+    assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
-    array_klasses()->restore_unshareable_info(ClassLoaderData::the_null_class_loader_data(), Handle(), CHECK);
+    array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
   // Initialize @ValueBased class annotation

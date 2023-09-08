@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,13 @@ public class MacAppBundler extends AppImageBundler {
                     String keychain = SIGNING_KEYCHAIN.fetchFrom(params);
                     String result = null;
                     if (APP_STORE.fetchFrom(params)) {
-                        result = MacBaseInstallerBundler.findKey(
+                        result = MacCertificate.findCertificateKey(
                             "3rd Party Mac Developer Application: ",
                             user, keychain);
                     }
                     // if either not signing for app store or couldn't find
                     if (result == null) {
-                        result = MacBaseInstallerBundler.findKey(
+                        result = MacCertificate.findCertificateKey(
                             "Developer ID Application: ", user, keychain);
                     }
 
