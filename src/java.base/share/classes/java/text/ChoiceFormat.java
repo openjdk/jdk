@@ -148,7 +148,7 @@ import java.util.Arrays;
  * <i>Relation:</i>
  *         "#" / "&lt;" / "&le;"
  * <i>Format:</i>
- *         {@code String}
+ *         Any unicode characters except the <i>Relation</i> symbols
  * </pre></blockquote>
  *
  * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
