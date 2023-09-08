@@ -33,6 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -653,6 +654,30 @@ class ThreadInAsgct {
   ~ThreadInAsgct() {
     assert(_thread->in_asgct(), "invariant");
     _thread->set_in_asgct(false);
+  }
+};
+
+// Class to compute the total CPU time for a set of threads, then update an
+// hsperfdata counter.
+class ThreadTotalCPUTimeClosure: public ThreadClosure {
+ private:
+  jlong _time_diff;
+  PerfCounter* _counter;
+
+ public:
+  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
+      _time_diff(0), _counter(counter) {}
+
+  ~ThreadTotalCPUTimeClosure() {
+    _counter->inc(_time_diff);
+  }
+
+  virtual void do_thread(Thread* thread) {
+    // The default code path (fast_thread_cpu_time()) asserts that
+    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
+    // must ensure the thread exists and has not terminated.
+    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
+    _time_diff = os::thread_cpu_time(thread);
   }
 };
 

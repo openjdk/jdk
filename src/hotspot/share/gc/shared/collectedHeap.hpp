@@ -33,7 +33,6 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
@@ -553,31 +552,6 @@ class GCCauseSetter : StackObj {
 
   ~GCCauseSetter() {
     _heap->set_gc_cause(_previous_cause);
-  }
-};
-
-// Class to compute the total CPU time for a set of threads, then update an
-// hsperfdata counter.
-
-class ThreadTotalCPUTimeClosure: public ThreadClosure {
- private:
-  jlong _time_diff;
-  PerfCounter* _counter;
-
- public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _time_diff(0), _counter(counter) {}
-
-  ~ThreadTotalCPUTimeClosure() {
-    _counter->inc(_time_diff);
-  }
-
-  virtual void do_thread(Thread* thread) {
-    // The default code path (fast_thread_cpu_time()) asserts that
-    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-    // must ensure the thread exists and has not terminated.
-    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _time_diff = os::thread_cpu_time(thread);
   }
 };
 
