@@ -529,6 +529,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return UNSAFE.getInt(getConstantPoolPointer() + config().constantPoolFlagsOffset);
     }
 
+    /**
+     * Represents a list of static arguments from a {@link BootstrapMethodInvocation} of the form
+     * {{@code arg_count}, {@code pool_index}}, meaning the arguments are not already resolved
+     * and that the JDK has to lookup the arguments when they are needed. The {@code bssIndex}
+     * corresponds to {@code pool_index} and the {@code size} corresponds to {@code arg_count}.
+     */
     static class CachedBSMArgs extends AbstractList<JavaConstant> {
         private final JavaConstant[] cache;
         private final HotSpotConstantPool cp;
@@ -540,6 +546,17 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             this.cache = new JavaConstant[size];
         }
 
+        /**
+         * Lazily resolves and caches the argument at the given index and returns it. The method
+         * {@link CompilerToVM#bootstrapArgumentIndexAt} is used to obtain the constant pool
+         * index of the entry and the method {@link CompilerToVM#lookupConstantInPool} is used
+         * to resolve it. If the resolution failed, the index is returned as a
+         * {@link PrimitiveConstant}.
+         *
+         * @param index index of the element to return
+         * @return A {@link PrimitiveConstant} representing a {@code CONSTANT_Dynamic_info}
+         *         entry or a {@link JavaConstant} representing the static argument requested
+         */
         @Override
         public JavaConstant get(int index) {
             JavaConstant res = cache[index];

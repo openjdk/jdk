@@ -169,18 +169,23 @@ public interface ConstantPool {
          * entry. To resolve this entry, the corresponding bootstrap method has to be called first:
          *
          * <pre>
-         * resolveIndyOrCondy(int index, int opcode) {
-         *     bsmInvocation = cp.lookupBootstrapMethodInvocation(index, opcode);
-         *     staticArguments = bsmInvocation.getStaticArguments();
-         *     for each argument in staticArguments {
-         *         if argument is PrimitiveArgument {
-         *             // argument is a condy, so opcode becomes -1
-         *             resolveIndyOrCondy(argument.asInt(), -1);
+         * lookupConstant(int index, boolean resolve) {
+         *     constant = cp.lookupConstant(index, resolve);
+         *     if constant is null {
+         *         bsmInvocation = cp.lookupBootstrapMethodInvocation(index, -1);
+         *         staticArguments = bsmInvocation.getStaticArguments();
+         *         for each argument in staticArguments {
+         *             if argument is PrimitiveArgument {
+         *                 lookupConstant(argument.asInt(), resolve);
+         *             }
          *         }
+         *         call boostrap method with resolved arguments to get constant
          *     }
-         *     call original boostrap method with resolved arguments
+         *     return constant;
          * }
          * </pre>
+         *
+         * The other types of entries are already resolved an can be used directly.
          *
          * @jvms 5.4.3.6
          */
