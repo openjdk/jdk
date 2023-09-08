@@ -437,9 +437,13 @@ jint ShenandoahHeap::initialize() {
 
   _control_thread = new ShenandoahControlThread();
 
-  ShenandoahInitLogger::print();
+  print_init_logger();
 
   return JNI_OK;
+}
+
+void ShenandoahHeap::print_init_logger() const {
+  ShenandoahInitLogger::print();
 }
 
 void ShenandoahHeap::initialize_mode() {
