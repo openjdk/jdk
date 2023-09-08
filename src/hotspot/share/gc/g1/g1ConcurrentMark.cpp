@@ -1349,7 +1349,6 @@ void G1ConcurrentMark::remark() {
 }
 
 class G1ReclaimEmptyRegionsTask : public WorkerTask {
-  // Per-region work during the Cleanup pause.
   class G1ReclaimEmptyRegionsClosure : public HeapRegionClosure {
     G1CollectedHeap* _g1h;
     size_t _freed_bytes;
