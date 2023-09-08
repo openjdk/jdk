@@ -44,7 +44,8 @@ import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 /**
- * A {@code ChoiceFormat} allows you to attach a format to a range of numbers.
+ * {@code ChoiceFormat} is a concrete subclass of {@code NumberFormat} that
+ * allows you to attach a format to a range of numbers.
  * It is generally used in a {@link MessageFormat} for handling plurals.
  * The choice is specified with an ascending list of doubles, where each item
  * specifies a half-open interval up to the next item:
@@ -68,8 +69,10 @@ import java.util.Arrays;
  * {@code ChoiceFormat} doesn't implement any locale specific behavior.
  *
  * <p>
- * When creating a {@code ChoiceFormat}, you must specify an array of formats
- * and an array of limits. The length of these arrays must be the same.
+ * A {@code ChoiceFormat} can be constructed using either an array of formats
+ * and an array of limits or a string pattern. When constructing with
+ * format and limit arrays, the length of these arrays must be the same.
+ *
  * For example,
  * <ul>
  * <li>
@@ -83,7 +86,8 @@ import java.util.Arrays;
  * </ul>
  *
  * <p>
- * Here is a simple example that shows formatting and parsing:
+ * Below is an example of constructing a ChoiceFormat with arrays to format
+ * and parse values:
  * <blockquote>
  * {@snippet lang=java :
  * double[] limits = {1,2,3,4,5,6,7};
