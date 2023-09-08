@@ -36,6 +36,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "opto/subtypenode.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -1481,7 +1482,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  Node* prev_dom = search_identical(dist);
+  Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
     // Replace dominated IfNode
@@ -1556,14 +1557,14 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
-Node* IfNode::search_identical(int dist) {
+Node* IfNode::search_identical(int dist, PhaseIterGVN* igvn) {
   // Setup to scan up the CFG looking for a dominating test
   Node* dom = in(0);
   Node* prev_dom = this;
   int op = Opcode();
   // Search up the dominator tree for an If with an identical test
-  while (dom->Opcode() != op    ||  // Not same opcode?
-         dom->in(1)    != in(1) ||  // Not same input 1?
+  while (dom->Opcode() != op ||  // Not same opcode?
+         !same_condition(dom, igvn) ||  // Not same input 1?
          prev_dom->in(0) != dom) {  // One path of test does not dominate?
     if (dist < 0) return nullptr;
 
@@ -1585,6 +1586,36 @@ Node* IfNode::search_identical(int dist) {
 #endif
 
   return prev_dom;
+}
+
+bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
+  Node* dom_bool = dom->in(1);
+  Node* this_bool = in(1);
+  if (dom_bool == this_bool) {
+    return true;
+  }
+
+  if (dom_bool == nullptr || !dom_bool->is_Bool() ||
+      this_bool == nullptr || !this_bool->is_Bool()) {
+    return false;
+  }
+  Node* dom_cmp = dom_bool->in(1);
+  Node* this_cmp = this_bool->in(1);
+
+  // If the comparison is a subtype check, then SubTypeCheck nodes may have profile data attached to them and may be
+  // different nodes even-though they perform the same subtype check
+  if (dom_cmp == nullptr || !dom_cmp->is_SubTypeCheck() ||
+      this_cmp == nullptr || !this_cmp->is_SubTypeCheck()) {
+    return false;
+  }
+
+  if (dom_cmp->in(1) != this_cmp->in(1) ||
+      dom_cmp->in(2) != this_cmp->in(2) ||
+      dom_bool->as_Bool()->_test._test != this_bool->as_Bool()->_test._test) {
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -1964,7 +1995,7 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
   } else {
-    prev_dom = search_identical(4);
+    prev_dom = search_identical(4, igvn);
 
     if (prev_dom == nullptr) {
       return nullptr;
