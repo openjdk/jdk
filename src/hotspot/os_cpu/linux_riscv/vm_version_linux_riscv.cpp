@@ -207,14 +207,11 @@ char* VM_Version::os_uarch_additional_features() {
 }
 
 void VM_Version::vendor_features() {
-  // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
-  static constexpr int RIVOS_MVENDORID = 0x6cf; // JEDEC: 0x4f, Bank: 14
-
   if (!mvendorid.enabled()) {
     return;
   }
   switch (mvendorid.value()) {
-    case RIVOS_MVENDORID:
+    case RIVOS:
     rivos_features();
     break;
     default:
