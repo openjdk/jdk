@@ -169,10 +169,10 @@ import java.util.stream.Collectors;
  * <i>NegativePattern:</i>
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
- *      Any Unicode characters except the {@linkplain
+ *      Any characters except the {@linkplain
  *      DecimalFormat##special_pattern_character special characters}.
  * <i>Suffix:</i>
- *      Any Unicode characters except the {@linkplain
+ *      Any characters except the {@linkplain
  *      DecimalFormat##special_pattern_character special characters}.
  * <i>MinimumInteger:</i>
  *      0
