@@ -361,7 +361,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
   // Perf data for CPU time consumed by concurrent mark threads.
-  PerfVariable* _g1_concurrent_mark_threads_cpu_time;
+  PerfCounter* _g1_concurrent_mark_threads_cpu_time;
 
   enum class VerifyLocation {
     RemarkBefore,

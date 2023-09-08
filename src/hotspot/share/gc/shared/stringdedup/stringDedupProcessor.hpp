@@ -48,7 +48,7 @@ class StringDedup::Processor : public CHeapObj<mtGC> {
   NONCOPYABLE(Processor);
 
   // Perf data for CPU time consumed by the string dedup thread.
-  static PerfVariable* _g1_concurrent_dedup_thread_cpu_time;
+  static PerfCounter* _concurrent_dedup_thread_cpu_time;
 
   static OopStorage* _storages[2];
   static StorageUse* volatile _storage_for_requests;

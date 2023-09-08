@@ -144,7 +144,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Perf counters for CPU time of parallel GC threads. Defined here in order to
   // be reused for all collectors.
-  PerfVariable* _perf_parallel_gc_threads_cpu_time;
+  PerfCounter* _perf_parallel_worker_threads_cpu_time;
 
   // Constructor
   CollectedHeap();
@@ -561,15 +561,15 @@ class GCCauseSetter : StackObj {
 
 class ThreadTotalCPUTimeClosure: public ThreadClosure {
  private:
-  jlong _total;
-  PerfVariable* _counter;
+  jlong _time_diff;
+  PerfCounter* _counter;
 
  public:
-  ThreadTotalCPUTimeClosure(PerfVariable* counter) :
-      _total(0), _counter(counter) {}
+  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
+      _time_diff(0), _counter(counter) {}
 
   ~ThreadTotalCPUTimeClosure() {
-    _counter->set_value(_total);
+    _counter->inc(_time_diff);
   }
 
   virtual void do_thread(Thread* thread) {
@@ -577,8 +577,7 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
     // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
     // must ensure the thread exists and has not terminated.
     assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    jlong cpu_time = os::thread_cpu_time(thread);
-    _total += cpu_time;
+    _time_diff = os::thread_cpu_time(thread);
   }
 };
 

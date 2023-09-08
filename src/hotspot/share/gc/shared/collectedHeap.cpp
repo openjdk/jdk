@@ -275,9 +275,9 @@ CollectedHeap::CollectedHeap() :
                 PerfDataManager::create_string_variable(SUN_GC, "lastCause",
                              80, GCCause::to_string(_gc_lastcause), CHECK);
 
-    _perf_parallel_gc_threads_cpu_time =
-                PerfDataManager::create_variable(NULL_NS, "par_gc_thread_time",
-                                                 PerfData::U_Ticks, CHECK);
+    _perf_parallel_worker_threads_cpu_time =
+                PerfDataManager::create_counter(SUN_THREADS, "par_gc_thread_time",
+                                                PerfData::U_Ticks, CHECK);
   }
 
   // Create the ring log

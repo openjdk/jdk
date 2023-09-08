@@ -106,7 +106,7 @@ VMThread*         VMThread::_vm_thread          = nullptr;
 VM_Operation*     VMThread::_cur_vm_operation   = nullptr;
 VM_Operation*     VMThread::_next_vm_operation  = &cleanup_op; // Prevent any thread from setting an operation until VM thread is ready.
 PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = nullptr;
-PerfVariable*     VMThread::_perf_vm_thread_cpu_time = nullptr;
+PerfCounter*      VMThread::_perf_vm_thread_cpu_time = nullptr;
 VMOperationTimeoutTask* VMThread::_timeout_task = nullptr;
 
 
@@ -138,8 +138,8 @@ void VMThread::create() {
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
     _perf_vm_thread_cpu_time =
-                 PerfDataManager::create_variable(NULL_NS, "vm_thread_time",
-                                                  PerfData::U_Ticks, CHECK);
+                 PerfDataManager::create_counter(SUN_THREADS, "vm_thread_time",
+                                                 PerfData::U_Ticks, CHECK);
   }
 }
 

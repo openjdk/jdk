@@ -71,6 +71,10 @@ protected:
   // precondition: this is the current thread.
   virtual void do_refinement_step() = 0;
 
+  // Attempt to update concurrent refine threads stats.
+  // Only overridden in G1PrimaryConcurrentRefineThread.
+  virtual void maybe_update_threads_cpu_time() {};
+
   // Helper for do_refinement_step implementations.  Try to perform some
   // refinement work, limited by stop_at.  Returns true if any refinement work
   // was performed, false if no work available per stop_at.

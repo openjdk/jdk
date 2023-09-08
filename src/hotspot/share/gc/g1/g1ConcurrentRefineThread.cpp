@@ -79,10 +79,7 @@ void G1ConcurrentRefineThread::run_service() {
     } else {
       _vtime_accum = 0.0;
     }
-
-    if (UsePerfData && os::is_thread_cpu_time_supported() && is_primary()) {
-      _cr->update_concurrent_refine_threads_cpu_time();
-    }
+    maybe_update_threads_cpu_time();
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
@@ -141,6 +138,7 @@ class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
   bool maybe_deactivate() override;
   void do_refinement_step() override;
+  void maybe_update_threads_cpu_time() override;
 
 public:
   G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr) :
@@ -183,6 +181,12 @@ void G1PrimaryConcurrentRefineThread::do_refinement_step() {
       // Refinement was cut off, so proceed with fewer threads.
       cr()->reduce_threads_wanted();
     }
+  }
+}
+
+void G1PrimaryConcurrentRefineThread::maybe_update_threads_cpu_time() {
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    cr()->update_concurrent_refine_threads_cpu_time();
   }
 }
 
