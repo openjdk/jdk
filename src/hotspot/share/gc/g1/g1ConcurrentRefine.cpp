@@ -116,7 +116,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
     _g1_concurrent_refine_threads_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_refine_thread_time",
+        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_refine_thread.cpu_time",
                                         PerfData::U_Ticks, CHECK_JNI_ERR);
   }
 

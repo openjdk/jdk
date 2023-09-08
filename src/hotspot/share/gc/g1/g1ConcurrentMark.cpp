@@ -458,7 +458,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
     EXCEPTION_MARK;
 
     _g1_concurrent_mark_threads_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_mark_thread_time",
+        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_mark_thread.cpu_time",
                                         PerfData::U_Ticks, CHECK);
   }
 }

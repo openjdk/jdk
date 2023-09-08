@@ -276,7 +276,7 @@ CollectedHeap::CollectedHeap() :
                              80, GCCause::to_string(_gc_lastcause), CHECK);
 
     _perf_parallel_worker_threads_cpu_time =
-                PerfDataManager::create_counter(SUN_THREADS, "par_gc_thread_time",
+                PerfDataManager::create_counter(SUN_THREADS, "par_gc_thread.cpu_time",
                                                 PerfData::U_Ticks, CHECK);
   }
 
