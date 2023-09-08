@@ -1229,6 +1229,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         blocking = false;
       }
 
+      // In libjvmci, JVMCI initialization should not deadlock with other threads
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
         vframeStream vfst(JavaThread::cast(thread));
@@ -1246,8 +1247,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
           blocking = false;
         }
-      } else {
-        // In libjvmci, JVMCI initialization should not deadlock with other threads
       }
 
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
