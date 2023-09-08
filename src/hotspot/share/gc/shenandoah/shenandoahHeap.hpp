@@ -179,6 +179,7 @@ public:
     _gc_generation = generation;
   }
 
+  ShenandoahHeuristics* heuristics();
   ShenandoahOldHeuristics* old_heuristics();
   ShenandoahYoungHeuristics* young_heuristics();
 
@@ -198,7 +199,7 @@ public:
   jint initialize() override;
   void post_initialize() override;
   void initialize_heuristics_generations();
-
+  virtual void print_init_logger() const;
   void initialize_serviceability() override;
 
   void print_on(outputStream* st)              const override;

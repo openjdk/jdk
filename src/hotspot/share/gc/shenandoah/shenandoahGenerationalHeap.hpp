@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,18 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 
-#include "gc/shared/gcInitLogger.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 
-class ShenandoahInitLogger : public GCInitLogger {
-protected:
-  void print_heap() override;
-  void print_gc_specific() override;
-
+class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
-  static void print();
+  explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) : ShenandoahHeap(policy) {}
+
+  static ShenandoahGenerationalHeap* heap();
+
+  void print_init_logger() const override;
 };
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP

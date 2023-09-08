@@ -487,9 +487,13 @@ jint ShenandoahHeap::initialize() {
   _control_thread = new ShenandoahControlThread();
   _regulator_thread = new ShenandoahRegulatorThread(_control_thread);
 
-  ShenandoahInitLogger::print();
+  print_init_logger();
 
   return JNI_OK;
+}
+
+void ShenandoahHeap::print_init_logger() const {
+  ShenandoahInitLogger::print();
 }
 
 size_t ShenandoahHeap::max_size_for(ShenandoahGeneration* generation) const {
@@ -726,6 +730,9 @@ void ShenandoahHeap::post_initialize() {
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
 }
 
+ShenandoahHeuristics* ShenandoahHeap::heuristics() {
+  return _global_generation->heuristics();
+}
 
 ShenandoahOldHeuristics* ShenandoahHeap::old_heuristics() {
   return (ShenandoahOldHeuristics*) _old_generation->heuristics();

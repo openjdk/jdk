@@ -27,60 +27,29 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
-#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-void ShenandoahInitLogger::print_heap() {
-  GCInitLogger::print_heap();
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  log_info(gc, init)("Mode: %s",
-                     heap->mode()->name());
-
-  if (!heap->mode()->is_generational()) {
-    log_info(gc, init)("Heuristics: %s", heap->global_generation()->heuristics()->name());
-  } else {
-    log_info(gc, init)("Young Heuristics: %s", heap->young_generation()->heuristics()->name());
-    log_info(gc, init)("Young Generation Soft Size: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(heap->young_generation()->soft_max_capacity()),
-                       proper_unit_for_byte_size(heap->young_generation()->soft_max_capacity()));
-    log_info(gc, init)("Young Generation Max: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(heap->young_generation()->max_capacity()),
-                       proper_unit_for_byte_size(heap->young_generation()->max_capacity()));
-    log_info(gc, init)("Old Heuristics: %s", heap->old_generation()->heuristics()->name());
-    log_info(gc, init)("Old Generation Soft Size: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(heap->old_generation()->soft_max_capacity()),
-                       proper_unit_for_byte_size(heap->old_generation()->soft_max_capacity()));
-    log_info(gc, init)("Old Generation Max: " SIZE_FORMAT "%s",
-                       byte_size_in_proper_unit(heap->old_generation()->max_capacity()),
-                       proper_unit_for_byte_size(heap->old_generation()->max_capacity()));
-  }
-
-
-
-  log_info(gc, init)("Heap Region Count: " SIZE_FORMAT,
-                     ShenandoahHeapRegion::region_count());
-
-  log_info(gc, init)("Heap Region Size: " SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(ShenandoahHeapRegion::region_size_bytes()),
-                     exact_unit_for_byte_size(ShenandoahHeapRegion::region_size_bytes()));
-
-  log_info(gc, init)("TLAB Size Max: " SIZE_FORMAT "%s",
-                     byte_size_in_exact_unit(ShenandoahHeapRegion::max_tlab_size_bytes()),
-                     exact_unit_for_byte_size(ShenandoahHeapRegion::max_tlab_size_bytes()));
-
-  log_info(gc, init)("Humongous Object Threshold: " SIZE_FORMAT "%s",
-          byte_size_in_exact_unit(ShenandoahHeapRegion::humongous_threshold_bytes()),
-          exact_unit_for_byte_size(ShenandoahHeapRegion::humongous_threshold_bytes()));
-}
 
 void ShenandoahInitLogger::print() {
   ShenandoahInitLogger init_log;
   init_log.print_all();
+}
+
+void ShenandoahInitLogger::print_heap() {
+  GCInitLogger::print_heap();
+
+  log_info(gc, init)("Heap Region Count: " SIZE_FORMAT, ShenandoahHeapRegion::region_count());
+  log_info(gc, init)("Heap Region Size: " PROPERFMT, PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
+  log_info(gc, init)("TLAB Size Max: " PROPERFMT, PROPERFMTARGS(ShenandoahHeapRegion::max_tlab_size_bytes()));
+  log_info(gc, init)("Humongous Object Threshold: " PROPERFMT, PROPERFMTARGS(ShenandoahHeapRegion::humongous_threshold_bytes()));
+}
+
+void ShenandoahInitLogger::print_gc_specific() {
+  GCInitLogger::print_gc_specific();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  log_info(gc, init)("Mode: %s", heap->mode()->name());
+  log_info(gc, init)("Heuristics: %s", heap->heuristics()->name());
 }
