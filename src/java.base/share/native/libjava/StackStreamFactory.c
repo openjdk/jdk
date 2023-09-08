@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
   (JNIEnv *env, jclass dummy)
 {
-   return JVM_STACKWALK_FILL_CLASS_REFS_ONLY == java_lang_StackStreamFactory_FILL_CLASS_REFS_ONLY &&
+   return JVM_STACKWALK_CLASS_INFO_ONLY == java_lang_StackStreamFactory_CLASS_INFO_ONLY &&
           JVM_STACKWALK_SHOW_HIDDEN_FRAMES == java_lang_StackStreamFactory_SHOW_HIDDEN_FRAMES &&
           JVM_STACKWALK_FILL_LIVE_STACK_FRAMES == java_lang_StackStreamFactory_FILL_LIVE_STACK_FRAMES;
 }
@@ -52,10 +52,10 @@ JNIEXPORT jboolean JNICALL Java_java_lang_StackStreamFactory_checkStackWalkModes
 /*
  * Class:     java_lang_StackStreamFactory_AbstractStackWalker
  * Method:    callStackWalk
- * Signature: (JILjdk/internal/vm/ContinuationScope;Ljdk/internal/vm/Continuation;II[Ljava/lang/Object;)Ljava/lang/Object;
+ * Signature: (IILjdk/internal/vm/ContinuationScope;Ljdk/internal/vm/Continuation;II[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_callStackWalk
-  (JNIEnv *env, jobject stackstream, jlong mode, jint skipFrames, jobject contScope, jobject cont,
+  (JNIEnv *env, jobject stackstream, jint mode, jint skipFrames, jobject contScope, jobject cont,
    jint batchSize, jint startIndex, jobjectArray frames)
 {
     return JVM_CallStackWalk(env, stackstream, mode, skipFrames, contScope, cont,
@@ -65,10 +65,10 @@ JNIEXPORT jobject JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWa
 /*
  * Class:     java_lang_StackStreamFactory_AbstractStackWalker
  * Method:    fetchStackFrames
- * Signature: (JJII[Ljava/lang/Object;)I
+ * Signature: (IJII[Ljava/lang/Object;)I
  */
 JNIEXPORT jint JNICALL Java_java_lang_StackStreamFactory_00024AbstractStackWalker_fetchStackFrames
-  (JNIEnv *env, jobject stackstream, jlong mode, jlong anchor,
+  (JNIEnv *env, jobject stackstream, jint mode, jlong anchor,
    jint batchSize, jint startIndex,
    jobjectArray frames)
 {
