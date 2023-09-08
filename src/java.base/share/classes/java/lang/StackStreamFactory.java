@@ -72,7 +72,7 @@ final class StackStreamFactory {
     private static final int SMALL_BATCH       = 8;
     private static final int BATCH_SIZE        = 32;
     private static final int LARGE_BATCH_SIZE  = 256;
-    private static final int MIN_BATCH_SIZE    = SMALL_BATCH;
+    private static final int MIN_BATCH_SIZE    = 4;
 
     // These flags must match the values maintained in the VM
     @Native private static final int DEFAULT_MODE              = 0x0;
@@ -196,7 +196,7 @@ final class StackStreamFactory {
         protected abstract int batchSize(int lastBatchFrameCount);
 
         /*
-         * Returns the next batch size, always >= minimum batch size (32)
+         * Returns the next batch size, always >= minimum batch size
          *
          * Subclass may override this method if the minimum batch size is different.
          */
@@ -747,19 +747,29 @@ final class StackStreamFactory {
             return n;
         }
 
+        /*
+         * Typically finding the caller class only needs to walk two stack frames
+         * 0: StackWalker::getCallerClass
+         * 1: API
+         * 2: caller class
+         *
+         * So start the initial batch size with the minimum size.
+         * If it fetches the second batch, getCallerClass may be invoked via
+         * core reflection, can increase the next batch size.
+         */
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new ClassFrameBuffer(walker, getNextBatchSize());
+            this.frameBuffer = new ClassFrameBuffer(walker, MIN_BATCH_SIZE);
         }
 
         @Override
         protected int batchSize(int lastBatchFrameCount) {
-            return MIN_BATCH_SIZE;
+            return SMALL_BATCH;
         }
 
         @Override
         protected int getNextBatchSize() {
-            return MIN_BATCH_SIZE;
+            return SMALL_BATCH;
         }
     }
 
