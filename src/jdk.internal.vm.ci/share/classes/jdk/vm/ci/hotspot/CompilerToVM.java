@@ -336,48 +336,55 @@ final class CompilerToVM {
 
     /**
      * Gets the name of the {@code JVM_CONSTANT_NameAndType} entry in {@code constantPool}
-     * referenced by the {@code rawIndex}. The meaning of {@code rawIndex} is dependent
-     * on the given {@opcode}.
+     * referenced by the {@code which}.
      *
      * The behavior of this method is undefined if the class holding the {@code constantPool}
-     * has not yet been rewritten, or {@code rawIndex} is not a valid index for
+     * has not yet been rewritten, or {@code which} is not a valid index for
      * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    String lookupNameInPool(HotSpotConstantPool constantPool, int rawIndex, int opcode) {
-        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, opcode);
+    String lookupNameInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupNameInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex, int opcode);
+    private native String lookupNameInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Gets the signature of the {@code JVM_CONSTANT_NameAndType} entry in {@code constantPool}
-     * referenced by the {@code rawIndex}. The meaning of {@code rawIndex} is dependent
-     * on the given {@opcode}.
+     * referenced by the {@code which}.
      *
      * The behavior of this method is undefined if the class holding the {@code constantPool}
-     * has not yet been rewritten, or {@code rawIndex} is not a valid index for
+     * has not yet been rewritten, or {@code which} is not a valid index for
      * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    String lookupSignatureInPool(HotSpotConstantPool constantPool, int rawIndex, int opcode) {
-        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, opcode);
+    String lookupSignatureInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupSignatureInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex, int opcode);
+    private native String lookupSignatureInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Gets the {@code JVM_CONSTANT_Class} index from the entry in {@code constantPool}
-     * referenced by the {@code rawIndex}. The meaning of {@code rawIndex} is dependent
+     * referenced by the {@code which}. The meaning of {@code which} is dependent
      * on the given {@opcode}.
      *
      * The behavior of this method is undefined if the class holding the {@code constantPool}
-     * has not yet been rewritten, or {@code rawIndex} is not a valid index for
+     * has not yet been rewritten, or {@code which} is not a valid index for
      * this class for the given {@code opcode}
+     *
+     * @param which  for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}, must be {@code cpci}. For all other bytecodes,
+     *               must be {@code rawIndex}
      */
-    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int rawIndex, int opcode) {
-        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), rawIndex, opcode);
+    int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, int which, int opcode) {
+        return lookupKlassRefIndexInPool(constantPool, constantPool.getConstantPoolPointer(), which, opcode);
     }
 
-    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex, int opcode);
+    private native int lookupKlassRefIndexInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int which, int opcode);
 
     /**
      * Looks up a class denoted by the {@code JVM_CONSTANT_Class} entry at index {@code cpi} in

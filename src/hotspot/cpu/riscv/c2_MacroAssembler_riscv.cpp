@@ -1372,6 +1372,70 @@ void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRe
   bind(Done);
 }
 
+// According to Java SE specification, for floating-point round operations, if
+// the input is NaN, +/-infinity, or +/-0, the same input is returned as the
+// rounded result; this differs from behavior of RISC-V fcvt instructions (which
+// round out-of-range values to the nearest max or min value), therefore special
+// handling is needed by NaN, +/-Infinity, +/-0.
+void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                                          Register tmp1, Register tmp2, Register tmp3) {
+
+  assert_different_registers(dst, src);
+  assert_different_registers(tmp1, tmp2, tmp3);
+
+  // Set rounding mode for conversions
+  // Here we use similar modes to double->long and long->double conversions
+  // Different mode for long->double conversion matter only if long value was not representable as double,
+  // we got long value as a result of double->long conversion so, it is definitely representable
+  RoundingMode rm;
+  switch (round_mode) {
+    case RoundDoubleModeNode::rmode_ceil:
+      rm = RoundingMode::rup;
+      break;
+    case RoundDoubleModeNode::rmode_floor:
+      rm = RoundingMode::rdn;
+      break;
+    case RoundDoubleModeNode::rmode_rint:
+      rm = RoundingMode::rne;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  // tmp1 - is a register to store double converted to long int
+  // tmp2 - is a register to create constant for comparison
+  // tmp3 - is a register where we store modified result of double->long conversion
+  Label done, bad_val;
+
+  // Conversion from double to long
+  fcvt_l_d(tmp1, src, rm);
+
+  // Generate constant (tmp2)
+  // tmp2 = 100...0000
+  addi(tmp2, zr, 1);
+  slli(tmp2, tmp2, 63);
+
+  // Prepare converted long (tmp1)
+  // as a result when conversion overflow we got:
+  // tmp1 = 011...1111 or 100...0000
+  // Convert it to: tmp3 = 100...0000
+  addi(tmp3, tmp1, 1);
+  andi(tmp3, tmp3, -2);
+  beq(tmp3, tmp2, bad_val);
+
+  // Conversion from long to double
+  fcvt_d_l(dst, tmp1, rm);
+  // Add sign of input value to result for +/- 0 cases
+  fsgnj_d(dst, dst, src);
+  j(done);
+
+  // If got conversion overflow return src
+  bind(bad_val);
+  fmv_d(dst, src);
+
+  bind(done);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
   Label loop;

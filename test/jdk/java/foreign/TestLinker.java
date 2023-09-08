@@ -25,6 +25,8 @@
  * @test
  * @modules java.base/jdk.internal.foreign
  * @run testng TestLinker
+ * @run testng/othervm/policy=security.policy
+ *          -Djava.security.manager=default TestLinker
  */
 
 import jdk.internal.foreign.CABI;
