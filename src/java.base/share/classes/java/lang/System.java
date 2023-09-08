@@ -2495,7 +2495,7 @@ public final class System {
                 StringLatin1.getChars(i, index, buf);
             }
 
-            public short digit(int i) {
+            public short digitPair(int i) {
                 return StringLatin1.PACKED_DIGITS[i];
             }
 

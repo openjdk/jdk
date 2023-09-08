@@ -4242,7 +4242,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 ByteArrayLittleEndian.setShort(
                         buf,
                         highIntSize + 1,
-                        jla.digit((int) Math.abs(intCompact - highInt * 100)));
+                        jla.digitPair((int) Math.abs(intCompact - highInt * 100)));
 
                 return jla.newStringLatin1NoRepl(buf);
             }
