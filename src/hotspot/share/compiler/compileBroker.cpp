@@ -1240,12 +1240,14 @@ void CompileBroker::compile_method_base(const methodHandle& method,
             break;
           }
         }
-      }
 
-      // Don't allow blocking compilation requests to JVMCI
-      // if JVMCI itself is not yet initialized
-      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
-        blocking = false;
+        // Don't allow blocking compilation requests to JVMCI
+        // if JVMCI itself is not yet initialized
+        if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+          blocking = false;
+        }
+      } else {
+        // In libjvmci, JVMCI initialization should not deadlock with other threads
       }
 
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
