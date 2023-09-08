@@ -21,11 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8304246
  * @summary Compiler Implementation for Unnamed patterns and variables
- * @enablePreview
  * @compile Unnamed.java
  * @run main Unnamed
  */

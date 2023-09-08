@@ -654,7 +654,7 @@ public class JavacParser implements Parser {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedWithBrackets);
                 }
             } else {
-                if (preview.isEnabled() && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
+                if (Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowed);
                 } else {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UnderscoreAsIdentifier);

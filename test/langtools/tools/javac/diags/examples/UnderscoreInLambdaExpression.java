@@ -21,9 +21,7 @@
  * questions.
  */
 
-// key: compiler.misc.feature.unnamed.variables
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// options: -Xlint:preview
 
 public class UnderscoreInLambdaExpression {
     java.util.function.Function<String,String> f = _ -> "x";

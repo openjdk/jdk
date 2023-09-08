@@ -35,6 +35,4 @@ IdentifierTest.java:169:5: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:173:26: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:175:19: compiler.err.use.of.underscore.not.allowed
 IdentifierTest.java:181:11: compiler.err.use.of.underscore.not.allowed
-- compiler.note.preview.filename: IdentifierTest.java, DEFAULT
-- compiler.note.preview.recompile
 37 errors

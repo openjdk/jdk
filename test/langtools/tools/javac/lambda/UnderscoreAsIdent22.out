@@ -12,6 +12,4 @@ UnderscoreAsIdent.java:25:9: compiler.err.use.of.underscore.not.allowed
 UnderscoreAsIdent.java:27:19: compiler.err.use.of.underscore.not.allowed
 UnderscoreAsIdent.java:29:9: compiler.err.use.of.underscore.not.allowed
 UnderscoreAsIdent.java:31:22: compiler.err.use.of.underscore.not.allowed
-- compiler.note.preview.filename: UnderscoreAsIdent.java, DEFAULT
-- compiler.note.preview.recompile
 14 errors
