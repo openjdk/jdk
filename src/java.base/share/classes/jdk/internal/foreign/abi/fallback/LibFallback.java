@@ -42,7 +42,7 @@ final class LibFallback {
                 new java.security.PrivilegedAction<>() {
                     public Boolean run() {
                         try {
-                            System.loadLibrary("jimage");
+                            System.loadLibrary("fallbackLinker");
                             init();
                             return true;
                         } catch (UnsatisfiedLinkError ule) {
