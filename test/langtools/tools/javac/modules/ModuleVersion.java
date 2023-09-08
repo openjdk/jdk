@@ -27,7 +27,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ModuleBuilder ModuleTestBase
  * @run main ModuleVersion
  */
@@ -36,10 +41,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Module_attribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.ModuleAttribute;
 import toolbox.JavacTask;
 import toolbox.Task.Expect;
 import toolbox.Task.OutputKind;
@@ -112,16 +115,16 @@ public class ModuleVersion extends ModuleTestBase {
         }
     }
 
-    private void checkModuleVersion(Path classfile, String version) throws IOException, ConstantPoolException {
-        ClassFile cf = ClassFile.read(classfile);
+    private void checkModuleVersion(Path classfile, String version) throws IOException {
+        ClassModel cm = Classfile.of().parse(classfile);
 
-        Module_attribute moduleAttribute = (Module_attribute) cf.attributes.get(Attribute.Module);
+        ModuleAttribute moduleAttribute = cm.findAttribute(Attributes.MODULE).orElse(null);
 
         if (moduleAttribute == null) {
             throw new AssertionError("Version attribute missing!");
         }
 
-        String actualVersion = cf.constant_pool.getUTF8Value(moduleAttribute.module_version_index);
+        String actualVersion = moduleAttribute.moduleVersion().orElseThrow().stringValue();
 
         if (!version.equals(actualVersion)) {
             throw new AssertionError("Incorrect version in the classfile: " + actualVersion);
