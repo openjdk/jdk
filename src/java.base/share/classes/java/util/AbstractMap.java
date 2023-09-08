@@ -897,37 +897,22 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         public String toString() { return view().toString(); }
     }
 
-    abstract sealed class AbstractIterator<T> implements Iterator<T> {
+    // Iterator implementations.
+    // Here, we avoid polymorphism to ensure full VM optimization capabilities.
 
-        protected final Iterator<Entry<K,V>> i = entrySet().iterator();
+    final class KeyIterator implements Iterator<K> {
+        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+        public boolean hasNext() { return i.hasNext(); }
+        public void remove() { i.remove(); }
+        public K next() { return i.next().getKey(); }
+    }
 
-        @Override
-        public boolean hasNext() {
-            return i.hasNext();
-        }
-
-        @Override
+    final class ValueIterator implements Iterator<V> {
+        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+        public boolean hasNext() { return i.hasNext(); }
         public void remove() {
             i.remove();
         }
-
-    }
-
-    final class KeyIterator extends AbstractIterator<K> {
-
-        @Override
-        public K next() {
-            return i.next().getKey();
-        }
-
-    }
-
-    final class ValueIterator extends AbstractIterator<V> {
-
-        @Override
-        public V next() {
-            return i.next().getValue();
-        }
-
+        public V next() { return i.next().getValue(); }
     }
 }
