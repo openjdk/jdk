@@ -36,6 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.hpp"

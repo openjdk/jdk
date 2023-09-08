@@ -1320,6 +1320,13 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
+    // JVMCI compilation is not yet initializable.
+    return nullptr;
+  }
+#endif
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
@@ -1347,12 +1354,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
-
-#if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
-    return nullptr;
-  }
-#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
@@ -2203,7 +2204,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       compilable = ciEnv::MethodCompilable_never;
     } else {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
-      failure_reason = compile_state.failure_reason();
+      if (env.init_error() != JNI_OK) {
+        failure_reason = os::strdup(err_msg("Error attaching to libjvmci (err: %d)", env.init_error()), mtJVMCI);
+        bool reason_on_C_heap = true;
+        // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
+        // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
+        bool retryable = env.init_error() == JNI_ENOMEM;
+        compile_state.set_failure(retryable, failure_reason, reason_on_C_heap);
+      }
       if (failure_reason == nullptr) {
         if (WhiteBoxAPI && WhiteBox::compilation_locked) {
           // Must switch to native to block
@@ -2662,8 +2670,8 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   uint total_bailout_count = CompileBroker::_total_bailout_count;
   uint total_invalidated_count = CompileBroker::_total_invalidated_count;
 
-  uint nmethods_size = CompileBroker::_sum_nmethod_code_size;
-  uint nmethods_code_size = CompileBroker::_sum_nmethod_size;
+  uint nmethods_code_size = CompileBroker::_sum_nmethod_code_size;
+  uint nmethods_size = CompileBroker::_sum_nmethod_size;
 
   tty->cr();
   tty->print_cr("Accumulated compiler times");
