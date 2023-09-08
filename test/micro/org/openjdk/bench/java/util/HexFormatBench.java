@@ -126,5 +126,31 @@ public class HexFormatBench {
         }
     }
 
+    @Benchmark
+    public void toHexDigitsByte(Blackhole bh) {
+        for (byte b : bytes) {
+            bh.consume(LOWER_FORMATTER.toHexDigits(b));
+        }
+    }
 
+    @Benchmark
+    public void toHexDigitsShort(Blackhole bh) {
+        for (short b : bytes) {
+            bh.consume(LOWER_FORMATTER.toHexDigits(b));
+        }
+    }
+
+    @Benchmark
+    public void toHexDigitsInt(Blackhole bh) {
+        for (int b : bytes) {
+            bh.consume(LOWER_FORMATTER.toHexDigits(b));
+        }
+    }
+
+    @Benchmark
+    public void toHexDigitsLong(Blackhole bh) {
+        for (long b : bytes) {
+            bh.consume(LOWER_FORMATTER.toHexDigits(b));
+        }
+    }
 }
