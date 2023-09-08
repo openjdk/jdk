@@ -352,11 +352,11 @@ class LateInlineCallGenerator : public DirectCallGenerator {
     return DirectCallGenerator::generate(jvms);
   }
 
-  virtual void print_inlining_late(InliningResult kind, const char* msg) {
+  virtual void print_inlining_late(InliningResult result, const char* msg) {
     CallNode* call = call_node();
     Compile* C = Compile::current();
     C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), kind, msg);
+    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), result, msg);
     C->print_inlining_move_to(this);
     C->print_inlining_update_delayed(this);
   }
@@ -494,11 +494,11 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
     return new_jvms;
   }
 
-  virtual void print_inlining_late(InliningResult kind, const char* msg) {
+  virtual void print_inlining_late(InliningResult result, const char* msg) {
     CallNode* call = call_node();
     Compile* C = Compile::current();
     C->print_inlining_assert_ready();
-    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), kind, msg);
+    C->print_inlining(method(), call->jvms()->depth()-1, call->jvms()->bci(), result, msg);
     C->print_inlining_move_to(this);
     C->print_inlining_update_delayed(this);
   }

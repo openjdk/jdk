@@ -409,7 +409,7 @@ bool CompileTask::check_break_at_flags() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_inlining
-void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult kind, const char* msg) {
+void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
   //         1234567
   st->print("        ");     // print timestamp
   //         1234
@@ -444,8 +444,8 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
     st->print(" (not loaded)");
 
   if (msg != nullptr) {
-    st->print("   %s%s", kind == InliningResult::SUCCESS ? "" : "failed to inline: ", msg);
-  } else if (kind == InliningResult::FAILURE) {
+    st->print("   %s%s", result == InliningResult::SUCCESS ? "" : "failed to inline: ", msg);
+  } else if (result == InliningResult::FAILURE) {
     st->print("   %s", "failed to inline");
   }
   st->cr();
@@ -471,11 +471,11 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
   }
 }
 
-void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult kind, const char* msg) {
+void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg) {
   LogTarget(Debug, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print_inlining_inner(&ls, method, inline_level, bci, kind, msg);
+    print_inlining_inner(&ls, method, inline_level, bci, result, msg);
   }
 }
 
