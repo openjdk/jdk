@@ -462,12 +462,8 @@ public class AttributeWriter extends BasicWriter {
                 println("ModuleTarget:");
                 indent(+1);
                 print("target_platform: #" + attr.targetPlatform().index());
-//ToDo find the spec - can be null???
-//                if (attr.target_platform_index != 0) {
-                    tab();
-                    print("// " + attr.targetPlatform().stringValue());
-//                }
-                println();
+                tab();
+                println("// " + attr.targetPlatform().stringValue());
                 indent(-1);
             }
             case NestMembersAttribute attr -> {
@@ -546,7 +542,6 @@ public class AttributeWriter extends BasicWriter {
                 println("SourceFile: \"" + attr.sourceFile().stringValue() + "\"");
             case SourceIDAttribute attr ->
                 constantWriter.write(attr.sourceId().index());
-//            case StackMapAttribute ???
             case StackMapTableAttribute attr -> {
                 var entries = attr.entries();
                 println("StackMapTable: number_of_entries = " + entries.size());

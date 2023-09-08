@@ -223,32 +223,32 @@ public sealed interface ClassReader extends ConstantPool
     FloatEntry readFloatEntry(int offset);
 
     /**
-     * {@return the field ref entry whose index is given at the specified
+     * {@return the field reference entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the index does not correspond to
-     *         a field ref entry
+     *         a field reference entry
      */
     FieldRefEntry readFieldRefEntry(int offset);
 
     /**
-     * {@return the member ref entry whose index is given at the specified
+     * {@return the member reference entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the index does not correspond to
-     *         a member ref entry
+     *         a member reference entry
      */
     MemberRefEntry readMemberRefEntry(int offset);
 
     /**
-     * {@return the interface method ref entry whose index is given at the specified
-     * offset within the classfile}
+     * {@return the interface method reference entry whose index is given at the
+     * specified offset within the classfile}
      * @param offset the offset of the index within the classfile
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the index does not correspond to
-     *         an interface method ref entry
+     *         an interface method reference entry
      */
     InterfaceMethodRefEntry readInterfaceMethodRefEntry(int offset);
 
