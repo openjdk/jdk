@@ -81,6 +81,44 @@ public class T8314226 {
         }
     }
 
+    int multipleCasesWithReturn(Object obj) {
+        switch (obj) {
+            case Integer _ when ((Integer) obj) > 0:
+            case String _ when !((String) obj).isEmpty():
+                return 1;
+            case null:
+                return 2;
+            default:
+                return 3;
+        }
+    }
+
+    int multipleCasesWithEffectNoReturn(Object obj) {
+        int i = 0;
+        switch (obj) {
+            case Integer _ when ((Integer) obj) > 0:
+            case String _ when !((String) obj).isEmpty():
+                i = i + 1;
+            case null:
+                i = i + 10;
+            default:
+                i = i + 100;
+        }
+        return i;
+    }
+
+    int multipleCasesWithLoop(Object obj) {
+        switch (obj) {
+            case Integer _ when ((Integer) obj) > 0:
+            case String _ when !((String) obj).isEmpty():
+                return 1;
+            case null:
+                while (true) {break;}
+            default:
+                return 3;
+        }
+    }
+
     public static void main(String[] args) {
         new T8314226().run();
     }
@@ -101,9 +139,21 @@ public class T8314226 {
         assertEquals(-1, singleGuardedCase(42));
         assertEquals(1, singleGuardedCase("test"));
         assertEquals(-1, singleGuardedCase(""));
+        assertEquals(1, multipleCasesWithReturn(42));
+        assertEquals(1, multipleCasesWithReturn("test"));
+        assertEquals(2, multipleCasesWithReturn(null));
+        assertEquals(3, multipleCasesWithReturn(""));
+        assertEquals(111, multipleCasesWithEffectNoReturn(42));
+        assertEquals(111, multipleCasesWithEffectNoReturn("test"));
+        assertEquals(110, multipleCasesWithEffectNoReturn(null));
+        assertEquals(100, multipleCasesWithEffectNoReturn(""));
+        assertEquals(1, multipleCasesWithLoop(42));
+        assertEquals(1, multipleCasesWithLoop("test"));
+        assertEquals(3, multipleCasesWithLoop(null));
+        assertEquals(3, multipleCasesWithLoop(""));
     }
 
-    void assertEquals(int expected, int actual) {
+    void assertEquals(Object expected, Object actual) {
         if (expected != actual) {
             throw new AssertionError("Expected: " + expected + ", but got: " + actual);
         }

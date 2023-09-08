@@ -683,7 +683,7 @@ public class TransPatterns extends TreeTranslator {
         for (int j = cases.size() - 1; j >= 0; j--) {
             var currentCase = cases.get(j);
 
-            if (currentCase != cases.last() && currentCase.guard != null &&
+            if (currentCase != cases.last() && (currentCase.guard != null || TreeInfo.isNullCaseLabel(currentCase.labels.head)) &&
                     currentCase.caseKind == CaseKind.STATEMENT &&
                     currentCase.completesNormally) {
                 var nextCase = cases.get(j + 1);
