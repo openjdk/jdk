@@ -157,8 +157,6 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     private DateFormatSymbols(boolean flag) {
     }
 
-    // Non-transient / non-static fields should be added to hashCode impl
-
     /**
      * Era strings. For example: "AD" and "BC".  An array of 2 strings,
      * indexed by {@code Calendar.BC} and {@code Calendar.AD}.
@@ -660,8 +658,8 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * {@return the hash code for this {@code DateFormatSymbols}}
      *
-     * All fields of this class that are non-transient and non-static are used
-     * to calculate the hash code value.
+     * Non-transient and non-static fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
      *
      * @see Object#hashCode()
      */

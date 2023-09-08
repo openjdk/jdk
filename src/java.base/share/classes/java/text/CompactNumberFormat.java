@@ -217,7 +217,6 @@ public final class CompactNumberFormat extends NumberFormat {
     @java.io.Serial
     private static final long serialVersionUID = 7128367218649234678L;
 
-    // Non-transient / non-static fields should be added to hashCode impl
 
     /**
      * The patterns for compact form of numbers for this
@@ -2380,8 +2379,8 @@ public final class CompactNumberFormat extends NumberFormat {
     /**
      * {@return the hash code for this {@code CompactNumberFormat}}
      *
-     * All fields of this class that are non-transient and non-static are used
-     * to calculate the hash code value.
+     * Non-transient and non-static fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
      *
      * @see Object#hashCode()
      */

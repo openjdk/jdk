@@ -1236,8 +1236,6 @@ public class MessageFormat extends Format {
 
     // ===========================privates============================
 
-    // Non-transient / non-static fields should be added to hashCode impl
-
     /**
      * The locale to use for formatting numbers and dates.
      * @serial

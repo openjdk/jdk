@@ -778,8 +778,8 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * {@return the hash code for this {@code DecimalFormatSymbols}}
      *
-     * All fields of this class that are non-transient and non-static are used
-     * to calculate the hash code value.
+     * Non-transient and non-static fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
      *
      * @see Object#hashCode()
      */
@@ -992,8 +992,6 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             currencyInitialized = true;
         }
     }
-
-    // Non-transient / non-static fields should be added to hashCode impl
 
     /**
      * Character used for zero.
