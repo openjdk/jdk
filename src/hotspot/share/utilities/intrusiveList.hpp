@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_UTILITIES_INTRUSIVELIST_HPP
-#define SHARE_VM_UTILITIES_INTRUSIVELIST_HPP
+#ifndef SHARE_UTILITIES_INTRUSIVELIST_HPP
+#define SHARE_UTILITIES_INTRUSIVELIST_HPP
 
-#include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
+#include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isSame.hpp"
+#include "metaprogramming/logical.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
+#include <type_traits>
 
 class IntrusiveListEntry;
 class IntrusiveListImpl;
@@ -63,7 +62,8 @@ class IntrusiveListImpl;
  * in the list, the actual type of such objects may be more specific
  * than the list's element type.
  *
- * \tparam T is the class of the elements in the list.
+ * \tparam T is the class of the elements in the list.  Must be a possibly
+ * const-qualified class type.
  *
  * \tparam entry_member is a pointer to class member referring to the
  * IntrusiveListEntry subobject of T used by this list.
@@ -74,7 +74,23 @@ class IntrusiveListImpl;
  * is to not provide a constant-time size() operation.
  *
  * \tparam Base is the base class for the list.  This is typically
- * used to specify the allocation class, and defaults to _ValueObj.
+ * used to specify the allocation class.  The default is void, indicating
+ * no allocation class for the list.
+ *
+ * The value type for a list may be const-qualified.  Such a list provides
+ * const iterators and access to const-qualified elements.  A list whose value
+ * type is not const-qualified can provide both const and non-const iterators
+ * and can provide access to either const or unqualified elements, depending
+ * on the operation used.  A list that is itself const only provides const
+ * iterators and access to const-qualified elements.  A const object cannot be
+ * added to a list whose value type is not const-qualified, as that would be
+ * an implicit casting away of the const qualifier.
+ *
+ * Some operations that remove elements from a list take a
+ * <code>disposer</code> argument.  This is a function or function object that
+ * will be called with one argument, a const reference to a removed element.
+ * This function should "dispose" of the argument object when called, such as
+ * by deleting the object.  The result of the call is ignored.
  *
  * Usage of IntrusiveList involves defining an element class which
  * contains a IntrusiveListEntry member, and using a corresponding
@@ -94,7 +110,7 @@ class IntrusiveListImpl;
  * </code>
  *
  * Alternatively, the scope of the entry member can be limited, with a
- * typedef of a list specialization providing access, e.g.
+ * type alias of a list specialization providing access, e.g.
  *
  * <code>
  * class MyClass {
@@ -103,7 +119,7 @@ class IntrusiveListImpl;
  *   ...
  * public:
  *   ...
- *   typedef IntrusiveList<MyClass, &_entry> MyList;
+ *   using MyList = IntrusiveList<MyClass, &_entry>;
  *   ...
  * };
  *
@@ -115,23 +131,36 @@ class IntrusiveListImpl;
 template<typename T,
          IntrusiveListEntry T::*entry_member,
          bool has_size = false,
-         typename Base = _ValueObj>
+         typename Base = void>
 class IntrusiveList;
 
 /**
  * A class with an IntrusiveListEntry member can be used as an element
  * of a corresponding specialization of IntrusiveList.
  */
-class IntrusiveListEntry VALUE_OBJ_CLASS_SPEC {
+class IntrusiveListEntry {
   friend class IntrusiveListImpl;
 
 public:
-  IntrusiveListEntry();
-  ~IntrusiveListEntry();
+  /** Make an entry not attached to any list. */
+  IntrusiveListEntry()
+    : _prev(nullptr),
+      _next(nullptr)
+      DEBUG_ONLY(COMMA _list(nullptr))
+   {}
+
+  /**
+   * Destroy the entry.
+   *
+   * precondition: not an element of a list.
+   */
+  ~IntrusiveListEntry() NOT_DEBUG(= default);
+
+  NONCOPYABLE(IntrusiveListEntry);
 
 private:
-  // _prev and _next are the links between elements / entries in an
-  // associated list.  The values of these members are type-erased
+  // _prev and _next are the links between elements / root entries in
+  // an associated list.  The values of these members are type-erased
   // void*.  The IntrusiveListImpl::IteratorOperations class is used
   // to encode, decode, and manipulate the type-erased values.
   //
@@ -143,80 +172,79 @@ private:
   // The list containing this entry, if any.
   // Debug-only, for use in validity checks.
   DEBUG_ONLY(mutable IntrusiveListImpl* _list;)
-
-  // Noncopyable.
-  IntrusiveListEntry(const IntrusiveListEntry&);
-  IntrusiveListEntry& operator=(const IntrusiveListEntry&);
 };
 
-class IntrusiveListImpl VALUE_OBJ_CLASS_SPEC {
-  typedef IntrusiveListEntry Entry;
+class IntrusiveListImpl {
+public:
+  struct TestSupport;            // For unit tests
+
+private:
+  using Entry = IntrusiveListEntry;
 
   // Nothing for clients to see here, everything is private.  Only
   // the IntrusiveList class template has access, via friendship.
   template<typename T, Entry T::*, bool, typename> friend class IntrusiveList;
 
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
 
   Entry _root;
 
   IntrusiveListImpl();
-  ~IntrusiveListImpl();
+  ~IntrusiveListImpl() NOT_DEBUG(= default);
 
-  // Noncopyable
-  IntrusiveListImpl(const IntrusiveListImpl&);
-  IntrusiveListImpl& operator=(const IntrusiveListImpl&);
+  NONCOPYABLE(IntrusiveListImpl);
 
   // Tag manipulation for encoded void*; see IteratorOperations.
-  static const uintptr_t tag_alignment = 2;
+  static const uintptr_t _tag_alignment = 2;
 
-  static bool is_tagged_entry(const void* ptr) {
-    return !is_aligned(ptr, tag_alignment);
+  static bool is_tagged_root_entry(const void* ptr) {
+    return !is_aligned(ptr, _tag_alignment);
   }
 
-  static const void* tag_entry(const Entry* entry) {
+  static const void* add_tag_to_root_entry(const Entry* entry) {
+    assert(is_aligned(entry, _tag_alignment), "must be");
     const void* untagged = entry;
-    assert(is_aligned(untagged, tag_alignment), "must be");
     return static_cast<const char*>(untagged) + 1;
   }
 
-  static const Entry* untag_entry(const void* ptr) {
-    assert(is_tagged_entry(ptr), "precondition");
+  static const Entry* remove_tag_from_root_entry(const void* ptr) {
+    assert(is_tagged_root_entry(ptr), "precondition");
     const void* untagged = static_cast<const char*>(ptr) - 1;
-    assert(is_aligned(untagged, tag_alignment), "must be");
+    assert(is_aligned(untagged, _tag_alignment), "must be");
     return static_cast<const Entry*>(untagged);
   }
 
   const Entry* root_entry() const { return &_root; }
 
   static void detach(const Entry* entry) {
-    // TODO: Consider making the clearing of next & prev DEBUG_ONLY.
-    // Any operation that will care is a precondition violation, which
-    // we only check in debug builds.
-    entry->_prev = NULL;
-    entry->_next = NULL;
-    DEBUG_ONLY(entry->_list = NULL;)
+    entry->_prev = nullptr;
+    entry->_next = nullptr;
+    DEBUG_ONLY(entry->_list = nullptr;)
   }
 
-  // Support for optional constant-time size() operation.
-  // Can't be private: C++03 11.4/2; fixed in C++11.
-public:
-  template<bool has_size, typename Base> class SizeBase;
-private:
+  class NoAllocationBase {};
+  template<typename Base> struct ResolveBase;
 
-  // Conversion from T* to Entry*, along with relevant typedefs.  A
+  // Support for optional constant-time size() operation.
+  template<bool has_size, typename Base> class SizeBase;
+
+  // Conversion from T* to Entry*, along with relevant type aliases.  A
   // corresponding specialization is used directly by IntrusiveList,
   // and by the list's iterators.
   template<typename T, Entry T::*entry_member>
   struct ListTraits : public AllStatic {
-    typedef IntrusiveListImpl::size_type size_type;
-    typedef IntrusiveListImpl::difference_type difference_type;
-    typedef T value_type;
-    typedef value_type* pointer;
-    typedef const value_type* const_pointer;
-    typedef value_type& reference;
-    typedef const value_type& const_reference;
+    static_assert(std::is_class<T>::value, "precondition");
+    // May be const, but not volatile.
+    static_assert(!std::is_volatile<T>::value, "precondition");
+
+    using size_type = IntrusiveListImpl::size_type;
+    using difference_type = IntrusiveListImpl::difference_type;
+    using value_type = T;
+    using pointer = std::add_pointer_t<value_type>;
+    using const_pointer = std::add_pointer_t<std::add_const_t<value_type>>;
+    using reference = std::add_lvalue_reference_t<value_type>;
+    using const_reference = std::add_lvalue_reference_t<std::add_const_t<value_type>>;
 
     static const Entry* get_entry(const_reference value) {
       return &(value.*entry_member);
@@ -224,8 +252,8 @@ private:
   };
 
   // Stand-in for std::distance.
-  template<typename Iterator>
-  static difference_type distance(Iterator from, Iterator to) {
+  template<typename Iterator1, typename Iterator2>
+  static difference_type distance(Iterator1 from, Iterator2 to) {
     difference_type result = 0;
     for ( ; from != to; ++result, ++from) {}
     return result;
@@ -235,8 +263,7 @@ private:
   // specializations of this class.
   template<typename T,
            Entry T::*entry_member,
-           bool is_forward,
-           bool is_const>
+           bool is_forward>
   class IteratorImpl;
 
   // Iterator support.  Provides (static) functions for manipulating
@@ -245,48 +272,55 @@ private:
   // API for iterators.
   template<typename Iterator> class IteratorOperations;
 
-  // Metafunction for determining the mutable variant of Iterator.
-  template<typename Iterator> struct MutableIterator;
-
-  // Metafunction for determining whether L is an IntrusiveList type
-  // compatible with T and entry_member.
-  template<typename T, Entry T::*entry_member, typename L>
-  struct IsCompatibleList;
-
-  // Used as the ConvertibleFrom for IteratorImpl instantiations that
-  // don't support implicit conversions.
-  class Inaccessible {};
+  // Predicate metafunction for determining whether T is a non-const
+  // IntrusiveList type.
+  template<typename T>
+  struct IsListType : public std::false_type {};
 
 #ifdef ASSERT
-  // Get entry's containing list; NULL if entry not in a list.
+  // Get entry's containing list; null if entry not in a list.
   static const IntrusiveListImpl* entry_list(const Entry* entry);
-  // Set entry's containing list; list may be NULL.
+  // Set entry's containing list; list may be null.
   static void set_entry_list(const Entry* entry, IntrusiveListImpl* list);
 #endif // ASSERT
 };
 
+// Metafunction for resolving the Base template parameter for
+// IntrusiveList, handling the default void type and transforming it
+// into the internal NoAllocationBase.
+
+template<typename Base>
+struct IntrusiveListImpl::ResolveBase {
+  using type = Base;
+};
+
+template<>
+struct IntrusiveListImpl::ResolveBase<void> {
+  using type = NoAllocationBase;
+};
+
 // Base class for IntrusiveList, with specializations either providing
-// or not providing constant-time size.  Base is the next base class
-// in the superclass list.
+// or not providing constant-time size.  Base is the corresponding template
+// parameter from IntrusiveList.
 
 template<bool has_size, typename Base>
-class IntrusiveListImpl::SizeBase : public Base {
+class IntrusiveListImpl::SizeBase : public ResolveBase<Base>::type {
 protected:
-  SizeBase() {}
-  ~SizeBase() {}
+  SizeBase() = default;
+  ~SizeBase() = default;
 
-  size_type* size_ptr() { return NULL; }
+  size_type* size_ptr() { return nullptr; }
   void adjust_size(difference_type n) {}
 };
 
 template<typename Base>
-class IntrusiveListImpl::SizeBase<true, Base> : public Base {
+class IntrusiveListImpl::SizeBase<true, Base> : public ResolveBase<Base>::type {
 public:
   size_type size() const { return _size; }
 
 protected:
   SizeBase() : _size(0) {}
-  ~SizeBase() {}
+  ~SizeBase() = default;
 
   size_type* size_ptr() { return &_size; }
   void adjust_size(difference_type n) { _size += n; }
@@ -297,26 +331,27 @@ private:
 
 template<typename T,
          IntrusiveListEntry T::*entry_member,
-         bool is_forward,
-         bool is_const>
-struct IntrusiveListImpl::MutableIterator<
-  IntrusiveListImpl::IteratorImpl<T, entry_member, is_forward, is_const> >
-  : public AllStatic
-{
-  typedef IteratorImpl<T, entry_member, is_forward, false> type;
-};
+         bool has_size,
+         typename Base>
+struct IntrusiveListImpl::IsListType<IntrusiveList<T, entry_member, has_size, Base>>
+  : public std::true_type
+{};
 
-template<typename T, IntrusiveListEntry T::*entry_member, typename L>
-struct IntrusiveListImpl::IsCompatibleList : public FalseType {};
-
+// With MSVC the above specialization doesn't match if T is const-qualified
+// but the entry member's class type isn't (which it seemingly can't be, since
+// the syntax for pointer-to-data-member doesn't support it).  So we need this
+// additional specialization for MSVC.  gcc and clang don't need this.  This
+// seems likely a compiler bug, probably(?) in MSVC, but relevant standardese
+// has so far eluded me.
+#if defined(TARGET_COMPILER_visCPP)
 template<typename T,
          IntrusiveListEntry T::*entry_member,
          bool has_size,
          typename Base>
-struct IntrusiveListImpl::IsCompatibleList<
-  T, entry_member, IntrusiveList<T, entry_member, has_size, Base> >
-  : public TrueType
+struct IntrusiveListImpl::IsListType<IntrusiveList<const T, entry_member, has_size, Base>>
+  : public std::true_type
 {};
+#endif // TARGET_COMPILER_visCPP
 
 // The IteratorOperations class provides operations for encoding,
 // decoding, and manipulating type-erased void* values representing
@@ -325,7 +360,7 @@ struct IntrusiveListImpl::IsCompatibleList<
 //
 // - T*: a pointer to a list element.
 // - IntrusiveListEntry*: a pointer to a list's root entry.
-// - NULL: a pointer to no object.
+// - nullptr: a pointer to no object.
 //
 // IntrusiveListEntry uses such encoded values to refer to the next or
 // previous object in a list, e.g. to represent the links between
@@ -333,43 +368,74 @@ struct IntrusiveListImpl::IsCompatibleList<
 //
 // IteratorImpl uses such encoded values to refer to the object that
 // represents the iterator.  A singular iterator is represented by an
-// encoded NULL.  A dereferenceable iterator is represented by an
+// encoded null.  A dereferenceable iterator is represented by an
 // encoded pointer to a list element.  An encoded list root entry is
 // used to represent either an end-of-list or before-the-beginning
 // iterator, depending on context.
 //
 // The encoding of these values uses a tagged void pointer scheme.
-// NULL represents itself.  A list element (T*) is distinguished from
+// null represents itself.  A list element (T*) is distinguished from
 // a IntrusiveListEntry* via the low address bit.  If the low bit is
 // set, the value is a IntrusiveListEntry*; specifically, it is one
 // byte past the pointer to the entry.  Otherwise, it is a list
 // element.  [This requires all value types and IntrusiveListEntry to
 // have an alignment of at least 2.]
 //
+// This encoding leads to minimal cost for typical correct iteration patterns.
+// Dereferencing an iterator referring to a list element consists of just
+// reinterpreting the type of the iterator's internal value.  And for
+// iteration over a range denoted by a pair of iterators, until the iteration
+// reaches the end of the range the current iterator always refers to a list
+// element.  Similarly, incrementing an iterator consists of just a load from
+// the iterator's internal value plus a constant offset.
+//
 // IteratorOperations also provides a suite of operations for
 // manipulating iterators and list elements, making use of that
 // encoding.  This allows the implementation of iterators and lists to
 // be written in terms of these higher level operations, without
 // needing to deal with the underlying encoding directly.
+//
+// Note that various functions provided by this class take a const_reference
+// argument.  This means some of these functions may break the rule against
+// putting const elements in lists with non-const elements.  It is up to
+// callers to ensure that doesn't really happen and result in implicitly
+// casting away const of the passed argument.  That is, if the list has
+// non-const elements then the actual argument must be non-const, even though
+// the function parameter is const_reference.  We do it this way because
+// having the overloads for both, with one being conditional, would
+// significantly expand the code surface and complexity here.  Instead we
+// expect the list API to enforce the invariant, which has the added benefit
+// of having improper usage fail to compile at that level rather than deep in
+// the implementation.  See splice() for example.
 template<typename Iterator>
 class IntrusiveListImpl::IteratorOperations : AllStatic {
-  typedef IntrusiveListImpl Impl;
-  typedef typename Iterator::ListTraits ListTraits;
-  typedef typename ListTraits::const_reference const_reference;
+  using Impl = IntrusiveListImpl;
+  using ListTraits = typename Iterator::ListTraits;
+  using const_reference = typename ListTraits::const_reference;
 
-  static const bool is_forward = Iterator::is_forward;
+  static const bool _is_forward = Iterator::_is_forward;
 
-  static const void* make_raw_value(const_reference value) {
+  static const void* make_encoded_value(const_reference value) {
     return &value;
   }
 
-  static const void* make_raw_value(const Entry* entry) {
-    return tag_entry(entry);
+  static const void* make_encoded_value(const Entry* entry) {
+    return add_tag_to_root_entry(entry);
   }
 
   static const Entry* resolve_to_entry(Iterator i) {
     assert_not_singular(i);
-    return is_entry(i) ? untag_entry(raw_value(i)) : ListTraits::get_entry(dereference(i));
+    const void* encoded = encoded_value(i);
+    if (is_tagged_root_entry(encoded)) {
+      return remove_tag_from_root_entry(encoded);
+    } else {
+      return ListTraits::get_entry(dereference_element_ptr(encoded));
+    }
+  }
+
+  // Get the list element from an encoded pointer to list element.
+  static const_reference dereference_element_ptr(const void* encoded_ptr) {
+    return *static_cast<typename ListTraits::const_pointer>(encoded_ptr);
   }
 
   static Iterator next(Iterator i) {
@@ -389,30 +455,37 @@ class IntrusiveListImpl::IteratorOperations : AllStatic {
   }
 
   static void attach_impl(const_reference prev, Iterator next) {
-    ListTraits::get_entry(prev)->_next = raw_value(next);
-    resolve_to_entry(next)->_prev = make_raw_value(prev);
+    ListTraits::get_entry(prev)->_next = encoded_value(next);
+    resolve_to_entry(next)->_prev = make_encoded_value(prev);
   }
 
   static void attach_impl(Iterator prev, const_reference next) {
-    resolve_to_entry(prev)->_next = make_raw_value(next);
-    ListTraits::get_entry(next)->_prev = raw_value(prev);
+    resolve_to_entry(prev)->_next = make_encoded_value(next);
+    ListTraits::get_entry(next)->_prev = encoded_value(prev);
   }
 
   static void iter_attach_impl(Iterator prev, Iterator next) {
-    resolve_to_entry(prev)->_next = raw_value(next);
-    resolve_to_entry(next)->_prev = raw_value(prev);
+    resolve_to_entry(prev)->_next = encoded_value(next);
+    resolve_to_entry(next)->_prev = encoded_value(prev);
   }
 
 public:
-  static const void* raw_value(Iterator i) { return i._raw_value; }
+  static const void* encoded_value(Iterator i) { return i._encoded_value; }
 
-  static bool is_singular(Iterator i) { return raw_value(i) == NULL; }
-  static bool is_entry(Iterator i) { return is_tagged_entry(raw_value(i)); }
+  static bool is_singular(Iterator i) {
+    return encoded_value(i) == nullptr;
+  }
+
+  static bool is_root_entry(Iterator i) {
+    return is_tagged_root_entry(encoded_value(i));
+  }
+
+  // Corresponding is_element is not used, so not provided.
 
   static const_reference dereference(Iterator i) {
     assert_not_singular(i);
-    assert(!is_entry(i), "dereference end-of-list iterator");
-    return *static_cast<typename ListTraits::const_pointer>(raw_value(i));
+    assert(!is_root_entry(i), "dereference end-of-list iterator");
+    return dereference_element_ptr(encoded_value(i));
   }
 
   // Get the predecessor / successor (according to the iterator's
@@ -423,15 +496,15 @@ public:
   // the iterator must be dereferenceable.)
 
   static Iterator successor(const_reference value) {
-    return is_forward ? next(value) : prev(value);
+    return _is_forward ? next(value) : prev(value);
   }
 
   static Iterator predecessor(const_reference value) {
-    return is_forward ? prev(value) : next(value);
+    return _is_forward ? prev(value) : next(value);
   }
 
   static Iterator iter_predecessor(Iterator i) {
-    return is_forward ? prev(i) : next(i);
+    return _is_forward ? prev(i) : next(i);
   }
 
   // Attach pred to succ such that, after the operation,
@@ -446,45 +519,33 @@ public:
   // provided because that form is never needed.)
 
   // Mixed reference / iterator attachment.
-  // C++11: PredType&& and SuccType&& ?
+  // C++11: use rvalue references and perfect forwarding.
   template<typename PredType, typename SuccType>
   static void attach(const PredType& pred, const SuccType& succ) {
-    is_forward ? attach_impl(pred, succ) : attach_impl(succ, pred);
+    _is_forward ? attach_impl(pred, succ) : attach_impl(succ, pred);
   }
 
   // Iterator to iterator attachment.
   static void iter_attach(Iterator pred, Iterator succ) {
-    is_forward ? iter_attach_impl(pred, succ) : iter_attach_impl(succ, pred);
+    _is_forward ? iter_attach_impl(pred, succ) : iter_attach_impl(succ, pred);
   }
 
   template<typename Iterator2>
   static Iterator make_iterator(Iterator2 i) {
-    return Iterator(IteratorOperations<Iterator2>::raw_value(i));
+    return Iterator(IteratorOperations<Iterator2>::encoded_value(i));
   }
 
   static Iterator make_iterator_to(const_reference value) {
-    return Iterator(make_raw_value(value));
+    return Iterator(make_encoded_value(value));
   }
 
   static Iterator make_begin_iterator(const Impl& impl) {
     const Entry* entry = impl.root_entry();
-    return Iterator(is_forward ? entry->_next : entry->_prev);
+    return Iterator(_is_forward ? entry->_next : entry->_prev);
   }
 
   static Iterator make_end_iterator(const Impl& impl) {
-    return Iterator(make_raw_value(impl.root_entry()));
-  }
-
-  // Support for iterator copy conversion and copy assignment from
-  // ConvertibleFrom.  The Inaccessible overload is only declared; it
-  // can never be called.  If ConvertibleFrom is *not* Inaccessible,
-  // then the template overload is the best (and only) match.
-
-  static const void* raw_value_for_conversion(const Inaccessible&);
-
-  template<typename Iterator2>
-  static const void* raw_value_for_conversion(Iterator2 i) {
-    return IteratorOperations<Iterator2>::raw_value(i);
+    return Iterator(make_encoded_value(impl.root_entry()));
   }
 
   static void assert_not_singular(Iterator i) {
@@ -493,8 +554,8 @@ public:
 
   static void assert_is_in_some_list(Iterator i) {
     assert_not_singular(i);
-    assert(list_ptr(i) != NULL,
-           "Invalid iterator " PTR_FORMAT, p2i(raw_value(i)));
+    assert(list_ptr(i) != nullptr,
+           "Invalid iterator " PTR_FORMAT, p2i(encoded_value(i)));
   }
 
 #ifdef ASSERT
@@ -510,60 +571,70 @@ public:
  * Bi-directional constant (e.g. not output) iterator for iterating
  * over the elements of an IntrusiveList.  The IntrusiveList class
  * uses specializations of this class as its iterator types.
+ *
+ * An iterator may be either const or non-const.  The value type of a const
+ * iterator is const-qualified, and a const iterator only provides access to
+ * const-qualified elements.  Similarly, a non-const iterator provides access
+ * to unqualified elements.  A non-const iterator can be implicitly converted
+ * to a const iterator, but not vice versa.
  */
 template<typename T,
          IntrusiveListEntry T::*entry_member,
-         bool is_forward_,
-         bool is_const_>
-class IntrusiveListImpl::IteratorImpl VALUE_OBJ_CLASS_SPEC {
+         bool is_forward>
+class IntrusiveListImpl::IteratorImpl {
   friend class IntrusiveListImpl;
 
-  static const bool is_forward = is_forward_;
-  static const bool is_const = is_const_;
+  static const bool _is_forward = is_forward;
+  static const bool _is_const = std::is_const<T>::value;
 
-  typedef IntrusiveListImpl Impl;
-  typedef Impl::ListTraits<T, entry_member> ListTraits;
-  typedef Impl::IteratorOperations<IteratorImpl> IOps;
+  using Impl = IntrusiveListImpl;
+  using ListTraits = Impl::ListTraits<T, entry_member>;
+  using IOps = Impl::IteratorOperations<IteratorImpl>;
 
-  // A const iterator type supports implicit conversion from the
-  // corresponding non-const iterator type.  For non-const iterators,
-  // use Inaccessible as the ConvertibleFrom type, to simplify
-  // overload definitions.
-  typedef typename Conditional<is_const,
-                               IteratorImpl<T, entry_member, is_forward, false>,
-                               Impl::Inaccessible>::type ConvertibleFrom;
+  // Test whether From is an iterator type different from this type that can
+  // be implicitly converted to this iterator type.  A const iterator type
+  // supports implicit conversion from the corresponding non-const iterator
+  // type.
+  template<typename From>
+  static constexpr bool is_convertible_iterator() {
+    using NonConst = IteratorImpl<std::remove_const_t<T>, entry_member, _is_forward>;
+    return _is_const && std::is_same<From, NonConst>::value;
+  }
 
 public:
   /** Type of an iterator's value. */
-  typedef typename ListTraits::value_type value_type;
+  using value_type = typename ListTraits::value_type;
 
   /** Type of a reference to an iterator's value. */
-  typedef typename Conditional<is_const,
-                               typename ListTraits::const_reference,
-                               typename ListTraits::reference>::type reference;
+  using reference = typename ListTraits::reference;
 
   /** Type of a pointer to an iterator's value. */
-  typedef typename Conditional<is_const,
-                               typename ListTraits::const_pointer,
-                               typename ListTraits::pointer>::type pointer;
+  using pointer = typename ListTraits::pointer;
 
   /** Type for distance between iterators. */
-  typedef typename ListTraits::difference_type difference_type;
+  using difference_type = typename ListTraits::difference_type;
 
   // TODO: We don't have access to <iterator>, so we can't provide the
   // iterator_category type.  Maybe someday...
-  // typedef std::bidirectional_iterator_tag iterator_category;
+  // using iterator_category = std::bidirectional_iterator_tag;
 
   /** Construct a singular iterator. */
-  IteratorImpl() : _raw_value(NULL) {}
+  IteratorImpl() : _encoded_value(nullptr) {}
 
-  // Default destructor, copy constructor, copy assign.
+  ~IteratorImpl() = default;
+  IteratorImpl(const IteratorImpl&) = default;
+  IteratorImpl& operator=(const IteratorImpl&) = default;
 
-  // Implicit conversion from ConvertibleFrom.
-  // If ConvertibleFrom is Inaccessible, this can't actually be called.
-  IteratorImpl(const ConvertibleFrom& other) :
-    _raw_value(IOps::raw_value_for_conversion(other))
+  // Implicit conversion from non-const to const element type.
+  template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
+  IteratorImpl(const From& other)
+    : _encoded_value(IteratorOperations<From>::encoded_value(other))
   {}
+
+  template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
+  IteratorImpl& operator=(const From& other) {
+    return *this = IteratorImpl(other);
+  }
 
   /**
    * Return a reference to the iterator's value.
@@ -628,7 +699,7 @@ public:
     IOps::assert_is_in_some_list(*this);
     *this = IOps::iter_predecessor(*this);
     // Must not have been (r)begin iterator.
-    assert(!IOps::is_entry(*this), "iterator decrement underflow");
+    assert(!IOps::is_root_entry(*this), "iterator decrement underflow");
     return *this;
   }
 
@@ -652,33 +723,23 @@ public:
    * or both refer to end-of-list.
    *
    * precondition: this and other are both dereferenceable or end-of-list.
-   * precondition: this and other must be iterators for the same list.
    * complexity: constant.
    */
   bool operator==(const IteratorImpl& other) const {
     IOps::assert_is_in_some_list(*this);
     IOps::assert_is_in_some_list(other);
-    assert(IOps::list_ptr(*this) == IOps::list_ptr(other),
-           "comparing iterators from different lists");
-    return IOps::raw_value(*this) == IOps::raw_value(other);
+    return IOps::encoded_value(*this) == IOps::encoded_value(other);
   }
 
   /**
    * Return true if this and other are not ==.
    *
    * precondition: this and other are both dereferenceable or end-of-list.
-   * precondition: this and other must be iterators for the same list.
    * complexity: constant.
    */
   bool operator!=(const IteratorImpl& other) const {
     return !(*this == other);
   }
-
-  // Comparisons with Inaccessible, to simplify the definitions below
-  // for ConvertibleFrom OP IteratorImpl.  Only declared, since can't
-  // be called.
-  bool operator==(const Impl::Inaccessible&) const;
-  bool operator!=(const Impl::Inaccessible&) const;
 
   // Add ConvertibleFrom OP IteratorImpl overloads, because these are
   // not handled by the corresponding member function plus implicit
@@ -687,100 +748,127 @@ public:
   // conversion of iterator to const_iterator.  But we need an
   // additional overload to handle iterator == const_iterator.
 
-  friend bool operator==(const ConvertibleFrom& lhs, const IteratorImpl& rhs) {
+  template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
+  friend bool operator==(const From& lhs, const IteratorImpl& rhs) {
     return rhs == lhs;
   }
 
-  friend bool operator!=(const ConvertibleFrom& lhs, const IteratorImpl& rhs) {
+  template<typename From, ENABLE_IF(is_convertible_iterator<From>())>
+  friend bool operator!=(const From& lhs, const IteratorImpl& rhs) {
     return rhs != lhs;
   }
 
 private:
   // An iterator refers to either an object in the list, the root
-  // entry of the list, or NULL if singular.  See IteratorOperations
+  // entry of the list, or null if singular.  See IteratorOperations
   // for details of the encoding.
-  const void* _raw_value;
+  const void* _encoded_value;
 
-  // Allow explicit construction from an encoded const void* raw
+  // Allow explicit construction from an encoded const void*
   // value.  But require exactly that type, disallowing any implicit
   // conversions.  Without that restriction, certain kinds of usage
   // errors become both more likely and harder to diagnose the
   // resulting compilation errors.  [The remaining diagnostic
-  // difficulties could be eliminated by making RawValue a non-public
+  // difficulties could be eliminated by making EncodedValue a non-public
   // class for carrying the encoded void* to iterator construction.]
-  template<typename RawValue>
-  explicit IteratorImpl(RawValue raw_value,
-                        typename EnableIf<IsSame<RawValue, const void*>::value>::type* = NULL)
-    : _raw_value(raw_value)
+  template<typename EncodedValue,
+           ENABLE_IF(std::is_same<EncodedValue, const void*>::value)>
+  explicit IteratorImpl(EncodedValue encoded_value)
+    : _encoded_value(encoded_value)
   {}
 };
 
 template<typename T,
          IntrusiveListEntry T::*entry_member,
-         bool has_size_,
+         bool has_size,
          typename Base>
-class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size_, Base> {
+class IntrusiveList : public IntrusiveListImpl::SizeBase<has_size, Base> {
   // Give access to other instantiations, for splice().
   template<typename U, IntrusiveListEntry U::*, bool, typename>
   friend class IntrusiveList;
 
-  typedef IntrusiveListEntry Entry;
-  typedef IntrusiveListImpl Impl;
-  typedef Impl::ListTraits<T, entry_member> ListTraits;
-  typedef Impl::SizeBase<has_size_, Base> Super;
+  // Give access for unit testing.
+  friend struct IntrusiveListImpl::TestSupport;
+
+  using Entry = IntrusiveListEntry;
+  using Impl = IntrusiveListImpl;
+  using ListTraits = Impl::ListTraits<T, entry_member>;
+  using Super = Impl::SizeBase<has_size, Base>;
+
+  // A subsequence of one list can be transferred to another list via splice
+  // if the lists have the same (ignoring const qualifiers) element type, use
+  // the same entry member, and either the receiver's element type is const or
+  // neither element type is const.  A const element of a list cannot be
+  // transferred to a list with non-const elements.  That would effectively be
+  // a quiet casting away of const.  Assuming Other is a List, these
+  // constraints are equivalent to the constraints on conversion of
+  // Other::iterator -> iterator.  The presence or absence of constant-time
+  // size support and the base types of the lists don't affect whether
+  // splicing is permitted.
+  template<typename Other>
+  static constexpr bool can_splice_from() {
+    return Conjunction<Impl::IsListType<Other>,
+                       std::is_convertible<typename Other::iterator, iterator>>::value;
+  }
+
+  template<typename Other>
+  static constexpr bool can_swap() {
+    return Conjunction<Impl::IsListType<Other>,
+                       std::is_same<typename Other::iterator, iterator>>::value;
+  }
 
 public:
   /** Flag indicating presence of a constant-time size() operation. */
-  static const bool has_size = has_size_;
+  static const bool _has_size = has_size;
 
   /** Type of the size of the list. */
-  typedef typename ListTraits::size_type size_type;
+  using size_type = typename ListTraits::size_type;
 
   /** The difference type for iterators. */
-  typedef typename ListTraits::difference_type difference_type;
+  using difference_type = typename ListTraits::difference_type;
 
   /** Type of list elements. */
-  typedef typename ListTraits::value_type value_type;
+  using value_type = typename ListTraits::value_type;
 
   /** Type of a pointer to a list element. */
-  typedef typename ListTraits::pointer pointer;
+  using pointer = typename ListTraits::pointer;
 
   /** Type of a const pointer to a list element. */
-  typedef typename ListTraits::const_pointer const_pointer;
+  using const_pointer = typename ListTraits::const_pointer;
 
   /** Type of a reference to a list element. */
-  typedef typename ListTraits::reference reference;
+  using reference = typename ListTraits::reference;
 
   /** Type of a const reference to a list element. */
-  typedef typename ListTraits::const_reference const_reference;
+  using const_reference = typename ListTraits::const_reference;
 
   /** Forward iterator type allowing modification of elements. */
-  typedef Impl::IteratorImpl<T,                 // element type
-                             entry_member,      // pointer to entry member of T
-                             true,              // is_forward
-                             false>             // is_const
-  iterator;
+  using iterator =
+    Impl::IteratorImpl<T, entry_member, true>;
 
   /** Forward iterator type disallowing modification of elements. */
-  typedef Impl::IteratorImpl<T,                 // element type
-                             entry_member,      // pointer to entry member of T
-                             true,              // is_forward
-                             true>              // is_const
-  const_iterator;
+  using const_iterator =
+    Impl::IteratorImpl<std::add_const_t<T>, entry_member, true>;
 
   /** Reverse iterator type allowing modification of elements. */
-  typedef Impl::IteratorImpl<T,                 // element type
-                             entry_member,      // pointer to entry member of T
-                             false,             // is_forward
-                             false>             // is_const
-  reverse_iterator;
+  using reverse_iterator =
+    Impl::IteratorImpl<T, entry_member, false>;
 
   /** Reverse iterator type disallowing modification of elements. */
-  typedef Impl::IteratorImpl<T,                 // element type
-                             entry_member,      // pointer to entry member of T
-                             false,             // is_forward
-                             true>              // is_const
-  const_reverse_iterator;
+  using const_reverse_iterator =
+    Impl::IteratorImpl<std::add_const_t<T>, entry_member, false>;
+
+  /** Make an empty list. */
+  IntrusiveList() : _impl() {}
+
+  /**
+   * Destroy the list.
+   *
+   * precondition: empty()
+   */
+  ~IntrusiveList() = default;
+
+  NONCOPYABLE(IntrusiveList);
 
   /**
    * Inserts value at the front of the list.  Does not affect the
@@ -789,7 +877,7 @@ public:
    * precondition: value must not already be in a list using the same entry.
    * complexity: constant.
    */
-  void push_front(const_reference value) {
+  void push_front(reference value) {
     insert(begin(), value);
   }
 
@@ -800,7 +888,7 @@ public:
    * precondition: value must not already be in a list using the same entry.
    * complexity: constant.
    */
-  void push_back(const_reference value) {
+  void push_back(reference value) {
     insert(end(), value);
   }
 
@@ -857,6 +945,34 @@ public:
    */
   reference back() { return *rbegin(); }
   const_reference back() const { return *rbegin(); }
+
+  /**
+   * Returns a [const_]reference to the n'th element of the list.
+   *
+   * precondition: n < length()
+   * complexity: O(length())
+   */
+  reference operator[](size_type n) {
+    return nth_element(begin(), end(), n);
+  }
+
+  const_reference operator[](size_type n) const {
+    return nth_element(cbegin(), cend(), n);
+  }
+
+private:
+
+  // Implementation of operator[].
+  template<typename Iterator>
+  static typename Iterator::reference
+  nth_element(Iterator it, Iterator end, size_type n) {
+    for (size_type index = 0; true; ++it, ++index) {
+      assert(it != end, "index out of bounds: %ju", uintmax_t(n));
+      if (index == n) return *it;
+    }
+  }
+
+public:
 
   /**
    * Returns a [const_]iterator referring to the first element of the
@@ -944,7 +1060,7 @@ public:
    * complexity: O(length())
    */
   size_type length() const {
-    return Impl::distance(cbegin(), cend());
+    return static_cast<size_type>(Impl::distance(cbegin(), cend()));
   }
 
   /**
@@ -954,8 +1070,7 @@ public:
    * iterator for the successor of i.  Invalidates iterators referring
    * to the removed element.
    *
-   * precondition: i must be a valid iterator for the list.
-   * precondition: i is not end-of-list.
+   * precondition: i must be a dereferenceable iterator for the list.
    * complexity: constant.
    */
   iterator erase(const_iterator i) {
@@ -968,27 +1083,25 @@ public:
 
   template<typename Disposer>
   iterator erase_and_dispose(const_iterator i, Disposer disposer) {
-    return erase_one_and_dispose(i, disposer);
+    return erase_one_and_dispose<iterator>(i, disposer);
   }
 
   template<typename Disposer>
   reverse_iterator erase_and_dispose(const_reverse_iterator i, Disposer disposer) {
-    return erase_one_and_dispose(i, disposer);
+    return erase_one_and_dispose<reverse_iterator>(i, disposer);
   }
 
 private:
 
-  // C++11: typename Result = MutableIterator...
-  template<typename Iterator, typename Disposer>
-  typename Impl::MutableIterator<Iterator>::type
-  erase_one_and_dispose(Iterator i, Disposer disposer) {
-    typedef Impl::IteratorOperations<Iterator> IOps;
+  template<typename Result, typename Iterator, typename Disposer>
+  Result erase_one_and_dispose(Iterator i, Disposer disposer) {
+    using IOps = Impl::IteratorOperations<Iterator>;
     assert_is_iterator(i);
     const_reference value = *i++;
     IOps::iter_attach(IOps::predecessor(value), i);
     detach(value);
     disposer(value);
-    return make_iterator<typename Impl::MutableIterator<Iterator>::type>(i);
+    return make_iterator<Result>(i);
   }
 
 public:
@@ -1000,8 +1113,7 @@ public:
    * Returns an iterator referring to the end of the removed range.
    * Invalidates iterators referring to the removed elements.
    *
-   * precondition: from and to must be valid iterators for the list.
-   * precondition: from does not follow to in the list.
+   * precondition: from and to must form a valid range for the list.
    * complexity: O(number of elements removed)
    */
   iterator erase(const_iterator from, const_iterator to) {
@@ -1014,23 +1126,21 @@ public:
 
   template<typename Disposer>
   iterator erase_and_dispose(const_iterator from, const_iterator to, Disposer disposer) {
-    return erase_range_and_dispose(from, to, disposer);
+    return erase_range_and_dispose<iterator>(from, to, disposer);
   }
 
   template<typename Disposer>
   reverse_iterator erase_and_dispose(const_reverse_iterator from,
                                      const_reverse_iterator to,
                                      Disposer disposer) {
-    return erase_range_and_dispose(from, to, disposer);
+    return erase_range_and_dispose<reverse_iterator>(from, to, disposer);
   }
 
 private:
 
-  // C++11: typename Result = MutableIterator...
-  template<typename Iterator, typename Disposer>
-  typename Impl::MutableIterator<Iterator>::type
-  erase_range_and_dispose(Iterator from, Iterator to, Disposer disposer) {
-    typedef Impl::IteratorOperations<Iterator> IOps;
+  template<typename Result, typename Iterator, typename Disposer>
+  Result erase_range_and_dispose(Iterator from, Iterator to, Disposer disposer) {
+    using IOps = Impl::IteratorOperations<Iterator>;
     assert_is_iterator(from);
     assert_is_iterator(to);
     if (from != to) {
@@ -1041,7 +1151,7 @@ private:
         disposer(value);
       } while (from != to);
     }
-    return make_iterator<typename Impl::MutableIterator<Iterator>::type>(to);
+    return make_iterator<Result>(to);
   }
 
 public:
@@ -1074,28 +1184,26 @@ public:
    * postcondition: ++result == pos
    * complexity: constant.
    */
-  iterator insert(const_iterator pos, const_reference value) {
-    return insert_impl(pos, value);
+  iterator insert(const_iterator pos, reference value) {
+    return insert_impl<iterator>(pos, value);
   }
 
-  reverse_iterator insert(const_reverse_iterator pos, const_reference value) {
-    return insert_impl(pos, value);
+  reverse_iterator insert(const_reverse_iterator pos, reference value) {
+    return insert_impl<reverse_iterator>(pos, value);
   }
 
 private:
 
-  // C++11: typename Result = MutableIterator...
-  template<typename Iterator>
-  typename Impl::MutableIterator<Iterator>::type
-  insert_impl(Iterator pos, const_reference value) {
-    assert(Impl::entry_list(ListTraits::get_entry(value)) == NULL, "precondition");
+  template<typename Result, typename Iterator>
+  Result insert_impl(Iterator pos, reference value) {
+    assert(Impl::entry_list(ListTraits::get_entry(value)) == nullptr, "precondition");
     assert_is_iterator(pos);
-    typedef Impl::IteratorOperations<Iterator> IOps;
+    using IOps = Impl::IteratorOperations<Iterator>;
     IOps::attach(IOps::iter_predecessor(pos), value);
     IOps::attach(value, pos);
     DEBUG_ONLY(set_list(value, &_impl);)
     adjust_size(1);
-    return make_iterator_to<typename Impl::MutableIterator<Iterator>::type>(value);
+    return make_iterator_to<Result>(value);
   }
 
 public:
@@ -1107,11 +1215,11 @@ public:
    * not invalidate any iterators.
    *
    * precondition: pos must be a valid iterator for this list.
-   * precondition: from and to must be valid iterators for from_list.
-   * precondition: from does not follow to.
-   * precondition: pos is not in the range to transfer, i.e. if
-   * this == from_list then either from follows pos or to does not
-   * follow pos.
+   * precondition: from and to must form a valid range for from_list.
+   * precondition: pos is not in the range to transfer, i.e. either
+   * - this != &from_list, or
+   * - pos is reachable from to, or
+   * - pos is not reachable from from.
    *
    * postcondition: iterators referring to elements in the transferred range
    * are valid iterators for this list rather than from_list.
@@ -1122,17 +1230,14 @@ public:
    * transferred in its entirety; otherwise O(number of elements
    * transferred).
    */
-  template<typename FromList>
-  typename EnableIf<Impl::IsCompatibleList<T, entry_member, FromList>::value,
-                    iterator>::type
-  splice(const_iterator pos,
-         FromList& from_list,
-         const_iterator from,
-         const_iterator to) {
-    // preparation for supporting reverse iterators too.
-    typedef const_iterator Iterator;
-    typedef typename Impl::MutableIterator<Iterator>::type Result;
-    typedef Impl::IteratorOperations<Iterator> IOps;
+  template<typename FromList, ENABLE_IF(can_splice_from<FromList>())>
+  iterator splice(const_iterator pos,
+                  FromList& from_list,
+                  typename FromList::iterator from,
+                  typename FromList::const_iterator to) {
+    using Iterator = const_iterator;
+    using Result = iterator;
+    using IOps = Impl::IteratorOperations<Iterator>;
 
     assert_is_iterator(pos);
     from_list.assert_is_iterator(from);
@@ -1148,9 +1253,9 @@ public:
 
     // Adjust sizes if needed.  Only need adjustment if different
     // lists and at least one of the lists has a constant-time size.
-    if ((has_size || from_list.has_size) && !is_same_list(from_list)) {
+    if ((_has_size || from_list._has_size) && !is_same_list(from_list)) {
       difference_type transferring;
-      if (from_list.has_size &&
+      if (from_list._has_size &&
           (from == from_list.cbegin()) &&
           (to == from_list.cend())) {
         // If from_list has constant-time size() and we're transferring
@@ -1178,12 +1283,14 @@ public:
     }
 #endif // ASSERT
 
+    // to is end of non-empty range, so has a dereferenceable predecessor.
     Iterator to_pred = --Iterator(to); // Fetch before clobbered
-    IOps::iter_attach(IOps::predecessor(*from), to);
-    IOps::attach(IOps::iter_predecessor(pos), *from);
-    // to is end of non-empty range, so to's predecessor is dereferenceable.
+    // from is dereferenceable since it neither follows nor equals to.
+    const_reference from_value = *from;
+    IOps::iter_attach(IOps::predecessor(from_value), to);
+    IOps::attach(IOps::iter_predecessor(pos), from_value);
     IOps::attach(*to_pred, pos);
-    return make_iterator_to<Result>(*from);
+    return make_iterator_to<Result>(from_value);
   }
 
   /**
@@ -1203,10 +1310,10 @@ public:
    * constant-time size() operation; otherwise O(number of elements
    * transferred).
    */
-  template<typename FromList>
+  template<typename FromList, ENABLE_IF(Impl::IsListType<FromList>::value)>
   iterator splice(const_iterator pos, FromList& from_list) {
     assert(!is_same_list(from_list), "precondition");
-    return splice(pos, from_list, from_list.cbegin(), from_list.cend());
+    return splice(pos, from_list, from_list.begin(), from_list.end());
   }
 
   /**
@@ -1224,20 +1331,14 @@ public:
    *
    * complexity: constant.
    */
-  template<typename FromList>
-  typename EnableIf<Impl::IsCompatibleList<T, entry_member, FromList>::value,
-                    iterator>::type
-  splice(const_iterator pos, FromList& from_list, const_iterator from) {
-    // preparation for supporting reverse iterators too.
-    typedef const_iterator Iterator;
-    typedef typename Impl::MutableIterator<Iterator>::type Result;
-    typedef Impl::IteratorOperations<Iterator> IOps;
+  template<typename FromList, ENABLE_IF(can_splice_from<FromList>())>
+  iterator splice(const_iterator pos,
+                  FromList& from_list,
+                  typename FromList::iterator from) {
+    using IOps = Impl::IteratorOperations<const_iterator>;
 
     assert_is_iterator(pos);
     from_list.assert_is_iterator(from);
-
-    from_list.adjust_size(-1);
-    adjust_size(1);
 
 #ifdef ASSERT
     // Transfer element to this list, or verify pos not in [from, to).
@@ -1248,10 +1349,61 @@ public:
     }
 #endif // ASSERT
 
-    IOps::iter_attach(IOps::predecessor(*from), IOps::successor(*from));
-    IOps::attach(IOps::iter_predecessor(pos), *from);
-    IOps::attach(*from, pos);
-    return make_iterator_to<Result>(*from);
+    const_reference from_value = *from;
+
+    // Remove from_value from from_list.
+    IOps::iter_attach(IOps::predecessor(from_value), IOps::successor(from_value));
+    from_list.adjust_size(-1);
+
+    // Add from_value to this list before pos.
+    IOps::attach(IOps::iter_predecessor(pos), from_value);
+    IOps::attach(from_value, pos);
+    adjust_size(1);
+
+    return make_iterator_to<iterator>(from_value);
+  }
+
+  /**
+   * Exchange the elements of this list and other, maintaining the order of
+   * the elements.  Does not invalidate any iterators.
+   *
+   * precondition: this and other are different lists.
+   *
+   * postcondition: iterators referring to elements in this list become valid
+   * iterators for other, and vice versa.
+   *
+   * complexity: if one of the lists has constant-time size and the other does
+   * not, then O(number of elements in the list without constant-time size);
+   * otherwise constant (when neither or both lists have constant-time size).
+   */
+  template<typename OtherList, ENABLE_IF(can_swap<OtherList>())>
+  void swap(OtherList& other) {
+    assert(!is_same_list(other), "self-swap");
+    if (!_has_size) {
+      // This list does not have constant-time size. First, transfer other's
+      // elements to the front of this list (a constant-time operation).  Then
+      // transfer this list's original elements to other (linear time if other
+      // has constant-time size, constant-time if it doesn't).
+      iterator old_begin = begin();
+      splice(old_begin, other);
+      other.splice(other.begin(), *this, old_begin, end());
+    } else if (!OtherList::_has_size) {
+      // This list has constant-time size but other doesn't.  First,
+      // transfer all of this list's elements to other (a constant-time
+      // operation).  Then transfer other's original elements to this list
+      // (linear time).
+      typename OtherList::iterator other_begin = other.begin();
+      other.splice(other_begin, *this);
+      splice(begin(), other, other_begin, other.end());
+    } else {
+      // Both lists have constant-time sizes that need to be managed.  Use an
+      // intermediate temporary so all transfers are of entire lists.  This
+      // stays within the constant-time domain for all of the transfers.
+      IntrusiveList temp{};
+      temp.splice(temp.begin(), other);
+      other.splice(other.begin(), *this);
+      splice(begin(), temp);
+    }
   }
 
   /**
@@ -1302,10 +1454,10 @@ private:
 
   template<typename Iterator>
   void assert_is_iterator(const Iterator& i) const {
-    typedef Impl::IteratorOperations<Iterator> IOps;
+    using IOps = Impl::IteratorOperations<Iterator>;
     assert(IOps::list_ptr(i) == &_impl,
            "Iterator " PTR_FORMAT " not for this list " PTR_FORMAT,
-           p2i(IOps::raw_value(i)), p2i(this));
+           p2i(IOps::encoded_value(i)), p2i(this));
   }
 
   void assert_is_element(const_reference value) const {
@@ -1326,13 +1478,16 @@ private:
     return Impl::IteratorOperations<Result>::make_iterator(i);
   }
 
+  // This can break the rules about putting const elements in non-const
+  // iterators or lists.  It is up to callers to ensure that doesn't happen
+  // and result in implicitly casting away const of the passed argument.
   template<typename Iterator>
   Iterator make_iterator_to(const_reference value) const {
     assert_is_element(value);
     return Impl::IteratorOperations<Iterator>::make_iterator_to(value);
   }
 
-  struct NopDisposer VALUE_OBJ_CLASS_SPEC {
+  struct NopDisposer {
     void operator()(const_reference) const {}
   };
 
@@ -1343,4 +1498,4 @@ private:
   }
 };
 
-#endif // include guard
+#endif // SHARE_UTILITIES_INTRUSIVELIST_HPP

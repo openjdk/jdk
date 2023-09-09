@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,47 +27,41 @@
 #include "utilities/intrusiveList.hpp"
 #include "utilities/macros.hpp"
 
-IntrusiveListEntry::IntrusiveListEntry() :
-  _prev(NULL),
-  _next(NULL)
 #ifdef ASSERT
-  , _list(NULL)
-#endif
-{ }
-
 IntrusiveListEntry::~IntrusiveListEntry() {
-  assert(_list == NULL, "deleting list entry while in list");
-  assert(_prev == NULL, "invariant");
-  assert(_next == NULL, "invariant");
+  assert(_list == nullptr, "deleting list entry while in list");
+  assert(_prev == nullptr, "invariant");
+  assert(_next == nullptr, "invariant");
 }
+#endif // ASSERT
 
-IntrusiveListImpl::IntrusiveListImpl() : _root() {
-  _root._prev = tag_entry(&_root);
-  _root._next = tag_entry(&_root);
+IntrusiveListImpl::IntrusiveListImpl() {
+  _root._prev = add_tag_to_root_entry(&_root);
+  _root._next = add_tag_to_root_entry(&_root);
   DEBUG_ONLY(_root._list = this;)
 }
 
-IntrusiveListImpl::~IntrusiveListImpl() {
-  assert(is_tagged_entry(_root._prev), "deleting non-empty list");
-  assert(is_tagged_entry(_root._next), "deleting non-empty list");
 #ifdef ASSERT
+IntrusiveListImpl::~IntrusiveListImpl() {
+  assert(is_tagged_root_entry(_root._prev), "deleting non-empty list");
+  assert(is_tagged_root_entry(_root._next), "deleting non-empty list");
   // Clear _root's information before running its asserting destructor.
-  _root._prev = NULL;
-  _root._next = NULL;
-  _root._list = NULL;
-#endif
+  _root._prev = nullptr;
+  _root._next = nullptr;
+  _root._list = nullptr;
 }
+#endif // ASSERT
 
 #ifdef ASSERT
 
 const IntrusiveListImpl* IntrusiveListImpl::entry_list(const Entry* entry) {
   // Ensure consistency.
-  if (entry->_list == NULL) {
-    assert(entry->_next == NULL, "invariant");
-    assert(entry->_prev == NULL, "invariant");
+  if (entry->_list == nullptr) {
+    assert(entry->_next == nullptr, "invariant");
+    assert(entry->_prev == nullptr, "invariant");
   } else {
-    assert(entry->_next != NULL, "invariant");
-    assert(entry->_prev != NULL, "invariant");
+    assert(entry->_next != nullptr, "invariant");
+    assert(entry->_prev != nullptr, "invariant");
   }
   return entry->_list;
 }
