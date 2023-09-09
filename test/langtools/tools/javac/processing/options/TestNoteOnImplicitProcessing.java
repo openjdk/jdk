@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8310061 8315534
+ * @bug 8310061 8315534 8306819
  * @summary Verify a note is issued for implicit annotation processing
  *
  * @library /tools/lib /tools/javac/lib
@@ -62,11 +62,13 @@ import toolbox.JarTask;
  * Generates note and the processor runs:
  * $ javac -cp ImplicitProcTestProc.jar                                     HelloWorldTest.java
  *
- * Does _not_ generate a note and the processor runs:
+ * Does _not_ generate a note and the processor does run:
  * $ javac -processorpath ImplicitProcTestProc.jar                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -processor ImplicitProcTestProc.jar HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:full                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:only                          HelloWorldTest.java
+ *
+ * Does _not_ generate a note and the processor does _not_run:
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:-options                     HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:none                         HelloWorldTest.java
  *
@@ -165,8 +167,8 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
-        checkForCompilerNote(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
+        checkForCompilerNote(javacResult, false);
     }
 
     @Test
@@ -239,7 +241,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
         checkForCompilerNote(javacResult, false);
     }
 
@@ -254,7 +256,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .run(Expect.SUCCESS)
             .writeAll();
 
-        checkForProcessorMessage(javacResult, true);
+        checkForProcessorMessage(javacResult, false);
         checkForCompilerNote(javacResult, false);
     }
 
@@ -317,7 +319,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
 
                 task.call();
 
-                verifyMessages(out, compilerOut, true);
+                verifyMessages(out, compilerOut, false, false);
             }
 
             {
@@ -329,7 +331,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
                 task.setProcessors(List.of(processor));
                 task.call();
 
-                verifyMessages(out, compilerOut, false);
+                verifyMessages(out, compilerOut, false, true);
             }
 
             {
@@ -339,7 +341,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
 
                 task.analyze();
 
-                verifyMessages(out, compilerOut, true);
+                verifyMessages(out, compilerOut, false, false);
             }
 
             {
@@ -353,16 +355,21 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
                 task.setProcessors(List.of(processor));
                 task.analyze();
 
-                verifyMessages(out, compilerOut, false);
+                verifyMessages(out, compilerOut, false, true);
             }
         } finally {
             System.setOut(oldOut);
         }
     }
 
-    private void verifyMessages(ByteArrayOutputStream out, StringWriter compilerOut, boolean expectedNotePresent) {
-        if (!out.toString(StandardCharsets.UTF_8).contains("ImplicitProcTestProc run")) {
-            throw new RuntimeException("Expected processor message not printed");
+    private void verifyMessages(ByteArrayOutputStream out, StringWriter compilerOut, boolean expectedNotePresent,
+                                boolean processorRunExpected) {
+        boolean processorRun = out.toString(StandardCharsets.UTF_8).contains("ImplicitProcTestProc run");
+
+        if (processorRun != processorRunExpected) {
+            throw new RuntimeException(processorRunExpected ?
+                                       "Expected processor message not printed" :
+                                       "Unexpected processor message printed");
         }
 
         out.reset();

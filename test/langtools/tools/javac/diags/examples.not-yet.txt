@@ -215,3 +215,7 @@ compiler.misc.illegal.signature                               # the compiler can
 
 # this one needs a forged class file to be reproduced
 compiler.err.annotation.unrecognized.attribute.name
+
+# Pending removal
+compiler.note.implicit.annotation.processing
+compiler.warn.proc.use.proc.or.implicit
