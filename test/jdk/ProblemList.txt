@@ -437,7 +437,7 @@ java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 m
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
-java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
+java/awt/PopupMenu/PopupMenuLocation.java 8238720,8315878 windows-all,macosx-aarch64
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
@@ -582,8 +582,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 # jdk_security
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -724,9 +722,9 @@ java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-a
 
 # svc_tools
 
-sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
-sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
-sun/tools/jstatd/TestJstatdServer.java                          8081569,8226420 windows-all
+sun/tools/jstatd/TestJstatdDefaults.java                        8081569 windows-all
+sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 generic-all
+sun/tools/jstatd/TestJstatdServer.java                          8081569 windows-all
 
 sun/tools/jstat/jstatLineCounts1.sh                             8268211 linux-aarch64
 sun/tools/jstat/jstatLineCounts2.sh                             8268211 linux-aarch64

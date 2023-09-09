@@ -25,7 +25,12 @@
  * @test 8203892
  * @summary Target interface added as marker interface in calls to altMetafactory
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -37,11 +42,9 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute.BootstrapMethodSpecifier;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -80,16 +83,15 @@ public class CheckTargetIsNotAddedAsMarkerInterfaceTest {
     }
 
     void checkClassFile(final File cfile) throws Exception {
-        ClassFile classFile = ClassFile.read(cfile);
-        for (Attribute attr : classFile.attributes) {
-            if (attr.getName(classFile.constant_pool).equals("BootstrapMethods")) {
-                BootstrapMethods_attribute bsmAttr = (BootstrapMethods_attribute)attr;
-                BootstrapMethodSpecifier bsmSpecifier = bsmAttr.bootstrap_method_specifiers[0];
-                Assert.check(classFile.constant_pool.get(bsmSpecifier.bootstrap_arguments[0]) instanceof CONSTANT_MethodType_info);
-                Assert.check(classFile.constant_pool.get(bsmSpecifier.bootstrap_arguments[1]) instanceof CONSTANT_MethodHandle_info);
-                Assert.check(classFile.constant_pool.get(bsmSpecifier.bootstrap_arguments[2]) instanceof CONSTANT_MethodType_info);
-                Assert.check(classFile.constant_pool.get(bsmSpecifier.bootstrap_arguments[3]) instanceof CONSTANT_Integer_info);
-                Assert.check(classFile.constant_pool.get(bsmSpecifier.bootstrap_arguments[4]) instanceof CONSTANT_Integer_info);
+        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        for (Attribute<?> attr : classFile.attributes()) {
+            if (attr instanceof BootstrapMethodsAttribute bsmAttr) {
+                BootstrapMethodEntry bsmSpecifier = bsmAttr.bootstrapMethods().getFirst();
+                Assert.check(bsmSpecifier.arguments().get(0) instanceof MethodTypeEntry);
+                Assert.check(bsmSpecifier.arguments().get(1) instanceof MethodHandleEntry);
+                Assert.check(bsmSpecifier.arguments().get(2) instanceof MethodTypeEntry);
+                Assert.check(bsmSpecifier.arguments().get(3) instanceof IntegerEntry);
+                Assert.check(bsmSpecifier.arguments().get(4) instanceof IntegerEntry);
                 break;
             }
         }
