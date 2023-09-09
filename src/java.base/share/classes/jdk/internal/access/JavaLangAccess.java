@@ -334,6 +334,56 @@ public interface JavaLangAccess {
     byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
+     * Returns the string representation size for a given int value.
+     *
+     * @param x int value
+     * @return string size
+     */
+    int stringSize(int x);
+
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     */
+    int stringSize(long i);
+
+    /**
+     * For values from 0 to 99 return a short encoding a pair of ASCII-encoded digit characters in little-endian,
+     * e.g. 0 -> ('0' << 8 | '0'). Used for formatting
+     */
+    short digitPair(int i);
+
+    /**
+     * Places characters representing the integer i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    int getChars(int i, int index, byte[] buf);
+
+    /**
+     * Places characters representing the long i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    int getChars(long i, int index, byte[] buf);
+
+    /**
      * Returns a new string by decoding from the given utf8 bytes array.
      *
      * @param off the index of the first byte to decode

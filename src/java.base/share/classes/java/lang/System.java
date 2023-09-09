@@ -2483,6 +2483,26 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
+            public int stringSize(int i) {
+                return Integer.stringSize(i);
+            }
+
+            public int stringSize(long i) {
+                return Long.stringSize(i);
+            }
+
+            public int getChars(int i, int index, byte[] buf) {
+                return StringLatin1.getChars(i, index, buf);
+            }
+
+            public int getChars(long i, int index, byte[] buf) {
+                return StringLatin1.getChars(i, index, buf);
+            }
+
+            public short digitPair(int i) {
+                return StringLatin1.PACKED_DIGITS[i];
+            }
+
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
                 return String.newStringUTF8NoRepl(bytes, off, len, true);
             }

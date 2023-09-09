@@ -80,6 +80,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -95,6 +97,9 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * An instantaneous point on the time-line.
@@ -209,6 +214,8 @@ import java.util.Objects;
 @jdk.internal.ValueBased
 public final class Instant
         implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constant for the 1970-01-01T00:00:00Z epoch instant.
@@ -1352,7 +1359,28 @@ public final class Instant
      */
     @Override
     public String toString() {
-        return DateTimeFormatter.ISO_INSTANT.format(this);
+        LocalDate date = LocalDate.ofEpochDay(
+                Math.floorDiv(seconds, SECONDS_PER_DAY));
+        LocalTime time = LocalTime.ofSecondOfDay(
+                Math.floorMod(seconds, SECONDS_PER_DAY));
+
+        int yearSize = LocalDate.yearSize(date.getYear());
+        int nanoSize = LocalTime.nanoSize(nanos);
+
+        byte[] buf = new byte[yearSize + 16 + nanoSize];
+
+        int off = date.getChars(buf, 0);
+        buf[off] = 'T';
+
+        off = time.getChars(buf, off + 1);
+        LocalTime.getNanoChars(buf, off, nanos);
+        buf[off + nanoSize] = 'Z';
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     // -----------------------------------------------------------------------

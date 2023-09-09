@@ -78,6 +78,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -95,6 +97,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A date-time without a time-zone in the ISO-8601 calendar system,
@@ -1965,7 +1969,23 @@ public final class LocalDateTime
      */
     @Override
     public String toString() {
-        return date.toString() + 'T' + time.toString();
+        int yearSize = LocalDate.yearSize(date.getYear());
+        int nano = time.getNano();
+        int nanoSize = LocalTime.nanoSize(nano);
+
+        byte[] buf = new byte[yearSize + 15 + nanoSize];
+
+        int off = date.getChars(buf, 0);
+        buf[off] = 'T';
+        off = time.getChars(buf, off + 1);
+        LocalTime.getNanoChars(buf, off, nano);
+
+        try {
+            return SharedSecrets.getJavaLangAccess()
+                    .newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     //-----------------------------------------------------------------------

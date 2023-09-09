@@ -76,6 +76,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -91,6 +93,11 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -126,6 +133,11 @@ import java.util.Objects;
 public final class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
 
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+
+    @Stable
+    static final int[] DIGITS_K = new int[1000];
+
     /**
      * The minimum supported {@code LocalTime}, '00:00'.
      * This is the time of midnight at the start of the day.
@@ -156,6 +168,14 @@ public final class LocalTime
         NOON = HOURS[12];
         MIN = HOURS[0];
         MAX = new LocalTime(23, 59, 59, 999_999_999);
+
+        for (int i = 0; i < 1000; i++) {
+            int c0 = i < 10 ? 2 : i < 100 ? 1 : 0;
+            int c1 = (i / 100) + '0';
+            int c2 = ((i / 10) % 10) + '0';
+            int c3 = i % 10 + '0';
+            DIGITS_K[i] = c0 + (c1 << 8) + (c2 << 16) + (c3 << 24);
+        }
     }
 
     /**
@@ -1629,27 +1649,96 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
-        int hourValue = hour;
-        int minuteValue = minute;
-        int secondValue = second;
-        int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
-        if (secondValue > 0 || nanoValue > 0) {
-            buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
-            if (nanoValue > 0) {
-                buf.append('.');
-                if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
-                } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
-                } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
-                }
-            }
+        int nano = this.nano;
+        int nanoSize = LocalTime.nanoSize(nano);
+
+        byte[] buf = new byte[8 + nanoSize];
+        getChars(buf, 0);
+        LocalTime.getNanoChars(buf, 8, nano);
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
         }
-        return buf.toString();
+    }
+
+    static int nanoSize(int nano) {
+        if (nano == 0) {
+            return 0;
+        }
+
+        int div = nano / 1000;
+        int div2 = div / 1000;
+
+        if (nano - div * 1000 != 0) {
+            return 10;
+        }
+
+        return (div - div2 * 1000 == 0) ? 4 : 7;
+    }
+
+    int getChars(byte[] buf, int off) {
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off,
+                jla.digitPair(hour)); // hh
+        buf[off + 2] = ':';
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off + 3,
+                jla.digitPair(minute)); // minute
+        buf[off + 5] = ':';
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off + 6,
+                jla.digitPair(second)); // second
+        return off + 8;
+    }
+
+    static void getNanoChars(byte[] buf, int off, int nano) {
+        if (nano == 0) {
+            return;
+        }
+
+        int div = nano / 1000;
+        int div2 = div / 1000;
+        ByteArrayLittleEndian.setInt(
+                buf,
+                off,
+                DIGITS_K[div2] & 0xffffff00 | '.'
+        );
+        off += 4;
+
+        int rem1 = nano - div * 1000;
+        int v;
+        if (rem1 == 0) {
+            int rem2 = div - div2 * 1000;
+            if (rem2 == 0) {
+                return;
+            }
+
+            v = DIGITS_K[rem2];
+        } else {
+            v = DIGITS_K[div - div2 * 1000];
+        }
+
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off,
+                (short) (v >> 8)
+        );
+        off += 2;
+
+        if (rem1 == 0) {
+            buf[off] = (byte) (v >> 24);
+        } else {
+            ByteArrayLittleEndian.setInt(
+                    buf,
+                    off,
+                    DIGITS_K[rem1] & 0xffffff00 | (v >> 24)
+            );
+        }
     }
 
     //-----------------------------------------------------------------------

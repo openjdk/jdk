@@ -74,6 +74,8 @@ import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -92,6 +94,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Comparator;
 import java.util.Objects;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A date-time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
@@ -1922,8 +1926,28 @@ public final class OffsetDateTime
      * @return a string representation of this date-time, not null
      */
     @Override
+    @SuppressWarnings("deprecation")
     public String toString() {
-        return dateTime.toString() + offset.toString();
+        int yearSize = LocalDate.yearSize(dateTime.getYear());
+        int nano = dateTime.getNano();
+        int nanoSize = LocalTime.nanoSize(nano);
+
+        String offSetId = offset.getId();
+
+        byte[] buf = new byte[yearSize + 15 + nanoSize + offSetId.length()];
+
+        int off = toLocalDate().getChars(buf, 0);
+        buf[off] = 'T';
+        off = toLocalTime().getChars(buf, off + 1);
+        LocalTime.getNanoChars(buf, off, nano);
+        offSetId.getBytes(0, offSetId.length(), buf, off + nanoSize);
+
+        try {
+            return SharedSecrets.getJavaLangAccess()
+                    .newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     //-----------------------------------------------------------------------

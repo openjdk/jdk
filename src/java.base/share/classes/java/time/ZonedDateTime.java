@@ -71,6 +71,8 @@ import java.io.ObjectInput;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -90,6 +92,8 @@ import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneRules;
 import java.util.List;
 import java.util.Objects;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A date-time with a time-zone in the ISO-8601 calendar system,
@@ -2213,12 +2217,47 @@ public final class ZonedDateTime
      * @return a string representation of this date-time, not null
      */
     @Override  // override for Javadoc
+    @SuppressWarnings("deprecation")
     public String toString() {
-        String str = dateTime.toString() + offset.toString();
+        int yearSize = LocalDate.yearSize(dateTime.getYear());
+        int nano = dateTime.getNano();
+        int nanoSize = LocalTime.nanoSize(nano);
+
+        String offSetId = offset.getId();
+        int offsetIdLenth = offSetId.length();
+
+        String zoneStr = null;
+        int zoneLength = 0;
+
+        int offsetLength = offsetIdLenth;
         if (offset != zone) {
-            str += '[' + zone.toString() + ']';
+            zoneStr = zone.toString();
+            zoneLength = zoneStr.length();
+            offsetLength += zoneLength + 2;
         }
-        return str;
+
+        byte[] buf = new byte[yearSize + 15 + nanoSize + offsetLength];
+
+        int off = toLocalDate().getChars(buf, 0);
+        buf[off] = 'T';
+        off = toLocalTime().getChars(buf, off + 1);
+        LocalTime.getNanoChars(buf, off, nano);
+        off += nanoSize;
+        offSetId.getBytes(0, offsetIdLenth, buf, off);
+
+        if (offset != zone) {
+            off += offsetIdLenth;
+            buf[off] = '[';
+            zoneStr.getBytes(0, zoneLength, buf, off + 1);
+            buf[off + zoneLength + 1] = ']';
+        }
+
+        try {
+            return SharedSecrets.getJavaLangAccess()
+                    .newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     //-----------------------------------------------------------------------

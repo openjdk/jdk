@@ -80,6 +80,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.IsoEra;
 import java.time.chrono.IsoChronology;
@@ -102,6 +104,10 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
@@ -139,6 +145,8 @@ import java.util.stream.Stream;
 @jdk.internal.ValueBased
 public final class LocalDate
         implements Temporal, TemporalAdjuster, ChronoLocalDate, Serializable {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * The minimum supported {@code LocalDate}, '-999999999-01-01'.
@@ -2147,28 +2155,58 @@ public final class LocalDate
      */
     @Override
     public String toString() {
-        int yearValue = year;
-        int monthValue = month;
-        int dayValue = day;
-        int absYear = Math.abs(yearValue);
-        StringBuilder buf = new StringBuilder(10);
-        if (absYear < 1000) {
-            if (yearValue < 0) {
-                buf.append(yearValue - 10000).deleteCharAt(1);
-            } else {
-                buf.append(yearValue + 10000).deleteCharAt(0);
-            }
-        } else {
-            if (yearValue > 9999) {
-                buf.append('+');
-            }
-            buf.append(yearValue);
+        byte[] buf = new byte[yearSize(year) + 6];
+        getChars(buf, 0);
+
+        try {
+            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
         }
-        return buf.append(monthValue < 10 ? "-0" : "-")
-            .append(monthValue)
-            .append(dayValue < 10 ? "-0" : "-")
-            .append(dayValue)
-            .toString();
+    }
+
+    static int yearSize(int year) {
+        if (Math.abs(year) < 1000) {
+            return year < 0 ? 5 : 4;
+        }
+        return jla.stringSize(year) + (year > 9999 ? 1 : 0);
+    }
+
+    int getChars(byte[] buf, int off) {
+        int year = this.year;
+        int yearSize = yearSize(year);
+        int yearAbs = Math.abs(year);
+        if (yearAbs < 1000) {
+            if (year < 0) {
+                buf[off] = '-';
+            }
+            int y01 = yearAbs / 100;
+            int y23 = yearAbs - y01 * 100;
+
+            ByteArrayLittleEndian.setInt(
+                    buf,
+                    year < 0 ? 1 : 0,
+                    (jla.digitPair(y23) << 16) | jla.digitPair(y01));
+        } else {
+            if (year > 9999) {
+                buf[off] = '+';
+            }
+            jla.getChars(year, off + yearSize, buf);
+        }
+
+        off += yearSize;
+        buf[off] = '-';
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off + 1,
+                jla.digitPair(month)); // mm
+        buf[off + 3] = '-';
+        ByteArrayLittleEndian.setShort(
+                buf,
+                off + 4,
+                jla.digitPair(day)); // dd
+
+        return off + 6;
     }
 
     //-----------------------------------------------------------------------

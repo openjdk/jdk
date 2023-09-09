@@ -75,6 +75,8 @@ import java.io.ObjectOutput;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -91,6 +93,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
+
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A time with an offset from UTC/Greenwich in the ISO-8601 calendar system,
@@ -118,7 +122,6 @@ import java.util.Objects;
 @jdk.internal.ValueBased
 public final class OffsetTime
         implements Temporal, TemporalAdjuster, Comparable<OffsetTime>, Serializable {
-
     /**
      * The minimum supported {@code OffsetTime}, '00:00:00+18:00'.
      * This is the time of midnight at the start of the day in the maximum offset
@@ -1397,8 +1400,24 @@ public final class OffsetTime
      * @return a string representation of this time, not null
      */
     @Override
+    @SuppressWarnings("deprecation")
     public String toString() {
-        return time.toString() + offset.toString();
+        int nano = time.getNano();
+        int nanoSize = LocalTime.nanoSize(nano);
+
+        String offSetId = offset.getId();
+        byte[] buf = new byte[8 + nanoSize + offSetId.length()];
+        time.getChars(buf, 0);
+
+        LocalTime.getNanoChars(buf, 8, nano);
+        offSetId.getBytes(0, offSetId.length(), buf, 8 + nanoSize);
+
+        try {
+            return SharedSecrets.getJavaLangAccess()
+                    .newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+        } catch (CharacterCodingException cce) {
+            throw new AssertionError(cce);
+        }
     }
 
     //-----------------------------------------------------------------------
