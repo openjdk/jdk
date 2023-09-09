@@ -51,7 +51,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
+#include "jfr/jfrEvents.hpp"
 #endif
 
 #ifdef AIX
@@ -728,7 +728,10 @@ void os::dll_unload(void *lib) {
   }
 #endif  // LINUX
 
-  JFR_ONLY(NativeLibraryUnloadEvent unload_event(l_path);)
+#if INCLUDE_JFR
+  EventNativeLibraryUnload event;
+  event.set_name(l_path);
+#endif
 
   if (l_path == nullptr) {
     l_path = "<not available>";
@@ -739,7 +742,11 @@ void os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
-    JFR_ONLY(unload_event.set_result(true);)
+#if INCLUDE_JFR
+    event.set_success(true);
+    event.set_errorMessage(nullptr);
+    event.commit();
+#endif
   } else {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -750,7 +757,11 @@ void os::dll_unload(void *lib) {
                             l_path, p2i(lib), error_report);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
-    JFR_ONLY(unload_event.set_error_msg(error_report);)
+#if INCLUDE_JFR
+    event.set_success(false);
+    event.set_errorMessage(error_report);
+    event.commit();
+#endif
   }
   // Update the dll cache
   AIX_ONLY(LoadedLibraries::reload());

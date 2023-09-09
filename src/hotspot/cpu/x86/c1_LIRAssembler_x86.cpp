@@ -1695,9 +1695,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     assert(data != nullptr,                "need data for type check");
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
-  Label profile_cast_success, profile_cast_failure;
-  Label *success_target = op->should_profile() ? &profile_cast_success : success;
-  Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
+  Label* success_target = success;
+  Label* failure_target = failure;
 
   if (obj == k_RInfo) {
     k_RInfo = dst;
@@ -1716,15 +1715,25 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   __ testptr(obj, obj);
   if (op->should_profile()) {
     Label not_null;
-    __ jccb(Assembler::notEqual, not_null);
-    // Object is null; update MDO and exit
     Register mdo  = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
+    __ jccb(Assembler::notEqual, not_null);
+    // Object is null; update MDO and exit
     Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
     int header_bits = BitData::null_seen_byte_constant();
     __ orb(data_addr, header_bits);
     __ jmp(*obj_is_null);
     __ bind(not_null);
+
+    Label update_done;
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj, tmp_load_klass);
+    type_profile_helper(mdo, md, data, recv, &update_done);
+
+    Address nonprofiled_receiver_count_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+    __ addptr(nonprofiled_receiver_count_addr, DataLayout::counter_increment);
+
+    __ bind(update_done);
   } else {
     __ jcc(Assembler::equal, *obj_is_null);
   }
@@ -1811,20 +1820,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // successful cast, fall through to profile or jump
     }
   }
-  if (op->should_profile()) {
-    Register mdo  = klass_RInfo, recv = k_RInfo;
-    __ bind(profile_cast_success);
-    __ mov_metadata(mdo, md->constant_encoding());
-    __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv, success);
-    __ jmp(*success);
-
-    __ bind(profile_cast_failure);
-    __ mov_metadata(mdo, md->constant_encoding());
-    Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-    __ subptr(counter_addr, DataLayout::counter_increment);
-    __ jmp(*failure);
-  }
   __ jmp(*success);
 }
 
@@ -1855,22 +1850,31 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data != nullptr,                "need data for type check");
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
-    Label profile_cast_success, profile_cast_failure, done;
-    Label *success_target = op->should_profile() ? &profile_cast_success : &done;
-    Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+    Label done;
+    Label* success_target = &done;
+    Label* failure_target = stub->entry();
 
     __ testptr(value, value);
     if (op->should_profile()) {
       Label not_null;
-      __ jccb(Assembler::notEqual, not_null);
-      // Object is null; update MDO and exit
       Register mdo  = klass_RInfo;
       __ mov_metadata(mdo, md->constant_encoding());
+      __ jccb(Assembler::notEqual, not_null);
+      // Object is null; update MDO and exit
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
       int header_bits = BitData::null_seen_byte_constant();
       __ orb(data_addr, header_bits);
       __ jmp(done);
       __ bind(not_null);
+
+      Label update_done;
+      Register recv = k_RInfo;
+      __ load_klass(recv, value, tmp_load_klass);
+      type_profile_helper(mdo, md, data, recv, &update_done);
+
+      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
+      __ addptr(counter_addr, DataLayout::counter_increment);
+      __ bind(update_done);
     } else {
       __ jcc(Assembler::equal, done);
     }
@@ -1893,21 +1897,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ testl(k_RInfo, k_RInfo);
     __ jcc(Assembler::equal, *failure_target);
     // fall through to the success case
-
-    if (op->should_profile()) {
-      Register mdo  = klass_RInfo, recv = k_RInfo;
-      __ bind(profile_cast_success);
-      __ mov_metadata(mdo, md->constant_encoding());
-      __ load_klass(recv, value, tmp_load_klass);
-      type_profile_helper(mdo, md, data, recv, &done);
-      __ jmpb(done);
-
-      __ bind(profile_cast_failure);
-      __ mov_metadata(mdo, md->constant_encoding());
-      Address counter_addr(mdo, md->byte_offset_of_slot(data, CounterData::count_offset()));
-      __ subptr(counter_addr, DataLayout::counter_increment);
-      __ jmp(*stub->entry());
-    }
 
     __ bind(done);
   } else
