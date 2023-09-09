@@ -26,7 +26,8 @@
 package java.security;
 
 /**
- * This interface identifies security classes that can be returned by PEM
+ * This interface identifies security classes that contain Key, Certificate, or
+ * CRL data.
  */
-public interface PEMable {
+public interface SecurityObject {
 }

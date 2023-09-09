@@ -82,7 +82,7 @@ import java.util.List;
  *
  */
 
-public class EncryptedPrivateKeyInfo implements PEMable {
+public class EncryptedPrivateKeyInfo implements SecurityObject {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by

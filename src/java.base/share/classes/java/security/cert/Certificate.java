@@ -54,7 +54,7 @@ import sun.security.x509.X509CertImpl;
  * @since 1.2
  */
 
-public abstract class Certificate implements java.io.Serializable, PEMable {
+public abstract class Certificate implements java.io.Serializable, SecurityObject {
 
     @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;

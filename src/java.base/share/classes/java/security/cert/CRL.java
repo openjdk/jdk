@@ -25,7 +25,7 @@
 
 package java.security.cert;
 
-import java.security.PEMable;
+import java.security.SecurityObject;
 
 /**
  * This class is an abstraction of certificate revocation lists (CRLs) that
@@ -45,7 +45,7 @@ import java.security.PEMable;
  * @since 1.2
  */
 
-public abstract class CRL implements PEMable {
+public abstract class CRL implements SecurityObject {
 
     // the CRL type
     private final String type;

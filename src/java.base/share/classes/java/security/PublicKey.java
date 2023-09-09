@@ -44,7 +44,7 @@ package java.security;
  *
  */
 
-public interface PublicKey extends Key, PEMable {
+public interface PublicKey extends Key {
     // Declare serialVersionUID to be compatible with JDK1.1
     /**
      * The class fingerprint that is set to indicate serialization
