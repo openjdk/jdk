@@ -183,6 +183,14 @@ class MutableBigInteger {
         return (intLen == 2) ? d << 32 | (value[offset + 1] & LONG_MASK) : d;
     }
 
+    long toLong(int sign) {
+        assert (intLen <= 2) : "this MutableBigInteger exceeds the range of long";
+        if (intLen == 0 || sign == 0)
+            return 0;
+        long d = value[offset] & LONG_MASK;
+        return (intLen == 2) ? d << 32 | (value[offset + 1] & LONG_MASK) : d;
+    }
+
     /**
      * Convert this MutableBigInteger to a BigInteger object.
      */

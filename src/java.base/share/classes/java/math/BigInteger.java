@@ -4183,25 +4183,81 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             tmp = q2;
         }
 
-        // Get string version of first digit group
-        String s = Long.toString(digitGroups[numGroups-1], radix);
+        long digit = digitGroups[numGroups - 1];
+        if (radix == 10) {
+            padWithZeros(buf, digits - (jla.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
+            buf.append(digit);
+        } else {
+            // Get string version of first digit group
+            String s = Long.toString(digit, radix);
 
-        // Pad with internal zeros if necessary.
-        padWithZeros(buf, digits - (s.length() +
-            (numGroups - 1)*digitsPerLong[radix]));
+            // Pad with internal zeros if necessary.
+            padWithZeros(buf, digits - (s.length() +
+                    (numGroups - 1) * digitsPerLong[radix]));
 
-        // Put first digit group into result buffer
-        buf.append(s);
+            // Put first digit group into result buffer
+            buf.append(s);
+        }
 
         // Append remaining digit groups each padded with leading zeros
         for (int i=numGroups-2; i >= 0; i--) {
             // Prepend (any) leading zeros for this digit group
-            s = Long.toString(digitGroups[i], radix);
-            int numLeadingZeros = digitsPerLong[radix] - s.length();
+            if (radix == 10) {
+                digit = digitGroups[i];
+                int numLeadingZeros = digitsPerLong[10] - jla.stringSize(digit);
+                if (numLeadingZeros != 0) {
+                    buf.append(ZEROS, 0, numLeadingZeros);
+                }
+                buf.append(digit);
+            } else {
+                String s = Long.toString(digitGroups[i], radix);
+                int numLeadingZeros = digitsPerLong[radix] - s.length();
+                if (numLeadingZeros != 0) {
+                    buf.append(ZEROS, 0, numLeadingZeros);
+                }
+                buf.append(s);
+            }
+        }
+    }
+
+    private void smallToString(StringBuilder buf, int digits) {
+        assert signum >= 0;
+
+        if (signum == 0) {
+            padWithZeros(buf, digits);
+            return;
+        }
+
+        // Compute upper bound on number of digit groups and allocate space
+        int maxNumDigitGroups = (4 * mag.length + 6) / 7;
+        long[] digitGroups = new long[maxNumDigitGroups];
+
+        // Translate number to string, a digit group at a time
+        BigInteger tmp = this;
+        int numGroups = 0;
+        while (tmp.signum != 0) {
+            BigInteger d = longRadix[10];
+
+            MutableBigInteger q = new MutableBigInteger(),
+                    a = new MutableBigInteger(tmp.mag);
+
+            digitGroups[numGroups++] = a.divideKnuthSmall(q).toLong();
+            tmp = q.toBigInteger(1);
+        }
+
+        long digit = digitGroups[numGroups - 1];
+        padWithZeros(buf, digits - (jla.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
+        buf.append(digit);
+
+        // Append remaining digit groups each padded with leading zeros
+        for (int i = numGroups - 2; i >= 0; i--) {
+            // Prepend (any) leading zeros for this digit group
+            digit = digitGroups[i];
+            int numLeadingZeros = digitsPerLong[10] - jla.stringSize(digit);
             if (numLeadingZeros != 0) {
                 buf.append(ZEROS, 0, numLeadingZeros);
             }
-            buf.append(s);
+            buf.append(digit);
         }
     }
 
@@ -4277,7 +4333,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // at the beginning of the string or digits <= 0. As u.signum() >= 0,
         // smallToString() will not prepend a negative sign.
         if (u.mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD) {
-            u.smallToString(radix, sb, digits);
+            if (radix == 10) {
+                u.smallToString(sb, digits);
+            } else {
+                u.smallToString(radix, sb, digits);
+            }
             return;
         }
 
