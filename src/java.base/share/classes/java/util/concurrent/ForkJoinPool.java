@@ -2160,14 +2160,12 @@ public class ForkJoinPool extends AbstractExecutorService {
                 LockSupport.setCurrentBlocker(this);
                 w.parker = Thread.currentThread();
                 for (;;) {
-                    if ((p = w.phase) != idlePhase)
+                    if ((runState & STOP) != 0 || (p = w.phase) != idlePhase)
                         break;
                     U.park(quiescent, deadline);
-                    if ((p = w.phase) != idlePhase)
+                    if ((p = w.phase) != idlePhase || (runState & STOP) != 0)
                         break;
                     Thread.interrupted();       // clear status for next park
-                    if ((runState & STOP) != 0)
-                        break;
                     if (quiescent &&            // trim on timeout
                         deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
                         int id = idlePhase & SMASK;
@@ -2784,12 +2782,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
                     getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
                 if (isShutdown != 0 && isQuiescent(true))
-                    e = STOP | SHUTDOWN;
+                    e = runState;
             }
         }
-        if ((e & (STOP | TERMINATED)) == STOP) { // similar to isQuiescent
-            for (int r = ThreadLocalRandom.nextSecondarySeed();;) { // stagger
-                int prevRunState = e;
+        if ((e & STOP) != 0) { // help terminate; similar to isQuiescent
+            int r = (int)Thread.currentThread().threadId(); // stagger traversals
+            long c = ctl;
+            for (int prevRunState = 0; ; prevRunState = e) {
                 WorkQueue[] qs = queues;
                 int n = (qs == null) ? 0 : qs.length;
                 for (int l = n; l > 0; --l, ++r) {
@@ -2809,10 +2808,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                         }
                     }
                 }
-                if (((e = runState) & TERMINATED) != 0)
-                    break;
-                if (e == prevRunState && (e & RS_LOCK) == 0) {
-                    if (ctl != 0L)        // another thread will finish
+                if (c == (c = ctl) && (e = runState) == prevRunState &&
+                     (e & RS_LOCK) == 0) {
+                    if ((e & TERMINATED) != 0)
+                        break;
+                    if (c != 0L)        // another thread will finish
                         break;
                     if (casRunState(e, e = (e | TERMINATED) + RS_EPOCH)) {
                         CountDownLatch done; SharedThreadContainer ctr;
@@ -2820,7 +2820,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                             done.countDown();
                         if ((ctr = container) != null)
                             ctr.close();
-                        break;
                     }
                 }
             }
@@ -3821,17 +3820,16 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     @Override
     public void close() {
-        if (workerNamePrefix != null && (runState & TERMINATED) == 0) {
+        if (workerNamePrefix != null) {
             checkPermission();
             CountDownLatch done = null;
-            boolean interrupted = false; // Thread.interrupted();
+            boolean interrupted = false;
             while ((tryTerminate(interrupted, true) & TERMINATED) == 0) {
                 if (done == null)
                     done = terminationSignal();
                 else {
                     try {
                         done.await();
-                        break;
                     } catch (InterruptedException ex) {
                         interrupted = true;
                     }
