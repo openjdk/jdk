@@ -1585,7 +1585,7 @@ class ZipFileSystem extends FileSystem {
             if (pos + CENHDR + nlen > limit) {
                 throw new ZipException("invalid CEN header (bad header size)");
             }
-            if(elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL ||
+            if (elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL ||
                     locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
                 throw new ZipException("Invalid CEN header (invalid zip64 extra len size)");
             }

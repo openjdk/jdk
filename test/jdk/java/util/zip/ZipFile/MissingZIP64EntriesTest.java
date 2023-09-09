@@ -72,8 +72,8 @@ public class MissingZIP64EntriesTest {
      *    0x65: Uncompressed Size: 0xffffffff
      *    0x69: Name Length      :        0x9
      *    0x6b: Extra Length     :        0xc
-	 *        Extra data:[01, 00, 08, 00, 14, 00, 00, 00, 00, 00, 00, 00]
-	 *           [tag=0x0001, sz=8]
+     *        Extra data:[01, 00, 08, 00, 14, 00, 00, 00, 00, 00, 00, 00]
+     *           [tag=0x0001, sz=8]
      *               ->ZIP64: size *0x14 *0x6054b50
      *           [data= 14 00 00 00 00 00 00 00 ]
      *    0x6d: Comment Length   :        0x0

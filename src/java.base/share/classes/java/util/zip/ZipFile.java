@@ -1370,7 +1370,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
             }
             // Check the LOC offset is not negative
-            if ((locoff == ZIP64_MAGICVAL) ) {
+            if (locoff == ZIP64_MAGICVAL) {
                 if (blockSize >= 24) {
                     if (get64(cen, off + 16) < 0) {
                         zerror("Invalid zip64 extra block LOC OFFSET value");
