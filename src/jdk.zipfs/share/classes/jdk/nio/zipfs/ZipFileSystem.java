@@ -1572,6 +1572,10 @@ class ZipFileSystem extends FileSystem {
             int elen   = CENEXT(cen, pos);
             int clen   = CENCOM(cen, pos);
             int flag   = CENFLG(cen, pos);
+            long csize = CENSIZ(cen, pos);
+            long size  = CENLEN(cen, pos);
+            long locoff = CENOFF(cen, pos);
+            int diskNo = CENDSK(cen, pos);
             if ((flag & 1) != 0) {
                 throw new ZipException("invalid CEN header (encrypted entry)");
             }
@@ -1580,6 +1584,10 @@ class ZipFileSystem extends FileSystem {
             }
             if (pos + CENHDR + nlen > limit) {
                 throw new ZipException("invalid CEN header (bad header size)");
+            }
+            if(elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL ||
+                    locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
+                throw new ZipException("Invalid CEN header (invalid zip64 extra len size)");
             }
             IndexNode inode = new IndexNode(cen, pos, nlen);
             if (inode.pathHasDotOrDotDot()) {
@@ -2809,9 +2817,9 @@ class ZipFileSystem extends FileSystem {
             int nlen    = CENNAM(cen, pos);
             int elen    = CENEXT(cen, pos);
             int clen    = CENCOM(cen, pos);
+            int diskNo  = CENDSK(cen, pos);
             /*
             versionMade = CENVEM(cen, pos);
-            disk        = CENDSK(cen, pos);
             attrs       = CENATT(cen, pos);
             attrsEx     = CENATX(cen, pos);
             */
@@ -2829,6 +2837,9 @@ class ZipFileSystem extends FileSystem {
                 extra = Arrays.copyOfRange(cen, pos, pos + elen);
                 pos += elen;
                 readExtra(zipfs);
+            } else if (elen == 0 && (size == ZIP64_MINVAL || csize == ZIP64_MINVAL
+                    || locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32)) {
+                throw new ZipException("Invalid CEN header (invalid zip64 extra len size)");
             }
             if (clen > 0) {
                 comment = Arrays.copyOfRange(cen, pos, pos + clen);
@@ -3106,29 +3117,29 @@ class ZipFileSystem extends FileSystem {
                         throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
                     }
                     if (size == ZIP64_MINVAL) {
-                        if (pos + 8 > elen)  // invalid zip64 extra
-                            break;           // fields, just skip
                         size = LL(extra, pos);
                         if (size < 0) {
                             throw new ZipException("Invalid zip64 extra block size value");
                         }
-                        pos += 8;
                     }
                     if (csize == ZIP64_MINVAL) {
-                        if (pos + 8 > elen)
-                            break;
-                        csize = LL(extra, pos);
-                        if (csize < 0) {
-                            throw new ZipException("Invalid zip64 extra block compressed size value");
+                        if (sz >= 16) {
+                            csize = LL(extra, pos + 8);
+                            if (csize < 0) {
+                                throw new ZipException("Invalid zip64 extra block compressed size value");
+                            }
+                        } else {
+                            throw new ZipException("Invalid Zip64 extra block, missing compressed size");
                         }
-                        pos += 8;
                     }
                     if (locoff == ZIP64_MINVAL) {
-                        if (pos + 8 > elen)
-                            break;
-                        locoff = LL(extra, pos);
-                        if (locoff < 0) {
-                            throw new ZipException("Invalid zip64 extra block LOC offset value");
+                        if (sz >= 24) {
+                            locoff = LL(extra, pos + 16);
+                            if (locoff < 0) {
+                                throw new ZipException("Invalid zip64 extra block LOC offset value");
+                            }
+                        } else {
+                            throw new ZipException("Invalid Zip64 extra block, missing LOC offset value");
                         }
                     }
                     break;
@@ -3158,8 +3169,8 @@ class ZipFileSystem extends FileSystem {
                          break;
                     }
                     // If the LOC offset is 0xFFFFFFFF, then we need to read the
-                    // LOC offset from the EXTID_ZIP64 extra data. Therefore
-                    // wait until all of the CEN extra data fields have been processed
+                    // LOC offset from the EXTID_ZIP64 extra data. Therefore,
+                    // wait until all the CEN extra data fields have been processed
                     // prior to reading the LOC extra data field in order to obtain
                     // the Info-ZIP Extended Timestamp.
                     if (locoff != ZIP64_MINVAL) {

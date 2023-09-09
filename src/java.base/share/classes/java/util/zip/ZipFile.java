@@ -1220,17 +1220,23 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             int entryPos = pos + CENHDR;
             int nlen = CENNAM(cen, pos);
+            int elen = CENEXT(cen, pos);
+            int clen = CENCOM(cen, pos);
             if (entryPos + nlen > cen.length - ENDHDR) {
                 zerror("invalid CEN header (bad header size)");
             }
 
-            int elen = CENEXT(cen, pos);
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
                 long extraStartingOffset = pos + CENHDR + nlen;
                 if ((int)extraStartingOffset != extraStartingOffset) {
                     zerror("invalid CEN header (bad extra offset)");
                 }
                 checkExtraFields(pos, (int)extraStartingOffset, elen);
+            } else if (elen == 0 && (CENSIZ(cen, pos) == ZIP64_MAGICVAL
+                    || CENLEN(cen, pos) == ZIP64_MAGICVAL
+                    || CENOFF(cen, pos) == ZIP64_MAGICVAL
+                    || CENDSK(cen, pos) == ZIP64_MAGICCOUNT)) {
+                zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
             try {
@@ -1243,10 +1249,9 @@ public class ZipFile implements ZipConstants, Closeable {
                 entries[index++] = hash;
                 entries[index++] = next;
                 entries[index  ] = pos;
-                // Validate comment if it exists
-                // if the bytes representing the comment cannot be converted to
+                // Validate comment if it exists.
+                // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
-                int clen = CENCOM(cen, pos);
                 if (clen > 0) {
                     int start = entryPos + nlen + elen;
                     zcp.toString(cen, start, clen);
@@ -1273,7 +1278,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             // CEN Offset where this Extra field ends
             int extraEndOffset = startingOffset + extraFieldLen;
-            if (extraEndOffset > cen.length) {
+            if (extraEndOffset > cen.length - ENDHDR) {
                 zerror("Invalid CEN header (extra data field size too long)");
             }
             int currentOffset = startingOffset;
@@ -1302,9 +1307,11 @@ public class ZipFile implements ZipConstants, Closeable {
                     long csize = CENSIZ(cen, cenPos);
                     // Get the uncompressed size;
                     long size = CENLEN(cen, cenPos);
+                    // Get the LOC offset
+                    long locoff = CENOFF(cen, cenPos);
 
                     checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
-                            csize, size);
+                            csize, size, locoff);
                 }
                 currentOffset += tagBlockSize;
             }
@@ -1320,17 +1327,19 @@ public class ZipFile implements ZipConstants, Closeable {
          * @param blockSize the size of the Zip64 Extended Extra Field
          * @param csize CEN header compressed size value
          * @param size CEN header uncompressed size value
+         * @param locoff CEN header LOC offset
          * @throws ZipException if an error occurs
          */
         private void checkZip64ExtraFieldValues(int off, int blockSize, long csize,
-                                                long size)
+                                                long size, long locoff)
                 throws ZipException {
             byte[] cen = this.cen;
             // if ZIP64_EXTID blocksize == 0, which may occur with some older
             // versions of Apache Ant and Commons Compress, validate csize and size
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
-                if (csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL) {
+                if (csize == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL ||
+                        locoff == ZIP64_MAGICVAL) {
                     zerror("Invalid CEN header (invalid zip64 extra data field size)");
                 }
                 // Only validate the ZIP64_EXTID data if the block size > 0
@@ -1346,14 +1355,28 @@ public class ZipFile implements ZipConstants, Closeable {
             // we know its length is at least 8 from the call to
             // isZip64ExtBlockSizeValid()
             if ((size == ZIP64_MAGICVAL)) {
-                if(get64(cen, off) < 0) {
+                if (get64(cen, off) < 0) {
                     zerror("Invalid zip64 extra block size value");
                 }
             }
             // Check the compressed size is not negative
-            if ((csize == ZIP64_MAGICVAL) && (blockSize >= 16)) {
-                if (get64(cen, off + 8) < 0) {
-                    zerror("Invalid zip64 extra block compressed size value");
+            if (csize == ZIP64_MAGICVAL) {
+                if (blockSize >= 16) {
+                    if (get64(cen, off + 8) < 0) {
+                        zerror("Invalid zip64 extra block compressed size value");
+                    }
+                } else {
+                    zerror("Invalid Zip64 extra block, missing compressed size");
+                }
+            }
+            // Check the LOC offset is not negative
+            if ((locoff == ZIP64_MAGICVAL) ) {
+                if (blockSize >= 24) {
+                    if (get64(cen, off + 16) < 0) {
+                        zerror("Invalid zip64 extra block LOC OFFSET value");
+                    }
+                } else {
+                    zerror("Invalid Zip64 extra block, missing LOC offset value");
                 }
             }
         }
@@ -1378,8 +1401,8 @@ public class ZipFile implements ZipConstants, Closeable {
              * fields to expect:
              *  8 - uncompressed size
              * 16 - uncompressed size, compressed size
-             * 24 - uncompressed size, compressed sise, LOC Header offset
-             * 28 - uncompressed size, compressed sise, LOC Header offset,
+             * 24 - uncompressed size, compressed size, LOC Header offset
+             * 28 - uncompressed size, compressed size, LOC Header offset,
              * and Disk start number
              */
             return switch(blockSize) {
