@@ -33,6 +33,7 @@ import java.math.*;
 import java.util.Objects;
 import java.util.Optional;
 
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -41,8 +42,6 @@ import jdk.internal.vm.annotation.Stable;
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
-
-import static jdk.internal.util.DecimalDigits.stringSize;
 
 /**
  * The {@code Long} class wraps a value of the primitive type {@code
@@ -458,7 +457,7 @@ public final class Long extends Number
      * @return  a string representation of the argument in base&nbsp;10.
      */
     public static String toString(long i) {
-        int size = stringSize(i);
+        int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
             StringLatin1.getChars(i, size, buf);

@@ -25,8 +25,7 @@
 
 package java.lang;
 
-import static jdk.internal.util.DecimalDigits.stringSize;
-
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
@@ -428,7 +427,7 @@ public final class Integer extends Number
      */
     @IntrinsicCandidate
     public static String toString(int i) {
-        int size = stringSize(i);
+        int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
             StringLatin1.getChars(i, size, buf);
