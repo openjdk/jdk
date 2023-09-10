@@ -42,6 +42,8 @@ import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
+import static jdk.internal.util.DecimalDigits.stringSize;
+
 /**
  * The {@code Long} class wraps a value of the primitive type {@code
  * long} in an object. An object of type {@code Long} contains a
@@ -484,32 +486,6 @@ public final class Long extends Number
      */
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
-    }
-
-    /**
-     * Returns the string representation size for a given long value.
-     *
-     * @param x long value
-     * @return string size
-     *
-     * @implNote There are other ways to compute this: e.g. binary search,
-     * but values are biased heavily towards zero, and therefore linear search
-     * wins. The iteration results are also routinely inlined in the generated
-     * code after loop unrolling.
-     */
-    static int stringSize(long x) {
-        int d = 1;
-        if (x >= 0) {
-            d = 0;
-            x = -x;
-        }
-        long p = -10;
-        for (int i = 1; i < 19; i++) {
-            if (x > p)
-                return i + d;
-            p = 10 * p;
-        }
-        return 19 + d;
     }
 
     /**

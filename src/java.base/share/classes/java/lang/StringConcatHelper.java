@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import static jdk.internal.util.DecimalDigits.stringSize;
+
 import jdk.internal.misc.Unsafe;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.FormatConcatItem;
@@ -98,7 +100,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, int value) {
-        return checkOverflow(lengthCoder + Integer.stringSize(value));
+        return checkOverflow(lengthCoder + stringSize(value));
     }
 
     /**
@@ -109,7 +111,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, long value) {
-        return checkOverflow(lengthCoder + Long.stringSize(value));
+        return checkOverflow(lengthCoder + stringSize(value));
     }
 
     /**
