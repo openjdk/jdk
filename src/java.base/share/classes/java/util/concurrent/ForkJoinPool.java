@@ -621,10 +621,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * this causes enough memory traffic and CAS contention to prefer
      * using quieter short spinwaits in awaitWork and elsewhere.
      * Those in awaitWork are set to small values that only cover
-     * near-miss scenarios for inactivate/activate races. Because idle
-     * workers are often not yet blocked (parked), we use the
-     * WorkQueue parker field to advertise that a waiter actually
-     * needs unparking upon signal.
+     * near-miss scenarios for inactivate/activate races.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -1044,7 +1041,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final int PRESET_SIZE      = 1 << 2;   // size was set by property
 
     // others
-    static final int TRIMMED          = 1 << 31;  // timed out while idle
+    static final int DEREGISTERED     = 1 << 31;  // worker terminating
     static final int UNCOMPENSATE     = 1 << 16;  // tryCompensate return
     static final int IDLE             = 1 << 16;  // phase seqlock/version count
     static final long RESCAN          = 1L << 63; // window retry indicator
@@ -1214,8 +1211,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     static final class WorkQueue {
         // fields declared in order of their likely layout on most VMs
-        volatile ForkJoinWorkerThread owner; // null if shared or terminated
-        volatile Thread parker;    // set when parking in awaitWork
+        final ForkJoinWorkerThread owner; // null if shared or terminated
         ForkJoinTask<?>[] array;   // the queued tasks; power of 2 size
         int base;                  // index of next slot for poll
         final int config;          // mode bits
@@ -1228,7 +1224,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         @jdk.internal.vm.annotation.Contended("w")
         int stackPred;             // pool stack (ctl) predecessor link
         @jdk.internal.vm.annotation.Contended("w")
-        volatile int source;       // source queue id (or TRIMMED if trimmed)
+        volatile int source;       // source queue id (or DEREGISTERED)
         @jdk.internal.vm.annotation.Contended("w")
         int nsteals;               // number of steals from other queues
 
@@ -1831,9 +1827,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             int stop = lockRunState() & STOP;
             try {
                 WorkQueue[] qs; int n;
-                if (stop != 0 || (qs = queues) == null || (n = qs.length) <= 0)
-                    w.owner = null;             // terminating
-                else {
+                if (stop == 0 && (qs = queues) != null && (n = qs.length) > 0) {
                     for (int k = n, m = n - 1;  ; id += 2) {
                         if (qs[id &= m] == null)
                             break;
@@ -1881,24 +1875,23 @@ public class ForkJoinPool extends AbstractExecutorService {
         boolean replaceable = false;
         if (wt != null && (w = wt.workQueue) != null) {
             phase = w.phase;
-            src = w.source;
-            w.owner = null;               // disable signals
-            if (phase != 0) {             // else failed to start
-                replaceable = true;
-                if ((phase & IDLE) != 0)
-                    reactivate(w);        // pool stopped before released
-                if (w.top - w.base > 0) {
+            if ((src = w.source) != DEREGISTERED) { // else trimmed on timeout
+                w.source = DEREGISTERED;
+                if (phase != 0) {             // else failed to start
+                    replaceable = true;
+                    if ((phase & IDLE) != 0)
+                        reactivate(w);        // pool stopped before released
                     for (ForkJoinTask<?> t; (t = w.nextLocalTask()) != null; ) {
-                         try {
-                             t.cancel(false);
-                         } catch (Throwable ignore) {
-                         }
+                        try {
+                            t.cancel(false);
+                        } catch (Throwable ignore) {
+                        }
                     }
                 }
             }
         }
         long c = ctl;
-        if (src != TRIMMED)               // decrement counts
+        if (src != DEREGISTERED)          // decrement counts
             do {} while (c != (c = compareAndExchangeCtl(
                                    c, ((RC_MASK & (c - RC_UNIT)) |
                                        (TC_MASK & (c - TC_UNIT)) |
@@ -1950,10 +1943,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (v == null)
                     createWorker();
                 else {
-                    Thread t;
                     v.phase = sp;
-                    if ((t = v.parker) != null)
-                        U.unpark(t);
+                    U.unpark(v.owner);
                 }
                 break;
             }
@@ -1975,8 +1966,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                           c, ((UMASK & (c + RC_UNIT)) | (c & TC_MASK) |
                               (v.stackPred & LMASK))))) {
                 v.phase = sp;
-                if ((t = v.parker) != null)
-                    U.unpark(t);
+                U.unpark(v.owner);
                 if (v == w)
                     break;
             }
@@ -2004,10 +1994,9 @@ public class ForkJoinPool extends AbstractExecutorService {
             else if (ctl != c)                        // re-snapshot
                 swept = false;
             else if (swept && e == prevRunState && (e & RS_LOCK) == 0 &&
-                     (!transition ||
-                      casRunState(e, ((e & SHUTDOWN) == 0 ?
-                                      e + RS_EPOCH :  // advance
-                                      e | STOP))))    // terminate
+                     casRunState(e, !transition ? e : // confirm
+                                 (e & SHUTDOWN) == 0 ? e + RS_EPOCH : // advance
+                                 e | STOP))           // terminate
                 return true;
             else {
                 long sum = 0L;
@@ -2158,7 +2147,6 @@ public class ForkJoinPool extends AbstractExecutorService {
 
             if (p == idlePhase) {               // emulate LockSupport.park
                 LockSupport.setCurrentBlocker(this);
-                w.parker = Thread.currentThread();
                 for (;;) {
                     if ((runState & STOP) != 0 || (p = w.phase) != idlePhase)
                         break;
@@ -2172,14 +2160,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                         long sp = w.stackPred & LMASK;
                         long c = ctl, nc = sp | (UMASK & (c - TC_UNIT));
                         if (((int)c & SMASK) == id && compareAndSetCtl(c, nc)) {
-                            w.source = TRIMMED; // sentinel for deregisterWorker
+                            w.source = DEREGISTERED; // deregisterWorker sentinel
                             w.phase = idlePhase + IDLE;
                             break;
                         }
                         deadline += keepAlive;  // not at head; restart timer
                     }
                 }
-                w.parker = null;
                 LockSupport.setCurrentBlocker(null);
             }
         }
@@ -2238,8 +2225,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 (v = qs[i]) != null &&
                 compareAndSetCtl(c, (c & UMASK) | (v.stackPred & LMASK))) {
                 v.phase = sp;
-                if ((t = v.parker) != null)
-                    U.unpark(t);
+                U.unpark(v.owner);
                 stat = UNCOMPENSATE;
             }
         }
@@ -2785,7 +2771,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                     e = runState;
             }
         }
-        if ((e & STOP) != 0) { // help terminate; similar to isQuiescent
+        if ((e & (STOP | TERMINATED)) == STOP) { // similar to isQuiescent
             int r = (int)Thread.currentThread().threadId(); // stagger traversals
             long c = ctl;
             for (int prevRunState = 0; ; prevRunState = e) {
@@ -2794,7 +2780,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 for (int l = n; l > 0; --l, ++r) {
                     WorkQueue q; Thread o;  // interrupt workers, cancel tasks
                     if ((q = qs[r & SMASK & (n - 1)]) != null) {
-                        if ((o = q.owner) != null && !o.isInterrupted()) {
+                        if ((o = q.owner) != null && q.source != DEREGISTERED &&
+                            !o.isInterrupted()) {
                             try {
                                 o.interrupt();
                             } catch (Throwable ignore) {
@@ -2820,6 +2807,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                             done.countDown();
                         if ((ctr = container) != null)
                             ctr.close();
+                        break;
                     }
                 }
             }
@@ -3830,6 +3818,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 else {
                     try {
                         done.await();
+                        break;
                     } catch (InterruptedException ex) {
                         interrupted = true;
                     }
