@@ -104,7 +104,7 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;
 int ShenandoahCodeRoots::_disarmed_value = 1;
 
-bool ShenandoahCodeRoots::should_use_nmethod_barriers() {
+bool ShenandoahCodeRoots::use_nmethod_barriers_for_mark() {
   // Continuations need nmethod barriers for scanning stack chunk nmethods.
   if (Continuations::enabled()) return true;
 
@@ -132,10 +132,14 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   _nmethod_table->unregister_nmethod(nm);
 }
 
-void ShenandoahCodeRoots::arm_nmethods() {
-  if (should_use_nmethod_barriers()) {
+void ShenandoahCodeRoots::arm_nmethods_for_mark() {
+  if (use_nmethod_barriers_for_mark()) {
     BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
   }
+}
+
+void ShenandoahCodeRoots::arm_nmethods_for_evac() {
+  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
 class ShenandoahDisarmNMethodClosure : public NMethodClosure {
@@ -178,7 +182,7 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  if (should_use_nmethod_barriers()) {
+  if (use_nmethod_barriers_for_mark()) {
     ShenandoahDisarmNMethodsTask task;
     ShenandoahHeap::heap()->workers()->run_task(&task);
   }

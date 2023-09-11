@@ -547,7 +547,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   OrderAccess::fence();
 
   // Arm nmethods for concurrent mark
-  ShenandoahCodeRoots::arm_nmethods();
+  ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {
@@ -600,7 +600,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
 
       // Arm nmethods/stack for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods();
+      ShenandoahCodeRoots::arm_nmethods_for_evac();
       ShenandoahStackWatermark::change_epoch_id();
 
       if (ShenandoahPacing) {
