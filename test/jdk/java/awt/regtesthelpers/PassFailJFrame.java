@@ -175,7 +175,8 @@ public class PassFailJFrame {
                           boolean enableScreenCapture) throws InterruptedException,
             InvocationTargetException {
         if (isEventDispatchThread()) {
-            createUI(title, instructions, testTimeOut, rows, columns, enableScreenCapture);
+            createUI(title, instructions, testTimeOut, rows, columns,
+                     enableScreenCapture);
         } else {
             invokeAndWait(() -> createUI(title, instructions, testTimeOut,
                     rows, columns, enableScreenCapture));
