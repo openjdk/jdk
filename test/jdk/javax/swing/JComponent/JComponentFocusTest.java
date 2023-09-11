@@ -49,7 +49,7 @@ public class JComponentFocusTest {
     }
 
     public void init() {
-        fr = new JFrame("Test");
+        fr = new JFrame("JComponentFocusTest");
         fr.getContentPane().setLayout(null);
 
         p = new JPanel();

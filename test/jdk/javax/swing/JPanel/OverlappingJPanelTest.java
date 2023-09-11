@@ -49,7 +49,7 @@ public class OverlappingJPanelTest {
     }
 
     public void init() {
-        fr = new JFrame("Test");
+        fr = new JFrame("OverlappingJPanelTest");
         fr.getContentPane().setLayout(null);
 
         p = new JPanel();
