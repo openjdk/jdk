@@ -22,11 +22,35 @@
  */
 
 /**
- * @test
- * @bug 8302652
+ * @test id=vanilla-U
+ * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestUnorderedReduction
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction vanilla-U
+ */
+
+/**
+ * @test id=vanilla-A
+ * @bug 8302652 8314612
+ * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction vanilla-A
+ */
+
+/**
+ * @test id=v016-U
+ * @bug 8302652 8314612
+ * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction v016-U
+ */
+
+/**
+ * @test id=v032-A
+ * @bug 8302652 8314612
+ * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction v032-A
  */
 
 package compiler.loopopts.superword;
@@ -38,9 +62,22 @@ public class TestUnorderedReduction {
     static final int ITER  = 10;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-Xbatch",
-                                   "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestUnorderedReduction::test*",
-                                   "-XX:MaxVectorSize=16");
+        TestFramework framework = new TestFramework(TestUnorderedReduction.class);
+        framework.addFlags("-Xbatch",
+                           "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestUnorderedReduction::test*");
+
+        if (args.length != 1) {
+            throw new RuntimeException("Test requires exactly one argument!");
+        }
+
+        switch (args[0]) {
+            case "vanilla-U" -> { framework.addFlags("-XX:-AlignVector"); }
+            case "vanilla-A" -> { framework.addFlags("-XX:+AlignVector"); }
+            case "v016-U"    -> { framework.addFlags("-XX:MaxVectorSize=16"); }
+            case "v032-A"    -> { framework.addFlags("-XX:MaxVectorSize=32", "-XX:+AlignVector"); }
+            default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
+        }
+        framework.start();
     }
 
     @Run(test = {"test1", "test2", "test3"})
@@ -78,6 +115,7 @@ public class TestUnorderedReduction {
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI, "= 0",
                   IRNode.ADD_REDUCTION_VI, "> 0"}, // count can be high
+        applyIfAnd = {"MaxVectorSize", "=16", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static int test1(int[] data, int sum) {
         // Vectorizes, but the UnorderedReduction cannot be moved out of the loop,
@@ -118,6 +156,7 @@ public class TestUnorderedReduction {
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0",
                   IRNode.ADD_REDUCTION_VI, "<= 2"}, // count must be low
+        applyIfAnd = {"MaxVectorSize", "=16", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static int test2(int[] data, int sum) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -153,6 +192,7 @@ public class TestUnorderedReduction {
                   IRNode.MUL_VI, "> 0",
                   IRNode.ADD_VI, "= 0", // reduction not moved out of loop
                   IRNode.ADD_REDUCTION_VI, "> 0",},
+        applyIfAnd = {"MaxVectorSize", "=16", "AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static int test3(int[] data, int sum) {
         for (int i = 0; i < RANGE; i+=8) {
