@@ -205,7 +205,7 @@ public class KeyStore {
      * the default keystore type.
      * In the Security properties file, the default keystore type is given as:
      * <pre>
-     * keystore.type=jks
+     * keystore.type=pkcs12
      * </pre>
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
