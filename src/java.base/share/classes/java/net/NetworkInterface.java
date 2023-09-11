@@ -55,6 +55,16 @@ public final class NetworkInterface {
     private boolean virtual = false;
     private static final NetworkInterface defaultInterface;
 
+    void dump() {
+        System.out.println("name = " + name);
+        System.out.println("displayName = " + displayName);
+        System.out.println("index = " + index);
+        System.out.println("Arrays.toString(addrs) = " + Arrays.toString(addrs));
+        System.out.println("Arrays.toString(childs) = " + Arrays.toString(childs));
+        System.out.println("parent = " + parent);
+        System.out.println("virtual = " + virtual);
+    }
+
     static {
         jdk.internal.loader.BootLoader.loadLibrary("net");
 

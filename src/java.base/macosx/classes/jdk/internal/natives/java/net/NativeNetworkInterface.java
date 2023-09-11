@@ -31,6 +31,8 @@ import static jdk.internal.natives.include.sys.ErrNo.*;
 import static jdk.internal.natives.include.sys.IoCtlUtil.ioctl;
 import static jdk.internal.natives.include.sys.SockIoUtil.*;
 import static jdk.internal.natives.include.sys.SocketUtil.*;
+import static jdk.internal.natives.java.net.NativeNetworkInterfaceUtil.translateIPv4AddressToPrefix;
+import static jdk.internal.natives.java.net.NativeNetworkInterfaceUtil.translateIPv6AddressToPrefix;
 
 public final class NativeNetworkInterface {
 
@@ -217,7 +219,8 @@ public final class NativeNetworkInterface {
                         (ifa.ifa_flags() & IFF_BROADCAST) != 0) {
                     broadaddr = ifa.ifa_dstaddr();
                 }
-                interfaces.add(create(socket, ifa.ifa_name(), ifa_addr, broadaddr, AF_INET, (short) 0, interfaces.size()));
+                short prefix = translateIPv4AddressToPrefix(SockAddrIn.MAPPER.castFrom(ifa.ifa_netmask()));
+                interfaces.add(create(socket, ifa.ifa_name(), ifa_addr, broadaddr, AF_INET, prefix, interfaces.size()));
             }
         } finally {
             IfAddrsUtil.freeifaddrs(head);
@@ -245,16 +248,23 @@ public final class NativeNetworkInterface {
 
                 String name = ifa.ifa_name();
 
+                System.out.println("ifa_addr.segment() = " + ifa_addr.segment());
+
+                SockAddrIn6 sockAddrIn6 = SockAddrIn6.MAPPER.castFromRestricted(ifa_addr);
+
+                System.out.println("sockAddrIn6.segment() = " + sockAddrIn6.segment());
+
+
                 // set scope ID to interface index
-                SockAddrIn6.MAPPER.castFromRestricted(ifa_addr)
-                        .sin6_scope_id(getIndex(arena, socket, ifa.ifa_nameAsSegment()));
+                sockAddrIn6.sin6_scope_id(getIndex(arena, socket, ifa.ifa_nameAsSegment()));
 
                 // set ifa_broadaddr, if there is one
                 if ((ifa.ifa_flags() & IFF_POINTOPOINT) == 0 &&
                         (ifa.ifa_flags() & IFF_BROADCAST) != 0) {
                     broadaddr = ifa.ifa_dstaddr();
                 }
-                interfaces.add(create(socket, name, ifa_addr, broadaddr, AF_INET, (short) 0, interfaces.size()));
+                short prefix = translateIPv6AddressToPrefix(sockAddrIn6);
+                interfaces.add(create(socket, name, ifa_addr, broadaddr, AF_INET, prefix, interfaces.size()));
             }
         } finally {
             IfAddrsUtil.freeifaddrs(head);
@@ -290,28 +300,6 @@ public final class NativeNetworkInterface {
     }
 
 
-    /*
-     * Determines the prefix value for an AF_INET subnet address.
-     */
-    static short translateIPv4AddressToPrefix(SockAddrIn addr) {
-        short prefix = 0;
-        int mask;
-        if (addr.segment().equals(MemorySegment.NULL)) {
-            return 0;
-        }
-        mask = ntohl(addr.sin_addr().s_addr());
-        while (mask != 0) {
-            mask <<= 1;
-            prefix++;
-        }
-        return prefix;
-    }
-
-    private static int ntohl(int value) {
-        return ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN
-                ? value
-                : Integer.reverseBytes(value);
-    }
 
     private static UnsupportedOperationException unsupported() {
         return new UnsupportedOperationException("Implement me!");

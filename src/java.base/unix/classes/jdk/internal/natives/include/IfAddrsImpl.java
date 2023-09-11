@@ -71,7 +71,7 @@ public final class IfAddrsImpl implements IfAddrs {
     }
 
     private SockAddr sockAddrOrNull(long offset) {
-        var seg = segment.get(SOCKET_ADDR_PTR, IFA_ADDR_OFFSET);
+        var seg = segment.get(SOCKET_ADDR_PTR, offset);
         return seg.equals(MemorySegment.NULL)
                 ? null
                 : SockAddr.of(seg);

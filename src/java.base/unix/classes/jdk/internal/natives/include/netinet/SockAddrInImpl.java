@@ -59,7 +59,7 @@ public final class SockAddrInImpl
 
     @Override
     public InAddr sin_addr() {
-        return InAddr.of(segment().asSlice(4, LAYOUT));
+        return InAddr.of(segment().asSlice(4, InAddr.LAYOUT));
     }
 
     @Override

@@ -81,9 +81,9 @@ public interface SockAddrIn6 extends HasSegment, HasCopyFrom<SockAddrIn6> {
 
     void sin6_flowinfo(int value);
 
-/*    In6Addr sin6_addr();
+    In6Addr sin6_addr();
 
-    void sin6_addr(In6Addr value);*/
+    // void sin6_addr(In6Addr value);
 
     int sin6_scope_id();
 

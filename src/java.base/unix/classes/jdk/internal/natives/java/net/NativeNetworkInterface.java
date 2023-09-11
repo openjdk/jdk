@@ -24,6 +24,7 @@ import static jdk.internal.natives.include.sys.ErrNo.*;
 import static jdk.internal.natives.include.sys.IoCtlUtil.ioctl;
 import static jdk.internal.natives.include.sys.SockIoUtil.*;
 import static jdk.internal.natives.include.sys.SocketUtil.*;
+import static jdk.internal.natives.java.net.NativeNetworkInterfaceUtil.translateIPv4AddressToPrefix;
 
 public final class NativeNetworkInterface {
 
@@ -272,29 +273,6 @@ public final class NativeNetworkInterface {
         }
     }
 
-
-    /*
-     * Determines the prefix value for an AF_INET subnet address.
-     */
-    static short translateIPv4AddressToPrefix(SockAddrIn addr) {
-        short prefix = 0;
-        int mask;
-        if (addr.segment().equals(MemorySegment.NULL)) {
-            return 0;
-        }
-        mask = ntohl(addr.sin_addr().s_addr());
-        while (mask != 0) {
-            mask <<= 1;
-            prefix++;
-        }
-        return prefix;
-    }
-
-    private static int ntohl(int value) {
-        return ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN
-                ? value
-                : Integer.reverseBytes(value);
-    }
 
     private static UnsupportedOperationException unsupported() {
         return new UnsupportedOperationException("Implement me!");

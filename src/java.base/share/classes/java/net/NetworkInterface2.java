@@ -25,6 +25,7 @@
 
 package java.net;
 
+import jdk.internal.ValueBased;
 import jdk.internal.natives.java.net.NativeNetworkInterface;
 
 import java.util.Arrays;
@@ -57,14 +58,28 @@ public final class NetworkInterface2 {
     public static void main(String[] args) throws SocketException {
         System.out.println("** Main **");
 
+        System.out.println("(byte) 0xff = " + (byte) 0xff);
+
         System.out.println("Native");
         NetworkInterface.networkInterfaces()
                 .forEach(System.out::println);
+
+        System.out.println("****");
+        NetworkInterface.networkInterfaces()
+                        .forEach(NetworkInterface::dump);
+        System.out.println("****");
 
         System.out.println("FFM");
         NetworkInterface2.networkInterfaces()
                 .forEach(System.out::println);
 
+        // Add benchmark of obtaining NIs and also
+        // USING NIs (they are now immutable).
+
+    }
+
+    private String analyze(NetworkInterface ni) {
+        return null;
     }
 
     private final NetworkInterfaceDelegate delegate;
@@ -471,11 +486,12 @@ public final class NetworkInterface2 {
         return NativeNetworkInterface.boundInetAddress(addr);
     }
 
+    @ValueBased
     private static final class NetworkInterfaceDelegate {
 
-        private String name;
-        private String displayName;
-        private int index;
+        private final String name;
+        private final String displayName;
+        private final int index;
         private InetAddress addrs[];
         private InterfaceAddress bindings[];
         private NetworkInterface2 childs[];
@@ -488,6 +504,9 @@ public final class NetworkInterface2 {
          * kernel to choose one interface for sending multicast packets.
          */
         NetworkInterfaceDelegate() {
+            this.name = null;
+            this.displayName = null;
+            this.index = 0;
         }
 
         NetworkInterfaceDelegate(String name, int index, InetAddress[] addrs) {
@@ -495,6 +514,26 @@ public final class NetworkInterface2 {
             this.index = index;
             // We know we do not need defensive copying here
             this.addrs = addrs;
+
+            this.displayName = null;
+        }
+
+        public NetworkInterfaceDelegate(String name,
+                                        String displayName,
+                                        int index,
+                                        InetAddress[] addrs,
+                                        InterfaceAddress[] bindings,
+                                        NetworkInterface2[] childs,
+                                        NetworkInterface2 parent,
+                                        boolean virtual) {
+            this.name = name;
+            this.displayName = displayName;
+            this.index = index;
+            this.addrs = addrs;
+            this.bindings = bindings;
+            this.childs = childs;
+            this.parent = parent;
+            this.virtual = virtual;
         }
 
         public String getName() {

@@ -8,11 +8,16 @@ package jdk.internal.natives.include.netinet6;
 import jdk.internal.ValueBased;
 import jdk.internal.natives.StructMapper;
 import jdk.internal.natives.StructUtil;
+import jdk.internal.natives.include.SockAddr;
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
+
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.*;
 
 @ValueBased
 public final class SockAddrIn6Impl
@@ -20,6 +25,8 @@ public final class SockAddrIn6Impl
 
     private static final long SIN_6_SCOPE_ID_OFFSET =
             SockAddrIn6.LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("sin6_scope_id"));
+    private static final AddressLayout SIN_6_ADDR_PTR = ADDRESS.withTargetLayout(In6Addr.LAYOUT);
+    private static final long SIN_6_ADDR_OFFSET = LAYOUT.byteOffset(groupElement("sin6_addr"));
 
     private final MemorySegment segment;
 
@@ -70,6 +77,22 @@ public final class SockAddrIn6Impl
     @Override
     public void sin6_flowinfo(int value) {
         segment.set(ValueLayout.JAVA_INT, 4, value);
+    }
+
+    @Override
+    public In6Addr sin6_addr() {
+        System.out.println("segment.address() = " + segment.address());
+        System.out.println("SIN_6_ADDR_OFFSET = " + SIN_6_ADDR_OFFSET);
+        var lu = segment.get(JAVA_LONG_UNALIGNED, SIN_6_ADDR_OFFSET);
+        System.out.println("lu = " + lu);
+        var l = segment.get(JAVA_LONG, SIN_6_ADDR_OFFSET);
+        System.out.println("l = " + l);
+        var seg2 = segment.get(ADDRESS, SIN_6_ADDR_OFFSET);
+        System.out.println("seg2 = " + seg2);
+        var seg = segment.get(SIN_6_ADDR_PTR, SIN_6_ADDR_OFFSET);
+        return seg.equals(MemorySegment.NULL)
+                ? null
+                : In6Addr.of(seg);
     }
 
     @Override
