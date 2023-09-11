@@ -126,11 +126,6 @@ class Argument {
   int _number;  // The number of the argument.
  public:
   enum {
-    // Only 8 registers may contain integer parameters.
-    n_register_parameters = 8,
-    // Can have up to 8 floating registers.
-    n_float_register_parameters = 8,
-
     // PPC C calling conventions.
     // The first eight arguments are passed in int regs if they are int.
     n_int_register_parameters_c = 8,
@@ -155,7 +150,7 @@ class Argument {
   int  number() const { return _number; }
 
   // Locating register-based arguments:
-  bool is_register() const { return _number < n_register_parameters; }
+  bool is_register() const { return _number < n_int_register_parameters_c; }
 
   Register as_register() const {
     assert(is_register(), "must be a register argument");
