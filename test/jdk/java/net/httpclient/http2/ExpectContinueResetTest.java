@@ -30,7 +30,7 @@
  * @bug 8309118
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=100 -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors ExpectContinueResetTest
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors,headers ExpectContinueResetTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
