@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,33 +88,33 @@ public class FileChooserSymLinkTest {
                 <li>Navigate to <code>C:\\FileChooserTest</code> in
                     the <code>JFileChooser</code>.
                 <li>Perform testing in single- and multi-selection modes:
-                    <ul>
+                    <ul style="margin-bottom: 0px">
                     <li><strong>Single-selection:</strong>
-                    <ol>
-                        <li>Ensure <b>Enable multi-selection</b> is cleared
-                            (the default state).
-                        <li>Click <code>link</code> directory,
-                            the absolute path of the symbolic
-                            link should be displayed.<br>
-                            If it's <code>null</code>, click <b>Fail</b>.
-                        <li>Click <code>target</code> directory,
-                            its absolute path should be displayed.
-                    </ol>
+                        <ol>
+                            <li>Ensure <b>Enable multi-selection</b> is cleared
+                                (the default state).
+                            <li>Click <code>link</code> directory,
+                                the absolute path of the symbolic
+                                link should be displayed.<br>
+                                If it's <code>null</code>, click <b>Fail</b>.
+                            <li>Click <code>target</code> directory,
+                                its absolute path should be displayed.
+                        </ol>
                     <li><strong>Multi-selection:</strong>
-                    <ol>
-                        <li>Select <b>Enable multi-selection</b>.
-                        <li>Click <code>link</code>,
-                        <li>Press <kbd>Ctrl</kbd> and
-                            then click <code>target</code>.
-                        <li>Both should be selected and
-                            their absolute paths should be displayed.
-                        <li>If <code>link</code> can't be selected or
-                            if its absolute path is <code>null</code>,
-                            click <b>Fail</b>.
-                    </ol>
-                    If <code>link</code> can be selected in both
-                    single- and multi-selection modes, click <b>Pass</b>.
-                   </ul>
+                        <ol>
+                            <li>Select <b>Enable multi-selection</b>.
+                            <li>Click <code>link</code>,
+                            <li>Press <kbd>Ctrl</kbd> and
+                                then click <code>target</code>.
+                            <li>Both should be selected and
+                                their absolute paths should be displayed.
+                            <li>If <code>link</code> can't be selected or
+                                if its absolute path is <code>null</code>,
+                                click <b>Fail</b>.
+                        </ol>
+                    </ul>
+                    <p>If <code>link</code> can be selected in both
+                    single- and multi-selection modes, click <b>Pass</b>.</p>
                 <li>When done with testing, paste the following commands to
                    remove the <code>FileChooserTest</code> directory:
                 <pre><code>cd \\
