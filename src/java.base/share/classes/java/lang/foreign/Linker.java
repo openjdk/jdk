@@ -569,8 +569,12 @@ public sealed interface Linker permits AbstractLinker {
      * {@code T}, then the size of the returned segment is set to {@code T.byteSize()}.
      * <p>
      * The returned method handle will throw an {@link IllegalArgumentException} if the {@link MemorySegment}
-     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address.
-     * The returned method handle will additionally throw {@link NullPointerException} if any argument passed to it is {@code null}.
+     * representing the target address of the foreign function is the {@link MemorySegment#NULL} address. If an argument
+     * is a {@link MemorySegment},whose corresponding layout is an {@linkplain GroupLayout group layout}, the linker might attempt to access the contents of the segment. As such, one of the exceptions specified by the
+     * {@link MemorySegment#get(ValueLayout.OfByte, long)} or the
+     * {@link MemorySegment#copy(MemorySegment, long, MemorySegment, long, long)} methods may be thrown.
+     * The returned method handle will additionally throw {@link NullPointerException} if any argument
+     * passed to it is {@code null}.
      * <p>
      * This method is <a href="package-summary.html#restricted"><em>restricted</em></a>.
      * Restricted methods are unsafe, and, if used incorrectly, their use might crash
