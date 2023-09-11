@@ -296,7 +296,6 @@ void VMThread::evaluate_operation(VM_Operation* op) {
     assert(Thread::current() == static_cast<Thread*>(this),
            "Must be called from VM thread");
     // Update vm_thread_cpu_time after each VM operation.
-    // _perf_vm_thread_cpu_time->set_value(os::current_thread_cpu_time());
     ThreadTotalCPUTimeClosure tttc(_perf_vm_thread_cpu_time);
     tttc.do_thread(this);
   }

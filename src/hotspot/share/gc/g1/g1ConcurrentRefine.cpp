@@ -164,8 +164,7 @@ void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   // The primary thread (_threads[0]) updates the counter for all worker
   // threads, because:
   // the primary thread is always woken up first from being blocked on a monitor
-  // when there is refinement work to do (see comment in
-  // G1ConcurrentRefineThread's constructor);
+  // when there is refinement work to do;
   // the primary thread is started last and stopped first, so it will not risk
   // reading CPU time of a terminated worker thread.
   assert_current_thread_is_primary_refinement_thread();
