@@ -137,7 +137,7 @@ CardTable::CardValue* PSCardTable::find_first_dirty_card(CardValue* const start_
 // postcondition: ret is a clean card or end_card
 // Note: if a part of an object is on a dirty card, all cards this object
 // resides on are considered dirty except for large object arrays. The card marks
-// of object arrays are precise which allows scanning of just the dirty regions.
+// of objArrays are precise which allows scanning of just the dirty parts.
 CardTable::CardValue* PSCardTable::find_first_clean_card(ObjectStartArray* const start_array,
                                                          CardValue* const start_card,
                                                          CardValue* const end_card,
@@ -156,7 +156,7 @@ CardTable::CardValue* PSCardTable::find_first_clean_card(ObjectStartArray* const
     // Find the final obj on the prev dirty card.
     HeapWord* obj_addr = start_array->object_start(addr_for(i_card)-1);
     if (large_obj_array == cast_to_oop(obj_addr)) {
-      // we scan only dirty regions of large arrays
+      // We scan dirty parts of large objArrays precisely, so return immediately.
       assert(i_card <= end_card, "inv");
       return i_card;
     }
@@ -235,8 +235,8 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
 // slice_size_in_words to the start of stripe 0 in slice 0 to get to the start
 // of stripe 0 in slice 1.
 //
-// Parallel scanning of large arrays is also based on stripes with the exception
-// of the last 2 stripes: the chunks defined by them are scanned together.
+// Large objArrays are also distributed across threads by stripes, except for
+// the last 2 stripes which are scanned by the thread owning the second-to-last stripe.
 
 void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              MutableSpace* sp,
@@ -254,7 +254,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     HeapWord* const cur_stripe_end_addr = MIN2(cur_stripe_addr + stripe_size_in_words,
                                                space_top);
 
-    // Process a stripe iff it contains any obj-start or large array chunk
+    // Stripes without an object start may either contain a large object, or a part of a large objArray; the latter must be handled specially, the former is handled by the owner of the stripe where that large object starts.
     if (!start_array->object_starts_in_range(cur_stripe_addr, cur_stripe_end_addr)) {
       // Scan middle and end of large arrays
       scavenge_large_array_stripe(start_array, pm, cur_stripe_addr, cur_stripe_end_addr, space_top);
@@ -265,7 +265,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     // 1. range of cards checked for being dirty or clean: [iter_limit_l, iter_limit_r)
     // 2. range of cards can be cleared: [clear_limit_l, clear_limit_r)
     // 3. range of objs (obj-start) can be scanned: [first_obj_addr, cur_stripe_end_addr)
-    // 4. range of large array elements to be scanned: [first_obj_addr, cur_stripe_end_addr)
+    // 4. range of large objArray elements to be scanned: [first_obj_addr, cur_stripe_end_addr)
     //    limited to dirty regions
 
     CardValue* iter_limit_l;
@@ -397,7 +397,7 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
   HeapWord* arr_end_addr = large_arr_addr + arr_sz;
 
   if (arr_end_addr <= stripe_end_addr) {
-    // the end chunk is scanned together with the chunk in the previous stripe
+    // The end chunk is scanned together with the chunk in the previous stripe.
     assert(large_obj_arr_min_words() > 2 * stripe_size_in_words, "2nd last chunk must cover stripe");
     return;
   }
@@ -411,7 +411,7 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
   HeapWord* next_stripe = stripe_end_addr;
   HeapWord* next_stripe_end = MIN2(next_stripe + stripe_size_in_words, space_top);
 
-  // scan to end if it is in the following stripe
+  // Scan to end if it is in the following stripe.
   if (arr_end_addr > next_stripe && arr_end_addr <= next_stripe_end) {
     clear_limit_r = byte_for(arr_end_addr);
     iter_limit_r = byte_for(arr_end_addr - 1) + 1;
