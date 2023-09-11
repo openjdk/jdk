@@ -469,13 +469,16 @@ Java_java_io_WinNTFileSystem_setPermission0(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
     WCHAR *pathbuf;
     DWORD a;
-    if (access == java_io_FileSystem_ACCESS_READ ||
-        access == java_io_FileSystem_ACCESS_EXECUTE) {
-        return enable;
-    }
+
     pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL)
         return JNI_FALSE;
+
+    if (access == java_io_FileSystem_ACCESS_READ ||
+        access == java_io_FileSystem_ACCESS_EXECUTE) {
+        return _waccess(pathbuf, 0) == 0 ? enable : JNI_FALSE;
+    }
+
     a = GetFileAttributesW(pathbuf);
 
     /* if reparse point, get final target */
