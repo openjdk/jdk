@@ -84,7 +84,7 @@ public class bug4412522 {
             while (!(v instanceof javax.swing.text.html.ParagraphView)) {
 
                 int n = v.getViewCount();
-                Shape sh = v.getChildAllocation(n - 1,  r);
+                Shape sh = v.getChildAllocation(n - 1, r);
                 String viewName = v.getClass().getName();
                 if (viewName.endsWith("TableView")) {
                     tableWidth = r.getBounds().width;

@@ -79,7 +79,7 @@ public class bug4690812 {
             int tableHeight = 0;
             while (!(v instanceof javax.swing.text.html.ParagraphView)) {
                 int n = v.getViewCount();
-                Shape sh = v.getChildAllocation(n - 1,  r);
+                Shape sh = v.getChildAllocation(n - 1, r);
                 v = v.getView(n - 1);
                 if (sh != null) {
                     r = sh;
