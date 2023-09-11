@@ -70,8 +70,8 @@ final class StackStreamFactory {
     private static final Set<Class<?>> stackWalkImplClasses = init();
 
     // Number of elements in the buffer reserved for VM to use
-    private static final int RESERVED_ELEMENTS = 2;
-    private static final int MIN_BATCH_SIZE    = RESERVED_ELEMENTS + 2;
+    private static final int RESERVED_ELEMENTS = 1;
+    private static final int MIN_BATCH_SIZE    = 4;
     private static final int SMALL_BATCH       = 8;
     private static final int BATCH_SIZE        = 32;
     private static final int LARGE_BATCH_SIZE  = 256;
@@ -540,8 +540,7 @@ final class StackStreamFactory {
         protected int batchSize(int lastBatchFrameCount) {
             if (lastBatchFrameCount == 0) {
                 // First batch, use estimateDepth if not exceed the large batch size
-                // and not too small
-                int initialBatchSize = Math.max(walker.estimateDepth()+RESERVED_ELEMENTS, SMALL_BATCH);
+                int initialBatchSize = Math.max(walker.estimateDepth()+RESERVED_ELEMENTS, MIN_BATCH_SIZE);
                 return Math.min(initialBatchSize, LARGE_BATCH_SIZE);
             } else {
                 if (lastBatchFrameCount > BATCH_SIZE) {
@@ -759,7 +758,7 @@ final class StackStreamFactory {
          */
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new ClassFrameBuffer(walker, MIN_BATCH_SIZE);
+            this.frameBuffer = new ClassFrameBuffer(walker, RESERVED_ELEMENTS+2);
         }
 
         @Override
