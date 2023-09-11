@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.util;
+package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
@@ -34,14 +34,14 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-final class OctalDigits implements Digits {
+public final class OctalDigits implements Digits {
     @Stable
     private static final short[] DIGITS;
 
     /**
      * Singleton instance of OctalDigits.
      */
-    static final Digits INSTANCE = new OctalDigits();
+    public static final Digits INSTANCE = new OctalDigits();
 
     static {
         short[] digits = new short[8 * 8];
