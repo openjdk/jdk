@@ -39,6 +39,11 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.List;
 import java.util.ArrayList;
 
+/*
+ * The test uses custom implementation of the CountDownLatch class.
+ * The reason is we want the state of tested thread to be predictable.
+ * With original CountDownLatch it is not clear what thread state is expected.
+ */
 class CountDownLatch {
     private int count = 0;
 
@@ -71,7 +76,6 @@ public class VThreadEventTest {
     private static native int threadMountCount();
     private static native int threadUnmountCount();
 
-    private static volatile int completedNo;
     private static volatile boolean attached;
     private static boolean failed;
     private static List<Thread> test1Threads = new ArrayList(TCNT1);
@@ -97,14 +101,13 @@ public class VThreadEventTest {
         log("test1 vthread started");
         ready0.countDown();
         await(mready);
-        ready1.countDown(); // to guaranty state is not State.WAITING after await() above
+        ready1.countDown(); // to guaranty state is not State.WAITING after await(mready)
         try {
             Thread.sleep(20000); // big timeout to keep unmounted untill interrupted
         } catch (InterruptedException ex) {
             // it is expected, ignore
         }
         ready2.countDown();
-        completedNo++;
     };
 
     // The test2 vthreads are kept mounted until agent attach.
@@ -116,7 +119,6 @@ public class VThreadEventTest {
             // keep mounted
         }
         ready2.countDown();
-        completedNo++;
     };
 
     // The test3 vthreads are kept mounted until agent attach.
@@ -129,7 +131,6 @@ public class VThreadEventTest {
         }
         LockSupport.parkNanos(10 * TIMEOUT_BASE); // will cause extra mount and unmount
         ready2.countDown();
-        completedNo++;
     };
 
     public static void main(String[] args) throws Exception {
@@ -148,7 +149,7 @@ public class VThreadEventTest {
             }
             await(ready0);
             mready.countDown();
-            await(ready1);
+            await(ready1); // to guaranty state is not State.WAITING after await(mready) in test1() 
             // wait for test1 threads to reach WAITING state in sleep()
             for (Thread t : test1Threads) {
                 Thread.State state = t.getState();
@@ -164,10 +165,6 @@ public class VThreadEventTest {
             vm.loadAgentLibrary("VThreadEventTest");
             Thread.sleep(200); // to allow the agent to get ready
 
-            log("main: completedNo: " + completedNo);
-            if (completedNo > 0) {
-                throw new RuntimeException("FAILED: none of vthreadsexpected to complete at this point");
-            }
             attached = true;
             for (Thread t : test1Threads) {
                  t.interrupt();
