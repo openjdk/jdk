@@ -3766,89 +3766,159 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   MemNode* align_to_ref = _align_to_ref;
   assert(align_to_ref != nullptr, "align_to_ref must be set");
-  assert(lp()->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = pre_loop_end();
-  Node* pre_opaq1 = pre_end->limit();
-  assert(pre_opaq1->Opcode() == Op_Opaque1, "");
-  Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;
+  assert(lp()->is_main_loop(), "can only do alignment for main loop");
+  Opaque1Node* pre_opaq = pre_loop_end()->limit()->as_Opaque1();
+
+  // Current pre-loop limit.
   Node* lim0 = pre_opaq->in(1);
 
-  // Where we put new limit calculations
+  // Where we put new limit calculations.
   Node* pre_ctrl = pre_loop_head()->in(LoopNode::EntryControl);
 
-  // Ensure the original loop limit is available from the
-  // pre-loop Opaque1 node.
+  // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && _igvn.type(orig_limit) != Type::TOP, "");
 
   SWPointer align_to_ref_p(align_to_ref, this, nullptr, false);
   assert(align_to_ref_p.valid(), "sanity");
 
-  // Given:
-  //     lim0 == original pre loop limit
-  //     V == v_align (power of 2)
-  //     invar == extra invariant piece of the address expression
-  //     e == offset [ +/- invar ]
+  // We want to align the address of align_to_ref to some alignment width (aw, power of 2):
   //
-  // When reassociating expressions involving '%' the basic rules are:
-  //     (a - b) % k == 0   =>  a % k == b % k
-  // and:
-  //     (a + b) % k == 0   =>  a % k == (k - b) % k
+  //   adr = base + offset + invar + scale * iv
   //
-  // For stride > 0 && scale > 0,
-  //   Derive the new pre-loop limit "lim" such that the two constraints:
-  //     (1) lim = lim0 + N           (where N is some positive integer < V)
-  //     (2) (e + lim) % V == 0
-  //   are true.
+  // The limit of the pre-loop needs to be adjusted.
   //
-  //   Substituting (1) into (2),
-  //     (e + lim0 + N) % V == 0
-  //   solve for N:
-  //     N = (V - (e + lim0)) % V
-  //   substitute back into (1), so that new limit
-  //     lim = lim0 + (V - (e + lim0)) % V
+  //   lim0:     current pre-loop limit
+  //   lim:      new pre-loop limit
+  //   N:        difference between lim and lim0
   //
-  // For stride > 0 && scale < 0
-  //   Constraints:
-  //     lim = lim0 + N
-  //     (e - lim) % V == 0
-  //   Solving for lim:
-  //     (e - lim0 - N) % V == 0
-  //     N = (e - lim0) % V
-  //     lim = lim0 + (e - lim0) % V
+  // We want to find N, such that:
   //
-  // For stride < 0 && scale > 0
-  //   Constraints:
-  //     lim = lim0 - N
-  //     (e + lim) % V == 0
-  //   Solving for lim:
-  //     (e + lim0 - N) % V == 0
-  //     N = (e + lim0) % V
-  //     lim = lim0 - (e + lim0) % V
+  //   iv = lim = lim0 + N   (exit when iv reaches the new limit)
+  //   adr % aw = 0          (adr is aligned aligned after pre-loop)
   //
-  // For stride < 0 && scale < 0
-  //   Constraints:
-  //     lim = lim0 - N
-  //     (e - lim) % V == 0
-  //   Solving for lim:
-  //     (e - lim0 + N) % V == 0
-  //     N = (V - (e - lim0)) % V
-  //     lim = lim0 - (V - (e - lim0)) % V
+  // We can write:
+  //
+  //   E = base + offset + invar
+  //   adr = E + scale * lim
+  //       = E + scale * lim0 + scale * N
+  //
+  //   (E + scale * lim0 + scale * N) % aw = 0
+  //
+  // In most cases, scale is the element size (elt_size), for example:
+  //
+  //   for (i = 0; i < a.length; i++) { a[i] = ...; }
+  //
+  // Thus, it is reasonable to require abs(scale) to be a strictly positive power of 2.
+  // If scale == 0 (i.e. the address does not depend on iv), then we are not able to
+  // affect the alignment at all. TODO sth about abs(scale) not power of 2?
+  //
+  // Further, if abs(scale) >= aw, then N has no effect on alignment, and we are not
+  // able to affect the alignment at all. Hence, we require abs(scale) < aw.
+  //
+  // Moreover, for alignment to be acheivabe, E must be a multiple of scale. We cannot
+  // check this at compile time, and do not bother to do it at runtime either. If it
+  // does not hold, we set a new limit, but it just does not ensure alignment.
+  //
+  // Finally, we must assume that the stride is non-zero, else TODO
+  //
+  // In the following, we use:
+  //
+  //   V = aw / abs(scale)            (power of 2)
+  //   e = E / abs(scale)
+  //
+  // Case 1: scale > 0 && stride > 0 (i.e. N >= 0)
+  //   (e + lim0 + N) % V = 0
+  //   N = (V - (e + lim0)) % V
+  //   lim = lim0 + (-e - lim0) % V
+  // 
+  // Case 2: scale < 0 && stride > 0 (i.e. N >= 0)
+  //   (e - lim0 - N) % V = 0
+  //   N = (e - lim0) % V
+  //   lim = lim0 + (+e - lim0) % V
+  //
+  // Case 3: scale > 0 && stride < 0 (i.e. N <= 0)
+  //   (e + lim0 - abs(N)) % V = 0
+  //   abs(N) = (e + lim0) % V
+  //   lim = lim0 - (+e + lim0) % V
+  //
+  // Case 4: scale < 0 && stride < 0 (i.e. N <= 0)
+  //   (e - lim0 + abs(N)) % V = 0
+  //   abs(N) = (lim0 - e) % V
+  //   lim = lim0 - (-e + lim0) % V
+  //
+  // We generalize this with the following formula:
+  //   lim = lim0 +- (pm_e +- lim0) % V
+  //
+  //   pm_e = -+ E / abs(scale)
+  //        = pm_E / abs(scale)
+  //
+  //   pm_E = -+ (base + offset + invar)
+  //        = -+ offset -+ base -+ invar
 
-  int vw = vector_width_in_bytes(align_to_ref);
+  // We chose an aw that is the maximal possible vector width for the type of
+  // align_to_ref. TODO we could look at pack to get actual size
+  int aw       = vector_width_in_bytes(align_to_ref);
   int stride   = iv_stride();
   int scale    = align_to_ref_p.scale_in_bytes();
-  int elt_size = align_to_ref_p.memory_size();
-  int v_align  = vw / elt_size;
-  assert(v_align > 1, "sanity");
-  int offset   = align_to_ref_p.offset_in_bytes() / elt_size;
-  Node *offsn  = _igvn.intcon(offset);
+  int offset   = align_to_ref_p.offset_in_bytes();
+  Node* base   = align_to_ref_p.adr(); // TODO check what happens with non-heap unsafe!
+  Node* invar  = align_to_ref_p.invar();
 
-  Node *e = offsn;
-  if (align_to_ref_p.invar() != nullptr) {
-    // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
-    Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* invar = align_to_ref_p.invar();
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
+    tty->print(" align_to_ref:");
+    align_to_ref->dump();
+    tty->print_cr(" aw:       %d", aw);
+    tty->print_cr(" stride:   %d", stride);
+    tty->print_cr(" scale:    %d", scale);
+    tty->print(" base:");
+    base->dump();
+    tty->print_cr(" offset:   %d", offset);
+    if (invar == nullptr) {
+      tty->print_cr(" invar:     null");
+    } else {
+      tty->print(" invar:");
+      invar->dump();
+    }
+  }
+#endif
+
+  if (stride == 0 || !is_power_of_2(abs(stride)) ||
+      scale  == 0 || !is_power_of_2(abs(scale))  ||
+      abs(scale) >= aw) {
+    // Alignment cannot be affected by changing pre-loop limit.
+#ifndef PRODUCT
+    if (is_trace_align_vector()) {
+      tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
+      tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
+    }
+#endif
+    assert(false, "alignment cannot be affected"); // TODO ok?
+    return;
+  }
+
+  assert(stride != 0 && is_power_of_2(abs(stride)) &&
+         scale  != 0 && is_power_of_2(abs(scale))  &&
+         abs(scale) < aw, "otherwise we cannot affect alignment with pre-loop");
+
+  int V = aw / abs(scale);
+
+#ifndef PRODUCT
+  if (is_trace_align_vector()) {
+    tty->print_cr(" V:        %d", V);
+  }
+#endif
+
+  // 1: Compute pm_E
+  bool is_minus = scale * stride > 0;
+
+  // 1.1: offset
+  Node* pm_E = _igvn.intcon(is_minus ? -offset : offset);
+
+  // 1.2: invar (if it exists)
+  if (invar != nullptr) {
     if (_igvn.type(invar)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
@@ -3856,65 +3926,68 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    Node* aref = new URShiftINode(invar, log2_elt);
-    _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
-    e =  new AddINode(e, aref);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    if (is_minus) {
+      pm_E = new SubINode(pm_E, invar);
+    } else {
+      pm_E = new AddINode(pm_E, invar);
+    }
+    _igvn.register_new_node_with_optimizer(pm_E);
+    _phase->set_ctrl(pm_E, pre_ctrl);
   }
-  if (vw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
-    // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new CastP2XNode(nullptr, align_to_ref_p.adr());
+
+  // 1.3: base (unless base is guaranteed aw aligned)
+  if (aw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
+    // The base is only aligned with ObjectAlignmentInBytes with arrays.
+    // When the base() is top, we have no alignment guarantee at all.
+    // Hence, we must now take the base into account for the calculation.
+    Node* xbase = new CastP2XNode(nullptr, base);
     _igvn.register_new_node_with_optimizer(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
     _igvn.register_new_node_with_optimizer(xbase);
 #endif
-    Node* mask = _igvn.intcon(vw-1);
-    Node* masked_xbase  = new AndINode(xbase, mask);
-    _igvn.register_new_node_with_optimizer(masked_xbase);
-    Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* bref     = new URShiftINode(masked_xbase, log2_elt);
-    _igvn.register_new_node_with_optimizer(bref);
-    _phase->set_ctrl(bref, pre_ctrl);
-    e = new AddINode(e, bref);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    if (is_minus) {
+      pm_E = new SubINode(pm_E, xbase);
+    } else {
+      pm_E = new AddINode(pm_E, xbase);
+    }
+    _igvn.register_new_node_with_optimizer(pm_E);
+    _phase->set_ctrl(pm_E, pre_ctrl);
   }
 
-  // compute e +/- lim0
-  if (scale < 0) {
-    e = new SubINode(e, lim0);
+  // 2: compute pm_e by divide (shift) by abs(scale)
+  Node* log2_abs_scale = _igvn.intcon(exact_log2(abs(scale)));
+  Node* pm_e = new URShiftINode(pm_E, log2_abs_scale);
+  _igvn.register_new_node_with_optimizer(pm_e);
+  _phase->set_ctrl(pm_e, pre_ctrl);
+
+  // 3: add / subtract lim0
+  Node* pm_e_pm_lim0 = nullptr;
+  if (stride > 0) {
+    pm_e_pm_lim0 = new SubINode(pm_e, lim0);
   } else {
-    e = new AddINode(e, lim0);
+    pm_e_pm_lim0 = new AddINode(pm_e, lim0);
   }
-  _igvn.register_new_node_with_optimizer(e);
-  _phase->set_ctrl(e, pre_ctrl);
+  _igvn.register_new_node_with_optimizer(pm_e_pm_lim0);
+  _phase->set_ctrl(pm_e_pm_lim0, pre_ctrl);
 
-  if (stride * scale > 0) {
-    // compute V - (e +/- lim0)
-    Node* va  = _igvn.intcon(v_align);
-    e = new SubINode(va, e);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
-  }
-  // compute N = (exp) % V
-  Node* va_msk = _igvn.intcon(v_align - 1);
-  Node* N = new AndINode(e, va_msk);
-  _igvn.register_new_node_with_optimizer(N);
-  _phase->set_ctrl(N, pre_ctrl);
-
-  //   substitute back into (1), so that new limit
-  //     lim = lim0 + N
-  Node* lim;
+  // 4: modulo with V (mask with (V-1))
+  Node* mask_V = _igvn.intcon(V-1);
+  Node* pm_e_pm_lim0_mod_V = new AndINode(pm_e_pm_lim0, mask_V);
+  _igvn.register_new_node_with_optimizer(pm_e_pm_lim0_mod_V);
+  _phase->set_ctrl(pm_e_pm_lim0_mod_V, pre_ctrl);
+ 
+  // 5: compute new limit
+  Node* lim = nullptr;
   if (stride < 0) {
-    lim = new SubINode(lim0, N);
+    lim = new SubINode(lim0, pm_e_pm_lim0_mod_V);
   } else {
-    lim = new AddINode(lim0, N);
+    lim = new AddINode(lim0, pm_e_pm_lim0_mod_V);
   }
   _igvn.register_new_node_with_optimizer(lim);
   _phase->set_ctrl(lim, pre_ctrl);
+
+  // 6. Make sure not to exceed the original limit with the new limit
   Node* constrained =
     (stride > 0) ? (Node*) new MinINode(lim, orig_limit)
                  : (Node*) new MaxINode(lim, orig_limit);

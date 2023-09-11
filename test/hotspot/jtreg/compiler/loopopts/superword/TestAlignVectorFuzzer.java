@@ -426,6 +426,25 @@ public class TestAlignVectorFuzzer {
         int hand_unrolling2 = randomHandUnrolling();
         int hand_unrolling3 = randomHandUnrolling();
 
+//      Overwrite the fuzzed values below to reproduce a specific failure:
+//
+//        init = 1;
+//        limit = init + 3000;
+//        offset1 = 0;
+//        offset2 = 0;
+//        offset3 = 32 - 2*init;
+//        stride =  1;
+//        scale =   2;
+//        hand_unrolling1 = 0;
+//        hand_unrolling2 = 0;
+//        hand_unrolling3 = 4;
+//
+//        init_is_con    = true;
+//        limit_is_con   = true;
+//        offset1_is_con = true;
+//        offset2_is_con = true;
+//        offset3_is_con = true;
+
         System.out.println("  init:    " + init    + " (con: " + init_is_con + ")");
         System.out.println("  limit:   " + limit   + " (con: " + limit_is_con + ")");
         System.out.println("  offset1: " + offset1 + " (con: " + offset1_is_con + ")");
