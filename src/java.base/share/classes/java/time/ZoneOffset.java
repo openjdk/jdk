@@ -91,6 +91,7 @@ import java.util.concurrent.ConcurrentMap;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -468,18 +469,18 @@ public final class ZoneOffset
         ByteArrayLittleEndian.setShort(
                 buf,
                 1,
-                jla.digitPair(absHours));
+                DecimalDigits.digitPair(absHours));
         buf[3] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 4,
-                jla.digitPair(absMinutes));
+                DecimalDigits.digitPair(absMinutes));
         if (absSeconds != 0) {
             buf[6] = ':';
             ByteArrayLittleEndian.setShort(
                     buf,
                     7,
-                    jla.digitPair(absSeconds));
+                    DecimalDigits.digitPair(absSeconds));
         }
 
         try {

@@ -35,6 +35,7 @@ import java.time.Instant;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import sun.util.calendar.BaseCalendar;
 import sun.util.calendar.CalendarSystem;
 import sun.util.calendar.CalendarUtils;
@@ -1038,7 +1039,7 @@ public class Date
         BaseCalendar.Date date = normalize();
 
         int year = date.getYear();
-        int yearSize = year >= 1000 && year <= 9999 ? 4 : jla.stringSize(year);
+        int yearSize = year >= 1000 && year <= 9999 ? 4 : DecimalDigits.stringSize(year);
 
         TimeZone zi = date.getZone();
         String shortName = zi != null ? zi.getDisplayName(date.isDaylightTime(), TimeZone.SHORT, Locale.US) : "GMT";
@@ -1057,28 +1058,28 @@ public class Date
         ByteArrayLittleEndian.setShort(
                 buf,
                 8,
-                jla.digitPair(date.getDayOfMonth())); // dd
+                DecimalDigits.digitPair(date.getDayOfMonth())); // dd
         buf[10] = ' ';
         ByteArrayLittleEndian.setShort(
                 buf,
                 11,
-                jla.digitPair(date.getHours())); // HH
+                DecimalDigits.digitPair(date.getHours())); // HH
         buf[13] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 14,
-                jla.digitPair(date.getMinutes())); // mm
+                DecimalDigits.digitPair(date.getMinutes())); // mm
         buf[16] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 17,
-                jla.digitPair(date.getSeconds())); // ss
+                DecimalDigits.digitPair(date.getSeconds())); // ss
         buf[19] = ' ';
 
         shortName.getBytes(0, shortNameLength, buf, 20);
         buf[20 + shortNameLength] = ' ';
 
-        jla.getChars(year, buf.length, buf);
+        DecimalDigits.getCharsLatin1(year, buf.length, buf);
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
         } catch (CharacterCodingException cce) {
@@ -1158,7 +1159,7 @@ public class Date
                         .getCalendarDate(getTime(), (TimeZone)null);
 
         int year = date.getYear();
-        int yearSize = year >= 1000 && year <= 9999 ? 4 : jla.stringSize(year);
+        int yearSize = year >= 1000 && year <= 9999 ? 4 : DecimalDigits.stringSize(year);
         int dayOfMonth = date.getDayOfMonth();
 
         byte[] buf = new byte[(dayOfMonth < 10 ? 19 : 20) + yearSize];
@@ -1170,29 +1171,29 @@ public class Date
             ByteArrayLittleEndian.setShort(
                     buf,
                     0,
-                    jla.digitPair(dayOfMonth)); // dd
+                    DecimalDigits.digitPair(dayOfMonth)); // dd
             off = 2;
         }
         buf[off++] = ' ';
         convertToAbbr(buf, off, wtb[date.getMonth() + 8]); // EEE
         buf[off + 3] = ' ';
-        jla.getChars(year, off + yearSize + 4, buf);
+        DecimalDigits.getCharsLatin1(year, off + yearSize + 4, buf);
         off += yearSize + 4;
         buf[off++] = ' ';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off,
-                jla.digitPair(date.getHours())); // HH
+                DecimalDigits.digitPair(date.getHours())); // HH
         buf[off + 2] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 3,
-                jla.digitPair(date.getMinutes())); // mm
+                DecimalDigits.digitPair(date.getMinutes())); // mm
         buf[off + 5] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 6,
-                jla.digitPair(date.getSeconds())); // mm
+                DecimalDigits.digitPair(date.getSeconds())); // mm
         buf[off + 8] = ' ';
         buf[off + 9] = 'G';
         buf[off + 10] = 'M';

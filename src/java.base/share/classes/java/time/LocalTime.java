@@ -97,6 +97,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -1682,17 +1683,17 @@ public final class LocalTime
         ByteArrayLittleEndian.setShort(
                 buf,
                 off,
-                jla.digitPair(hour)); // hh
+                DecimalDigits.digitPair(hour)); // hh
         buf[off + 2] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 3,
-                jla.digitPair(minute)); // minute
+                DecimalDigits.digitPair(minute)); // minute
         buf[off + 5] = ':';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 6,
-                jla.digitPair(second)); // second
+                DecimalDigits.digitPair(second)); // second
         return off + 8;
     }
 

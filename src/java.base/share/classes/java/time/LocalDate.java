@@ -108,6 +108,7 @@ import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
@@ -2169,7 +2170,7 @@ public final class LocalDate
         if (Math.abs(year) < 1000) {
             return year < 0 ? 5 : 4;
         }
-        return jla.stringSize(year) + (year > 9999 ? 1 : 0);
+        return DecimalDigits.stringSize(year) + (year > 9999 ? 1 : 0);
     }
 
     int getChars(byte[] buf, int off) {
@@ -2186,12 +2187,12 @@ public final class LocalDate
             ByteArrayLittleEndian.setInt(
                     buf,
                     off + (year < 0 ? 1 : 0),
-                    (jla.digitPair(y23) << 16) | jla.digitPair(y01));
+                    (DecimalDigits.digitPair(y23) << 16) | DecimalDigits.digitPair(y01));
         } else {
             if (year > 9999) {
                 buf[off] = '+';
             }
-            jla.getChars(year, off + yearSize, buf);
+            DecimalDigits.getCharsLatin1(year, off + yearSize, buf);
         }
 
         off += yearSize;
@@ -2199,12 +2200,12 @@ public final class LocalDate
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 1,
-                jla.digitPair(month)); // mm
+                DecimalDigits.digitPair(month)); // mm
         buf[off + 3] = '-';
         ByteArrayLittleEndian.setShort(
                 buf,
                 off + 4,
-                jla.digitPair(day)); // dd
+                DecimalDigits.digitPair(day)); // dd
 
         return off + 6;
     }
