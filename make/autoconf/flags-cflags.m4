@@ -560,8 +560,10 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -MP"
-    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -Zc:wchar_t-"
+    # The -utf-8 option sets source and execution character sets to UTF-8 to enable correct
+    # compilation of all source files regardless of the active code page on Windows.
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -MP"
+    TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:inline -utf-8 -Zc:wchar_t-"
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)

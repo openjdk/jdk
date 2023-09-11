@@ -43,7 +43,7 @@ bool ThreadStackTracker::initialize(NMT_TrackingLevel level) {
 }
 
 int ThreadStackTracker::compare_thread_stack_base(const SimpleThreadStackSite& s1, const SimpleThreadStackSite& s2) {
-  return s1.base() - s2.base();
+  return primitive_compare(s1.base(), s2.base());
 }
 
 void ThreadStackTracker::new_thread_stack(void* base, size_t size, const NativeCallStack& stack) {

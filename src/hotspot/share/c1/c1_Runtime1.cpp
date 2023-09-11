@@ -116,30 +116,30 @@ const char *Runtime1::_blob_names[] = {
 
 #ifndef PRODUCT
 // statistics
-int Runtime1::_generic_arraycopystub_cnt = 0;
-int Runtime1::_arraycopy_slowcase_cnt = 0;
-int Runtime1::_arraycopy_checkcast_cnt = 0;
-int Runtime1::_arraycopy_checkcast_attempt_cnt = 0;
-int Runtime1::_new_type_array_slowcase_cnt = 0;
-int Runtime1::_new_object_array_slowcase_cnt = 0;
-int Runtime1::_new_instance_slowcase_cnt = 0;
-int Runtime1::_new_multi_array_slowcase_cnt = 0;
-int Runtime1::_monitorenter_slowcase_cnt = 0;
-int Runtime1::_monitorexit_slowcase_cnt = 0;
-int Runtime1::_patch_code_slowcase_cnt = 0;
-int Runtime1::_throw_range_check_exception_count = 0;
-int Runtime1::_throw_index_exception_count = 0;
-int Runtime1::_throw_div0_exception_count = 0;
-int Runtime1::_throw_null_pointer_exception_count = 0;
-int Runtime1::_throw_class_cast_exception_count = 0;
-int Runtime1::_throw_incompatible_class_change_error_count = 0;
-int Runtime1::_throw_count = 0;
+uint Runtime1::_generic_arraycopystub_cnt = 0;
+uint Runtime1::_arraycopy_slowcase_cnt = 0;
+uint Runtime1::_arraycopy_checkcast_cnt = 0;
+uint Runtime1::_arraycopy_checkcast_attempt_cnt = 0;
+uint Runtime1::_new_type_array_slowcase_cnt = 0;
+uint Runtime1::_new_object_array_slowcase_cnt = 0;
+uint Runtime1::_new_instance_slowcase_cnt = 0;
+uint Runtime1::_new_multi_array_slowcase_cnt = 0;
+uint Runtime1::_monitorenter_slowcase_cnt = 0;
+uint Runtime1::_monitorexit_slowcase_cnt = 0;
+uint Runtime1::_patch_code_slowcase_cnt = 0;
+uint Runtime1::_throw_range_check_exception_count = 0;
+uint Runtime1::_throw_index_exception_count = 0;
+uint Runtime1::_throw_div0_exception_count = 0;
+uint Runtime1::_throw_null_pointer_exception_count = 0;
+uint Runtime1::_throw_class_cast_exception_count = 0;
+uint Runtime1::_throw_incompatible_class_change_error_count = 0;
+uint Runtime1::_throw_count = 0;
 
-static int _byte_arraycopy_stub_cnt = 0;
-static int _short_arraycopy_stub_cnt = 0;
-static int _int_arraycopy_stub_cnt = 0;
-static int _long_arraycopy_stub_cnt = 0;
-static int _oop_arraycopy_stub_cnt = 0;
+static uint _byte_arraycopy_stub_cnt = 0;
+static uint _short_arraycopy_stub_cnt = 0;
+static uint _int_arraycopy_stub_cnt = 0;
+static uint _long_arraycopy_stub_cnt = 0;
+static uint _oop_arraycopy_stub_cnt = 0;
 
 address Runtime1::arraycopy_count_address(BasicType type) {
   switch (type) {
@@ -1520,36 +1520,36 @@ JRT_END
 #ifndef PRODUCT
 void Runtime1::print_statistics() {
   tty->print_cr("C1 Runtime statistics:");
-  tty->print_cr(" _resolve_invoke_virtual_cnt:     %d", SharedRuntime::_resolve_virtual_ctr);
-  tty->print_cr(" _resolve_invoke_opt_virtual_cnt: %d", SharedRuntime::_resolve_opt_virtual_ctr);
-  tty->print_cr(" _resolve_invoke_static_cnt:      %d", SharedRuntime::_resolve_static_ctr);
-  tty->print_cr(" _handle_wrong_method_cnt:        %d", SharedRuntime::_wrong_method_ctr);
-  tty->print_cr(" _ic_miss_cnt:                    %d", SharedRuntime::_ic_miss_ctr);
-  tty->print_cr(" _generic_arraycopystub_cnt:      %d", _generic_arraycopystub_cnt);
-  tty->print_cr(" _byte_arraycopy_cnt:             %d", _byte_arraycopy_stub_cnt);
-  tty->print_cr(" _short_arraycopy_cnt:            %d", _short_arraycopy_stub_cnt);
-  tty->print_cr(" _int_arraycopy_cnt:              %d", _int_arraycopy_stub_cnt);
-  tty->print_cr(" _long_arraycopy_cnt:             %d", _long_arraycopy_stub_cnt);
-  tty->print_cr(" _oop_arraycopy_cnt:              %d", _oop_arraycopy_stub_cnt);
-  tty->print_cr(" _arraycopy_slowcase_cnt:         %d", _arraycopy_slowcase_cnt);
-  tty->print_cr(" _arraycopy_checkcast_cnt:        %d", _arraycopy_checkcast_cnt);
-  tty->print_cr(" _arraycopy_checkcast_attempt_cnt:%d", _arraycopy_checkcast_attempt_cnt);
+  tty->print_cr(" _resolve_invoke_virtual_cnt:     %u", SharedRuntime::_resolve_virtual_ctr);
+  tty->print_cr(" _resolve_invoke_opt_virtual_cnt: %u", SharedRuntime::_resolve_opt_virtual_ctr);
+  tty->print_cr(" _resolve_invoke_static_cnt:      %u", SharedRuntime::_resolve_static_ctr);
+  tty->print_cr(" _handle_wrong_method_cnt:        %u", SharedRuntime::_wrong_method_ctr);
+  tty->print_cr(" _ic_miss_cnt:                    %u", SharedRuntime::_ic_miss_ctr);
+  tty->print_cr(" _generic_arraycopystub_cnt:      %u", _generic_arraycopystub_cnt);
+  tty->print_cr(" _byte_arraycopy_cnt:             %u", _byte_arraycopy_stub_cnt);
+  tty->print_cr(" _short_arraycopy_cnt:            %u", _short_arraycopy_stub_cnt);
+  tty->print_cr(" _int_arraycopy_cnt:              %u", _int_arraycopy_stub_cnt);
+  tty->print_cr(" _long_arraycopy_cnt:             %u", _long_arraycopy_stub_cnt);
+  tty->print_cr(" _oop_arraycopy_cnt:              %u", _oop_arraycopy_stub_cnt);
+  tty->print_cr(" _arraycopy_slowcase_cnt:         %u", _arraycopy_slowcase_cnt);
+  tty->print_cr(" _arraycopy_checkcast_cnt:        %u", _arraycopy_checkcast_cnt);
+  tty->print_cr(" _arraycopy_checkcast_attempt_cnt:%u", _arraycopy_checkcast_attempt_cnt);
 
-  tty->print_cr(" _new_type_array_slowcase_cnt:    %d", _new_type_array_slowcase_cnt);
-  tty->print_cr(" _new_object_array_slowcase_cnt:  %d", _new_object_array_slowcase_cnt);
-  tty->print_cr(" _new_instance_slowcase_cnt:      %d", _new_instance_slowcase_cnt);
-  tty->print_cr(" _new_multi_array_slowcase_cnt:   %d", _new_multi_array_slowcase_cnt);
-  tty->print_cr(" _monitorenter_slowcase_cnt:      %d", _monitorenter_slowcase_cnt);
-  tty->print_cr(" _monitorexit_slowcase_cnt:       %d", _monitorexit_slowcase_cnt);
-  tty->print_cr(" _patch_code_slowcase_cnt:        %d", _patch_code_slowcase_cnt);
+  tty->print_cr(" _new_type_array_slowcase_cnt:    %u", _new_type_array_slowcase_cnt);
+  tty->print_cr(" _new_object_array_slowcase_cnt:  %u", _new_object_array_slowcase_cnt);
+  tty->print_cr(" _new_instance_slowcase_cnt:      %u", _new_instance_slowcase_cnt);
+  tty->print_cr(" _new_multi_array_slowcase_cnt:   %u", _new_multi_array_slowcase_cnt);
+  tty->print_cr(" _monitorenter_slowcase_cnt:      %u", _monitorenter_slowcase_cnt);
+  tty->print_cr(" _monitorexit_slowcase_cnt:       %u", _monitorexit_slowcase_cnt);
+  tty->print_cr(" _patch_code_slowcase_cnt:        %u", _patch_code_slowcase_cnt);
 
-  tty->print_cr(" _throw_range_check_exception_count:            %d:", _throw_range_check_exception_count);
-  tty->print_cr(" _throw_index_exception_count:                  %d:", _throw_index_exception_count);
-  tty->print_cr(" _throw_div0_exception_count:                   %d:", _throw_div0_exception_count);
-  tty->print_cr(" _throw_null_pointer_exception_count:           %d:", _throw_null_pointer_exception_count);
-  tty->print_cr(" _throw_class_cast_exception_count:             %d:", _throw_class_cast_exception_count);
-  tty->print_cr(" _throw_incompatible_class_change_error_count:  %d:", _throw_incompatible_class_change_error_count);
-  tty->print_cr(" _throw_count:                                  %d:", _throw_count);
+  tty->print_cr(" _throw_range_check_exception_count:            %u:", _throw_range_check_exception_count);
+  tty->print_cr(" _throw_index_exception_count:                  %u:", _throw_index_exception_count);
+  tty->print_cr(" _throw_div0_exception_count:                   %u:", _throw_div0_exception_count);
+  tty->print_cr(" _throw_null_pointer_exception_count:           %u:", _throw_null_pointer_exception_count);
+  tty->print_cr(" _throw_class_cast_exception_count:             %u:", _throw_class_cast_exception_count);
+  tty->print_cr(" _throw_incompatible_class_change_error_count:  %u:", _throw_incompatible_class_change_error_count);
+  tty->print_cr(" _throw_count:                                  %u:", _throw_count);
 
   SharedRuntime::print_ic_miss_histogram();
   tty->cr();

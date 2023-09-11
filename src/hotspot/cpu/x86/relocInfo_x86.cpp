@@ -27,11 +27,13 @@
 #include "code/relocInfo.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "utilities/checkedCast.hpp"
 
 
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {

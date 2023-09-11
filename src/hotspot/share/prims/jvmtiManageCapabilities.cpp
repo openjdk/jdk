@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiManageCapabilities.hpp"
 
@@ -55,7 +56,12 @@ jvmtiCapabilities JvmtiManageCapabilities::onload_solo_remaining_capabilities;
   // all capabilities ever acquired
 jvmtiCapabilities JvmtiManageCapabilities::acquired_capabilities;
 
+int JvmtiManageCapabilities::_can_support_virtual_threads_count = 0;
+
+Mutex* JvmtiManageCapabilities::_capabilities_lock = nullptr;
+
 void JvmtiManageCapabilities::initialize() {
+  _capabilities_lock = new Mutex(Mutex::nosafepoint, "Capabilities_lock");
   always_capabilities = init_always_capabilities();
   onload_capabilities = init_onload_capabilities();
   always_solo_capabilities = init_always_solo_capabilities();
@@ -211,8 +217,14 @@ void JvmtiManageCapabilities::copy_capabilities(const jvmtiCapabilities *from, j
   }
 }
 
+Mutex* JvmtiManageCapabilities::lock() {
+  if (Thread::current_or_null() == nullptr) {
+    return nullptr;  // Detached thread, can be a call from Agent_OnLoad.
+  }
+  return _capabilities_lock;
+}
 
-void JvmtiManageCapabilities::get_potential_capabilities(const jvmtiCapabilities *current,
+void JvmtiManageCapabilities::get_potential_capabilities_nolock(const jvmtiCapabilities *current,
                                                          const jvmtiCapabilities *prohibited,
                                                          jvmtiCapabilities *result) {
   // exclude prohibited capabilities, must be before adding current
@@ -231,13 +243,22 @@ void JvmtiManageCapabilities::get_potential_capabilities(const jvmtiCapabilities
   }
 }
 
+void JvmtiManageCapabilities::get_potential_capabilities(const jvmtiCapabilities* current,
+                                                         const jvmtiCapabilities* prohibited,
+                                                         jvmtiCapabilities* result) {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+  get_potential_capabilities_nolock(current, prohibited, result);
+}
+
 jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *current,
                                                      const jvmtiCapabilities *prohibited,
                                                      const jvmtiCapabilities *desired,
                                                      jvmtiCapabilities *result) {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+
   // check that the capabilities being added are potential capabilities
   jvmtiCapabilities temp;
-  get_potential_capabilities(current, prohibited, &temp);
+  get_potential_capabilities_nolock(current, prohibited, &temp);
   if (has_some(exclude(desired, &temp, &temp))) {
     return JVMTI_ERROR_NOT_AVAILABLE;
   }
@@ -259,6 +280,10 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
   exclude(&always_solo_remaining_capabilities, desired, &always_solo_remaining_capabilities);
   exclude(&onload_solo_remaining_capabilities, desired, &onload_solo_remaining_capabilities);
 
+  if (desired->can_support_virtual_threads != 0 && current->can_support_virtual_threads == 0) {
+    _can_support_virtual_threads_count++;
+  }
+
   // return the result
   either(current, desired, result);
 
@@ -271,6 +296,8 @@ jvmtiError JvmtiManageCapabilities::add_capabilities(const jvmtiCapabilities *cu
 void JvmtiManageCapabilities::relinquish_capabilities(const jvmtiCapabilities *current,
                                                       const jvmtiCapabilities *unwanted,
                                                       jvmtiCapabilities *result) {
+  MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+
   jvmtiCapabilities to_trash;
   jvmtiCapabilities temp;
 
@@ -282,6 +309,12 @@ void JvmtiManageCapabilities::relinquish_capabilities(const jvmtiCapabilities *c
          &always_solo_remaining_capabilities);
   either(&onload_solo_remaining_capabilities, both(&onload_solo_capabilities, &to_trash, &temp),
          &onload_solo_remaining_capabilities);
+
+  if (to_trash.can_support_virtual_threads != 0) {
+    assert(current->can_support_virtual_threads != 0, "sanity check");
+    assert(_can_support_virtual_threads_count > 0, "sanity check");
+    _can_support_virtual_threads_count--;
+  }
 
   update();
 
@@ -366,7 +399,7 @@ void JvmtiManageCapabilities::update() {
   JvmtiExport::set_can_post_frame_pop(avail.can_generate_frame_pop_events);
   JvmtiExport::set_can_pop_frame(avail.can_pop_frame);
   JvmtiExport::set_can_force_early_return(avail.can_force_early_return);
-  JvmtiExport::set_can_support_virtual_threads(avail.can_support_virtual_threads);
+  JvmtiExport::set_can_support_virtual_threads(_can_support_virtual_threads_count != 0);
   JvmtiExport::set_should_clean_up_heap_objects(avail.can_generate_breakpoint_events);
   JvmtiExport::set_can_get_owned_monitor_info(avail.can_get_owned_monitor_info ||
                                               avail.can_get_owned_monitor_stack_depth_info);

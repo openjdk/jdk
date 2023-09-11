@@ -21,7 +21,8 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 import java.io.IOException;
 import java.lang.annotation.Repeatable;
@@ -50,7 +51,7 @@ import static java.util.stream.Collectors.*;
  */
 public abstract class LocalVariableTestBase extends TestBase {
     public static final int DEFAULT_SCOPE = 0;
-    private final ClassFile classFile;
+    private final ClassModel classFile;
     private final Class<?> clazz;
 
     /**
@@ -59,13 +60,13 @@ public abstract class LocalVariableTestBase extends TestBase {
     public LocalVariableTestBase(Class<?> clazz) {
         this.clazz = clazz;
         try {
-            this.classFile = ClassFile.read(getClassFile(clazz));
-        } catch (IOException | ConstantPoolException e) {
+            this.classFile = Classfile.of().parse(getClassFile(clazz).toPath());
+        } catch (IOException e) {
             throw new IllegalArgumentException("Can't read classfile for specified class", e);
         }
     }
 
-    protected abstract List<VariableTable> getVariableTables(Code_attribute codeAttribute);
+    protected abstract List<VariableTable> getVariableTables(CodeAttribute codeAttribute);
 
     /**
      * Finds expected variables with their type in VariableTable.
@@ -74,7 +75,7 @@ public abstract class LocalVariableTestBase extends TestBase {
     public void test() throws IOException {
         List<java.lang.reflect.Method> testMethods = Stream.of(clazz.getDeclaredMethods())
                 .filter(m -> m.getAnnotationsByType(ExpectedLocals.class).length > 0)
-                .collect(toList());
+                .toList();
         int failed = 0;
         for (java.lang.reflect.Method method : testMethods) {
             try {
@@ -99,12 +100,12 @@ public abstract class LocalVariableTestBase extends TestBase {
     public void test(String methodName, Map<String, String> expectedLocals2Types, Map<String, Integer> sig2scope)
             throws IOException {
 
-        for (Method m : classFile.methods) {
-            String mName = getString(m.name_index);
+        for (MethodModel m : classFile.methods()) {
+            String mName = m.methodName().stringValue();
             if (methodName.equals(mName)) {
                 System.out.println("Testing local variable table in method " + mName);
-                Code_attribute code_attribute = (Code_attribute) m.attributes.get(Attribute.Code);
-
+                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                assert code_attribute != null;
                 List<? extends VariableTable> variableTables = getVariableTables(code_attribute);
                 generalLocalVariableTableCheck(variableTables);
 
@@ -115,7 +116,7 @@ public abstract class LocalVariableTestBase extends TestBase {
                 generalEntriesCheck(entries, code_attribute);
                 assertIndexesAreUnique(entries, sig2scope);
                 checkNamesAndTypes(entries, expectedLocals2Types);
-                checkDoubleAndLongIndexes(entries, sig2scope, code_attribute.max_locals);
+                checkDoubleAndLongIndexes(entries, sig2scope, code_attribute.maxLocals());
             }
         }
     }
@@ -131,17 +132,17 @@ public abstract class LocalVariableTestBase extends TestBase {
         }
     }
 
-    private void generalEntriesCheck(List<VariableTable.Entry> entries, Code_attribute code_attribute) {
+    private void generalEntriesCheck(List<VariableTable.Entry> entries, CodeAttribute code_attribute) {
         for (VariableTable.Entry e : entries) {
-            assertTrue(e.index() >= 0 && e.index() < code_attribute.max_locals,
-                    "Index " + e.index() + " out of variable array. Size of array is " + code_attribute.max_locals);
+            assertTrue(e.index() >= 0 && e.index() < code_attribute.maxLocals(),
+                    "Index " + e.index() + " out of variable array. Size of array is " + code_attribute.maxLocals());
             assertTrue(e.startPC() >= 0, "StartPC is less then 0. StartPC = " + e.startPC());
             assertTrue(e.length() >= 0, "Length is less then 0. Length = " + e.length());
-            assertTrue(e.startPC() + e.length() <= code_attribute.code_length,
+            assertTrue(e.startPC() + e.length() <= code_attribute.codeLength(),
                     format("StartPC+Length > code length.%n" +
                             "%s%n" +
                             "code_length = %s"
-                            , e, code_attribute.code_length));
+                            , e, code_attribute.codeLength()));
         }
     }
 
@@ -205,14 +206,15 @@ public abstract class LocalVariableTestBase extends TestBase {
         return entries.stream().collect(groupingBy(e -> scopes.getOrDefault(e.name() + "&" + e.type(), DEFAULT_SCOPE)));
     }
 
-    protected String getString(int i) {
-        try {
-            return classFile.constant_pool.getUTF8Info(i).value;
-        } catch (ConstantPool.InvalidIndex | ConstantPool.UnexpectedEntry ex) {
-            ex.printStackTrace();
-            throw new AssertionFailedException("Issue while reading constant pool");
-        }
-    }
+    // Don't need the getString method now
+//    protected String getString(int i) {
+//        try {
+//            return classFile.constant_pool.getUTF8Info(i).value;
+//        } catch (ConstantPool.InvalidIndex | ConstantPool.UnexpectedEntry ex) {
+//            ex.printStackTrace();
+//            throw new AssertionFailedException("Issue while reading constant pool");
+//        }
+//    }
 
     /**
      * LocalVariableTable and LocalVariableTypeTable are similar.

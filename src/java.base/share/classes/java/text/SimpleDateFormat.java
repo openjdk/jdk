@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2409,9 +2409,7 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     /**
-     * Returns the hash code value for this {@code SimpleDateFormat} object.
-     *
-     * @return the hash code value for this {@code SimpleDateFormat} object.
+     * {@return the hash code value for this {@code SimpleDateFormat} object}
      */
     @Override
     public int hashCode()
@@ -2431,7 +2429,7 @@ public class SimpleDateFormat extends DateFormat {
     public boolean equals(Object obj)
     {
         if (!super.equals(obj)) {
-            return false; // super does class check
+            return false; // super does null and class checks
         }
         SimpleDateFormat that = (SimpleDateFormat) obj;
         return (pattern.equals(that.pattern)

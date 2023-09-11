@@ -326,22 +326,6 @@ class Generation: public CHeapObj<mtGC> {
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;
 
-  // The "requestor" generation is performing some garbage collection
-  // action for which it would be useful to have scratch space.  If
-  // the target is not the requestor, no gc actions will be required
-  // of the target.  The requestor promises to allocate no more than
-  // "max_alloc_words" in the target generation (via promotion say,
-  // if the requestor is a young generation and the target is older).
-  // If the target generation can provide any scratch space, it adds
-  // it to "list", leaving "list" pointing to the head of the
-  // augmented list.  The default is to offer no space.
-  virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                                  size_t max_alloc_words) {}
-
-  // Give each generation an opportunity to do clean up for any
-  // contributed scratch.
-  virtual void reset_scratch() {}
-
   // When an older generation has been collected, and perhaps resized,
   // this method will be invoked on all younger generations (from older to
   // younger), allowing them to resize themselves as appropriate.

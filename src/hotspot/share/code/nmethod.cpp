@@ -119,23 +119,23 @@
 // These variables are put into one block to reduce relocations
 // and make it simpler to print from the debugger.
 struct java_nmethod_stats_struct {
-  int nmethod_count;
-  int total_size;
-  int relocation_size;
-  int consts_size;
-  int insts_size;
-  int stub_size;
-  int scopes_data_size;
-  int scopes_pcs_size;
-  int dependencies_size;
-  int handler_table_size;
-  int nul_chk_table_size;
+  uint nmethod_count;
+  uint total_size;
+  uint relocation_size;
+  uint consts_size;
+  uint insts_size;
+  uint stub_size;
+  uint scopes_data_size;
+  uint scopes_pcs_size;
+  uint dependencies_size;
+  uint handler_table_size;
+  uint nul_chk_table_size;
 #if INCLUDE_JVMCI
-  int speculations_size;
-  int jvmci_data_size;
+  uint speculations_size;
+  uint jvmci_data_size;
 #endif
-  int oops_size;
-  int metadata_size;
+  uint oops_size;
+  uint metadata_size;
 
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
@@ -158,34 +158,34 @@ struct java_nmethod_stats_struct {
   }
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
-    tty->print_cr("Statistics for %d bytecoded nmethods for %s:", nmethod_count, name);
-    if (total_size != 0)          tty->print_cr(" total in heap  = %d", total_size);
+    tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
+    if (total_size != 0)          tty->print_cr(" total in heap  = %u", total_size);
     if (nmethod_count != 0)       tty->print_cr(" header         = " SIZE_FORMAT, nmethod_count * sizeof(nmethod));
-    if (relocation_size != 0)     tty->print_cr(" relocation     = %d", relocation_size);
-    if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
-    if (insts_size != 0)          tty->print_cr(" main code      = %d", insts_size);
-    if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
-    if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
-    if (metadata_size != 0)       tty->print_cr(" metadata       = %d", metadata_size);
-    if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
-    if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
-    if (dependencies_size != 0)   tty->print_cr(" dependencies   = %d", dependencies_size);
-    if (handler_table_size != 0)  tty->print_cr(" handler table  = %d", handler_table_size);
-    if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %d", nul_chk_table_size);
+    if (relocation_size != 0)     tty->print_cr(" relocation     = %u", relocation_size);
+    if (consts_size != 0)         tty->print_cr(" constants      = %u", consts_size);
+    if (insts_size != 0)          tty->print_cr(" main code      = %u", insts_size);
+    if (stub_size != 0)           tty->print_cr(" stub code      = %u", stub_size);
+    if (oops_size != 0)           tty->print_cr(" oops           = %u", oops_size);
+    if (metadata_size != 0)       tty->print_cr(" metadata       = %u", metadata_size);
+    if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %u", scopes_data_size);
+    if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %u", scopes_pcs_size);
+    if (dependencies_size != 0)   tty->print_cr(" dependencies   = %u", dependencies_size);
+    if (handler_table_size != 0)  tty->print_cr(" handler table  = %u", handler_table_size);
+    if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %u", nul_chk_table_size);
 #if INCLUDE_JVMCI
-    if (speculations_size != 0)   tty->print_cr(" speculations   = %d", speculations_size);
-    if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %d", jvmci_data_size);
+    if (speculations_size != 0)   tty->print_cr(" speculations   = %u", speculations_size);
+    if (jvmci_data_size != 0)     tty->print_cr(" JVMCI data     = %u", jvmci_data_size);
 #endif
   }
 };
 
 struct native_nmethod_stats_struct {
-  int native_nmethod_count;
-  int native_total_size;
-  int native_relocation_size;
-  int native_insts_size;
-  int native_oops_size;
-  int native_metadata_size;
+  uint native_nmethod_count;
+  uint native_total_size;
+  uint native_relocation_size;
+  uint native_insts_size;
+  uint native_oops_size;
+  uint native_metadata_size;
   void note_native_nmethod(nmethod* nm) {
     native_nmethod_count += 1;
     native_total_size       += nm->size();
@@ -196,31 +196,31 @@ struct native_nmethod_stats_struct {
   }
   void print_native_nmethod_stats() {
     if (native_nmethod_count == 0)  return;
-    tty->print_cr("Statistics for %d native nmethods:", native_nmethod_count);
-    if (native_total_size != 0)       tty->print_cr(" N. total size  = %d", native_total_size);
-    if (native_relocation_size != 0)  tty->print_cr(" N. relocation  = %d", native_relocation_size);
-    if (native_insts_size != 0)       tty->print_cr(" N. main code   = %d", native_insts_size);
-    if (native_oops_size != 0)        tty->print_cr(" N. oops        = %d", native_oops_size);
-    if (native_metadata_size != 0)    tty->print_cr(" N. metadata    = %d", native_metadata_size);
+    tty->print_cr("Statistics for %u native nmethods:", native_nmethod_count);
+    if (native_total_size != 0)       tty->print_cr(" N. total size  = %u", native_total_size);
+    if (native_relocation_size != 0)  tty->print_cr(" N. relocation  = %u", native_relocation_size);
+    if (native_insts_size != 0)       tty->print_cr(" N. main code   = %u", native_insts_size);
+    if (native_oops_size != 0)        tty->print_cr(" N. oops        = %u", native_oops_size);
+    if (native_metadata_size != 0)    tty->print_cr(" N. metadata    = %u", native_metadata_size);
   }
 };
 
 struct pc_nmethod_stats_struct {
-  int pc_desc_resets;   // number of resets (= number of caches)
-  int pc_desc_queries;  // queries to nmethod::find_pc_desc
-  int pc_desc_approx;   // number of those which have approximate true
-  int pc_desc_repeats;  // number of _pc_descs[0] hits
-  int pc_desc_hits;     // number of LRU cache hits
-  int pc_desc_tests;    // total number of PcDesc examinations
-  int pc_desc_searches; // total number of quasi-binary search steps
-  int pc_desc_adds;     // number of LUR cache insertions
+  uint pc_desc_resets;   // number of resets (= number of caches)
+  uint pc_desc_queries;  // queries to nmethod::find_pc_desc
+  uint pc_desc_approx;   // number of those which have approximate true
+  uint pc_desc_repeats;  // number of _pc_descs[0] hits
+  uint pc_desc_hits;     // number of LRU cache hits
+  uint pc_desc_tests;    // total number of PcDesc examinations
+  uint pc_desc_searches; // total number of quasi-binary search steps
+  uint pc_desc_adds;     // number of LUR cache insertions
 
   void print_pc_stats() {
-    tty->print_cr("PcDesc Statistics:  %d queries, %.2f comparisons per query",
+    tty->print_cr("PcDesc Statistics:  %u queries, %.2f comparisons per query",
                   pc_desc_queries,
                   (double)(pc_desc_tests + pc_desc_searches)
                   / pc_desc_queries);
-    tty->print_cr("  caches=%d queries=%d/%d, hits=%d+%d, tests=%d+%d, adds=%d",
+    tty->print_cr("  caches=%d queries=%u/%u, hits=%u+%u, tests=%u+%u, adds=%u",
                   pc_desc_resets,
                   pc_desc_queries, pc_desc_approx,
                   pc_desc_repeats, pc_desc_hits,

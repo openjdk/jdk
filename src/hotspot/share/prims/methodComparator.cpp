@@ -88,7 +88,18 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_getstatic       : // fall through
   case Bytecodes::_putstatic       : // fall through
   case Bytecodes::_getfield        : // fall through
-  case Bytecodes::_putfield        : // fall through
+  case Bytecodes::_putfield        : {
+    int index_old = s_old->get_index_u2();
+    int index_new = s_new->get_index_u2();
+    // Check if the names of classes, field/method names and signatures at these indexes
+    // are the same. Indices which are really into constantpool cache (rather than constant
+    // pool itself) are accepted by the constantpool query routines below.
+    if ((old_cp->klass_ref_at_noresolve(index_old, c_old) != new_cp->klass_ref_at_noresolve(index_new, c_old)) ||
+        (old_cp->name_ref_at(index_old, c_old) != new_cp->name_ref_at(index_new, c_old)) ||
+        (old_cp->signature_ref_at(index_old, c_old) != new_cp->signature_ref_at(index_new, c_old)))
+      return false;
+    break;
+  }
   case Bytecodes::_invokevirtual   : // fall through
   case Bytecodes::_invokespecial   : // fall through
   case Bytecodes::_invokestatic    : // fall through
