@@ -82,7 +82,7 @@ public class bug4813831 {
             View v = jep.getUI().getRootView(jep);
             do {
                 int n = v.getViewCount();
-                Shape sh = v.getChildAllocation(n - 1,  r);
+                Shape sh = v.getChildAllocation(n - 1, r);
                 if (sh != null) {
                     r = sh;
                 }

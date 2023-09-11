@@ -136,7 +136,7 @@ public class bug4745001 {
                         } else {
                             tree.collapseRow(row);
                         }
-                    } catch(Exception ex) {
+                    } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                  }
@@ -146,7 +146,7 @@ public class bug4745001 {
                     bug4745001.this.wait();
                 }
             }
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             t.printStackTrace();
         }
     }
