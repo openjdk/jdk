@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  */
 
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -57,12 +58,16 @@ public class InconsistentEntries {
 
     @BeforeTest
     public void setUp() throws IOException {
-        if (!POLICY_DIR.toFile().exists()) {
-            Files.createDirectory(POLICY_DIR);
-        }
+        try {
+            if (!POLICY_DIR.toFile().exists()) {
+                Files.createDirectory(POLICY_DIR);
+            }
 
-        targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
-        Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
+            Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ioe) {
+            throw new SkipException("probably insufficient privileges", ioe);
+        }
     }
 
     @AfterTest
