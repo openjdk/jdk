@@ -163,10 +163,8 @@ public:
 };
 
 void ShenandoahCodeRoots::disarm_nmethods() {
-  if (ShenandoahNMethodBarrier) {
-    ShenandoahDisarmNMethodsTask task;
-    ShenandoahHeap::heap()->workers()->run_task(&task);
-  }
+  ShenandoahDisarmNMethodsTask task;
+  ShenandoahHeap::heap()->workers()->run_task(&task);
 }
 
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
