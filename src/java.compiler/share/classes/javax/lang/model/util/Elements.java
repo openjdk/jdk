@@ -759,6 +759,29 @@ public interface Elements {
     }
 
     /**
+     * {@return the class body of an {@code enum} constant if the
+     * argument is an {@code enum} constant declared with an optional
+     * class body, {@code null} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method throws {@code
+     * UnsupportedOperationException} if the argument is an {@code
+     * enum} constant and throws an {@code IllegalArgumentException}
+     * if it is not.
+     *
+     * @param enumConstant an enum constant
+     * @throws IllegalArgumentException if the argument is not an {@code enum} constant
+     * @jls 8.9.1 Enum Constants
+     * @since 22
+     */
+    default TypeElement getEnumConstantBody(VariableElement enumConstant) {
+        switch(enumConstant.getKind()) {
+        case ENUM_CONSTANT -> throw new UnsupportedOperationException();
+        default            -> throw new IllegalArgumentException("Argument not an enum constant");
+        }
+    }
+
+    /**
      * Returns the record component for the given accessor. Returns
      * {@code null} if the given method is not a record component
      * accessor.

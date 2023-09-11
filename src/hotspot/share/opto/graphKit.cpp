@@ -2677,7 +2677,8 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
 // but that's not exposed to the optimizer.  This call also doesn't take in an
 // Object; if you wish to check an Object you need to load the Object's class
 // prior to coming here.
-Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn) {
+Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn,
+                               ciMethod* method, int bci) {
   Compile* C = gvn.C;
   if ((*ctrl)->is_top()) {
     return C->top();
@@ -2734,7 +2735,9 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   Node* m = C->immutable_memory();
   Node *chk_off = gvn.transform(new LoadINode(nullptr, m, p1, gvn.type(p1)->is_ptr(), TypeInt::INT, MemNode::unordered));
   int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
-  bool might_be_cache = (gvn.find_int_con(chk_off, cacheoff_con) == cacheoff_con);
+  const TypeInt* chk_off_t = chk_off->Value(&gvn)->isa_int();
+  int chk_off_con = (chk_off_t != nullptr && chk_off_t->is_con()) ? chk_off_t->get_con() : cacheoff_con;
+  bool might_be_cache = (chk_off_con == cacheoff_con);
 
   // Load from the sub-klass's super-class display list, or a 1-word cache of
   // the secondary superclass list, or a failing value with a sentinel offset
@@ -2762,8 +2765,49 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   Node *nkls = gvn.transform(LoadKlassNode::make(gvn, nullptr, kmem, p2, gvn.type(p2)->is_ptr(), TypeInstKlassPtr::OBJECT_OR_NULL));
 
   // Compile speed common case: ARE a subtype and we canNOT fail
-  if( superklass == nkls )
+  if (superklass == nkls) {
     return C->top();             // false path is dead; no test needed.
+  }
+
+  // Gather the various success & failures here
+  RegionNode* r_not_subtype = new RegionNode(3);
+  gvn.record_for_igvn(r_not_subtype);
+  RegionNode* r_ok_subtype = new RegionNode(4);
+  gvn.record_for_igvn(r_ok_subtype);
+
+  // If we might perform an expensive check, first try to take advantage of profile data that was attached to the
+  // SubTypeCheck node
+  if (might_be_cache && method != nullptr && VM_Version::profile_all_receivers_at_type_check()) {
+    ciCallProfile profile = method->call_profile_at_bci(bci);
+    float total_prob = 0;
+    for (int i = 0; profile.has_receiver(i); ++i) {
+      float prob = profile.receiver_prob(i);
+      total_prob += prob;
+    }
+    if (total_prob * 100. >= TypeProfileSubTypeCheckCommonThreshold) {
+      const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
+      for (int i = 0; profile.has_receiver(i); ++i) {
+        ciKlass* klass = profile.receiver(i);
+        const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
+        Compile::SubTypeCheckResult result = C->static_subtype_check(superk, klass_t);
+        if (result != Compile::SSC_always_true && result != Compile::SSC_always_false) {
+          continue;
+        }
+        float prob = profile.receiver_prob(i);
+        ConNode* klass_node = gvn.makecon(klass_t);
+        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, klass_node, BoolTest::eq, prob, gvn, T_ADDRESS);
+        Node* iftrue = gvn.transform(new IfTrueNode(iff));
+
+        if (result == Compile::SSC_always_true) {
+          r_ok_subtype->add_req(iftrue);
+        } else {
+          assert(result == Compile::SSC_always_false, "");
+          r_not_subtype->add_req(iftrue);
+        }
+        *ctrl = gvn.transform(new IfFalseNode(iff));
+      }
+    }
+  }
 
   // See if we get an immediate positive hit.  Happens roughly 83% of the
   // time.  Test to see if the value loaded just previously from the subklass
@@ -2779,14 +2823,13 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
   if (!might_be_cache) {
     Node* not_subtype_ctrl = *ctrl;
     *ctrl = iftrue1; // We need exactly the 1 test above
+    PhaseIterGVN* igvn = gvn.is_IterGVN();
+    if (igvn != nullptr) {
+      igvn->remove_globally_dead_node(r_ok_subtype);
+      igvn->remove_globally_dead_node(r_not_subtype);
+    }
     return not_subtype_ctrl;
   }
-
-  // Gather the various success & failures here
-  RegionNode *r_ok_subtype = new RegionNode(4);
-  gvn.record_for_igvn(r_ok_subtype);
-  RegionNode *r_not_subtype = new RegionNode(3);
-  gvn.record_for_igvn(r_not_subtype);
 
   r_ok_subtype->init_req(1, iftrue1);
 
@@ -2851,12 +2894,12 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
       subklass = load_object_klass(obj_or_subklass);
     }
 
-    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn);
+    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn, method(), bci());
     set_control(ctrl);
     return n;
   }
 
-  Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass));
+  Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass, method(), bci()));
   Node* bol = _gvn.transform(new BoolNode(check, BoolTest::eq));
   IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
   set_control(_gvn.transform(new IfTrueNode(iff)));
@@ -3996,11 +4039,7 @@ void GraphKit::add_parse_predicate(Deoptimization::DeoptReason reason, const int
     return;
   }
 
-  Node* cont = _gvn.intcon(1);
-  Node* opaq = _gvn.transform(new Opaque1Node(C, cont));
-  C->add_parse_predicate_opaq(opaq);
-  Node* bol = _gvn.transform(new Conv2BNode(opaq));
-  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), bol, reason);
+  ParsePredicateNode* parse_predicate = new ParsePredicateNode(control(), reason, &_gvn);
   _gvn.set_type(parse_predicate, parse_predicate->Value(&_gvn));
   Node* if_false = _gvn.transform(new IfFalseNode(parse_predicate));
   {
