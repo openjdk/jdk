@@ -33,7 +33,6 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1544,19 +1543,13 @@ final class StringUTF16 {
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(
-                    buf,
-                    charPos << 1,
-                    inflatePacked(r));
+            putPair(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(
-                    buf,
-                    charPos << 1,
-                    inflatePacked(-i));
+            putPair(buf, charPos, -i);
         } else {
             putChar(buf, --charPos, '0' - i);
         }
@@ -1590,10 +1583,7 @@ final class StringUTF16 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(
-                    buf,
-                    charPos << 1,
-                    inflatePacked((int)((q * 100) - i)));
+            putPair(buf, charPos, (int)((q * 100) - i));
             i = q;
         }
 
@@ -1603,20 +1593,14 @@ final class StringUTF16 {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(
-                    buf,
-                    charPos << 1,
-                    inflatePacked((q2 * 100) - i2));
+            putPair(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            ByteArrayLittleEndian.setInt(
-                    buf,
-                    charPos << 1,
-                    inflatePacked(-i2));
+            putPair(buf, charPos, -i2);
         } else {
             putChar(buf, --charPos, '0' - i2);
         }
@@ -1627,10 +1611,10 @@ final class StringUTF16 {
         return charPos;
     }
 
-    private static int inflatePacked(int v) {
+    private static void putPair(byte[] buf, int charPos, int v) {
         int packed = (int) StringLatin1.PACKED_DIGITS[v];
-        return ((packed & 0xFF) << HI_BYTE_SHIFT)
-                | ((packed & 0xFF00) << LO_BYTE_SHIFT);
+        putChar(buf, charPos, packed & 0xFF);
+        putChar(buf, charPos + 1, packed >> 8);
     }
     // End of trusted methods.
 
