@@ -1733,9 +1733,6 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     // runState operations
 
-    private int getAndBitwiseOrRunState(int v) { // for status bits
-        return U.getAndBitwiseOrInt(this, RUNSTATE, v);
-    }
     private boolean casRunState(int c, int v) {
         return U.compareAndSetInt(this, RUNSTATE, c, v);
     }
@@ -1823,6 +1820,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             w.array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
             ThreadLocalRandom.localInit();
             int seed = w.stackPred = ThreadLocalRandom.getProbe();
+            int phaseSeq = seed & ~((IDLE << 1) - 1); // initial phase tag
             int id = ((seed << 1) | 1) & SMASK; // base of linear-probe-like scan
             int stop = lockRunState() & STOP;
             try {
@@ -1836,7 +1834,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                             break;
                         }
                     }
-                    w.phase = id;               // now publishable
+                    w.phase = id | phaseSeq;    // now publishable
                     if (id < n)
                         qs[id] = w;
                     else {                      // expand
@@ -1982,10 +1980,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * quiescent
      */
     private boolean isQuiescent(boolean transition) {
+        U.fullFence();
         long phaseSum = -1L;
         boolean swept = false;
-        outer: for (int e = 0;;) {
-            int prevRunState = e;
+        outer: for (int e, prevRunState = 0; ; prevRunState = e) {
             long c = ctl;
             if (((e = runState) & STOP) != 0)
                 return true;                          // terminating
@@ -1993,11 +1991,13 @@ public class ForkJoinPool extends AbstractExecutorService {
                 break;                                // at least one active
             else if (ctl != c)                        // re-snapshot
                 swept = false;
-            else if (swept && e == prevRunState && (e & RS_LOCK) == 0 &&
-                     casRunState(e, !transition ? e : // confirm
-                                 (e & SHUTDOWN) == 0 ? e + RS_EPOCH : // advance
-                                 e | STOP))           // terminate
-                return true;
+            else if (swept && e == prevRunState && (e & RS_LOCK) == 0) {
+                if (casRunState(e, !transition ? e : // confirm
+                                (e & SHUTDOWN) == 0 ? e + RS_EPOCH : // advance
+                                e | STOP))           // terminate
+                    return true;
+                swept = false;
+            }
             else {
                 long sum = 0L;
                 WorkQueue[] qs = queues;
@@ -2026,44 +2026,31 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void runWorker(WorkQueue w) {
         if (w != null) {
-            int phase = w.phase, r = w.stackPred; // seed from registerWorker
-            int e = runState;    // reset or exit when changed
+            int r = w.stackPred; // seed from registerWorker
             long next = 0L;
-            for (boolean stateChange = true;;) {
+            for (int e = 0;;) {
+                int phase;
                 int window;      // encodes origin and previous non-empty queue
-                if (stateChange) {
-                    stateChange = false;
+                r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
+                if (e != (e = runState)) {
                     if ((e & STOP) != 0)          // terminating
                         break;                    // else use random origin
                     window = (INVALID_ID << 16) | (r >>> 16);
                 }
                 else
                     window = (int)next;           // continue from last scan
-                if ((next = scan(w, window, (r << 1) | 1)) < 0L)
-                    ;                             // continue scanning
-                else if (e != (e = runState))
-                    stateChange = true;
-                else {                            // try to inactivate & enqueue
-                    boolean enqueued = true;
-                    int idlePhase = phase + IDLE;
+                if ((next = scan(w, window, (r << 1) | 1)) >= 0L &&
+                    ((phase = w.phase) & IDLE) == 0) {
+                    int idlePhase = phase + IDLE; // try to inactivate & enqueue
                     long np = (phase + (IDLE << 1)) & LMASK, pc = ctl;
                     long qc = ((pc - RC_UNIT) & UMASK) | np;
                     w.stackPred = (int)pc;        // set ctl stack link
                     w.phase = idlePhase;          // try to enqueue
-                    if (pc != (pc = compareAndExchangeCtl(pc, qc))) {
-                        qc = ((pc - RC_UNIT) & UMASK) | np;
-                        w.stackPred = (int)pc;    // retry once
-                        if (pc != compareAndExchangeCtl(pc, qc))
-                            enqueued = false;
-                    }
-                    if (!enqueued)
-                        w.phase = phase;          // back out on contention
-                    else if ((phase = awaitWork(w, qc, idlePhase)) == idlePhase)
+                    if (pc != (pc = compareAndExchangeCtl(pc, qc)))
+                        w.phase = phase;          // back out contention
+                    else if ((awaitWork(w, qc, idlePhase) & IDLE) != 0)
                         break;                    // worker exit
-                    else if (e != (e = runState)) // recheck after blocking
-                        stateChange = true;
                 }
-                r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
             }
         }
     }
@@ -2760,19 +2747,20 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return runState on exit
      */
     private int tryTerminate(boolean now, boolean enable) {
-        int e, isShutdown;
+        int e;
         if (((e = runState) & STOP) == 0) {
             if (now)
-                getAndBitwiseOrRunState(e = STOP | SHUTDOWN);
+                runState = e = (lockRunState() + RS_LOCK) | STOP | SHUTDOWN;
             else {
-                if ((isShutdown = (e & SHUTDOWN)) == 0 && enable)
-                    getAndBitwiseOrRunState(isShutdown = SHUTDOWN);
-                if (isShutdown != 0 && isQuiescent(true))
+                if ((e & SHUTDOWN) == 0 && enable)
+                    runState = e = (lockRunState() + RS_LOCK) | SHUTDOWN;
+                if ((e & SHUTDOWN) != 0 && isQuiescent(true))
                     e = runState;
             }
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // similar to isQuiescent
             int r = (int)Thread.currentThread().threadId(); // stagger traversals
+            U.fullFence();
             long c = ctl;
             for (int prevRunState = 0; ; prevRunState = e) {
                 WorkQueue[] qs = queues;

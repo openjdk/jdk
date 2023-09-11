@@ -899,8 +899,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     @Override
     public V resultNow() {
-        if (!isCompletedNormally())
-            throw new IllegalStateException();
+        int s = status;
+        if ((s & DONE) == 0)
+             throw new IllegalStateException("Task has not completed");
+        if ((s & ABNORMAL) != 0) {
+            if ((s & THROWN) != 0)
+                throw new IllegalStateException("Task completed with exception");
+            else
+                throw new IllegalStateException("Task was cancelled");
+        }
         return getRawResult();
     }
 
