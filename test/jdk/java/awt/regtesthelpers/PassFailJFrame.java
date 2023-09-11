@@ -210,7 +210,7 @@ public class PassFailJFrame {
      *              {@code doRun.run()}
      * @throws InvocationTargetException if an exception is thrown while
      *              running {@code doRun}
-     * @see javax.swing.SwingUtilities#invokeAndWait(Runnable) 
+     * @see javax.swing.SwingUtilities#invokeAndWait(Runnable)
      */
     private static void invokeOnEDT(Runnable doRun)
             throws InterruptedException, InvocationTargetException {
