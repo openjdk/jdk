@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,7 +439,7 @@ public interface Document {
      * For a removal, the end of the removal range is collapsed
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
-     * <p style="text-align:center"><img src="doc-files/Document-remove.gif"
+     * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
      * If the Document structure changed as result of the removal,
