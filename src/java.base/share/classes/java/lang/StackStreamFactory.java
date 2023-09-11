@@ -71,7 +71,7 @@ final class StackStreamFactory {
 
     // Number of elements in the buffer reserved for VM to use
     private static final int RESERVED_ELEMENTS = 1;
-    private static final int MIN_BATCH_SIZE    = 4;
+    private static final int MIN_BATCH_SIZE    = RESERVED_ELEMENTS + 2;
     private static final int SMALL_BATCH       = 8;
     private static final int BATCH_SIZE        = 32;
     private static final int LARGE_BATCH_SIZE  = 256;
@@ -758,7 +758,7 @@ final class StackStreamFactory {
          */
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new ClassFrameBuffer(walker, RESERVED_ELEMENTS+2);
+            this.frameBuffer = new ClassFrameBuffer(walker, MIN_BATCH_SIZE);
         }
 
         @Override
