@@ -1,0 +1,43 @@
+// TODO: comment
+
+function appendTypeInfo(extra_label, type) {
+  var new_extra_label = null;
+  if (extra_label != null && extra_label.length > 0) {
+    new_extra_label = extra_label;
+  }
+  if (type == null) {
+    return new_extra_label;
+  }
+  var callTypeStart = "{0:control, 1:abIO, 2:memory, 3:rawptr:BotPTR, 4:return_address";
+  if (type.startsWith(callTypeStart)) {
+    // Exclude types of the first five outputs of call-like nodes.
+    type = type.replace(callTypeStart, "").replace("}", "");
+    if (type.length == 0) {
+      return new_extra_label;
+    }
+    type = "{" + type.replace(", ", "") + "}";
+  }
+  if (new_extra_label == null) {
+    new_extra_label = "";
+  } else if (new_extra_label.length > 0) {
+    new_extra_label += " ";
+  }
+  // Clean up interface lists in reference types (too verbose).
+  var m = /(.*)\(.*\)(.*)/.exec(type);
+  if (m != null && typeof m[1] != 'undefined' && typeof m[2] != 'undefined') {
+    type = m[1] + m[2];
+  }
+  // Remove package name in reference types (too verbose).
+  var m2 = /.*\/(.*)/.exec(type);
+  if (m2 != null && typeof m2[1] != 'undefined') {
+    type = m2[1];
+  }
+  new_extra_label += type;
+  return new_extra_label;
+}
+
+editProperty(not(or([matches("name", "Start"),
+                     matches("bottom_type", "bottom"),
+                     matches("bottom_type", "abIO")])),
+             ["extra_label", "bottom_type"], "extra_label",
+             function(propertyValues) {return appendTypeInfo(propertyValues[0], propertyValues[1]);});

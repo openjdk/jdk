@@ -30,17 +30,3 @@ editProperty(matches("name", "CallLeaf|CallLeafNoFP"), ["dump_spec"], "extra_lab
              function(dump_spec) {return callLeafInfo(dump_spec[0], 1);});
 editProperty(matches("name", "CallLeafDirect|CallLeafDirectVector|CallLeafNoFPDirect"), ["dump_spec"], "extra_label",
              function(dump_spec) {return callLeafInfo(dump_spec[0], 0);});
-
-// Add extra line to exception creation nodes with the name of the exception.
-function exceptionInfo(dump_spec) {
-  dump_spec2 = dump_spec[0].replace('#','')
-  dump_components = split_string(dump_spec2);
-  if (dump_components.length < 1) {
-    return null;
-  }
-  // dump_components[0] has a form like e.g. java/lang/NumberFormatException:NotNull,
-  // we want to return only the simple class name ("NumberFormatException").
-  simple_classname = dump_components[0].split("/").pop();
-  return simple_classname.split(":")[0];
-}
-editProperty(matches("name", "CreateEx|CreateException"), ["dump_spec"], "extra_label", exceptionInfo);
