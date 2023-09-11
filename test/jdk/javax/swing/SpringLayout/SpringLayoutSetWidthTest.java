@@ -34,6 +34,7 @@ import javax.swing.JTextArea;
 import javax.swing.Spring;
 import javax.swing.SpringLayout;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 
 public class SpringLayoutSetWidthTest {
 
@@ -41,6 +42,12 @@ public class SpringLayoutSetWidthTest {
     JFrame fr;
     SpringLayout layout;
     JTextArea textArea;
+
+    public static void main(String[] args) throws Exception {
+        SpringLayoutSetWidthTest test = new SpringLayoutSetWidthTest();
+        EventQueue.invokeAndWait(test::init);
+        EventQueue.invokeAndWait(test::destroy);
+    }
 
     public void init() {
         fr = new JFrame("Test");
