@@ -376,19 +376,29 @@ class MulAddVS2VINode : public VectorNode {
     virtual int Opcode() const;
 };
 
-//------------------------------FmaVDNode--------------------------------------
-// Vector multiply double
-class FmaVDNode : public VectorNode {
+//------------------------------FmaVNode--------------------------------------
+// Vector fused-multiply-add
+class FmaVNode : public VectorNode {
 public:
-  FmaVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  FmaVNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {
+    assert(UseFMA, "Needs FMA instructions support.");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------FmaVDNode--------------------------------------
+// Vector fused-multiply-add double
+class FmaVDNode : public FmaVNode {
+public:
+  FmaVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------FmaVFNode--------------------------------------
-// Vector multiply float
-class FmaVFNode : public VectorNode {
+// Vector fused-multiply-add float
+class FmaVFNode : public FmaVNode {
 public:
-  FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
@@ -508,7 +518,9 @@ class AbsVDNode : public VectorNode {
 // Vector Neg parent class (not for code generation).
 class NegVNode : public VectorNode {
  public:
-  NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    init_class_id(Class_NegV);
+  }
   virtual int Opcode() const = 0;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 

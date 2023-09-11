@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -46,32 +45,13 @@ public class SearchWriter extends HtmlDocletWriter {
     /**
      * Constructor to construct SearchWriter object.
      * @param configuration the configuration
-     * @param filename file to be generated
      */
-    public SearchWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public SearchWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.SEARCH_PAGE);
     }
 
-    /**
-     * Constructs the SearchWriter object and then use it to generate the search
-     * file. The name of the generated file is "search.html". The search file
-     * will get generated if and only if "-noindex" is not used on the command line.
-     *
-     * @param configuration the configuration
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.SEARCH_PAGE;
-        SearchWriter searchWriter = new SearchWriter(configuration, filename);
-        searchWriter.generateSearchFile();
-    }
-
-    /**
-     * Generates the search file contents.
-     *
-     * @throws DocFileIOException if there is a problem while generating the documentation
-     */
-    protected void generateSearchFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         String title = resources.getText("doclet.Window_Search_title");
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder searchFileContent = new ContentBuilder();
@@ -116,7 +96,8 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .setId(HtmlId.of("page-search-link")))
                         .add(new HtmlTree(TagName.BUTTON)
                                 .add(new HtmlTree(TagName.IMG)
-                                        .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                        .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                                                     .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                         .put(HtmlAttr.ALT, copyUrlText))
                                 .add(HtmlTree.SPAN(Text.of(copyText))
                                         .put(HtmlAttr.DATA_COPIED, copiedText))
@@ -134,6 +115,7 @@ public class SearchWriter extends HtmlDocletWriter {
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
                         .put(HtmlAttr.STYLE, "display: none;")
-                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
+                        .add(HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.SCRIPT_FILES)
+                                                       .resolve(DocPaths.SEARCH_PAGE_JS).getPath())));
     }
 }

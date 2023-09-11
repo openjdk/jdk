@@ -26,9 +26,17 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -41,13 +49,25 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Links;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.CONSTRUCTORS;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ENUM_CONSTANTS;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.FIELDS;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.METHODS;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.NESTED_CLASSES;
+import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.PROPERTIES;
+
 /**
  * The base class for member writers.
+ *
+ * Two primary methods are defined: {@link #buildSummary(Content)} and {@link #buildDetails(Content)}.
  */
 public abstract class AbstractMemberWriter {
 
@@ -57,43 +77,250 @@ public abstract class AbstractMemberWriter {
     protected final SubWriterHolderWriter writer;
     protected final Contents contents;
     protected final Resources resources;
-    protected final Links links;
     protected final HtmlIds htmlIds;
 
     protected final TypeElement typeElement;
+    protected final VisibleMemberTable.Kind kind;
+    protected final VisibleMemberTable visibleMemberTable;
 
-    public AbstractMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        this.configuration = writer.configuration;
-        this.options = configuration.getOptions();
+    protected final Comparator<Element> summariesComparator;
+
+    /**
+     * The list of {@linkplain VisibleMemberTable.Kind kinds} of summary table
+     * that appear in the page for any {@linkplain TypeElement type element}.
+     *
+     * Note: this is not the default ordering of {@link VisibleMemberTable.Kind}.
+     * For what it is worth, that ordering is relied on by {@link Navigation}.
+     *
+     * Compared to {@link #detailKinds}, this list includes nested classes and distinct
+     * kinds for required and optional annotation type members
+     *
+     * @see VisibleMemberTable.Kind#forSummariesOf(ElementKind)
+     */
+    static final List<VisibleMemberTable.Kind> summaryKinds = List.of(
+            NESTED_CLASSES,
+            ENUM_CONSTANTS, PROPERTIES, FIELDS,
+            CONSTRUCTORS,
+            ANNOTATION_TYPE_MEMBER_REQUIRED, ANNOTATION_TYPE_MEMBER_OPTIONAL, METHODS
+    );
+
+    /**
+     * The list of {@linkplain VisibleMemberTable.Kind kinds} of detail lists
+     * that appear in the page for any {@linkplain TypeElement type element}.
+     *
+     * Note: this is not the default ordering of {@link VisibleMemberTable.Kind}.
+     * For what it is worth, that ordering is relied on by {@link Navigation}.
+     *
+     * Compared to {@link #summaryKinds}, this list does not include nested classes and
+     * just a single kind for all annotation type members, although nested classes could
+     * be included by ensuring that {@link #buildDetails} is a no-op.
+     *
+     * @see VisibleMemberTable.Kind#forDetailsOf(ElementKind)
+     */
+    static final List<VisibleMemberTable.Kind> detailKinds = List.of(
+            ENUM_CONSTANTS, PROPERTIES, FIELDS,
+            CONSTRUCTORS,
+            ANNOTATION_TYPE_MEMBER, METHODS
+    );
+
+    /**
+     * Creates a member writer for a given enclosing writer and kind of member.
+     *
+     * @param writer the enclosing "page" writer.
+     * @param kind the kind
+     */
+    protected AbstractMemberWriter(ClassWriter writer, VisibleMemberTable.Kind kind) {
+        this(writer, writer.typeElement, kind);
+    }
+
+    /**
+     * Creates a member writer for a given enclosing writer.
+     * No type element or kind is provided, limiting the set of methods that can be used.
+     *
+     * @param writer the writer
+     */
+    protected AbstractMemberWriter(SubWriterHolderWriter writer) {
+        this(writer, null, null);
+    }
+
+    /**
+     * Creates a member writer for a given enclosing writer, and optional type element and member kind.
+     * If no specific type element or kind is provided, methods that require such information
+     * may throw {@link NullPointerException}.
+     *
+     * @param writer the writer
+     */
+    protected AbstractMemberWriter(SubWriterHolderWriter writer,
+                                 TypeElement typeElement,
+                                 VisibleMemberTable.Kind kind) {
         this.writer = writer;
         this.typeElement = typeElement;
+        this.kind = kind;
+
+        this.configuration = writer.configuration;
+        this.options = configuration.getOptions();
         this.utils = configuration.utils;
         this.contents = configuration.getContents();
         this.resources = configuration.docResources;
-        this.links = writer.links;
         this.htmlIds = configuration.htmlIds;
+
+        visibleMemberTable = typeElement == null ? null : configuration.getVisibleMemberTable(typeElement);
+
+        summariesComparator = utils.comparators.indexElementComparator();
     }
 
-    public AbstractMemberWriter(SubWriterHolderWriter writer) {
-        this(writer, null);
+    /**
+     * Builds the list of "details" for all members of this kind.
+     *
+     * @param target the content to which the list will be added
+     */
+    public abstract void buildDetails(Content target);
+
+    /**
+     * Builds the signature.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildSignature(Content target);
+
+    /**
+     * Builds the deprecation info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildDeprecationInfo(Content target);
+
+    /**
+     * Builds the preview info.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected abstract void buildPreviewInfo(Content target);
+
+    /**
+     * Builds the "summary" for all members of this kind.
+     *
+     * @param target the content to which the list will be added
+     */
+    public void buildSummary(Content target)
+    {
+        var summaryTreeList = new ArrayList<Content>();
+
+        buildMainSummary(summaryTreeList);
+
+        var showInherited = switch (kind) {
+            case FIELDS, METHODS, NESTED_CLASSES, PROPERTIES -> true;
+            case ANNOTATION_TYPE_MEMBER, ANNOTATION_TYPE_MEMBER_OPTIONAL, ANNOTATION_TYPE_MEMBER_REQUIRED,
+                    CONSTRUCTORS, ENUM_CONSTANTS -> false;
+        };
+        if (showInherited)
+            buildInheritedSummary(summaryTreeList);
+
+        if (!summaryTreeList.isEmpty()) {
+            Content member = getMemberSummaryHeader(target);
+            summaryTreeList.forEach(member::add);
+            buildSummary(target, member);
+        }
+    }
+
+    /**
+     * Builds the main summary table for the members of this kind.
+     *
+     * @param summaryTreeList the list of contents to which the documentation will be added
+     */
+    private void buildMainSummary(List<Content> summaryTreeList) {
+        Set<? extends Element> members = asSortedSet(visibleMemberTable.getVisibleMembers(kind));
+        if (!members.isEmpty()) {
+            var pHelper = writer.getPropertyHelper();
+            for (Element member : members) {
+                final Element property = pHelper.getPropertyElement(member);
+                if (property != null && member instanceof ExecutableElement ee) {
+                    configuration.cmtUtils.updatePropertyMethodComment(ee, property);
+                }
+                if (utils.isMethod(member)) {
+                    var docFinder = utils.docFinder();
+                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
+                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
+                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
+                        return DocFinder.Result.fromOptional(optional);
+                    })).toOptional();
+                    // The fact that we use `member` for possibly unrelated tags is suspicious
+                    addMemberSummary(typeElement, member, r.orElse(List.of()));
+                } else {
+                    addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
+                }
+            }
+            summaryTreeList.add(getSummaryTable(typeElement));
+        }
+    }
+
+    /**
+     * Builds the inherited member summary for the members of this kind.
+     *
+     * @param targets the list of contents to which the documentation will be added
+     */
+    private void buildInheritedSummary(List<Content> targets) {
+        var inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
+
+        for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
+            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
+                continue;
+            }
+            if (Objects.equals(inheritedClass, typeElement)) {
+                continue;
+            }
+            if (utils.hasHiddenTag(inheritedClass)) {
+                continue;
+            }
+
+            List<? extends Element> members = inheritedMembersFromMap.stream()
+                    .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), inheritedClass))
+                    .toList();
+
+            if (!members.isEmpty()) {
+                SortedSet<Element> inheritedMembers = new TreeSet<>(summariesComparator);
+                inheritedMembers.addAll(members);
+                Content inheritedHeader = getInheritedSummaryHeader(inheritedClass);
+                Content links = getInheritedSummaryLinks();
+                addSummaryFootNote(inheritedClass, inheritedMembers, links);
+                inheritedHeader.add(links);
+                targets.add(inheritedHeader);
+            }
+        }
+    }
+
+    private void addSummaryFootNote(TypeElement inheritedClass, Iterable<Element> inheritedMembers,
+                                    Content links) {
+        boolean isFirst = true;
+        for (Element member : inheritedMembers) {
+            TypeElement t = utils.isUndocumentedEnclosure(inheritedClass)
+                    ? typeElement : inheritedClass;
+            addInheritedMemberSummary(t, member, isFirst, links);
+            isFirst = false;
+        }
+    }
+
+    private SortedSet<? extends Element> asSortedSet(Collection<? extends Element> members) {
+        SortedSet<Element> out = new TreeSet<>(summariesComparator);
+        out.addAll(members);
+        return out;
     }
 
     /**
      * Returns the member summary header for the given class.
      *
-     * @param typeElement the class the summary belongs to
      * @param content     the content to which the member summary will be added
      *
      * @return the member summary header
      */
-    public abstract Content getMemberSummaryHeader(TypeElement typeElement, Content content);
+    public abstract Content getMemberSummaryHeader(Content content);
     /**
      * Adds the given summary to the list of summaries.
      *
      * @param summariesList the list of summaries
      * @param content       the summary
      */
-    public abstract void addSummary(Content summariesList, Content content);
+    public abstract void buildSummary(Content summariesList, Content content);
 
     /**
      * Returns a list of visible elements of the specified kind in this
@@ -375,7 +602,7 @@ public abstract class AbstractMemberWriter {
     public void addMemberSummary(TypeElement tElement, Element member,
             List<? extends DocTree> firstSentenceTrees) {
         if (tElement != typeElement) {
-            throw new IllegalStateException(tElement + ", " + typeElement);
+            throw new IllegalStateException(getClass() + ": " + tElement + ", " + typeElement);
         }
         var table = getSummaryTable();
         List<Content> rowContents = new ArrayList<>();
@@ -398,11 +625,10 @@ public abstract class AbstractMemberWriter {
      * @param tElement the class the inherited member belongs to
      * @param member the inherited member that is being documented
      * @param isFirst true if this is the first member in the list
-     * @param isLast true if this is the last member in the list
      * @param content the content to which the links will be added
      */
     public void addInheritedMemberSummary(TypeElement tElement,
-            Element member, boolean isFirst, boolean isLast,
+            Element member, boolean isFirst,
             Content content) {
         writer.addInheritedMemberSummary(this, tElement, member, isFirst, content);
     }
