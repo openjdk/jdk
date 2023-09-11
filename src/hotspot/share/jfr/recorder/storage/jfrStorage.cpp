@@ -38,6 +38,7 @@
 #include "jfr/utilities/jfrIterator.hpp"
 #include "jfr/utilities/jfrLinkedList.inline.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTryLock.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -328,7 +329,8 @@ static void log_discard(size_t pre_full_count, size_t post_full_count, size_t am
 }
 
 void JfrStorage::discard_oldest(Thread* thread) {
-  if (JfrBuffer_lock->try_lock()) {
+  JfrMutexTryLock mutex(JfrBuffer_lock);
+  if (mutex.acquired()) {
     if (!control().should_discard()) {
       // another thread handled it
       return;
@@ -350,7 +352,6 @@ void JfrStorage::discard_oldest(Thread* thread) {
       oldest->release(); // publish
       break;
     }
-    JfrBuffer_lock->unlock();
     log_discard(num_full_pre_discard, control().full_count(), discarded_size);
   }
 }

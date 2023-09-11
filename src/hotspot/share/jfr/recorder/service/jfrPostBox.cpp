@@ -101,7 +101,7 @@ void JfrPostBox::deposit(int new_messages) {
 void JfrPostBox::asynchronous_post(int msg) {
   assert(!is_synchronous(msg), "invariant");
   deposit(msg);
-  JfrMonitorTryLock try_msg_lock(JfrMsg_lock);
+  JfrMutexTryLock try_msg_lock(JfrMsg_lock);
   if (try_msg_lock.acquired()) {
     JfrMsg_lock->notify_all();
   }
