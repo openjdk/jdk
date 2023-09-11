@@ -643,7 +643,7 @@ public class PassFailJFrame {
         latch.countDown();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private String title;
         private String instructions;
         private long testTimeOut;
