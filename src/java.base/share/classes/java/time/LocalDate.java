@@ -2185,7 +2185,7 @@ public final class LocalDate
 
             ByteArrayLittleEndian.setInt(
                     buf,
-                    year < 0 ? 1 : 0,
+                    off + (year < 0 ? 1 : 0),
                     (jla.digitPair(y23) << 16) | jla.digitPair(y01));
         } else {
             if (year > 9999) {
