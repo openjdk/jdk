@@ -51,7 +51,7 @@ public class SpringLayoutTest {
     }
 
     public void init() {
-        fr = new JFrame("Test");
+        fr = new JFrame("SpringLayoutTest");
         p = (JPanel)fr.getContentPane();
         layout = new SpringLayout();
         p.setLayout(layout);

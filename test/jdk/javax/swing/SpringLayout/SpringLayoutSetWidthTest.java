@@ -50,7 +50,7 @@ public class SpringLayoutSetWidthTest {
     }
 
     public void init() {
-        fr = new JFrame("Test");
+        fr = new JFrame("SpringLayoutSetWidthTest");
 
         panel = new JPanel();
         layout = new SpringLayout();
