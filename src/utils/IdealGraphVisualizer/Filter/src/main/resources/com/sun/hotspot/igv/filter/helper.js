@@ -220,3 +220,21 @@ function removeBlock(selector) {
     f.addRule(new RemoveBlockFilter.RemoveBlockRule(selector));
     f.apply(graph);
 }
+
+// Simplify a reference type of the form
+//   "my/package/Class (package1/Class1,package2/Class2,..)"
+// into
+//   "Class"
+function simplify_reference_type(type) {
+  // Clean up interface lists in reference types.
+  var m = /(.*)\(.*\)(.*)/.exec(type);
+  if (m != null && typeof m[1] != 'undefined' && typeof m[2] != 'undefined') {
+    type = m[1] + m[2];
+  }
+  // Remove package name in reference types.
+  var m2 = /.*\/(.*)/.exec(type);
+  if (m2 != null && typeof m2[1] != 'undefined') {
+    type = m2[1];
+  }
+  return type;
+}
