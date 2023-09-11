@@ -289,21 +289,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   __ bind(do_float);
   __ lfs(floatSlot, 0, arg_java);
-#if defined(LINUX)
-  // Linux uses ELF ABI. Both original ELF and ELFv2 ABIs have float
-  // in the least significant word of an argument slot.
-#if defined(VM_LITTLE_ENDIAN)
-  __ stfs(floatSlot, 0, arg_c);
-#else
-  __ stfs(floatSlot, 4, arg_c);
-#endif
-#elif defined(AIX)
-  // Although AIX runs on big endian CPU, float is in most significant
-  // word of an argument slot.
-  __ stfs(floatSlot, 0, arg_c);
-#else
-#error "unknown OS"
-#endif
+  __ stfs(floatSlot, float_on_stack_offset_in_bytes, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
   __ cmplwi(CCR0, fpcnt, max_fp_register_arguments);

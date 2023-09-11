@@ -783,15 +783,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
   const int additional_frame_header_slots = ((frame::native_abi_minframe_size - frame::jit_out_preserve_size)
                                             / VMRegImpl::stack_slot_size);
-
-#ifdef VM_LITTLE_ENDIAN
-  // Floats are in the least significant word of an argument slot.
-  const int float_offset_in_slots = 0;
-#else
-  // Although AIX runs on big endian CPU, float is in the most
-  // significant word of an argument slot.
-  const int float_offset_in_slots = AIX_ONLY(0) NOT_AIX(1);
-#endif
+  const int float_offset_in_slots = float_on_stack_offset_in_bytes / VMRegImpl::stack_slot_size;
 
   VMReg reg;
   int arg = 0;

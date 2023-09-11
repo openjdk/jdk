@@ -205,13 +205,7 @@ public abstract class CallArranger {
             // Stack layout computation: We need to count all arguments in order to get the correct
             // offset for the next argument which will really use the stack.
             // The reserved space for the Parameter Save Area is determined by the DowncallStubGenerator.
-            VMStorage stack;
-            if (!useABIv2 && is32Bit) {
-                stackAlloc(4, STACK_SLOT_SIZE); // Skip first half of stack slot.
-                stack = stackAlloc(4, 4);
-            } else {
-                stack = stackAlloc(is32Bit ? 4 : 8, STACK_SLOT_SIZE);
-            }
+            VMStorage stack = stackAlloc(is32Bit ? 4 : 8, STACK_SLOT_SIZE);
             if (reg == null) return stack;
             if (is32Bit) {
                 reg = new VMStorage(reg.type(), PPC64Architecture.REG32_MASK, reg.indexOrOffset());
