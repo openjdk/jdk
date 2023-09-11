@@ -91,10 +91,9 @@ ShenandoahSTWMark::ShenandoahSTWMark(bool full_gc) :
 void ShenandoahSTWMark::mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
-  if (heap->unload_classes()) {
-    // Arm all nmethods, so we visit nmethod oops in stack chunks.
-    ShenandoahCodeRoots::arm_nmethods();
-  }
+  // Arm all nmethods. Even though this is STW mark, some marking code
+  // piggybacks on nmethod barriers for special instances.
+  ShenandoahCodeRoots::arm_nmethods();
 
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = heap->ref_processor();
@@ -126,10 +125,8 @@ void ShenandoahSTWMark::mark() {
   heap->mark_complete_marking_context();
   end_mark();
 
-  if (heap->unload_classes()) {
-    // Mark is finished, can disarm the nmethods now.
-    ShenandoahCodeRoots::disarm_nmethods();
-  }
+  // Mark is finished, can disarm the nmethods now.
+  ShenandoahCodeRoots::disarm_nmethods();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());

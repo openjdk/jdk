@@ -545,12 +545,9 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   // Make above changes visible to worker threads
   OrderAccess::fence();
-  // Arm nmethods for concurrent marking. When a nmethod is about to be executed,
-  // we need to make sure that all its metadata are marked. alternative is to remark
-  // thread roots at final mark pause, but it can be potential latency killer.
-  if (heap->unload_classes()) {
-    ShenandoahCodeRoots::arm_nmethods();
-  }
+
+  // Arm nmethods for concurrent mark
+  ShenandoahCodeRoots::arm_nmethods();
 
   ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {

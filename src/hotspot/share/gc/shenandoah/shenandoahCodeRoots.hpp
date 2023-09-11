@@ -102,6 +102,8 @@ public:
   static int  disarmed_value()         { return _disarmed_value; }
   static int* disarmed_value_address() { return &_disarmed_value; }
 
+  static bool should_use_nmethod_barriers();
+
 private:
   static ShenandoahNMethodTable* _nmethod_table;
   static int                     _disarmed_value;
