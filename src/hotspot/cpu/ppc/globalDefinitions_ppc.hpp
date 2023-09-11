@@ -31,15 +31,6 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
-#ifdef VM_LITTLE_ENDIAN
-  // Floats are in the least significant word of an argument slot.
-  const int float_on_stack_offset_in_bytes = 0;
-#else
-  // Although AIX runs on big endian CPU, float is in the most
-  // significant word of an argument slot.
-  const int float_on_stack_offset_in_bytes = AIX_ONLY(0) NOT_AIX(4);
-#endif
-
 #ifdef AIX
 const size_t pd_segfault_address = -1;
 #else

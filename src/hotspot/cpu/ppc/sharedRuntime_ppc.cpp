@@ -783,7 +783,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
 
   const int additional_frame_header_slots = ((frame::native_abi_minframe_size - frame::jit_out_preserve_size)
                                             / VMRegImpl::stack_slot_size);
-  const int float_offset_in_slots = float_on_stack_offset_in_bytes / VMRegImpl::stack_slot_size;
+  const int float_offset_in_slots = Argument::float_on_stack_offset_in_bytes_c / VMRegImpl::stack_slot_size;
 
   VMReg reg;
   int arg = 0;

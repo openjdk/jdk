@@ -289,7 +289,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   __ bind(do_float);
   __ lfs(floatSlot, 0, arg_java);
-  __ stfs(floatSlot, float_on_stack_offset_in_bytes, arg_c);
+  __ stfs(floatSlot, Argument::float_on_stack_offset_in_bytes_c, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
   __ cmplwi(CCR0, fpcnt, max_fp_register_arguments);

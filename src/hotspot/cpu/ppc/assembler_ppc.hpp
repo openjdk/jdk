@@ -137,6 +137,15 @@ class Argument {
     // The first thirteen float arguments are passed in float regs.
     n_float_register_parameters_c = 13,
 
+#ifdef VM_LITTLE_ENDIAN
+    // Floats are in the least significant word of an argument slot.
+    float_on_stack_offset_in_bytes_c = 0,
+#else
+    // Although AIX runs on big endian CPU, float is in the most
+    // significant word of an argument slot.
+    float_on_stack_offset_in_bytes_c = AIX_ONLY(0) NOT_AIX(4),
+#endif
+
     n_int_register_parameters_j   = 8,  // duplicates num_java_iarg_registers
     n_float_register_parameters_j = 13, // num_java_farg_registers
   };
