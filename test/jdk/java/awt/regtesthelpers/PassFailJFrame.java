@@ -307,16 +307,18 @@ public class PassFailJFrame {
         return text;
     }
 
+
     @FunctionalInterface
     public interface WindowCreator {
         Window createTestUI();
-    };
+    }
+
 
     private static final class WindowClosingHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent e) {
             testFailedReason = FAILURE_REASON
-                               + "User closed the instruction Frame";
+                               + "User closed a window";
             failed = true;
             latch.countDown();
         }
