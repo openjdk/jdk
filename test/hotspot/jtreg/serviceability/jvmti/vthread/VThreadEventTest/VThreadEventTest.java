@@ -27,6 +27,7 @@
  * @summary missing JVMTI events from vthreads parked during JVMTI attach
  * @requires vm.continuations
  * @requires vm.jvmti
+ * @requires vm.compMode != "Xcomp"
  * @run main/othervm/native
  *     -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadEventTest attach
  */
@@ -38,25 +39,21 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.List;
 import java.util.ArrayList;
 
-class Counter {
+class CountDownLatch {
     private int count = 0;
 
-    Counter (int count) {
+    CountDownLatch(int count) {
         this.count = count;
     }
 
-    public synchronized void decr() {
+    public synchronized void countDown() {
         count--;
         notify();
     }
 
-    public synchronized void await() {
-        try {
-            while (count > 0) {
-                wait(1);
-            }
-        } catch (InterruptedException ex) {
-            throw new RuntimeException("wait was interrupted: " + ex);
+    public synchronized void await() throws InterruptedException {
+        while (count > 0) {
+            wait(1);
         }
     }
 }
@@ -77,76 +74,112 @@ public class VThreadEventTest {
     private static volatile int completedNo;
     private static volatile boolean attached;
     private static boolean failed;
-    private static List<Thread> threads = new ArrayList(TCNT1);
+    private static List<Thread> test1Threads = new ArrayList(TCNT1);
+
+    private static CountDownLatch ready0 = new CountDownLatch(THREAD_CNT);
+    private static CountDownLatch ready1 = new CountDownLatch(TCNT1);
+    private static CountDownLatch ready2 = new CountDownLatch(THREAD_CNT);
+    private static CountDownLatch mready = new CountDownLatch(1);
+
+    private static void await(CountDownLatch dumpedLatch) {
+        try {
+            dumpedLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // The test1 vthreads are kept unmounted until interrupted after agent attach.
+    static final Runnable test1 = () -> {
+        synchronized (test1Threads) {
+            test1Threads.add(Thread.currentThread());
+        }
+        log("test1 vthread started");
+        ready0.countDown();
+        await(mready);
+        ready1.countDown(); // to guaranty state is not State.WAITING after await() above
+        try {
+            Thread.sleep(20000); // big timeout to keep unmounted untill interrupted
+        } catch (InterruptedException ex) {
+            // it is expected, ignore
+        }
+        ready2.countDown();
+        completedNo++;
+    };
+
+    // The test2 vthreads are kept mounted until agent attach.
+    static final Runnable test2 = () -> {
+        log("test2 vthread started");
+        ready0.countDown();
+        await(mready);
+        while (!attached) {
+            // keep mounted
+        }
+        ready2.countDown();
+        completedNo++;
+    };
+
+    // The test3 vthreads are kept mounted until agent attach.
+    static final Runnable test3 = () -> {
+        log("test3 vthread started");
+        ready0.countDown();
+        await(mready);
+        while (!attached) {
+            // keep mounted
+        }
+        LockSupport.parkNanos(10 * TIMEOUT_BASE); // will cause extra mount and unmount
+        ready2.countDown();
+        completedNo++;
+    };
 
     public static void main(String[] args) throws Exception {
         if (Runtime.getRuntime().availableProcessors() < 8) {
             log("WARNING: test expects at least 8 processors.");
         }
-        Counter ready1 = new Counter(THREAD_CNT);
-        Counter ready2 = new Counter(THREAD_CNT);
-        Counter mready = new Counter(1);
-
         try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
-            for (int tCnt = 0; tCnt < TCNT1; tCnt++) {
-                executorService.execute(() -> {
-                    synchronized (threads) {
-                        threads.add(Thread.currentThread());
-                    }
-                    log("test1 vthread started");
-                    ready1.decr();
-                    mready.await();
-                    try {
-                        // timeout is big enough to keep mounted untill interrupted
-                        Thread.sleep(20000);
-                    } catch (InterruptedException ex) {
-                        // it is expected, ignore
-                    }
-                    ready2.decr();
-                    completedNo++;
-                });
+            for (int i = 0; i < TCNT1; i++) {
+                executorService.execute(test1);
             }
-            for (int tCnt = 0; tCnt < TCNT2; tCnt++) {
-                executorService.execute(() -> {
-                    log("test2 vthread started");
-                    ready1.decr();
-                    mready.await();
-                    while (!attached) {
-                        // keep mounted
-                    }
-                    ready2.decr();
-                    completedNo++;
-                });
+            for (int i = 0; i < TCNT2; i++) {
+                executorService.execute(test2);
             }
-            for (int tCnt = 0; tCnt < TCNT3; tCnt++) {
-                executorService.execute(() -> {
-                    log("test3 vthread started");
-                    ready1.decr();
-                    mready.await();
-                    while (!attached) {
-                        // keep mounted
-                    }
-                    LockSupport.parkNanos(10 * TIMEOUT_BASE);
-                    ready2.decr();
-                    completedNo++;
-                });
+            for (int i = 0; i < TCNT3; i++) {
+                executorService.execute(test3);
             }
-            ready1.await();
-            mready.decr();
+            await(ready0);
+            mready.countDown();
+            await(ready1);
+            // wait for test1 threads to reach WAITING state in sleep()
+            for (Thread t : test1Threads) {
+                Thread.State state = t.getState();
+                log("DBG: state: " + state);
+                while (state != Thread.State.WAITING) {
+                    Thread.sleep(10);
+                    state = t.getState();
+                    log("DBG: state: " + state);
+                }
+            }
+
             VirtualMachine vm = VirtualMachine.attach(String.valueOf(ProcessHandle.current().pid()));
             vm.loadAgentLibrary("VThreadEventTest");
-            Thread.sleep(100);
+            Thread.sleep(200); // to allow the agent to get ready
+
             log("main: completedNo: " + completedNo);
+            if (completedNo > 0) {
+                throw new RuntimeException("FAILED: none of vthreadsexpected to complete at this point");
+            }
             attached = true;
-            for (Thread t : threads) {
-                t.interrupt();
+            for (Thread t : test1Threads) {
+                 t.interrupt();
             }
             ready2.await();
         }
-        // wait not more than 10 secs until all VirtualThreadEnd events are sent
-        for (int sleepNo = 0; sleepNo < 10 && threadEndCount() < THREAD_CNT; sleepNo++) {
-            log("main: wait iter: " + sleepNo);
+        // wait until all VirtualThreadEnd events have been sent
+        for (int sleepNo = 1; threadEndCount() < THREAD_CNT; sleepNo++) {
             Thread.sleep(100);
+            if (sleepNo % 100 == 0) { // 10 sec period of waiting
+                log("main: waited seconds: " + sleepNo/10);
+            }
         }
         int threadEndCnt = threadEndCount();
         int threadMountCnt = threadMountCount();
@@ -160,15 +193,15 @@ public class VThreadEventTest {
         log("ThreadUnmount cnt: " + threadUnmountCnt + " (expected: " + threadUnmountExp + ")");
 
         if (threadEndCnt != threadEndExp) {
-            log("unexpected count of ThreadEnd events");
+            log("FAILED: unexpected count of ThreadEnd events");
             failed = true;
         }
         if (threadMountCnt != threadMountExp) {
-            log("unexpected count of ThreadMount events");
+            log("FAILED: unexpected count of ThreadMount events");
             failed = true;
         }
         if (threadUnmountCnt != threadUnmountExp) {
-            log("unexpected count of ThreadUnmount events");
+            log("FAILED: unexpected count of ThreadUnmount events");
             failed = true;
         }
         if (failed) {

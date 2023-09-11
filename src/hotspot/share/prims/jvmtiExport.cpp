@@ -420,7 +420,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 JvmtiThreadState*
 JvmtiExport::get_jvmti_thread_state(JavaThread *thread) {
   assert(thread == JavaThread::current(), "must be current thread");
-  if (thread->is_virtual() && thread->jvmti_thread_state() == nullptr) {
+  if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
   }
   return thread->jvmti_thread_state();

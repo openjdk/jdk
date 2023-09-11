@@ -25,62 +25,40 @@
 #include <cstring>
 #include <jvmti.h>
 #include <mutex>
+#include <atomic>
 #include "jvmti_common.h"
-
-#ifdef _WIN32
-#define VARIADICJNI __cdecl
-#else
-#define VARIADICJNI JNICALL
-#endif
-
-namespace {
-  std::mutex lock;
-  jvmtiEnv *jvmti = nullptr;
-  int thread_end_cnt = 0;
-  int thread_unmount_cnt = 0;
-  int thread_mount_cnt = 0;
-
-  void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread virtual_thread) {
-    std::lock_guard<std::mutex> lockGuard(lock);
-    thread_end_cnt++;
-  }
-
-  void VARIADICJNI VirtualThreadMount(jvmtiEnv* jvmti, ...) {
-    std::lock_guard<std::mutex> lockGuard(lock);
-    thread_mount_cnt++;
-  }
-
-  void VARIADICJNI VirtualThreadUnmount(jvmtiEnv* jvmti, ...) {
-    std::lock_guard<std::mutex> lockGuard(lock);
-    thread_unmount_cnt++;
-  }
-}
 
 extern "C" {
 
-void
-check_jvmti_err(jvmtiError err, const char* msg) {
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("Error in JVMTI %s: %s(%d)\n", msg, TranslateError(err), err);
-    abort();
-  }
+static jvmtiEnv *jvmti = nullptr;
+static std::atomic<int> thread_end_cnt(0);
+static std::atomic<int> thread_unmount_cnt(0);
+static std::atomic<int> thread_mount_cnt(0);
+
+void JNICALL VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread) {
+  thread_end_cnt++;
+}
+
+void JNICALL VirtualThreadMount(jvmtiEnv* jvmti, ...) {
+  thread_mount_cnt++;
+}
+
+void JNICALL VirtualThreadUnmount(jvmtiEnv* jvmti, ...) {
+  thread_unmount_cnt++;
 }
 
 JNIEXPORT jint JNICALL
 Java_VThreadEventTest_threadEndCount(JNIEnv* jni, jclass clazz) {
-  std::lock_guard<std::mutex> lockGuard(lock);
   return thread_end_cnt;
 }
 
 JNIEXPORT jint JNICALL
 Java_VThreadEventTest_threadMountCount(JNIEnv* jni, jclass clazz) {
-  std::lock_guard<std::mutex> lockGuard(lock);
   return thread_mount_cnt;
 }
 
 JNIEXPORT jint JNICALL
 Java_VThreadEventTest_threadUnmountCount(JNIEnv* jni, jclass clazz) {
-  std::lock_guard<std::mutex> lockGuard(lock);
   return thread_unmount_cnt;
 }
 
@@ -97,28 +75,28 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   }
   memset(&caps, 0, sizeof(caps));
   caps.can_support_virtual_threads = 1;
-  check_jvmti_err(jvmti->AddCapabilities(&caps), "AddCapabilities");
+  check_jvmti_error(jvmti->AddCapabilities(&caps), "AddCapabilities");
 
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.VirtualThreadEnd = &VirtualThreadEnd;
 
   err = jvmti->SetEventCallbacks(&callbacks, (jint)sizeof(callbacks));
-  check_jvmti_err(err, "SetEventCallbacks");
+  check_jvmti_error(err, "SetEventCallbacks");
 
   err = set_ext_event_callback(jvmti, "VirtualThreadMount", VirtualThreadMount);
-  check_jvmti_err(err, "SetExtEventCallback for VirtualThreadMount");
+  check_jvmti_error(err, "SetExtEventCallback for VirtualThreadMount");
 
   err = set_ext_event_callback(jvmti, "VirtualThreadUnmount", VirtualThreadUnmount);
-  check_jvmti_err(err, "SetExtEventCallback for VirtualThreadUnmount");
+  check_jvmti_error(err, "SetExtEventCallback for VirtualThreadUnmount");
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, nullptr);
-  check_jvmti_err(err, "SetEventNotificationMode for VirtualThreadEnd");
+  check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadEnd");
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
-  check_jvmti_err(err, "SetEventNotificationMode for VirtualThreadMount");
+  check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadMount");
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, nullptr);
-  check_jvmti_err(err, "SetEventNotificationMode for VirtualThreadUnmount");
+  check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadUnmount");
 
   LOG("vthread events enabled\n");
   return JVMTI_ERROR_NONE;

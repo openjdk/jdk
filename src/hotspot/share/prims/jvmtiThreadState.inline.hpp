@@ -98,7 +98,6 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
-  JvmtiEventController::recompute_thread_filtered(state);
   return state;
 }
 
@@ -110,6 +109,7 @@ inline JvmtiThreadState* JvmtiThreadState::state_for(JavaThread *thread, Handle 
     MutexLocker mu(JvmtiThreadState_lock);
     // check again with the lock held
     state = state_for_while_locked(thread, thread_handle());
+    JvmtiEventController::recompute_thread_filtered(state);
   } else {
     // Check possible safepoint even if state is non-null.
     // (Note: the thread argument isn't the current thread)

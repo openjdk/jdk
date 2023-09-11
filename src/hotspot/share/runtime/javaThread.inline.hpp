@@ -176,10 +176,12 @@ bool JavaThread::is_at_poll_safepoint() {
   return _safepoint_state->is_at_poll_safepoint();
 }
 
+#if 0
 inline bool JavaThread::is_virtual() const {
   oop t_oop = jvmti_vthread();
   return t_oop != nullptr && java_lang_VirtualThread::is_instance(t_oop);
 }
+#endif
 
 bool JavaThread::is_vthread_mounted() const {
   return vthread_continuation() != nullptr;
