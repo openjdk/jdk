@@ -34,6 +34,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
 # define __ _masm->

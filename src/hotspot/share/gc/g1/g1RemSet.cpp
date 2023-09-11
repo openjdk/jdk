@@ -545,7 +545,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   void do_claimed_block(uint const region_idx, CardValue* const dirty_l, CardValue* const dirty_r) {
     _ct->change_dirty_cards_to(dirty_l, dirty_r, _scanned_card_value);
-    size_t num_cards = dirty_r - dirty_l;
+    size_t num_cards = pointer_delta(dirty_r, dirty_l, sizeof(CardValue));
     _blocks_scanned++;
 
     HeapWord* const card_start = _ct->addr_for(dirty_l);
@@ -757,6 +757,25 @@ void G1RemSet::scan_heap_roots(G1ParScanThreadState* pss,
   p->record_or_add_thread_work_item(scan_phase, worker_id, cl.heap_roots_found(), G1GCPhaseTimes::ScanHRFoundRoots);
 }
 
+// Wrapper around a CodeBlobClosure to count the number of code blobs scanned.
+class G1ScanAndCountCodeBlobClosure : public CodeBlobClosure {
+  CodeBlobClosure* _cl;
+  size_t _count;
+
+public:
+  G1ScanAndCountCodeBlobClosure(CodeBlobClosure* cl) : _cl(cl), _count(0) {
+  }
+
+  void do_code_blob(CodeBlob* cb) override {
+    _cl->do_code_blob(cb);
+    _count++;
+  }
+
+  size_t count() const {
+    return _count;
+  }
+};
+
 // Heap region closure to be applied to all regions in the current collection set
 // increment to fix up non-card related roots.
 class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
@@ -767,6 +786,8 @@ class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
   G1GCPhaseTimes::GCParPhases _code_roots_phase;
 
   uint _worker_id;
+
+  size_t _code_roots_scanned;
 
   size_t _opt_roots_scanned;
   size_t _opt_refs_scanned;
@@ -798,6 +819,7 @@ public:
     _scan_phase(scan_phase),
     _code_roots_phase(code_roots_phase),
     _worker_id(worker_id),
+    _code_roots_scanned(0),
     _opt_roots_scanned(0),
     _opt_refs_scanned(0),
     _opt_refs_memory_used(0),
@@ -822,8 +844,12 @@ public:
     if (_scan_state->claim_collection_set_region(region_idx)) {
       EventGCPhaseParallel event;
       G1EvacPhaseWithTrimTimeTracker timer(_pss, _code_root_scan_time, _code_trim_partially_time);
+      G1ScanAndCountCodeBlobClosure cl(_pss->closures()->weak_codeblobs());
+
       // Scan the code root list attached to the current region
-      r->code_roots_do(_pss->closures()->weak_codeblobs());
+      r->code_roots_do(&cl);
+
+      _code_roots_scanned = cl.count();
 
       event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_code_roots_phase));
     }
@@ -833,6 +859,8 @@ public:
 
   Tickspan code_root_scan_time() const { return _code_root_scan_time;  }
   Tickspan code_root_trim_partially_time() const { return _code_trim_partially_time; }
+
+  size_t code_roots_scanned() const { return _code_roots_scanned; }
 
   Tickspan rem_set_opt_root_scan_time() const { return _rem_set_opt_root_scan_time; }
   Tickspan rem_set_opt_trim_partially_time() const { return _rem_set_opt_trim_partially_time; }
@@ -856,6 +884,8 @@ void G1RemSet::scan_collection_set_regions(G1ParScanThreadState* pss,
   p->record_or_add_time_secs(scan_phase, worker_id, cl.rem_set_opt_trim_partially_time().seconds());
 
   p->record_or_add_time_secs(coderoots_phase, worker_id, cl.code_root_scan_time().seconds());
+  p->record_or_add_thread_work_item(coderoots_phase, worker_id, cl.code_roots_scanned(), G1GCPhaseTimes::CodeRootsScannedNMethods);
+
   p->add_time_secs(objcopy_phase, worker_id, cl.code_root_trim_partially_time().seconds());
 
   // At this time we record some metrics only for the evacuations after the initial one.
