@@ -374,20 +374,24 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set, con
 #ifndef PRODUCT
     Compile::current()->_in_dump_cnt++;
     print_prop(NODE_NAME_PROPERTY, (const char *)node->Name());
+    print_prop("idx", node->_idx);
     const Type *t = node->bottom_type();
     print_prop("type", t->msg());
-    buffer[0] = 0;
-    stringStream bottom_type_stream(buffer, sizeof(buffer) - 1);
-    t->dump_on(&bottom_type_stream);
-    print_prop("bottom_type", buffer);
-    print_prop("idx", node->_idx);
-    if (types != nullptr) {
-      const Type* pt = (*types)[node->_idx];
-      if (pt != nullptr) {
-        buffer[0] = 0;
-        stringStream phase_type_stream(buffer, sizeof(buffer) - 1);
-        pt->dump_on(&phase_type_stream);
-        print_prop("phase_type", buffer);
+    if (t->category() != Type::Category::Control &&
+        t->category() != Type::Category::Memory) {
+      // Print detailed type information for nodes whose type is not trivial.
+      buffer[0] = 0;
+      stringStream bottom_type_stream(buffer, sizeof(buffer) - 1);
+      t->dump_on(&bottom_type_stream);
+      print_prop("bottom_type", buffer);
+      if (types != nullptr) {
+        const Type* pt = (*types)[node->_idx];
+        if (pt != nullptr) {
+          buffer[0] = 0;
+          stringStream phase_type_stream(buffer, sizeof(buffer) - 1);
+          pt->dump_on(&phase_type_stream);
+          print_prop("phase_type", buffer);
+        }
       }
     }
 
