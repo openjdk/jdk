@@ -100,7 +100,7 @@ public class TestWindowsLFFocus {
 
             SwingUtilities.invokeAndWait(() -> {
                 Point location = new Point(frameLoc);
-                location.y +=  bar.getHeight() / 2 + item.getHeight() / 2;
+                location.y += bar.getHeight() / 2 + item.getHeight() / 2;
 
                 frameLoc = location;
             });
