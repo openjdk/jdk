@@ -26,6 +26,7 @@
 
 /*
  * @test id=trimNative
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -36,6 +37,7 @@
 
 /*
  * @test id=trimNativeStrict
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -47,6 +49,7 @@
 /*
  * @test id=trimNativeHighInterval
  * @summary High interval trimming should not even kick in for short program runtimes
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -58,6 +61,7 @@
 /*
  * @test id=trimNativeLowInterval
  * @summary Very low (sub-second) interval, nothing should explode
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -69,6 +73,7 @@
 /*
  * @test id=trimNativeLowIntervalStrict
  * @summary Very low (sub-second) interval, nothing should explode (stricter test, manual mode)
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -80,6 +85,7 @@
 /*
  * @test id=testOffByDefault
  * @summary Test that trimming is disabled by default
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -91,6 +97,7 @@
 /*
  * @test id=testOffExplicit
  * @summary Test that trimming can be disabled explicitly
+ * @requires vm.flagless
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -102,6 +109,7 @@
 /*
  * @test id=testOffOnNonCompliantPlatforms
  * @summary Test that trimming is correctly reported as unavailable if unavailable
+ * @requires vm.flagless
  * @requires (os.family!="linux") | vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib

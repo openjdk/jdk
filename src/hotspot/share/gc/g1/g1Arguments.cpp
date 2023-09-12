@@ -230,11 +230,6 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
 
-  // By default do not let the target stack size to be more than 1/4 of the entries
-  if (FLAG_IS_DEFAULT(GCDrainStackTargetSize)) {
-    FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, TASKQUEUE_SIZE / 4));
-  }
-
 #ifdef COMPILER2
   // Enable loop strip mining to offer better pause time guarantees
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
