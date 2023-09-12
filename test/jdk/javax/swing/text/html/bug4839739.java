@@ -80,7 +80,6 @@ public class bug4839739 {
     }
 
     private static void createAndShowUI() {
-
         String text = "<html><head><body><!-- some comment -->" +
                 "some always visible text</body></html>";
 
