@@ -115,7 +115,9 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0"},
+	applyIf = {"AlignVector", "false"})
+    // AlignVector does not allow invariant (i is invariant in innermost loop)
     public int[] nestedLoopIndexCompute() {
         int[] res = new int[SIZE];
         for (int i = 50; i < 100; i++) {
