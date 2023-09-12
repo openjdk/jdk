@@ -38,6 +38,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Models the {@code RuntimeVisibleParameterAnnotations} attribute {@jvms 4.7.18}, which
  * can appear on methods. Delivered as a {@link jdk.internal.classfile.MethodElement}
  * when traversing a {@link MethodModel}.
+ *
+ * @apiNote The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface RuntimeVisibleParameterAnnotationsAttribute
         extends Attribute<RuntimeVisibleParameterAnnotationsAttribute>, MethodElement

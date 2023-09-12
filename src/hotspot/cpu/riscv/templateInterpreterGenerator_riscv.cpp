@@ -37,7 +37,7 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
@@ -710,7 +710,9 @@ void TemplateInterpreterGenerator::lock_method() {
   __ check_extended_sp();
   __ add(sp, sp, - entry_size); // add space for a monitor entry
   __ add(esp, esp, - entry_size);
-  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sub(t0, sp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
@@ -785,15 +787,19 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
     // Store extended SP
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sd(t1, Address(sp, 5 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(t0, sp, 2 * wordSize);
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
+    __ sd(t1, Address(sp, 5 * wordSize));
     __ mv(sp, t0);
   }
 }
