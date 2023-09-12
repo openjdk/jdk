@@ -452,7 +452,7 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
   assert(obj->is_objArray(), "must be objArray");
   objArrayOop oa = objArrayOop(obj);
-  int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
+  int print_len = MIN2(oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     st->print(" - %3d : ", index);
     if (oa->obj_at(index) != nullptr) {

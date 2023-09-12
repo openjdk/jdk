@@ -3085,10 +3085,22 @@ class ZipFileSystem extends FileSystem {
                 int sz = SH(extra, pos + 2);
                 pos += 4;
                 if (pos + sz > elen) {        // invalid data
-                    throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
+                    throw new ZipException(String.format(
+                            "Invalid CEN header (invalid extra data field size for " +
+                                    "tag: 0x%04x size: %d)",
+                            tag, sz));
                 }
                 switch (tag) {
                 case EXTID_ZIP64 :
+                    // if ZIP64_EXTID blocksize == 0, which may occur with some older
+                    // versions of Apache Ant and Commons Compress, validate csize
+                    // size, and locoff to make sure the fields != ZIP64_MAGICVAL
+                    if (sz == 0) {
+                        if (csize == ZIP64_MINVAL || size == ZIP64_MINVAL || locoff == ZIP64_MINVAL) {
+                            throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");
+                        }
+                        break;
+                    }
                     // Check to see if we have a valid block size
                     if (!isZip64ExtBlockSizeValid(sz)) {
                         throw new ZipException("Invalid CEN header (invalid zip64 extra data field size)");

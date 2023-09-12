@@ -137,4 +137,7 @@ PANDOC_HTML_MANPAGE_FILTER := $(BUILDTOOLS_OUTPUTDIR)/manpages/pandoc-html-manpa
 
 ##########################################################################################
 
+# Hook to include the corresponding custom post file, if present.
+$(eval $(call IncludeCustomExtension, ToolsJdk-post.gmk))
+
 endif # _TOOLS_GMK

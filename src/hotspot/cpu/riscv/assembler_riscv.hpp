@@ -27,6 +27,7 @@
 #ifndef CPU_RISCV_ASSEMBLER_RISCV_HPP
 #define CPU_RISCV_ASSEMBLER_RISCV_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "code/codeCache.hpp"
 #include "metaprogramming/enableIf.hpp"
@@ -2790,7 +2791,7 @@ public:
     if (shamt != 0) {                                                                        \
       _slli(Rd, Rs1, shamt);                                                                 \
     } else {                                                                                 \
-      if (Rd != Rs1) {                                                                        \
+      if (Rd != Rs1) {                                                                       \
         addi(Rd, Rs1, 0);                                                                    \
       }                                                                                      \
     }                                                                                        \
@@ -2811,7 +2812,7 @@ public:
     if (shamt != 0) {                                                                        \
       NORMAL_NAME(Rd, Rs1, shamt);                                                           \
     } else {                                                                                 \
-      if (Rd != Rs1) {                                                                        \
+      if (Rd != Rs1) {                                                                       \
         addi(Rd, Rs1, 0);                                                                    \
       }                                                                                      \
     }                                                                                        \

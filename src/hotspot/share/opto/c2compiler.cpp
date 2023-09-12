@@ -502,10 +502,10 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
     if (!Matcher::match_rule_supported(Op_OnSpinWait)) return false;
     break;
   case vmIntrinsics::_fmaD:
-    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaD)) return false;
+    if (!Matcher::match_rule_supported(Op_FmaD)) return false;
     break;
   case vmIntrinsics::_fmaF:
-    if (!UseFMA || !Matcher::match_rule_supported(Op_FmaF)) return false;
+    if (!Matcher::match_rule_supported(Op_FmaF)) return false;
     break;
   case vmIntrinsics::_isDigit:
     if (!Matcher::match_rule_supported(Op_Digit)) return false;

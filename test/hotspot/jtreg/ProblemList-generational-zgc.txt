@@ -32,6 +32,7 @@
 resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8307393   generic-all
 serviceability/sa/CDSJMapClstats.java                         8307393   generic-all
 serviceability/sa/ClhsdbAttach.java                           8307393   generic-all
+serviceability/sa/ClhsdbAttachDifferentJVMs.java              8307393   generic-all
 serviceability/sa/ClhsdbCDSCore.java                          8307393   generic-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java                8307393   generic-all
 serviceability/sa/ClhsdbClasses.java                          8307393   generic-all

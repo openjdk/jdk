@@ -201,7 +201,9 @@ void DowncallStubGenerator::generate() {
   __ enter();
 
   // return address and rbp are already in place
-  __ subptr(rsp, allocated_frame_size); // prolog
+  if (allocated_frame_size > 0) {
+    __ subptr(rsp, allocated_frame_size); // prolog
+  }
 
   _frame_complete = __ pc() - start;
 

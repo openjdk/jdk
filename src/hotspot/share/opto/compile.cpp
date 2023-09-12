@@ -360,10 +360,11 @@ void Compile::remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines
   assert(found <= 1, "not unique");
 }
 
-void Compile::remove_useless_nodes(GrowableArray<Node*>& node_list, Unique_Node_List& useful) {
+template<typename N, ENABLE_IF_SDEFN(std::is_base_of<Node, N>::value)>
+void Compile::remove_useless_nodes(GrowableArray<N*>& node_list, Unique_Node_List& useful) {
   for (int i = node_list.length() - 1; i >= 0; i--) {
-    Node* n = node_list.at(i);
-    if (!useful.member(n)) {
+    N* node = node_list.at(i);
+    if (!useful.member(node)) {
       node_list.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
     }
   }
@@ -388,6 +389,9 @@ void Compile::remove_useless_node(Node* dead) {
   }
   if (dead->Opcode() == Op_Opaque4) {
     remove_template_assertion_predicate_opaq(dead);
+  }
+  if (dead->is_ParsePredicate()) {
+    remove_parse_predicate(dead->as_ParsePredicate());
   }
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
@@ -436,7 +440,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   }
 
   remove_useless_nodes(_macro_nodes,        useful); // remove useless macro nodes
-  remove_useless_nodes(_parse_predicate_opaqs, useful); // remove useless Parse Predicate opaque nodes
+  remove_useless_nodes(_parse_predicates,   useful); // remove useless Parse Predicate nodes
   remove_useless_nodes(_template_assertion_predicate_opaqs, useful); // remove useless Assertion Predicate opaque nodes
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
@@ -631,7 +635,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _failure_reason(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
-                  _parse_predicate_opaqs (comp_arena(), 8, 0, nullptr),
+                  _parse_predicates  (comp_arena(), 8, 0, nullptr),
                   _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
                   _expensive_nodes   (comp_arena(), 8, 0, nullptr),
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
@@ -1807,18 +1811,18 @@ bool Compile::can_alias(const TypePtr* adr_type, int alias_idx) {
   return adr_idx == alias_idx;
 }
 
-// Remove the opaque nodes that protect the Parse Predicates so that all unused
-// checks and uncommon_traps will be eliminated from the ideal graph.
-void Compile::cleanup_parse_predicates(PhaseIterGVN& igvn) const {
+// Mark all ParsePredicateNodes as useless. They will later be removed from the graph in IGVN together with their
+// uncommon traps if no Runtime Predicates were created from the Parse Predicates.
+void Compile::mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn) {
   if (parse_predicate_count() == 0) {
     return;
   }
-  for (int i = parse_predicate_count(); i > 0; i--) {
-    Node* n = parse_predicate_opaque1_node(i - 1);
-    assert(n->Opcode() == Op_Opaque1, "must be");
-    igvn.replace_node(n, n->in(1));
+  for (int i = 0; i < parse_predicate_count(); i++) {
+    ParsePredicateNode* parse_predicate = _parse_predicates.at(i);
+    parse_predicate->mark_useless();
+    igvn._worklist.push(parse_predicate);
   }
-  assert(parse_predicate_count() == 0, "should be clean!");
+  _parse_predicates.clear();
 }
 
 void Compile::record_for_post_loop_opts_igvn(Node* n) {
@@ -1851,6 +1855,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
     }
     igvn.optimize();
     assert(_for_post_loop_igvn.length() == 0, "no more delayed nodes allowed");
+    assert(C->parse_predicate_count() == 0, "all parse predicates should have been removed now");
 
     // Sometimes IGVN sets major progress (e.g., when processing loop nodes).
     if (C->major_progress()) {
@@ -2096,7 +2101,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
             CallGenerator* cg = _late_inlines.at(i);
             const char* msg = "live nodes > LiveNodeCountInliningCutoff";
             if (do_print_inlining) {
-              cg->print_inlining_late(msg);
+              cg->print_inlining_late(InliningResult::FAILURE, msg);
             }
             log_late_inline_failure(cg, msg);
           }

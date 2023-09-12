@@ -73,6 +73,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/threadService.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
