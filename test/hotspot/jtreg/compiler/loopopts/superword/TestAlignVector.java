@@ -320,9 +320,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=8"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test0(byte[] a, byte[] b, byte mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -336,8 +337,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test1(byte[] a, byte[] b, byte mask) {
@@ -356,13 +357,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -378,13 +379,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -404,10 +405,20 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_8, "= 0",// unaligned
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_8, "= 0",// unaligned
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfAnd = {"AlignVector", "true", "MaxVectorSize", ">=16"})
     static Object[] test4(byte[] a, byte[] b, byte mask) {
         for (int i = 0; i < RANGE/16; i++) {
             // Problematic for AlignVector
@@ -429,13 +440,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -453,13 +464,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -477,13 +488,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "= 0",
+                  IRNode.AND_VS, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -501,13 +512,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -525,9 +536,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=8"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test9(byte[] a, byte[] b, byte mask) {
         // known non-zero init value does not affect offset, but has implicit effect on iv
@@ -543,13 +555,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -565,13 +577,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=8"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -588,13 +600,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "= 0",
+                  IRNode.AND_VS, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -611,9 +623,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test10d(short[] a, short[] b, short mask) {
         for (int i = 13; i < RANGE-16; i+=8) {
@@ -627,8 +640,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11aB(byte[] a, byte[] b, byte mask) {
@@ -640,8 +653,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.AND_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11aS(short[] a, short[] b, short mask) {
@@ -653,8 +666,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.AND_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11aI(int[] a, int[] b, int mask) {
@@ -666,8 +679,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.AND_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11aL(long[] a, long[] b, long mask) {
@@ -679,8 +692,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11bB(byte[] a, byte[] b, byte mask) {
@@ -692,8 +705,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.AND_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11bS(short[] a, short[] b, short mask) {
@@ -705,8 +718,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.AND_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11bI(int[] a, int[] b, int mask) {
@@ -718,8 +731,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.AND_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11bL(long[] a, long[] b, long mask) {
@@ -731,13 +744,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -750,13 +763,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.AND_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "= 0",
+                  IRNode.AND_VS, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -769,13 +782,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.AND_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.AND_VI, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -788,8 +801,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.AND_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test11cL(long[] a, long[] b, long mask) {
@@ -801,13 +814,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.AND_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -820,13 +833,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.AND_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_S, "= 0",
+                  IRNode.AND_VS, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -839,13 +852,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.AND_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
+                  IRNode.AND_VI, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -858,13 +871,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.AND_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.AND_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.AND_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -877,8 +890,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.AND_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.AND_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test12(byte[] a, byte[] b, byte mask) {
@@ -893,8 +906,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIL(int[] a, long[] b) {
@@ -906,8 +921,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VB, "> 0",
+                  IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIB(int[] a, byte[] b) {
@@ -919,8 +936,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aIS(int[] a, short[] b) {
@@ -932,8 +951,14 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VB, "> 0",
+                  IRNode.ADD_VS, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13aBSIL(byte[] a, short[] b, int[] c, long[] d) {
@@ -947,8 +972,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
+                  IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIL(int[] a, long[] b) {
@@ -960,8 +987,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VB, "> 0",
+                  IRNode.ADD_VI, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIB(int[] a, byte[] b) {
@@ -973,8 +1002,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VS, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bIS(int[] a, short[] b) {
@@ -986,8 +1017,14 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.LOAD_VECTOR_S, "> 0",
+                  IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VB, "> 0",
+                  IRNode.ADD_VS, "> 0",
+                  IRNode.ADD_VI, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test13bBSIL(byte[] a, short[] b, int[] c, long[] d) {
@@ -1001,13 +1038,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1035,13 +1072,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1069,13 +1106,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
+                  IRNode.ADD_VB, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1103,13 +1140,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1137,13 +1174,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1171,35 +1208,35 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
+                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+                  IRNode.ADD_VB, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
     static Object[] test15cB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
-            a[11*i+0]++;
-            a[11*i+1]++;
-            a[11*i+2]++;
-            a[11*i+3]++;
-            a[11*i+4]++;
-            a[11*i+5]++;
-            a[11*i+6]++;
-            a[11*i+7]++;
-            a[11*i+8]++;
-            a[11*i+9]++;
-            a[11*i+10]++;
-            a[11*i+11]++;
-            a[11*i+12]++;
-            a[11*i+13]++;
-            a[11*i+14]++;
-            a[11*i+15]++;
+            a[19*i+0]++;
+            a[19*i+1]++;
+            a[19*i+2]++;
+            a[19*i+3]++;
+            a[19*i+4]++;
+            a[19*i+5]++;
+            a[19*i+6]++;
+            a[19*i+7]++;
+            a[19*i+8]++;
+            a[19*i+9]++;
+            a[19*i+10]++;
+            a[19*i+11]++;
+            a[19*i+12]++;
+            a[19*i+13]++;
+            a[19*i+14]++;
+            a[19*i+15]++;
         }
         return new Object[]{ a };
     }
@@ -1256,8 +1293,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test17a(long[] a) {
@@ -1271,13 +1308,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.ADD_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
@@ -1292,8 +1329,8 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test17c(long[] a) {
@@ -1309,13 +1346,13 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
-                  IRNode.ADD_V, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
+                  IRNode.ADD_VL, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR, "= 0",
-                  IRNode.ADD_V, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
+                  IRNode.ADD_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AlignVector", "true"})
