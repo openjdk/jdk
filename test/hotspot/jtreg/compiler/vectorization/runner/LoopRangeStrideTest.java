@@ -80,7 +80,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0"},
+        applyIf = {"AlignVector", "false"})
+    // AlignVector does not allow variable init (start)
     public int[] nonConstantRange() {
         int[] res = new int[SIZE];
         for (int i = start; i < end; i++) {
@@ -102,7 +104,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0"},
+        applyIf = {"AlignVector", "false"})
+    // AlignVector does not allow variable init (start)
     public int[] nonEqualTestRange() {
         int[] res = new int[SIZE];
         for (int i = start; i != end; i++) {
@@ -124,7 +128,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0"},
+        applyIf = {"AlignVector", "false"})
+    // AlignVector does not allow variable init (start)
     public int[] whileLoop() {
         int[] res = new int[SIZE];
         int i = start;
@@ -137,7 +143,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.STORE_VECTOR, ">0"})
+        counts = {IRNode.STORE_VECTOR, ">0"},
+        applyIf = {"AlignVector", "false"})
+    // AlignVector does not allow variable init (start)
     public int[] doWhileLoop() {
         int[] res = new int[SIZE];
         int i = start;
