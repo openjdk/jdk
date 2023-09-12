@@ -70,21 +70,6 @@ public final class DecimalDigits implements Digits {
             0x3039, 0x3139, 0x3239, 0x3339, 0x3439, 0x3539, 0x3639, 0x3739, 0x3839, 0x3939
     };
 
-    @Stable
-    private static final int[] DIGITS_K;
-
-    static {
-        int[] digits_k = new int[1000];
-        for (int i = 0; i < 1000; i++) {
-            int c0 = i < 10 ? 2 : i < 100 ? 1 : 0;
-            int c1 = (i / 100) + '0';
-            int c2 = ((i / 10) % 10) + '0';
-            int c3 = i % 10 + '0';
-            digits_k[i] = c0 + (c1 << 8) + (c2 << 16) + (c3 << 24);
-        }
-        DIGITS_K = digits_k;
-    }
-
     /**
      * Singleton instance of DecimalDigits.
      */
@@ -171,90 +156,5 @@ public final class DecimalDigits implements Digits {
      */
     public static short digitPair(int i) {
         return DIGITS[i];
-    }
-
-    /**
-     * For values from 0 to 999 return a short encoding a triple of ASCII-encoded digit characters in little-endian
-     * @param i value to convert
-     * @return a short encoding a triple of ASCII-encoded digit characters
-     */
-    public static int digitTriple(int i) {
-        return DIGITS_K[i];
-    }
-
-    /**
-     * Returns the string representation size for a given int value.
-     *
-     * @param x int value
-     * @return string size
-     *
-     * @implNote There are other ways to compute this: e.g. binary search,
-     * but values are biased heavily towards zero, and therefore linear search
-     * wins. The iteration results are also routinely inlined in the generated
-     * code after loop unrolling.
-     */
-    public static int stringSize(int x) {
-        int d = 1;
-        if (x >= 0) {
-            d = 0;
-            x = -x;
-        }
-        int p = -10;
-        for (int i = 1; i < 10; i++) {
-            if (x > p)
-                return i + d;
-            p = 10 * p;
-        }
-        return 10 + d;
-    }
-
-    /**
-     * Places characters representing the integer i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @implNote This method converts positive inputs into negative
-     * values, to cover the Integer.MIN_VALUE case. Converting otherwise
-     * (negative to positive) will expose -Integer.MIN_VALUE that overflows
-     * integer.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     * @return index of the most significant digit or minus sign, if present
-     */
-    public static int getCharsLatin1(int i, int index, byte[] buf) {
-        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q, r;
-        int charPos = index;
-
-        boolean negative = i < 0;
-        if (!negative) {
-            i = -i;
-        }
-
-        // Generate two digits per iteration
-        while (i <= -100) {
-            q = i / 100;
-            r = (q * 100) - i;
-            i = q;
-            charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[r]);
-        }
-
-        // We know there are at most two digits left at this point.
-        if (i < -9) {
-            charPos -= 2;
-            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[-i]);
-        } else {
-            buf[--charPos] = (byte)('0' - i);
-        }
-
-        if (negative) {
-            buf[--charPos] = (byte)'-';
-        }
-        return charPos;
     }
 }
