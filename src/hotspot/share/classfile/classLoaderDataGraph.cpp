@@ -80,85 +80,6 @@ void ClassLoaderDataGraph::verify_claimed_marks_cleared(int claim) {
 #endif
 }
 
-// Class iterator used by the compiler.  It gets some number of classes at
-// a safepoint to decay invocation counters on the methods.
-class ClassLoaderDataGraphKlassIteratorStatic {
-  ClassLoaderData* _current_loader_data;
-  Klass*           _current_class_entry;
- public:
-
-  ClassLoaderDataGraphKlassIteratorStatic() : _current_loader_data(nullptr), _current_class_entry(nullptr) {}
-
-  InstanceKlass* try_get_next_class() {
-    assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-    size_t max_classes = ClassLoaderDataGraph::num_instance_classes();
-    assert(max_classes > 0, "should not be called with no instance classes");
-    for (size_t i = 0; i < max_classes; ) {
-
-      if (_current_class_entry != nullptr) {
-        Klass* k = _current_class_entry;
-        _current_class_entry = _current_class_entry->next_link();
-
-        if (k->is_instance_klass()) {
-          InstanceKlass* ik = InstanceKlass::cast(k);
-          i++;  // count all instance classes found
-          // Not yet loaded classes are counted in max_classes
-          // but only return loaded classes.
-          if (ik->is_loaded()) {
-            return ik;
-          }
-        }
-      } else {
-        // Go to next CLD
-        if (_current_loader_data != nullptr) {
-          _current_loader_data = _current_loader_data->next();
-        }
-        // Start at the beginning
-        if (_current_loader_data == nullptr) {
-          _current_loader_data = ClassLoaderDataGraph::_head;
-        }
-
-        _current_class_entry = _current_loader_data->klasses();
-      }
-    }
-    // Should never be reached unless all instance classes have failed or are not fully loaded.
-    // Caller handles null.
-    return nullptr;
-  }
-
-  // If the current class for the static iterator is a class being unloaded or
-  // deallocated, adjust the current class.
-  void adjust_saved_class(ClassLoaderData* cld) {
-    if (_current_loader_data == cld) {
-      _current_loader_data = cld->next();
-      if (_current_loader_data != nullptr) {
-        _current_class_entry = _current_loader_data->klasses();
-      }  // else try_get_next_class will start at the head
-    }
-  }
-
-  void adjust_saved_class(Klass* klass) {
-    if (_current_class_entry == klass) {
-      _current_class_entry = klass->next_link();
-    }
-  }
-};
-
-static ClassLoaderDataGraphKlassIteratorStatic static_klass_iterator;
-
-InstanceKlass* ClassLoaderDataGraph::try_get_next_class() {
-  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
-  return static_klass_iterator.try_get_next_class();
-}
-
-void ClassLoaderDataGraph::adjust_saved_class(ClassLoaderData* cld) {
-  return static_klass_iterator.adjust_saved_class(cld);
-}
-
-void ClassLoaderDataGraph::adjust_saved_class(Klass* klass) {
-  return static_klass_iterator.adjust_saved_class(klass);
-}
-
 void ClassLoaderDataGraph::clean_deallocate_lists(bool walk_previous_versions) {
   assert(SafepointSynchronize::is_at_safepoint(), "must only be called at safepoint");
   uint loaders_processed = 0;
@@ -494,7 +415,6 @@ bool ClassLoaderDataGraph::do_unloading() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   ClassLoaderData* prev = nullptr;
-  bool seen_dead_loader = false;
   uint loaders_processed = 0;
   uint loaders_removed = 0;
 
@@ -505,7 +425,6 @@ bool ClassLoaderDataGraph::do_unloading() {
     } else {
       // Found dead CLD.
       loaders_removed++;
-      seen_dead_loader = true;
       data->unload();
 
       // Move dead CLD to unloading list.
@@ -523,7 +442,7 @@ bool ClassLoaderDataGraph::do_unloading() {
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
-  return seen_dead_loader;
+  return loaders_removed != 0;
 }
 
 // There's at least one dead class loader.  Purge refererences of healthy module

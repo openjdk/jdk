@@ -31,7 +31,7 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.ByteArray;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -76,6 +76,7 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
+
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -468,34 +469,34 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         long lsb = leastSigBits;
         long msb = mostSigBits;
         byte[] buf = new byte[36];
-        ByteArrayLittleEndian.setLong(
+        ByteArray.setLong(
                 buf,
                 0,
-                HexDigits.packDigits((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)));
+                HexDigits.digit((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)));
         buf[8] = '-';
-        ByteArrayLittleEndian.setInt(
+        ByteArray.setInt(
                 buf,
                 9,
-                HexDigits.packDigits(((int) msb) >> 24, ((int) msb) >> 16));
+                HexDigits.digit(((int) msb) >> 24, ((int) msb) >> 16));
         buf[13] = '-';
-        ByteArrayLittleEndian.setInt(
+        ByteArray.setInt(
                 buf,
                 14,
-                HexDigits.packDigits(((int) msb) >> 8, (int) msb));
+                HexDigits.digit(((int) msb) >> 8, (int) msb));
         buf[18] = '-';
-        ByteArrayLittleEndian.setInt(
+        ByteArray.setInt(
                 buf,
                 19,
-                HexDigits.packDigits((int) (lsb >> 56), (int) (lsb >> 48)));
+                HexDigits.digit((int) (lsb >> 56), (int) (lsb >> 48)));
         buf[23] = '-';
-        ByteArrayLittleEndian.setLong(
+        ByteArray.setLong(
                 buf,
                 24,
-                HexDigits.packDigits((int) (lsb >> 40), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16));
-        ByteArrayLittleEndian.setInt(
+                HexDigits.digit(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16));
+        ByteArray.setInt(
                 buf,
                 32,
-                HexDigits.packDigits(((int) lsb) >> 8, (int) lsb));
+                HexDigits.digit(((int) lsb) >> 8, (int) lsb));
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);

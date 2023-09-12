@@ -326,6 +326,16 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ jcc(Assembler::equal, is_float);
   __ cmpl(c_rarg1, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
+#ifdef ASSERT
+  // make sure the type is INT
+  {
+    Label L;
+    __ cmpl(c_rarg1, T_INT);
+    __ jcc(Assembler::equal, L);
+    __ stop("StubRoutines::call_stub: unexpected result type");
+    __ bind(L);
+  }
+#endif
 
   // handle T_INT case
   __ movl(Address(c_rarg0, 0), rax);

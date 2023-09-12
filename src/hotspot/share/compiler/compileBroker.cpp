@@ -1229,6 +1229,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         blocking = false;
       }
 
+      // In libjvmci, JVMCI initialization should not deadlock with other threads
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
         vframeStream vfst(JavaThread::cast(thread));
@@ -1240,12 +1241,12 @@ void CompileBroker::compile_method_base(const methodHandle& method,
             break;
           }
         }
-      }
 
-      // Don't allow blocking compilation requests to JVMCI
-      // if JVMCI itself is not yet initialized
-      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
-        blocking = false;
+        // Don't allow blocking compilation requests to JVMCI
+        // if JVMCI itself is not yet initialized
+        if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+          blocking = false;
+        }
       }
 
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
@@ -1320,6 +1321,13 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
+    // JVMCI compilation is not yet initializable.
+    return nullptr;
+  }
+#endif
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
@@ -1347,12 +1355,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
-
-#if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
-    return nullptr;
-  }
-#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation

@@ -85,7 +85,7 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   // also assume that that buffer is typically half-full (G1LastPLABAverageOccupancy),
   // the new desired PLAB size is set to 20 words.
   //
-  // (This also implies that we expect G1LastPLABAverageOccupancy/TargetPLABWastePct
+  // (This also implies that we expect (100-G1LastPLABAverageOccupancy)/TargetPLABWastePct
   // number of refills during allocation).
   //
   // The amount of allocation performed should be independent of the number of
@@ -113,7 +113,7 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   size_t const used_for_waste_calculation = used() > _region_end_waste ? used() - _region_end_waste : 0;
 
   size_t const total_waste_allowed = used_for_waste_calculation * TargetPLABWastePct;
-  return (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
+  return (size_t)((double)total_waste_allowed / (100 - G1LastPLABAverageOccupancy));
 }
 
 G1EvacStats::G1EvacStats(const char* description, size_t default_per_thread_plab_size, unsigned wt) :
