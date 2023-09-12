@@ -53,7 +53,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
 @Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED"})
+        "--enable-preview"})
 
 @State(Scope.Benchmark)
 public class ClassfileBenchmark {

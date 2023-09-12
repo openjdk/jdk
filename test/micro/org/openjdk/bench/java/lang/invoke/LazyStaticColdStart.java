@@ -53,11 +53,7 @@ import static java.lang.classfile.Classfile.ACC_STATIC;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Fork(value = 10, warmups = 5, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"
+        "--enable-preview"
 })
 public class LazyStaticColdStart {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
