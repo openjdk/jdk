@@ -85,11 +85,14 @@ public class RuntimePermissionTest {
         @Override
         public void checkPermission(Permission permission) {
             if (permission instanceof RuntimePermission) {
-                LOGGER.info("Checking RuntimePermission: " + permission);
                 if (RUNTIME_PERMISSION_NAME.equals(permission.getName()) && !permitInetAddressResolver) {
                     LOGGER.info("Denying '" + RUNTIME_PERMISSION_NAME + "' permission");
                     throw new SecurityException("Access Denied: " + RUNTIME_PERMISSION_NAME);
-                }
+                } else {
+                   // Do not do anything for non-matching Permission. Otherwise the test
+                   // has a chance to re-enter here recursively, e.g. due to permission
+                   // checks during class load. This would eventually overflow the stack.
+               }
             }
         }
     }
