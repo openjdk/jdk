@@ -1612,7 +1612,7 @@ final class StringUTF16 {
         return charPos;
     }
 
-    private static void putPair(byte[] buf, int charPos, int v) {
+    static void putPair(byte[] buf, int charPos, int v) {
         int packed = (int) DecimalDigits.digitPair(v);
         putChar(buf, charPos, packed & 0xFF);
         putChar(buf, charPos + 1, packed >> 8);

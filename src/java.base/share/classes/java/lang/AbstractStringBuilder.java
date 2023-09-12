@@ -35,6 +35,8 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
@@ -813,6 +815,30 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringUTF16.putCharSB(value, count++, c);
         }
         return this;
+    }
+
+    void appendDigit2(int i) {
+        ensureCapacityInternal(count + 2);
+        if (isLatin1()) {
+            ByteArrayLittleEndian.setShort(value, count, DecimalDigits.digitPair(i));
+        } else {
+            StringUTF16.putPair(value, count, i);
+        }
+        count += 2;
+    }
+
+    void appendDigit3(int i) {
+        ensureCapacityInternal(count + 3);
+        int v = DecimalDigits.digitTriple(i);
+        if (isLatin1()) {
+            ByteArrayLittleEndian.setShort(value, count, (short) (v >> 8));
+            value[count + 2] = (byte) (v >> 24);
+        } else {
+            StringUTF16.putChar(value, count, (byte) (v >> 8));
+            StringUTF16.putChar(value, count + 1, (byte) (v >> 16));
+            StringUTF16.putChar(value, count + 2, (byte) (v >> 24));
+        }
+        count += 3;
     }
 
     /**
