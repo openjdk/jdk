@@ -494,7 +494,6 @@ bool ClassLoaderDataGraph::do_unloading() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   ClassLoaderData* prev = nullptr;
-  bool seen_dead_loader = false;
   uint loaders_processed = 0;
   uint loaders_removed = 0;
 
@@ -505,7 +504,6 @@ bool ClassLoaderDataGraph::do_unloading() {
     } else {
       // Found dead CLD.
       loaders_removed++;
-      seen_dead_loader = true;
       data->unload();
 
       // Move dead CLD to unloading list.
@@ -523,7 +521,7 @@ bool ClassLoaderDataGraph::do_unloading() {
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
-  return seen_dead_loader;
+  return loaders_removed != 0;
 }
 
 // There's at least one dead class loader.  Purge refererences of healthy module
