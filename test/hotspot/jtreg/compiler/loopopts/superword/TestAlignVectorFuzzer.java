@@ -21,46 +21,59 @@
  * questions.
  */
 
-// TODO bug etc
-// TODO run with and without -XX:-TieredCompilation -Xbatch
-
 /*
- * @test
+ * @test id=VerifyAlignVector
  * @bug 8253191
- *
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
- *
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
- *                                 -XX:LoopUnrollLimit=10000
+ *                                 -XX:LoopUnrollLimit=1000
  *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
+
+/*
+ * @test id=Vanilla
+ * @bug 8253191
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
+ * @library /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:LoopUnrollLimit=1000
+ *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
+ */
+
+/*
+ * @test id=VerifyAlignVector-NoTieredCompilation-Xbatch
+ * @bug 8253191
+ * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
+ * @library /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
+ *                                 -XX:+AlignVector -XX:+VerifyAlignVector
+ *                                 -XX:LoopUnrollLimit=1000
+ *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
+ *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
+ *                                 -XX:-TieredCompilation -Xbatch
+ *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
+ */
+
 package compiler.loopopts.superword;
 
 import java.lang.invoke.*;
-//// TODO remove
-//// import jdk.internal.vm.annotation.DontInline;
-//// import jdk.test.lib.Asserts;
 import java.util.Random;
 import jdk.test.lib.Utils;
 
-// TODO:
-// types: single and in combo
-// hand unrolled - especially relevant for stride and scale other than 1/-1
-//
-// Also: different scenarios: +-AlignVector, +-VerifyAlignVector, different MaxVectorSize
-//
-// And: Unsafe accesses. Misaligned also.
-//
-// Is there a way to clear the profiling somehow?
-//
-// TODO: Result verification: random input, copy, run with compiled and interpreted, compare.
-//
-// TODO: benchmark no alignment if not required: benefits vs overhead?
-//       -> more for future: in this change we should still align everything we can
+// Still TODO:
+// - decr unrolling
+// - Unsafe, and misaligned access.
+// Other ideas:
+// - Benchmark benefit of alignment when not required
+
 
 public class TestAlignVectorFuzzer {
 
