@@ -49,86 +49,47 @@ public class TestAlignVector {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    static int count = 0;
+    // Inputs
+    byte[] aB;
+    byte[] bB;
+    byte mB = (byte)31;
+    short[] aS;
+    short[] bS;
+    short mS = (short)0xF0F0;
+    int[] aI;
+    int[] bI;
+    int mI = 0xF0F0F0F0;
+    long[] aL;
+    long[] bL;
+    long mL = 0xF0F0F0F0F0F0F0F0L;
+
+    // List of tests
+    Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
+
+    // List of gold, the results from the first run before compilation
+    Map<String,Object[]> golds = new HashMap<String,Object[]>();
+
+    interface TestFunction {
+        Object[] run();
+    }
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                                    "-XX:LoopUnrollLimit=1000");
     }
 
-    interface TestFunction {
-        Object[] run();
-    }
+    public TestAlignVector() {
+        // Generate input once
+        aB = generateB();
+        bB = generateB();
+        aS = generateS();
+        bS = generateS();
+        aI = generateI();
+        bI = generateI();
+        aL = generateL();
+        bL = generateL();
 
-    @Warmup(0)
-    @Run(test = {"test0",
-                 "test1",
-                 "test2",
-                 "test3",
-                 "test4",
-                 "test5",
-                 "test6",
-                 "test7",
-                 "test8",
-                 "test9",
-                 "test10a",
-                 "test10b",
-                 "test10c",
-                 "test10d",
-                 "test11aB",
-                 "test11aS",
-                 "test11aI",
-                 "test11aL",
-                 "test11bB",
-                 "test11bS",
-                 "test11bI",
-                 "test11bL",
-                 "test11cB",
-                 "test11cS",
-                 "test11cI",
-                 "test11cL",
-                 "test11dB",
-                 "test11dS",
-                 "test11dI",
-                 "test11dL",
-                 "test12",
-                 "test13aIL",
-                 "test13aIB",
-                 "test13aIS",
-                 "test13aBSIL",
-                 "test13bIL",
-                 "test13bIB",
-                 "test13bIS",
-                 "test13bBSIL",
-                 "test14aB",
-                 "test14bB",
-                 "test14cB",
-                 "test15aB",
-                 "test15bB",
-                 "test15cB",
-                 "test16a",
-                 "test16b",
-                 "test17a",
-                 "test17b",
-                 "test17c",
-                 "test17d",
-                 "test18a",
-                 "test18b"})
-    public void runTests() {
-        byte[] aB = generateB();
-        byte[] bB = generateB();
-        byte mB = (byte)31;
-        short[] aS = generateS();
-        short[] bS = generateS();
-        short mS = (short)0xF0F0;
-        int[] aI = generateI();
-        int[] bI = generateI();
-        int mI = 0xF0F0F0F0;
-        long[] aL = generateL();
-        long[] bL = generateL();
-        long mL = 0xF0F0F0F0F0F0F0F0L;
-
-        Map<String,TestFunction> tests = new HashMap<String,TestFunction>();
+        // Add all tests to list
         tests.put("test0",       () -> { return test0(aB.clone(), bB.clone(), mB); });
         tests.put("test1",       () -> { return test1(aB.clone(), bB.clone(), mB); });
         tests.put("test2",       () -> { return test2(aB.clone(), bB.clone(), mB); });
@@ -197,14 +158,79 @@ public class TestAlignVector {
         tests.put("test18a",     () -> { return test18a(aB.clone(), aI.clone()); });
         tests.put("test18b",     () -> { return test18b(aB.clone(), aI.clone()); });
 
+        // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             Object[] gold = test.run();
-            for (int i = 0; i < 10; i++) {
-                Object[] result = test.run();
-                verify(name, gold, result);
-            }
+	    golds.put(name, gold);
+        }
+    }
+
+    @Warmup(100)
+    @Run(test = {"test0",
+                 "test1",
+                 "test2",
+                 "test3",
+                 "test4",
+                 "test5",
+                 "test6",
+                 "test7",
+                 "test8",
+                 "test9",
+                 "test10a",
+                 "test10b",
+                 "test10c",
+                 "test10d",
+                 "test11aB",
+                 "test11aS",
+                 "test11aI",
+                 "test11aL",
+                 "test11bB",
+                 "test11bS",
+                 "test11bI",
+                 "test11bL",
+                 "test11cB",
+                 "test11cS",
+                 "test11cI",
+                 "test11cL",
+                 "test11dB",
+                 "test11dS",
+                 "test11dI",
+                 "test11dL",
+                 "test12",
+                 "test13aIL",
+                 "test13aIB",
+                 "test13aIS",
+                 "test13aBSIL",
+                 "test13bIL",
+                 "test13bIB",
+                 "test13bIS",
+                 "test13bBSIL",
+                 "test14aB",
+                 "test14bB",
+                 "test14cB",
+                 "test15aB",
+                 "test15bB",
+                 "test15cB",
+                 "test16a",
+                 "test16b",
+                 "test17a",
+                 "test17b",
+                 "test17c",
+                 "test17d",
+                 "test18a",
+                 "test18b"})
+    public void runTests() {
+        for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
+            String name = entry.getKey();
+            TestFunction test = entry.getValue();
+            // Recall gold value from before compilation
+            Object[] gold = golds.get(name);
+            // Compute new result
+            Object[] result = test.run();
+            // Compare gold and new result
+            verify(name, gold, result);
         }
     }
 
@@ -1140,16 +1166,7 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB, "= 0",
-                  IRNode.STORE_VECTOR, "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "true"})
+    // IR rules difficult because of modulo wrapping with offset after peeling.
     static Object[] test15aB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1174,16 +1191,7 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB, "= 0",
-                  IRNode.STORE_VECTOR, "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "true"})
+    // IR rules difficult because of modulo wrapping with offset after peeling.
     static Object[] test15bB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1208,16 +1216,7 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.ADD_VB,        IRNode.VECTOR_SIZE_16, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=16"})
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB, "= 0",
-                  IRNode.STORE_VECTOR, "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "true"})
+    // IR rules difficult because of modulo wrapping with offset after peeling.
     static Object[] test15cB(byte[] a) {
         // non-power-of-2 scale
         for (int i = 0; i < RANGE/64-20; i++) {
@@ -1308,16 +1307,7 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
-                  IRNode.ADD_VL, "> 0",
-                  IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
-                  IRNode.ADD_VL, "= 0",
-                  IRNode.STORE_VECTOR, "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "true"})
+    // Difficult to write good IR rule. Modulo calculus overflow can create non-power-of-2 packs.
     static Object[] test17b(long[] a) {
         // Not alignable
         for (int i = 0; i < RANGE-1; i++) {
@@ -1329,9 +1319,10 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
-                  IRNode.ADD_VL, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.ADD_VL,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static Object[] test17c(long[] a) {
         // Unsafe: aligned vectorizes
@@ -1346,11 +1337,11 @@ public class TestAlignVector {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_L, "> 0",
-                  IRNode.ADD_VL, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.ADD_VL,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
-        applyIf = {"AlignVector", "false"})
+        applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=32"})
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.ADD_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
