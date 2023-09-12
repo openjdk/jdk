@@ -22,35 +22,35 @@
  */
 
 /**
- * @test id=vanilla-U
+ * @test id=Vanilla-Unaligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestUnorderedReduction vanilla-U
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction Vanilla-Unaligned
  */
 
 /**
- * @test id=vanilla-A
+ * @test id=Vanilla-Aligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestUnorderedReduction vanilla-A
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction Vanilla-Aligned
  */
 
 /**
- * @test id=v016-U
+ * @test id=MaxVectorSize16-Unaligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestUnorderedReduction v016-U
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction MaxVectorSize16-Unaligned
  */
 
 /**
- * @test id=v032-A
+ * @test id=MaxVectorSize32-Aligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestUnorderedReduction v032-A
+ * @run driver compiler.loopopts.superword.TestUnorderedReduction MaxVectorSize32-Aligned
  */
 
 package compiler.loopopts.superword;
@@ -71,10 +71,10 @@ public class TestUnorderedReduction {
         }
 
         switch (args[0]) {
-            case "vanilla-U" -> { framework.addFlags("-XX:-AlignVector"); }
-            case "vanilla-A" -> { framework.addFlags("-XX:+AlignVector"); }
-            case "v016-U"    -> { framework.addFlags("-XX:MaxVectorSize=16"); }
-            case "v032-A"    -> { framework.addFlags("-XX:MaxVectorSize=32", "-XX:+AlignVector"); }
+            case "Vanilla-Unaligned"         -> { framework.addFlags("-XX:-AlignVector"); }
+            case "Vanilla-Aligned"           -> { framework.addFlags("-XX:+AlignVector"); }
+            case "MaxVectorSize16-Unaligned" -> { framework.addFlags("-XX:-AlignVector", "-XX:MaxVectorSize=16"); }
+            case "MaxVectorSize32-Aligned"   -> { framework.addFlags("-XX:+AlignVector", "-XX:MaxVectorSize=32"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         }
         framework.start();
