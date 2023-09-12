@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,20 @@
  * @key headful
  * @bug 4654927
  * @summary Clicking on Greyed Menuitems closes the Menubar Dropdown
- * @author Alexander Potochkin
  * @library ../../regtesthelpers
  * @build Util
  * @run main bug4654927
  */
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
-import java.awt.*;
+import java.awt.Point;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.util.concurrent.Callable;
 
@@ -48,34 +53,33 @@ public class bug4654927 {
         try {
             String systemLAF = UIManager.getSystemLookAndFeelClassName();
             // the test is not applicable to Motif L&F
-            if(systemLAF.endsWith("MotifLookAndFeel")){
+            if (systemLAF.endsWith("MotifLookAndFeel")){
                 return;
             }
 
             UIManager.setLookAndFeel(systemLAF);
             Robot robot = new Robot();
-            robot.setAutoDelay(10);
+            robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
+            SwingUtilities.invokeAndWait(() -> createAndShowUI());
 
-                public void run() {
-                    createAndShowUI();
-                }
-            });
             robot.waitForIdle();
+            robot.delay(1000);	    
 
             // test mouse press
             Point point = Util.getCenterPoint(menu);
             robot.mouseMove(point.x, point.y);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(250);
 
             point = Util.getCenterPoint(menuItem);
             robot.mouseMove(point.x, point.y);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(250);
 
             if (!isMenuItemShowing()) {
                 throw new RuntimeException("Popup is unexpectedly closed");
@@ -106,20 +110,24 @@ public class bug4654927 {
             int y1 = itemLocation.y + 10;
 
             // close menu
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
-            robot.mousePress(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             Util.glide(robot, x0, y0, x1, y1);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
 
             if (!isMenuItemShowing()) {
                 throw new RuntimeException("Popup is unexpectedly closed");
             }
         } finally {
-            if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
     }
 
@@ -151,6 +159,5 @@ public class bug4654927 {
         frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
     }
 }
