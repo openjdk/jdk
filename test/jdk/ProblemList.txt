@@ -460,15 +460,14 @@ java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,wi
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
 
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
+
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
-java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
-
-java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
 ############################################################################
 
 # jdk_beans
