@@ -20,15 +20,31 @@ public class SwingWorkerExecutorLeakTest {
 
   public static void main(String[] args) throws Exception {
 
-    // AppContext must be in new thread group, otherwise dispose() throws
+    // AppContext must be in different thread group, otherwise dispose() throws
     Thread thread = new Thread(new ThreadGroup("Test"), "Test") {
       public void run() {
-        appContext = SunToolkit.createNewAppContext();
+        if (true) {
+          // AppContext.getAppContext() creates AppContext in root thread group unless
+          // (javaplugin.version != null || javawebstart.version != null) && javafx.version != null
+          System.setProperty("javaplugin.version", "foo");
+          System.setProperty("javawebstart.version", "foo");
+          System.setProperty("javafx.version", "foo");
+        }
+        else {
+          // alternative: call SunToolkit.createNewAppContext() directly, uses current thread group
+          SunToolkit.createNewAppContext();
+        }
+
+        // SwingWorker.execute() calls SwingWorker.getWorkersExecutorService(),
+        // which calls AppContext.getAppContext() and stores reference to executor in AppContext
         new SwingWorker<Void, Void>() {
           protected Void doInBackground() {
             return null;
           }
-        }.execute(); // calls SwingWorker.getWorkersExecutorService()
+        }.execute();
+
+        // remember AppContext created in this thread group
+        appContext = AppContext.getAppContext();
       }
     };
     thread.start();
