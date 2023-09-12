@@ -33,7 +33,6 @@ import java.math.*;
 import java.util.Objects;
 import java.util.Optional;
 
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;

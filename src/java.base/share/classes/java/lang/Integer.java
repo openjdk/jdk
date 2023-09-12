@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
