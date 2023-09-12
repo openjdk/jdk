@@ -103,7 +103,7 @@ public class bug4329418 {
         jep.setCaretPosition(doc.getLength());
 
         jf.getContentPane().add(jep);
-        jf.setLocation(100, 100);
+        jf.setLocationRelativeTo(null);
         jf.setSize(200, 200);
         jf.setVisible(true);
     }

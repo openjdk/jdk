@@ -57,7 +57,7 @@ public class bug4253334 {
         MutableAttributeSet attrs = new SimpleAttributeSet();
         StyleConstants.setBold(attrs, true);
         StyleConstants.setItalic(attrs, true);
-        doc.setCharacterAttributes(3,9,attrs,false);
+        doc.setCharacterAttributes(3, 9, attrs, false);
 
         Action[] as = kit.getActions();
         Action boldAction = null;
