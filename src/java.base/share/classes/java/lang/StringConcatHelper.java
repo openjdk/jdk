@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.util.FormatConcatItem;
@@ -99,7 +98,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, int value) {
-        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
+        return checkOverflow(lengthCoder + Integer.stringSize(value));
     }
 
     /**
@@ -251,7 +250,7 @@ final class StringConcatHelper {
      */
     private static long prepend(long indexCoder, byte[] buf, int value) {
         if (indexCoder < UTF16) {
-            return DecimalDigits.getCharsLatin1(value, (int)indexCoder, buf);
+            return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
             return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
         }

@@ -440,6 +440,24 @@ public final class Integer extends Number
     }
 
     /**
+     * Returns a string representation of the argument as an unsigned
+     * decimal value.
+     *
+     * The argument is converted to unsigned decimal representation
+     * and returned as a string exactly as if the argument and radix
+     * 10 were given as arguments to the {@link #toUnsignedString(int,
+     * int)} method.
+     *
+     * @param   i  an integer to be converted to an unsigned string.
+     * @return  an unsigned string representation of the argument.
+     * @see     #toUnsignedString(int, int)
+     * @since 1.8
+     */
+    public static String toUnsignedString(int i) {
+        return Long.toString(toUnsignedLong(i));
+    }
+
+    /**
      * Returns the string representation size for a given int value.
      *
      * @param x int value
@@ -463,24 +481,6 @@ public final class Integer extends Number
             p = 10 * p;
         }
         return 10 + d;
-    }
-
-    /**
-     * Returns a string representation of the argument as an unsigned
-     * decimal value.
-     *
-     * The argument is converted to unsigned decimal representation
-     * and returned as a string exactly as if the argument and radix
-     * 10 were given as arguments to the {@link #toUnsignedString(int,
-     * int)} method.
-     *
-     * @param   i  an integer to be converted to an unsigned string.
-     * @return  an unsigned string representation of the argument.
-     * @see     #toUnsignedString(int, int)
-     * @since 1.8
-     */
-    public static String toUnsignedString(int i) {
-        return Long.toString(toUnsignedLong(i));
     }
 
     /**

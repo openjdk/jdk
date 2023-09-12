@@ -25,7 +25,6 @@
 
 package java.lang;
 
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
 
