@@ -97,8 +97,8 @@ public final class DecimalDigits implements Digits {
             value = q;
             int digits = DIGITS[r];
 
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
             putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         int iq, ivalue = (int)value;
@@ -107,8 +107,8 @@ public final class DecimalDigits implements Digits {
             r = (iq * 100) - ivalue;
             ivalue = iq;
             int digits = DIGITS[r];
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
             putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         if (ivalue < 0) {
@@ -116,10 +116,10 @@ public final class DecimalDigits implements Digits {
         }
 
         int digits = DIGITS[ivalue];
-        putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+        putCharMH.invokeExact(buffer, --index, digits >> 8);
 
         if (9 < ivalue) {
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         if (negative) {
