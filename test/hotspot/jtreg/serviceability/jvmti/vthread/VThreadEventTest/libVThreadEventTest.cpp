@@ -21,10 +21,8 @@
  * questions.
  */
 
-#include <cstdlib>
 #include <cstring>
 #include <jvmti.h>
-#include <mutex>
 #include <atomic>
 #include "jvmti_common.h"
 

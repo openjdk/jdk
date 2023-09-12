@@ -29,6 +29,7 @@
  * @requires vm.jvmti
  * @requires vm.compMode != "Xcomp"
  * @run main/othervm/native
+ *     -Djava.util.concurrent.ForkJoinPool.common.parallelism=9
  *     -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadEventTest attach
  */
 
@@ -42,7 +43,7 @@ import java.util.ArrayList;
 /*
  * The test uses custom implementation of the CountDownLatch class.
  * The reason is we want the state of tested thread to be predictable.
- * With original CountDownLatch it is not clear what thread state is expected.
+ * With java.util.concurrent.CountDownLatch it is not clear what thread state is expected.
  */
 class CountDownLatch {
     private int count = 0;
@@ -68,7 +69,6 @@ public class VThreadEventTest {
     static final int TCNT2 = 4;
     static final int TCNT3 = 4;
     static final int THREAD_CNT = TCNT1 + TCNT2 + TCNT3;
-    static final long TIMEOUT_BASE = 1_000_000L;
 
     private static void log(String msg) { System.out.println(msg); }
 
@@ -103,7 +103,7 @@ public class VThreadEventTest {
         await(mready);
         ready1.countDown(); // to guaranty state is not State.WAITING after await(mready)
         try {
-            Thread.sleep(20000); // big timeout to keep unmounted untill interrupted
+            Thread.sleep(20000); // big timeout to keep unmounted until interrupted
         } catch (InterruptedException ex) {
             // it is expected, ignore
         }
@@ -129,7 +129,7 @@ public class VThreadEventTest {
         while (!attached) {
             // keep mounted
         }
-        LockSupport.parkNanos(10 * TIMEOUT_BASE); // will cause extra mount and unmount
+        LockSupport.parkNanos(10_000_000L); // will cause extra mount and unmount
         ready2.countDown();
     };
 
