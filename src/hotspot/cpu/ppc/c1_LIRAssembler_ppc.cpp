@@ -2541,10 +2541,12 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(k_RInfo, array);
     __ load_klass(klass_RInfo, value);
 
+    Label failure;
+
     // Get instance klass.
     __ ld(k_RInfo, in_bytes(ObjArrayKlass::element_klass_offset()), k_RInfo);
     // Perform the fast part of the checking logic.
-    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, R0, &done, op->stub()->entry(), nullptr);
+    __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, R0, &done, &failure, nullptr);
 
     // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
     const address slow_path = Runtime1::entry_for(Runtime1::slow_subtype_check_id);
@@ -2552,7 +2554,11 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(slow_path));
     __ mtctr(R0);
     __ bctrl(); // sets CR0
-    __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CCR0, Assembler::equal), *stub->entry());
+    __ beq(CCR0, done);
+
+    __ bind(failure);
+    __ b(*stub->entry());
+    __ align(32, 12);
     __ bind(done);
 
   } else if (code == lir_checkcast) {
