@@ -35,8 +35,8 @@ import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 public abstract class AbstractPlugin implements Plugin {

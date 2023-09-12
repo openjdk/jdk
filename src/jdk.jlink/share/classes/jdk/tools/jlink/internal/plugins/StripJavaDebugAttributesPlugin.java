@@ -25,13 +25,13 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
 
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;

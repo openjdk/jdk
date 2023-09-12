@@ -74,12 +74,12 @@ import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.CodeBuilder;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.TypeKind;
+import static java.lang.classfile.Classfile.*;
+import java.lang.classfile.CodeBuilder;
 
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
