@@ -32,6 +32,8 @@
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.Properties;
@@ -123,8 +125,9 @@ public class CurrencyFormat {
         }
 
         FileInputStream stream = new FileInputStream(new File(System.getProperty("test.src", "."), "CurrencySymbols.properties"));
+        InputStreamReader streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
         Properties props = new Properties();
-        props.load(stream);
+        props.load(streamReader);
         SimpleDateFormat format = null;
 
         Locale[] locales = NumberFormat.getAvailableLocales();
