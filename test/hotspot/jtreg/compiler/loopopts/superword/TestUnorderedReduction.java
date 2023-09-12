@@ -25,6 +25,7 @@
  * @test id=Vanilla-Unaligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReduction Vanilla-Unaligned
  */
@@ -33,6 +34,7 @@
  * @test id=Vanilla-Aligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReduction Vanilla-Aligned
  */
@@ -41,6 +43,7 @@
  * @test id=MaxVectorSize16-Unaligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReduction MaxVectorSize16-Unaligned
  */
@@ -49,6 +52,7 @@
  * @test id=MaxVectorSize32-Aligned
  * @bug 8302652 8314612
  * @summary Special test cases for PhaseIdealLoop::move_unordered_reduction_out_of_loop
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestUnorderedReduction MaxVectorSize32-Aligned
  */
