@@ -447,7 +447,7 @@ public interface Document {
      * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
-     * If the {@code Document} structure changed as result of the removal,
+     * If the document structure changed as result of the removal,
      * the details of what {@code Element}s were inserted and removed in
      * response to the change will also be contained in the generated
      * {@code DocumentEvent}. It is up to the implementation of a {@code Document}
