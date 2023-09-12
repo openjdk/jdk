@@ -235,14 +235,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
 #ifdef _WIN64
   int last_reg = 15;
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vextractf32x4(xmm_save(i), as_XMMRegister(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(xmm_save(i), as_XMMRegister(i));
   }
 
   const Address rdi_save(rbp, rdi_off * wordSize);
@@ -365,14 +359,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
   // restore regs belonging to calling function
 #ifdef _WIN64
   // emit the restores for xmm regs
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vinsertf32x4(as_XMMRegister(i), as_XMMRegister(i), xmm_save(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(as_XMMRegister(i), xmm_save(i));
   }
 #endif
   __ movptr(r15, r15_save);
