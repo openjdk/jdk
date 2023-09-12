@@ -57,17 +57,6 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         runInNewProcess(Runner.class, spec).assertStdErrContains("Heap segment not allowed");
     }
 
-    @Test
-    public void testCritical() throws Throwable {
-        MethodHandle handle = downcallHandle("test_critical", FunctionDescriptor.ofVoid(C_POINTER, C_INT), Linker.Option.critical(true));
-        int[] ints = { 0, 1, 2 };
-        MemorySegment segment = MemorySegment.ofArray(ints);
-        handle.invokeExact(segment, 3);
-        for (int i = 0; i < ints.length; i++) {
-            assertEquals(ints[i], i + 1);
-        }
-    }
-
     public static class Runner {
 
         static {

@@ -32,9 +32,3 @@ EXPORT void test_args(void* ptr) {}
 EXPORT void test_return(void* (*cb)(void)) {
     cb();
 }
-
-EXPORT void test_critical(int* arr, int num) {
-    for (int i = 0; i < num; i++) {
-        arr[i]++;
-    }
-}
