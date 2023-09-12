@@ -131,29 +131,59 @@ import java.util.Arrays;
  *
  * <h2><a id="patterns">Patterns</a></h2>
  * A {@code ChoiceFormat} pattern has the following syntax:
- * <blockquote><pre>
- * <i>Pattern:</i>
- *         SubPattern *("|" SubPattern)
- *         <i>Note: Each additional subPattern must have a limit greater than the previous subPattern's limit</i>
- * <i>SubPattern:</i>
- *         Limit Relation Format
- * <i>Limit:</i>
- *          Number / "&infin;" / "-&infin;"
- * <i>Number:</i>
- *         *(Digit) 1*(Decimal / Digit) *(Digit) [Exponent]
- * <i>Decimal:</i>
- *         1*(Digit ".") / 1*("." Digit)
- * <i>Digit:</i>
- *         0 - 9
- * <i>Exponent:</i>
- *         *(Digit) Digit ExponentSymbol Digit *(Digit)
- * <i>ExponentSymbol:</i>
- *         "e" / "E"
- * <i>Relation:</i>
- *         "#" / "&lt;" / "&le;"
- * <i>Format:</i>
- *         Any characters except the <i>Relation</i> symbols
- * </pre></blockquote>
+ * <blockquote>
+ * <dl>
+ * <dt><i>Pattern:</i>
+ * <dd>SubPattern *("|" SubPattern)
+ * <dd><i>Note: Each additional SubPattern must have a Limit greater than the previous SubPattern's Limit</i>
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>SubPattern:</i>
+ * <dd>Limit Relation Format
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Limit:</i>
+ * <dd>Number / "&infin;" / "-&infin;"
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Number:</i>
+ * <dd>["-"] *(Digit) 1*(Decimal / Digit) *(Digit) [Exponent]
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Decimal:</i>
+ * <dd>1*(Digit ".") / 1*("." Digit)
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Digit:</i>
+ * <dd>0 - 9
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Exponent:</i>
+ * <dd>*(Digit) Digit ExponentSymbol Digit *(Digit)
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>ExponentSymbol:</i>
+ * <dd>"e" / "E"
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Relation:</i>
+ * <dd>"#" / "&lt;" / "&le;"
+ * </dl>
+ *
+ * <dl>
+ * <dt><i>Format:</i>
+ * <dd>Any characters except the <i>Relation</i> symbols
+ * </dl>
+ *
+ * </blockquote>
  *
  * <i>Note:The relation &le; is not equivalent to &lt;&equals;</i>
  *
