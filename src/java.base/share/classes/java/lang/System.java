@@ -2544,6 +2544,14 @@ public final class System {
                 return sb.prepend(lengthCoder, buf);
             }
 
+            public void appendDigit2(StringBuilder sb, int i) {
+                sb.appendDigit2(i);
+            }
+
+            public void appendDigit3(StringBuilder sb, int i) {
+                sb.appendDigit3(i);
+            }
+
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }

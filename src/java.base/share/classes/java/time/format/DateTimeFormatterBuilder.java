@@ -121,6 +121,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -159,6 +162,28 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    /**
+     * Hours per day.
+     */
+    static final int HOURS_PER_DAY = 24;
+    /**
+     * Minutes per hour.
+     */
+    static final int MINUTES_PER_HOUR = 60;
+    /**
+     * Seconds per minute.
+     */
+    static final int SECONDS_PER_MINUTE = 60;
+    /**
+     * Seconds per hour.
+     */
+    static final int SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+    /**
+     * Seconds per day.
+     */
+    static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Query for a time-zone that is region-only.
@@ -3811,67 +3836,137 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
-            Long inSecs = context.getValue(INSTANT_SECONDS);
-            Long inNanos = null;
-            if (context.getTemporal().isSupported(NANO_OF_SECOND)) {
-                inNanos = context.getTemporal().getLong(NANO_OF_SECOND);
-            }
-            if (inSecs == null) {
-                return false;
-            }
-            long inSec = inSecs;
-            int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
-            // format mostly using LocalDateTime.toString
-            if (inSec >= -SECONDS_0000_TO_1970) {
-                // current era
-                long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
-                long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
-                long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                if (hi > 0) {
-                    buf.append('+').append(hi);
+            Instant instant = (Instant) context.getTemporal();
+            long seconds = instant.getEpochSecond();
+            int nano = instant.getNano();
+
+            LocalDate date = LocalDate.ofEpochDay(
+                    Math.floorDiv(seconds, SECONDS_PER_DAY));
+
+            int year = date.getYear();
+            int yearAbs = Math.abs(year);
+            if (yearAbs < 1000) {
+                if (year < 0) {
+                    buf.append('-');
                 }
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
-                }
+                int y01 = yearAbs / 100;
+                int y23 = yearAbs - y01 * 100;
+
+                jla.appendDigit2(buf, y01);
+                jla.appendDigit2(buf, y23);
             } else {
-                // before current era
-                long zeroSecs = inSec + SECONDS_0000_TO_1970;
-                long hi = zeroSecs / SECONDS_PER_10000_YEARS;
-                long lo = zeroSecs % SECONDS_PER_10000_YEARS;
-                LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
-                int pos = buf.length();
-                buf.append(ldt);
-                if (ldt.getSecond() == 0) {
-                    buf.append(":00");
+                if (year > 9999) {
+                    buf.append('+');
                 }
-                if (hi < 0) {
-                    if (ldt.getYear() == -10_000) {
-                        buf.replace(pos, pos + 2, Long.toString(hi - 1));
-                    } else if (lo == 0) {
-                        buf.insert(pos, hi);
-                    } else {
-                        buf.insert(pos + 1, Math.abs(hi));
-                    }
-                }
+
+                buf.append(year);
             }
-            // add fraction
-            if ((fractionalDigits < 0 && inNano > 0) || fractionalDigits > 0) {
-                buf.append('.');
-                int div = 100_000_000;
-                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
-                                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
-                                    i < fractionalDigits); i++) {
-                    int digit = inNano / div;
-                    buf.append((char) (digit + '0'));
-                    inNano = inNano - (digit * div);
-                    div = div / 10;
-                }
+            buf.append('-');
+            jla.appendDigit2(buf, date.getMonthValue());
+            buf.append('-');
+            jla.appendDigit2(buf, date.getDayOfMonth());
+            buf.append('T');
+
+            LocalTime time = LocalTime.ofSecondOfDay(
+                    Math.floorMod(seconds, SECONDS_PER_DAY));
+
+            jla.appendDigit2(buf, time.getHour());
+            buf.append(':');
+            jla.appendDigit2(buf, time.getMinute());
+            buf.append(':');
+            jla.appendDigit2(buf, time.getSecond());
+
+            if (fractionalDigits < 0) {
+                formatNano(buf, nano);
+            } else {
+                formatNano(buf, fractionalDigits, nano);
             }
+
             buf.append('Z');
             return true;
+        }
+
+        private static void formatNano(StringBuilder buf, int nano) {
+            if (nano == 0) {
+                return;
+            }
+
+            int div = nano / 1000;
+            int div2 = div / 1000;
+
+            buf.append('.');
+            jla.appendDigit3(buf, div2);
+
+            int rem1 = nano - div * 1000;
+            int rem2 = div - div2 * 1000;
+
+            if (rem1 == 0 && rem2 == 0) {
+                return;
+            }
+
+            jla.appendDigit3(buf, rem2);
+            if (rem1 == 0) {
+                return;
+            }
+            jla.appendDigit3(buf, rem1);
+        }
+
+        private static void formatNano(StringBuilder buf, int fractionalDigits, int nano) {
+            if (fractionalDigits == 0) {
+                return;
+            }
+
+            buf.append('.');
+
+            int div = nano / 1000;
+            int div2 = div / 1000;
+
+            if (fractionalDigits == 1) {
+                buf.append((char) ('0' + (div2 / 100)));
+                return;
+            }
+
+            if (fractionalDigits == 2) {
+                jla.appendDigit2(buf, div2 / 10);
+                return;
+            }
+
+            jla.appendDigit3(buf, div2);
+
+            if (fractionalDigits == 3) {
+                return;
+            }
+
+            int rem1 = nano - div * 1000;
+            int rem2 = div - div2 * 1000;
+
+            if (fractionalDigits == 4) {
+                buf.append((char) ('0' + (rem2 / 100)));
+                return;
+            }
+
+            if (fractionalDigits == 5) {
+                jla.appendDigit2(buf, rem2 / 10);
+                return;
+            }
+
+            jla.appendDigit3(buf, rem2);
+
+            if (fractionalDigits == 6) {
+                return;
+            }
+
+            if (fractionalDigits == 7) {
+                buf.append((char) ('0' + (rem1 / 100)));
+                return;
+            }
+
+            if (fractionalDigits == 8) {
+                jla.appendDigit2(buf, rem1 / 10);
+                return;
+            }
+
+            jla.appendDigit3(buf, rem1);
         }
 
         @Override
