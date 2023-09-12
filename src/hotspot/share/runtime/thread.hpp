@@ -662,15 +662,15 @@ class ThreadInAsgct {
 // hsperfdata counter.
 class ThreadTotalCPUTimeClosure: public ThreadClosure {
  private:
-  jlong _time_diff;
+  jlong _total;
   PerfCounter* _counter;
 
  public:
   ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _time_diff(0), _counter(counter) {}
+      _total(0), _counter(counter) {}
 
   ~ThreadTotalCPUTimeClosure() {
-    _counter->inc(_time_diff);
+    _counter->inc(_total - _counter->get_value());
   }
 
   virtual void do_thread(Thread* thread) {
@@ -678,7 +678,7 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
     // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
     // must ensure the thread exists and has not terminated.
     assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _time_diff = os::thread_cpu_time(thread);
+    _total += os::thread_cpu_time(thread);
   }
 };
 
