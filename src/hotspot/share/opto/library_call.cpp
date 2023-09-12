@@ -5387,7 +5387,7 @@ bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
-  stubAddr = StubRoutines::select_array_partition_function(bt, is_dual_pivot);
+  stubAddr = StubRoutines::select_array_partition_function(is_dual_pivot);
   // stub not loaded
   if (stubAddr == nullptr) {
     return false;
@@ -5408,10 +5408,13 @@ bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
   guarantee(alloc != nullptr, "created above");
   Node* pivotIndices_adr = basic_plus_adr(pivotIndices, arrayOopDesc::base_offset_in_bytes(T_INT));
 
+  // pass the bastic type enum to the stub
+  Node* elemType = intcon(bt);
+
   // Call the stub
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(is_dual_pivot),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    obj_adr, fromIndex, toIndex, pivotIndices_adr, indexPivot1, indexPivot2);
+                    obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr, indexPivot1, indexPivot2);
 
   if (!stopped()) {
     set_result(pivotIndices);
@@ -5437,7 +5440,7 @@ bool LibraryCallKit::inline_arraysort() {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
-  stubAddr = StubRoutines::select_arraysort_function(bt);
+  stubAddr = StubRoutines::select_arraysort_function();
   //stub not loaded
   if (stubAddr == nullptr) {
     return false;
@@ -5450,10 +5453,13 @@ bool LibraryCallKit::inline_arraysort() {
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
 
+  // pass the bastic type enum to the stub
+  Node* elemType = intcon(bt);
+
   // Call the stub.
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_sort_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    obj_adr, fromIndex, toIndex);
+                    obj_adr, elemType, fromIndex, toIndex);
 
   return true;
 }

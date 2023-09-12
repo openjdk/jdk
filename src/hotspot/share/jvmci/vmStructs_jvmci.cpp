@@ -327,18 +327,9 @@
   static_field(StubRoutines,                _checkcast_arraycopy_uninit,                      address)                               \
   static_field(StubRoutines,                _unsafe_arraycopy,                                address)                               \
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
-  static_field(StubRoutines,                _arraysort_int,                                   address)                               \
-  static_field(StubRoutines,                _arraysort_long,                                  address)                               \
-  static_field(StubRoutines,                _arraysort_float,                                 address)                               \
-  static_field(StubRoutines,                _arraysort_double,                                address)                               \
-  static_field(StubRoutines,                _array_partition_single_int,                      address)                               \
-  static_field(StubRoutines,                _array_partition_dual_int,                        address)                               \
-  static_field(StubRoutines,                _array_partition_single_long,                     address)                               \
-  static_field(StubRoutines,                _array_partition_dual_long,                       address)                               \
-  static_field(StubRoutines,                _array_partition_single_float,                    address)                               \
-  static_field(StubRoutines,                _array_partition_dual_float,                      address)                               \
-  static_field(StubRoutines,                _array_partition_single_double,                   address)                               \
-  static_field(StubRoutines,                _array_partition_dual_double,                     address)                               \
+  static_field(StubRoutines,                _arraysort,                                       address)                               \
+  static_field(StubRoutines,                _array_partition_single,                          address)                               \
+  static_field(StubRoutines,                _array_partition_dual,                            address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \

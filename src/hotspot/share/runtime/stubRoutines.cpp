@@ -176,18 +176,9 @@ address StubRoutines::_hf2f = nullptr;
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
 
-address StubRoutines::_arraysort_int = nullptr;
-address StubRoutines::_arraysort_long = nullptr;
-address StubRoutines::_arraysort_float = nullptr;
-address StubRoutines::_arraysort_double = nullptr;
-address StubRoutines::_array_partition_single_int  = nullptr;
-address StubRoutines::_array_partition_dual_int  = nullptr;
-address StubRoutines::_array_partition_single_long = nullptr;
-address StubRoutines::_array_partition_dual_long = nullptr;
-address StubRoutines::_array_partition_single_float = nullptr;
-address StubRoutines::_array_partition_dual_float = nullptr;
-address StubRoutines::_array_partition_single_double = nullptr;
-address StubRoutines::_array_partition_dual_double = nullptr;
+address StubRoutines::_arraysort = nullptr;
+address StubRoutines::_array_partition_single  = nullptr;
+address StubRoutines::_array_partition_dual  = nullptr;
 
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
@@ -542,29 +533,5 @@ UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
     if (_ucm_entry->error_exit_pc() == nullptr) {
       _ucm_entry->set_error_exit_pc(_cgen->assembler()->pc());
     }
-  }
-}
-
-address StubRoutines::select_arraysort_function(BasicType t) {
-  switch(t) {
-    case T_INT:    return _arraysort_int;
-    case T_LONG:   return _arraysort_long;
-    case T_FLOAT:  return _arraysort_float;
-    case T_DOUBLE: return _arraysort_double;
-  default:
-    ShouldNotReachHere();
-    return nullptr;
-  }
-}
-
-address StubRoutines::select_array_partition_function(BasicType t, bool is_dual_pivot) {
-  switch(t) {
-    case T_INT:    return is_dual_pivot ? _array_partition_dual_int : _array_partition_single_int;
-    case T_LONG:   return is_dual_pivot ? _array_partition_dual_long : _array_partition_single_long;
-    case T_FLOAT:  return is_dual_pivot ? _array_partition_dual_float : _array_partition_single_float;
-    case T_DOUBLE: return is_dual_pivot ? _array_partition_dual_double : _array_partition_single_double;
-  default:
-    ShouldNotReachHere();
-    return nullptr;
   }
 }

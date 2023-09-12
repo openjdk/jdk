@@ -153,18 +153,9 @@ class StubRoutines: AllStatic {
   static BufferBlob* _compiler_stubs_code;                 // code buffer for C2 intrinsics
   static BufferBlob* _final_stubs_code;                    // code buffer for all other routines
 
-  static address _arraysort_int;
-  static address _arraysort_long;
-  static address _arraysort_float;
-  static address _arraysort_double;
-  static address _array_partition_single_int;
-  static address _array_partition_dual_int;
-  static address _array_partition_single_long;
-  static address _array_partition_dual_long;
-  static address _array_partition_single_float;
-  static address _array_partition_dual_float;
-  static address _array_partition_single_double;
-  static address _array_partition_dual_double;
+  static address _arraysort;
+  static address _array_partition_single;
+  static address _array_partition_dual;
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
   static address _jbyte_arraycopy;
@@ -387,8 +378,8 @@ class StubRoutines: AllStatic {
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
-  static address select_arraysort_function(BasicType t);
-  static address select_array_partition_function(BasicType t, bool is_dual_pivot);
+  static address select_arraysort_function() { return _arraysort; }
+  static address select_array_partition_function(bool is_dual_pivot) { return is_dual_pivot ? _array_partition_dual : _array_partition_single; }
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }

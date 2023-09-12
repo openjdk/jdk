@@ -4192,41 +4192,15 @@ void StubGenerator::generate_compiler_stubs() {
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "x86_64" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort_int");
-      StubRoutines::_arraysort_int = (address)os::dll_lookup(libsimdsort, ebuf_);
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort");
+      StubRoutines::_arraysort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort_long");
-      StubRoutines::_arraysort_long = (address)os::dll_lookup(libsimdsort, ebuf_);
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single");
+      StubRoutines::_array_partition_single = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort_float");
-      StubRoutines::_arraysort_float = (address)os::dll_lookup(libsimdsort, ebuf_);
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual");
+      StubRoutines::_array_partition_dual = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort_double");
-      StubRoutines::_arraysort_double = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single_int");
-      StubRoutines::_array_partition_single_int = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual_int");
-      StubRoutines::_array_partition_dual_int = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single_long");
-      StubRoutines::_array_partition_single_long = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual_long");
-      StubRoutines::_array_partition_dual_long = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single_float");
-      StubRoutines::_array_partition_single_float = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual_float");
-      StubRoutines::_array_partition_dual_float = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single_double");
-      StubRoutines::_array_partition_single_double = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual_double");
-      StubRoutines::_array_partition_dual_double = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }
 

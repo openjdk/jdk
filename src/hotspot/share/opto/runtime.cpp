@@ -859,11 +859,12 @@ const TypeFunc* OptoRuntime::array_fill_Type() {
 
 const TypeFunc* OptoRuntime::array_partition_Type(bool is_dual_pivot) {
   // create input type (domain)
-  int num_args = is_dual_pivot ? 6 : 5;
+  int num_args = is_dual_pivot ? 7 : 6;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;  // array
+  fields[argp++] = TypeInt::INT;      // element type
   fields[argp++] = TypeInt::INT;      // low
   fields[argp++] = TypeInt::INT;      // end
   fields[argp++] = TypePtr::NOTNULL;  // pivot_indices (int array)
@@ -883,11 +884,12 @@ const TypeFunc* OptoRuntime::array_partition_Type(bool is_dual_pivot) {
 
 const TypeFunc* OptoRuntime::array_sort_Type() {
   // create input type (domain)
-  int num_args      = 3;
+  int num_args      = 4;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL;    // array
+  fields[argp++] = TypeInt::INT;    // element type
   fields[argp++] = TypeInt::INT;    // fromIndex
   fields[argp++] = TypeInt::INT;    // toIndex
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");

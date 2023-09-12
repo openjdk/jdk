@@ -388,7 +388,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         } args[6];
       } calls[] = {
         "array_partition_stub",
-        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+3, ShenandoahStore },   { -1, ShenandoahNone },
+        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+4, ShenandoahStore },   { -1, ShenandoahNone },
           { -1, ShenandoahNone },                { -1, ShenandoahNone },                  { -1, ShenandoahNone } },
         "arraysort_stub",
         { { TypeFunc::Parms, ShenandoahStore },  { -1, ShenandoahNone },                  { -1, ShenandoahNone },
