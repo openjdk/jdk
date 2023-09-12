@@ -1738,6 +1738,11 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+
+
+  Node* similar_subtype_check(const Node* x, Node* r_in);
+
+  void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 };
 
 

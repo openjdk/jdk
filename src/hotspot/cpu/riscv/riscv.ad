@@ -6864,6 +6864,21 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (UMulHiL src1 src2));
+  ins_cost(IMUL_COST);
+  format %{ "mulhu  $dst, $src1, $src2\t# umulhi, #@umulHiL_rReg" %}
+
+  ins_encode %{
+    __ mulhu(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
@@ -7692,6 +7707,20 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
   %}
 
   ins_pipe(fp_sqrt_d);
+%}
+
+// Round Instruction
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(2 * XFER_COST + BRANCH_COST);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "RoundDoubleMode $src, $rmode" %}
+  ins_encode %{
+    __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Arithmetic Instructions End

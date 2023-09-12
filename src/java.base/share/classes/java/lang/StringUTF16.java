@@ -1519,7 +1519,7 @@ final class StringUTF16 {
     // been done by the caller.
 
     /**
-     * This is a variant of {@link Integer#getChars(int, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(int, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1528,6 +1528,7 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(int i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         int q, r;
         int charPos = index;
 
@@ -1541,14 +1542,16 @@ final class StringUTF16 {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
+            charPos -= 2;
+            putPair(buf, charPos, r);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i]);
         if (i < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i]);
+            charPos -= 2;
+            putPair(buf, charPos, -i);
+        } else {
+            putChar(buf, --charPos, '0' - i);
         }
 
         if (negative) {
@@ -1558,7 +1561,7 @@ final class StringUTF16 {
     }
 
     /**
-     * This is a variant of {@link Long#getChars(long, int, byte[])}, but for
+     * This is a variant of {@link StringLatin1#getChars(long, int, byte[])}, but for
      * UTF-16 coder.
      *
      * @param i     value to convert
@@ -1567,8 +1570,8 @@ final class StringUTF16 {
      * @return index of the most significant digit or minus sign, if present
      */
     static int getChars(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
         long q;
-        int r;
         int charPos = index;
 
         boolean negative = (i < 0);
@@ -1579,10 +1582,9 @@ final class StringUTF16 {
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            r = (int)((q * 100) - i);
+            charPos -= 2;
+            putPair(buf, charPos, (int)((q * 100) - i));
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
         }
 
         // Get 2 digits/iteration using ints
@@ -1590,22 +1592,29 @@ final class StringUTF16 {
         int i2 = (int)i;
         while (i2 <= -100) {
             q2 = i2 / 100;
-            r  = (q2 * 100) - i2;
+            charPos -= 2;
+            putPair(buf, charPos, (q2 * 100) - i2);
             i2 = q2;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i2]);
         if (i2 < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i2]);
+            charPos -= 2;
+            putPair(buf, charPos, -i2);
+        } else {
+            putChar(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
             putChar(buf, --charPos, '-');
         }
         return charPos;
+    }
+
+    private static void putPair(byte[] buf, int charPos, int v) {
+        int packed = (int) StringLatin1.PACKED_DIGITS[v];
+        putChar(buf, charPos, packed & 0xFF);
+        putChar(buf, charPos + 1, packed >> 8);
     }
     // End of trusted methods.
 

@@ -29,7 +29,12 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main DuplicatedCheckcastTest
  */
@@ -37,12 +42,10 @@
 import java.nio.file.Path;
 import java.util.ArrayList;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.instruction.*;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -50,7 +53,7 @@ import toolbox.ToolBox;
 
 public class DuplicatedCheckcastTest extends TestRunner {
     ToolBox tb;
-    ClassFile cf;
+    ClassModel cf;
 
     public DuplicatedCheckcastTest() {
         super(System.err);
@@ -97,13 +100,13 @@ public class DuplicatedCheckcastTest extends TestRunner {
                 .sources(source)
                 .outdir(curPath)
                 .run();
-        cf = ClassFile.read(curPath.resolve("IntersectionTypeTest.class"));
+        cf = Classfile.of().parse(curPath.resolve("IntersectionTypeTest.class"));
         ArrayList<Instruction> checkCastList = new ArrayList<>();
-        for (Method method : cf.methods) {
-            if ("test".equals(method.getName(cf.constant_pool))) {
-                Code_attribute code_attribute = (Code_attribute) method.attributes.get(Attribute.Code);
-                for (Instruction instruction : code_attribute.getInstructions()) {
-                    if ("checkcast".equals(instruction.getMnemonic())) {
+        for (MethodModel method : cf.methods()) {
+            if (method.methodName().equalsString("test")) {
+                CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                for (CodeElement ce : code_attribute.elementList()) {
+                    if (ce instanceof Instruction instruction && Opcode.CHECKCAST == instruction.opcode()) {
                         checkCastList.add(instruction);
                     }
                 }
@@ -117,10 +120,12 @@ public class DuplicatedCheckcastTest extends TestRunner {
         checkClassName(checkCastList.get(1), expected2);
     }
 
-    public void checkClassName(Instruction ins, String expected) throws Exception {
-        int classIndex = ins.getUnsignedShort(1);
-        CONSTANT_Class_info classInfo = cf.constant_pool.getClassInfo(classIndex);
-        String className = classInfo.getName();
+    public void checkClassName(Instruction ins, String expected) {
+        String className = "";
+        if (ins instanceof TypeCheckInstruction typeCheckInstruction) {
+            ClassEntry classInfo = typeCheckInstruction.type();
+            className = classInfo.asInternalName();
+        }
         if (!expected.equals(className)) {
             throw new AssertionError("The type of the 'checkcast' is not right. Expected: " +
                     expected + ", actual: " + className);
