@@ -32,7 +32,7 @@ import jdk.test.whitebox.WhiteBox;
         }
 
         if (!args[0].equals("true") && !args[0].equals("false")) {
-          throw new RuntimeException("Invalid argument: Test requires arg: [true|false]");
+            throw new RuntimeException("Invalid argument: Test requires arg: [true|false]");
         }
 
         ResolvedReferencesTestApp t = new ResolvedReferencesTestApp();
