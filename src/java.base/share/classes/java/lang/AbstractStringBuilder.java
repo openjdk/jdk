@@ -35,6 +35,7 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
@@ -829,7 +830,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(int i) {
         int count = this.count;
-        int spaceNeeded = count + Integer.stringSize(i);
+        int spaceNeeded = count + DecimalDigits.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             StringLatin1.getChars(i, spaceNeeded, value);
@@ -854,7 +855,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(long l) {
         int count = this.count;
-        int spaceNeeded = count + Long.stringSize(l);
+        int spaceNeeded = count + DecimalDigits.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             StringLatin1.getChars(l, spaceNeeded, value);
