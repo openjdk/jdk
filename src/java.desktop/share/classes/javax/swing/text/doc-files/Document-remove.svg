@@ -49,8 +49,8 @@
             shape-rendering: crispEdges;
         }
         text {
-            font-family: 'DejaVu Sans', sans-serif;
-            font-size: 10px;
+            font-family: Arial, 'DejaVu Sans', sans-serif;
+            font-size: 13px;
             text-anchor: middle;
             dominant-baseline: middle;
         }
