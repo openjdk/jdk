@@ -38,15 +38,15 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class bug4624353 {
-    static boolean passed = true;
+    static volatile boolean passed = true;
     static JFrame fr;
     static JFileChooser fc;
 
     public static void main(String args[]) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
 
-        SwingUtilities.invokeAndWait(() -> {
-            try {
+        try {
+            SwingUtilities.invokeAndWait(() -> {
                 fr = new JFrame("bug4624353");
                 fc = new JFileChooser();
                 fc.setControlButtonsAreShown(false);
@@ -55,15 +55,17 @@ public class bug4624353 {
                 fr.setVisible(true);
 
                 passAround(fc);
-                if (!passed) {
-                    throw new RuntimeException("Test failed");
-                }
-            } finally {
+            });
+            if (!passed) {
+                throw new RuntimeException("Test failed");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
                 if (fr != null) {
                     fr.dispose();
                 }
-            }
-        });
+            });
+        }
     }
 
     public static void passAround(Container c) {
