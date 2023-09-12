@@ -45,6 +45,9 @@
             stroke: red;
             stroke-width: 1px;
         }
+        rect, line {
+            shape-rendering: crispEdges;
+        }
         text {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 10px;
