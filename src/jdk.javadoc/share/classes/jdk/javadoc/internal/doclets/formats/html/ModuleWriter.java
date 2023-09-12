@@ -165,12 +165,8 @@ public class ModuleWriter extends HtmlDocletWriter {
         computeModulesData();
     }
 
-    /**
-     * Build the module summary.
-     *
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    public void build() throws DocletException {
+    @Override
+    public void buildPage() throws DocletException {
         buildModuleDoc();
     }
 
@@ -681,6 +677,7 @@ public class ModuleWriter extends HtmlDocletWriter {
                 row.add(getPackageExportOpensTo(entry.openedTo));
             }
             Content summary = new ContentBuilder();
+            // TODO: consider deprecation info, addPackageDeprecationInfo
             addPreviewSummary(pkg, summary);
             addSummaryComment(pkg, summary);
             row.add(summary);

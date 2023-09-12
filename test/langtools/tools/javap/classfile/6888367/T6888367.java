@@ -24,21 +24,23 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.lang.constant.*;
+import java.nio.file.Paths;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.Type.ArrayType;
-import com.sun.tools.classfile.Type.ClassSigType;
-import com.sun.tools.classfile.Type.ClassType;
-import com.sun.tools.classfile.Type.MethodType;
-import com.sun.tools.classfile.Type.SimpleType;
-import com.sun.tools.classfile.Type.TypeParamType;
-import com.sun.tools.classfile.Type.WildcardType;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
 
 /*
  * @test
  * @bug 6888367
  * @summary classfile library parses signature attributes incorrectly
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 
 /*
@@ -61,99 +63,108 @@ public class T6888367 {
     }
 
     public void run() throws Exception {
-        ClassFile cf = getClassFile("Test");
+        ClassModel cm = getClassFile("Test");
 
-        testFields(cf);
-        testMethods(cf);
-        testInnerClasses(cf); // recursive
+        testFields(cm);
+        testMethods(cm);
+        testInnerClasses(cm); // recursive
 
         if (errors > 0)
             throw new Exception(errors + " errors found");
     }
 
-    void testFields(ClassFile cf) throws Exception {
-        String cn = cf.getName();
-        ConstantPool cp = cf.constant_pool;
-        for (Field f: cf.fields) {
-            test("field " + cn + "." + f.getName(cp), f.descriptor, f.attributes, cp);
+    void testFields(ClassModel cm) throws Exception {
+        String cn = cm.thisClass().name().stringValue();
+        for (FieldModel fm: cm.fields()) {
+            test("field " + cn + "." + fm.fieldName(), fm.fieldTypeSymbol(), fm);
         }
     }
 
-    void testMethods(ClassFile cf) throws Exception {
-        String cn = cf.getName();
-        ConstantPool cp = cf.constant_pool;
-        for (Method m: cf.methods) {
-            test("method " + cn + "." + m.getName(cp), m.descriptor, m.attributes, cp);
+    void testMethods(ClassModel cm) throws Exception {
+        String cn = cm.thisClass().name().stringValue();
+        for (MethodModel mm: cm.methods()) {
+            test("method " + cn + "." + mm.methodName(), mm.methodTypeSymbol(), mm);
         }
     }
 
-    void testInnerClasses(ClassFile cf) throws Exception {
-        ConstantPool cp = cf.constant_pool;
-        InnerClasses_attribute ic =
-                (InnerClasses_attribute) cf.attributes.get(Attribute.InnerClasses);
-        for (InnerClasses_attribute.Info info: ic.classes) {
-            String outerClassName = cp.getClassInfo(info.outer_class_info_index).getName();
-            if (!outerClassName.equals(cf.getName())) {
+    void testInnerClasses(ClassModel cm) throws Exception {
+        InnerClassesAttribute ic =
+                cm.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+        assert ic != null;
+        for (InnerClassInfo info: ic.classes()) {
+            ClassEntry outerClass = info.outerClass().orElse(null);
+            if (outerClass == null || !outerClass.name().equalsString(cm.getClass().getName())) {
                 continue;
             }
-            String innerClassName = cp.getClassInfo(info.inner_class_info_index).getName();
-            ClassFile icf = getClassFile(innerClassName);
-            test("class " + innerClassName, null, icf.attributes, icf.constant_pool);
-            testInnerClasses(icf);
+            String innerClassName = info.innerClass().asInternalName();
+            ClassModel icm = getClassFile(innerClassName);
+            test("class " + innerClassName, null, icm);
+            testInnerClasses(icm);
         }
     }
 
-    void test(String name, Descriptor desc, Attributes attrs, ConstantPool cp)
-            throws Exception {
-        AnnotValues d = getDescValue(attrs, cp);
-        AnnotValues s = getSigValue(attrs, cp);
+    void test(String name, ConstantDesc desc, AttributedElement m) {
+        AnnotValues d = getDescValue(m);
+        AnnotValues s = getSigValue(m);
         if (d == null && s == null) // not a test field or method if no @Desc or @Sig given
             return;
 
         System.err.println(name);
-
-        if (desc != null) {
-            System.err.println("    descriptor: " + desc.getValue(cp));
-            checkEqual(d.raw, desc.getValue(cp));
-            Type dt = new Signature(desc.index).getType(cp);
-            checkEqual(d.type, tp.print(dt));
-        }
-
-        Signature_attribute sa = (Signature_attribute) attrs.get(Attribute.Signature);
+        SignatureAttribute sa = m.findAttribute(Attributes.SIGNATURE).orElse(null);
         if (sa != null)
-            System.err.println("     signature: " + sa.getSignature(cp));
+            System.err.println("     signature: " + sa.signature());
 
-        if (s != null || sa != null) {
-            if (s != null && sa != null) {
-                checkEqual(s.raw, sa.getSignature(cp));
-                Type st = new Signature(sa.signature_index).getType(cp);
-                checkEqual(s.type, tp.print(st));
-            } else if (s != null)
-                error("@Sig annotation found but not Signature attribute");
-            else
-                error("Signature attribute found but no @Sig annotation");
+        switch (desc) {
+            case ClassDesc cDesc -> {
+                System.err.println("    descriptor: " + cDesc.descriptorString());
+                checkEqual(d.raw, cDesc.descriptorString());
+                Signature dt = Signature.of(cDesc);
+                checkEqual(d.type, tp.print(dt));
+                if (s != null || sa != null) {
+                    if (s != null && sa != null) {
+                        checkEqual(s.raw, sa.signature().stringValue());
+                        Signature st = Signature.parseFrom(sa.signature().stringValue());
+                        checkEqual(s.type, tp.print(st));
+                    } else if (s != null)
+                        error("@Sig annotation found but not Signature attribute");
+                    else
+                        error("Signature attribute found but no @Sig annotation");
+                }
+            }
+            case MethodTypeDesc mDesc -> {
+                System.err.println("    descriptor: " + mDesc.descriptorString());
+                checkEqual(d.raw, mDesc.descriptorString());
+                MethodSignature mdt = MethodSignature.of(mDesc);
+                checkEqual(d.type, tp.print(mdt));
+                if (s != null || sa != null) {
+                    if (s != null && sa != null) {
+                        checkEqual(s.raw, sa.signature().stringValue());
+                        MethodSignature mst = MethodSignature.parseFrom(sa.signature().stringValue());
+                        checkEqual(s.type, tp.print(mst));
+                    } else if (s != null)
+                        error("@Sig annotation found but not Signature attribute");
+                    else
+                        error("Signature attribute found but no @Sig annotation");
+                }
+            }
+            default -> throw new AssertionError();
         }
-
         System.err.println();
     }
 
 
-    ClassFile getClassFile(String name) throws IOException, ConstantPoolException {
-        URL url = getClass().getResource(name + ".class");
-        InputStream in = url.openStream();
-        try {
-            return ClassFile.read(in);
-        } finally {
-            in.close();
-        }
+    ClassModel getClassFile(String name) throws IOException, URISyntaxException {
+        URL rsc = getClass().getResource(name + ".class");
+        assert rsc != null;
+        return Classfile.of().parse(Paths.get(rsc.toURI()));
     }
 
-    AnnotValues getDescValue(Attributes attrs, ConstantPool cp) throws Exception {
-        return getAnnotValues(Desc.class.getName(), attrs, cp);
+    AnnotValues getDescValue(AttributedElement m) {
+        return getAnnotValues(Desc.class.getName(), m);
     }
 
-    AnnotValues getSigValue(Attributes attrs, ConstantPool cp) throws Exception {
-        return getAnnotValues(Sig.class.getName(), attrs, cp);
+    AnnotValues getSigValue(AttributedElement m) {
+        return getAnnotValues(Sig.class.getName(), m);
     }
 
     static class AnnotValues {
@@ -165,20 +176,14 @@ public class T6888367 {
         final String type;
     }
 
-    AnnotValues getAnnotValues(String annotName, Attributes attrs, ConstantPool cp)
-            throws Exception {
-        RuntimeInvisibleAnnotations_attribute annots =
-                (RuntimeInvisibleAnnotations_attribute)attrs.get(Attribute.RuntimeInvisibleAnnotations);
+    AnnotValues getAnnotValues(String annotName, AttributedElement m) {
+        RuntimeInvisibleAnnotationsAttribute annots = m.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
         if (annots != null) {
-            for (Annotation a: annots.annotations) {
-                if (cp.getUTF8Value(a.type_index).equals("L" + annotName + ";")) {
-                    Annotation.Primitive_element_value pv0 =
-                            (Annotation.Primitive_element_value) a.element_value_pairs[0].value;
-                    Annotation.Primitive_element_value pv1 =
-                            (Annotation.Primitive_element_value) a.element_value_pairs[1].value;
-                    return new AnnotValues(
-                            cp.getUTF8Value(pv0.const_value_index),
-                            cp.getUTF8Value(pv1.const_value_index));
+            for (Annotation a: annots.annotations()) {
+                if (a.classSymbol().descriptorString().equals("L" + annotName + ";")) {
+                    String pv0 = ((AnnotationValue.OfString) a.elements().get(0).value()).stringValue();
+                    String pv1 = ((AnnotationValue.OfString) a.elements().get(1).value()).stringValue();
+                    return new AnnotValues(pv0, pv1);
                 }
             }
         }
@@ -187,7 +192,7 @@ public class T6888367 {
     }
 
     void checkEqual(String expect, String found) {
-        if (!(expect == null ? found == null : expect.equals(found))) {
+        if (!(Objects.equals(expect, found))) {
             System.err.println("expected: " + expect);
             System.err.println("   found: " + found);
             error("unexpected values found");
@@ -203,96 +208,128 @@ public class T6888367 {
 
     TypePrinter tp = new TypePrinter();
 
-    class TypePrinter implements Type.Visitor<String,Void> {
-        String print(Type t) {
-            return t == null ? null : t.accept(this, null);
+    class TypePrinter {
+        <T> String print(T t) {
+            switch (t) {
+                case Signature.BaseTypeSig type -> {
+                    return visitSimpleType(type);
+                }
+                case Signature.ArrayTypeSig type -> {
+                    return visitArrayType(type);
+                }
+                case Signature.ClassTypeSig type -> {
+                    return visitClassType(type);
+                }
+                case ClassSignature type -> {
+                    return visitClassSigType(type);
+                }
+                case MethodSignature type -> {
+                    return visitMethodType(type);
+                }
+                case Signature.TypeVarSig type -> {
+                    return "S{" + type.identifier() + "}"; //Consider the TypeVarSig as Simple Type
+                }
+                default -> {
+                    return null;
+                }
+            }
         }
-        String print(String pre, List<? extends Type> ts, String post) {
+        <T> String print(String pre, List<T> ts, String post) {
             if (ts == null)
                 return null;
             StringBuilder sb = new StringBuilder();
             sb.append(pre);
             String sep = "";
-            for (Type t: ts) {
+            for (T t: ts) {
                 sb.append(sep);
-                sb.append(print(t));
+                switch (t) {
+                    case Signature sig -> sb.append(print(sig));
+                    case Signature.TypeParam pSig -> sb.append(visitTypeParamType(pSig));
+                    case Signature.TypeArg aSig -> sb.append(visitWildcardType(aSig));
+                    default -> throw new AssertionError();
+                }
                 sep = ",";
             }
             sb.append(post);
             return sb.toString();
         }
 
-        public String visitSimpleType(SimpleType type, Void p) {
-            return "S{" + type.name + "}";
+        public String visitSimpleType(Signature.BaseTypeSig type) {
+            return "S{" + type.baseType() + "}";
         }
 
-        public String visitArrayType(ArrayType type, Void p) {
-            return "A{" + print(type.elemType) + "}";
+        public String visitArrayType(Signature.ArrayTypeSig type) {
+            return "A{" + print(type.componentSignature()) + "}";
         }
 
-        public String visitMethodType(MethodType type, Void p) {
+        public String visitMethodType(MethodSignature type) {
             StringBuilder sb = new StringBuilder();
             sb.append("M{");
-            if (type.typeParamTypes != null)
-                sb.append(print("<", type.typeParamTypes, ">"));
-            sb.append(print(type.returnType));
-            sb.append(print("(", type.paramTypes, ")"));
-            if (type.throwsTypes != null)
-                sb.append(print("", type.throwsTypes, ""));
+            if (!type.typeParameters().isEmpty())
+                sb.append(print("<", type.typeParameters(), ">"));
+            sb.append(print(type.result()));
+            sb.append(print("(", type.arguments(), ")"));
+            if (!type.throwableSignatures().isEmpty())
+                sb.append(print("", type.throwableSignatures(), ""));
             sb.append("}");
             return sb.toString();
         }
 
-        public String visitClassSigType(ClassSigType type, Void p) {
+        public String visitClassSigType(ClassSignature type) {
             StringBuilder sb = new StringBuilder();
             sb.append("CS{");
-            if (type.typeParamTypes != null)
-                sb.append(print("<", type.typeParamTypes, ">"));
-            sb.append(print(type.superclassType));
-            if (type.superinterfaceTypes != null)
-                sb.append(print("i(", type.superinterfaceTypes, ")"));
+            if (!type.typeParameters().isEmpty())
+                sb.append(print("<", type.typeParameters(), ">"));
+            sb.append(print(type.superclassSignature()));
+            if (!type.superinterfaceSignatures().isEmpty())
+                sb.append(print("i(", type.superinterfaceSignatures(), ")"));
             sb.append("}");
             return sb.toString();
         }
 
-        public String visitClassType(ClassType type, Void p) {
+        public String visitClassType(Signature.ClassTypeSig type) {
             StringBuilder sb = new StringBuilder();
             sb.append("C{");
-            if (type.outerType != null) {
-                sb.append(print(type.outerType));
+            if (type.outerType().isPresent()) {
+                sb.append(print(type.outerType().get()));
                 sb.append(".");
             }
-            sb.append(type.name);
-            if (type.typeArgs != null)
-                sb.append(print("<", type.typeArgs, ">"));
+            sb.append(type.className());
+            if (!type.typeArgs().isEmpty())
+                sb.append(print("<", type.typeArgs(), ">"));
             sb.append("}");
             return sb.toString();
         }
 
-        public String visitTypeParamType(TypeParamType type, Void p) {
+        public String visitTypeParamType(Signature.TypeParam type) {
             StringBuilder sb = new StringBuilder();
             sb.append("TA{");
-            sb.append(type.name);
-            if (type.classBound != null) {
+            sb.append(type.identifier());
+            if (type.classBound().isPresent()) {
                 sb.append(":c");
-                sb.append(print(type.classBound));
+                sb.append(print(type.classBound().get()));
             }
-            if (type.interfaceBounds != null)
-                sb.append(print(":i", type.interfaceBounds, ""));
+            if (!type.interfaceBounds().isEmpty())
+                sb.append(print(":i", type.interfaceBounds(), ""));
             sb.append("}");
             return sb.toString();
         }
 
-        public String visitWildcardType(WildcardType type, Void p) {
-            switch (type.kind) {
-                case UNBOUNDED:
+        public String visitWildcardType(Signature.TypeArg type) {
+            switch (type.wildcardIndicator()) {
+                case UNBOUNDED -> {
                     return "W{?}";
-                case EXTENDS:
-                    return "W{e," + print(type.boundType) + "}";
-                case SUPER:
-                    return "W{s," + print(type.boundType) + "}";
-                default:
-                    throw new AssertionError();
+                }
+                case EXTENDS -> {
+                    return "W{e," + print(type.boundType().get()) + "}";
+                }
+                case SUPER -> {
+                    return "W{s," + print(type.boundType().get()) + "}";
+                }
+                default -> {
+                    if (type.boundType().isPresent()) return print(type.boundType().get());
+                    else throw new AssertionError();
+                }
             }
         }
 
@@ -317,28 +354,28 @@ class GenClss<T> { }
 class Test {
     // fields
 
-    @Desc(d="Z", t="S{boolean}")
+    @Desc(d="Z", t="S{Z}")
     boolean z;
 
-    @Desc(d="B", t="S{byte}")
+    @Desc(d="B", t="S{B}")
     byte b;
 
-    @Desc(d="C", t="S{char}")
+    @Desc(d="C", t="S{C}")
     char c;
 
-    @Desc(d="D", t="S{double}")
+    @Desc(d="D", t="S{D}")
     double d;
 
-    @Desc(d="F", t="S{float}")
+    @Desc(d="F", t="S{F}")
     float f;
 
-    @Desc(d="I", t="S{int}")
+    @Desc(d="I", t="S{I}")
     int i;
 
-    @Desc(d="J", t="S{long}")
+    @Desc(d="J", t="S{J}")
     long l;
 
-    @Desc(d="S", t="S{short}")
+    @Desc(d="S", t="S{S}")
     short s;
 
     @Desc(d="LClss;", t="C{Clss}")
@@ -347,7 +384,7 @@ class Test {
     @Desc(d="LIntf;", t="C{Intf}")
     Intf intf;
 
-    @Desc(d="[I", t="A{S{int}}")
+    @Desc(d="[I", t="A{S{I}}")
     int[] ai;
 
     @Desc(d="[LClss;", t="A{C{Clss}}")
@@ -359,16 +396,16 @@ class Test {
 
     // methods, return types
 
-    @Desc(d="()V", t="M{S{void}()}")
+    @Desc(d="()V", t="M{S{V}()}")
     void mv0() { }
 
-    @Desc(d="()I", t="M{S{int}()}")
+    @Desc(d="()I", t="M{S{I}()}")
     int mi0() { return 0; }
 
     @Desc(d="()LClss;", t="M{C{Clss}()}")
     Clss mclss0() { return null; }
 
-    @Desc(d="()[I", t="M{A{S{int}}()}")
+    @Desc(d="()[I", t="M{A{S{I}}()}")
     int[] mai0() { return null; }
 
     @Desc(d="()[LClss;", t="M{A{C{Clss}}()}")
@@ -405,57 +442,57 @@ class Test {
 
     // methods, arg types
 
-    @Desc(d="(I)V", t="M{S{void}(S{int})}")
+    @Desc(d="(I)V", t="M{S{V}(S{I})}")
     void mi1(int arg) { }
 
-    @Desc(d="(LClss;)V", t="M{S{void}(C{Clss})}")
+    @Desc(d="(LClss;)V", t="M{S{V}(C{Clss})}")
     void mclss1(Clss arg) { }
 
-    @Desc(d="([I)V", t="M{S{void}(A{S{int}})}")
+    @Desc(d="([I)V", t="M{S{V}(A{S{I}})}")
     void mai1(int[] arg) { }
 
-    @Desc(d="([LClss;)V", t="M{S{void}(A{C{Clss}})}")
+    @Desc(d="([LClss;)V", t="M{S{V}(A{C{Clss}})}")
     void maClss1(Clss[] arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
-    @Sig(s="(LGenClss<LClss;>;)V", t="M{S{void}(C{GenClss<C{Clss}>})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
+    @Sig(s="(LGenClss<LClss;>;)V", t="M{S{V}(C{GenClss<C{Clss}>})}")
     void mgenClss1(GenClss<Clss> arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
-    @Sig(s="(LGenClss<*>;)V", t="M{S{void}(C{GenClss<W{?}>})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
+    @Sig(s="(LGenClss<*>;)V", t="M{S{V}(C{GenClss<W{?}>})}")
     void mgenClssW1(GenClss<?> arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
-    @Sig(s="(LGenClss<+LClss;>;)V", t="M{S{void}(C{GenClss<W{e,C{Clss}}>})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
+    @Sig(s="(LGenClss<+LClss;>;)V", t="M{S{V}(C{GenClss<W{e,C{Clss}}>})}")
     void mgenClssWExtClss1(GenClss<? extends Clss> arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
-    @Sig(s="(LGenClss<-LClss;>;)V", t="M{S{void}(C{GenClss<W{s,C{Clss}}>})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
+    @Sig(s="(LGenClss<-LClss;>;)V", t="M{S{V}(C{GenClss<W{s,C{Clss}}>})}")
     void mgenClssWSupClss1(GenClss<? super Clss> arg) { }
 
-    @Desc(d="(Ljava/lang/Object;)V", t="M{S{void}(C{java/lang/Object})}")
+    @Desc(d="(Ljava/lang/Object;)V", t="M{S{V}(C{java/lang/Object})}")
     @Sig(s="<T:Ljava/lang/Object;>(TT;)V",
-        t="M{<TA{T:cC{java/lang/Object}}>S{void}(S{T})}")
+        t="M{<TA{T:cC{java/lang/Object}}>S{V}(S{T})}")
     <T> void mt1(T arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
     @Sig(s="<T:Ljava/lang/Object;>(LGenClss<+TT;>;)V",
-        t="M{<TA{T:cC{java/lang/Object}}>S{void}(C{GenClss<W{e,S{T}}>})}")
+        t="M{<TA{T:cC{java/lang/Object}}>S{V}(C{GenClss<W{e,S{T}}>})}")
     <T> void mgenClssWExtT1(GenClss<? extends T> arg) { }
 
-    @Desc(d="(LGenClss;)V", t="M{S{void}(C{GenClss})}")
+    @Desc(d="(LGenClss;)V", t="M{S{V}(C{GenClss})}")
     @Sig(s="<T:Ljava/lang/Object;>(LGenClss<-TT;>;)V",
-        t="M{<TA{T:cC{java/lang/Object}}>S{void}(C{GenClss<W{s,S{T}}>})}")
+        t="M{<TA{T:cC{java/lang/Object}}>S{V}(C{GenClss<W{s,S{T}}>})}")
     <T> void mgenClssWSupT1(GenClss<? super T> arg) { }
 
     // methods, throws
 
-    @Desc(d="()V", t="M{S{void}()}")
+    @Desc(d="()V", t="M{S{V}()}")
     void m_E() throws Exception { }
 
-    @Desc(d="()V", t="M{S{void}()}")
+    @Desc(d="()V", t="M{S{V}()}")
     @Sig(s="<T:Ljava/lang/Throwable;>()V^TT;",
-        t="M{<TA{T:cC{java/lang/Throwable}}>S{void}()S{T}}")
+        t="M{<TA{T:cC{java/lang/Throwable}}>S{V}()S{T}}")
     <T extends Throwable> void m_T() throws T { }
 
     // inner classes

@@ -3,18 +3,18 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General License version 2 only, as
+ * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.  Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
  * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General License
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
  *
- * You should have received a copy of the GNU General License version
+ * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
@@ -35,6 +35,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models the {@code StackMapTable} attribute {@jvms 4.7.4}, which can appear
  * on a {@code Code} attribute.
+ * <p>
+ * The attribute does not permit multiple instances in a given location.
+ * Subsequent occurrence of the attribute takes precedence during the attributed
+ * element build or transformation.
  */
 public sealed interface StackMapTableAttribute
         extends Attribute<StackMapTableAttribute>, CodeElement
@@ -45,6 +49,10 @@ public sealed interface StackMapTableAttribute
      */
     List<StackMapFrameInfo> entries();
 
+    /**
+     * {@return a stack map table attribute}
+     * @param entries the stack map frames
+     */
     public static StackMapTableAttribute of(List<StackMapFrameInfo> entries) {
         return new UnboundAttribute.UnboundStackMapTableAttribute(entries);
     }

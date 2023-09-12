@@ -409,8 +409,8 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * Replaces each element of this list with the result of applying the
-     * operator to that element.  Errors or runtime exceptions thrown by
-     * the operator are relayed to the caller.
+     * operator to that element (optional operation).  Errors or runtime
+     * exceptions thrown by the operator are relayed to the caller.
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code list}:
@@ -426,10 +426,8 @@ public interface List<E> extends SequencedCollection<E> {
      * replacing the first element.
      *
      * @param operator the operator to apply to each element
-     * @throws UnsupportedOperationException if this list is unmodifiable.
-     *         Implementations may throw this exception if an element
-     *         cannot be replaced or if, in general, modification is not
-     *         supported
+     * @throws UnsupportedOperationException if the {@code replaceAll} operation
+     *         is not supported by this list
      * @throws NullPointerException if the specified operator is null or
      *         if the operator result is a null value and this list does
      *         not permit null elements
@@ -446,8 +444,8 @@ public interface List<E> extends SequencedCollection<E> {
 
     /**
      * Sorts this list according to the order induced by the specified
-     * {@link Comparator}.  The sort is <i>stable</i>: this method must not
-     * reorder equal elements.
+     * {@link Comparator} (optional operation).  The sort is <i>stable</i>:
+     * this method must not reorder equal elements.
      *
      * <p>All elements in this list must be <i>mutually comparable</i> using the
      * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
@@ -495,8 +493,8 @@ public interface List<E> extends SequencedCollection<E> {
      *          {@linkplain Comparable natural ordering} should be used
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> using the specified comparator
-     * @throws UnsupportedOperationException if the list's list-iterator does
-     *         not support the {@code set} operation
+     * @throws UnsupportedOperationException if the {@code sort} operation
+     *         is not supported by this list
      * @throws IllegalArgumentException
      *         (<a href="Collection.html#optional-restrictions">optional</a>)
      *         if the comparator is found to violate the {@link Comparator}

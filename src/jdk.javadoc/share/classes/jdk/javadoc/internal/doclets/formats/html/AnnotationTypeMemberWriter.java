@@ -113,31 +113,19 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
         buildDefaultValueInfo(annotationContent);
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param target the content to which the documentation will be added
-     */
+    @Override
     protected void buildSignature(Content target) {
         target.add(getSignature(currentMember));
     }
 
-    /**
-     * Build the deprecation information.
-     *
-     * @param annotationContent the content to which the documentation will be added
-     */
-    protected void buildDeprecationInfo(Content annotationContent) {
-        addDeprecated(currentMember, annotationContent);
+    @Override
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentMember, target);
     }
 
-    /**
-     * Build the preview information.
-     *
-     * @param annotationContent the content to which the documentation will be added
-     */
-    protected void buildPreviewInfo(Content annotationContent) {
-        addPreview(currentMember, annotationContent);
+    @Override
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentMember, target);
     }
 
     /**
@@ -171,8 +159,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement,
-            Content content) {
+    public Content getMemberSummaryHeader(Content content) {
         switch (kind) {
             case ANNOTATION_TYPE_MEMBER_REQUIRED -> content.add(selectComment(
                     MarkerComments.START_OF_ANNOTATION_TYPE_REQUIRED_MEMBER_SUMMARY,
@@ -185,10 +172,6 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
         Content c = new ContentBuilder();
         writer.addSummaryHeader(this, c);
         return c;
-    }
-
-    protected Content getMemberHeader() {
-        return writer.getMemberHeader();
     }
 
     @Override
@@ -338,7 +321,7 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 : member.asType();
     }
 
-    public void addDefaultValueInfo(Element member, Content annotationContent) {
+    protected void addDefaultValueInfo(Element member, Content annotationContent) {
         if (utils.isAnnotationInterface(member.getEnclosingElement())) {
             ExecutableElement ee = (ExecutableElement) member;
             AnnotationValue value = ee.getDefaultValue();

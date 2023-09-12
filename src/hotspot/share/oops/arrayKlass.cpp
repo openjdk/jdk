@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -96,6 +97,7 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
   set_layout_helper(Klass::_lh_neutral_value);
   set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
   JFR_ONLY(INIT_ID(this);)
+  log_array_class_load(this);
 }
 
 
@@ -173,12 +175,12 @@ void ArrayKlass::remove_java_mirror() {
 }
 
 void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
-  assert(loader_data == ClassLoaderData::the_null_class_loader_data(), "array classes belong to null loader");
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   // Klass recreates the component mirror also
 
   if (_higher_dimension != nullptr) {
     ArrayKlass *ak = higher_dimension();
+    log_array_class_load(ak);
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
@@ -193,6 +195,21 @@ void ArrayKlass::cds_print_value_on(outputStream* st) const {
   }
 }
 #endif // INCLUDE_CDS
+
+void ArrayKlass::log_array_class_load(Klass* k) {
+  LogTarget(Debug, class, load, array) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ResourceMark rm;
+    ls.print("%s", k->name()->as_klass_external_name());
+    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
+      ls.print(" source: shared objects file (top)");
+    } else if (MetaspaceShared::is_shared_static((void*)k)) {
+      ls.print(" source: shared objects file");
+    }
+    ls.cr();
+  }
+}
 
 // Printing
 

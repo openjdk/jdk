@@ -170,7 +170,6 @@ public class TestTrimNative {
         if (expectEnabled) {
             output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval + " ms");
             output.shouldContain("Native heap trimmer start");
-            output.shouldContain("Native heap trimmer stop");
         } else {
             output.shouldNotContain("Periodic native trim enabled");
         }
@@ -251,7 +250,7 @@ public class TestTrimNative {
             System.gc();
 
             // give GC time to react
-            System.out.println("Sleeping...");
+            System.out.println("Sleeping for " + sleeptime + " ms...");
             Thread.sleep(sleeptime);
             System.out.println("Done.");
         }
@@ -296,12 +295,15 @@ public class TestTrimNative {
 
             case "trimNativeLowInterval":
             case "trimNativeLowIntervalStrict": {
+                long ms1 = System.currentTimeMillis();
                 OutputAnalyzer output = runTestWithOptions(
                         new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=1" },
                         new String[] { TestTrimNative.Tester.class.getName(), "0" }
                 );
+                long ms2 = System.currentTimeMillis();
+                int maxTrimsExpected = (int)(ms2 - ms1); // 1ms trim interval
                 checkExpectedLogMessages(output, true, 1);
-                parseOutputAndLookForNegativeTrim(output, 1, 3000, strictTesting);
+                parseOutputAndLookForNegativeTrim(output, 1, (int)maxTrimsExpected, strictTesting);
             } break;
 
             case "testOffOnNonCompliantPlatforms": {

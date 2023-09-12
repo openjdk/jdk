@@ -30,6 +30,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 
 
 // Implementation of StubQueue

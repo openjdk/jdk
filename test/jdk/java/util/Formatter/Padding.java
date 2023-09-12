@@ -29,6 +29,8 @@
  * @run junit Padding
  */
 
+import java.util.Locale;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -307,7 +309,7 @@ public class Padding {
     @ParameterizedTest
     @MethodSource
     void padding(String expected, String format, Object value) {
-        assertEquals(expected, String.format(format, value));
+        assertEquals(expected, String.format(Locale.US, format, value));
     }
 
 }

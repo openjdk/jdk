@@ -171,9 +171,8 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
 
   if (UseRVV) {
@@ -210,6 +209,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
       unaligned_access.value() == MISALIGNED_FAST);
   }
+
+#ifdef __riscv_ztso
+  // Hotspot is compiled with TSO support, it will only run on hardware which
+  // supports Ztso
+  if (FLAG_IS_DEFAULT(UseZtso)) {
+    FLAG_SET_DEFAULT(UseZtso, true);
+  }
+#endif
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -268,8 +275,8 @@ void VM_Version::c2_initialize() {
       if (MaxVectorSize > _initial_vector_length) {
         warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
                 _initial_vector_length, _initial_vector_length);
+        MaxVectorSize = _initial_vector_length;
       }
-      MaxVectorSize = _initial_vector_length;
     } else {
       vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
     }

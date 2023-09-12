@@ -1096,15 +1096,15 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
   }
 }
 
-int networkStream::read(char *buf, size_t len) {
-  return os::recv(_socket, buf, (int)len, 0);
+ssize_t networkStream::read(char *buf, size_t len) {
+  return os::recv(_socket, buf, len, 0);
 }
 
 void networkStream::flush() {
   if (size() != 0) {
-    int result = os::raw_send(_socket, (char *)base(), size(), 0);
+    ssize_t result = os::raw_send(_socket, (char *)base(), size(), 0);
     assert(result != -1, "connection error");
-    assert(result == (int)size(), "didn't send enough data");
+    assert(result >= 0 && (size_t)result == size(), "didn't send enough data");
   }
   reset();
 }
@@ -1143,9 +1143,9 @@ bool networkStream::connect(const char *host, short port) {
     return false;
   }
 
-  ret = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
+  ssize_t conn = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
   freeaddrinfo(addr_info);
-  return (ret >= 0);
+  return (conn >= 0);
 }
 
 #endif
