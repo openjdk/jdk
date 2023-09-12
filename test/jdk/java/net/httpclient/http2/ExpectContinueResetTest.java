@@ -210,16 +210,13 @@ public class ExpectContinueResetTest {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            try (InputStream is = exchange.getRequestBody();
-                 OutputStream os = exchange.getResponseBody()) {
-                err.println("Sending 100");
-                exchange.sendResponseHeaders(100, -1);
-                err.println("Sending 200");
-                exchange.sendResponseHeaders(200, -1);
-                // Setting responseLength to -1, sets the END_STREAM flag on the ResponseHeaders before sending a RST_STREAM frame.
-                // Therefore, there is no need to explicitly send a RST_STREAM here.
-                err.println("Sending Reset");
-            }
+            err.println("Sending 100");
+            exchange.sendResponseHeaders(100, -1);
+            err.println("Sending 200");
+            exchange.sendResponseHeaders(200, -1);
+            // Setting responseLength to -1, sets the END_STREAM flag on the ResponseHeaders before sending a RST_STREAM frame.
+            // Therefore, there is no need to explicitly send a RST_STREAM here as this will be sent by the Server impl.
+            err.println("Sending Reset");
         }
     }
 
@@ -227,18 +224,15 @@ public class ExpectContinueResetTest {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            try (InputStream is = exchange.getRequestBody();
-                 OutputStream os = exchange.getResponseBody()) {
-                err.println("Sending 100");
-                exchange.sendResponseHeaders(100,   0);
-                err.println("Sending 200");
-                exchange.sendResponseHeaders(200, 0);
-                if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
-                    err.println("Sending Reset");
-                    testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
-                } else {
-                    throw new RuntimeException("Wrong Exchange type used");
-                }
+            err.println("Sending 100");
+            exchange.sendResponseHeaders(100,   0);
+            err.println("Sending 200");
+            exchange.sendResponseHeaders(200, 0);
+            if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
+                err.println("Sending Reset");
+                testExchange.addResetToOutputQ(ResetFrame.NO_ERROR);
+            } else {
+                throw new RuntimeException("Wrong Exchange type used");
             }
         }
     }
