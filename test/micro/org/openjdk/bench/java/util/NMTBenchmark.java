@@ -44,13 +44,11 @@ public abstract class NMTBenchmark {
   Unsafe unsafe;
   long addresses[];
 
-  @Param({"100000", "1000000"})
+  //@Param({"100000", "1000000"})
+  @Param({"100000"})
   public int N;
 
-  @Param({"0", "1"})
-  public int WITH_THREADS;
-
-  @Param({"2", "4", "8"})
+  @Param({"0", "4"})
   public int THREADS;
 
   // Each TestThread instance allocates/frees a portion (`start` to `end`) of the `addresses` array.
@@ -106,14 +104,15 @@ public abstract class NMTBenchmark {
   }
 
   @Benchmark
-  public void allocateMemory(Blackhole bh) throws InterruptedException{
+  public void mixAallocateFreeMemory(Blackhole bh) throws InterruptedException{
+
     Unsafe unsafe = Unsafe.getUnsafe();
     if (unsafe == null) {
       throw new InterruptedException();
     }
 
     addresses = new long[N];
-    if (WITH_THREADS != 0) { // Multi-threaded
+    if (THREADS != 0) { // Multi-threaded
       TestThread threads[] = new TestThread[THREADS];
 
       for (int t = 0; t < THREADS; t++) {
@@ -130,8 +129,7 @@ public abstract class NMTBenchmark {
         }
       }
     } else { // No threads used.
-      if (THREADS != 2)
-        return;
+
       for (int i = 0; i < N; i++) {
         addresses[i] = unsafe.allocateMemory(S);
         //Mixing alloc/free
@@ -162,12 +160,93 @@ public abstract class NMTBenchmark {
     }
   }
 
-  @Fork(value = 2, jvmArgsAppend={"-XX:NativeMemoryTracking=off", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
+  @Benchmark
+  public void onlyAllocateMemory() throws InterruptedException {
+    Unsafe unsafe = Unsafe.getUnsafe();
+    if (unsafe == null) {
+      throw new InterruptedException();
+    }
+
+    addresses = new long[N];
+    if (THREADS != 0) { // Multi-threaded
+      TestThread threads[] = new TestThread[THREADS];
+
+      for (int t = 0; t < THREADS; t++) {
+        // One half of threads allocate and the other half free the memory
+        threads[t] = new TestThread(t, t < (THREADS / 2) ? true : false);
+        threads[t].start();
+      }
+
+      for (int t = 0; t < THREADS; t++) {
+        try {
+          threads[t].join();
+        } catch (InterruptedException ie) {
+          // do nothing
+        }
+      }
+    } else { // No threads used.
+      for (int i = 0; i < N; i++) {
+        addresses[i] = unsafe.allocateMemory(S);
+      }
+    }
+  }
+
+  @Benchmark
+  public void mixAllocateReallocateMemory() throws InterruptedException {
+    Unsafe unsafe = Unsafe.getUnsafe();
+    if (unsafe == null) {
+      throw new InterruptedException();
+    }
+
+    addresses = new long[N];
+    if (THREADS != 0) { // Multi-threaded
+      TestThread threads[] = new TestThread[THREADS];
+
+      for (int t = 0; t < THREADS; t++) {
+        // One half of threads allocate and the other half free the memory
+        threads[t] = new TestThread(t, t < (THREADS / 2) ? true : false);
+        threads[t].start();
+      }
+
+      for (int t = 0; t < THREADS; t++) {
+        try {
+          threads[t].join();
+        } catch (InterruptedException ie) {
+          // do nothing
+        }
+      }
+    } else { // No threads used.
+      for (int i = 0; i < N; i++) {
+        addresses[i] = unsafe.allocateMemory(S);
+        //Mixing alloc/realloc
+        if (i % 3 == 0) {
+          if (addresses[i] != 0) {
+            unsafe.reallocateMemory(addresses[i], S * 2);
+            addresses[i] = 0;
+          }
+        }
+      }
+
+      for (int i = 0; i < N; i++) {
+        if (i % 2 == 0) {
+            if (addresses[i] != 0) {
+              unsafe.reallocateMemory(addresses[i], S / 2);
+              addresses[i] = 0;
+            }
+        }
+      }
+    }
+  }
+
+  public static final String ADD_EXPORTS = "--add-exports";
+  public static final String MISC_PACKAGE = "java.base/jdk.internal.misc=ALL-UNNAMED"; // used for Unsafe API
+
+  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=off", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTOff extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsAppend={"-XX:NativeMemoryTracking=summary", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
+  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=summary", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTSummary extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsAppend={"-XX:NativeMemoryTracking=detail", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
+  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=detail", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTDetail extends NMTBenchmark { }
 }
