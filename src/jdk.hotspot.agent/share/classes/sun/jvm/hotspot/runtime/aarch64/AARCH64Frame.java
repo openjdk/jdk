@@ -329,8 +329,6 @@ public class AARCH64Frame extends Frame {
 
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
-  //------------------------------------------------------------------------------
-  // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
     // Sites calling method handle intrinsics and lambda forms are
     // treated as any other call site. Therefore, no special action is
