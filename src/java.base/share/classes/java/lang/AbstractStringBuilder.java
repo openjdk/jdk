@@ -830,10 +830,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(int i) {
         int count = this.count;
-        int spaceNeeded = count + DecimalDigits.stringSize(i);
+        int spaceNeeded = count + Integer.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            DecimalDigits.getCharsLatin1(i, spaceNeeded, value);
+            StringLatin1.getChars(i, spaceNeeded, value);
         } else {
             StringUTF16.getChars(i, count, spaceNeeded, value);
         }
@@ -855,10 +855,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(long l) {
         int count = this.count;
-        int spaceNeeded = count + DecimalDigits.stringSize(l);
+        int spaceNeeded = count + Long.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
-            DecimalDigits.getCharsLatin1(l, spaceNeeded, value);
+            StringLatin1.getChars(l, spaceNeeded, value);
         } else {
             StringUTF16.getChars(l, count, spaceNeeded, value);
         }

@@ -110,7 +110,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, long value) {
-        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
+        return checkOverflow(lengthCoder + Long.stringSize(value));
     }
 
     /**
@@ -286,7 +286,7 @@ final class StringConcatHelper {
      */
     private static long prepend(long indexCoder, byte[] buf, long value) {
         if (indexCoder < UTF16) {
-            return DecimalDigits.getCharsLatin1(value, (int)indexCoder, buf);
+            return StringLatin1.getChars(value, (int)indexCoder, buf);
         } else {
             return StringUTF16.getChars(value, (int)indexCoder, buf) | UTF16;
         }
