@@ -149,6 +149,9 @@
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
+  void round_double_mode(FloatRegister dst, FloatRegister src, int round_mode,
+                         Register tmp1, Register tmp2, Register tmp3);
+
   // intrinsic methods implemented by rvv instructions
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
