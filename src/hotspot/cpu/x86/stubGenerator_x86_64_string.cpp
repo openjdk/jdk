@@ -43,7 +43,9 @@ address StubGenerator::generate_string_indexof() {
   address jmp_table[13];
   int jmp_ndx = 0;
   __ align(CodeEntryAlignment);
+  Label L_recurse;
   address start = __ pc();
+  __ bind(L_recurse);
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -66,7 +68,8 @@ address StubGenerator::generate_string_indexof() {
     Label L_inner_mid11, L_inner_mid12,L_0x404f26, L_tail_8;
     Label L_inner1, L_outer1;
 
-    Label L_begin;
+    Label L_begin, L_cross_page, L_no_recursion, L_pop_exit, L_byte_by_byte;
+    Label L_bbb_outer, L_bbb_mid, L_bbb_found;
 
     Label strchr_avx2, memcmp_avx2;
 
@@ -78,7 +81,7 @@ address StubGenerator::generate_string_indexof() {
     jmp_table[jmp_ndx++] = __ pc();
 //   0x0000000000404a6b <+59>:    mov    rax,r12
 //   0x0000000000404a6e <+62>:    jmp    0x405025 <_Z14avx2_strstr_v2PKcmS0_m+1525> L_exit
-    __ movq(rax, r12);
+    __ xorq(rax, rax);
     __ jmp(L_exit);
 
     __ bind(L_anysize);
@@ -102,6 +105,8 @@ address StubGenerator::generate_string_indexof() {
     __ xorl(rax, rax);
     __ movq(Address(rsp, 0), r9);
     __ movq(Address(rsp, 0x18), rbx);
+    __ subq(r10, rcx);
+    __ incrementq(r10);
     __ movq(Address(rsp, 0x10), r10);
     __ jmpb(L_outer_loop_guts);
 
@@ -1054,6 +1059,9 @@ address StubGenerator::generate_string_indexof() {
 #endif
 
     __ subptr(rsp, 0x68);
+    __ xorq(rax, rax);
+    __ cmpq(rcx, rax);
+    __ je(L_exit);
     __ movq(rax, -1);
     __ movq(r9, rsi);
     __ subq(r9, rcx);
@@ -1070,12 +1078,96 @@ address StubGenerator::generate_string_indexof() {
     __ movq(r11, rdx);
     __ movq(r10, rsi);
     __ movq(rbx, rdi);
+
+    // Check for potential page fault since we read 0x20 + needleSize
+    // bytes beyond the end of the haystack.  If s[n] is within the
+    // same page as s[n+k+0x20] then there's no chance of a page fault.
+    // Equates to &s[n] & 0xfff < 0xfe0
+    __ leaq(r14, Address(rbx, r10, Address::times_1, -0x1));  // &s[n-1]
+    __ movq(r15, r14);
+    __ andq(r15, 0xFFF);
+    __ cmpq(r15, 0xFFF - 0x20);
+    __ jg_b(L_cross_page);
     __ cmpq(rcx, 0xc);
     __ ja(L_anysize);
     __ mov64(rax, (int64_t) jump_table);
     __ shlq(r12, 0x3);
     __ addq(rax, r12);
+    __ shrq(r12, 0x3);  // Restore r12
     __ jmp(Address(rax, 0));
+
+    __ bind(L_cross_page);
+    //
+    // Determine if any 32-byte chunks can be done
+    __ movq(r14, rdi);
+    __ push(rdi);   // Save initial string pointer
+    __ subq(rsi, 0x20);
+    __ jbe_b(L_no_recursion);
+
+    __ push(rdi);
+    __ push(rsi);
+    __ push(rdx);
+    __ push(rcx);
+    __ call(L_recurse, relocInfo::none);
+    __ pop(rcx);
+    __ pop(rdx);
+    __ pop(rsi);
+    __ pop(rdi);
+    __ cmpq(rax, -1);
+    __ jne(L_pop_exit);
+
+    __ addq(rdi, rsi);  // end-of-string - 0x20
+    __ addq(rsi, 0x20);
+    __ subq(rdi, rcx);  // subtract needle size
+    __ cmpq(rdi, r14);
+    __ cmovq(Assembler::belowEqual, rdi, r14);
+    __ addq(r14, rsi);
+    __ subq(r14, rcx);  // last byte to read
+    __ movq(r13, rdi);  // first byte to read
+    __ jmpb(L_byte_by_byte);
+
+    __ bind(L_no_recursion);
+    __ addq(rsi, 0x20);
+    __ movq(r13, rdi);
+    __ addq(r14, rsi);
+    __ subq(r14, rcx);  // last byte to read
+
+    __ bind(L_byte_by_byte);
+    __ movq(r12, rdx);
+    __ movq(r15, rcx);
+    __ xorq(rbx, rbx);
+    __ movq(rax, -1);
+    __ load_unsigned_byte(r9, Address(r12, 0));  // first byte of needle
+    __ jmpb(L_bbb_mid);
+
+    __ bind(L_bbb_outer);
+    __ addptr(r13, 1);
+    __ cmpq(r13, r14);
+    __ ja(L_pop_exit);
+
+    __ bind(L_bbb_mid);
+    __ cmpb(r9, Address(r13, 0));
+    __ jne_b(L_bbb_outer);
+    // First byte matches
+
+    __ movq(rdi, r13);
+    __ movq(rsi, r12);
+    __ movq(rdx, r15);
+    __ call(memcmp_avx2, relocInfo::none);
+    __ testl(rax, rax);
+    __ je_b(L_bbb_found);
+    __ movq(rax, -1);
+    __ jmpb(L_bbb_outer);
+
+    __ bind(L_bbb_found);
+    __ pop(rax);        // get back pointer to start of string
+    __ subq(r13, rax);
+    __ movq(rax, r13);
+    __ jmp(L_exit);
+
+    __ bind(L_pop_exit);
+    __ pop(r15);
+    __ jmp(L_exit);
 
   __ align(CodeEntryAlignment);
     __ bind(memcmp_avx2);
