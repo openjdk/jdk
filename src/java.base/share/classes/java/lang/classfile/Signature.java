@@ -50,8 +50,8 @@ public sealed interface Signature {
     }
 
     /**
+     * {@return a Java type signature}
      * @param classDesc the symbolic description of the Java type
-     * @return Java type signature
      */
     public static Signature of(ClassDesc classDesc) {
         requireNonNull(classDesc);

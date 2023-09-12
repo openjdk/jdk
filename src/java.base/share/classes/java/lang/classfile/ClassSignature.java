@@ -47,7 +47,7 @@ public sealed interface ClassSignature
     String signatureString();
 
     /**
-     * @return class signature
+     * {@return a class signature}
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
      */
@@ -57,7 +57,7 @@ public sealed interface ClassSignature
     }
 
     /**
-     * @return class signature
+     * {@return a class signature}
      * @param typeParameters the type parameters
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces

@@ -270,7 +270,7 @@ public sealed interface Classfile
      * Parse a classfile into a {@link ClassModel}.
      * @param path the path to the classfile
      * @return the class model
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     default ClassModel parse(Path path) throws IOException {
         return parse(Files.readAllBytes(path));
@@ -306,7 +306,7 @@ public sealed interface Classfile
      * @param path the path to the file to write
      * @param thisClass the name of the class to build
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     default void buildTo(Path path,
                          ClassDesc thisClass,
@@ -322,7 +322,7 @@ public sealed interface Classfile
      * @param thisClassEntry the name of the class to build
      * @param constantPool the constant pool builder
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     default void buildTo(Path path,
                          ClassEntry thisClassEntry,
@@ -359,7 +359,7 @@ public sealed interface Classfile
      * Build a module descriptor into a file.
      * @param path the file to write
      * @param moduleAttribute the {@code Module} attribute
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     default void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute) throws IOException {
@@ -371,7 +371,7 @@ public sealed interface Classfile
      * @param path the file to write
      * @param moduleAttribute the {@code Module} attribute
      * @param handler a handler that receives a {@link ClassBuilder}
-     * @throws java.io.IOException
+     * @throws java.io.IOException if an I/O error occurs
      */
     default void buildModuleTo(Path path,
                                      ModuleAttribute moduleAttribute,

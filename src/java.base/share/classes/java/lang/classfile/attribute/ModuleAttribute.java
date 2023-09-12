@@ -255,7 +255,7 @@ public sealed interface ModuleAttribute
         ModuleAttributeBuilder exports(ModuleExportInfo exports);
 
         /**
-         *
+         * Opens package
          * @param pkge the opened package
          * @param opensFlagsMask the open package flags
          * @param opensToModules the modules to open to
@@ -264,7 +264,7 @@ public sealed interface ModuleAttribute
         ModuleAttributeBuilder opens(PackageDesc pkge, int opensFlagsMask, ModuleDesc... opensToModules);
 
         /**
-         *
+         * Opens package
          * @param pkge the opened package
          * @param opensFlags the open package flags
          * @param opensToModules the modules to open to

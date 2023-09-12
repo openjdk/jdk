@@ -58,6 +58,9 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  */
 public final class ClassPrinter {
 
+    private ClassPrinter() {
+    }
+
     /**
      * Level of detail to print or export.
      */

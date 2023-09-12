@@ -392,9 +392,9 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the type in an instanceof expression or a new expression,
          * or the type before the :: in a method reference expression}
-         * {@param targetType {@link TargetType#INSTANCEOF}, {@link TargetType#NEW},
-         *                    {@link TargetType#CONSTRUCTOR_REFERENCE},
-         *                    or {@link TargetType#METHOD_REFERENCE}}
+         * @param targetType {@link TargetType#INSTANCEOF}, {@link TargetType#NEW},
+         *                   {@link TargetType#CONSTRUCTOR_REFERENCE},
+         *                   or {@link TargetType#METHOD_REFERENCE}
          * @param target the code label corresponding to the instruction
          */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
@@ -438,10 +438,10 @@ public sealed interface TypeAnnotation
          * or on the i'th type argument in the explicit type argument list for any of the following:
          * a new expression, an explicit constructor invocation statement, a method invocation expression,
          * or a method reference expression}
-         * {@param targetType {@link TargetType#CAST}, {@link TargetType#CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT},
-         *                    {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT},
-         *                    {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
-         *                    or {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT}}
+         * @param targetType {@link TargetType#CAST}, {@link TargetType#CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT},
+         *                   {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT},
+         *                   {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
+         *                   or {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT}
          * @param target the code label corresponding to the instruction
          * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
          */
@@ -609,7 +609,7 @@ public sealed interface TypeAnnotation
             permits TargetInfoImpl.LocalVarTargetImpl {
 
         /**
-         * @return the table of local variable location/indices.
+         * {@return the table of local variable location/indices.}
          */
         List<LocalVarTargetInfo> table();
     }

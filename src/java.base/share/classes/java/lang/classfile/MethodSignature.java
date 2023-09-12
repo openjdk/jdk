@@ -52,7 +52,7 @@ public sealed interface MethodSignature
     String signatureString();
 
     /**
-     * @return method signature for a raw (no generic information) method descriptor
+     * {@return method signature for a raw (no generic information) method descriptor}
      * @param methodDescriptor the method descriptor
      */
     public static MethodSignature of(MethodTypeDesc methodDescriptor) {
@@ -66,7 +66,7 @@ public sealed interface MethodSignature
     }
 
     /**
-     * @return method signature
+     * {@return a method signature}
      * @param result signature for the return type
      * @param arguments signatures for the method arguments
      */
@@ -80,7 +80,7 @@ public sealed interface MethodSignature
     }
 
     /**
-     * @return method signature
+     * {@return a method signature}
      * @param typeParameters signatures for the type parameters
      * @param exceptions signatures for the exceptions
      * @param result signature for the return type

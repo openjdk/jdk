@@ -64,7 +64,7 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
     /**
      * Creates a new instance of CodeRelabeler using provided {@link java.util.function.BiFunction}
      * to re-label the code.
-     * @param mapFunction
+     * @param mapFunction function remapping labels
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(BiFunction<Label, CodeBuilder, Label> mapFunction) {
