@@ -91,11 +91,14 @@ public class Displayable extends Panel {
     public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
             Frame f = new Frame();
-            Displayable test = new Displayable();
-            test.init();
-            f.add("North", test);
-            f.pack();
-            f.dispose();
+            try {
+                Displayable test = new Displayable();
+                test.init();
+                f.add("North", test);
+                f.pack();
+            } finally {
+                f.dispose();
+            }
         });
     }
 }

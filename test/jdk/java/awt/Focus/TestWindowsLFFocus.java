@@ -61,6 +61,7 @@ public class TestWindowsLFFocus {
     private static void test() throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
+                actionFired = false;
                 frame = new JFrame();
                 bar = new JMenuBar();
                 frame.setJMenuBar(bar);
@@ -109,6 +110,7 @@ public class TestWindowsLFFocus {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
+            robot.waitForIdle();
             robot.delay(500);
 
             if (!actionFired) {

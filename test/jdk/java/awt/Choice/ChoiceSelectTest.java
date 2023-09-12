@@ -36,7 +36,7 @@ import java.awt.Panel;
  */
 
 public class ChoiceSelectTest extends Panel {
-    Choice c;
+    final Choice c;
 
     public ChoiceSelectTest() {
         setLayout(new FlowLayout());
