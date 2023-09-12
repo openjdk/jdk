@@ -434,10 +434,6 @@ public interface JavaLangAccess {
     @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
 
-   void appendDigit2(StringBuilder sb, int i);
-
-   void appendDigit3(StringBuilder sb, int i);
-
     /**
      * Join strings
      */
