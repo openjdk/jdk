@@ -32,6 +32,7 @@ import java.security.*;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
+import jdk.internal.util.HexDigits;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).

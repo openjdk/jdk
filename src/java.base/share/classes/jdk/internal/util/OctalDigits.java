@@ -23,35 +23,35 @@
  * questions.
  */
 
-package java.util;
+package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Digits class for decimal digits.
+ * Digits class for octal digits.
  *
  * @since 21
  */
-final class DecimalDigits implements Digits {
+public final class OctalDigits implements Digits {
     @Stable
     private static final short[] DIGITS;
 
     /**
-     * Singleton instance of DecimalDigits.
+     * Singleton instance of OctalDigits.
      */
-    static final Digits INSTANCE = new DecimalDigits();
+    public static final Digits INSTANCE = new OctalDigits();
 
     static {
-        short[] digits = new short[10 * 10];
+        short[] digits = new short[8 * 8];
 
-        for (int i = 0; i < 10; i++) {
-            short hi = (short) ((i + '0') << 8);
+        for (int i = 0; i < 8; i++) {
+            short lo = (short) (i + '0');
 
-            for (int j = 0; j < 10; j++) {
-                short lo = (short) (j + '0');
-                digits[i * 10 + j] = (short) (hi | lo);
+            for (int j = 0; j < 8; j++) {
+                short hi = (short) ((j + '0') << 8);
+                digits[(i << 3) + j] = (short) (hi | lo);
             }
         }
 
@@ -61,52 +61,24 @@ final class DecimalDigits implements Digits {
     /**
      * Constructor.
      */
-    private DecimalDigits() {
+    private OctalDigits() {
     }
 
     @Override
     public int digits(long value, byte[] buffer, int index,
                       MethodHandle putCharMH) throws Throwable {
-        boolean negative = value < 0;
-        if (!negative) {
-            value = -value;
-        }
-
-        long q;
-        int r;
-        while (value <= Integer.MIN_VALUE) {
-            q = value / 100;
-            r = (int)((q * 100) - value);
-            value = q;
-            int digits = DIGITS[r];
-
+        while ((value & ~0x3F) != 0) {
+            int digits = DIGITS[(int) (value & 0x3F)];
+            value >>>= 6;
+            putCharMH.invokeExact(buffer, --index, digits >> 8);
             putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
         }
 
-        int iq, ivalue = (int)value;
-        while (ivalue <= -100) {
-            iq = ivalue / 100;
-            r = (iq * 100) - ivalue;
-            ivalue = iq;
-            int digits = DIGITS[r];
+        int digits = DIGITS[(int) (value & 0x3F)];
+        putCharMH.invokeExact(buffer, --index, digits >> 8);
+
+        if (7 < value) {
             putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
-        }
-
-        if (ivalue < 0) {
-            ivalue = -ivalue;
-        }
-
-        int digits = DIGITS[ivalue];
-        putCharMH.invokeExact(buffer, --index, digits & 0xFF);
-
-        if (9 < ivalue) {
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
-        }
-
-        if (negative) {
-            putCharMH.invokeExact(buffer, --index, (int)'-');
         }
 
         return index;
@@ -114,21 +86,6 @@ final class DecimalDigits implements Digits {
 
     @Override
     public int size(long value) {
-        boolean negative = value < 0;
-        int sign = negative ? 1 : 0;
-
-        if (!negative) {
-            value = -value;
-        }
-
-        long precision = -10;
-        for (int i = 1; i < 19; i++) {
-            if (value > precision)
-                return i + sign;
-
-            precision = 10 * precision;
-        }
-
-        return 19 + sign;
+        return (66 - Long.numberOfLeadingZeros(value)) / 3;
     }
 }
