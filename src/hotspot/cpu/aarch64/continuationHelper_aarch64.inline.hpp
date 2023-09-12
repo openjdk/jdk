@@ -68,6 +68,8 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - frame::sender_sp_offset) = f.fp();
 }
 
+#define CPU_OVERRIDES_RETURN_ADDRESS_ACCESSORS
+
 inline address ContinuationHelper::return_address_at(intptr_t* sp) {
   return pauth_strip_verifiable(*(address*)sp);
 }

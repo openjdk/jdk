@@ -37,6 +37,16 @@
 
 #include CPU_HEADER_INLINE(continuationHelper)
 
+#ifndef CPU_OVERRIDES_RETURN_ADDRESS_ACCESSORS
+inline address ContinuationHelper::return_address_at(intptr_t* sp) {
+  return *(address*)sp;
+}
+
+inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
+  *(address*)sp = pc;
+}
+#endif
+
 inline bool ContinuationHelper::NonInterpretedUnknownFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame();
 }

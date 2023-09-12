@@ -68,14 +68,6 @@ inline void ContinuationHelper::push_pd(const frame& f) {
   *(intptr_t**)(f.sp() - 2) = f.fp();
 }
 
-inline address ContinuationHelper::return_address_at(intptr_t* sp) {
-  return *(address*)sp;
-}
-
-inline void ContinuationHelper::patch_return_address_at(intptr_t* sp, address pc) {
-  *(address*)sp = pc;
-}
-
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* entry) {
   anchor->set_last_Java_fp(entry->entry_fp());
 }
