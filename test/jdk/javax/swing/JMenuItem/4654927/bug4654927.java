@@ -64,7 +64,7 @@ public class bug4654927 {
             SwingUtilities.invokeAndWait(() -> createAndShowUI());
 
             robot.waitForIdle();
-            robot.delay(1000);	    
+            robot.delay(1000);
 
             // test mouse press
             Point point = Util.getCenterPoint(menu);
