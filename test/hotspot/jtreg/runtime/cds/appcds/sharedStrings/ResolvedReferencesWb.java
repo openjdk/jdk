@@ -27,13 +27,17 @@ import jdk.test.whitebox.WhiteBox;
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
-        if (args.length < 2 && args[0].equals("--isArchived")) {
-            throw new RuntimeException("Test requires --isArchived flag");
+        if (args.length < 1) {
+            throw new RuntimeException("Test requires arg: [true|false]");
+        }
+
+        if (!args[0].equals("true") && !args[0].equals("false")) {
+          throw new RuntimeException("Invalid argument: Test requires arg: [true|false]");
         }
 
         ResolvedReferencesTestApp t = new ResolvedReferencesTestApp();
         Object[] resolvedReferences = wb.getResolvedReferences(ResolvedReferencesTestApp.class);
-        boolean isArchived = (args[1].equals("true"));
+        boolean isArchived = (args[0].equals("true"));
 
         if (resolvedReferences.length <= 0) {
             throw new RuntimeException("Resolved reference should not be null");

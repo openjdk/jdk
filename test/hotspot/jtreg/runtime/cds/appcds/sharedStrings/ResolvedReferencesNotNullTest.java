@@ -51,8 +51,8 @@ public class ResolvedReferencesNotNullTest {
                                                                   "-XX:+UnlockDiagnosticVMOptions",
                                                                   "-XX:+WhiteBoxAPI",
                                                                   "ResolvedReferencesWb",
-                                                                  "--isArchived",
-                                                                  "false");
+                                                                  "false" // ResolvedReferencesTestApp is not archived
+                                                                  );
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
@@ -72,8 +72,7 @@ public class ResolvedReferencesNotNullTest {
                        "-XX:+UnlockDiagnosticVMOptions",
                        "-XX:+WhiteBoxAPI",
                        "ResolvedReferencesWb",
-                       "--isArchived",
-                       "true")
-                      .assertNormalExit();
+                       "true" // ResolvedReferencesTestApp is archived
+                       ).assertNormalExit();
     }
 }
