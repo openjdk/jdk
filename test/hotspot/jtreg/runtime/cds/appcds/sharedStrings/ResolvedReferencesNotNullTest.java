@@ -42,9 +42,6 @@ public class ResolvedReferencesNotNullTest {
         String appJar = TestCommon.getTestJar(SharedStringsUtils.TEST_JAR_NAME_FULL);
         String whiteboxParam = SharedStringsUtils.getWbParam();
 
-        // If ResolvedReferencesTestApp is not archived, the resolvedReferences array should only contain
-        // the objects fooString and barString since they are static. The object
-        // quxString should NOT be in the array since the method that returns it is not called
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-cp",
                                                                   appJar,
                                                                   whiteboxParam,

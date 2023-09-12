@@ -23,7 +23,12 @@
 
 import jdk.test.whitebox.WhiteBox;
 
- public class ResolvedReferencesWb {
+// This class is used by ResolvedReferencesNotNullTest and is used with and without CDS
+// When not archived, the resolved references array should only contain the objects
+// fooString and barString since they are resolved by ResolvedReferencesTestApp::<clinit>
+// The object quxString should NOT be in the array since the method qux() is never called.
+// quxString will be in the resolved refererences array only if ResolvedReferencesTestApp is archived
+public class ResolvedReferencesWb {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
@@ -55,14 +60,18 @@ import jdk.test.whitebox.WhiteBox;
             }
         }
 
-        // CDS resolves all of the string literals used by the app and stores
-        // them inside the resolvedReferences array. The strings fooString and
-        // barString must have been found but not quxString unless ResolvedReferencesTestApp is archived.
         if (isArchived) {
+            // CDS eagerly resolves all the string literals in the ConstantPool. At this point, all
+            // three strings should be in the resolvedReferences array.
             if (!foundFoo || !foundBar || !foundQux) {
                 throwException(resolvedReferences, "Incorrect resolved references array, all strings should be present");
             }
         } else {
+            // If the class is not archived, the string literals in the ConstantPool are resolved
+            // on-demand. At this point, ResolvedReferencesTestApp::<clinit> has been executed
+            // so the two strings used there should be in the resolvedReferences array.
+            // ResolvedReferencesTestApp::qux() is not executed so "quxString"
+            // should not yet be resolved.
             if (!foundFoo || !foundBar || foundQux) {
                 throwException(resolvedReferences, "Incorrect resolved references array, quxString should not be archived");
             }
