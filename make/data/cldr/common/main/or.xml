@@ -4755,8 +4755,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>ସେଣ୍ଟ୍. ହେଲେନା ପାଉଣ୍ଡ୍</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ସିଏରା ଲିଓନୀୟ ଲେଓନ୍</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ସିଏରା ଲିଓନୀୟ ଲେଓନ୍ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ସୋମାଲି ସିଲିଂ</displayName>

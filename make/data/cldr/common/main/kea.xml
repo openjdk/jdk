@@ -2137,8 +2137,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Libra di Santa Ilena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone di Sera Leoa</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone di Sera Leoa (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Xelin somalianu</displayName>

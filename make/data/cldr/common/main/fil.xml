@@ -3913,10 +3913,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName draft="contributed">Slovak Koruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leonean Leone</displayName>
 				<displayName count="one">Sierra Leonean leone</displayName>
 				<displayName count="other">Sierra Leonean leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leonean Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra Leonean leone (1964—2022)</displayName>
+				<displayName count="other">Sierra Leonean leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Shilling</displayName>

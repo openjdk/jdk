@@ -5341,8 +5341,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName draft="contributed">स्लोवाक कोरुना</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सिएरा लियोनियन लियोन</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>सिएरा लियोनियन लियोन (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>सोमाली शिलिंग</displayName>

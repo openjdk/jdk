@@ -3483,9 +3483,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Pāuna Hato Herena</displayName>
 				<displayName count="other">pāuna Hato Herena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone Araone</displayName>
 				<displayName count="other">leone Araone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone Araon (1964—2022)e</displayName>
+				<displayName count="other">leone Araone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Hereni Hūmārie</displayName>

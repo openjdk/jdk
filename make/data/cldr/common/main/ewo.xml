@@ -724,8 +724,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Lívələ yá Ǹfúfúb Elɛ́n</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leóne yá Sierá-leónə</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leóne yá Sierá-leónə (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Silíŋ yá Somalí</displayName>

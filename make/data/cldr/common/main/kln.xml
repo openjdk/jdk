@@ -723,8 +723,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Pouditab helena ne tilil</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leonit</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leonit (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>siligitab Somalia</displayName>

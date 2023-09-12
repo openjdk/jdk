@@ -699,8 +699,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Libra de Santa Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone de Serra Leoa</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone de Serra Leoa (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Xelim somali</displayName>

@@ -2871,6 +2871,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">pund de Sant-Helena</displayName>
 				<displayName count="other" draft="unconfirmed">pundes de Sant-Helena</displayName>
 			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">leone de Sierra-Leone</displayName>
+				<displayName count="other" draft="unconfirmed">leones de Sierra-Leone</displayName>
+			</currency>
 			<currency type="SLL">
 				<displayName draft="unconfirmed">leone de Sierra-Leone (1964..2022)</displayName>
 				<displayName count="other" draft="unconfirmed">leones de Sierra-Leone (1964..2022)</displayName>

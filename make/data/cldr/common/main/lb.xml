@@ -4283,10 +4283,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Slowakesch Kroun</displayName>
 				<displayName count="other">Slowakesch Krounen</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra-leonesche Leone</displayName>
 				<displayName count="one">Sierra-leonesche Leone</displayName>
 				<displayName count="other">Sierra-leonesch Leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra-leonesche Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra-leonesche Leone (1964—2022)</displayName>
+				<displayName count="other">Sierra-leonesch Leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalia-Schilling</displayName>

@@ -5353,8 +5353,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>স্লোভাক কোরুনা</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>সিয়েরালিয়ন লিয়ন</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>সিয়েরালিয়ন লিয়ন (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>সোমালি শিলিং</displayName>

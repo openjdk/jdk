@@ -186,22 +186,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>HH:mm:ss zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>HH:mm:ss z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH:mm:ss</pattern>
+							<pattern>h:mm:ss a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>HH:mm</pattern>
+							<pattern>h:mm a</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>

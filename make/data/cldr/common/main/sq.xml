@@ -4823,10 +4823,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">sterlina e Ishullit të Shën-Helenës</displayName>
 				<symbol alt="narrow">SHP</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leoni i Sierra-Leones</displayName>
 				<displayName count="one">leon i Sierra-Leones</displayName>
 				<displayName count="other">leonë të Sierra-Leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leoni i Sierra-Leones (1964—2022)</displayName>
+				<displayName count="one">leon i Sierra-Leones (1964—2022)</displayName>
+				<displayName count="other">leonë të Sierra-Leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilinga somaleze</displayName>

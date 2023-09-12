@@ -2289,8 +2289,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SKK">
 				<displayName draft="contributed">ßlovaakesche Kruhne</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="contributed">ẞjärra-lejoneesesche Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="contributed">ẞjärra-lejoneesesche Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somaalesche Schillenge</displayName>

@@ -4777,10 +4777,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">keramatly ýelena adasynyň funty</displayName>
 				<displayName count="other">keramatly ýelena adasynyň funty</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sýerra-Leone leony</displayName>
 				<displayName count="one">sýerra-leone leony</displayName>
 				<displayName count="other">sýerra-leone leony</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sýerra-Leone leony (1964—2022)</displayName>
+				<displayName count="one">sýerra-leone leony (1964—2022)</displayName>
+				<displayName count="other">sýerra-leone leony (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali şillingi</displayName>

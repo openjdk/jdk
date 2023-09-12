@@ -3685,8 +3685,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<currency type="SKK">
 				<displayName draft="contributed">سىلوۋاكىيە كورۇناسى</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="contributed">سېررالېئون لېئونېسى</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="contributed">سېررالېئون لېئونېسى - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="contributed">سومالى شىللىڭى</displayName>

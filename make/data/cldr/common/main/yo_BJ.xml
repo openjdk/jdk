@@ -1353,8 +1353,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Pɔ́n-un Elena</displayName>
 				<displayName count="other">àwɔn pɔ́n-un Elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName count="other">àwɔn líónì Sira Líonì</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName count="other">àwɔn líónì Sira Líonì (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shílè Somali</displayName>

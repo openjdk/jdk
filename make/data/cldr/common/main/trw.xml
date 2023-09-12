@@ -3648,8 +3648,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName draft="unconfirmed">سینٹ ہیلینا پاؤنڈ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">سیئرا لیون لیون</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">سیئرا لیون لیون - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">صومالی شلنگ</displayName>

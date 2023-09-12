@@ -5957,7 +5957,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">corona eslovaca</displayName>
 				<displayName count="other">corones eslovaques</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone sierralleonés</displayName>
 				<displayName count="one">leone sierralleonés</displayName>
 				<displayName count="other">leones sierralleoneses</displayName>

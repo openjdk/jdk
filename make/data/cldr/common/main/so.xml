@@ -5701,10 +5701,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">bowndka St Helen</displayName>
 				<displayName count="other">Bowndka St Helen</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leonka Sira Leon</displayName>
 				<displayName count="one">leonka Sira Leon</displayName>
 				<displayName count="other">leonka Sira Leon</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leonka Sira Leon (1964—2022)</displayName>
+				<displayName count="one">leonka Sira Leon (1964—2022)</displayName>
+				<displayName count="other">leonka Sira Leon (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilingka Soomaaliya</displayName>

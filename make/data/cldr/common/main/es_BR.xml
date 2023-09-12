@@ -11,6 +11,38 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="es"/>
 		<territory type="BR"/>
 	</identity>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
 	<numbers>
 		<currencies>
 			<currency type="BRL">

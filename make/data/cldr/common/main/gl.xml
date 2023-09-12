@@ -4383,10 +4383,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">libra de Santa Helena</displayName>
 				<displayName count="other">libras de Santa Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone de Serra Leoa</displayName>
 				<displayName count="one">leone de Serra Leoa</displayName>
 				<displayName count="other">leones de Serra Leoa</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone de Serra Leoa (1964—2022)</displayName>
+				<displayName count="one">leone de Serra Leoa (1964—2022)</displayName>
+				<displayName count="other">leones de Serra Leoa (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>xilin somalí</displayName>

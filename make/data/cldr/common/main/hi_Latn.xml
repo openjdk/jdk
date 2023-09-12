@@ -168,7 +168,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM y G</pattern>
+							<pattern>EEEE d MMMM, y G</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -396,7 +396,7 @@ annotations.
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d MMMM, y</pattern>
+							<pattern>EEEE d MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1451,7 +1451,7 @@ annotations.
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quarts</unitPattern>
 			</unit>
-			<unit type="pressure-gasoline-equivalent">
+			<unit type="pressure-gasoline-energy-density">
 				<displayName>gasoline equivalent</displayName>
 			</unit>
 		</unitLength>

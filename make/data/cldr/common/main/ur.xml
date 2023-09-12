@@ -4801,8 +4801,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName draft="contributed">سلووک کرونا</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>سیئرا لیونین لیون</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>سیئرا لیونین لیون - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>صومالی شلنگ</displayName>

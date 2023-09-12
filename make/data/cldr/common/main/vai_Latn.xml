@@ -618,8 +618,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Siŋ Hɛlina Pɔɔ̃</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Liyɔɔ̀</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Liyɔɔ̀ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somaliya Siyeŋ</displayName>

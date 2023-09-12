@@ -10,7 +10,7 @@ For terms of use, see http://www.unicode.org/copyright.html
     <version number="$Revision$"/>
     <unitIdComponents>
     	<unitIdComponent type="prefix" values="arc british dessert fluid light nautical xxx x curr"/>
-		<unitIdComponent type="suffix" values="force imperial luminosity mass metric person radius scandinavian troy unit it us equivalent cloth length jp"/>
+		<unitIdComponent type="suffix" values="force imperial luminosity mass metric person radius scandinavian troy unit it us energy density cloth length jp"/>
 		<unitIdComponent type="power" values="square cubic pow2 pow3 pow4 pow5 pow6 pow7 pow8 pow9 pow10 pow11 pow12 pow13 pow14 pow15"/>
 		<unitIdComponent type="and" values="and"/>
 		<unitIdComponent type="per" values="per"/>
@@ -123,7 +123,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <!-- mass -->
         <convertUnit source='dalton' baseUnit='kilogram' factor='AMU' systems="si_acceptable metric prefixable"/>
         <convertUnit source='grain' baseUnit='kilogram' factor='lb_to_kg/7000' systems="ussystem uksystem"/>
-        <convertUnit source='carat' baseUnit='kilogram' factor='0.0002' systems="metric_adjacent"/>
+        <convertUnit source='carat' baseUnit='kilogram' factor='0.0002' systems="metric_adjacent ussystem uksystem"/>
         <convertUnit source='gram' baseUnit='kilogram' factor='0.001' systems="si metric prefixable"/>
         <convertUnit source='ounce' baseUnit='kilogram' factor='lb_to_kg/16' systems="ussystem uksystem"/>
         <convertUnit source='ounce-troy' baseUnit='kilogram' factor='0.03110348' systems="ussystem uksystem"/>
@@ -161,12 +161,12 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='barrel' baseUnit='cubic-meter' factor='42*gal_to_m3' systems="ussystem"/> <!-- oil -->
         
         <!-- area -->
-        <convertUnit source='dunam' baseUnit='square-meter' factor='1000'/>
+        <convertUnit source='dunam' baseUnit='square-meter' factor='1000' systems="metric_adjacent"/>
         <convertUnit source='acre' baseUnit='square-meter' factor='ft2_to_m2 * 43560' systems="ussystem uksystem"/>
         <convertUnit source='hectare' baseUnit='square-meter' factor='10000' systems="si_acceptable metric"/>
         
         <!-- length -->
-        <convertUnit source='point' baseUnit='meter' factor='ft_to_m/864' systems="ussystem uksystem"/>
+        <convertUnit source='point' baseUnit='meter' factor='ft_to_m/864' systems="metric_adjacent ussystem uksystem"/>
         <convertUnit source='inch' baseUnit='meter' factor='ft_to_m/12' systems="ussystem uksystem"/>
         <convertUnit source='foot' baseUnit='meter' factor='ft_to_m' systems="ussystem uksystem"/>
         <convertUnit source='yard' baseUnit='meter' factor='ft_to_m*3' systems="ussystem uksystem"/>
@@ -178,7 +178,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='mile' baseUnit='meter' factor='ft_to_m*5280' systems="ussystem uksystem"/>
         <convertUnit source='nautical-mile' baseUnit='meter' factor='1852' systems="ussystem uksystem si_acceptable"/>
         <convertUnit source='mile-scandinavian' baseUnit='meter' factor='10000' systems="metric_adjacent"/>
-        <convertUnit source='100-kilometer' baseUnit='meter' factor='100000' systems="metric"/>
+        <convertUnit source='100-kilometer' baseUnit='meter' factor='100000' systems="si metric"/>
         <convertUnit source='earth-radius' baseUnit='meter' factor='6.3781E6' systems="astronomical"/>
         <convertUnit source='solar-radius' baseUnit='meter' factor='695700000' systems="astronomical"/>
         <convertUnit source='astronomical-unit' baseUnit='meter' factor='meters_per_AU' systems="astronomical si_acceptable"/>
@@ -186,23 +186,23 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='parsec' baseUnit='meter' factor='meters_per_AU*60*60*180/PI' systems="astronomical prefixable"/> <!-- https://www.iau.org/public/themes/measuring/ distance where 1 AU subtends 1 arcsecond -->
         
         <!-- time -->
-        <convertUnit source='second' baseUnit='second' systems="si metric prefixable"/>
-        <convertUnit source='minute' baseUnit='second' factor='60' systems="si_acceptable metric_adjacent prefixable"/>
-        <convertUnit source='hour' baseUnit='second' factor='3600' systems="si_acceptable metric_adjacent prefixable"/>
-        <convertUnit source='day' baseUnit='second' factor='86400' systems="si_acceptable metric_adjacent prefixable"/>
+        <convertUnit source='second' baseUnit='second' systems="si metric prefixable ussystem uksystem astronomical"/>
+        <convertUnit source='minute' baseUnit='second' factor='60' systems="si_acceptable metric_adjacent prefixable ussystem uksystem astronomical"/>
+        <convertUnit source='hour' baseUnit='second' factor='3600' systems="si_acceptable metric_adjacent prefixable ussystem uksystem astronomical"/>
+        <convertUnit source='day' baseUnit='second' factor='86400' systems="si_acceptable metric_adjacent prefixable ussystem uksystem astronomical"/>
         <convertUnit source='day-person' baseUnit='second' factor='86400' systems="person_age"/>
-        <convertUnit source='week' baseUnit='second' factor='86400*7' systems="metric_adjacent"/>
+        <convertUnit source='week' baseUnit='second' factor='86400*7' systems="metric_adjacent ussystem uksystem astronomical"/>
         <convertUnit source='week-person' baseUnit='second' factor='86400*7' systems="person_age"/>
         <convertUnit source='fortnight' baseUnit='second' factor='86400*14' systems="ussystem uksystem"/>
         
         <!-- year-duration -->
-        <convertUnit source='month' baseUnit='year' factor='1/12' systems="metric_adjacent"/>
+        <convertUnit source='month' baseUnit='year' factor='1/12' systems="metric_adjacent ussystem uksystem astronomical"/>
         <convertUnit source='month-person' baseUnit='year' factor='1/12' systems="person_age"/>
         <convertUnit source='quarter' baseUnit='year' factor='1/4' systems="metric_adjacent"/>
-        <convertUnit source='year' baseUnit='year' systems="metric_adjacent prefixable"/>
+        <convertUnit source='year' baseUnit='year' systems="metric_adjacent prefixable ussystem uksystem astronomical"/>
         <convertUnit source='year-person' baseUnit='year' systems="person_age"/>
-        <convertUnit source='decade' baseUnit='year' factor='10' systems="metric_adjacent"/>
-        <convertUnit source='century' baseUnit='year' factor='100' systems="metric_adjacent"/>
+        <convertUnit source='decade' baseUnit='year' factor='10' systems="metric_adjacent ussystem uksystem astronomical"/>
+        <convertUnit source='century' baseUnit='year' factor='100' systems="metric_adjacent ussystem uksystem astronomical"/>
         
         <!-- electric-current -->
         <convertUnit source='ampere' baseUnit='ampere' systems="si metric prefixable"/>
@@ -214,34 +214,34 @@ For terms of use, see http://www.unicode.org/copyright.html
         <convertUnit source='celsius' baseUnit='kelvin' offset='273.15' systems="si metric"/>
         
         <!-- angle -->
-        <convertUnit source='arc-second' baseUnit='revolution' factor='1/360*60*60' systems="si_acceptable metric_adjacent"/>
-        <convertUnit source='arc-minute' baseUnit='revolution' factor='1/360*60' systems="si_acceptable metric_adjacent"/>
-        <convertUnit source='degree' baseUnit='revolution' factor='1/360' systems="si_acceptable metric_adjacent"/>
+        <convertUnit source='arc-second' baseUnit='revolution' factor='1/360*60*60' systems="si_acceptable metric_adjacent ussystem uksystem astronomical"/>
+        <convertUnit source='arc-minute' baseUnit='revolution' factor='1/360*60' systems="si_acceptable metric_adjacent ussystem uksystem astronomical"/>
+        <convertUnit source='degree' baseUnit='revolution' factor='1/360' systems="si_acceptable metric_adjacent ussystem uksystem astronomical"/>
         <convertUnit source='radian' baseUnit='revolution' factor='1/2*PI' systems="si metric"/>
-        <convertUnit source='revolution' baseUnit='revolution' systems="metric_adjacent"/>
+        <convertUnit source='revolution' baseUnit='revolution' systems="metric_adjacent ussystem uksystem"/>
         
         <!-- substance-amount -->
-        <convertUnit source='item' baseUnit='item' systems="metric_adjacent"/>
+        <convertUnit source='item' baseUnit='item' systems="metric_adjacent ussystem uksystem"/>
         <convertUnit source='mole' baseUnit='item' factor='item_per_mole' systems="si metric prefixable"/>
         
         <!-- portion -->
-        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000' systems="metric_adjacent"/>
-        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000' systems="metric_adjacent"/>
-        <convertUnit source='permille' baseUnit='portion' factor='1/1000' systems="metric_adjacent"/>
-        <convertUnit source='percent' baseUnit='portion' factor='1/100' systems="metric_adjacent"/>
-        <convertUnit source='karat' baseUnit='portion' factor='1/24' systems="metric_adjacent"/>
-        <convertUnit source='portion' baseUnit='portion' systems="metric_adjacent"/>
+        <convertUnit source='permillion' baseUnit='portion' factor='1/1000000' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='permyriad' baseUnit='portion' factor='1/10000' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='permille' baseUnit='portion' factor='1/1000' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='percent' baseUnit='portion' factor='1/100' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='karat' baseUnit='portion' factor='1/24' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='portion' baseUnit='portion' systems="metric_adjacent ussystem uksystem"/>
         
         <!-- digital -->
-        <convertUnit source='bit' baseUnit='bit' systems="metric prefixable"/>
-        <convertUnit source='byte' baseUnit='bit' factor='8' systems="metric prefixable"/>
+        <convertUnit source='bit' baseUnit='bit' systems="metric_adjacent prefixable ussystem uksystem"/>
+        <convertUnit source='byte' baseUnit='bit' factor='8' systems="metric_adjacent prefixable ussystem uksystem"/>
         
         <!-- graphics -->
-        <convertUnit source='dot' baseUnit='pixel' systems="metric_adjacent"/>
-        <convertUnit source='pixel' baseUnit='pixel' systems="metric_adjacent prefixable"/>
+        <convertUnit source='dot' baseUnit='pixel' systems="metric_adjacent ussystem uksystem"/>
+        <convertUnit source='pixel' baseUnit='pixel' systems="metric_adjacent ussystem uksystem prefixable"/>
         
         <!-- typewidth -->
-        <convertUnit source='em' baseUnit='em' systems="metric_adjacent"/>
+        <convertUnit source='em' baseUnit='em' systems="metric_adjacent ussystem uksystem"/>
         
         <!-- frequency -->
         <convertUnit source='hertz' baseUnit='revolution-per-second' systems="si metric prefixable"/>
@@ -254,11 +254,11 @@ For terms of use, see http://www.unicode.org/copyright.html
         <!-- pressure -->
         <convertUnit source='pascal' baseUnit='kilogram-per-meter-square-second' systems="si metric prefixable"/>
         <convertUnit source='bar' baseUnit='kilogram-per-meter-square-second' factor='100000' systems="si_acceptable metric prefixable"/>
-        <convertUnit source='atmosphere' baseUnit='kilogram-per-meter-square-second' factor='101325' systems="astronomical"/>
-        <convertUnit source='gasoline-equivalent' baseUnit='kilogram-per-meter-square-second' factor='33.705 * 3600 * 1000/gal_to_m3'  systems="ussystem" description="Constructed so that 1 gallon-gasoline-equivalent = 33.705 kWh as per https://www3.epa.gov/otaq/gvg/learn-more-technology.htm"/>
+        <convertUnit source='atmosphere' baseUnit='kilogram-per-meter-square-second' factor='101325' systems="ussystem uksystem "/>
+        <convertUnit source='gasoline-energy-density' baseUnit='kilogram-per-meter-square-second' factor='33.705 * 3600 * 1000/gal_to_m3'  systems="metric_adjacent ussystem uksystem" description="Constructed so that 1 gallon-gasoline-energy-density = 33.705 kWh as per https://www3.epa.gov/otaq/gvg/learn-more-technology.htm"/>
 
         <!-- pressure-per-length -->
-        <convertUnit source='ofhg' baseUnit='kilogram-per-square-meter-square-second' factor='13595.1*gravity'/>
+        <convertUnit source='ofhg' baseUnit='kilogram-per-square-meter-square-second' factor='13595.1*gravity' systems="metric_adjacent uksystem ussystem"/>
 
         <!-- energy -->
         <convertUnit source='electronvolt' baseUnit='kilogram-square-meter-per-square-second' factor='1.602177E-19' systems='si_acceptable metric_adjacent'/>
@@ -316,7 +316,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<convertUnit source='weber' baseUnit='kilogram-square-meter-per-square-second-ampere' systems='si metric prefixable'/>
         
         <!-- acceleration -->
-        <convertUnit source='g-force' baseUnit='meter-per-square-second' factor='gravity' systems="metric_adjacent"/>
+        <convertUnit source='g-force' baseUnit='meter-per-square-second' factor='gravity' systems="metric_adjacent ussystem uksystem"/>
         
         <!-- luminance -->
         <convertUnit source='lux' baseUnit='candela-per-square-meter' systems="si metric prefixable"/>

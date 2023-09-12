@@ -6798,12 +6798,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">Slovakijos kronos</displayName>
 				<displayName count="other">Slovakijos kronų</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Siera Leonės leonė</displayName>
 				<displayName count="one">Siera Leonės leonė</displayName>
 				<displayName count="few">Siera Leonės leonės</displayName>
 				<displayName count="many">Siera Leonės leonės</displayName>
 				<displayName count="other">Siera Leonės leonių</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Siera Leonės leonė (1964—2022)</displayName>
+				<displayName count="one">Siera Leonės leonė (1964—2022)</displayName>
+				<displayName count="few">Siera Leonės leonės (1964—2022)</displayName>
+				<displayName count="many">Siera Leonės leonės (1964—2022)</displayName>
+				<displayName count="other">Siera Leonės leonių (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalio šilingas</displayName>

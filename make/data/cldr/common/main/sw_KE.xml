@@ -1309,10 +1309,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">dola ya Singapoo</displayName>
 				<displayName count="other">dola za Singapoo</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leoni ya Siera Leoni</displayName>
 				<displayName count="one">leoni ya Siera Leoni</displayName>
 				<displayName count="other">leoni za Siera Leoni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leoni ya Siera Leoni (1964—2022)</displayName>
+				<displayName count="one">leoni ya Siera Leoni (1964—2022)</displayName>
+				<displayName count="other">leoni za Siera Leoni (1964—2022)</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>Pauni ya Sudani Kusini</displayName>

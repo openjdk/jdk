@@ -4705,6 +4705,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>Slovak Korunası</displayName>
 			</currency>
+			<currency type="SLE">
+				<displayName>Sierra Leone leonesi</displayName>
+			</currency>
 			<currency type="SLL">
 				<displayName>Sierra Leone leonesi (1964–2022)</displayName>
 			</currency>

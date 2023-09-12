@@ -1651,9 +1651,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">St. Helena Pound</displayName>
 				<displayName count="other" draft="unconfirmed">St. Helena pounds</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">Sierra Leone Leone</displayName>
 				<displayName count="other" draft="unconfirmed">Sierra Leone leonei</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">Sierra Leone Leone (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">Sierra Leone leonei (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">Somali Sheleŋ</displayName>

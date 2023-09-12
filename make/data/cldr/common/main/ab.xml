@@ -3758,8 +3758,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="RUB">
 				<symbol draft="unconfirmed">₽</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">леоне</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">леоне (1964—2022)</displayName>
 			</currency>
 			<currency type="THB">
 				<symbol draft="unconfirmed">฿</symbol>

@@ -712,8 +712,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Paũndi ya Santahelena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leoni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leoni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilingi ya Somalia</displayName>

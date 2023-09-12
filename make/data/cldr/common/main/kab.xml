@@ -4684,10 +4684,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="unconfirmed">Akurun n Sluvakya</displayName>
 				<displayName count="other" draft="unconfirmed">Ikurunen n Sluvakya</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Alyun</displayName>
 				<displayName count="one" draft="unconfirmed">Aliyun n Sira Lyun</displayName>
 				<displayName count="other" draft="unconfirmed">Iliyunen n Sira Lyun</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Alyun (1964—2022)</displayName>
+				<displayName count="one" draft="unconfirmed">Aliyun n Sira Lyun (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">Iliyunen n Sira Lyun (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Aciling Aṣumali</displayName>

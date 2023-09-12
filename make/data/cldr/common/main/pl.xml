@@ -5556,12 +5556,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">koron słowackich</displayName>
 				<displayName count="other">korona słowacka</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone sierraleoński</displayName>
 				<displayName count="one">leone sierraleoński</displayName>
 				<displayName count="few">leone sierraleońskie</displayName>
 				<displayName count="many">leone sierraleońskich</displayName>
 				<displayName count="other">leone sierraleońskiego</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone sierraleoński (1964—2022)</displayName>
+				<displayName count="one">leone sierraleoński (1964—2022)</displayName>
+				<displayName count="few">leone sierraleońskie (1964—2022)</displayName>
+				<displayName count="many">leone sierraleońskich (1964—2022)</displayName>
+				<displayName count="other">leone sierraleońskiego (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>szyling somalijski</displayName>

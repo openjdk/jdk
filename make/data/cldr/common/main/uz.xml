@@ -4188,8 +4188,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>Muqaddas Yelena oroli funti</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Syerra-Leone leonesi</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Syerra-Leone leonesi (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali shillingi</displayName>

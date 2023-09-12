@@ -4683,12 +4683,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="few">St. Helena punty</displayName>
 				<displayName count="other">St. Helena puntow</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sierra-leoneski leone</displayName>
 				<displayName count="one">sierra-leoneski leone</displayName>
 				<displayName count="two">sierra-leoneskej leone</displayName>
 				<displayName count="few">sierra-leoneske leone</displayName>
 				<displayName count="other">sierra-leoneskich leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierra-leoneski leone (1964—2022)</displayName>
+				<displayName count="one">sierra-leoneski leone (1964—2022)</displayName>
+				<displayName count="two">sierra-leoneskej leone (1964—2022)</displayName>
+				<displayName count="few">sierra-leoneske leone (1964—2022)</displayName>
+				<displayName count="other">sierra-leoneskich leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somaliski šiling</displayName>

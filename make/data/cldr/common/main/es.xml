@@ -5312,10 +5312,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">corona eslovaca</displayName>
 				<displayName count="other">coronas eslovacas</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leona</displayName>
 				<displayName count="one">leona</displayName>
 				<displayName count="other">leonas</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leona (1964—2022)</displayName>
+				<displayName count="one">leona (1964—2022)</displayName>
+				<displayName count="other">leonas (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>chelín somalí</displayName>

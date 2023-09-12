@@ -995,8 +995,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Paunɛ ya Sántu elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leonɛ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leonɛ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilingɛ ya Somali</displayName>

@@ -6666,8 +6666,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>スロバキア コルナ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>シエラレオネ レオン</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>シエラレオネ レオン (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ソマリア シリング</displayName>

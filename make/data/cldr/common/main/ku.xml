@@ -3624,10 +3624,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">lîreyê saînt helenayî</displayName>
 				<displayName count="other">lîreyên saînt helenayî</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leoneyê sîera leoneyî</displayName>
 				<displayName count="one">leoneyê sîera leoneyî</displayName>
 				<displayName count="other">leoneyên sîera leoneyî</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leoneyê sîera leoneyî (1964—2022)</displayName>
+				<displayName count="one">leoneyê sîera leoneyî (1964—2022)</displayName>
+				<displayName count="other">leoneyên sîera leoneyî (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>şîlîngê somalî</displayName>

@@ -1615,6 +1615,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} grana</unitPattern>
 				<unitPattern count="other">{0} granova</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="duration-year">
@@ -1644,6 +1649,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="speed-beaufort">
 				<displayName>Bft</displayName>
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="few">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="one">{0}/gal Imp</unitPattern>

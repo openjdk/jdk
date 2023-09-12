@@ -3142,9 +3142,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">libra de Santa Elena</displayName>
 				<displayName count="other" draft="unconfirmed">libres de Santa Elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">leona</displayName>
 				<displayName count="other" draft="unconfirmed">leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">leona (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">chelin somalí</displayName>

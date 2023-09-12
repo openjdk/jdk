@@ -5876,8 +5876,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>קורונה סלובקי</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ליאון סיירה לאוני</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ליאון סיירה לאוני - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>שילינג סומלי</displayName>

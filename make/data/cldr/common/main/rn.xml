@@ -699,8 +699,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Ipawundi rya Sente Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Ilewone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Ilewone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Ishilingi ryo muri Somaliya</displayName>

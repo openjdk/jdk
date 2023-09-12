@@ -3804,8 +3804,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one" draft="unconfirmed">sterliña de Sant’Elena</displayName>
 				<displayName count="other" draft="unconfirmed">sterliñe de Sant’Elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">lion da Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">lion da Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">scellin da Somalia</displayName>

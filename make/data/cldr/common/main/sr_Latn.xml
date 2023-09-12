@@ -2459,6 +2459,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">u pon</relative>
 				<relative type="1">sledećeg pon</relative>
 			</field>
+			<field type="mon-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">za {0} ponedeljak</relativeTimePattern>
+					<relativeTimePattern count="few">za {0} ponedeljka</relativeTimePattern>
+					<relativeTimePattern count="other">za {0} ponedeljaka</relativeTimePattern>
+				</relativeTime>
+			</field>
 			<field type="tue">
 				<relative type="-1">prošlog utorka</relative>
 				<relative type="0">u utorak</relative>
@@ -5076,6 +5083,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="few">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6423,11 +6433,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="few">slovačke krune</displayName>
 				<displayName count="other">slovačkih kruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sijeraleonski leone</displayName>
 				<displayName count="one">sijeraleonski leone</displayName>
 				<displayName count="few">sijeraleonska leona</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="one">sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="few">sijeraleonska leona (1964—2022)</displayName>
+				<displayName count="other">sijeraleonskih leona (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somalijski šiling</displayName>

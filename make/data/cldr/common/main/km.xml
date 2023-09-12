@@ -4445,8 +4445,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>ផោន​សាំងហេឡេណា</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>លីអ៊ុន​សៀរ៉ាឡេអូន</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>លីអ៊ុន​សៀរ៉ាឡេអូន (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ស៊ីលិញ​សូម៉ាលី</displayName>

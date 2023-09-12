@@ -742,8 +742,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>ⴰⵊⵏⵉⵀ ⵏ ⵙⴰⵏⵜⵉⵍⵉⵏ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ⵍⵉⵢⵓⵏ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ⵍⵉⵢⵓⵏ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ⴰⵛⵉⵍⵉⵏ ⵏ ⵚⵚⵓⵎⴰⵍ</displayName>

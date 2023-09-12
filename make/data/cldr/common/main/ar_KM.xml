@@ -44,6 +44,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</calendars>
 	</dates>
 	<numbers>
+		<defaultNumberingSystem>arab</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<currencies>
 			<currency type="KMF">
 				<symbol>CF</symbol>

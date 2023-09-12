@@ -5646,13 +5646,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">koruna na Slóvaice</displayName>
 				<displayName count="other">koruna na Slóvaice</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone Shiarra Leon</displayName>
 				<displayName count="one">leone Shiarra Leon</displayName>
 				<displayName count="two">leone Shiarra Leon</displayName>
 				<displayName count="few">leone Shiarra Leon</displayName>
 				<displayName count="many">leone Shiarra Leon</displayName>
 				<displayName count="other">leone Shiarra Leon</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone Shiarra Leon (1964—2022)</displayName>
+				<displayName count="one">leone Shiarra Leon (1964—2022)</displayName>
+				<displayName count="two">leone Shiarra Leon (1964—2022)</displayName>
+				<displayName count="few">leone Shiarra Leon (1964—2022)</displayName>
+				<displayName count="many">leone Shiarra Leon (1964—2022)</displayName>
+				<displayName count="other">leone Shiarra Leon (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Scilling na Somáile</displayName>

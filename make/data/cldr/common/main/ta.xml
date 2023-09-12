@@ -5611,10 +5611,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">செயின்ட் ஹெலேனா பவுண்டு</displayName>
 				<displayName count="other">செயின்ட் ஹெலேனா பவுண்டுகள்</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>சியாரா லியோனியன் லியோன்</displayName>
 				<displayName count="one">சியாரா லியோனியன் லியோன்</displayName>
 				<displayName count="other">சியாரா லியோனியன் லியோன்கள்</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>சியாரா லியோனியன் லியோன் (1964—2022)</displayName>
+				<displayName count="one">சியாரா லியோனியன் லியோன் (1964—2022)</displayName>
+				<displayName count="other">சியாரா லியோனியன் லியோன்கள் (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>சோமாலி ஷில்லிங்</displayName>

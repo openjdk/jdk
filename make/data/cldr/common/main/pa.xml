@@ -4787,8 +4787,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>ਸੇਂਟ ਹੇਲੇਨਾ ਪੌਂਡ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ਸਿਏਰਾ ਲਿਓਨੀਅਨ ਲਿਓਨ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ਸਿਏਰਾ ਲਿਓਨੀਅਨ ਲਿਓਨ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ਸੋਮਾਲੀ ਸ਼ਿਲਿੰਗ</displayName>

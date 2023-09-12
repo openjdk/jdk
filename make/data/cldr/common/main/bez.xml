@@ -717,8 +717,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Lupila lwa Husantahelena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Lupila lwa Lioni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Lupila lwa Lioni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Lupila lwa Husomalia</displayName>

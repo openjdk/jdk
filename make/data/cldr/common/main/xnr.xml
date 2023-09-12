@@ -2707,9 +2707,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>सेंट हेलेना दा पाउंड</displayName>
 				<displayName count="other">सेंट हेलेना दे पाउंड</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सिएरा लियोनिया दा लियोन</displayName>
 				<displayName count="other">सिएरा लियोनिया दे लियोन</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>सिएरा लियोनिया दा लियोन (1964—2022)</displayName>
+				<displayName count="other">सिएरा लियोनिया दे लियोन (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>सोमाले दा शिलिंग</displayName>

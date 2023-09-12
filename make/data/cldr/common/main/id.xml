@@ -4774,8 +4774,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>Koruna Slovakia</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilling Somalia</displayName>

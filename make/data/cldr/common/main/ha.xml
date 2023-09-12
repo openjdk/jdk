@@ -3101,10 +3101,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Fam na San Helena</displayName>
 				<displayName count="other">fam na San Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Kuɗin Salewo</displayName>
 				<displayName count="one">Kuɗin Saliyo</displayName>
 				<displayName count="other">Kuɗin Saliyo</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Kuɗin Salewo (1964—2022)</displayName>
+				<displayName count="one">Kuɗin Saliyo (1964—2022)</displayName>
+				<displayName count="other">Kuɗin Saliyo (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Sulen Somaliya</displayName>

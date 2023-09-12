@@ -5902,13 +5902,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="many">a gurunennoù Slovakia</displayName>
 				<displayName count="other">kurunenn Slovakia</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone Sierra Leone</displayName>
 				<displayName count="one">leone Sierra Leone</displayName>
 				<displayName count="two">leone Sierra Leone</displayName>
 				<displayName count="few">leone Sierra Leone</displayName>
 				<displayName count="many">a leoneoù Sierra Leone</displayName>
 				<displayName count="other">leone Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="one">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="two">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="few">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="many">a leoneoù Sierra Leone (1964—2022)</displayName>
+				<displayName count="other">leone Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>shilling Somalia</displayName>

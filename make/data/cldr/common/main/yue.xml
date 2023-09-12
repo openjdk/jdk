@@ -6255,8 +6255,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SKK">
 				<displayName>斯洛伐克克朗</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>獅子山利昂</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>獅子山利昂 (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>索馬利亞先令</displayName>

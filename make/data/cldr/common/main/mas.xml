@@ -727,8 +727,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Iropiyianí e Santahelena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Iropiyianí e leoni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Iropiyianí e leoni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Iropiyianí e Somalia</displayName>

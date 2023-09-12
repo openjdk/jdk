@@ -2827,8 +2827,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Ego Pound obodo St Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Ego Leone obodo Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Ego Leone obodo Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Ego shilling obodo Somali</displayName>

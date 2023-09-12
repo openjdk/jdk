@@ -3326,9 +3326,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName draft="unconfirmed">St. Helena Pünj</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">Sierra Leones Leone</displayName>
 				<displayName count="other" draft="unconfirmed">Sierra Leones Leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">Sierra Leones Leone (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">Sierra Leones Leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">Somaali Skalang</displayName>

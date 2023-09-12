@@ -37,7 +37,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[अ {अऽ} आ {आऽ} इ ई उ ऊ ए {एऽ} ओ {ओऽ} क ग ङ च ज ञ ट ड ण त द न प ब म र ळ व स ह य ल {ड़} ँ ं ा ि ी ु ू े ो ः ् ऽ]</exemplarCharacters>
+		<exemplarCharacters>[ँ ंः अ {अऽ} आ {आऽ} इ ई उ ऊ ए {एऽ} ओ {ओऽ} क ग ङ च ज ञ ट ड{ड़} ण त द न प ब म य र ल ळ व स ह ऽ ा ि ी ु ू े ो ्]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 १ २ ३ ४ ५ ६ ७ ८ ९]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>

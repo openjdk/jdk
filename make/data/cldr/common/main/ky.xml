@@ -4657,8 +4657,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>Ыйык Елена аралынын фунту</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Сиерра-Леоне леонеси</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Сиерра-Леоне леонеси (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомали шиллинги</displayName>

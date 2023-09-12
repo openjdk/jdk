@@ -5829,12 +5829,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many" draft="contributed">slovenskej koruny</displayName>
 				<displayName count="other" draft="contributed">slovenských korún</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sierraleonský leone</displayName>
 				<displayName count="one">sierraleonský leone</displayName>
 				<displayName count="few">sierraleonské leone</displayName>
 				<displayName count="many">sierraleonského leone</displayName>
 				<displayName count="other">sierraleonských leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierraleonský leone (1964—2022)</displayName>
+				<displayName count="one">sierraleonský leone (1964—2022)</displayName>
+				<displayName count="few">sierraleonské leone (1964—2022)</displayName>
+				<displayName count="many">sierraleonského leone (1964—2022)</displayName>
+				<displayName count="other">sierraleonských leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somálsky šiling</displayName>

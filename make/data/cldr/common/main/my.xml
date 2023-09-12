@@ -4415,8 +4415,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>စိန့်ဟယ်လယ်နာ ပေါင်</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ဆီယာရာလီယွန်း လီအိုနီ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ဆီယာရာလီယွန်း လီအိုနီ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ဆိုမာလီ သျှီလင်</displayName>

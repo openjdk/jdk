@@ -731,8 +731,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Phawundindi laseSt Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leyoni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leyoni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Shilingi yase Somaliya</displayName>

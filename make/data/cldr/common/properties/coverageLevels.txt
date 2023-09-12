@@ -20,7 +20,7 @@ bgc ;	basic ;	Haryanvi
 bho ;	basic ;	Bhojpuri
 blo ;	moderate ;	Anii
 bn ;	modern ;	Bangla
-br ;	basic ;	Breton
+br ;	moderate ;	Breton
 brx ;	basic ;	Bodo
 bs ;	modern ;	Bosnian
 bs_Cyrl ;	basic ;	Bosnian (Cyrillic)
@@ -144,6 +144,7 @@ th ;	modern ;	Thai
 ti ;	basic ;	Tigrinya
 tk ;	modern ;	Turkmen
 to ;	basic ;	Tongan
+tok ;	basic ;	Toki Pona
 tr ;	modern ;	Turkish
 tt ;	basic ;	Tatar
 ug ;	basic ;	Uyghur
@@ -164,6 +165,6 @@ yue_Hans ;	modern ;	Cantonese (Simplified)
 za ;	basic ;	Zhuang
 zh ;	modern ;	Chinese
 zh_Hant ;	modern ;	Traditional Chinese
-zu ;	moderate ;	Zulu
+zu ;	modern ;	Zulu
 		
 #EOF		

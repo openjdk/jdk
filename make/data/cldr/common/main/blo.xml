@@ -4150,11 +4150,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Sɛŋ Elenaa kapɔŋ</displayName>
 				<displayName count="other">Sɛŋ Elenaa kɩpɔŋ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Seraleyɔn kaleyɔn</displayName>
 				<displayName count="zero">baa Seraleyɔn kaleyɔn</displayName>
 				<displayName count="one">Seraleyɔn kaleyɔn</displayName>
 				<displayName count="other">Seraleyɔn kɩleyɔn</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="zero">baa Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="one">Seraleyɔn kaleyɔn (1964—2022)</displayName>
+				<displayName count="other">Seraleyɔn kɩleyɔn (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalii kashílè</displayName>

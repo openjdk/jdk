@@ -5994,10 +5994,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>Словачка круна</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Сиералеонско леоне</displayName>
 				<displayName count="one">Сиералеонско леоне</displayName>
 				<displayName count="other">Сиералеонски леони</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Сиералеонско леоне (1964—2022)</displayName>
+				<displayName count="one">Сиералеонско леоне (1964—2022)</displayName>
+				<displayName count="other">Сиералеонски леони (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомалијски шилинг</displayName>

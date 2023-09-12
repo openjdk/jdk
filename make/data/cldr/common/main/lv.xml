@@ -5472,11 +5472,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>Slovakijas krona</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sjerraleones leone</displayName>
 				<displayName count="zero">Sjerraleones leones</displayName>
 				<displayName count="one">Sjerraleones leone</displayName>
 				<displayName count="other">Sjerraleones leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sjerraleones leone (1964—2022)</displayName>
+				<displayName count="zero">Sjerraleones leones (1964—2022)</displayName>
+				<displayName count="one">Sjerraleones leone (1964—2022)</displayName>
+				<displayName count="other">Sjerraleones leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somālijas šiliņš</displayName>

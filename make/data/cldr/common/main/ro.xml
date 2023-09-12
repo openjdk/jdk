@@ -5283,11 +5283,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">coroane slovace</displayName>
 				<displayName count="other">coroane slovace</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone din Sierra Leone</displayName>
 				<displayName count="one">leone din Sierra Leone</displayName>
 				<displayName count="few">leoni din Sierra Leone</displayName>
 				<displayName count="other">leoni din Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone din Sierra Leone (1964—2022)</displayName>
+				<displayName count="one">leone din Sierra Leone (1964—2022)</displayName>
+				<displayName count="few">leoni din Sierra Leone (1964—2022)</displayName>
+				<displayName count="other">leoni din Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>șiling somalez</displayName>

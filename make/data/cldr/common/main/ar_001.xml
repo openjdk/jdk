@@ -11,4 +11,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ar"/>
 		<territory type="001"/>
 	</identity>
+	<numbers>
+		<defaultNumberingSystem>arab</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
+	</numbers>
 </ldml>

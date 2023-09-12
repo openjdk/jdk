@@ -3678,8 +3678,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>St. Helena pund</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leona leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leona leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalia skillingur</displayName>

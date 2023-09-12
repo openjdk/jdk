@@ -7720,7 +7720,7 @@ annotations.
 				<unitPattern count="one">{0} Imp. quart</unitPattern>
 				<unitPattern count="other">{0} Imp. quarts</unitPattern>
 			</unit>
-			<unit type="pressure-gasoline-equivalent">
+			<unit type="pressure-gasoline-energy-density">
 				<displayName>of gasoline equivalent</displayName>
 				<unitPattern count="one">{0} of gasoline equivalent</unitPattern>
 				<unitPattern count="other">{0} of gasoline equivalent</unitPattern>
@@ -8792,7 +8792,7 @@ annotations.
 				<unitPattern count="one">{0} qt-Imp.</unitPattern>
 				<unitPattern count="other">{0} qt-Imp.</unitPattern>
 			</unit>
-			<unit type="pressure-gasoline-equivalent">
+			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0} gas-equiv</unitPattern>
 				<unitPattern count="other">{0} gas-equiv</unitPattern>
@@ -9863,7 +9863,7 @@ annotations.
 				<unitPattern count="one">{0}qt-Imp.</unitPattern>
 				<unitPattern count="other">{0}qt-Imp.</unitPattern>
 			</unit>
-			<unit type="pressure-gasoline-equivalent">
+			<unit type="pressure-gasoline-energy-density">
 				<displayName>gas-equiv</displayName>
 				<unitPattern count="one">{0}gas-equiv</unitPattern>
 				<unitPattern count="other">{0}gas-equiv</unitPattern>

@@ -6764,8 +6764,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many" draft="provisional">словацьких крон</displayName>
 				<displayName count="other" draft="provisional">словацької крони</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>леоне Сьєрра-Леоне</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>леоне Сьєрра-Леоне (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>сомалійський шилінг</displayName>

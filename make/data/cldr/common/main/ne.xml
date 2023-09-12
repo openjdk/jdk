@@ -4543,8 +4543,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>सेन्ट हेलेना पाउन्ड</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सियरा लियोनेन लियोन</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>सियरा लियोनेन लियोन (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>सोमाली शिलिङ</displayName>

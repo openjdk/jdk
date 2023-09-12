@@ -6235,11 +6235,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">slovačke kune</displayName>
 				<displayName count="other">slovačkih kuna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sijeraleonski leone</displayName>
 				<displayName count="one">sijeraleonski leone</displayName>
 				<displayName count="few">sijeraleonska leona</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="one">sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="few">sijeraleonska leona (1964—2022)</displayName>
+				<displayName count="other">sijeraleonskih leona (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalski šiling</displayName>

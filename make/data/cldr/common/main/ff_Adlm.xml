@@ -6538,10 +6538,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">𞤨𞤢𞤱𞤲𞤣𞤵 𞤅𞤫𞤲-𞤖𞤫𞤤𞤫𞤲𞤢</displayName>
 				<displayName count="other">𞤆𞤢𞤱𞤯𞤭 𞤅𞤫𞤲-𞤖𞤫𞤤𞤫𞤲𞤢</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>𞤂𞤫𞤴𞤮𞤲 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮</displayName>
 				<displayName count="one">𞤤𞤫𞤴𞤮𞤲 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮</displayName>
 				<displayName count="other">𞤤𞤫𞤴𞤮𞤲𞤶𞤭 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>𞤂𞤫𞤴𞤮𞤲 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮 - 1964-2022</displayName>
+				<displayName count="one">𞤤𞤫𞤴𞤮𞤲 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮 - 1964-2022</displayName>
+				<displayName count="other">𞤤𞤫𞤴𞤮𞤲𞤶𞤭 𞤅𞤫𞤪𞤢𞤤𞤭𞤴𞤢𞤲𞤳𞤮 - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>𞤅𞤭𞤤𞤭𞤲 𞤅𞤮𞤥𞤢𞤤𞤭𞤲𞤳𞤮</displayName>

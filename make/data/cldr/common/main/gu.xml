@@ -5030,8 +5030,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>સેંટ હેલેના પાઉન્ડ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>સિએરા લિઓનિઅન લિઓન</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>સિએરા લિઓનિઅન લિઓન (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>સોમાલી શિલિંગ</displayName>

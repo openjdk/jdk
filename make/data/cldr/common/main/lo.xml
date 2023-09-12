@@ -5792,8 +5792,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>ຄູໂຣນາ ສະໂລວັກ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ເຊຍ​ນາ ​ເລໂອ​ນຽນ ເລ​ໂອນ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ເຊຍ​ນາ ​ເລໂອ​ນຽນ ເລ​ໂອນ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ໂຊ​ມາ​ລິ ຊິວ​ລິງ</displayName>

@@ -5505,8 +5505,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>پوند سنت هلن</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>لئون سیرالئون</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>لئون سیرالئون - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>شیلینگ سومالی</displayName>

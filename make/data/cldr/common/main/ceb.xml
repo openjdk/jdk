@@ -2546,10 +2546,15 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<displayName count="one">St. Helena pound</displayName>
 				<displayName count="other">St. Helena pounds</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leonean Leone</displayName>
 				<displayName count="one">Sierra Leonean leone</displayName>
 				<displayName count="other">Sierra Leonean leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leonean Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra Leonean leone (1964—2022)</displayName>
+				<displayName count="other">Sierra Leonean leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Shilling</displayName>

@@ -1950,8 +1950,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SGD">
 				<displayName>新加坡元</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>塞拉利昂利昂</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>塞拉利昂利昂 (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>索馬里先令</displayName>

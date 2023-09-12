@@ -737,8 +737,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Solai Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>solai Sierra leonǝ</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>solai Sierra leonǝ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Solai Somaliya</displayName>

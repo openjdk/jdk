@@ -3875,10 +3875,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">sterlina de Sant’Èlena</displayName>
 				<displayName count="other">sterline de Sant’Èlena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leon sierleoneze</displayName>
 				<displayName count="one">leon sierleoneze</displayName>
 				<displayName count="other">leoni sierleonezi</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leon sierleoneze (1964—2022)</displayName>
+				<displayName count="one">leon sierleoneze (1964—2022)</displayName>
+				<displayName count="other">leoni sierleonezi (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>selin sòmalo</displayName>

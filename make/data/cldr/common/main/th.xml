@@ -6089,8 +6089,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>โครูนาสโลวัก</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ลีโอนเซียร์ราลีโอน</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ลีโอนเซียร์ราลีโอน (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ชิลลิงโซมาเลีย</displayName>

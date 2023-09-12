@@ -6012,8 +6012,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>كرونة سلوفاكية</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ليون سيراليوني</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>ليون سيراليوني - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>شلن صومالي</displayName>

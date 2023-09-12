@@ -2711,10 +2711,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Iponti yaseSt. Helena</displayName>
 				<displayName count="other">Iiponti zaseSt. Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>I-Loeone yaseSierra Leone</displayName>
 				<displayName count="one">I-leone yaseSierra Leone</displayName>
 				<displayName count="other">Ii-leones zaseSierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>I-Loeone yaseSierra Leone (1964—2022)</displayName>
+				<displayName count="one">I-leone yaseSierra Leone (1964—2022)</displayName>
+				<displayName count="other">Ii-leones zaseSierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>I-Shilling yaseSomalia</displayName>

@@ -5147,10 +5147,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">corona eslovaca</displayName>
 				<displayName count="other">corones eslovaques</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone de Sierra Leone</displayName>
 				<displayName count="one">leone de Sierra Leone</displayName>
 				<displayName count="other">leones de Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone de Sierra Leone (1964—2022)</displayName>
+				<displayName count="one">leone de Sierra Leone (1964—2022)</displayName>
+				<displayName count="other">leones de Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>xíling somali</displayName>

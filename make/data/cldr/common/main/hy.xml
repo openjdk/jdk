@@ -4690,8 +4690,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>Սուրբ Հեղինեի ֆունտ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Սիեռա Լեոնեի լեոնե</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Սիեռա Լեոնեի լեոնե (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>սոմալիական շիլինգ</displayName>

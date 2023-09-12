@@ -5705,10 +5705,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Enhrovakija Rãgre</displayName>
 				<displayName count="other">Enhrovakija Rãgre ag</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Krĩ Mĩgkusũg-fi Re’onĩ</displayName>
 				<displayName count="one">Krĩ Mĩgkusũg-fi Re’onĩ</displayName>
 				<displayName count="other">Krĩ Mĩgkusũg-fi Re’onĩ ag</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Krĩ Mĩgkusũg-fi Re’onĩ (1964—2022)</displayName>
+				<displayName count="one">Krĩ Mĩgkusũg-fi Re’onĩ (1964—2022)</displayName>
+				<displayName count="other">Krĩ Mĩgkusũg-fi Re’onĩ ag (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somỹrija Serĩm</displayName>

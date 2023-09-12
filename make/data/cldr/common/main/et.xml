@@ -5056,6 +5056,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Slovaki kroon</displayName>
 				<displayName count="other">Slovaki krooni</displayName>
 			</currency>
+			<currency type="SLE">
+				<displayName>Sierra Leone leoone</displayName>
+				<displayName count="one">Sierra Leone leoone</displayName>
+				<displayName count="other">Sierra Leone leoonet</displayName>
+			</currency>
 			<currency type="SLL">
 				<displayName>Sierra Leone leoone (1964–2022)</displayName>
 				<displayName count="one">Sierra Leone leoone (1964–2022)</displayName>

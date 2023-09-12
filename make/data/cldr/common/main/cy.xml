@@ -5568,7 +5568,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="many">punt St. Helena</displayName>
 				<displayName count="other">punt St. Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone Sierra Leone</displayName>
 				<displayName count="zero">leone Sierra Leone</displayName>
 				<displayName count="one">leone Sierra Leone</displayName>
@@ -5576,6 +5576,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">leone Sierra Leone</displayName>
 				<displayName count="many">leone Sierra Leone</displayName>
 				<displayName count="other">leone Sierra Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="zero">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="one">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="two">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="few">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="many">leone Sierra Leone (1964—2022)</displayName>
+				<displayName count="other">leone Sierra Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Swllt Somalia</displayName>

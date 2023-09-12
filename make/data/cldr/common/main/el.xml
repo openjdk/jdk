@@ -5994,10 +5994,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">κορόνα Σλοβενίας</displayName>
 				<displayName count="other">κορόνες Σλοβενίας</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Λεόνε Σιέρα Λεόνε</displayName>
 				<displayName count="one">λεόνε Σιέρα Λεόνε</displayName>
 				<displayName count="other">λεόνε Σιέρα Λεόνε</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Λεόνε Σιέρα Λεόνε (1964—2022)</displayName>
+				<displayName count="one">λεόνε Σιέρα Λεόνε (1964—2022)</displayName>
+				<displayName count="other">λεόνε Σιέρα Λεόνε (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Σελίνι Σομαλίας</displayName>

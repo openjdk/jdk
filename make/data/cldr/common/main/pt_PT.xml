@@ -3213,10 +3213,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">libra santa-helenense</displayName>
 				<displayName count="other">libras santa-helenenses</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone de Serra Leoa</displayName>
 				<displayName count="one">leone de Serra Leoa</displayName>
 				<displayName count="other">leones de Serra Leoa</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone de Serra Leoa (1964—2022)</displayName>
+				<displayName count="one">leone de Serra Leoa (1964—2022)</displayName>
+				<displayName count="other">leones de Serra Leoa (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>xelim somali</displayName>

@@ -9,6 +9,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<identity>
 		<version number="$Revision$"/>
 		<language type="yi"/>
-		<territory type="001"/>
+		<territory type="UA"/>
 	</identity>
 </ldml>

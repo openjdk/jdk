@@ -734,8 +734,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Ɛlɛni-Senu Livri</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>siyeralewɔni Lewɔni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>siyeralewɔni Lewɔni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somali Siling</displayName>

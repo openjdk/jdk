@@ -5079,8 +5079,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SKK">
 				<displayName>स्लोवाकी कोरुना</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सीयेर्रा लिय’ननि लीयन</displayName>
+				<symbol draft="contributed">एस.एल.इ</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>सीयेर्रा लिय’ननि लीयन (1964—2022)</displayName>
 				<symbol draft="contributed">एस.एल.एल</symbol>
 			</currency>
 			<currency type="SOS">

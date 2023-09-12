@@ -4592,10 +4592,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">سينټ هيلينا پونډ</displayName>
 				<displayName count="other">سينټ هيلينا پونډونه</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>سيرا ليوني ليون</displayName>
 				<displayName count="one">سيرا ليوني ليون</displayName>
 				<displayName count="other">سيرا ليوني ليونونه</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>سيرا ليوني ليون - 1964-2022</displayName>
+				<displayName count="one">سيرا ليوني ليون - 1964-2022</displayName>
+				<displayName count="other">سيرا ليوني ليونونه - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>سومالي شيلنګ</displayName>

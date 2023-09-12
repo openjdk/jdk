@@ -4616,9 +4616,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">Pon Sint Héléna</displayName>
 				<displayName count="other" draft="unconfirmed">pon Sint Héléna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="unconfirmed">Léon Gunung Singa</displayName>
 				<displayName count="other" draft="unconfirmed">léon Gunung Singa</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="unconfirmed">Léon Gunung Singa (1964—2022)</displayName>
+				<displayName count="other" draft="unconfirmed">léon Gunung Singa (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">Siling Somali</displayName>

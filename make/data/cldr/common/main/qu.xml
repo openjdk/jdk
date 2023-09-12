@@ -1194,22 +1194,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>HH:mm:ss zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>HH:mm:ss z</pattern>
+							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH:mm:ss</pattern>
+							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>HH:mm</pattern>
+							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -3156,9 +3160,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Libra de Santa Helena</displayName>
 				<displayName count="other">Libra de santa helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Leone de Sierra Leona</displayName>
 				<displayName count="other">Leone de sierra leona</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone de Sierra Leona (1964—2022)</displayName>
+				<displayName count="other">Leone de sierra leona (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Chelín Somalí</displayName>

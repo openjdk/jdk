@@ -4970,10 +4970,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Slovak korunası</displayName>
 				<displayName count="other">Slovak korunası</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra Leon Leonu</displayName>
 				<displayName count="one">Sierra Leon leonu</displayName>
 				<displayName count="other">Sierra Leon leonu</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra Leon Leonu (1964—2022)</displayName>
+				<displayName count="one">Sierra Leon leonu (1964—2022)</displayName>
+				<displayName count="other">Sierra Leon leonu (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somali Şillinqi</displayName>

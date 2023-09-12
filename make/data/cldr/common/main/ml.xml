@@ -5444,10 +5444,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>സ്ലോവാക് കൊരൂന</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>സിയെറ ലിയോണിയൻ ലിയോൺ</displayName>
 				<displayName count="one">സിയെറ ലിയോണിയൻ ലിയോൺ</displayName>
 				<displayName count="other">സിയെറ ലിയോണിയൻ ലിയോണസ്</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>സിയെറ ലിയോണിയൻ ലിയോൺ (1964—2022)</displayName>
+				<displayName count="one">സിയെറ ലിയോണിയൻ ലിയോൺ (1964—2022)</displayName>
+				<displayName count="other">സിയെറ ലിയോണിയൻ ലിയോണസ് (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>സോമാലി ഷില്ലിംഗ്</displayName>

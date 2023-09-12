@@ -5408,10 +5408,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">सेंट हेलेना पाउंड</displayName>
 				<displayName count="other">सेंट हेलेना पाउंड्स</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सिएरा लिऑनचा लिऑन</displayName>
 				<displayName count="one">सिएरा लिऑनचा लिऑन</displayName>
 				<displayName count="other">सिएरा लिऑनचे लिऑन्स</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>सिएरा लिऑनचा लिऑन (1964—2022)</displayName>
+				<displayName count="one">सिएरा लिऑनचा लिऑन (1964—2022)</displayName>
+				<displayName count="other">सिएरा लिऑनचे लिऑन्स (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>सोमाली शिलिंग</displayName>

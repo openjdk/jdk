@@ -4518,8 +4518,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>ශාන්ත හෙලේනා පවුම්</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>සියරා ලියොන් ලියොන්</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>සියරා ලියොන් ලියොන් (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>සෝමාලියානු ශිලිං</displayName>

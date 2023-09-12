@@ -702,8 +702,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SHP">
 				<displayName>Junih Usantehilini</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Lyun Usirralyuni</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Lyun Usirralyuni (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Cilin Uṣumali</displayName>

@@ -1691,8 +1691,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM.y – MM.y G</greatestDifference>
-							<greatestDifference id="y">MM.y – MM.y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">dd.MM.y – dd.MM.y G</greatestDifference>
@@ -1998,7 +1998,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'Woche' W 'im' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'Woche' W 'im' MMMM</dateFormatItem>
-						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d.M.y</dateFormatItem>
 						<dateFormatItem id="yMM">MM.y</dateFormatItem>
@@ -2118,8 +2118,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">LLLL–LLLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">dd.–dd.MM.y</greatestDifference>
@@ -5201,10 +5201,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Slowakische Kronen</displayName>
 				<displayName count="other">Slowakische Kronen</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Sierra-leonischer Leone</displayName>
 				<displayName count="one">Sierra-leonischer Leone</displayName>
 				<displayName count="other">Sierra-leonische Leones</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Sierra-leonischer Leone (1964—2022)</displayName>
+				<displayName count="one">Sierra-leonischer Leone (1964—2022)</displayName>
+				<displayName count="other">Sierra-leonische Leones (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somalia-Schilling</displayName>

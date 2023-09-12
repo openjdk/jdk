@@ -510,8 +510,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Hebrew; ?; ? } => { Hebrew; Hebrew; Israel }-->
 		<likelySubtag from="hi" to="hi_Deva_IN"/>
 		<!--{ Hindi; ?; ? } => { Hindi; Devanagari; India }-->
-		<likelySubtag from="hi_Latn" to="hi_Latn_IN"/>
-		<!--{ Hindi; Latin; ? } => { Hindi; Latin; India }-->
 		<likelySubtag from="hif" to="hif_Latn_FJ"/>
 		<!--{ Fiji Hindi; ?; ? } => { Fiji Hindi; Latin; Fiji }-->
 		<likelySubtag from="hil" to="hil_Latn_PH"/>
@@ -542,8 +540,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Hmong Njua; ?; Suriname } => { Hmong Njua; Lao; Suriname }-->
 		<likelySubtag from="hnj_TH" to="hnj_Laoo_TH"/>
 		<!--{ Hmong Njua; ?; Thailand } => { Hmong Njua; Lao; Thailand }-->
-		<likelySubtag from="hnj_US" to="hnj_Hmnp_US"/>
-		<!--{ Hmong Njua US } => { Hmong Njua; Nyiakeng Puachue Hmong; United States }--> <!-- Manually re-added, revisit in CLDR-16424 -->
 		<likelySubtag from="hnj_VN" to="hnj_Laoo_VN"/>
 		<!--{ Hmong Njua; ?; Vietnam } => { Hmong Njua; Lao; Vietnam }-->
 		<likelySubtag from="hnj_Laoo" to="hnj_Laoo_LA"/>
@@ -776,12 +772,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Wadiyara Koli; ?; ? } => { Wadiyara Koli; Arabic; Pakistan }-->
 		<likelySubtag from="kxv" to="kxv_Latn_IN"/>
 		<!--{ Kuvi; ?; ? } => { Kuvi; Latin; India }-->
-		<likelySubtag from="kxv_Deva" to="kxv_Deva_IN"/>
-		<!--{ Kuvi; Devanagari; ? } => { Kuvi; Devanagari; India }-->
-		<likelySubtag from="kxv_Orya" to="kxv_Orya_IN"/>
-		<!--{ Kuvi; Odia; ? } => { Kuvi; Odia; India }-->
-		<likelySubtag from="kxv_Telu" to="kxv_Telu_IN"/>
-		<!--{ Kuvi; Telugu; ? } => { Kuvi; Telugu; India }-->
 		<likelySubtag from="ky" to="ky_Cyrl_KG"/>
 		<!--{ Kyrgyz; ?; ? } => { Kyrgyz; Cyrillic; Kyrgyzstan }-->
 		<likelySubtag from="ky_CN" to="ky_Arab_CN"/>
@@ -1586,8 +1576,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Yangben; ?; ? } => { Yangben; Latin; Cameroon }-->
 		<likelySubtag from="ybb" to="ybb_Latn_CM"/>
 		<!--{ Yemba; ?; ? } => { Yemba; Latin; Cameroon }-->
-		<likelySubtag from="yi" to="yi_Hebr_001"/>
-		<!--{ Yiddish; ?; ? } => { Yiddish; Hebrew; world }-->
+		<likelySubtag from="yi" to="yi_Hebr_UA"/>
+		<!--{ Yiddish; ?; ? } => { Yiddish; Hebrew; Ukraine }-->
 		<likelySubtag from="yo" to="yo_Latn_NG"/>
 		<!--{ Yoruba; ?; ? } => { Yoruba; Latin; Nigeria }-->
 		<likelySubtag from="yrl" to="yrl_Latn_BR"/>
@@ -3962,8 +3952,6 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="dei" to="dei_Latn_ID" origin="sil1"/>	<!-- Demisa ➡︎ Demisa (Latin, Indonesia) -->
 		<likelySubtag from="dek" to="dek_Latn_CM" origin="sil1"/>	<!-- Dek ➡︎ Dek (Latin, Cameroon) -->
 		<likelySubtag from="del" to="del_Latn_US" origin="sil1"/>	<!-- Delaware ➡︎ Delaware (Latin, United States) -->
-		<!-- CLDR-16405 the next entry causes problems, and is likely unnecessary, or maybe just want one from del_CA? -->
-		<!-- <likelySubtag from="del_Latn_CA" to="del_Latn_CA" origin="sil1"/> -->	<!-- Delaware (Latin, Canada) ➡︎ Delaware (Latin, Canada) -->
 		<likelySubtag from="dem" to="dem_Latn_ID" origin="sil1"/>	<!-- Dem ➡︎ Dem (Latin, Indonesia) -->
 		<likelySubtag from="deq" to="deq_Latn_CF" origin="sil1"/>	<!-- Dendi [Central African Republic] ➡︎ Dendi [Central African Republic] (Latin, Central African Republic) -->
 		<likelySubtag from="der" to="der_Beng_IN" origin="sil1"/>	<!-- Deori ➡︎ Deori (Bangla, India) -->
@@ -7162,9 +7150,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="rog" to="rog_Latn_VN" origin="sil1"/>	<!-- Northern Roglai ➡︎ Northern Roglai (Latin, Vietnam) -->
 		<likelySubtag from="rol" to="rol_Latn_PH" origin="sil1"/>	<!-- Romblomanon ➡︎ Romblomanon (Latin, Philippines) -->
 		<likelySubtag from="rom" to="rom_Latn_RO" origin="sil1"/>	<!-- Romany ➡︎ Romany (Latin, Romania) -->
-		<likelySubtag from="rom_Cyrl" to="rom_Cyrl_RO" origin="sil1"/>	<!-- Romany (Cyrillic) ➡︎ Romany (Cyrillic, Romania) -->
-		<!-- CLDR-16405 the next entry causes problems; maybe just want one from rom_BG ?) -->
-		<!-- <likelySubtag from="rom_Cyrl_BG" to="rom_Cyrl_BG" origin="sil1"/> -->	<!-- Romany (Cyrillic, Bulgaria) ➡︎ Romany (Cyrillic, Bulgaria) -->
+		<likelySubtag from="rom_BG" to="rom_Cyrl_BG" origin="sil1"/>	<!-- Romany (Cyrillic, Bulgaria) ➡︎ Romany (Cyrillic, Bulgaria) -->
+		<likelySubtag from="rom_Cyrl" to="rom_Cyrl_BG" origin="sil1"/>	<!-- Romany (Cyrillic, Bulgaria) ➡︎ Romany (Cyrillic, Bulgaria) -->
 		<likelySubtag from="rop" to="rop_Latn_AU" origin="sil1"/>	<!-- Kriol ➡︎ Kriol (Latin, Australia) -->
 		<likelySubtag from="ror" to="ror_Latn_ID" origin="sil1"/>	<!-- Rongga ➡︎ Rongga (Latin, Indonesia) -->
 		<likelySubtag from="rou" to="rou_Latn_TD" origin="sil1"/>	<!-- Runga ➡︎ Runga (Latin, Chad) -->
@@ -9122,9 +9109,9 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<likelySubtag from="jib" to="jib_Latn_NG" origin="sil1"/>	<!-- Jibu ➡︎ Jibu (Latin, Nigeria) -->
 		<likelySubtag from="jra" to="jra_Latn_VN" origin="sil1"/>	<!-- Jarai ➡︎ Jarai (Latin, Vietnam) -->
 		<likelySubtag from="jra_Khmr" to="jra_Khmr_KH" origin="sil1"/>	<!-- Jarai (Khmer) ➡︎ Jarai (Khmer, Cambodia) -->
-		<!-- CLDR-16405 the following two conflict with the metadata aliases treating aju as the primary child of jrb -->
-		<!-- <likelySubtag from="jrb" to="jrb_Hebr_IL" origin="sil1"/> -->	<!-- Judeo-Arabic ➡︎ Judeo-Arabic (Hebrew, Israel) -->
-		<!-- <likelySubtag from="jrb_Arab_MA" to="jrb_Arab_MA" origin="sil1"/>-->	<!-- Judeo-Arabic (Arabic, Morocco) ➡︎ Judeo-Arabic (Arabic, Morocco) -->
+		<likelySubtag from="jrb" to="jrb_Hebr_IL" origin="sil1"/> 	<!-- Judeo-Arabic ➡︎ Judeo-Arabic (Hebrew, Israel) -->
+		<likelySubtag from="jrb_MA" to="jrb_Arab_MA" origin="sil1"/>	<!-- Judeo-Arabic (Arabic, Morocco) ➡︎ Judeo-Arabic (Arabic, Morocco) -->
+		<likelySubtag from="jrb_Arab" to="jrb_Arab_MA" origin="sil1"/>	<!-- Judeo-Arabic (Arabic, Morocco) ➡︎ Judeo-Arabic (Arabic, Morocco) -->
 		<likelySubtag from="kad" to="kad_Latn_NG" origin="sil1"/>	<!-- Adara ➡︎ Adara (Latin, Nigeria) -->
 		<likelySubtag from="kai" to="kai_Latn_NG" origin="sil1"/>	<!-- Karekare ➡︎ Karekare (Latin, Nigeria) -->
 		<likelySubtag from="kbm" to="kbm_Latn_PG" origin="sil1"/>	<!-- Iwal ➡︎ Iwal (Latin, Papua New Guinea) -->

@@ -3735,10 +3735,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">libra de St. Helena</displayName>
 				<displayName count="other">libras de St. Helena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>leone sierraleonese</displayName>
 				<displayName count="one">leone sierraleonese</displayName>
 				<displayName count="other">leones sierraleonese</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>leone sierraleonese (1964—2022)</displayName>
+				<displayName count="one">leone sierraleonese (1964—2022)</displayName>
+				<displayName count="other">leones sierraleonese (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>shilling somali</displayName>

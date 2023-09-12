@@ -4149,10 +4149,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Сийлахьчу Еленин гӀайрен фунт</displayName>
 				<displayName count="other">Сийлахьчу Еленин гӀайрен фунташ</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Леоне</displayName>
 				<displayName count="one">леоне</displayName>
 				<displayName count="other">леонеш</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Леоне (1964—2022)</displayName>
+				<displayName count="one">леоне (1964—2022)</displayName>
+				<displayName count="other">леонеш (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомалин шиллинг</displayName>

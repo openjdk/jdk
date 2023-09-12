@@ -4986,8 +4986,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>წმ. ელენეს კუნძულის ფუნტი</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>სიერა-ლეონეს ლეონე</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>სიერა-ლეონეს ლეონე (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>სომალური შილინგი</displayName>

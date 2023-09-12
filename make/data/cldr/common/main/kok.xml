@@ -4463,9 +4463,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>सेंट हेलिना पावंड</displayName>
 				<displayName count="other">सेंट हेलिना पावंड्स</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>सिएरा लियॉनी लियॉन</displayName>
 				<displayName count="other">सिएरा लियॉनी लियॉन्स</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>सिएरा लियॉनी लियॉन (1964—2022)</displayName>
+				<displayName count="other">सिएरा लियॉनी लियॉन्स (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>सोमाली शिलिंग</displayName>

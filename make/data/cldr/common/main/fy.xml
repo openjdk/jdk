@@ -4047,8 +4047,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SKK">
 				<displayName draft="contributed">Slowaakse koruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName draft="contributed">Sierraleoonse leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName draft="contributed">Sierraleoonse leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="contributed">Somalyske shilling</displayName>

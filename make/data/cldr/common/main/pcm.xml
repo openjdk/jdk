@@ -4420,10 +4420,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">Sent Hẹlẹ́ná paund</displayName>
 				<displayName count="other">Sent Hẹlẹ́ná paunds</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Siẹ́ra Líoniá Liọn</displayName>
 				<displayName count="one">Siẹ́ra Líoniá liọn</displayName>
 				<displayName count="other">Siẹ́ra Líoniá liọns</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Siẹ́ra Líoniá Liọn (1964—2022)</displayName>
+				<displayName count="one">Siẹ́ra Líoniá liọn (1964—2022)</displayName>
+				<displayName count="other">Siẹ́ra Líoniá liọns (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Sọmáliá Shílin</displayName>

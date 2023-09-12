@@ -5678,11 +5678,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">slovačke krune</displayName>
 				<displayName count="other">slovačkih kruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sijeraleonski leone</displayName>
 				<displayName count="one">sijeraleonski leon</displayName>
 				<displayName count="few">sijeraleonske leone</displayName>
 				<displayName count="other">sijeraleonskih leona</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sijeraleonski leone (1964—2022)</displayName>
+				<displayName count="one">sijeraleonski leon (1964—2022)</displayName>
+				<displayName count="few">sijeraleonske leone (1964—2022)</displayName>
+				<displayName count="other">sijeraleonskih leona (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somalijski šiling</displayName>

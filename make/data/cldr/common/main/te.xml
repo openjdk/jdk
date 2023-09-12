@@ -5342,10 +5342,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">సెయింట్ హెలెనా పౌండ్</displayName>
 				<displayName count="other">సెయింట్ హెలెనా పౌండ్‌లు</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>సీయిరు లియోనియన్ లీయోన్</displayName>
 				<displayName count="one">సీయిరు లియోనియన్ లీయోన్</displayName>
 				<displayName count="other">సీయిరు లియోనియన్ లీయోన్‌లు</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>సీయిరు లియోనియన్ లీయోన్ (1964—2022)</displayName>
+				<displayName count="one">సీయిరు లియోనియన్ లీయోన్ (1964—2022)</displayName>
+				<displayName count="other">సీయిరు లియోనియన్ లీయోన్‌లు (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>సొమాలి షిల్లింగ్</displayName>

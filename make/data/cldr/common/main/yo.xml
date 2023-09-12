@@ -3386,9 +3386,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Pọ́n-un Elena</displayName>
 				<displayName count="other">àwọn pọ́n-un Elena</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Líónì Sira Líonì</displayName>
 				<displayName count="other">àwọn líónì Sira Líonì</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Líónì Sira Líonì (1964—2022)</displayName>
+				<displayName count="other">àwọn líónì Sira Líonì (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Ṣílè Somali</displayName>

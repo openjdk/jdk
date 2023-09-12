@@ -6433,11 +6433,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="few">словачке круне</displayName>
 				<displayName count="other">словачких круна</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>сијералеонски леоне</displayName>
 				<displayName count="one">сијералеонски леоне</displayName>
 				<displayName count="few">сијералеонска леона</displayName>
 				<displayName count="other">сијералеонских леона</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>сијералеонски леоне (1964—2022)</displayName>
+				<displayName count="one">сијералеонски леоне (1964—2022)</displayName>
+				<displayName count="few">сијералеонска леона (1964—2022)</displayName>
+				<displayName count="other">сијералеонских леона (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>сомалијски шилинг</displayName>

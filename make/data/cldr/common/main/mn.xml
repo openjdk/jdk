@@ -4922,8 +4922,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>Сент Хеленагийн фунт</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Сьерра-Леоны леон</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Сьерра-Леоны леон (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомалийн шиллинг</displayName>

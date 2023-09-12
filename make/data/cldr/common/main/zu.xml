@@ -4860,8 +4860,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>i-Saint Helena Pound</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>i-Sierra Leonean Leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>i-Sierra Leonean Leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>i-Somali Shilling</displayName>

@@ -4612,10 +4612,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SKK">
 				<displayName>Slóvakísk króna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>síerraleónsk ljóna</displayName>
 				<displayName count="one">síerraleónsk ljóna</displayName>
 				<displayName count="other">síerraleónskar ljónur</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>síerraleónsk ljóna (1964—2022)</displayName>
+				<displayName count="one">síerraleónsk ljóna (1964—2022)</displayName>
+				<displayName count="other">síerraleónskar ljónur (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>sómalískur skildingur</displayName>

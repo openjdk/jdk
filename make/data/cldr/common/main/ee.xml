@@ -3703,8 +3703,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">slovakiaga koruna</displayName>
 				<displayName count="other">slovakiaga koruna</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sierra leonega leone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierra leonega leone (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somaliaga shilling</displayName>

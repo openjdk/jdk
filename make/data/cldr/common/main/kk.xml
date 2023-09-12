@@ -5086,8 +5086,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="SHP">
 				<displayName>Әулие Елена аралы фунты</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Сьерра-Леоне леонесі</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Сьерра-Леоне леонесі (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомали шиллингі</displayName>

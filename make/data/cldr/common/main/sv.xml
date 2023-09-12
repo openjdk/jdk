@@ -5957,10 +5957,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">slovakisk krona</displayName>
 				<displayName count="other">slovakiska korunor</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>sierraleonsk leone</displayName>
 				<displayName count="one">sierraleonsk leone</displayName>
 				<displayName count="other">sierraleonska leoner</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>sierraleonsk leone (1964—2022)</displayName>
+				<displayName count="one">sierraleonsk leone (1964—2022)</displayName>
+				<displayName count="other">sierraleonska leoner (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>somalisk shilling</displayName>
