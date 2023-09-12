@@ -25,8 +25,8 @@
 
 /*
  * @test
- * @summary Client should close with an IOException if a reset is received after a partial response and before full
- *          200 response is received.
+ * @summary Verifies that the client reacts correctly to receiving RST_STREAM at various stages of
+ *          a Partial Response.
  * @bug 8309118
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
@@ -81,18 +81,19 @@ public class ExpectContinueResetTest {
     public Object[][] testDataUnconsumedBody() {
         // Not consuming the InputStream in the server's handler results in different handling of RST_STREAM client-side
         return new Object[][] {
-                { http2PostSuccessfullyUri, false },
-                { http2PostExceptionallyUri, true }
+                { http2PostSuccessfullyUri, false }, // Checks RST_STREAM is ignored after client sees an END_STREAM
+                { http2PostExceptionallyUri, true }  // Checks RST_STREAM is processed if client sees no END_STREAM
         };
     }
 
     @DataProvider(name = "testDataConsumedBody")
     public Object[][] testDataConsumedBody() {
         return new Object[][] {
-                { h2resetStreamAfter100NoErrorUri }, // Error, client receives reset before END_STREAM and 200. (Code NO_ERROR is incorrect to send in this case so exception thrown is valid)
-                { h2resetStreamAfter100ErrorUri },  // Error, client receives reset before END_STREAM and 200. (Code PROTOCOL_ERROR more appropriate)
-                { h2ResetStreamAfter200UriNoError }, // Error
-                { h2ResetStreamAfter200UriError } // Error
+                // All client requests to these URIs should complete exceptionally
+                { h2resetStreamAfter100NoErrorUri }, // Client receives RST_STREAM before END_STREAM and 200
+                { h2resetStreamAfter100ErrorUri },  // Client receives RST_STREAM before END_STREAM and 200
+                { h2ResetStreamAfter200UriNoError }, // Client receives RST_STREAM after 200 but before server sends END_STREAM
+                { h2ResetStreamAfter200UriError } // Client receives RST_STREAM after 200 but before server sends END_STREAM
         };
     }
 
@@ -297,7 +298,8 @@ public class ExpectContinueResetTest {
             this.sendResponseHeaders(100, 0);
             reqBody.readAllBytes();
             this.sendResponseHeaders(200, 0);
-            // Send Reset after reading data and 200 sent
+            // Send Reset after reading data and 200 sent. This means the RST_STREAM will be received by the client before
+            // an empty DATA_FRAME with the END_STREAM flag sent causing the exchange to complete exceptionally.
             addResetToOutputQ(ResetFrame.NO_ERROR);
         }
 
@@ -305,7 +307,8 @@ public class ExpectContinueResetTest {
             this.sendResponseHeaders(100, 0);
             reqBody.readAllBytes();
             this.sendResponseHeaders(200, 0);
-            // Send Reset after reading data and 200 sent
+            // Send Reset after reading data and 200 sent. This means the RST_STREAM will be received by the client before
+            // an empty DATA_FRAME with the END_STREAM flag sent causing the exchange to complete exceptionally.
             addResetToOutputQ(ResetFrame.PROTOCOL_ERROR);
         }
     }

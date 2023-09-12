@@ -25,13 +25,11 @@
 
 /*
  * @test
- * @summary Tests that when the httpclient sends a 100 Expect Continue header and receives
- *          a response code of 417 Expectation Failed, that the client does not hang
- *          indefinitely and closes the connection.
+ * @summary Tests basic handling of Partial Responses by the HttpClient
  * @bug 8286171 8307648
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run testng/othervm/timeout=100  -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors ExpectContinueTest
+ * @run testng/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=errors ExpectContinueTest
  */
 
 
