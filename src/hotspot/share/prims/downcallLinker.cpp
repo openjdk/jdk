@@ -23,6 +23,8 @@
 
 #include "precompiled.hpp"
 #include "downcallLinker.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 
 #include <cerrno>
 #ifdef _WIN64
@@ -30,7 +32,8 @@
 #include <Winsock2.h>
 #endif
 
-void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) {
+// We call this from _thread_in_native, right after a downcall
+JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask))
   // keep in synch with jdk.internal.foreign.abi.PreservableValues
   enum PreservableValues {
     NONE = 0,
@@ -51,4 +54,12 @@ void DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask) 
   if (captured_state_mask & ERRNO) {
     *value_ptr = errno;
   }
-}
+JVM_END
+
+// We call these from _thread_in_java, since there is no state transition
+JRT_ENTRY(void, DowncallLinker::lock_gc(JavaThread* current))
+  GCLocker::lock_critical(current);
+JRT_END
+JRT_ENTRY(void, DowncallLinker::unlock_gc(JavaThread* current))
+  GCLocker::unlock_critical(current);
+JRT_END

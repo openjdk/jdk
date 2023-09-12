@@ -289,7 +289,7 @@ void DowncallStubGenerator::generate() {
     in_reg_spiller.generate_spill(_masm, spill_rsp_offset);
 
     __ movptr(c_rarg0, r15_thread);
-    runtime_call(CAST_FROM_FN_PTR(address, GCLocker::lock_critical));
+    runtime_call(CAST_FROM_FN_PTR(address, DowncallLinker::lock_gc));
 
     in_reg_spiller.generate_fill(_masm, spill_rsp_offset);
 
@@ -326,7 +326,7 @@ void DowncallStubGenerator::generate() {
     }
 
     __ movptr(c_rarg0, r15_thread);
-    runtime_call(CAST_FROM_FN_PTR(address, GCLocker::unlock_critical));
+    runtime_call(CAST_FROM_FN_PTR(address, DowncallLinker::unlock_gc));
 
     if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, spill_rsp_offset);
