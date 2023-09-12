@@ -3888,14 +3888,13 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   if (stride == 0 || !is_power_of_2(abs(stride)) ||
       scale  == 0 || !is_power_of_2(abs(scale))  ||
       abs(scale) >= aw) {
-    // Alignment cannot be affected by changing pre-loop limit.
 #ifndef PRODUCT
     if (is_trace_align_vector()) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
     }
 #endif
-    assert(false, "alignment cannot be affected"); // TODO ok?
+    // Cannot affect alignment, abort.
     return;
   }
 

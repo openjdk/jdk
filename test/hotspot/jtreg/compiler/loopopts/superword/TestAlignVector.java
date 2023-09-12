@@ -53,7 +53,7 @@ public class TestAlignVector {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:LoopUnrollLimit=10000");
+                                   "-XX:LoopUnrollLimit=1000");
     }
 
     interface TestFunction {
@@ -106,8 +106,8 @@ public class TestAlignVector {
                  "test15aB",
                  "test15bB",
                  "test15cB",
-//                 "test16a",
-//                 "test16b",
+                 "test16a",
+                 "test16b",
                  "test17a",
                  "test17b",
                  "test17c",
@@ -186,8 +186,8 @@ public class TestAlignVector {
         tests.put("test15bB",    () -> { return test15bB(aB.clone()); });
         tests.put("test15cB",    () -> { return test15cB(aB.clone()); });
 
-        //tests.put("test16a",     () -> { return test16a(aB.clone(), aS.clone()); });
-        //tests.put("test16b",     () -> { return test16b(aB.clone()); });
+        tests.put("test16a",     () -> { return test16a(aB.clone(), aS.clone()); });
+        tests.put("test16b",     () -> { return test16b(aB.clone()); });
 
         tests.put("test17a",     () -> { return test17a(aL.clone()); });
         tests.put("test17b",     () -> { return test17b(aL.clone()); });
@@ -1204,58 +1204,56 @@ public class TestAlignVector {
         return new Object[]{ a };
     }
 
-// TODO add after fixing 8313717
-//
-//    @Test
-//    static Object[] test16a(byte[] a, short[] b) {
-//        // infinite loop issues
-//        for (int i = 0; i < RANGE/2-20; i++) {
-//            a[2*i+0]++;
-//            a[2*i+1]++;
-//            a[2*i+2]++;
-//            a[2*i+3]++;
-//            a[2*i+4]++;
-//            a[2*i+5]++;
-//            a[2*i+6]++;
-//            a[2*i+7]++;
-//            a[2*i+8]++;
-//            a[2*i+9]++;
-//            a[2*i+10]++;
-//            a[2*i+11]++;
-//            a[2*i+12]++;
-//            a[2*i+13]++;
-//            a[2*i+14]++;
-//
-//            b[2*i+0]++;
-//            b[2*i+1]++;
-//            b[2*i+2]++;
-//            b[2*i+3]++;
-//        }
-//        return new Object[]{ a, b };
-//    }
-//
-//    @Test
-//    static Object[] test16b(byte[] a) {
-//        // infinite loop issues
-//        for (int i = 0; i < RANGE/2-20; i++) {
-//            a[2*i+0]++;
-//            a[2*i+1]++;
-//            a[2*i+2]++;
-//            a[2*i+3]++;
-//            a[2*i+4]++;
-//            a[2*i+5]++;
-//            a[2*i+6]++;
-//            a[2*i+7]++;
-//            a[2*i+8]++;
-//            a[2*i+9]++;
-//            a[2*i+10]++;
-//            a[2*i+11]++;
-//            a[2*i+12]++;
-//            a[2*i+13]++;
-//            a[2*i+14]++;
-//        }
-//        return new Object[]{ a };
-//    }
+    @Test
+    static Object[] test16a(byte[] a, short[] b) {
+        // infinite loop issues
+        for (int i = 0; i < RANGE/2-20; i++) {
+            a[2*i+0]++;
+            a[2*i+1]++;
+            a[2*i+2]++;
+            a[2*i+3]++;
+            a[2*i+4]++;
+            a[2*i+5]++;
+            a[2*i+6]++;
+            a[2*i+7]++;
+            a[2*i+8]++;
+            a[2*i+9]++;
+            a[2*i+10]++;
+            a[2*i+11]++;
+            a[2*i+12]++;
+            a[2*i+13]++;
+            a[2*i+14]++;
+
+            b[2*i+0]++;
+            b[2*i+1]++;
+            b[2*i+2]++;
+            b[2*i+3]++;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    static Object[] test16b(byte[] a) {
+        // infinite loop issues
+        for (int i = 0; i < RANGE/2-20; i++) {
+            a[2*i+0]++;
+            a[2*i+1]++;
+            a[2*i+2]++;
+            a[2*i+3]++;
+            a[2*i+4]++;
+            a[2*i+5]++;
+            a[2*i+6]++;
+            a[2*i+7]++;
+            a[2*i+8]++;
+            a[2*i+9]++;
+            a[2*i+10]++;
+            a[2*i+11]++;
+            a[2*i+12]++;
+            a[2*i+13]++;
+            a[2*i+14]++;
+        }
+        return new Object[]{ a };
+    }
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
