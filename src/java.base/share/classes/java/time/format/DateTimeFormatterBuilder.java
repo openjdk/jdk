@@ -121,8 +121,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.internal.util.DecimalDigits;
-
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -3353,6 +3351,17 @@ public final class DateTimeFormatterBuilder {
             return false;
         }
 
+        // Simplified variant of Integer.stringSize that assumes positive values
+        private static int stringSize(int x) {
+            int p = 10;
+            for (int i = 1; i < 10; i++) {
+                if (x < p)
+                    return i;
+                p = 10 * p;
+            }
+            return 10;
+        }
+
         private static final int[] TENS = new int[] {
             1,
             10,
@@ -3373,7 +3382,7 @@ public final class DateTimeFormatterBuilder {
             }
             int val = field.range().checkValidIntValue(value, field);
             DecimalStyle decimalStyle = context.getDecimalStyle();
-            int stringSize = DecimalDigits.stringSize(val);
+            int stringSize = stringSize(val);
             char zero = decimalStyle.getZeroDigit();
             if (val == 0 || stringSize < 10 - maxWidth) {
                 // 0 or would round down to 0
