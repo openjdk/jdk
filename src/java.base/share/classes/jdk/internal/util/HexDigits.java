@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.util;
+package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
@@ -34,7 +34,7 @@ import jdk.internal.vm.annotation.Stable;
  *
  * @since 21
  */
-final class HexDigits implements Digits {
+public final class HexDigits implements Digits {
     /**
      * Each element of the array represents the ascii encoded
      * hex relative to its index, for example:<p>
@@ -79,7 +79,7 @@ final class HexDigits implements Digits {
     /**
      * Singleton instance of HexDigits.
      */
-    static final Digits INSTANCE = new HexDigits();
+    public static final Digits INSTANCE = new HexDigits();
 
     static {
         short[] digits = new short[16 * 16];
@@ -105,14 +105,14 @@ final class HexDigits implements Digits {
     /**
      * Combine two hex shorts into one int based on big endian
      */
-    static int digit(int b0, int b1) {
+    public static int digit(int b0, int b1) {
         return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
     }
 
     /**
      * Combine four hex shorts into one long based on big endian
      */
-    static long digit(int b0, int b1, int b2, int b3) {
+    public static long digit(int b0, int b1, int b2, int b3) {
         return (((long) DIGITS[b0 & 0xff]) << 48)
                 | (((long) DIGITS[b1 & 0xff]) << 32)
                 | (DIGITS[b2 & 0xff] << 16)
