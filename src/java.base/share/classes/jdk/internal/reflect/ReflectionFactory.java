@@ -374,14 +374,10 @@ public class ReflectionFactory {
                                              constructorToCall.getParameterTypes(),
                                              constructorToCall.getExceptionTypes(),
                                              constructorToCall.getModifiers(),
-                                             langReflectAccess.
-                                             getConstructorSlot(constructorToCall),
-                                             langReflectAccess.
-                                             getConstructorSignature(constructorToCall),
-                                             langReflectAccess.
-                                             getConstructorAnnotations(constructorToCall),
-                                             langReflectAccess.
-                                             getConstructorParameterAnnotations(constructorToCall));
+                                             langReflectAccess.getConstructorSlot(constructorToCall),
+                                             langReflectAccess.getConstructorSignature(constructorToCall),
+                                             langReflectAccess.getConstructorAnnotations(constructorToCall),
+                                             langReflectAccess.getConstructorParameterAnnotations(constructorToCall));
         ConstructorAccessor acc;
         if (useOldSerializableConstructor()) {
             acc = new SerializationConstructorAccessorGenerator().
@@ -396,7 +392,6 @@ public class ReflectionFactory {
         ctor.setAccessible(true);
         return ctor;
     }
-
 
     public final MethodHandle readObjectForSerialization(Class<?> cl) {
         return findReadWriteObjectForSerialization(cl, "readObject", ObjectInputStream.class);

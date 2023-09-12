@@ -195,7 +195,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
         // NOTE: will throw NullPointerException, as specified, if o is null
         if (!declaringClass.isAssignableFrom(o.getClass())) {
             throw new IllegalArgumentException("object of type " + o.getClass().getName()
-                    +  " is not an instance of " + declaringClass.getName());
+                    + " is not an instance of " + declaringClass.getName());
         }
     }
 
