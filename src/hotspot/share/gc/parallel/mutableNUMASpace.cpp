@@ -60,7 +60,7 @@ MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), 
 
   lgrp_spaces()->reserve(checked_cast<int>(lgrp_num));
   // Add new spaces for the new nodes
-  for (int i = 0; i < lgrp_num; i++) {
+  for (size_t i = 0; i < lgrp_num; i++) {
     lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment));
   }
 
@@ -709,7 +709,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
 
   os::page_info page_expected, page_found;
   page_expected.size = page_size;
-  page_expected.lgrp_id = lgrp_id();
+  page_expected.lgrp_id = checked_cast<uint>(lgrp_id());
 
   char *s = scan_start;
   while (s < scan_end) {
@@ -720,7 +720,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
     if (e != scan_end) {
       assert(e < scan_end, "e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end));
 
-      if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
+      if ((page_expected.size != page_size || checked_cast<uint>(page_expected.lgrp_id) != lgrp_id())
           && page_expected.size != 0) {
         os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);
       }
