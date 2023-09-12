@@ -63,7 +63,7 @@ public class RuntimePermissionTest {
                 ServiceConfigurationError sce =
                         Assert.expectThrows(ServiceConfigurationError.class,
                                             () -> InetAddress.getByName("javaTest.org"));
-                LOGGER.info("Got ServiceConfigurationError: " + sce);
+                System.err.println("Got ServiceConfigurationError: " + sce);
                 Throwable cause = sce.getCause();
                 Assert.assertTrue(cause instanceof SecurityException);
                 Assert.assertTrue(cause.getMessage().contains(RUNTIME_PERMISSION_NAME));
@@ -78,15 +78,15 @@ public class RuntimePermissionTest {
 
         public TestSecurityManager(boolean permitInetAddressResolver) {
             this.permitInetAddressResolver = permitInetAddressResolver;
-            LOGGER.info("inetAddressResolverProvider permission is " +
-                        (permitInetAddressResolver ? "granted" : "not granted"));
+            System.err.println("inetAddressResolverProvider permission is " +
+                               (permitInetAddressResolver ? "granted" : "not granted"));
         }
 
         @Override
         public void checkPermission(Permission permission) {
             if (permission instanceof RuntimePermission) {
                 if (RUNTIME_PERMISSION_NAME.equals(permission.getName()) && !permitInetAddressResolver) {
-                    LOGGER.info("Denying '" + RUNTIME_PERMISSION_NAME + "' permission");
+                    System.err.println("Denying '" + RUNTIME_PERMISSION_NAME + "' permission");
                     throw new SecurityException("Access Denied: " + RUNTIME_PERMISSION_NAME);
                 } else {
                    // Do not do anything for non-matching Permission. Otherwise the test
@@ -98,6 +98,5 @@ public class RuntimePermissionTest {
     }
 
     private static final String RUNTIME_PERMISSION_NAME = "inetAddressResolverProvider";
-    private static final Logger LOGGER = Logger.getLogger(RuntimePermissionTest.class.getName());
 
 }
