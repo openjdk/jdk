@@ -27,15 +27,11 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
-#include "classfile/placeholders.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/symbolHandle.hpp"
-#include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
 #include "utilities/resourceHash.hpp"
 
 // Overview
@@ -511,15 +507,8 @@ void LoaderConstraintTable::verify() {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
           guarantee(k == probe->klass(), "klass should be in dictionary");
-        } else {
-          // If we don't find the class in the dictionary, it
-          // has to be in the placeholders table.
-          PlaceholderEntry* entry = PlaceholderTable::get_entry(name, loader_data);
-
-          // The InstanceKlass might not be on the entry, so the only
-          // thing we can check here is whether we were successful in
-          // finding the class in the placeholders table.
-          guarantee(entry != nullptr, "klass should be in the placeholders");
+          // If we don't find the class in the dictionary, it is
+          // in the process of loading and may or may not be in the placeholder table.
         }
       }
       for (int n = 0; n< probe->num_loaders(); n++) {
