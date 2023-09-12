@@ -149,7 +149,7 @@ public class VThreadEventTest {
             }
             await(ready0);
             mready.countDown();
-            await(ready1); // to guaranty state is not State.WAITING after await(mready) in test1() 
+            await(ready1); // to guaranty state is not State.WAITING after await(mready) in test1()
             // wait for test1 threads to reach WAITING state in sleep()
             for (Thread t : test1Threads) {
                 Thread.State state = t.getState();
