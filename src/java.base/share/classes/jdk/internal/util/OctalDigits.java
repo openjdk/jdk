@@ -47,10 +47,10 @@ public final class OctalDigits implements Digits {
         short[] digits = new short[8 * 8];
 
         for (int i = 0; i < 8; i++) {
-            short hi = (short) ((i + '0') << 8);
+            short lo = (short) (i + '0');
 
             for (int j = 0; j < 8; j++) {
-                short lo = (short) (j + '0');
+                short hi = (short) ((j + '0') << 8);
                 digits[(i << 3) + j] = (short) (hi | lo);
             }
         }
@@ -70,15 +70,15 @@ public final class OctalDigits implements Digits {
         while ((value & ~0x3F) != 0) {
             int digits = DIGITS[(int) (value & 0x3F)];
             value >>>= 6;
-            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
             putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         int digits = DIGITS[(int) (value & 0x3F)];
-        putCharMH.invokeExact(buffer, --index, digits & 0xFF);
+        putCharMH.invokeExact(buffer, --index, digits >> 8);
 
         if (7 < value) {
-            putCharMH.invokeExact(buffer, --index, digits >> 8);
+            putCharMH.invokeExact(buffer, --index, digits & 0xFF);
         }
 
         return index;
