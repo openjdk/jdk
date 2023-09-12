@@ -343,12 +343,6 @@ public interface JavaLangAccess {
     int stringSize(long i);
 
     /**
-     * For values from 0 to 99 return a short encoding a pair of ASCII-encoded digit characters in little-endian,
-     * e.g. 0 -> ('0' << 8 | '0'). Used for formatting
-     */
-    short digitPair(int i);
-
-    /**
      * Places characters representing the long i into the
      * character array buf. The characters are placed into
      * the buffer backwards starting with the least significant

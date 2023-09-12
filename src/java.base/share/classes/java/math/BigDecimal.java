@@ -36,6 +36,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.MathUtils;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 import java.nio.ByteOrder;
 import java.nio.charset.CharacterCodingException;
@@ -4250,7 +4251,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 ByteArrayLittleEndian.setShort(
                         buf,
                         highIntSize + 1,
-                        jla.digitPair((int) Math.abs(intCompact - highInt * 100)));
+                        DecimalDigits.digitPair((int) Math.abs(intCompact - highInt * 100)));
 
                 try {
                     return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);

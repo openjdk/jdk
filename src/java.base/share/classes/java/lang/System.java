@@ -2491,10 +2491,6 @@ public final class System {
                 StringLatin1.getChars(i, index, buf);
             }
 
-            public short digitPair(int i) {
-                return StringLatin1.PACKED_DIGITS[i];
-            }
-
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
                 return String.newStringUTF8NoRepl(bytes, off, len, true);
             }
