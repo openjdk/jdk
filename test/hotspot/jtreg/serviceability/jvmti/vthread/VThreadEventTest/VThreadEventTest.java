@@ -29,7 +29,7 @@
  * @requires vm.jvmti
  * @requires vm.compMode != "Xcomp"
  * @run main/othervm/native
- *     -Djava.util.concurrent.ForkJoinPool.common.parallelism=9
+ *     -Djdk.virtualThreadScheduler.parallelism=9
  *     -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadEventTest attach
  */
 
