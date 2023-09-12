@@ -46,7 +46,7 @@ import java.awt.geom.Point2D;
  *          Shape objects - Polygon, Area, and GeneralPath.  Both an
  *          automatic test for constraint compliance and a manual
  *          test for correctness are included in this one class.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main PathHitTest
  */
@@ -58,7 +58,7 @@ import java.awt.geom.Point2D;
  *          Shape objects - Polygon, Area, and GeneralPath.  Both an
  *          automatic test for constraint compliance and a manual
  *          test for correctness are included in this one class.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PathHitTest manual
  */
