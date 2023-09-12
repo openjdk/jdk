@@ -53,8 +53,8 @@ public abstract class Parser {
      * The end of stream character.
      */
     public static final char EOS = 0xffff;
-    private Pair mNoNS; // there is no namespace
-    private Pair mXml;  // the xml namespace
+    private final Pair mNoNS; // there is no namespace
+    private final Pair mXml;  // the xml namespace
     private Map<String, Input> mEnt;  // the entities look up table
     private Map<String, Input> mPEnt; // the parameter entities look up table
     protected boolean mIsSAlone;     // xml decl standalone flag
@@ -541,11 +541,11 @@ public abstract class Parser {
                         bkch();
                         name = name(mIsNSAware);
                         wsskip();
-                        st = 1;  // read 'PUPLIC' or 'SYSTEM'
+                        st = 1;  // read 'PUBLIC' or 'SYSTEM'
                     }
                     break;
 
-                case 1:     // read 'PUPLIC' or 'SYSTEM'
+                case 1:     // read 'PUBLIC' or 'SYSTEM'
                     switch (chtyp(ch)) {
                         case 'A':
                             bkch();
@@ -1338,7 +1338,7 @@ public abstract class Parser {
      * declared in DTD (attribute declaration had been read); 0x2 - attribute's
      * default value is used.</p>
      *
-     * @param att An object which reprecents current attribute.
+     * @param att An object which represents current attribute.
      * @exception Exception is parser specific exception form panic method.
      * @exception IOException
      */
@@ -1869,7 +1869,7 @@ public abstract class Parser {
      * character before quoted string and read the following string as not an
      * attribute ('-'), 'c' - CDATA, 'i' - non CDATA, ' ' - no normalization;
      * '-' - not an attribute value; 'd' - in DTD context.
-     * @return The content of the quoted strign as a string.
+     * @return The content of the quoted string as a string.
      * @exception Exception is parser specific exception form panic method.
      * @exception IOException
      */
@@ -2745,7 +2745,7 @@ public abstract class Parser {
 
     /**
      * Recognizes the built-in entities <i>lt</i>, <i>gt</i>, <i>amp</i>,
-     * <i>apos</i>, <i>quot</i>. The initial state is 0x100. Any state belowe
+     * <i>apos</i>, <i>quot</i>. The initial state is 0x100. Any state below
      * 0x100 is a built-in entity replacement character.
      *
      * @param ch the next character of an entity name.
@@ -3357,7 +3357,7 @@ public abstract class Parser {
     /**
      * Puts back the last read character.
      *
-     * This method <strong>MUST NOT</strong> be called more then once after each
+     * This method <strong>MUST NOT</strong> be called more than once after each
      * call of {@link #getch getch} method.
      */
     protected void bkch()
@@ -3394,7 +3394,7 @@ public abstract class Parser {
     }
 
     /**
-     * Provedes an instance of a pair.
+     * Provides an instance of a pair.
      *
      * @param next The reference to a next pair.
      * @return An instance of a pair.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     private int _state = 0;
     private Element _currentEle;
     private XMLWriter _writer;
-    private Charset _charset;
+    private final Charset _charset;
     /**
      * This flag can be used to turn escaping off for content. It does
      * not apply to attribute content.
@@ -75,7 +75,7 @@ public class XMLStreamWriterImpl implements XMLStreamWriter {
     //pretty print by default
     private boolean _doIndent = true;
     //The system line separator for writing out line breaks.
-    private char[] _lineSep = System.lineSeparator().toCharArray();
+    private final char[] _lineSep = System.lineSeparator().toCharArray();
 
     public XMLStreamWriterImpl(OutputStream os) throws XMLStreamException {
         this(os, XMLStreamWriter.DEFAULT_CHARSET);

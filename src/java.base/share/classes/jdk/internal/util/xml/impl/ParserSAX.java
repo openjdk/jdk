@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ final class ParserSAX
     public static final String FEATURE_PREF =
             "http://xml.org/sax/features/namespace-prefixes";
     //          SAX feature flags
-    private boolean mFNamespaces;
-    private boolean mFPrefixes;
+    private final boolean mFNamespaces;
+    private final boolean mFPrefixes;
     //          SAX handlers
-    private DefaultHandler mHand;      // the default handler
+    private final DefaultHandler mHand;      // the default handler
     private ContentHandler mHandCont;  // the content handler
     private DTDHandler mHandDtd;   // the DTD handler
     private ErrorHandler mHandErr;   // the error handler
@@ -291,11 +291,11 @@ final class ParserSAX
      * application before it is passed to the parser.</p>
      *
      * @param systemId The system identifier (URI).
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly wrapping
+     * @exception SAXException Any SAX exception, possibly wrapping
      * another exception.
-     * @exception java.io.IOException An IO exception from the parser, possibly
+     * @exception IOException An IO exception from the parser, possibly
      * from a byte stream or character stream supplied by the application.
-     * @see #parse(org.xml.sax.InputSource)
+     * @see #parse(InputSource)
      */
     public void parse(String systemId) throws IOException, SAXException {
         parse(new InputSource(systemId));
@@ -321,9 +321,9 @@ final class ParserSAX
      * should throw an exception.</p>
      *
      * @param is The input source for the top-level of the XML document.
-     * @exception org.xml.sax.SAXException Any SAX exception, possibly wrapping
+     * @exception SAXException Any SAX exception, possibly wrapping
      * another exception.
-     * @exception java.io.IOException An IO exception from the parser, possibly
+     * @exception IOException An IO exception from the parser, possibly
      * from a byte stream or character stream supplied by the application.
      * @see org.xml.sax.InputSource
      * @see #parse(java.lang.String)
@@ -350,8 +350,8 @@ final class ParserSAX
     }
 
     /**
-     * Parse the content of the given {@link java.io.InputStream} instance as
-     * XML using the specified {@link org.xml.sax.helpers.DefaultHandler}.
+     * Parse the content of the given {@link InputStream} instance as
+     * XML using the specified {@link DefaultHandler}.
      *
      * @param src InputStream containing the content to be parsed.
      * @param handler The SAX DefaultHandler to use.
@@ -371,8 +371,8 @@ final class ParserSAX
     }
 
     /**
-     * Parse the content given {@link org.xml.sax.InputSource} as XML using the
-     * specified {@link org.xml.sax.helpers.DefaultHandler}.
+     * Parse the content given {@link InputSource} as XML using the
+     * specified {@link DefaultHandler}.
      *
      * @param is The InputSource containing the content to be parsed.
      * @param handler The SAX DefaultHandler to use.

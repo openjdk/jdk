@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.internal.util.xml.SAXParser;
 
 public class SAXParserImpl extends SAXParser {
 
-    private ParserSAX parser;
+    private final ParserSAX parser;
 
     public SAXParserImpl() {
         super();
@@ -79,9 +79,9 @@ public class SAXParserImpl extends SAXParser {
     }
 
     /**
-     * Parse the content of the given {@link java.io.InputStream}
+     * Parse the content of the given {@link InputStream}
      * instance as XML using the specified
-     * {@link org.xml.sax.helpers.DefaultHandler}.
+     * {@link DefaultHandler}.
      *
      * @param src InputStream containing the content to be parsed.
      * @param handler The SAX DefaultHandler to use.
@@ -98,9 +98,9 @@ public class SAXParserImpl extends SAXParser {
     }
 
     /**
-     * Parse the content given {@link org.xml.sax.InputSource}
+     * Parse the content given {@link InputSource}
      * as XML using the specified
-     * {@link org.xml.sax.helpers.DefaultHandler}.
+     * {@link DefaultHandler}.
      *
      * @param is The InputSource containing the content to be parsed.
      * @param handler The SAX DefaultHandler to use.
