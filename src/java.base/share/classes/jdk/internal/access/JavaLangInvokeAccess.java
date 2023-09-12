@@ -178,7 +178,7 @@ public interface JavaLangInvokeAccess {
      * Returns a method handle that allocates an instance of the given class
      * and then invoke the given constructor of one of its superclasses.
      *
-     * Used by serialization, exposed via sun.reflect.ReflectionFactory.
+     * This method should only be used by ReflectionFactory::newConstructorForSerialization.
      */
     MethodHandle serializableConstructor(Class<?> decl, Constructor<?> ctorToCall) throws IllegalAccessException;
 }

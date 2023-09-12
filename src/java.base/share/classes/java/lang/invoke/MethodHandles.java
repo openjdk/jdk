@@ -3529,8 +3529,7 @@ return mh1;
          * Produces a method handle that is capable of creating instances of the given class
          * and instantiated by the given constructor.  No security manager check.
          *
-         * This method is only used to implement the unsupported
-         * sun.reflect.ReflectionFactory::newConstructorForSerialization API.
+         * This method should only be used by ReflectionFactory::newConstructorForSerialization.
          */
         /* package-private */ MethodHandle serializableConstructor(Class<?> decl, Constructor<?> c) throws IllegalAccessException {
             MemberName ctor = new MemberName(c);
