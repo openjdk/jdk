@@ -2177,25 +2177,27 @@ public final class LocalDate
         int year = this.year;
         int yearSize = yearSize(year);
         int yearAbs = Math.abs(year);
+
+        int yearEnd = off + yearSize;
         if (yearAbs < 1000) {
             if (year < 0) {
-                buf[off] = '-';
+                buf[off++] = '-';
             }
             int y01 = yearAbs / 100;
             int y23 = yearAbs - y01 * 100;
 
             ByteArrayLittleEndian.setInt(
                     buf,
-                    off + (year < 0 ? 1 : 0),
+                    off,
                     (DecimalDigits.digitPair(y23) << 16) | DecimalDigits.digitPair(y01));
         } else {
             if (year > 9999) {
                 buf[off] = '+';
             }
-            DecimalDigits.getCharsLatin1(year, off + yearSize, buf);
+            DecimalDigits.getCharsLatin1(year, yearEnd, buf);
         }
 
-        off += yearSize;
+        off = yearEnd;
         buf[off] = '-';
         ByteArrayLittleEndian.setShort(
                 buf,
