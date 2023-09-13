@@ -194,8 +194,11 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Runs or continues execution of the continuation on the current thread.
+     * Runs or continues execution on the current thread. The virtual thread is mounted
+     * on the current thread before the task runs or continues. It unmounts when the
+     * task completes or yields.
      */
+    @ChangesCurrentThread
     private void runContinuation() {
         // the carrier must be a platform thread
         if (Thread.currentThread().isVirtual()) {
@@ -217,11 +220,13 @@ final class VirtualThread extends BaseVirtualThread {
         // notify JVMTI before mount
         notifyJvmtiMount(/*hide*/true);
 
+        mount();
         try {
             cont.run();
         } finally {
+            unmount();
             if (cont.isDone()) {
-                afterTerminate();
+                afterDone();
             } else {
                 afterYield();
             }
@@ -285,16 +290,13 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Runs a task in the context of this virtual thread. The virtual thread is
-     * mounted on the current (carrier) thread before the task runs. It unmounts
-     * from its carrier thread when the task completes.
+     * Runs a task in the context of this virtual thread.
      */
     @ChangesCurrentThread
     private void run(Runnable task) {
-        assert state == RUNNING;
+        assert Thread.currentThread() == this && state == RUNNING;
 
-        // first mount
-        mount();
+        // notify JVMTI, may post VirtualThreadStart event
         notifyJvmtiStart();
 
         // emit JFR event if enabled
@@ -322,12 +324,8 @@ final class VirtualThread extends BaseVirtualThread {
                 }
 
             } finally {
-                // last unmount
+                // notify JVMTI, may post VirtualThreadEnd event
                 notifyJvmtiEnd();
-                unmount();
-
-                // final state
-                setState(TERMINATED);
             }
         }
     }
@@ -417,21 +415,15 @@ final class VirtualThread extends BaseVirtualThread {
      }
 
     /**
-     * Unmounts this virtual thread, invokes Continuation.yield, and re-mounts the
-     * thread when continued. When enabled, JVMTI must be notified from this method.
-     * @return true if the yield was successful
+     * Invokes Continuation.yield, notifying JVMTI (if enabled) to hide frames until
+     * the continuation continues.
      */
     @Hidden
-    @ChangesCurrentThread
     private boolean yieldContinuation() {
-        // unmount
         notifyJvmtiUnmount(/*hide*/true);
-        unmount();
         try {
             return Continuation.yield(VTHREAD_SCOPE);
         } finally {
-            // re-mount
-            mount();
             notifyJvmtiMount(/*hide*/false);
         }
     }
@@ -477,22 +469,22 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     /**
-     * Invoked after the thread terminates execution. It notifies anyone
-     * waiting for the thread to terminate.
+     * Invoked after the continuation completes.
      */
-    private void afterTerminate() {
-        afterTerminate(true, true);
+    private void afterDone() {
+        afterDone(true, true);
     }
 
     /**
-     * Invoked after the thread terminates (or start failed). This method
-     * notifies anyone waiting for the thread to terminate.
+     * Invoked after the continuation completes (or start failed). Sets the thread
+     * state to TERMINATED and notifies anyone waiting for the thread to terminate.
      *
      * @param notifyContainer true if its container should be notified
      * @param executed true if the thread executed, false if it failed to start
      */
-    private void afterTerminate(boolean notifyContainer, boolean executed) {
-        assert (state() == TERMINATED) && (carrierThread == null);
+    private void afterDone(boolean notifyContainer, boolean executed) {
+        assert carrierThread == null;
+        setState(TERMINATED);
 
         if (executed) {
             notifyJvmtiUnmount(/*hide*/false);
@@ -546,8 +538,7 @@ final class VirtualThread extends BaseVirtualThread {
             started = true;
         } finally {
             if (!started) {
-                setState(TERMINATED);
-                afterTerminate(addedToContainer, /*executed*/false);
+                afterDone(addedToContainer, /*executed*/false);
             }
         }
     }

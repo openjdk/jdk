@@ -125,11 +125,13 @@ java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-a
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
+java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
 java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.java 8194753 linux-all,macosx-all
 java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java 7152980 macosx-all
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
 java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java 7156130 linux-all
 java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
@@ -137,6 +139,7 @@ java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.j
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/Mixing/AWT_Mixing/HierarchyBoundsListenerMixingTest.java 8049405 macosx-all
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlappingChoice.java 8048171 generic-all
 java/awt/Mixing/AWT_Mixing/JMenuBarOverlapping.java 8159451 linux-all,windows-all,macosx-all
 java/awt/Mixing/AWT_Mixing/JSplitPaneOverlapping.java 6986109 generic-all
@@ -437,7 +440,7 @@ java/awt/event/MouseEvent/ClickDuringKeypress/ClickDuringKeypress.java 8233568 m
 java/awt/event/KeyEvent/DeadKey/DeadKeyMacOSXInputText.java 8233568 macosx-all
 java/awt/event/KeyEvent/DeadKey/deadKeyMacOSX.java 8233568 macosx-all
 java/awt/TrayIcon/RightClickWhenBalloonDisplayed/RightClickWhenBalloonDisplayed.java 8238720 windows-all
-java/awt/PopupMenu/PopupMenuLocation.java 8238720 windows-all
+java/awt/PopupMenu/PopupMenuLocation.java 8238720,8315878 windows-all,macosx-aarch64
 java/awt/GridLayout/ComponentPreferredSize/ComponentPreferredSize.java 8238720 windows-all
 java/awt/GridLayout/ChangeGridSize/ChangeGridSize.java   8238720 windows-all
 java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsoluteCoordsTest.java 8238720 windows-all
@@ -459,6 +462,10 @@ java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-a
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
 sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
+
+# Several tests which fail on some hidpi systems/macosx12-aarch64 system
+java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
+java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 
 ############################################################################
 
@@ -654,16 +661,9 @@ javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
 javax/swing/JRadioButton/4314194/bug4314194.java 8298153 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
-java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
-java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
-java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
-java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
-
 javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
-java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all

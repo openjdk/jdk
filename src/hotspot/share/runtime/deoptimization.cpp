@@ -117,8 +117,7 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
   if (cm->is_marked_for_deoptimization()) {
@@ -139,8 +138,8 @@ void DeoptimizationScope::mark(CompiledMethod* cm, bool inc_recompile_counts) {
 }
 
 void DeoptimizationScope::dependent(CompiledMethod* cm) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
   if (_required_gen < cm->_deoptimization_generation) {
@@ -170,8 +169,8 @@ void DeoptimizationScope::deoptimize_marked() {
   bool wait = false;
   while (true) {
     {
-      MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+      ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
       // First we check if we or someone else already deopted the gen we want.
       if (DeoptimizationScope::_committed_deopt_gen >= _required_gen) {
         DEBUG_ONLY(_deopted = true;)
@@ -198,8 +197,8 @@ void DeoptimizationScope::deoptimize_marked() {
       Deoptimization::deoptimize_all_marked(); // May safepoint and an additional deopt may have occurred.
       DEBUG_ONLY(_deopted = true;)
       {
-        MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                       Mutex::_no_safepoint_check_flag);
+        ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+
         // Make sure that committed doesn't go backwards.
         // Should only happen if we did a deopt during a safepoint above.
         if (DeoptimizationScope::_committed_deopt_gen < comitting) {
