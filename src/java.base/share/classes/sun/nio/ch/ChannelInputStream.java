@@ -46,7 +46,7 @@ import jdk.internal.util.ArraysSupport;
  * @author Mark Reinhold
  */
 class ChannelInputStream extends InputStream {
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    static final int DEFAULT_BUFFER_SIZE = 8192;
 
     private final ReadableByteChannel ch;
     private ByteBuffer bb;
@@ -60,6 +60,32 @@ class ChannelInputStream extends InputStream {
         this.ch = ch;
     }
 
+    /*
+     * Reads bytes in DEFAULT_BUFFER_SIZE chunks until all requested bytes
+     * have been read or end-of-stream is reached.
+     * If the channel is selectable then it must be configured blocking.
+     */
+    private int readFully(ByteBuffer bb) throws IOException {
+        int nread = 0;
+        int pos = bb.position();
+        int rem = bb.limit() - pos;
+        while (rem > 0) {
+            int size = Integer.min(rem, DEFAULT_BUFFER_SIZE);
+            bb.limit(pos + size);
+            int n = ch.read(bb);
+            if (n < 0) {
+                // EOF
+                if (nread == 0)
+                    nread = -1;
+                break;
+            }
+            nread += n;
+            pos += n;
+            rem -=n;
+        }
+        return nread;
+    }
+
     /**
      * Reads a sequence of bytes from the channel into the given buffer.
      */
@@ -68,10 +94,10 @@ class ChannelInputStream extends InputStream {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
-                return ch.read(bb);
+                return readFully(bb);
             }
         } else {
-            return ch.read(bb);
+            return readFully(bb);
         }
     }
 
