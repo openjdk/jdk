@@ -25,6 +25,7 @@
  * @test id=VerifyAlignVector
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
@@ -39,6 +40,7 @@
  * @test id=Vanilla
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Do not force alignment.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
@@ -51,6 +53,7 @@
  * @test id=VerifyAlignVector-NoTieredCompilation-Xbatch
  * @bug 8253191
  * @summary Fuzzing loops with different (random) init, limit, stride, scale etc. Verify AlignVector.
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
@@ -67,13 +70,7 @@ package compiler.loopopts.superword;
 import java.lang.invoke.*;
 import java.util.Random;
 import jdk.test.lib.Utils;
-
-// Still TODO:
-// - decr unrolling
-// - Unsafe, and misaligned access.
-// Other ideas:
-// - Benchmark benefit of alignment when not required
-
+import jdk.internal.misc.Unsafe;
 
 public class TestAlignVectorFuzzer {
 
@@ -81,6 +78,7 @@ public class TestAlignVectorFuzzer {
     static final int ITERATIONS = 5;
 
     private static final Random random = Utils.getRandomInstance();
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     // Setup for variable compile-time constants:
     private static final CallSite INIT_CS    = new MutableCallSite(MethodType.methodType(int.class));
@@ -531,6 +529,9 @@ public class TestAlignVectorFuzzer {
                 testDUBCFH(aB, bC, cF);
 
                 testMMSFD(aS, bF, cD);
+
+                testUU_unsafe_BasI(aB);
+                testUU_unsafe_BasIH(aB, bB, cB);
             }
         }
         System.out.println("TEST PASSED");
@@ -1013,4 +1014,90 @@ public class TestAlignVectorFuzzer {
         }
     }
 
+    // -------------------- UNSAFE --------------------
+
+    static void testUU_unsafe_BasI(byte[] a) {
+        int init   = init_con_or_var();
+        int limit  = limit_con_or_var();
+        int stride = stride_con();
+        int scale  = scale_con();
+        int offset = offset1_con_or_var();
+
+        for (int i = init; i < limit; i += stride) {
+            int adr = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + i * scale;
+            int v = UNSAFE.getIntUnaligned(a, adr);
+            UNSAFE.putIntUnaligned(a, adr, v + 1);
+        }
+    }
+
+    static void testUU_unsafe_BasIH(byte[] a, byte[] b, byte[] c) {
+        int init   = init_con_or_var();
+        int limit  = limit_con_or_var();
+        int stride = stride_con();
+        int scale  = scale_con();
+        int offset1 = offset1_con_or_var();
+        int offset2 = offset2_con_or_var();
+        int offset3 = offset3_con_or_var();
+
+        int h1 = hand_unrolling1_con();
+        int h2 = hand_unrolling2_con();
+        int h3 = hand_unrolling3_con();
+
+        for (int i = init; i < limit; i += stride) {
+            int adr1 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset1 + i * scale;
+            int adr2 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset2 + i * scale;
+            int adr3 = UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset3 + i * scale;
+
+            if (h1 >=  1) { UNSAFE.putIntUnaligned(a, adr1 +  0*4, UNSAFE.getIntUnaligned(a, adr1 +  0*4) + 1); }
+            if (h1 >=  2) { UNSAFE.putIntUnaligned(a, adr1 +  1*4, UNSAFE.getIntUnaligned(a, adr1 +  1*4) + 1); }
+            if (h1 >=  3) { UNSAFE.putIntUnaligned(a, adr1 +  2*4, UNSAFE.getIntUnaligned(a, adr1 +  2*4) + 1); }
+            if (h1 >=  4) { UNSAFE.putIntUnaligned(a, adr1 +  3*4, UNSAFE.getIntUnaligned(a, adr1 +  3*4) + 1); }
+            if (h1 >=  5) { UNSAFE.putIntUnaligned(a, adr1 +  4*4, UNSAFE.getIntUnaligned(a, adr1 +  4*4) + 1); }
+            if (h1 >=  6) { UNSAFE.putIntUnaligned(a, adr1 +  5*4, UNSAFE.getIntUnaligned(a, adr1 +  5*4) + 1); }
+            if (h1 >=  7) { UNSAFE.putIntUnaligned(a, adr1 +  6*4, UNSAFE.getIntUnaligned(a, adr1 +  6*4) + 1); }
+            if (h1 >=  8) { UNSAFE.putIntUnaligned(a, adr1 +  7*4, UNSAFE.getIntUnaligned(a, adr1 +  7*4) + 1); }
+            if (h1 >=  9) { UNSAFE.putIntUnaligned(a, adr1 +  8*4, UNSAFE.getIntUnaligned(a, adr1 +  8*4) + 1); }
+            if (h1 >= 10) { UNSAFE.putIntUnaligned(a, adr1 +  9*4, UNSAFE.getIntUnaligned(a, adr1 +  9*4) + 1); }
+            if (h1 >= 11) { UNSAFE.putIntUnaligned(a, adr1 + 10*4, UNSAFE.getIntUnaligned(a, adr1 + 10*4) + 1); }
+            if (h1 >= 12) { UNSAFE.putIntUnaligned(a, adr1 + 11*4, UNSAFE.getIntUnaligned(a, adr1 + 11*4) + 1); }
+            if (h1 >= 13) { UNSAFE.putIntUnaligned(a, adr1 + 12*4, UNSAFE.getIntUnaligned(a, adr1 + 12*4) + 1); }
+            if (h1 >= 14) { UNSAFE.putIntUnaligned(a, adr1 + 13*4, UNSAFE.getIntUnaligned(a, adr1 + 13*4) + 1); }
+            if (h1 >= 15) { UNSAFE.putIntUnaligned(a, adr1 + 14*4, UNSAFE.getIntUnaligned(a, adr1 + 14*4) + 1); }
+            if (h1 >= 16) { UNSAFE.putIntUnaligned(a, adr1 + 15*4, UNSAFE.getIntUnaligned(a, adr1 + 15*4) + 1); }
+
+            if (h2 >=  1) { UNSAFE.putIntUnaligned(b, adr2 +  0*4, UNSAFE.getIntUnaligned(b, adr2 +  0*4) + 1); }
+            if (h2 >=  2) { UNSAFE.putIntUnaligned(b, adr2 +  1*4, UNSAFE.getIntUnaligned(b, adr2 +  1*4) + 1); }
+            if (h2 >=  3) { UNSAFE.putIntUnaligned(b, adr2 +  2*4, UNSAFE.getIntUnaligned(b, adr2 +  2*4) + 1); }
+            if (h2 >=  4) { UNSAFE.putIntUnaligned(b, adr2 +  3*4, UNSAFE.getIntUnaligned(b, adr2 +  3*4) + 1); }
+            if (h2 >=  5) { UNSAFE.putIntUnaligned(b, adr2 +  4*4, UNSAFE.getIntUnaligned(b, adr2 +  4*4) + 1); }
+            if (h2 >=  6) { UNSAFE.putIntUnaligned(b, adr2 +  5*4, UNSAFE.getIntUnaligned(b, adr2 +  5*4) + 1); }
+            if (h2 >=  7) { UNSAFE.putIntUnaligned(b, adr2 +  6*4, UNSAFE.getIntUnaligned(b, adr2 +  6*4) + 1); }
+            if (h2 >=  8) { UNSAFE.putIntUnaligned(b, adr2 +  7*4, UNSAFE.getIntUnaligned(b, adr2 +  7*4) + 1); }
+            if (h2 >=  9) { UNSAFE.putIntUnaligned(b, adr2 +  8*4, UNSAFE.getIntUnaligned(b, adr2 +  8*4) + 1); }
+            if (h2 >= 10) { UNSAFE.putIntUnaligned(b, adr2 +  9*4, UNSAFE.getIntUnaligned(b, adr2 +  9*4) + 1); }
+            if (h2 >= 11) { UNSAFE.putIntUnaligned(b, adr2 + 10*4, UNSAFE.getIntUnaligned(b, adr2 + 10*4) + 1); }
+            if (h2 >= 12) { UNSAFE.putIntUnaligned(b, adr2 + 11*4, UNSAFE.getIntUnaligned(b, adr2 + 11*4) + 1); }
+            if (h2 >= 13) { UNSAFE.putIntUnaligned(b, adr2 + 12*4, UNSAFE.getIntUnaligned(b, adr2 + 12*4) + 1); }
+            if (h2 >= 14) { UNSAFE.putIntUnaligned(b, adr2 + 13*4, UNSAFE.getIntUnaligned(b, adr2 + 13*4) + 1); }
+            if (h2 >= 15) { UNSAFE.putIntUnaligned(b, adr2 + 14*4, UNSAFE.getIntUnaligned(b, adr2 + 14*4) + 1); }
+            if (h2 >= 16) { UNSAFE.putIntUnaligned(b, adr2 + 15*4, UNSAFE.getIntUnaligned(b, adr2 + 15*4) + 1); }
+
+            if (h3 >=  1) { UNSAFE.putIntUnaligned(c, adr3 +  0*4, UNSAFE.getIntUnaligned(c, adr3 +  0*4) + 1); }
+            if (h3 >=  2) { UNSAFE.putIntUnaligned(c, adr3 +  1*4, UNSAFE.getIntUnaligned(c, adr3 +  1*4) + 1); }
+            if (h3 >=  3) { UNSAFE.putIntUnaligned(c, adr3 +  2*4, UNSAFE.getIntUnaligned(c, adr3 +  2*4) + 1); }
+            if (h3 >=  4) { UNSAFE.putIntUnaligned(c, adr3 +  3*4, UNSAFE.getIntUnaligned(c, adr3 +  3*4) + 1); }
+            if (h3 >=  5) { UNSAFE.putIntUnaligned(c, adr3 +  4*4, UNSAFE.getIntUnaligned(c, adr3 +  4*4) + 1); }
+            if (h3 >=  6) { UNSAFE.putIntUnaligned(c, adr3 +  5*4, UNSAFE.getIntUnaligned(c, adr3 +  5*4) + 1); }
+            if (h3 >=  7) { UNSAFE.putIntUnaligned(c, adr3 +  6*4, UNSAFE.getIntUnaligned(c, adr3 +  6*4) + 1); }
+            if (h3 >=  8) { UNSAFE.putIntUnaligned(c, adr3 +  7*4, UNSAFE.getIntUnaligned(c, adr3 +  7*4) + 1); }
+            if (h3 >=  9) { UNSAFE.putIntUnaligned(c, adr3 +  8*4, UNSAFE.getIntUnaligned(c, adr3 +  8*4) + 1); }
+            if (h3 >= 10) { UNSAFE.putIntUnaligned(c, adr3 +  9*4, UNSAFE.getIntUnaligned(c, adr3 +  9*4) + 1); }
+            if (h3 >= 11) { UNSAFE.putIntUnaligned(c, adr3 + 10*4, UNSAFE.getIntUnaligned(c, adr3 + 10*4) + 1); }
+            if (h3 >= 12) { UNSAFE.putIntUnaligned(c, adr3 + 11*4, UNSAFE.getIntUnaligned(c, adr3 + 11*4) + 1); }
+            if (h3 >= 13) { UNSAFE.putIntUnaligned(c, adr3 + 12*4, UNSAFE.getIntUnaligned(c, adr3 + 12*4) + 1); }
+            if (h3 >= 14) { UNSAFE.putIntUnaligned(c, adr3 + 13*4, UNSAFE.getIntUnaligned(c, adr3 + 13*4) + 1); }
+            if (h3 >= 15) { UNSAFE.putIntUnaligned(c, adr3 + 14*4, UNSAFE.getIntUnaligned(c, adr3 + 14*4) + 1); }
+            if (h3 >= 16) { UNSAFE.putIntUnaligned(c, adr3 + 15*4, UNSAFE.getIntUnaligned(c, adr3 + 15*4) + 1); }
+        }
+    }
 }
