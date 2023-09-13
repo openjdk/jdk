@@ -2454,8 +2454,6 @@ public final class DateTimeFormatterBuilder {
         int printerParsersSize = printerParsers.size();
         if (DateCompositePrinterParser.accept(printerParsers)) {
             pp = new DateCompositePrinterParser(printerParsers, false);
-        } else if (TimeCompositePrinterParser.accept(printerParsers)) {
-            pp = new TimeCompositePrinterParser(printerParsers, false);
         }
 
         if (pp == null) {
@@ -2593,102 +2591,6 @@ public final class DateTimeFormatterBuilder {
 
             if (date != null) {
                 formatDate(buf, literal, date);
-                return true;
-            }
-
-            return super.format(context, buf);
-        }
-    }
-
-    static final class TimeCompositePrinterParser extends CompositePrinterParser {
-        final char literal;
-        final int fractionalDigits;
-        private TimeCompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
-            super(printerParsers, optional);
-            literal = ((CharLiteralPrinterParser) printerParsers.get(1)).literal;
-            CompositePrinterParser p3 = (CompositePrinterParser) printerParsers.get(3);
-            CompositePrinterParser s2 = (CompositePrinterParser) p3.printerParsers[2];
-            NanosPrinterParser n = (NanosPrinterParser) s2.printerParsers[0];
-            if (n.minWidth == 0 && n.maxWidth == 9) {
-                fractionalDigits = -2;
-            } else {
-                fractionalDigits = n.minWidth;
-            }
-        }
-
-        static boolean accept(List<DateTimePrinterParser> printerParsers) {
-            if (printerParsers.size() != 4) {
-                return false;
-            }
-
-            if (printerParsers.get(0) instanceof NumberPrinterParser
-                    && printerParsers.get(1) instanceof CharLiteralPrinterParser
-                    && printerParsers.get(2) instanceof NumberPrinterParser
-                    && printerParsers.get(3) instanceof CompositePrinterParser
-            ) {
-                NumberPrinterParser p0 = (NumberPrinterParser) printerParsers.get(0);
-                CharLiteralPrinterParser p1 = (CharLiteralPrinterParser) printerParsers.get(1);
-                NumberPrinterParser p2 = (NumberPrinterParser) printerParsers.get(2);
-                CompositePrinterParser p3 = (CompositePrinterParser) printerParsers.get(3);
-
-                if (p0.field == ChronoField.HOUR_OF_DAY
-                        && p0.signStyle == SignStyle.NOT_NEGATIVE
-                        && p0.minWidth == 2
-                        && p0.maxWidth == 2
-                        && p0.subsequentWidth == 0
-                        && p2.field == ChronoField.MINUTE_OF_HOUR
-                        && p2.signStyle == SignStyle.NOT_NEGATIVE
-                        && p2.minWidth == 2
-                        && p2.maxWidth == 2
-                        && p2.subsequentWidth == 0
-                        && p3.printerParsers.length == 3
-                        && p3.printerParsers[0] instanceof CharLiteralPrinterParser
-                        && p3.printerParsers[1] instanceof NumberPrinterParser
-                        && p3.printerParsers[2] instanceof CompositePrinterParser
-                ) {
-                    CharLiteralPrinterParser s0 = (CharLiteralPrinterParser) p3.printerParsers[0];
-                    NumberPrinterParser s1 = (NumberPrinterParser) p3.printerParsers[1];
-                    CompositePrinterParser s2 = (CompositePrinterParser) p3.printerParsers[2];
-                    if (s1.field == ChronoField.SECOND_OF_MINUTE
-                            && s0.literal == p1.literal
-                            && s1.minWidth == 2
-                            && s1.maxWidth == 2
-                            && s1.subsequentWidth == 0
-                            && s2.printerParsers.length == 1
-                            && s2.printerParsers[0] instanceof NanosPrinterParser
-                    ) {
-                        NanosPrinterParser n = (NanosPrinterParser) s2.printerParsers[0];
-                        if (n.decimalPoint
-                                && n.field == ChronoField.NANO_OF_SECOND
-                                && n.signStyle == SignStyle.NOT_NEGATIVE
-                                && n.subsequentWidth == 0
-                                && ((n.minWidth == 0 && n.maxWidth == 9) || n.minWidth == n.maxWidth)
-                        ) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf) {
-            TemporalAccessor temporal = context.getTemporal();
-
-            LocalTime time = null;
-            if (temporal instanceof LocalDateTime) {
-                time = ((LocalDateTime) temporal).toLocalTime();
-            } else if (temporal instanceof LocalTime) {
-                time = (LocalTime) temporal;
-            } else if (temporal instanceof ZonedDateTime) {
-                time = ((ZonedDateTime) temporal).toLocalTime();
-            } else if (temporal instanceof OffsetDateTime) {
-                time = ((OffsetDateTime) temporal).toLocalTime();
-            }
-
-            if (time != null) {
-                formatTime(buf, -2, time);
                 return true;
             }
 
