@@ -2643,13 +2643,23 @@ public final class DateTimeFormatterBuilder {
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             TemporalAccessor temporal = context.getTemporal();
 
+            boolean utc = true;
             LocalTime time;
             switch (temporal) {
                 case LocalTime lt -> time = lt;
                 case LocalDateTime ldt -> time = ldt.toLocalTime();
-                case ZonedDateTime zdt -> time = zdt.toLocalTime();
-                case OffsetDateTime odt -> time = odt.toLocalTime();
-                case OffsetTime ot -> time = ot.toLocalTime();
+                case ZonedDateTime zdt -> {
+                    time = zdt.toLocalTime();
+                    utc = false;
+                }
+                case OffsetDateTime odt -> {
+                    time = odt.toLocalTime();
+                    utc = false;
+                }
+                case OffsetTime ot -> {
+                    time = ot.toLocalTime();
+                    utc = false;
+                }
                 default -> {
                     return super.format(context, buf);
                 }
@@ -2666,7 +2676,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
 
-            buf.append('Z');
+            if (utc) {
+                buf.append('Z');
+            }
             return true;
         }
     }
