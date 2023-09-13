@@ -22,7 +22,6 @@
  */
 
 import java.awt.Color;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Element;
 import javax.swing.text.MutableAttributeSet;
@@ -38,14 +37,10 @@ import javax.swing.text.StyledDocument;
 
 public class bug4472852 {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // create a Document and insert some text there
         StyledDocument doc = new DefaultStyledDocument();
-        try {
-            doc.insertString(0, "this", null);
-        } catch (BadLocationException e) {
-            throw new RuntimeException("Unexpected error: ", e);
-        }
+        doc.insertString(0, "this", null);
 
         // add style to the last word
         Element root = doc.getDefaultRootElement();
