@@ -20,9 +20,9 @@ import static java.awt.Toolkit.getDefaultToolkit;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Demonstrates adding and positioning two test windows horizontally
- * @run main/manual TwoWindowsH
+ * @run main/manual TwoWindowsHH
  */
-public class TwoWindowsH {
+public class TwoWindowsHH {
     public static final String INSTRUCTIONS = """
             A simple demo to position two test windows
             side by side horizontally or vertically.
@@ -34,15 +34,15 @@ public class TwoWindowsH {
                       .instructions(INSTRUCTIONS)
                       .rows(15)
                       .columns(30)
-                      .testUI(TwoWindowsH::createTestUI)
-                      .positionTestUI(TwoWindowsH::positionTestUI)
+                      .testUI(TwoWindowsHH::createTestUI)
+                      .positionTestUI(TwoWindowsHH::positionTestUI)
                       .build()
                       .awaitAndCheck();
     }
 
-    private static final int GAP = 8;
+    public static final int GAP = 8;
 
-    private static Point getScreenCenter() {
+    public static Point getScreenCenter() {
         GraphicsConfiguration gc = getLocalGraphicsEnvironment()
                                    .getDefaultScreenDevice()
                                    .getDefaultConfiguration();
@@ -92,7 +92,7 @@ public class TwoWindowsH {
     public static List<? extends Window> createTestUI() {
         return Stream.of(new Color(240, 200, 240),
                          new Color(200, 240, 200))
-                     .map(TwoWindowsH::createFrame)
+                     .map(TwoWindowsHH::createFrame)
                      .toList();
     }
 

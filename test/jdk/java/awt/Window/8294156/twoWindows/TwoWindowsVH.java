@@ -4,16 +4,16 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Demonstrates adding and positioning two test windows vertically
- * @run main/manual TwoWindowsV
+ * @run main/manual TwoWindowsVH
  */
-public class TwoWindowsV {
+public class TwoWindowsVH {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
-                      .instructions(TwoWindowsH.INSTRUCTIONS)
+                      .instructions(TwoWindowsHH.INSTRUCTIONS)
                       .rows(15)
                       .columns(30)
-                      .testUI(TwoWindowsH::createTestUI)
-                      .positionTestUI(TwoWindowsH::positionTestUI)
+                      .testUI(TwoWindowsHH::createTestUI)
+                      .positionTestUI(TwoWindowsHH::positionTestUI)
                       .position(PassFailJFrame.Position.VERTICAL)
                       .build()
                       .awaitAndCheck();
