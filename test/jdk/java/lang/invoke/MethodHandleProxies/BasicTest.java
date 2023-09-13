@@ -56,9 +56,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /*
  * @test
  * @bug 6983726 8206955 8269351
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @summary Basic sanity tests for MethodHandleProxies
  * @build BasicTest Client
  * @run junit BasicTest

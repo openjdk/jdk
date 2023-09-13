@@ -46,9 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @test
  * @bug 6983726
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @summary Tests on implementation hidden classes spinned by MethodHandleProxies
  * @build WrapperHiddenClassTest Client jdk.test.lib.util.ForceGC
  * @run junit WrapperHiddenClassTest
