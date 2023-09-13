@@ -25,12 +25,16 @@
 package java.lang.classfile;
 
 import jdk.internal.classfile.impl.ClassfileVersionImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the classfile version information for a class.  Delivered as a {@link
  * java.lang.classfile.ClassElement} when traversing the elements of a {@link
  * ClassModel}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassfileVersion
         extends ClassElement
         permits ClassfileVersionImpl {

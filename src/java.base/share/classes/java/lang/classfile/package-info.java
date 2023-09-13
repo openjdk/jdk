@@ -484,5 +484,10 @@
  *     | LocalVariableType(int slot, Utf8Entry name, Utf8Entry type, Label startScope, Label endScope)
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile;
+
+import jdk.internal.javac.PreviewFeature;

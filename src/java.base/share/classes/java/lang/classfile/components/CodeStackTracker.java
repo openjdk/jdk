@@ -30,6 +30,7 @@ import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.CodeStackTrackerImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeStackTracker} is a {@link CodeTransform} tracking stack content
@@ -48,7 +49,10 @@ import jdk.internal.classfile.impl.CodeStackTrackerImpl;
  *         int maxStack = stackTracker.maxStackSize().get();
  *     });
  * }
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeStackTracker extends CodeTransform permits CodeStackTrackerImpl {
 
     /**

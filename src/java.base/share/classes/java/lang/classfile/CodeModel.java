@@ -32,12 +32,16 @@ import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.BufferedCodeBuilder;
 import jdk.internal.classfile.impl.CodeImpl;
 import java.lang.classfile.instruction.ExceptionCatch;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the body of a method (the {@code Code} attribute).  The instructions
  * of the method body are accessed via a streaming view (e.g., {@link
  * #elements()}).
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeModel
         extends CompoundElement<CodeElement>, AttributedElement, MethodElement
         permits CodeAttribute, BufferedCodeBuilder.Model, CodeImpl {

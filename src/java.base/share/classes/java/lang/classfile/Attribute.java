@@ -63,6 +63,7 @@ import java.lang.classfile.attribute.SyntheticAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a classfile attribute {@jvms 4.7}.  Many, though not all, subtypes of
@@ -73,7 +74,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * directly from the corresponding model type through {@link
  * AttributedElement#findAttribute(AttributeMapper)}.
  * @param <A> the attribute type
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Attribute<A extends Attribute<A>>
         extends WritableElement<A>
         permits AnnotationDefaultAttribute, BootstrapMethodsAttribute,

@@ -84,12 +84,16 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Attribute mappers for standard classfile attributes.
  *
  * @see AttributeMapper
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public class Attributes {
 
     /** AnnotationDefault */

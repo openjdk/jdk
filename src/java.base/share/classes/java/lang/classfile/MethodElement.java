@@ -37,11 +37,15 @@ import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.classfile.attribute.SyntheticAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements
  * of a {@link MethodModel} or be presented to a {@link MethodBuilder}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodElement
         extends ClassfileElement
         permits AccessFlags, CodeModel, CustomAttribute,

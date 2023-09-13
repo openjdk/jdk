@@ -30,6 +30,7 @@ import java.lang.classfile.FieldElement;
 import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Deprecated} attribute {@jvms 4.7.15}, which can appear on
@@ -38,7 +39,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * of a corresponding model.
  * <p>
  * The attribute permits multiple instances in a given location.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DeprecatedAttribute
         extends Attribute<DeprecatedAttribute>,
                 ClassElement, MethodElement, FieldElement

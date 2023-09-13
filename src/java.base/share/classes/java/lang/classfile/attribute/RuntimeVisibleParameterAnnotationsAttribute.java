@@ -33,6 +33,7 @@ import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code RuntimeVisibleParameterAnnotations} attribute {@jvms 4.7.18}, which
@@ -42,7 +43,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * @apiNote The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RuntimeVisibleParameterAnnotationsAttribute
         extends Attribute<RuntimeVisibleParameterAnnotationsAttribute>, MethodElement
         permits BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute,

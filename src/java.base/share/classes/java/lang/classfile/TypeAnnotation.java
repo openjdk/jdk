@@ -57,13 +57,17 @@ import static java.lang.classfile.Classfile.TAT_NEW;
 import static java.lang.classfile.Classfile.TAT_RESOURCE_VARIABLE;
 import static java.lang.classfile.Classfile.TAT_THROWS;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an annotation on a type use, as defined in {@jvms 4.7.19} and {@jvms 4.7.20}.
  *
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface TypeAnnotation
         extends Annotation
         permits UnboundAttribute.UnboundTypeAnnotation {

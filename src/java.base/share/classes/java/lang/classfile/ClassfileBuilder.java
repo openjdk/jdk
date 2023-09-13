@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for a classfile or portion of a classfile.  Builders are rarely
@@ -41,7 +42,10 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
  * @param <E> the element type
  * @param <B> the builder type
  * @see ClassfileTransform
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends ClassfileBuilder<E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 

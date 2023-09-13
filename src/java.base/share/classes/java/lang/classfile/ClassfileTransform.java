@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A transformation on streams of elements. Transforms are used during
@@ -71,7 +72,10 @@ import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * @param <C> the transform type
  * @param <E> the element type
  * @param <B> the builder type
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,
         E extends ClassfileElement,

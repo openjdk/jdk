@@ -31,6 +31,7 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Record} attribute {@jvms 4.7.30}, which can
@@ -41,7 +42,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RecordAttribute extends Attribute<RecordAttribute>, ClassElement
         permits BoundAttribute.BoundRecordAttribute, UnboundAttribute.UnboundRecordAttribute {
 

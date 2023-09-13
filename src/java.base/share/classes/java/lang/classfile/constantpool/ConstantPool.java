@@ -29,12 +29,16 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.ClassReader;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Provides read access to the constant pool and bootstrap method table of a
  * classfile.
  * @jvms 4.4 The Constant Pool
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPool extends Iterable<PoolEntry>
         permits ClassReader, ConstantPoolBuilder {
 

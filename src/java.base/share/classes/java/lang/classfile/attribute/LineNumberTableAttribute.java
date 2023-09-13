@@ -29,6 +29,7 @@ import java.util.List;
 import java.lang.classfile.Attribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code LineNumberTable} attribute {@jvms 4.7.12}, which can appear
@@ -39,7 +40,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * {@link java.lang.classfile.Classfile.LineNumbersOption} option.
  * <p>
  * The attribute permits multiple instances in a given location.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LineNumberTableAttribute
         extends Attribute<LineNumberTableAttribute>
         permits BoundAttribute.BoundLineNumberTableAttribute,

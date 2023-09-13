@@ -37,16 +37,19 @@ import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method invocation instruction in the {@code code} array of a {@code
  * Code} attribute, other than {@code invokedynamic}.  Corresponding opcodes
  * will have a {@code kind} of {@link Opcode.Kind#INVOKE}.  Delivered as a
  * {@link CodeElement} when traversing the elements of a {@link CodeModel}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeInterfaceInstruction, AbstractInstruction.BoundInvokeInstruction, AbstractInstruction.UnboundInvokeInstruction {
     /**

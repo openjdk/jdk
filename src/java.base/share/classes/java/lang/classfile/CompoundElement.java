@@ -32,6 +32,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A {@link ClassfileElement} that has complex structure defined in terms of
@@ -41,7 +42,10 @@ import java.util.stream.StreamSupport;
  * or to traverse the contents of that element with the methods in this class
  * (e.g., {@link #elements()}, {@link #forEachElement(Consumer)}, etc.)
  * @param <E> the element type
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CompoundElement<E extends ClassfileElement>
         extends ClassfileElement, Iterable<E>
         permits ClassModel, CodeModel, FieldModel, MethodModel, jdk.internal.classfile.impl.AbstractUnboundModel {

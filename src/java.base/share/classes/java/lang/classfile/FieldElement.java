@@ -33,11 +33,15 @@ import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.classfile.attribute.SyntheticAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements
  * of a {@link FieldModel} or be presented to a {@link FieldBuilder}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldElement extends ClassfileElement
         permits AccessFlags,
                 CustomAttribute, ConstantValueAttribute, DeprecatedAttribute,

@@ -38,10 +38,14 @@ import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single "exports" declaration in the {@link ModuleAttribute}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleExportInfo
         permits UnboundAttribute.UnboundModuleExportInfo {
 

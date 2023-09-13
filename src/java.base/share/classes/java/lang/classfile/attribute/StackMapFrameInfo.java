@@ -33,10 +33,14 @@ import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static java.lang.classfile.Classfile.*;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models stack map frame of {@code StackMapTable} attribute {@jvms 4.7.4}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 

@@ -37,6 +37,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the
@@ -45,7 +46,10 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * the setting of the {@link Classfile.DebugElementsOption} option.
  *
  * @see PseudoInstruction
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariable extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {
     /**

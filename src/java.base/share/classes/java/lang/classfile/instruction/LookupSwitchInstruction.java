@@ -31,12 +31,16 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code lookupswitch} instruction in the {@code code} array of a
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LookupSwitchInstruction extends Instruction
         permits AbstractInstruction.BoundLookupSwitchInstruction,
                 AbstractInstruction.UnboundLookupSwitchInstruction {

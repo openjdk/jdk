@@ -34,6 +34,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code ModuleHashes} attribute, which can
@@ -67,7 +68,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleHashesAttribute
         extends Attribute<ModuleHashesAttribute>, ClassElement
         permits BoundAttribute.BoundModuleHashesAttribute, UnboundAttribute.UnboundModuleHashesAttribute {

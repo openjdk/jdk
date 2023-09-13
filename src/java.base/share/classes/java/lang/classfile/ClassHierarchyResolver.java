@@ -39,11 +39,15 @@ import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolv
 import jdk.internal.classfile.impl.Util;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Provides class hierarchy information for generating correct stack maps
  * during code building.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public interface ClassHierarchyResolver {
 

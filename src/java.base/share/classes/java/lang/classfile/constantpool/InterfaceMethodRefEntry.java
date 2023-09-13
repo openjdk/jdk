@@ -25,12 +25,16 @@
 package java.lang.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_InterfaceMethodRef_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.2 The CONSTANT_Fieldref_info, CONSTANT_Methodref_info, and CONSTANT_InterfaceMethodref_info Structures
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InterfaceMethodRefEntry
         extends MemberRefEntry
         permits AbstractPoolEntry.InterfaceMethodRefEntryImpl {

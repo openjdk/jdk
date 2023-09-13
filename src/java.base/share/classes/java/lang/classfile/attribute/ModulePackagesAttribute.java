@@ -35,6 +35,7 @@ import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code ModulePackages} attribute {@jvms 4.7.26}, which can
@@ -45,7 +46,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModulePackagesAttribute
         extends Attribute<ModulePackagesAttribute>, ClassElement
         permits BoundAttribute.BoundModulePackagesAttribute,

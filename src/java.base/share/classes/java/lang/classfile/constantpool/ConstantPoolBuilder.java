@@ -30,16 +30,13 @@ import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.util.Collection;
 import java.util.List;
 
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassModel;
-import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
-import jdk.internal.classfile.impl.ClassfileImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.classfile.WritableElement;
@@ -48,6 +45,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Builder for the constant pool of a classfile.  Provides read and write access
@@ -57,7 +55,10 @@ import jdk.internal.classfile.impl.Util;
  * A {@linkplain ConstantPoolBuilder} is associated with a {@link ClassBuilder}.
  * The {@linkplain ConstantPoolBuilder} also provides access to some of the
  * state of the {@linkplain ClassBuilder}, such as classfile processing options.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
         extends ConstantPool, WritableElement<ConstantPool>
         permits SplitConstantPool, TemporaryConstantPool {

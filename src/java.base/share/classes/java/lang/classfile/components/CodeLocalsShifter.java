@@ -30,13 +30,17 @@ import java.lang.classfile.AccessFlags;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeLocalsShifter} is a {@link CodeTransform} shifting locals to
  * newly allocated positions to avoid conflicts during code injection.
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeLocalsShifter extends CodeTransform permits CodeLocalsShifterImpl {
 
     /**

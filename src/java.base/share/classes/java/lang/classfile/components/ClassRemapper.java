@@ -34,6 +34,7 @@ import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodTransform;
 import jdk.internal.classfile.impl.ClassRemapperImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
@@ -50,7 +51,10 @@ import jdk.internal.classfile.impl.ClassRemapperImpl;
  * <p>
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 
     /**

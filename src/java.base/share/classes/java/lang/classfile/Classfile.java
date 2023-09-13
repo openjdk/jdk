@@ -44,12 +44,16 @@ import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import static java.util.Objects.requireNonNull;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Represents a context for parsing, transforming, and generating classfiles.
  * A {@code Classfile} has a set of options that condition how parsing and
  * generation is done.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Classfile
         permits ClassfileImpl {
 

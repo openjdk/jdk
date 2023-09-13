@@ -29,6 +29,7 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code SourceDebugExtension} attribute.
@@ -38,7 +39,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface SourceDebugExtensionAttribute
         extends Attribute<SourceDebugExtensionAttribute>, ClassElement
         permits BoundAttribute.BoundSourceDebugExtensionAttribute, UnboundAttribute.UnboundSourceDebugExtensionAttribute {

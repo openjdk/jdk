@@ -36,6 +36,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A printer of classfiles and its elements.
@@ -55,7 +56,10 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  * <p>
  * Another use case for {@link ClassPrinter} is to simplify writing of automated tests:
  * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public final class ClassPrinter {
 
     private ClassPrinter() {

@@ -30,6 +30,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 import java.util.List;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code RuntimeInvisibleAnnotations} attribute {@jvms 4.7.17}, which
@@ -40,7 +41,10 @@ import java.util.List;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RuntimeInvisibleAnnotationsAttribute
         extends Attribute<RuntimeInvisibleAnnotationsAttribute>,
                 ClassElement, MethodElement, FieldElement

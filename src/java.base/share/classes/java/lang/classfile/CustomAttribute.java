@@ -25,6 +25,7 @@
 package java.lang.classfile;
 
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a non-standard attribute of a classfile.  Clients should extend
@@ -32,7 +33,10 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * and provide an {@link AttributeMapper} to mediate between the classfile
  * format and the {@linkplain CustomAttribute} representation.
  * @param <T> the custom attribute type
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @SuppressWarnings("exports")
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         extends UnboundAttribute.CustomAttribute<T>

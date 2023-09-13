@@ -37,14 +37,17 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.List;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the value of a key-value pair of an annotation.
  *
  * @see Annotation
  * @see AnnotationElement
+ *
+ * @since 22
  */
-
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
         permits AnnotationValue.OfAnnotation, AnnotationValue.OfArray,
                 AnnotationValue.OfConstant, AnnotationValue.OfClass,

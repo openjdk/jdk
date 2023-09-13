@@ -87,6 +87,7 @@ import java.lang.classfile.instruction.TypeCheckInstruction;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
 import jdk.internal.classfile.impl.TransformingCodeBuilder;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for code attributes (method bodies).  Builders are not created
@@ -97,7 +98,10 @@ import jdk.internal.classfile.impl.TransformingCodeBuilder;
  * methods.
  *
  * @see CodeTransform
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeBuilder
         extends ClassfileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {

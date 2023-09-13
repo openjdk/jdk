@@ -34,6 +34,7 @@ import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code NestMembers} attribute {@jvms 4.7.29}, which can
@@ -44,7 +45,10 @@ import jdk.internal.classfile.impl.Util;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface NestMembersAttribute extends Attribute<NestMembersAttribute>, ClassElement
         permits BoundAttribute.BoundNestMembersAttribute, UnboundAttribute.UnboundNestMembersAttribute {
 

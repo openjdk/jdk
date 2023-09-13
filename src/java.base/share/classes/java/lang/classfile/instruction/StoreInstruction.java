@@ -32,13 +32,17 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a local variable store instruction in the {@code code} array of a
  * {@code Code} attribute.  Corresponding opcodes will have a {@code kind} of
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StoreInstruction extends Instruction
         permits AbstractInstruction.BoundStoreInstruction, AbstractInstruction.UnboundStoreInstruction {
 

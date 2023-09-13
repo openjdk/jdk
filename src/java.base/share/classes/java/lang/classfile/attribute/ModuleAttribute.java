@@ -43,6 +43,7 @@ import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code Module} attribute {@jvms 4.7.25}, which can
@@ -53,8 +54,10 @@ import jdk.internal.classfile.impl.Util;
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
+ *
+ * @since 22
  */
-
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleAttribute
         extends Attribute<ModuleAttribute>, ClassElement
         permits BoundAttribute.BoundModuleAttribute, UnboundAttribute.UnboundModuleAttribute {

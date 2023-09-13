@@ -24,6 +24,8 @@
  */
 package java.lang.classfile;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * Bidirectional mapper between the classfile representation of an attribute and
  * how that attribute is modeled in the API.  The attribute mapper is used
@@ -34,7 +36,10 @@ package java.lang.classfile;
  * Classes that model nonstandard attributes should extend {@link
  * CustomAttribute}.
  * @param <A> the attribute type
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public interface AttributeMapper<A> {
 
     /**

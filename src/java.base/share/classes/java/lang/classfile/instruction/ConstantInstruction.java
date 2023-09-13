@@ -34,6 +34,7 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a constant-load instruction in the {@code code} array of a {@code
@@ -42,7 +43,10 @@ import jdk.internal.classfile.impl.Util;
  * constant" instructions (e.g., {@code LDC}).  Corresponding opcodes will have
  * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantInstruction extends Instruction {
 
     /**

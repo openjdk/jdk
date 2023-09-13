@@ -25,10 +25,14 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.WritableElement;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an entry in the constant pool of a classfile.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PoolEntry extends WritableElement<PoolEntry>
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,

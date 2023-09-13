@@ -27,12 +27,16 @@ package java.lang.classfile;
 import java.util.Set;
 import jdk.internal.classfile.impl.AccessFlagsImpl;
 import java.lang.reflect.AccessFlag;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the access flags for a class, method, or field.  Delivered as a
  * {@link ClassElement}, {@link FieldElement}, or {@link MethodElement}
  * when traversing the corresponding model type.
+ *
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AccessFlags
         extends ClassElement, MethodElement, FieldElement
         permits AccessFlagsImpl {
