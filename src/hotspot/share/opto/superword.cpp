@@ -1785,8 +1785,6 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* p) {
 #endif
 
   if (C3_mod_aw != 0) {
-    // So far this assert has never triggered.
-    assert(false, "EQ(2*) not satisfied");
     return AlignmentSolution("EQ(2*) not satisfied (cannot align across main-loop iterations)");
   }
 
