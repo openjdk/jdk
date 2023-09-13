@@ -2656,9 +2656,6 @@ public final class DateTimeFormatterBuilder {
                 time = ((OffsetDateTime) temporal).toLocalTime();
             } else if (temporal instanceof OffsetTime) {
                 time = ((OffsetTime) temporal).toLocalTime();
-            } else if (temporal instanceof Instant) {
-                Instant instant = (Instant) temporal;
-                time = LocalTime.ofInstant(instant, ZoneId.systemDefault());
             } else {
                 return super.format(context, buf);
             }
