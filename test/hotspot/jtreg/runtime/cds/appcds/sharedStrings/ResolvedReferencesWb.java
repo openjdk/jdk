@@ -23,11 +23,6 @@
 
 import jdk.test.whitebox.WhiteBox;
 
-// This class is used by ResolvedReferencesNotNullTest and is used with and without CDS
-// When not archived, the resolved references array should only contain the objects
-// fooString and barString since they are resolved by ResolvedReferencesTestApp::<clinit>
-// The object quxString should NOT be in the array since the method qux() is never called.
-// quxString will be in the resolved refererences array only if ResolvedReferencesTestApp is archived
 public class ResolvedReferencesWb {
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
