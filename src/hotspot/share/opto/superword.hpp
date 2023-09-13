@@ -642,6 +642,8 @@ private:
   void filter_packs_for_alignment();
   // Find the set of alignment solutions for load/store pack p.
   AlignmentSolution pack_alignment_solution(Node_List* p);
+  // Compress packset, such that it has no nullptr entries.
+  void compress_packset();
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.

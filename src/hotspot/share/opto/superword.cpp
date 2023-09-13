@@ -1622,13 +1622,8 @@ void SuperWord::combine_packs() {
     }
   }
 
-  // Compress list.
-  for (int i = _packset.length() - 1; i >= 0; i--) {
-    Node_List* p1 = _packset.at(i);
-    if (p1 == nullptr) {
-      _packset.remove_at(i);
-    }
-  }
+  // Remove all nullptr from packset
+  compress_packset();
 
   if (TraceSuperWord) {
     tty->print_cr("\nAfter combine_packs");
@@ -1969,13 +1964,21 @@ void SuperWord::filter_packs_for_alignment() {
     set_align_to_ref(current.mem_ref());
   }
 
-  // Compress list. TODO: improve
-  for (int i = _packset.length() - 1; i >= 0; i--) {
-    Node_List* p1 = _packset.at(i);
-    if (p1 == nullptr) {
-      _packset.remove_at(i);
+  // Remove all nullptr from packset
+  compress_packset();
+}
+
+// Compress packset, such that it has no nullptr entries
+void SuperWord::compress_packset() {
+  int j = 0;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      _packset.at_put(j, p);
+      j++;
     }
   }
+  _packset.trunc_to(j);
 }
 
 //-----------------------------construct_my_pack_map--------------------------
@@ -3818,18 +3821,16 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   //   for (i = 0; i < a.length; i++) { a[i] = ...; }
   //
-  // Thus, it is reasonable to require abs(scale) to be a strictly positive power of 2.
-  // If scale == 0 (i.e. the address does not depend on iv), then we are not able to
-  // affect the alignment at all. TODO sth about abs(scale) not power of 2?
-  //
+  // It is thus reasonable to assume that both abs(scale) and abs(stride) are
+  // strictly positive powers of 2. Further, they can be assumed to be non-zero,
+  // otherwise the address does not depend on iv, and the alignment cannot be
+  // affected by adjusting the pre-loop limit.
   // Further, if abs(scale) >= aw, then N has no effect on alignment, and we are not
   // able to affect the alignment at all. Hence, we require abs(scale) < aw.
   //
   // Moreover, for alignment to be acheivabe, E must be a multiple of scale. We cannot
   // check this at compile time, and do not bother to do it at runtime either. If it
   // does not hold, we set a new limit, but it just does not ensure alignment.
-  //
-  // Finally, we must assume that the stride is non-zero, else TODO
   //
   // In the following, we use:
   //
@@ -3866,12 +3867,12 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //        = -+ offset -+ base -+ invar
 
   // We chose an aw that is the maximal possible vector width for the type of
-  // align_to_ref. TODO we could look at pack to get actual size
+  // align_to_ref.
   int aw       = vector_width_in_bytes(align_to_ref);
   int stride   = iv_stride();
   int scale    = align_to_ref_p.scale_in_bytes();
   int offset   = align_to_ref_p.offset_in_bytes();
-  Node* base   = align_to_ref_p.adr(); // TODO check what happens with non-heap unsafe!
+  Node* base   = align_to_ref_p.adr();
   Node* invar  = align_to_ref_p.invar();
 
 #ifndef PRODUCT

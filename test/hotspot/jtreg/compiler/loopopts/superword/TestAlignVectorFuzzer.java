@@ -78,7 +78,7 @@ import jdk.test.lib.Utils;
 public class TestAlignVectorFuzzer {
 
     static final int RANGE_CON = 1024 * 8;
-    static final int ITERATIONS = 10;
+    static final int ITERATIONS = 5;
 
     private static final Random random = Utils.getRandomInstance();
 
@@ -524,7 +524,11 @@ public class TestAlignVectorFuzzer {
                 testUUBSI(aB, bS, cI);
 
                 testUUBBBH(aB, bB, cB);
+
                 testUUBCFH(aB, bC, cF);
+                testDDBCFH(aB, bC, cF);
+                testUDBCFH(aB, bC, cF);
+                testDUBCFH(aB, bC, cF);
 
                 testMMSFD(aS, bF, cD);
             }
@@ -787,6 +791,207 @@ public class TestAlignVectorFuzzer {
             if (h3 >= 14) { c[offset3 + i * scale + 13]++; }
             if (h3 >= 15) { c[offset3 + i * scale + 14]++; }
             if (h3 >= 16) { c[offset3 + i * scale + 15]++; }
+        }
+    }
+
+    static void testDDBCFH(byte[] a, char[] b, float[] c) {
+        int init   = init_con_or_var();
+        int limit  = limit_con_or_var();
+        int stride = stride_con();
+        int scale  = scale_con();
+        int offset1 = offset1_con_or_var();
+        int offset2 = offset2_con_or_var();
+        int offset3 = offset3_con_or_var();
+
+        int h1 = hand_unrolling1_con();
+        int h2 = hand_unrolling2_con();
+        int h3 = hand_unrolling3_con();
+
+        for (int i = limit; i > init; i -= stride) {
+            if (h1 >=  1) { a[offset1 + i * scale +  0]++; }
+            if (h1 >=  2) { a[offset1 + i * scale +  1]++; }
+            if (h1 >=  3) { a[offset1 + i * scale +  2]++; }
+            if (h1 >=  4) { a[offset1 + i * scale +  3]++; }
+            if (h1 >=  5) { a[offset1 + i * scale +  4]++; }
+            if (h1 >=  6) { a[offset1 + i * scale +  5]++; }
+            if (h1 >=  7) { a[offset1 + i * scale +  6]++; }
+            if (h1 >=  8) { a[offset1 + i * scale +  7]++; }
+            if (h1 >=  9) { a[offset1 + i * scale +  8]++; }
+            if (h1 >= 10) { a[offset1 + i * scale +  9]++; }
+            if (h1 >= 11) { a[offset1 + i * scale + 10]++; }
+            if (h1 >= 12) { a[offset1 + i * scale + 11]++; }
+            if (h1 >= 13) { a[offset1 + i * scale + 12]++; }
+            if (h1 >= 14) { a[offset1 + i * scale + 13]++; }
+            if (h1 >= 15) { a[offset1 + i * scale + 14]++; }
+            if (h1 >= 16) { a[offset1 + i * scale + 15]++; }
+
+            if (h2 >=  1) { b[offset2 + i * scale +  0]++; }
+            if (h2 >=  2) { b[offset2 + i * scale +  1]++; }
+            if (h2 >=  3) { b[offset2 + i * scale +  2]++; }
+            if (h2 >=  4) { b[offset2 + i * scale +  3]++; }
+            if (h2 >=  5) { b[offset2 + i * scale +  4]++; }
+            if (h2 >=  6) { b[offset2 + i * scale +  5]++; }
+            if (h2 >=  7) { b[offset2 + i * scale +  6]++; }
+            if (h2 >=  8) { b[offset2 + i * scale +  7]++; }
+            if (h2 >=  9) { b[offset2 + i * scale +  8]++; }
+            if (h2 >= 10) { b[offset2 + i * scale +  9]++; }
+            if (h2 >= 11) { b[offset2 + i * scale + 10]++; }
+            if (h2 >= 12) { b[offset2 + i * scale + 11]++; }
+            if (h2 >= 13) { b[offset2 + i * scale + 12]++; }
+            if (h2 >= 14) { b[offset2 + i * scale + 13]++; }
+            if (h2 >= 15) { b[offset2 + i * scale + 14]++; }
+            if (h2 >= 16) { b[offset2 + i * scale + 15]++; }
+
+            if (h3 >=  1) { c[offset3 + i * scale +  0]++; }
+            if (h3 >=  2) { c[offset3 + i * scale +  1]++; }
+            if (h3 >=  3) { c[offset3 + i * scale +  2]++; }
+            if (h3 >=  4) { c[offset3 + i * scale +  3]++; }
+            if (h3 >=  5) { c[offset3 + i * scale +  4]++; }
+            if (h3 >=  6) { c[offset3 + i * scale +  5]++; }
+            if (h3 >=  7) { c[offset3 + i * scale +  6]++; }
+            if (h3 >=  8) { c[offset3 + i * scale +  7]++; }
+            if (h3 >=  9) { c[offset3 + i * scale +  8]++; }
+            if (h3 >= 10) { c[offset3 + i * scale +  9]++; }
+            if (h3 >= 11) { c[offset3 + i * scale + 10]++; }
+            if (h3 >= 12) { c[offset3 + i * scale + 11]++; }
+            if (h3 >= 13) { c[offset3 + i * scale + 12]++; }
+            if (h3 >= 14) { c[offset3 + i * scale + 13]++; }
+            if (h3 >= 15) { c[offset3 + i * scale + 14]++; }
+            if (h3 >= 16) { c[offset3 + i * scale + 15]++; }
+        }
+    }
+
+    static void testUDBCFH(byte[] a, char[] b, float[] c) {
+        int init   = init_con_or_var();
+        int limit  = limit_con_or_var();
+        int stride = stride_con();
+        int scale  = scale_con();
+        int x1 = opposite_direction_offset1_con_or_var();
+        int x2 = opposite_direction_offset2_con_or_var();
+        int x3 = opposite_direction_offset3_con_or_var();
+
+        int h1 = hand_unrolling1_con();
+        int h2 = hand_unrolling2_con();
+        int h3 = hand_unrolling3_con();
+
+        for (int i = init; i < limit; i += stride) {
+            if (h1 >=  1) { a[x1 - i * scale +  0]++; }
+            if (h1 >=  2) { a[x1 - i * scale +  1]++; }
+            if (h1 >=  3) { a[x1 - i * scale +  2]++; }
+            if (h1 >=  4) { a[x1 - i * scale +  3]++; }
+            if (h1 >=  5) { a[x1 - i * scale +  4]++; }
+            if (h1 >=  6) { a[x1 - i * scale +  5]++; }
+            if (h1 >=  7) { a[x1 - i * scale +  6]++; }
+            if (h1 >=  8) { a[x1 - i * scale +  7]++; }
+            if (h1 >=  9) { a[x1 - i * scale +  8]++; }
+            if (h1 >= 10) { a[x1 - i * scale +  9]++; }
+            if (h1 >= 11) { a[x1 - i * scale + 10]++; }
+            if (h1 >= 12) { a[x1 - i * scale + 11]++; }
+            if (h1 >= 13) { a[x1 - i * scale + 12]++; }
+            if (h1 >= 14) { a[x1 - i * scale + 13]++; }
+            if (h1 >= 15) { a[x1 - i * scale + 14]++; }
+            if (h1 >= 16) { a[x1 - i * scale + 15]++; }
+
+            if (h2 >=  1) { b[x2 - i * scale +  0]++; }
+            if (h2 >=  2) { b[x2 - i * scale +  1]++; }
+            if (h2 >=  3) { b[x2 - i * scale +  2]++; }
+            if (h2 >=  4) { b[x2 - i * scale +  3]++; }
+            if (h2 >=  5) { b[x2 - i * scale +  4]++; }
+            if (h2 >=  6) { b[x2 - i * scale +  5]++; }
+            if (h2 >=  7) { b[x2 - i * scale +  6]++; }
+            if (h2 >=  8) { b[x2 - i * scale +  7]++; }
+            if (h2 >=  9) { b[x2 - i * scale +  8]++; }
+            if (h2 >= 10) { b[x2 - i * scale +  9]++; }
+            if (h2 >= 11) { b[x2 - i * scale + 10]++; }
+            if (h2 >= 12) { b[x2 - i * scale + 11]++; }
+            if (h2 >= 13) { b[x2 - i * scale + 12]++; }
+            if (h2 >= 14) { b[x2 - i * scale + 13]++; }
+            if (h2 >= 15) { b[x2 - i * scale + 14]++; }
+            if (h2 >= 16) { b[x2 - i * scale + 15]++; }
+
+            if (h3 >=  1) { c[x3 - i * scale +  0]++; }
+            if (h3 >=  2) { c[x3 - i * scale +  1]++; }
+            if (h3 >=  3) { c[x3 - i * scale +  2]++; }
+            if (h3 >=  4) { c[x3 - i * scale +  3]++; }
+            if (h3 >=  5) { c[x3 - i * scale +  4]++; }
+            if (h3 >=  6) { c[x3 - i * scale +  5]++; }
+            if (h3 >=  7) { c[x3 - i * scale +  6]++; }
+            if (h3 >=  8) { c[x3 - i * scale +  7]++; }
+            if (h3 >=  9) { c[x3 - i * scale +  8]++; }
+            if (h3 >= 10) { c[x3 - i * scale +  9]++; }
+            if (h3 >= 11) { c[x3 - i * scale + 10]++; }
+            if (h3 >= 12) { c[x3 - i * scale + 11]++; }
+            if (h3 >= 13) { c[x3 - i * scale + 12]++; }
+            if (h3 >= 14) { c[x3 - i * scale + 13]++; }
+            if (h3 >= 15) { c[x3 - i * scale + 14]++; }
+            if (h3 >= 16) { c[x3 - i * scale + 15]++; }
+        }
+    }
+
+    static void testDUBCFH(byte[] a, char[] b, float[] c) {
+        int init   = init_con_or_var();
+        int limit  = limit_con_or_var();
+        int stride = stride_con();
+        int scale  = scale_con();
+        int x1 = opposite_direction_offset1_con_or_var();
+        int x2 = opposite_direction_offset2_con_or_var();
+        int x3 = opposite_direction_offset3_con_or_var();
+
+        int h1 = hand_unrolling1_con();
+        int h2 = hand_unrolling2_con();
+        int h3 = hand_unrolling3_con();
+
+        for (int i = limit; i > init; i -= stride) {
+            if (h1 >=  1) { a[x1 - i * scale +  0]++; }
+            if (h1 >=  2) { a[x1 - i * scale +  1]++; }
+            if (h1 >=  3) { a[x1 - i * scale +  2]++; }
+            if (h1 >=  4) { a[x1 - i * scale +  3]++; }
+            if (h1 >=  5) { a[x1 - i * scale +  4]++; }
+            if (h1 >=  6) { a[x1 - i * scale +  5]++; }
+            if (h1 >=  7) { a[x1 - i * scale +  6]++; }
+            if (h1 >=  8) { a[x1 - i * scale +  7]++; }
+            if (h1 >=  9) { a[x1 - i * scale +  8]++; }
+            if (h1 >= 10) { a[x1 - i * scale +  9]++; }
+            if (h1 >= 11) { a[x1 - i * scale + 10]++; }
+            if (h1 >= 12) { a[x1 - i * scale + 11]++; }
+            if (h1 >= 13) { a[x1 - i * scale + 12]++; }
+            if (h1 >= 14) { a[x1 - i * scale + 13]++; }
+            if (h1 >= 15) { a[x1 - i * scale + 14]++; }
+            if (h1 >= 16) { a[x1 - i * scale + 15]++; }
+
+            if (h2 >=  1) { b[x2 - i * scale +  0]++; }
+            if (h2 >=  2) { b[x2 - i * scale +  1]++; }
+            if (h2 >=  3) { b[x2 - i * scale +  2]++; }
+            if (h2 >=  4) { b[x2 - i * scale +  3]++; }
+            if (h2 >=  5) { b[x2 - i * scale +  4]++; }
+            if (h2 >=  6) { b[x2 - i * scale +  5]++; }
+            if (h2 >=  7) { b[x2 - i * scale +  6]++; }
+            if (h2 >=  8) { b[x2 - i * scale +  7]++; }
+            if (h2 >=  9) { b[x2 - i * scale +  8]++; }
+            if (h2 >= 10) { b[x2 - i * scale +  9]++; }
+            if (h2 >= 11) { b[x2 - i * scale + 10]++; }
+            if (h2 >= 12) { b[x2 - i * scale + 11]++; }
+            if (h2 >= 13) { b[x2 - i * scale + 12]++; }
+            if (h2 >= 14) { b[x2 - i * scale + 13]++; }
+            if (h2 >= 15) { b[x2 - i * scale + 14]++; }
+            if (h2 >= 16) { b[x2 - i * scale + 15]++; }
+
+            if (h3 >=  1) { c[x3 - i * scale +  0]++; }
+            if (h3 >=  2) { c[x3 - i * scale +  1]++; }
+            if (h3 >=  3) { c[x3 - i * scale +  2]++; }
+            if (h3 >=  4) { c[x3 - i * scale +  3]++; }
+            if (h3 >=  5) { c[x3 - i * scale +  4]++; }
+            if (h3 >=  6) { c[x3 - i * scale +  5]++; }
+            if (h3 >=  7) { c[x3 - i * scale +  6]++; }
+            if (h3 >=  8) { c[x3 - i * scale +  7]++; }
+            if (h3 >=  9) { c[x3 - i * scale +  8]++; }
+            if (h3 >= 10) { c[x3 - i * scale +  9]++; }
+            if (h3 >= 11) { c[x3 - i * scale + 10]++; }
+            if (h3 >= 12) { c[x3 - i * scale + 11]++; }
+            if (h3 >= 13) { c[x3 - i * scale + 12]++; }
+            if (h3 >= 14) { c[x3 - i * scale + 13]++; }
+            if (h3 >= 15) { c[x3 - i * scale + 14]++; }
+            if (h3 >= 16) { c[x3 - i * scale + 15]++; }
         }
     }
 
