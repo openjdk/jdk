@@ -29,6 +29,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -117,7 +118,7 @@ public class FileChooserSymLinkTest {
                       .awaitAndCheck();
     }
 
-    private static Window createTestUI() {
+    private static List<Window> createTestUI() {
         frame = new JFrame("JFileChooser Symbolic Link test");
         panel = new JPanel(new BorderLayout());
         multiSelection = new JCheckBox("Enable Multi-Selection");
@@ -158,6 +159,6 @@ public class FileChooserSymLinkTest {
         frame.add(panel, BorderLayout.NORTH);
         frame.add(jfc, BorderLayout.CENTER);
         frame.pack();
-        return frame;
+        return List.of(frame);
     }
 }
