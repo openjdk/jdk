@@ -44,16 +44,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.AttributedElement;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.CustomAttribute;
+import java.lang.classfile.*;
 
 /**
  * OptionsTest
