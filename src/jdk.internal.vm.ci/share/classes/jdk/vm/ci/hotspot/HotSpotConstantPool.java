@@ -549,21 +549,27 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         /**
          * Lazily resolves and caches the argument at the given index and returns it. The method
          * {@link CompilerToVM#bootstrapArgumentIndexAt} is used to obtain the constant pool
-         * index of the entry and the method {@link CompilerToVM#lookupConstantInPool} is used
-         * to resolve it. If the resolution failed, the index is returned as a
+         * index of the entry and the method {@link ConstantPool#lookupConstant} is used to
+         * resolve it. If the resolution failed, the index is returned as a
          * {@link PrimitiveConstant}.
          *
          * @param index index of the element to return
-         * @return A {@link PrimitiveConstant} representing a {@code CONSTANT_Dynamic_info}
-         *         entry or a {@link JavaConstant} representing the static argument requested
+         * @return A {@link PrimitiveConstant} representing an unresolved constant pool entry
+         * or a {@link JavaConstant} representing the static argument requested
          */
         @Override
         public JavaConstant get(int index) {
             JavaConstant res = cache[index];
             if (res == null) {
                 int argCpi = compilerToVM().bootstrapArgumentIndexAt(cp, bssIndex, index);
-                res = compilerToVM().lookupConstantInPool(cp, argCpi, false);
-                if (res == null) {
+                Object object = cp.lookupConstant(argCpi, false);
+                if (object instanceof PrimitiveConstant primitiveConstant) {
+                    res = runtime().getReflection().boxPrimitive(primitiveConstant);
+                } else if (object instanceof JavaConstant javaConstant) {
+                    res = javaConstant;
+                } else if (object instanceof JavaType type) {
+                    res = runtime().getReflection().forObject(type);
+                } else {
                     res = JavaConstant.forInt(argCpi);
                 }
                 cache[index] = res;
