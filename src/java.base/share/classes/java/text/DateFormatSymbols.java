@@ -658,7 +658,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * {@return the hash code for this {@code DateFormatSymbols}}
      *
-     * Non-transient and non-static fields of this class are used to calculate
+     * Non-transient instance fields of this class are used to calculate
      * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
      *
      * @see Object#hashCode()
