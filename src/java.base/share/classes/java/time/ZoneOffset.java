@@ -88,7 +88,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -457,8 +456,8 @@ public final class ZoneOffset
             int absHours = absTotalSeconds / SECONDS_PER_HOUR;
             int absMinutes = (absTotalSeconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
             buf.append(totalSeconds < 0 ? "-" : "+")
-                    .append(absHours < 10 ? "0" : "").append(absHours)
-                    .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
+                .append(absHours < 10 ? "0" : "").append(absHours)
+                .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
             int absSeconds = absTotalSeconds % SECONDS_PER_MINUTE;
             if (absSeconds != 0) {
                 buf.append(absSeconds < 10 ? ":0" : ":").append(absSeconds);
