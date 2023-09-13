@@ -25,16 +25,18 @@
 
 package build.tools.compileproperties;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -222,11 +224,8 @@ public class CompileProperties {
             System.out.println("parsing: " + propertiesPath);
         }
         Properties p = new Properties();
-        try (FileInputStream input = new FileInputStream(propertiesPath);
-             // Read in JDK .properties files in UTF-8
-             InputStreamReader streamReader = new InputStreamReader(input, StandardCharsets.UTF_8)
-        ) {
-            p.load(streamReader);
+        try (BufferedReader input = Files.newBufferedReader(Path.of(propertiesPath))) {
+            p.load(input);
         } catch ( FileNotFoundException e ) {
             ok = false;
             error("Cannot find file " + propertiesPath, e);
