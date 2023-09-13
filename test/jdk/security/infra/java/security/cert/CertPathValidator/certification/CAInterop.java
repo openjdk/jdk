@@ -94,6 +94,46 @@
  */
 
 /*
+ * @test id=comodorsaca
+ * @bug 8189131
+ * @summary Interoperability tests with Comodo RSA CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop comodorsaca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop comodorsaca CRL
+ */
+
+/*
+ * @test id=comodoeccca
+ * @bug 8189131
+ * @summary Interoperability tests with Comodo ECC CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop comodoeccca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop comodoeccca CRL
+ */
+
+/*
+ * @test id=usertrustrsaca
+ * @bug 8189131
+ * @summary Interoperability tests with Comodo userTrust RSA CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop usertrustrsaca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop usertrustrsaca CRL
+ */
+
+/*
+ * @test id=usertrusteccca
+ * @bug 8189131
+ * @summary Interoperability tests with Comodo userTrust ECC CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop usertrusteccca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop usertrusteccca CRL
+ */
+
+/*
  * @test id=letsencryptisrgx1
  * @bug 8189131
  * @summary Interoperability tests with Let's Encrypt CA
@@ -110,6 +150,36 @@
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop globalsignrootcar6 OCSP
  * @run main/othervm -Djava.security.debug=certpath CAInterop globalsignrootcar6 CRL
+ */
+
+/*
+ * @test id=entrustrootcaec1
+ * @bug 8195774
+ * @summary Interoperability tests with Entrust CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop entrustrootcaec1 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop entrustrootcaec1 CRL
+ */
+
+/*
+ * @test id=entrustrootcag4
+ * @bug 8243321
+ * @summary Interoperability tests with Entrust CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop entrustrootcag4 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop entrustrootcag4 CRL
+ */
+
+/*
+ * @test id=certignarootca
+ * @bug 8314960
+ * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certignarootca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop certignarootca CRL
  */
 public class CAInterop {
 
@@ -145,6 +215,19 @@ public class CAInterop {
                     new CATestTuple("https://valid.qcevident.ca23.ssl.buypass.no",
                     "https://revoked.qcevident.ca23.ssl.buypass.no");
 
+            case "comodorsaca" ->
+                    new CATestTuple("https://comodorsacertificationauthority-ev.comodoca.com",
+                    "https://comodorsacertificationauthority-ev.comodoca.com:444");
+            case "comodoeccca" ->
+                    new CATestTuple("https://comodoecccertificationauthority-ev.comodoca.com",
+                    "https://comodoecccertificationauthority-ev.comodoca.com:444");
+            case "usertrustrsaca" ->
+                    new CATestTuple("https://usertrustrsacertificationauthority-ev.comodoca.com",
+                    "https://usertrustrsacertificationauthority-ev.comodoca.com:444");
+            case "usertrusteccca" ->
+                    new CATestTuple("https://usertrustecccertificationauthority-ev.comodoca.com",
+                    "https://usertrustecccertificationauthority-ev.comodoca.com:444");
+
             case "letsencryptisrgx1" ->
                     new CATestTuple("https://valid-isrgrootx1.letsencrypt.org",
                             "https://revoked-isrgrootx1.letsencrypt.org");
@@ -152,6 +235,17 @@ public class CAInterop {
             case "globalsignrootcar6" ->
                     new CATestTuple("https://valid.r6.roots.globalsign.com",
                             "https://revoked.r6.roots.globalsign.com");
+
+            case "entrustrootcaec1" ->
+                    new CATestTuple("https://validec.entrust.net",
+                            "https://revokedec.entrust.net");
+            case "entrustrootcag4" ->
+                    new CATestTuple("https://validg4.entrust.net",
+                            "https://revokedg4.entrust.net");
+
+            case "certignarootca" ->
+                    new CATestTuple("https://valid.servicesca.dhimyotis.com",
+                            "https://revoked.servicesca.dhimyotis.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };
