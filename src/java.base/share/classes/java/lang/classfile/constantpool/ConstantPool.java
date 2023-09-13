@@ -36,6 +36,7 @@ import jdk.internal.javac.PreviewFeature;
  * classfile.
  * @jvms 4.4 The Constant Pool
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

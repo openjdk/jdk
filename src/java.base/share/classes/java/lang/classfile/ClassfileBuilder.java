@@ -43,6 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  * @param <B> the builder type
  * @see ClassfileTransform
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

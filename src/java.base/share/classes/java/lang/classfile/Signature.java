@@ -36,6 +36,7 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

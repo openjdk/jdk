@@ -73,6 +73,7 @@ import jdk.internal.javac.PreviewFeature;
  * @param <E> the element type
  * @param <B> the builder type
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)

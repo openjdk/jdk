@@ -34,6 +34,7 @@ import jdk.internal.javac.PreviewFeature;
  * CompoundElement}.  Elements specific to various locations in the classfile
  * will implement {@link ClassElement}, {@link MethodElement}, etc.
  *
+ * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
