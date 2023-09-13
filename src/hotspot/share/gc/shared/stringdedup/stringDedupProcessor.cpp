@@ -68,7 +68,7 @@ void StringDedup::Processor::initialize() {
   if (UsePerfData && os::is_thread_cpu_time_supported()) {
     EXCEPTION_MARK;
     _concurrent_dedup_thread_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS, "conc_dedup_thread.cpu_time",
+        PerfDataManager::create_counter(SUN_THREADS_GCCPU, "conc_dedup",
                                          PerfData::U_Ticks, CHECK);
   }
 }
@@ -195,7 +195,7 @@ void StringDedup::Processor::run(JavaThread* thread) {
     _cur_stat.report_active_end();
     log_statistics();
     if (UsePerfData && os::is_thread_cpu_time_supported()) {
-      ThreadTotalCPUTimeClosure tttc(_concurrent_dedup_thread_cpu_time);
+      ThreadTotalCPUTimeClosure tttc(_concurrent_dedup_thread_cpu_time, _total_cpu_time_diff);
       tttc.do_thread(thread);
     }
   }

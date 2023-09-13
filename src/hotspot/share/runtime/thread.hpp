@@ -658,30 +658,6 @@ class ThreadInAsgct {
   }
 };
 
-// Class to compute the total CPU time for a set of threads, then update an
-// hsperfdata counter.
-class ThreadTotalCPUTimeClosure: public ThreadClosure {
- private:
-  jlong _total;
-  PerfCounter* _counter;
-
- public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _total(0), _counter(counter) {}
-
-  ~ThreadTotalCPUTimeClosure() {
-    _counter->inc(_total - _counter->get_value());
-  }
-
-  virtual void do_thread(Thread* thread) {
-    // The default code path (fast_thread_cpu_time()) asserts that
-    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
-    // must ensure the thread exists and has not terminated.
-    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
-    _total += os::thread_cpu_time(thread);
-  }
-};
-
 // Inline implementation of Thread::current()
 inline Thread* Thread::current() {
   Thread* current = current_or_null();

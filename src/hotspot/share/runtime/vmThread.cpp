@@ -138,7 +138,7 @@ void VMThread::create() {
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
     _perf_vm_thread_cpu_time =
-                 PerfDataManager::create_counter(SUN_THREADS, "vm_thread.cpu_time",
+                 PerfDataManager::create_counter(SUN_THREADS_GCCPU, "vm",
                                                  PerfData::U_Ticks, CHECK);
   }
 }

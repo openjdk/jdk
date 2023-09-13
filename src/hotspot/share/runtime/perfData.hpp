@@ -61,6 +61,7 @@ enum CounterNS {
   JAVA_THREADS,         // Threads System name spaces
   COM_THREADS,
   SUN_THREADS,
+  SUN_THREADS_GCCPU,    // Subsystem for Sun Threads GC CPU
   JAVA_PROPERTY,        // Java Property name spaces
   COM_PROPERTY,
   SUN_PROPERTY,
@@ -864,6 +865,26 @@ class PerfTraceTimedEvent : public PerfTraceTime {
       _eventp->inc();
     }
 
+};
+
+// Class to compute the total CPU time for a set of threads, then update an
+// hsperfdata counter.
+class ThreadTotalCPUTimeClosure: public ThreadClosure {
+ private:
+  jlong _total;
+  PerfCounter* _counter;
+  volatile jlong* _total_cpu_time;
+
+ public:
+  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
+      _total(0), _counter(counter), _total_cpu_time(nullptr) {}
+  
+  ThreadTotalCPUTimeClosure(PerfCounter* counter, volatile jlong* total_cpu_counter) :
+      _total(0), _counter(counter), _total_cpu_time(total_cpu_counter) {}
+
+  ~ThreadTotalCPUTimeClosure();
+
+  virtual void do_thread(Thread* thread);
 };
 
 #endif // SHARE_RUNTIME_PERFDATA_HPP

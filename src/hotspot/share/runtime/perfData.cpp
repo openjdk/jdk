@@ -73,6 +73,7 @@ const char* PerfDataManager::_name_spaces[] = {
   "java.threads",           // Threads System name spaces
   "com.sun.threads",
   "sun.threads",
+  "sun.threads.gc_cpu_time",  // Subsystem for Sun Threads GC CPU
   "java.property",          // Java Property name spaces
   "com.sun.property",
   "sun.property",
@@ -533,3 +534,20 @@ PerfTraceTime::~PerfTraceTime() {
   _t.stop();
   _timerp->inc(_t.ticks());
 }
+
+ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
+    jlong net_cpu_time = _total - _counter->get_value();
+    _counter->inc(net_cpu_time);
+    if (_total_cpu_counter) {
+      Atomic::add(_total_cpu_counter, net_cpu_time);
+    }
+}
+
+void ThreadTotalCPUTimeClosure::do_thread(Thread* thread) {
+    // The default code path (fast_thread_cpu_time()) asserts that
+    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
+    // must ensure the thread exists and has not terminated.
+    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
+    _total += os::thread_cpu_time(thread);
+}
+

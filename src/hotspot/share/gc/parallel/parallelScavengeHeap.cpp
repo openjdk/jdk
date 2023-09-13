@@ -892,7 +892,7 @@ void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  ThreadTotalCPUTimeClosure tttc(_perf_parallel_worker_threads_cpu_time);
+  ThreadTotalCPUTimeClosure tttc(_perf_parallel_worker_threads_cpu_time, _total_cpu_time_diff);
   // Currently parallel worker threads in GCTaskManager never terminate, so it
   // is safe for VMThread to read their CPU times. If upstream changes this
   // behavior, we should rethink if it is still safe.

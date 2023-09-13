@@ -467,7 +467,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
     EXCEPTION_MARK;
 
     _g1_concurrent_mark_threads_cpu_time =
-        PerfDataManager::create_counter(SUN_THREADS, "g1_conc_mark_thread.cpu_time",
+        PerfDataManager::create_counter(SUN_THREADS_GCCPU, "g1_conc_mark",
                                         PerfData::U_Ticks, CHECK);
   }
 }
@@ -2091,7 +2091,7 @@ void G1ConcurrentMark::update_concurrent_mark_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_mark_threads_cpu_time);
+  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_mark_threads_cpu_time, _total_cpu_time_diff);
   tttc.do_thread(cm_thread());
   threads_do(&tttc);
 }
