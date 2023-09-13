@@ -83,6 +83,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -889,6 +890,25 @@ public final class DateTimeFormatterBuilder {
     }
 
     //-----------------------------------------------------------------------
+    DateTimeFormatterBuilder appendLocalDate() {
+        appendInternal(new LocalDatePrinterParser());
+        return this;
+    }
+
+    DateTimeFormatterBuilder appendLocalTime() {
+        appendInternal(new LocalTimePrinterParser(true, 0, 9));
+        return this;
+    }
+
+    DateTimeFormatterBuilder appendLocalTime(
+            boolean optional,
+            int nanoMinWidth,
+            int nanoMaxWidth
+    ) {
+        appendInternal(new LocalTimePrinterParser(optional, nanoMinWidth, nanoMaxWidth));
+        return this;
+    }
+
     /**
      * Appends an instant using ISO-8601 to the formatter, formatting fractional
      * digits in groups of three.
@@ -1922,8 +1942,29 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendPattern(String pattern) {
         Objects.requireNonNull(pattern, "pattern");
-        parsePattern(pattern);
-        return this;
+        switch (pattern) {
+            case "HH:mm:ss":
+                return appendLocalTime(true, 0, 0);
+            case "HH:mm:ss.SSS":
+                return appendLocalTime(true, 3, 3);
+            case "yyyy-MM-dd":
+                return appendLocalDate();
+            case "yyyy-MM-dd HH:mm:ss":
+                return appendLocalDate()
+                        .appendLiteral(' ')
+                        .appendLocalTime(false, 0, 0);
+            case "yyyy-MM-dd'T'HH:mm:ss":
+                return appendLocalDate()
+                        .appendLiteral('T')
+                        .appendLocalTime(false, 0, 0);
+            case "yyyy-MM-dd'T'HH:mm:ss.SSS":
+                return appendLocalDate()
+                        .appendLiteral('T')
+                        .appendLocalTime(false, 3, 3);
+            default:
+                parsePattern(pattern);
+                return this;
+        }
     }
 
     private void parsePattern(String pattern) {
@@ -2449,16 +2490,7 @@ public final class DateTimeFormatterBuilder {
             optionalEnd();
         }
 
-        CompositePrinterParser pp = null;
-
-        int printerParsersSize = printerParsers.size();
-        if (LocalDatePrinterParser.accept(printerParsers)) {
-            pp = new LocalDatePrinterParser(printerParsers, false);
-        }
-
-        if (pp == null) {
-            pp = new CompositePrinterParser(printerParsers, false);
-        }
+        CompositePrinterParser pp = new CompositePrinterParser(printerParsers, false);
 
         return new DateTimeFormatter(pp, locale, DecimalStyle.STANDARD,
                 resolverStyle, null, chrono, null);
@@ -2526,113 +2558,25 @@ public final class DateTimeFormatterBuilder {
     }
 
     static final class LocalDatePrinterParser extends CompositePrinterParser {
-        private LocalDatePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
-            super(printerParsers, optional);
+        LocalDatePrinterParser() {
+            super(buildPrinterParsers(), false);
         }
 
-        static boolean accept(List<DateTimePrinterParser> printerParsers) {
-            int printerParsersSize = printerParsers.size();
-            if (printerParsersSize != 5) {
-                return false;
-            }
-
-            if (!isYear(printerParsers.get(0))) {
-                return false;
-            }
-
-            if (!isMonthOfYear(printerParsers.get(2))) {
-                return false;
-            }
-
-            if (!isDayOfMonth(printerParsers.get(4))) {
-                return false;
-            }
-
-            if (printerParsers.get(1) instanceof CharLiteralPrinterParser
-                    && printerParsers.get(3) instanceof CharLiteralPrinterParser
-            ) {
-                CharLiteralPrinterParser p1 = (CharLiteralPrinterParser) printerParsers.get(1);
-                CharLiteralPrinterParser p3 = (CharLiteralPrinterParser) printerParsers.get(3);
-                if (p1.literal == '-' && p1.literal == p3.literal) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static boolean isYear(DateTimePrinterParser printerParser) {
-            if (printerParser instanceof NumberPrinterParser) {
-                NumberPrinterParser n = (NumberPrinterParser) printerParser;
-                if (n.field != ChronoField.YEAR && n.field != ChronoField.YEAR_OF_ERA) {
-                    return false;
-                }
-
-                if (n.minWidth != 4) {
-                    return false;
-                }
-
-                if (n.maxWidth != 10 && n.maxWidth != 19) {
-                    return false;
-                }
-
-                if (n.signStyle != SignStyle.EXCEEDS_PAD) {
-                    return false;
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private static boolean isMonthOfYear(DateTimePrinterParser printerParser) {
-            if (printerParser instanceof NumberPrinterParser) {
-                NumberPrinterParser n = (NumberPrinterParser) printerParser;
-                if (n.field != ChronoField.MONTH_OF_YEAR) {
-                    return false;
-                }
-
-                if (n.minWidth != 2 || n.maxWidth != 2) {
-                    return false;
-                }
-
-                if (n.signStyle != SignStyle.NOT_NEGATIVE) {
-                    return false;
-                }
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private static boolean isDayOfMonth(DateTimePrinterParser printerParser) {
-            if (printerParser instanceof NumberPrinterParser) {
-                NumberPrinterParser n = (NumberPrinterParser) printerParser;
-                if (n.field != ChronoField.DAY_OF_MONTH) {
-                    return false;
-                }
-
-                if (n.minWidth != 2 || n.maxWidth != 2) {
-                    return false;
-                }
-
-                if (n.signStyle != SignStyle.NOT_NEGATIVE) {
-                    return false;
-                }
-
-                return true;
-            }
-
-            return false;
+        private static List<DateTimePrinterParser> buildPrinterParsers() {
+            List<DateTimePrinterParser> printerParsers = new ArrayList<>();
+            printerParsers.add(new NumberPrinterParser(ChronoField.YEAR, 4, 10, SignStyle.EXCEEDS_PAD));
+            printerParsers.add(new CharLiteralPrinterParser('-'));
+            printerParsers.add(new NumberPrinterParser(ChronoField.MONTH_OF_YEAR, 2, 2, SignStyle.NOT_NEGATIVE));
+            printerParsers.add(new CharLiteralPrinterParser('-'));
+            printerParsers.add(new NumberPrinterParser(ChronoField.DAY_OF_MONTH, 2, 2, SignStyle.NOT_NEGATIVE));
+            return printerParsers;
         }
 
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             TemporalAccessor temporal = context.getTemporal();
 
-            LocalDate date = null;
+            LocalDate date;
             if (temporal instanceof LocalDateTime) {
                 date = ((LocalDateTime) temporal).toLocalDate();
             } else if (temporal instanceof LocalDate) {
@@ -2641,14 +2585,93 @@ public final class DateTimeFormatterBuilder {
                 date = ((ZonedDateTime) temporal).toLocalDate();
             } else if (temporal instanceof OffsetDateTime) {
                 date = ((OffsetDateTime) temporal).toLocalDate();
+            } else {
+                return super.format(context, buf);
             }
 
-            if (date != null) {
-                formatDate(buf, date);
-                return true;
+            formatDate(buf, date);
+            return true;
+        }
+    }
+
+    static final class LocalTimePrinterParser extends CompositePrinterParser {
+        private final boolean nanoOptional;
+        private final int nanoMinWidth;
+        private final int nanoMaxWidth;
+        private final int fractionalDigits;
+
+        LocalTimePrinterParser(boolean nanoOptional, int nanoMinWidth, int nanoMaxWidth) {
+            super(buildPrinterParsers(nanoOptional, nanoMinWidth, nanoMaxWidth), false);
+            this.nanoOptional = nanoOptional;
+            this.nanoMinWidth = nanoMinWidth;
+            this.nanoMaxWidth = nanoMaxWidth;
+            if (nanoMaxWidth == 0 && nanoMaxWidth == 9) {
+                fractionalDigits = -2;
+            } else {
+                fractionalDigits = nanoMaxWidth;
+            }
+        }
+
+        private static List<DateTimePrinterParser> buildPrinterParsers(
+                boolean optional,
+                int nanoMinWidth,
+                int nanoMaxWidth
+        ) {
+            List<DateTimePrinterParser> printerParsers = new ArrayList<>();
+            printerParsers.add(new NumberPrinterParser(ChronoField.HOUR_OF_DAY, 2, 2, SignStyle.NOT_NEGATIVE));
+            printerParsers.add(new CharLiteralPrinterParser(':'));
+            printerParsers.add(new NumberPrinterParser(ChronoField.MINUTE_OF_HOUR, 2, 2, SignStyle.NOT_NEGATIVE));
+            printerParsers.add(new CharLiteralPrinterParser(':'));
+            printerParsers.add(new NumberPrinterParser(ChronoField.SECOND_OF_MINUTE, 2, 2, SignStyle.NOT_NEGATIVE));
+
+            if (nanoMinWidth >= 0) {
+                DateTimePrinterParser nanosPrinterParser
+                        = new NanosPrinterParser(nanoMinWidth, nanoMaxWidth, optional, 0);
+                if (optional) {
+                    nanosPrinterParser
+                            = new CompositePrinterParser(new DateTimePrinterParser[]{nanosPrinterParser}, true);
+                }
+                printerParsers.add(nanosPrinterParser);
             }
 
-            return super.format(context, buf);
+            return printerParsers;
+        }
+
+        @Override
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+            TemporalAccessor temporal = context.getTemporal();
+
+            LocalTime time;
+            if (temporal instanceof LocalTime) {
+                time = (LocalTime) temporal;
+            } else if (temporal instanceof LocalDateTime) {
+                time = ((LocalDateTime) temporal).toLocalTime();
+            } else if (temporal instanceof ZonedDateTime) {
+                time = ((ZonedDateTime) temporal).toLocalTime();
+            } else if (temporal instanceof OffsetDateTime) {
+                time = ((OffsetDateTime) temporal).toLocalTime();
+            } else if (temporal instanceof OffsetTime) {
+                time = ((OffsetTime) temporal).toLocalTime();
+            } else if (temporal instanceof Instant) {
+                Instant instant = (Instant) temporal;
+                time = LocalTime.ofInstant(instant, ZoneId.systemDefault());
+            } else {
+                return super.format(context, buf);
+            }
+
+            formatTime(buf, time);
+
+            int nano = time.getNano();
+            if (nano != 0 || !nanoOptional) {
+                if (fractionalDigits < 0) {
+                    formatNano(buf, nano);
+                } else {
+                    formatNano(buf, fractionalDigits, nano);
+                }
+            }
+
+            buf.append('Z');
+            return true;
         }
     }
 
