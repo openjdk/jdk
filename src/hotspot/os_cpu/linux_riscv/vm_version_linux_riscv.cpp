@@ -108,7 +108,7 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s,", uarch);
+    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
   strcat(buf, "rv64");
@@ -122,13 +122,14 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
+          strcat(buf, " ");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
           // Turn Zxxx into zxxx
           char prebuf[3] = {};
           assert(strlen(tmp) > 1, "Must be");
-          prebuf[0] = '_';
+          prebuf[0] = ' ';
           prebuf[1] = (char)tolower(tmp[0]);
           strcat(buf, prebuf);
           strcat(buf, &tmp[1]);
@@ -224,19 +225,11 @@ void VM_Version::vendor_features() {
 
 void VM_Version::rivos_features() {
   // Enable common features not dependent on marchid/mimpid.
-  ext_I.enable_feature();
-  ext_M.enable_feature();
-  ext_A.enable_feature();
-  ext_F.enable_feature();
-  ext_D.enable_feature();
-  ext_C.enable_feature();
-  ext_H.enable_feature();
-  ext_V.enable_feature();
-
   ext_Zicbom.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicbop.enable_feature();
 
+  // If we running on a pre-6.5 kernel
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
@@ -244,6 +237,7 @@ void VM_Version::rivos_features() {
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
+  ext_Ztso.enable_feature();
   ext_Zihintpause.enable_feature();
 
   unaligned_access.enable_feature(MISALIGNED_FAST);

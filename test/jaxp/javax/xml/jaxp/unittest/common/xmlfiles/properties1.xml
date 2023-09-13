@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://invalid.site.com/dtd/properties1.dtd"
+[
+    <!ENTITY % pe "x">
+    <!ENTITY   x "AAAAA">
+    <!ENTITY   x1 "BBB">
+        ]>
+<properties>
+    <comment>java.util.Properties</comment>
+    <entry key="property1">value1</entry>
+    <entry key="property2">value2</entry>
+    <entry key="property3">value3</entry>
+</properties>

@@ -86,12 +86,17 @@ public final class SystemLookup implements SymbolLookup {
                 return System.getenv("SystemRoot");
             }
         });
-
         Path system32 = Path.of(systemRoot, "System32");
         Path ucrtbase = system32.resolve("ucrtbase.dll");
         Path msvcrt = system32.resolve("msvcrt.dll");
 
-        boolean useUCRT = Files.exists(ucrtbase);
+        @SuppressWarnings("removal")
+        boolean useUCRT = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                return Files.exists(ucrtbase);
+            }
+        });
         Path stdLib = useUCRT ? ucrtbase : msvcrt;
         SymbolLookup lookup = libLookup(libs -> libs.load(stdLib));
 

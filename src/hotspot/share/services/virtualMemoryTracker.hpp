@@ -43,12 +43,20 @@ class VirtualMemory {
   size_t     _reserved;
   size_t     _committed;
 
+#ifdef ASSERT
+  volatile size_t _peak_size;
+  void update_peak(size_t size);
+#endif // ASSERT
+
  public:
-  VirtualMemory() : _reserved(0), _committed(0) { }
+  VirtualMemory() : _reserved(0), _committed(0) {
+    DEBUG_ONLY(_peak_size  = 0;)
+  }
 
   inline void reserve_memory(size_t sz) { _reserved += sz; }
   inline void commit_memory (size_t sz) {
     _committed += sz;
+    DEBUG_ONLY(update_peak(sz);)
     assert(_committed <= _reserved, "Sanity check");
   }
 
@@ -64,6 +72,9 @@ class VirtualMemory {
 
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
+  inline size_t peak_size() const {
+    return DEBUG_ONLY(Atomic::load(&_peak_size)) NOT_DEBUG(0);
+  }
 };
 
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.

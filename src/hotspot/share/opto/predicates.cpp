@@ -69,7 +69,7 @@ ParsePredicateNode* ParsePredicate::init_parse_predicate(Node* parse_predicate_p
 }
 
 Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* if_proj) {
-    CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+    CallStaticJavaNode* uct_call = if_proj->is_uncommon_trap_if_pattern();
     if (uct_call == nullptr) {
       return Deoptimization::Reason_none;
     }
@@ -82,6 +82,30 @@ bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason d
   } else {
     return false;
   }
+}
+
+ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
+  const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+  if (loop_limit_check_predicate_block->has_parse_predicate()) {
+    _parse_predicates.push(loop_limit_check_predicate_block->parse_predicate());
+  }
+  if (UseProfiledLoopPredicate) {
+    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
+    if (profiled_loop_predicate_block->has_parse_predicate()) {
+      _parse_predicates.push(profiled_loop_predicate_block->parse_predicate());
+    }
+  }
+  if (UseLoopPredicate) {
+    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
+    if (loop_predicate_block->has_parse_predicate()) {
+      _parse_predicates.push(loop_predicate_block->parse_predicate());
+    }
+  }
+}
+
+ParsePredicateNode* ParsePredicateIterator::next() {
+  assert(has_next(), "always check has_next() first");
+  return _parse_predicates.at(_current_index++);
 }
 
 // Walk over all Regular Predicates of this block (if any) and return the first node not belonging to the block
