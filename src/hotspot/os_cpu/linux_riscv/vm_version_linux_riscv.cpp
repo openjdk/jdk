@@ -108,7 +108,7 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s,", uarch);
+    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
   strcat(buf, "rv64");
@@ -122,13 +122,14 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
+          strcat(buf, " ");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
           // Turn Zxxx into zxxx
           char prebuf[3] = {};
           assert(strlen(tmp) > 1, "Must be");
-          prebuf[0] = '_';
+          prebuf[0] = ' ';
           prebuf[1] = (char)tolower(tmp[0]);
           strcat(buf, prebuf);
           strcat(buf, &tmp[1]);

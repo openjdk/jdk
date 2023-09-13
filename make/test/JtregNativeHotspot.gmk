@@ -863,7 +863,6 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c exeGetCreatedJavaVMs.c
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack := jvm.lib
-  BUILD_HOTSPOT_JTREG_LIBRARIES_COPY_DEBUG_SYMBOLS_libnativeStack := true
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
 else
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := -ljvm
