@@ -189,11 +189,11 @@ public class TestClassNameWarning extends TestRunner {
         List<String> log = new JavapTask(tb)
                 .classpath(classes.toString())
                 .classes("Z")
-                .run()
+                .run(Task.Expect.FAIL, 1)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        checkOutput(log, true, "Warning:.*Z.class does not contain class Z");
+        checkOutput(log, true, "Error: error while reading constant pool for Z: Bad CP index: 0");
     }
 
     /**
