@@ -26,15 +26,11 @@
  * @bug 8170708
  * @summary javap -m <module> cannot read a module-info.class
  * @library /tools/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.jdeps/com.sun.tools.javap
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  * @build toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox toolbox.TestRunner
  * @run main TestClassNameWarning
  */

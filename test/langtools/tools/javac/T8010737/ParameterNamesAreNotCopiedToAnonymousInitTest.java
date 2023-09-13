@@ -143,11 +143,8 @@ public class ParameterNamesAreNotCopiedToAnonymousInitTest {
                     Arrays.asList(new File(System.getProperty("test.src"),
                     this.getClass().getName() + ".java")));
             java.util.List<String> options = Arrays.asList(
-                "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
-                "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+                "--enable-preview",
+                "--source", String.valueOf(Runtime.version().feature()),
                 "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                 "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",

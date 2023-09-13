@@ -31,7 +31,7 @@
  * the URLs and streams returned by the methods being tested.
  *
  * $ java \
- *      --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED
+ *      --enable-preview
  *      /path/to/CLTest.java
  */
 package p.q;
