@@ -26,16 +26,12 @@
  * @bug 8193125 8196623
  * @summary test modifiers with java.base
  * @library /tools/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
