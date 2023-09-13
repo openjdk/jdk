@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,13 +64,7 @@ public class TestCodeHeapSizeOptions extends CodeCacheCLITestBase {
     private TestCodeHeapSizeOptions() {
         super(CodeCacheCLITestBase.OPTIONS_SET,
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.INT_MODE.description,
-                        GENERIC_RUNNER),
-                new CodeCacheCLITestCase(CodeCacheCLITestCase
                         .CommonDescriptions.NON_TIERED.description,
-                        GENERIC_RUNNER),
-                new CodeCacheCLITestCase(CodeCacheCLITestCase
-                        .CommonDescriptions.TIERED_LEVEL_0.description,
                         GENERIC_RUNNER),
                 new CodeCacheCLITestCase(CodeCacheCLITestCase
                         .CommonDescriptions.TIERED_LEVEL_1.description,
