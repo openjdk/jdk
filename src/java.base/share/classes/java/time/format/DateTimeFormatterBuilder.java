@@ -2452,8 +2452,8 @@ public final class DateTimeFormatterBuilder {
         CompositePrinterParser pp = null;
 
         int printerParsersSize = printerParsers.size();
-        if (DateCompositePrinterParser.accept(printerParsers)) {
-            pp = new DateCompositePrinterParser(printerParsers, false);
+        if (LocalDatePrinterParser.accept(printerParsers)) {
+            pp = new LocalDatePrinterParser(printerParsers, false);
         }
 
         if (pp == null) {
@@ -2525,11 +2525,9 @@ public final class DateTimeFormatterBuilder {
         int parse(DateTimeParseContext context, CharSequence text, int position);
     }
 
-    static final class DateCompositePrinterParser extends CompositePrinterParser {
-        private final char literal;
-        private DateCompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
+    static final class LocalDatePrinterParser extends CompositePrinterParser {
+        private LocalDatePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
             super(printerParsers, optional);
-            literal = ((CharLiteralPrinterParser) printerParsers.get(1)).literal;
         }
 
         static boolean accept(List<DateTimePrinterParser> printerParsers) {
@@ -2538,38 +2536,94 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
 
-            if (printerParsers.get(0) instanceof NumberPrinterParser
-                    && printerParsers.get(1) instanceof CharLiteralPrinterParser
-                    && printerParsers.get(2) instanceof NumberPrinterParser
+            if (!isYear(printerParsers.get(0))) {
+                return false;
+            }
+
+            if (!isMonthOfYear(printerParsers.get(2))) {
+                return false;
+            }
+
+            if (!isDayOfMonth(printerParsers.get(4))) {
+                return false;
+            }
+
+            if (printerParsers.get(1) instanceof CharLiteralPrinterParser
                     && printerParsers.get(3) instanceof CharLiteralPrinterParser
-                    && printerParsers.get(4) instanceof NumberPrinterParser
             ) {
-                NumberPrinterParser p0 = (NumberPrinterParser) printerParsers.get(0);
                 CharLiteralPrinterParser p1 = (CharLiteralPrinterParser) printerParsers.get(1);
-                NumberPrinterParser p2 = (NumberPrinterParser) printerParsers.get(2);
                 CharLiteralPrinterParser p3 = (CharLiteralPrinterParser) printerParsers.get(3);
-                NumberPrinterParser p4 = (NumberPrinterParser) printerParsers.get(4);
-                if (p0.field == ChronoField.YEAR
-                        && p1.literal == p3.literal
-                        && p0.signStyle == SignStyle.EXCEEDS_PAD
-                        && p0.minWidth == 4
-                        && p0.maxWidth == 10
-                        && p0.subsequentWidth == 0
-                        && p2.field == ChronoField.MONTH_OF_YEAR
-                        && p2.signStyle == SignStyle.NOT_NEGATIVE
-                        && p2.minWidth == 2
-                        && p2.maxWidth == 2
-                        && p4.subsequentWidth == 0
-                        && p4.field == ChronoField.DAY_OF_MONTH
-                        && p4.signStyle == SignStyle.NOT_NEGATIVE
-                        && p4.minWidth == 2
-                        && p4.maxWidth == 2
-                        && p4.subsequentWidth == 0
-                ) {
+                if (p1.literal == '-' && p1.literal == p3.literal) {
                     return true;
                 }
             }
 
+            return false;
+        }
+
+        private static boolean isYear(DateTimePrinterParser printerParser) {
+            if (printerParser instanceof NumberPrinterParser) {
+                NumberPrinterParser n = (NumberPrinterParser) printerParser;
+                if (n.field != ChronoField.YEAR && n.field != ChronoField.YEAR_OF_ERA) {
+                    return false;
+                }
+
+                if (n.minWidth != 4) {
+                    return false;
+                }
+
+                if (n.maxWidth != 10 && n.maxWidth != 19) {
+                    return false;
+                }
+
+                if (n.signStyle != SignStyle.EXCEEDS_PAD) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static boolean isMonthOfYear(DateTimePrinterParser printerParser) {
+            if (printerParser instanceof NumberPrinterParser) {
+                NumberPrinterParser n = (NumberPrinterParser) printerParser;
+                if (n.field != ChronoField.MONTH_OF_YEAR) {
+                    return false;
+                }
+
+                if (n.minWidth != 2 || n.maxWidth != 2) {
+                    return false;
+                }
+
+                if (n.signStyle != SignStyle.NOT_NEGATIVE) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static boolean isDayOfMonth(DateTimePrinterParser printerParser) {
+            if (printerParser instanceof NumberPrinterParser) {
+                NumberPrinterParser n = (NumberPrinterParser) printerParser;
+                if (n.field != ChronoField.DAY_OF_MONTH) {
+                    return false;
+                }
+
+                if (n.minWidth != 2 || n.maxWidth != 2) {
+                    return false;
+                }
+
+                if (n.signStyle != SignStyle.NOT_NEGATIVE) {
+                    return false;
+                }
+
+                return true;
+            }
 
             return false;
         }
@@ -2590,7 +2644,7 @@ public final class DateTimeFormatterBuilder {
             }
 
             if (date != null) {
-                formatDate(buf, literal, date);
+                formatDate(buf, date);
                 return true;
             }
 
@@ -3903,7 +3957,7 @@ public final class DateTimeFormatterBuilder {
         }
     }
 
-    static void formatDate(StringBuilder buf, char literal, LocalDate date) {
+    static void formatDate(StringBuilder buf, LocalDate date) {
         int year = date.getYear();
         int yearAbs = Math.abs(year);
         if (yearAbs < 1000) {
@@ -3922,25 +3976,18 @@ public final class DateTimeFormatterBuilder {
 
             buf.append(year);
         }
-        buf.append(literal);
+        buf.append('-');
         jla.appendDigit2(buf, date.getMonthValue());
-        buf.append(literal);
+        buf.append('-');
         jla.appendDigit2(buf, date.getDayOfMonth());
     }
 
-    static void formatTime(StringBuilder buf, int fractionalDigits, LocalTime time) {
+    static void formatTime(StringBuilder buf, LocalTime time) {
         jla.appendDigit2(buf, time.getHour());
         buf.append(':');
         jla.appendDigit2(buf, time.getMinute());
         buf.append(':');
         jla.appendDigit2(buf, time.getSecond());
-
-        int nano = time.getNano();
-        if (fractionalDigits < 0) {
-            formatNano(buf, nano);
-        } else {
-            formatNano(buf, fractionalDigits, nano);
-        }
     }
 
     static void formatNano(StringBuilder buf, int nano) {
@@ -4051,13 +4098,18 @@ public final class DateTimeFormatterBuilder {
             LocalDate date = LocalDate.ofEpochDay(
                     Math.floorDiv(seconds, SECONDS_PER_DAY));
 
-            formatDate(buf, '-', date);
+            formatDate(buf, date);
             buf.append('T');
 
             LocalTime time = LocalTime.ofSecondOfDay(
                     Math.floorMod(seconds, SECONDS_PER_DAY));
 
-            formatTime(buf, fractionalDigits, time);
+            formatTime(buf, time);
+            if (fractionalDigits < 0) {
+                formatNano(buf, nano);
+            } else {
+                formatNano(buf, fractionalDigits, nano);
+            }
             buf.append('Z');
             return true;
         }
