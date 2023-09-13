@@ -130,7 +130,10 @@ public sealed interface ClassfileTransform<
      * the implementation to perform transformation.
      *
      * @param <E> the element type
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     interface ResolvedTransform<E extends ClassfileElement> {
         /**
          * {@return a {@link Consumer} to receive elements}

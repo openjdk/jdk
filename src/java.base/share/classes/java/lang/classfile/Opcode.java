@@ -685,7 +685,10 @@ public enum Opcode {
 
     /**
      * Kinds of opcodes.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public static enum Kind {
 
         /**

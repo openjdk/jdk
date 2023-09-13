@@ -44,7 +44,10 @@ public interface AttributeMapper<A> {
 
     /**
      * Attribute stability indicator
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributeStability {
 
         /**

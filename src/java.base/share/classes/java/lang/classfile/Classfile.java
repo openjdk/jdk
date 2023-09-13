@@ -80,14 +80,20 @@ public sealed interface Classfile
 
     /**
      * An option that affects the parsing and writing of classfiles.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface Option {
     }
 
     /**
      * Option describing attribute mappers for custom attributes.
      * Default is only to process standard attributes.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
             permits ClassfileImpl.AttributeMapperOptionImpl {
 
@@ -109,7 +115,10 @@ public sealed interface Classfile
     /**
      * Option describing the class hierarchy resolver to use when generating
      * stack maps.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassfileImpl.ClassHierarchyResolverOptionImpl {
 
@@ -137,7 +146,10 @@ public sealed interface Classfile
      * when a classfile is significantly transformed.
      * Default is {@code SHARED_POOL} to preserve the original constant
      * pool.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ConstantPoolSharingOption implements Option {
 
         /** Preserves the original constant pool when transforming classfile */
@@ -151,7 +163,10 @@ public sealed interface Classfile
      * Option describing whether or not to patch out unreachable code.
      * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
      * code with NOPs.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadCodeOption implements Option {
 
         /** Patch unreachable code */
@@ -169,7 +184,10 @@ public sealed interface Classfile
      * reference to unresolved {@link Label} during bytecode serialization.
      * Setting this option to {@code DROP_DEAD_LABELS} filters the above
      * elements instead.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadLabelsOption implements Option {
 
         /** Fail on unresolved labels */
@@ -185,7 +203,10 @@ public sealed interface Classfile
      * table, and character range table.  Discarding debug elements may
      * reduce the overhead of parsing or transforming classfiles.
      * Default is {@code PASS_DEBUG} to process debug elements.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DebugElementsOption implements Option {
 
         /** Process debug elements */
@@ -200,7 +221,10 @@ public sealed interface Classfile
      * Discarding line numbers may reduce the overhead of parsing or transforming
      * classfiles.
      * Default is {@code PASS_LINE_NUMBERS} to process line numbers.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum LineNumbersOption implements Option {
 
         /** Process line numbers */
@@ -215,7 +239,10 @@ public sealed interface Classfile
      * long when necessary.
      * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ShortJumpsOption implements Option {
 
         /** Automatically convert short jumps to long when necessary */
@@ -231,7 +258,10 @@ public sealed interface Classfile
      * maps for {@link #JAVA_6_VERSION} or above, where specifically for
      * {@link #JAVA_6_VERSION} the stack maps may not be generated.
      * @jvms 4.10.1 Verification by Type Checking
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum StackMapsOption implements Option {
 
         /** Generate stack maps when required */
@@ -250,7 +280,10 @@ public sealed interface Classfile
      * transformed in its exploded form.
      * Default is {@code PASS_ALL_ATTRIBUTES} to process all original attributes.
      * @see AttributeMapper.AttributeStability
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributesProcessingOption implements Option {
 
         /** Process all original attributes during transformation */

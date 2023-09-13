@@ -178,7 +178,10 @@ public sealed interface CodeBuilder
 
     /**
      * A builder for blocks of code.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface BlockCodeBuilder extends CodeBuilder
             permits BlockCodeBuilderImpl {
         /**
@@ -319,7 +322,10 @@ public sealed interface CodeBuilder
      * A builder to add catch blocks.
      *
      * @see #trying
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface CatchBuilder permits CatchBuilderImpl {
         /**
          * Adds a catch block that catches an exception of the given type.

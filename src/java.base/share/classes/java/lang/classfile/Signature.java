@@ -69,7 +69,10 @@ public sealed interface Signature {
 
     /**
      * Models the signature of a primitive type or void
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface BaseTypeSig extends Signature
             permits SignaturesImpl.BaseTypeSigImpl {
 
@@ -102,7 +105,10 @@ public sealed interface Signature {
     /**
      * Models the signature of a reference type, which may be a class, interface,
      * type variable, or array type.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface RefTypeSig
             extends Signature
             permits ArrayTypeSig, ClassTypeSig, TypeVarSig {
@@ -110,7 +116,10 @@ public sealed interface Signature {
 
     /**
      * Models the signature of a possibly-parameterized class or interface type.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ClassTypeSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.ClassTypeSigImpl {
@@ -172,14 +181,20 @@ public sealed interface Signature {
 
     /**
      * Models the type argument.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeArg
             permits SignaturesImpl.TypeArgImpl {
 
         /**
          * Indicator for whether a wildcard has default bound, no bound,
          * an upper bound, or a lower bound
+         *
+         * @since 22
          */
+        @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public enum WildcardIndicator {
 
             /**
@@ -255,7 +270,10 @@ public sealed interface Signature {
 
     /**
      * Models the signature of a type variable.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeVarSig
             extends RefTypeSig, ThrowableSig
             permits SignaturesImpl.TypeVarSigImpl {
@@ -274,7 +292,10 @@ public sealed interface Signature {
 
     /**
      * Models the signature of an array type.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ArrayTypeSig
             extends RefTypeSig
             permits SignaturesImpl.ArrayTypeSigImpl {
@@ -307,7 +328,10 @@ public sealed interface Signature {
 
     /**
      * Models a signature for a type parameter of a generic class or method.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface TypeParam
             permits SignaturesImpl.TypeParamImpl {
 
@@ -349,7 +373,10 @@ public sealed interface Signature {
 
     /**
      * Models a signature for a throwable type.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ThrowableSig extends Signature {
     }
 }

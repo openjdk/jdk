@@ -69,7 +69,10 @@ public interface ClassHierarchyResolver {
 
     /**
      * Information about a resolved class.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyInfo permits ClassHierarchyImpl.ClassHierarchyInfoImpl {
 
         /**
