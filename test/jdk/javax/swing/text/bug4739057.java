@@ -22,7 +22,9 @@
  */
 
 import javax.swing.JFormattedTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.text.MaskFormatter;
+import java.text.ParseException;
 
 /*
  * @test
@@ -33,12 +35,19 @@ import javax.swing.text.MaskFormatter;
 public class bug4739057 {
 
     public static void main(String[] args) throws Exception {
-        MaskFormatter formatter = new MaskFormatter("(###) ###-####");
-        formatter.setPlaceholderCharacter('#');
-        JFormattedTextField textField = new JFormattedTextField(formatter);
-        textField.replaceSelection("12345");
-        if (!textField.getText().equals("(123) 45#-####")) {
-            throw new RuntimeException("Test Failed! replaceSelection() didn't replace text properly");
-        }
+        SwingUtilities.invokeAndWait(() -> {
+            MaskFormatter formatter;
+            try {
+                formatter = new MaskFormatter("(###) ###-####");
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            formatter.setPlaceholderCharacter('#');
+            JFormattedTextField textField = new JFormattedTextField(formatter);
+            textField.replaceSelection("12345");
+            if (!textField.getText().equals("(123) 45#-####")) {
+                throw new RuntimeException("Test Failed! replaceSelection() didn't replace text properly");
+            }
+        });
     }
 }

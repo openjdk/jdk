@@ -21,6 +21,9 @@
  * questions.
  */
 
+import java.awt.Robot;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -28,11 +31,6 @@ import javax.swing.text.Document;
 import javax.swing.text.MutableAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledEditorKit;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 
 /*
  * @test
@@ -46,26 +44,18 @@ public class bug4329418 {
     private static JFrame jf;
     private static StyledEditorKit sek;
 
-    private static volatile Point p;
-    private static volatile boolean passed = true;
+    private static volatile boolean passed = false;
     private static final int FONT_SIZE = 36;
 
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
-            robot.delay(50);
 
             SwingUtilities.invokeAndWait(bug4329418::createAndShowUI);
             robot.waitForIdle();
             robot.delay(500);
 
-            SwingUtilities.invokeAndWait(() -> p = jf.getLocationOnScreen());
-            robot.delay(200);
-
-            robot.mouseMove(p.x, p.y);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyPress(KeyEvent.VK_ENTER);
             robot.keyRelease(KeyEvent.VK_ENTER);
             robot.delay(300);
@@ -88,15 +78,16 @@ public class bug4329418 {
         sek = new StyledEditorKit();
         JEditorPane jep = new JEditorPane();
         jep.setEditorKit(sek);
+
+        MutableAttributeSet attrs = sek.getInputAttributes();
+        StyleConstants.setFontSize(attrs, FONT_SIZE);
+
         jep.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
                 MutableAttributeSet attrs = sek.getInputAttributes();
                 passed = (StyleConstants.getFontSize(attrs) == FONT_SIZE);
             }
         });
-
-        MutableAttributeSet attrs = sek.getInputAttributes();
-        StyleConstants.setFontSize(attrs, FONT_SIZE);
 
         jep.setText("aaa");
         Document doc = jep.getDocument();
