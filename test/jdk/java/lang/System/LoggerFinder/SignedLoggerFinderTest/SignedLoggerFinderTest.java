@@ -168,10 +168,11 @@ public class SignedLoggerFinderTest {
             cmds.addAll(List.of("-classpath",
                 System.getProperty("test.classes")));
         }
-	Path patches = Paths.get(System.getProperty("test.classes"), "patches", "java.base");
+
+        Path patches = Paths.get(System.getProperty("test.classes"), "patches", "java.base");
         cmds.addAll(List.of(
             // patch of EventHelper to log at INFO level (for bootstrap logger)
-	    "--patch-module", "java.base=" + patches.toString(),
+            "--patch-module", "java.base=" + patches.toString(),
             // allow test to access internal bootstrap logger functionality
             "--add-opens=java.base/jdk.internal.logger=ALL-UNNAMED",
             // following debug property seems useful to tickle the issue
