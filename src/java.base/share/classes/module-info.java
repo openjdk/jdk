@@ -156,6 +156,7 @@ module java.base {
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
+        jdk.jdeps, // participates in preview features
         jdk.jlink,   // participates in preview features
         jdk.jshell; // participates in preview features
     exports jdk.internal.access to
