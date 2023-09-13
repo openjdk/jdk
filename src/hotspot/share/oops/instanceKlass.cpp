@@ -2472,7 +2472,7 @@ void InstanceKlass::clean_method_data() {
   for (int m = 0; m < methods()->length(); m++) {
     MethodData* mdo = methods()->at(m)->method_data();
     if (mdo != nullptr) {
-      MutexLocker ml(SafepointSynchronize::is_at_safepoint() ? nullptr : mdo->extra_data_lock());
+      ConditionalMutexLocker ml(mdo->extra_data_lock(), !SafepointSynchronize::is_at_safepoint());
       mdo->clean_method_data(/*always_clean*/false);
     }
   }
@@ -3406,8 +3406,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock
-                 , Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3448,8 +3447,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3464,8 +3462,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {
