@@ -28,8 +28,12 @@
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 
-// ----------------------------------VPointer----------------------------------
-// Information about an address for dependence checking and vector alignment
+// Code in this file and the vectorization.cpp contains shared logics and
+// utilities for C2's loop auto-vectorization.
+
+// A vectorization pointer (VPointer) has information about an address for
+// dependence checking and vector alignment. It's usually bound to a memory
+// operation in a counted loop for vectorizable analysis.
 class VPointer : public ArenaObj {
  protected:
   MemNode*        _mem;      // My memory reference node
@@ -195,7 +199,7 @@ class VPointer : public ArenaObj {
   Node* register_if_new(Node* n) const;
 };
 
-// ---------------------------VectorElementSizeStats---------------------------
+
 // Vector element size statistics for loop vectorization with vector masks
 class VectorElementSizeStats {
  private:

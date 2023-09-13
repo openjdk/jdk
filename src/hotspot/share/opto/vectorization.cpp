@@ -31,8 +31,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
-// ==================================VPointer==================================
-
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif
@@ -144,7 +142,6 @@ bool VPointer::invariant(Node* n) const {
   return is_not_member;
 }
 
-//------------------------scaled_iv_plus_offset--------------------
 // Match: k*iv + offset
 // where: k is a constant that maybe zero, and
 //        offset is (k2 [+/- invariant]) where k2 maybe zero and invariant is optional
@@ -188,7 +185,6 @@ bool VPointer::scaled_iv_plus_offset(Node* n) {
   return false;
 }
 
-//----------------------------scaled_iv------------------------
 // Match: k*iv where k is a constant that's not zero
 bool VPointer::scaled_iv(Node* n) {
   NOT_PRODUCT(Tracer::Depth ddd;)
@@ -260,7 +256,6 @@ bool VPointer::scaled_iv(Node* n) {
   return false;
 }
 
-//----------------------------offset_plus_k------------------------
 // Match: offset is (k [+/- invariant])
 // where k maybe zero and invariant is optional, but not both.
 bool VPointer::offset_plus_k(Node* n, bool negate) {
@@ -400,7 +395,7 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
-//----------------------------print------------------------
+// Function for printing the fields of a VPointer
 void VPointer::print() {
 #ifndef PRODUCT
   tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
@@ -414,7 +409,7 @@ void VPointer::print() {
 #endif
 }
 
-//----------------------------tracing------------------------
+// Following are functions for tracing VPointer match
 #ifndef PRODUCT
 void VPointer::Tracer::print_depth() const {
   for (int ii = 0; ii < _depth; ++ii) {
