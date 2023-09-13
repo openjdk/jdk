@@ -29,13 +29,14 @@ public final class CAInterop {
     public CAInterop(String revocationMode) {
         if ("CRL".equalsIgnoreCase(revocationMode)) {
             ValidatePathWithURL.enableCRLOnly();
-        }
-        if ("OCSP".equalsIgnoreCase(revocationMode)) {
+        } else if ("OCSP".equalsIgnoreCase(revocationMode)) {
             ValidatePathWithURL.enableOCSPOnly();
         } else {
             // OCSP and CRL check by default
             ValidatePathWithURL.enableOCSPAndCRL();
         }
+
+        ValidatePathWithURL.logRevocationSettings();
     }
 
     /**

@@ -77,6 +77,7 @@ public class ValidatePathWithURL {
      */
     public static void enableCRLOnly() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
+        Security.setProperty("ocsp.enable", "false");
     }
 
     /**
@@ -85,6 +86,29 @@ public class ValidatePathWithURL {
     public static void enableOCSPAndCRL() {
         System.setProperty("com.sun.security.enableCRLDP", "true");
         Security.setProperty("ocsp.enable", "true");
+    }
+
+    /**
+     * Logs revocation settings
+     */
+    public static void logRevocationSettings() {
+        System.out.println("=====================================================");
+        System.out.println("CONFIGURATION");
+        System.out.println("=====================================================");
+        System.out.println("http.proxyHost :" + System.getProperty("http.proxyHost"));
+        System.out.println("http.proxyPort :" + System.getProperty("http.proxyPort"));
+        System.out.println("https.proxyHost :" + System.getProperty("https.proxyHost"));
+        System.out.println("https.proxyPort :" + System.getProperty("https.proxyPort"));
+        System.out.println("https.socksProxyHost :"
+                + System.getProperty("https.socksProxyHost"));
+        System.out.println("https.socksProxyPort :"
+                + System.getProperty("https.socksProxyPort"));
+        System.out.println("jdk.certpath.disabledAlgorithms :"
+                + Security.getProperty("jdk.certpath.disabledAlgorithms"));
+        System.out.println("com.sun.security.enableCRLDP :"
+                + System.getProperty("com.sun.security.enableCRLDP"));
+        System.out.println("ocsp.enable :" + Security.getProperty("ocsp.enable"));
+        System.out.println("=====================================================");
     }
 
     /**
