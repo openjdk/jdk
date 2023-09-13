@@ -653,7 +653,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   LogConfiguration::post_initialize();
   Metaspace::post_initialize();
-  MutexLocker::post_initialize();
+  MutexLockerImpl::post_initialize();
 
   HOTSPOT_VM_INIT_END();
 
