@@ -62,6 +62,7 @@ public class bug4680204 {
                 sp2.setToolTipText(TOOL_TIP_TEXT);
                 frame.getContentPane().add(sp2);
                 sp2.setModel(new SpinnerNumberModel(1, 1, 100, 1));
+                frame.setLocationRelativeTo(null);
                 frame.pack();
                 frame.setVisible(true);
             });

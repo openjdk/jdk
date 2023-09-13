@@ -23,7 +23,6 @@
 
 import javax.swing.JComponent;
 import javax.swing.JSpinner;
-import javax.swing.SwingUtilities;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
 
@@ -31,27 +30,22 @@ import java.io.ObjectOutputStream;
  * @test
  * @bug 4522737
  * @summary Cannot serialize JSpinner twice.
- * @key headful
  * @run main bug4522737
  */
 
 public class bug4522737 {
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            final JComponent originalComponent = new JSpinner();
-            try {
-                ByteArrayOutputStream byteArrayOutputStream =
-                        new ByteArrayOutputStream();
-                ObjectOutputStream objectOutputStream =
-                        new ObjectOutputStream(byteArrayOutputStream);
-                objectOutputStream.writeObject(originalComponent);
+        final JComponent originalComponent = new JSpinner();
 
-                objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-                objectOutputStream.writeObject(originalComponent);
-            } catch (Throwable e) {
-                throw new RuntimeException("Cannot serialize JSpinner twice.", e);
-            }
-        });
+        ByteArrayOutputStream byteArrayOutputStream =
+                new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream =
+                new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject(originalComponent);
+
+        objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject(originalComponent);
+
         System.out.println("Test Passed!");
     }
 }
