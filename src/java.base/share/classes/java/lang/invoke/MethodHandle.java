@@ -1719,7 +1719,8 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         try {
             return this.withVarargs(true);
         } catch (IllegalArgumentException ex) {
-            throw new IllegalAccessException("cannot make variable arity: " + member + " because " + ex.getMessage());
+            throw new IllegalAccessException("cannot make variable arity: " + member +
+                    " does not have a trailing array parameter");
         }
     }
 
