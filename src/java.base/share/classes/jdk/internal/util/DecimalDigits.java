@@ -200,7 +200,7 @@ public final class DecimalDigits implements Digits {
      * character array buf. The characters are placed into
      * the buffer backwards starting with the least significant
      * digit at the specified index (exclusive), and working
-     * backwards from there.
+     * backwards from there. <strong>Caller must ensure buf has enough capacity for the value to be written!</strong>
      *
      * @implNote This method converts positive inputs into negative
      * values, to cover the Integer.MIN_VALUE case. Converting otherwise
@@ -251,7 +251,7 @@ public final class DecimalDigits implements Digits {
      * character array buf. The characters are placed into
      * the buffer backwards starting with the least significant
      * digit at the specified index (exclusive), and working
-     * backwards from there.
+     * backwards from there. <strong>Caller must ensure buf has enough capacity for the value to be written!</strong>
      *
      * @implNote This method converts positive inputs into negative
      * values, to cover the Long.MIN_VALUE case. Converting otherwise
