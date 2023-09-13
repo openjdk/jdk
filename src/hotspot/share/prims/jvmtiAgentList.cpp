@@ -248,7 +248,7 @@ bool JvmtiAgentList::is_dynamic_lib_loaded(long device, long inode) {
   JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
   while (it.has_next()) {
     JvmtiAgent* const agent = it.next();
-    if (!agent->is_static_lib() && device && inode &&
+    if (!agent->is_static_lib() && device != 0 && inode != 0 &&
         agent->device() == device && agent->inode() == inode) {
       return true;
     }

@@ -295,34 +295,17 @@ static bool load_agent_from_executable(JvmtiAgent* agent, const char* on_load_sy
 }
 
 #ifdef AIX
-static int stat64x_LIBPATH(const char* path, struct stat64x* stat)
-{
-  // Simulate the library search algorithm of dlopen() (in os::dll_load)
-  if (path[0] == '/' ||
-      (path[0] == '.' && (path[1] == '/' ||
-                          (path[1] == '.' && path[2] == '/')))) {
-    return stat64x(path, stat);
+// save the inode and device of the library's file as a signature. This signature can be used
+// in the same way as the library handle as a signature on other platforms.
+static void save_library_signature(JvmtiAgent* agent, const char* name) {
+  struct stat64x libstat;
+  if (0 == os::Aix::stat64x_via_LIBPATH(name, &libstat)) {
+    agent->set_inode(libstat.st_ino);
+    agent->set_device(libstat.st_dev);
   }
-
-  const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0)
-    return -1;
-
-  int ret = -1;
-  size_t libpathlen = strlen(env);
-  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) +1, mtServiceability);
-  char *saveptr, *token;
-  strcpy(libpath, env);
-  for( token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr) ) {
-    sprintf(combined, "%s/%s", token, path);
-    if (0 == (ret = stat64x(combined, stat)))
-      break;
+  else {
+    assert(false, "stat64x failed");
   }
-
-  FREE_C_HEAP_ARRAY(char*, combined);
-  FREE_C_HEAP_ARRAY(char*, libpath);
-  return ret;
 }
 #endif
 
@@ -335,18 +318,7 @@ static void* load_agent_from_absolute_path(JvmtiAgent* agent, bool vm_exit_on_er
   if (library == nullptr && vm_exit_on_error) {
     vm_exit(agent, " in absolute path, with error: ", nullptr);
   }
-  #ifdef AIX
-  if (library != nullptr) {
-    struct stat64x libstat;
-    if (0 == stat64x_LIBPATH(agent->name(), &libstat)) {
-      agent->set_inode(libstat.st_ino);
-      agent->set_device(libstat.st_dev);
-    }
-    else {
-      assert(false, "stat64x failed 1");
-    }
-  }
-  #endif
+  AIX_ONLY(if (library != nullptr) save_library_signature(agent, agent->name());)
   return library;
 }
 
@@ -359,33 +331,13 @@ static void* load_agent_from_relative_path(JvmtiAgent* agent, bool vm_exit_on_er
   // Try to load the agent from the standard dll directory
   if (os::dll_locate_lib(&buffer[0], sizeof buffer, Arguments::get_dll_dir(), name)) {
     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
-    #ifdef AIX
-    if (library != nullptr) {
-      struct stat64x libstat;
-      if (0 == stat64x_LIBPATH(&buffer[0], &libstat)) {
-        agent->set_inode(libstat.st_ino);
-        agent->set_device(libstat.st_dev);
-      }
-      else {
-        assert(false, "stat64x failed 3");
-      }
-    }
-    #endif
+    AIX_ONLY(if (library != nullptr) save_library_signature(agent, &buffer[0]);)
   }
   if (library == nullptr && os::dll_build_name(&buffer[0], sizeof buffer, name)) {
     // Try the library path directory.
     library = os::dll_load(&buffer[0], &ebuf[0], sizeof ebuf);
     if (library != nullptr) {
-      #ifdef AIX
-      struct stat64x libstat;
-      if (0 == stat64x_LIBPATH(&buffer[0], &libstat)) {
-        agent->set_inode(libstat.st_ino);
-        agent->set_device(libstat.st_dev);
-      }
-      else {
-        assert(false, "stat64x failed-2");
-      }
-      #endif
+      AIX_ONLY(save_library_signature(agent, &buffer[0]);)
       return library;
     }
     if (vm_exit_on_error) {
