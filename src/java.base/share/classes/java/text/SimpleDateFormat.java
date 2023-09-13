@@ -1710,17 +1710,6 @@ public class SimpleDateFormat extends DateFormat {
         return -1;
     }
 
-    private boolean matchDSTString(String text, int start, int zoneIndex, int standardIndex,
-                                   String[][] zoneStrings) {
-        int index = standardIndex + 2;
-        String zoneName  = zoneStrings[zoneIndex][index];
-        if (text.regionMatches(true, start,
-                               zoneName, 0, zoneName.length())) {
-            return true;
-        }
-        return false;
-    }
-
     /**
      * find time zone 'text' matched zoneStrings and set to internal
      * calendar.
@@ -2520,7 +2509,7 @@ public class SimpleDateFormat extends DateFormat {
                 hasFollowingMinusSign = false;
 
                 int separatorIndex = numberPattern.indexOf(';');
-                // If the negative subpattern is not absent, we have to analayze
+                // If the negative subpattern is not absent, we have to analyze
                 // it in order to check if it has a following minus sign.
                 if (separatorIndex > -1) {
                     int minusIndex = numberPattern.indexOf('-', separatorIndex);
