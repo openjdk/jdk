@@ -99,6 +99,17 @@ void VM_Version::initialize() {
     }
   }
 
+  // Enable vendor specific features
+
+  if (mvendorid.enabled()) {
+    // Rivos
+    if (mvendorid.value() == RIVOS) {
+      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
+        FLAG_SET_DEFAULT(UseConservativeFence, false);
+      }
+    }
+  }
+
   if (UseZic64b) {
     if (CacheLineSize != 64) {
       assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
