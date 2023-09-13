@@ -24,7 +24,7 @@
  */
 
 /**
- * <h2>Classfile parsing, generation, and transformation</h2>
+ * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
  * modifying Java class files, as specified in Chapter 4 of the <a
  * href="https://docs.oracle.com/javase/specs/jvms/se17/html/index.html">Java

@@ -24,8 +24,8 @@
  */
 
 /**
- * <h2>Specific components, transformations, and tools built on top of the
- * Classfile API</h2>
+ * <h2>Provides specific components, transformations, and tools built on top of the
+ * {@link java.lang.classfile} library.</h2>
  *
  * The {@code java.lang.classfile.components} package contains specific
  * transformation components and utility classes helping to compose very complex
