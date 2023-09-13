@@ -27,6 +27,7 @@ package java.net;
 
 import jdk.internal.ValueBased;
 import jdk.internal.natives.java.net.NativeNetworkInterface;
+import jdk.internal.vm.annotation.Stable;
 
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -82,6 +83,7 @@ public final class NetworkInterface2 {
         return null;
     }
 
+    @Stable
     private final NetworkInterfaceDelegate delegate;
 
     /**
@@ -489,14 +491,22 @@ public final class NetworkInterface2 {
     @ValueBased
     private static final class NetworkInterfaceDelegate {
 
+        @Stable
         private final String name;
+        @Stable
         private final String displayName;
+        @Stable
         private final int index;
+        @Stable
         private InetAddress addrs[];
+        @Stable
         private InterfaceAddress bindings[];
+        @Stable
         private NetworkInterface2 childs[];
-        private NetworkInterface2 parent = null;
-        private boolean virtual = false;
+        @Stable
+        private NetworkInterface2 parent;
+        @Stable
+        private boolean virtual;
 
         /**
          * Returns an NetworkInterface object with index set to 0 and name to null.

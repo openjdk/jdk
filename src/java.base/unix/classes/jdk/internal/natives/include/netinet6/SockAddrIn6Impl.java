@@ -81,18 +81,15 @@ public final class SockAddrIn6Impl
 
     @Override
     public In6Addr sin6_addr() {
-        System.out.println("segment.address() = " + segment.address());
-        System.out.println("SIN_6_ADDR_OFFSET = " + SIN_6_ADDR_OFFSET);
-        var lu = segment.get(JAVA_LONG_UNALIGNED, SIN_6_ADDR_OFFSET);
-        System.out.println("lu = " + lu);
-        var l = segment.get(JAVA_LONG, SIN_6_ADDR_OFFSET);
-        System.out.println("l = " + l);
-        var seg2 = segment.get(ADDRESS, SIN_6_ADDR_OFFSET);
-        System.out.println("seg2 = " + seg2);
         var seg = segment.get(SIN_6_ADDR_PTR, SIN_6_ADDR_OFFSET);
         return seg.equals(MemorySegment.NULL)
                 ? null
                 : In6Addr.of(seg);
+    }
+
+    @Override
+    public MemorySegment sin6_addrAsSegment() {
+        return segment.asSlice(SIN_6_ADDR_OFFSET, In6Addr.LAYOUT.byteSize());
     }
 
     @Override

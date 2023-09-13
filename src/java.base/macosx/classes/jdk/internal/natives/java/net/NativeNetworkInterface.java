@@ -247,13 +247,7 @@ public final class NativeNetworkInterface {
                 }
 
                 String name = ifa.ifa_name();
-
-                System.out.println("ifa_addr.segment() = " + ifa_addr.segment());
-
                 SockAddrIn6 sockAddrIn6 = SockAddrIn6.MAPPER.castFromRestricted(ifa_addr);
-
-                System.out.println("sockAddrIn6.segment() = " + sockAddrIn6.segment());
-
 
                 // set scope ID to interface index
                 sockAddrIn6.sin6_scope_id(getIndex(arena, socket, ifa.ifa_nameAsSegment()));
@@ -292,7 +286,7 @@ public final class NativeNetworkInterface {
         try {
             byte[] a = addr.sa_data().asSlice(0, 4).toArray(ValueLayout.JAVA_BYTE);
             InetAddress address = InetAddress.getByAddress(ifName, a);
-            System.out.println(ifName + " ,address = " + address);
+            //System.out.println(ifName + " ,address = " + address);
             return new NetworkInterface2(ifName, index, new InetAddress[]{address});
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);

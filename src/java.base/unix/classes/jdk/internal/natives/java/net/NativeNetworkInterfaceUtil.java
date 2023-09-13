@@ -5,6 +5,7 @@ import jdk.internal.natives.include.netinet6.In6Addr;
 import jdk.internal.natives.include.netinet6.SockAddrIn6;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
 
 final class NativeNetworkInterfaceUtil {
@@ -43,7 +44,10 @@ final class NativeNetworkInterfaceUtil {
         if (addr.segment().equals(MemorySegment.NULL)) {
             return 0;
         }
-        byte[] addrBytes = addr.sin6_addr().__u6_addr().__u6_addr8();
+
+        byte[] addrBytes = addr
+                .sin6_addrAsSegment().toArray(ValueLayout.JAVA_BYTE);
+
         int b, bit;
         for (b = 0; b < In6Addr.LAYOUT.byteSize(); b++, prefix += 8) {
             if (addrBytes[b] != (byte) 0xff) {

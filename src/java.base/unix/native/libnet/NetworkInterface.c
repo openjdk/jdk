@@ -1747,7 +1747,6 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
             continue;
 
         int index = getIndex(sock, ifa->ifa_name);
-        printf("index for %s is %d\n", ifa->ifa_name, index);
 
         // set scope ID to interface index
         ((struct sockaddr_in6 *)ifa->ifa_addr)->sin6_scope_id = index;
