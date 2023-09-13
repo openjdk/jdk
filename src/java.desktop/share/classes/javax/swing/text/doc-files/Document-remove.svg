@@ -147,8 +147,8 @@
             xlink:href="#brownFox"
     />
 
-    <path d="M  97,68 L 97,114" marker-end="url(#arrow)"/>
-    <path d="M 241,68 L 99,114" marker-end="url(#arrow)"/>
+    <path d="M  97,71 L 97,114" marker-end="url(#arrow)"/>
+    <path d="M 241,71 L 99,114" marker-end="url(#arrow)"/>
 
     <line x1="97" y1="116" x2="97" y2="149"/>
     <text x="97" y="151" class="top">4</text>
