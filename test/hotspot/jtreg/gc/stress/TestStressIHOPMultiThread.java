@@ -24,10 +24,10 @@
 package gc.stress;
 
  /*
- * @test id=TestStressIHOPMultiThread1
+ * @test
  * @bug 8148397
  * @key stress
- * @summary Parallelized stress testcase 1 for IHOP
+ * @summary Stress test for IHOP
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx128m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=1m -XX:+G1UseAdaptiveIHOP
@@ -37,10 +37,7 @@ package gc.stress;
  */
 
 /*
- * @test id=TestStressIHOPMultiThread2
- * @bug 8148397
- * @key stress
- * @summary Parallelized stress testcase 2 for IHOP
+ * @test
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx256m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=2m -XX:+G1UseAdaptiveIHOP
@@ -50,10 +47,7 @@ package gc.stress;
  */
 
 /*
- * @test id=TestStressIHOPMultiThread3
- * @bug 8148397
- * @key stress
- * @summary Parallelized stress testcase 3 for IHOP
+ * @test
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx256m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=4m -XX:-G1UseAdaptiveIHOP
@@ -63,10 +57,7 @@ package gc.stress;
  */
 
 /*
- * @test id=TestStressIHOPMultiThread4
- * @bug 8148397
- * @key stress
- * @summary Parallelized stress testcase 4 for IHOP
+ * @test
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx128m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=8m -XX:+G1UseAdaptiveIHOP
@@ -76,10 +67,7 @@ package gc.stress;
  */
 
 /*
- * @test id=TestStressIHOPMultiThread5
- * @bug 8148397
- * @key stress
- * @summary Parallelized stress testcase 5 for IHOP
+ * @test
  * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx512m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+G1UseAdaptiveIHOP
