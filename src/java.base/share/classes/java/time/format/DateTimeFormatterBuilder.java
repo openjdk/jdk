@@ -2581,16 +2581,14 @@ public final class DateTimeFormatterBuilder {
             TemporalAccessor temporal = context.getTemporal();
 
             LocalDate date;
-            if (temporal instanceof LocalDateTime) {
-                date = ((LocalDateTime) temporal).toLocalDate();
-            } else if (temporal instanceof LocalDate) {
-                date = (LocalDate) temporal;
-            } else if (temporal instanceof ZonedDateTime) {
-                date = ((ZonedDateTime) temporal).toLocalDate();
-            } else if (temporal instanceof OffsetDateTime) {
-                date = ((OffsetDateTime) temporal).toLocalDate();
-            } else {
-                return super.format(context, buf);
+            switch (temporal) {
+                case LocalDate localDate -> date = localDate;
+                case LocalDateTime ldt -> date = ldt.toLocalDate();
+                case ZonedDateTime zdt -> date = zdt.toLocalDate();
+                case OffsetDateTime odt -> date = odt.toLocalDate();
+                default -> {
+                    return super.format(context, buf);
+                }
             }
 
             formatDate(buf, date);
@@ -2646,18 +2644,15 @@ public final class DateTimeFormatterBuilder {
             TemporalAccessor temporal = context.getTemporal();
 
             LocalTime time;
-            if (temporal instanceof LocalTime) {
-                time = (LocalTime) temporal;
-            } else if (temporal instanceof LocalDateTime) {
-                time = ((LocalDateTime) temporal).toLocalTime();
-            } else if (temporal instanceof ZonedDateTime) {
-                time = ((ZonedDateTime) temporal).toLocalTime();
-            } else if (temporal instanceof OffsetDateTime) {
-                time = ((OffsetDateTime) temporal).toLocalTime();
-            } else if (temporal instanceof OffsetTime) {
-                time = ((OffsetTime) temporal).toLocalTime();
-            } else {
-                return super.format(context, buf);
+            switch (temporal) {
+                case LocalTime lt -> time = lt;
+                case LocalDateTime ldt -> time = ldt.toLocalTime();
+                case ZonedDateTime zdt -> time = zdt.toLocalTime();
+                case OffsetDateTime odt -> time = odt.toLocalTime();
+                case OffsetTime ot -> time = ot.toLocalTime();
+                default -> {
+                    return super.format(context, buf);
+                }
             }
 
             formatTime(buf, time);
