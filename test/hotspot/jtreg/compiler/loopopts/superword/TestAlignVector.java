@@ -46,6 +46,7 @@ import java.nio.ByteOrder;
 
 public class TestAlignVector {
     static int RANGE = 1024*8;
+    static int RANGE_FINAL = 1024*8;
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final Random RANDOM = Utils.getRandomInstance();
 
@@ -158,6 +159,9 @@ public class TestAlignVector {
         tests.put("test18a",     () -> { return test18a(aB.clone(), aI.clone()); });
         tests.put("test18b",     () -> { return test18b(aB.clone(), aI.clone()); });
 
+        tests.put("test19",      () -> { return test19(aI.clone(), bI.clone()); });
+        tests.put("test20",      () -> { return test20(aB.clone()); });
+
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -220,7 +224,9 @@ public class TestAlignVector {
                  "test17c",
                  "test17d",
                  "test18a",
-                 "test18b"})
+                 "test18b",
+                 "test19",
+                 "test20"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -1363,7 +1369,6 @@ public class TestAlignVector {
     }
 
     @Test
-    // TODO good IR rules
     static Object[] test18a(byte[] a, int[] b) {
         // scale = 0  -->  no iv
         for (int i = 0; i < RANGE; i++) {
@@ -1375,7 +1380,6 @@ public class TestAlignVector {
     }
 
     @Test
-    // TODO good IR rules
     static Object[] test18b(byte[] a, int[] b) {
         // scale = 0  -->  no iv
         for (int i = 0; i < RANGE; i++) {
@@ -1384,5 +1388,26 @@ public class TestAlignVector {
             a[2] = 1;
         }
         return new Object[]{ a, b };
+    }
+
+    @Test
+    static Object[] test19(int[] a, int[] b) {
+        for (int i = 5000; i > 0; i--) {
+            a[RANGE_FINAL - i] = b[RANGE_FINAL - i];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    static Object[] test20(byte[] a) {
+        // Example where it is easy to pass alignment check,
+        // but used to fail the alignment calculation
+        for (int i = 1; i < RANGE/2-50; i++) {
+            a[2*i+0+30]++;
+            a[2*i+1+30]++;
+            a[2*i+2+30]++;
+            a[2*i+3+30]++;
+        }
+        return new Object[]{ a };
     }
 }
