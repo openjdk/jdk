@@ -440,10 +440,11 @@ public interface Document {
      * down to the start of the range, and any marks in the removal
      * range are collapsed down to the start of the range.
      * <p>
-     * For example, {@code remove(4, 6)} removes the word
-     * <i>&lsquo;quick&rsquo;</i> and the following space from the text
-     * <i>&lsquo;The quick brown fox&rsquo;</i>.
-     * All the marks in the range 4&ndash;10 are collapsed to 4.
+     * For example, if the document contains the text
+     * <i>&lsquo;The quick brown fox&rsquo;</i>,
+     * calling {@code remove(4, 6)} will remove the word
+     * <i>&lsquo;quick&rsquo;</i> and the following space from the text,
+     * and all the marks in the range 4&ndash;10 will be collapsed to 4.
      * <p style="text-align:center"><img src="doc-files/Document-remove.svg"
      *  alt="Diagram shows removal of 'quick' from 'The quick brown fox.'">
      * <p>
