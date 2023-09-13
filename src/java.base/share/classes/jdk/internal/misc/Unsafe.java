@@ -2446,7 +2446,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset, v, v + delta));
+        } while (!compareAndSetInt(o, offset, v, v + delta));
         return v;
     }
 
@@ -2484,7 +2484,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset, v, v + delta));
+        } while (!compareAndSetLong(o, offset, v, v + delta));
         return v;
     }
 
@@ -2511,7 +2511,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset, v, (byte) (v + delta)));
+        } while (!compareAndSetByte(o, offset, v, (byte) (v + delta)));
         return v;
     }
 
@@ -2538,7 +2538,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset, v, (short) (v + delta)));
+        } while (!compareAndSetShort(o, offset, v, (short) (v + delta)));
         return v;
     }
 
@@ -2585,7 +2585,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getIntVolatile(o, offset);
             v = Float.intBitsToFloat(expectedBits);
-        } while (!weakCompareAndSetInt(o, offset,
+        } while (!compareAndSetInt(o, offset,
                                                 expectedBits, Float.floatToRawIntBits(v + delta)));
         return v;
     }
@@ -2630,7 +2630,7 @@ public final class Unsafe {
             // may result in the loop not terminating.
             expectedBits = getLongVolatile(o, offset);
             v = Double.longBitsToDouble(expectedBits);
-        } while (!weakCompareAndSetLong(o, offset,
+        } while (!compareAndSetLong(o, offset,
                                                  expectedBits, Double.doubleToRawLongBits(v + delta)));
         return v;
     }
@@ -2681,7 +2681,7 @@ public final class Unsafe {
         int v;
         do {
             v = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset, v, newValue));
+        } while (!compareAndSetInt(o, offset, v, newValue));
         return v;
     }
 
@@ -2719,7 +2719,7 @@ public final class Unsafe {
         long v;
         do {
             v = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset, v, newValue));
+        } while (!compareAndSetLong(o, offset, v, newValue));
         return v;
     }
 
@@ -2757,7 +2757,7 @@ public final class Unsafe {
         Object v;
         do {
             v = getReferenceVolatile(o, offset);
-        } while (!weakCompareAndSetReference(o, offset, v, newValue));
+        } while (!compareAndSetReference(o, offset, v, newValue));
         return v;
     }
 
@@ -2784,7 +2784,7 @@ public final class Unsafe {
         byte v;
         do {
             v = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset, v, newValue));
+        } while (!compareAndSetByte(o, offset, v, newValue));
         return v;
     }
 
@@ -2826,7 +2826,7 @@ public final class Unsafe {
         short v;
         do {
             v = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset, v, newValue));
+        } while (!compareAndSetShort(o, offset, v, newValue));
         return v;
     }
 
@@ -2954,7 +2954,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
+        } while (!compareAndSetByte(o, offset,
                                                   current, (byte) (current | mask)));
         return current;
     }
@@ -2985,7 +2985,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
+        } while (!compareAndSetByte(o, offset,
                                                   current, (byte) (current & mask)));
         return current;
     }
@@ -3016,7 +3016,7 @@ public final class Unsafe {
         byte current;
         do {
             current = getByteVolatile(o, offset);
-        } while (!weakCompareAndSetByte(o, offset,
+        } while (!compareAndSetByte(o, offset,
                                                   current, (byte) (current ^ mask)));
         return current;
     }
@@ -3094,7 +3094,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
+        } while (!compareAndSetShort(o, offset,
                                                 current, (short) (current | mask)));
         return current;
     }
@@ -3125,7 +3125,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
+        } while (!compareAndSetShort(o, offset,
                                                 current, (short) (current & mask)));
         return current;
     }
@@ -3156,7 +3156,7 @@ public final class Unsafe {
         short current;
         do {
             current = getShortVolatile(o, offset);
-        } while (!weakCompareAndSetShort(o, offset,
+        } while (!compareAndSetShort(o, offset,
                                                 current, (short) (current ^ mask)));
         return current;
     }
@@ -3188,7 +3188,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
+        } while (!compareAndSetInt(o, offset,
                                                 current, current | mask));
         return current;
     }
@@ -3230,7 +3230,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
+        } while (!compareAndSetInt(o, offset,
                                                 current, current & mask));
         return current;
     }
@@ -3261,7 +3261,7 @@ public final class Unsafe {
         int current;
         do {
             current = getIntVolatile(o, offset);
-        } while (!weakCompareAndSetInt(o, offset,
+        } while (!compareAndSetInt(o, offset,
                                                 current, current ^ mask));
         return current;
     }
@@ -3293,7 +3293,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
+        } while (!compareAndSetLong(o, offset,
                                                 current, current | mask));
         return current;
     }
@@ -3324,7 +3324,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
+        } while (!compareAndSetLong(o, offset,
                                                 current, current & mask));
         return current;
     }
@@ -3355,7 +3355,7 @@ public final class Unsafe {
         long current;
         do {
             current = getLongVolatile(o, offset);
-        } while (!weakCompareAndSetLong(o, offset,
+        } while (!compareAndSetLong(o, offset,
                                                 current, current ^ mask));
         return current;
     }
