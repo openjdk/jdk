@@ -484,6 +484,10 @@ final class CompilerToVM {
      * the JDK has to lookup the arguments when they are needed. The {@code cpi} corresponds to
      * {@code pool_index} and the {@code index} has to be smaller than {@code arg_count}.
      *
+     * The behavior of this method is undefined if {@code cpi} does not denote an entry representing
+     * a {@code CONSTANT_Dynamic_info} or a @{code CONSTANT_InvokeDynamic_info}, or if the index
+     * is out of bounds.
+     *
      * @param cpi the index of a {@code CONSTANT_Dynamic_info} or @{code CONSTANT_InvokeDynamic_info} entry
      * @param index the index of the static argument in the list of static arguments
      * @return the constant pool index associated with the static argument

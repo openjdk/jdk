@@ -554,8 +554,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
          * {@link PrimitiveConstant}.
          *
          * @param index index of the element to return
-         * @return A {@link PrimitiveConstant} representing an unresolved constant pool entry
-         * or a {@link JavaConstant} representing the static argument requested
+         * @return A {@link JavaConstant} corresponding to the static argument requested. A return
+         * value of type {@link PrimitiveConstant} represents an unresolved constant pool entry
          */
         @Override
         public JavaConstant get(int index) {
