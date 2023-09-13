@@ -88,9 +88,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.Stable;
 
@@ -139,8 +136,6 @@ import jdk.internal.vm.annotation.Stable;
 public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
-
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /** Cache of time-zone offset by offset in seconds. */
     private static final ConcurrentMap<Integer, ZoneOffset> SECONDS_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
@@ -456,37 +451,19 @@ public final class ZoneOffset
     private static String buildId(int totalSeconds) {
         if (totalSeconds == 0) {
             return "Z";
-        }
-
-        int absTotalSeconds = Math.abs(totalSeconds);
-        int absHours = absTotalSeconds / SECONDS_PER_HOUR;
-        int minuteSeconds = absTotalSeconds - absHours * SECONDS_PER_HOUR;
-        int absMinutes = minuteSeconds / SECONDS_PER_MINUTE;
-        int absSeconds = minuteSeconds - absMinutes * SECONDS_PER_MINUTE;
-
-        byte[] buf = new byte[6 + (absSeconds != 0 ? 3 : 0)];
-        buf[0] = (byte) (totalSeconds < 0 ? '-' : '+');
-        ByteArrayLittleEndian.setShort(
-                buf,
-                1,
-                DecimalDigits.digitPair(absHours));
-        buf[3] = ':';
-        ByteArrayLittleEndian.setShort(
-                buf,
-                4,
-                DecimalDigits.digitPair(absMinutes));
-        if (absSeconds != 0) {
-            buf[6] = ':';
-            ByteArrayLittleEndian.setShort(
-                    buf,
-                    7,
-                    DecimalDigits.digitPair(absSeconds));
-        }
-
-        try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
+        } else {
+            int absTotalSeconds = Math.abs(totalSeconds);
+            StringBuilder buf = new StringBuilder();
+            int absHours = absTotalSeconds / SECONDS_PER_HOUR;
+            int absMinutes = (absTotalSeconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
+            buf.append(totalSeconds < 0 ? "-" : "+")
+                    .append(absHours < 10 ? "0" : "").append(absHours)
+                    .append(absMinutes < 10 ? ":0" : ":").append(absMinutes);
+            int absSeconds = absTotalSeconds % SECONDS_PER_MINUTE;
+            if (absSeconds != 0) {
+                buf.append(absSeconds < 10 ? ":0" : ":").append(absSeconds);
+            }
+            return buf.toString();
         }
     }
 
