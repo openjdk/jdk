@@ -27,6 +27,7 @@
  * @summary Verify constant/immediate char values are correctly enhanced to ints when used in unary
  *          operators
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -34,11 +35,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox

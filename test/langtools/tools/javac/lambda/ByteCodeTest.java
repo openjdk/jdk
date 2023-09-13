@@ -26,12 +26,8 @@
  * @bug     8011738
  * @author  sogoel
  * @summary Code translation test for Lambda expressions, method references
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main ByteCodeTest
  */
 

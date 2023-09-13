@@ -30,11 +30,7 @@ import java.lang.classfile.attribute.*;
  * @test JSR175Annotations
  * @bug 6843077
  * @summary test that only type annotations are recorded as such in classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class JSR175Annotations {

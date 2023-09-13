@@ -25,12 +25,8 @@
  * @test
  * @bug 8011181
  * @summary javac, empty UTF8 entry generated for inner class
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.io.BufferedInputStream;

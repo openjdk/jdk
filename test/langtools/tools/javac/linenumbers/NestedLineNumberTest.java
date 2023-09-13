@@ -2,11 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8061778
  * @summary  Wrong LineNumberTable for default constructors
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.util.List;

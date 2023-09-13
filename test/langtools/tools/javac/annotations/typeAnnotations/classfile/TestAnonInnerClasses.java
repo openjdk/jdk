@@ -33,12 +33,8 @@
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;

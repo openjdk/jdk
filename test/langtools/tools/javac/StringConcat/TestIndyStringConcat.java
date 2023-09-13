@@ -33,12 +33,8 @@ import java.io.File;
  * @test
  * @bug     8148483 8151516 8151223
  * @summary Test that StringConcat is working for JDK >= 9
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *
  * @clean *
  * @compile -source 8 -target 8 TestIndyStringConcat.java

@@ -25,11 +25,7 @@
  * @test
  * @bug 8134759
  * @summary Add LineNumberTable attribute for return bytecodes split around finally code
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.lang.classfile.*;

@@ -26,13 +26,9 @@
  * @bug 8256266 8281238
  * @summary Verify annotations work correctly on binding variables
  * @library /tools/javac/lib
+ * @enablePreview
  * @modules java.compiler
  *          jdk.compiler
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @compile Annotations.java

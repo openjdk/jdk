@@ -25,12 +25,8 @@
  * @test
  * @bug 7166455
  * @summary javac doesn't set ACC_STRICT bit on <clinit> for strictfp class
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -source 16 -target 16 CheckACC_STRICTFlagOnclinitTest.java
  * @run main CheckACC_STRICTFlagOnclinitTest
  */

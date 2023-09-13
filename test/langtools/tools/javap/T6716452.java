@@ -24,11 +24,7 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.io.*;

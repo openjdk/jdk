@@ -26,13 +26,9 @@
  * @bug 8171177
  * @summary Verify that ModuleResolution attribute flags are honored.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.module
  *          jdk.jdeps/com.sun.tools.javap

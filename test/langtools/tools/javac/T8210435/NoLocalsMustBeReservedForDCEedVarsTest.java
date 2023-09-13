@@ -25,12 +25,8 @@
  * @test
  * @summary
  * @library /tools/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          jdk.compiler/com.sun.tools.javac.api
+ * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap

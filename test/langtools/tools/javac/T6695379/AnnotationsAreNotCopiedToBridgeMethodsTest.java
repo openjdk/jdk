@@ -26,12 +26,8 @@
  * @bug 6695379
  * @summary Copy method annotations and parameter annotations to synthetic
  * bridge methods
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main AnnotationsAreNotCopiedToBridgeMethodsTest
  */

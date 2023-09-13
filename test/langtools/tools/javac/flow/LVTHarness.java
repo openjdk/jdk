@@ -28,12 +28,8 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */

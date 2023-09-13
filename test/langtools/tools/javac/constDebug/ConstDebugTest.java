@@ -25,11 +25,7 @@
  * @test
  * @bug 4645152 4785453
  * @summary javac compiler incorrectly inserts <clinit> when -g is specified
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @run compile -g ConstDebugTest.java
  * @run main ConstDebugTest
  */

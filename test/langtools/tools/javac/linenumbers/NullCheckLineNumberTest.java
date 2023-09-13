@@ -2,11 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8172880
  * @summary  Wrong LineNumberTable for synthetic null checks
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.lang.classfile.*;

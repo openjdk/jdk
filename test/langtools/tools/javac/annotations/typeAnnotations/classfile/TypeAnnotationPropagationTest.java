@@ -25,12 +25,8 @@
  * @test
  * @bug 8144185
  * @summary javac produces incorrect RuntimeInvisibleTypeAnnotations length attribute
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import static java.lang.annotation.ElementType.TYPE_USE;

@@ -29,11 +29,7 @@ import java.lang.classfile.attribute.*;
  * @test PresenceInner
  * @bug 6843077
  * @summary test that annotations in inner types count only once
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class PresenceInner {

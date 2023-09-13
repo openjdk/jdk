@@ -26,11 +26,7 @@
  * @bug 8009170
  * @summary Regression: javac generates redundant bytecode in assignop involving
  * arrays
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @run main RedundantByteCodeInArrayTest
  */
 

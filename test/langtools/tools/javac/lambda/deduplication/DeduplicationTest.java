@@ -24,7 +24,7 @@
 /**
  * @test 8200301 8201194
  * @summary deduplicate lambda methods with the same body, target type, and captured state
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  *     java.base/jdk.internal.classfile.attribute
  *     java.base/jdk.internal.classfile.constantpool
  *     java.base/jdk.internal.classfile.instruction

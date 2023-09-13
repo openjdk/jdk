@@ -25,12 +25,8 @@
  * @test
  * @bug 8029800
  * @summary String.toLowerCase()/toUpperCase is generally dangerous, check it is not used in langtools
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.io.*;

@@ -34,12 +34,8 @@ import java.lang.classfile.attribute.*;
  * @test NoTargetAnnotations
  * @summary test that annotations with no Target meta type is emitted
  *          only once as declaration annotation
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 public class NoTargetAnnotations extends ClassfileTestHelper {
 

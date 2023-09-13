@@ -27,17 +27,13 @@
  * @author Jean-Francois Denise
  * @library ../../lib
  * @build tests.*
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.jlink/jdk.tools.jmod
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          jdk.compiler
  * @run main StripJavaDebugAttributesPluginTest
  */

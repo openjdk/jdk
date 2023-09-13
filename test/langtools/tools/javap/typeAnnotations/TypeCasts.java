@@ -30,11 +30,7 @@ import java.io.*;
  * @bug 6843077
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class TypeCasts {

@@ -25,6 +25,7 @@
  * @test
  * @bug 8210009
  * @summary Source Launcher classloader should support getResource and getResourceAsStream
+ * @enablePreview
  * @modules jdk.compiler
  * @library /tools/lib
  * @build toolbox.JavaTask toolbox.ToolBox

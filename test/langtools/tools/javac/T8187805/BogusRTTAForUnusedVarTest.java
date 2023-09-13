@@ -24,12 +24,8 @@
 /*
  * @test 8187805
  * @summary bogus RuntimeVisibleTypeAnnotations for unused local in a block
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main BogusRTTAForUnusedVarTest
  */

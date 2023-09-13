@@ -25,11 +25,7 @@
  * @test
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
  * @run main LambdaTestStrictFPFlag
  */

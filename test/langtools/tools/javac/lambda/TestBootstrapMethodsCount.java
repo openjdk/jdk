@@ -26,12 +26,8 @@
  * @bug 8129547
  * @summary Excess entries in BootstrapMethods with the same (bsm, bsmKind, bsmStaticArgs), but different dynamicArgs
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.jvm

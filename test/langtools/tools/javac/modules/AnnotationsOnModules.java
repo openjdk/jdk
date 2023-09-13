@@ -26,13 +26,9 @@
  * @bug 8159602 8170549 8171255 8171322 8254023
  * @summary Test annotations on module declaration.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationsOnModules

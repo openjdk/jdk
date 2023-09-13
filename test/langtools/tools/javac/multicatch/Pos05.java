@@ -25,12 +25,8 @@
  * @test
  * @bug 6943289
  * @summary  Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main Pos05
  */
 

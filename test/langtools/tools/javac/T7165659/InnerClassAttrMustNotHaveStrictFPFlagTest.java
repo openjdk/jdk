@@ -25,12 +25,8 @@
  * @test
  * @bug 7165659
  * @summary javac incorrectly sets strictfp access flag on inner-classes
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.io.File;

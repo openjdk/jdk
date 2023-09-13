@@ -25,12 +25,8 @@
  * @test
  * @bug 8231827
  * @summary Ensure the LV table entries are generated for bindings
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */

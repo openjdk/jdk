@@ -2,12 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8050993
  * @summary Verify that the condition in the conditional lexpression gets a LineNumberTable entry
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g T8050993.java
  * @run main T8050993
  */

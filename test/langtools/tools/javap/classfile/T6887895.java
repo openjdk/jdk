@@ -25,11 +25,7 @@
  * @test
  * @bug 6887895
  * @summary test getting constantpool elements' basename through asInternalName() API
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.io.*;

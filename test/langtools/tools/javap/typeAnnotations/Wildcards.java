@@ -29,11 +29,7 @@ import java.lang.classfile.attribute.*;
  * @test Wildcards
  * @bug 6843077
  * @summary test that annotations target wildcards get emitted to classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 public class Wildcards {
     public static void main(String[] args) throws Exception {

@@ -28,12 +28,8 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @bug 8006732 8006775 8042451
  * @summary Test population of reference info for multicatch exception parameters
  * @author Werner Dietl
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MultiCatch.java
  * @run main Driver MultiCatch
  */

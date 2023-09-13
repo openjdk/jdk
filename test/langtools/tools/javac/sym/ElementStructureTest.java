@@ -26,16 +26,12 @@
  * @bug 8072480 8203814
  * @summary Check the platform classpath contains the correct elements.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox ElementStructureTest

@@ -26,12 +26,8 @@
  * @bug 8027789
  * @summary check that the direct superclass is used as the site when calling
  *          a superclass' method
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile Base.java NonDirectSuper.java
  * @run main test.NonDirectSuper
  */
