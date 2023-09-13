@@ -514,7 +514,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int n = srcEnd - srcBegin;
         Preconditions.checkFromToIndex(dstBegin, dstBegin + n, dst.length, Preconditions.IOOBE_FORMATTER);
         if (isLatin1()) {
-            DecimalDigits.getCharsLatin1(value, srcBegin, srcEnd, dst, dstBegin);
+            StringLatin1.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         } else {
             StringUTF16.getChars(value, srcBegin, srcEnd, dst, dstBegin);
         }
