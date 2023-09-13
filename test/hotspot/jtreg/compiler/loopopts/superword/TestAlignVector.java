@@ -937,7 +937,8 @@ public class TestAlignVector {
                   IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // require avx to ensure vectors are larger than what unrolling produces
     static Object[] test13aIL(int[] a, long[] b) {
         for (int i = 0; i < RANGE; i++) {
             a[i]++;
@@ -1003,7 +1004,8 @@ public class TestAlignVector {
                   IRNode.ADD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.ADD_VL, IRNode.VECTOR_SIZE + "min(max_int, max_long)", "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
+    // require avx to ensure vectors are larger than what unrolling produces
     static Object[] test13bIL(int[] a, long[] b) {
         for (int i = 1; i < RANGE; i++) {
             a[i]++;
@@ -1340,8 +1342,9 @@ public class TestAlignVector {
     @IR(counts = {IRNode.LOAD_VECTOR_L, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.ADD_VL,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIfAnd = {"AlignVector", "false", "MaxVectorSize", ">=32"})
+    // Ensure vector width is large enough to fit 32 byte for longs.
     @IR(counts = {IRNode.LOAD_VECTOR_L, "= 0",
                   IRNode.ADD_VL, "= 0",
                   IRNode.STORE_VECTOR, "= 0"},
