@@ -108,7 +108,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.MUL_VI, ">0"},
-	applyIf = {"AlignVector", "false"})
+        applyIf = {"AlignVector", "false"})
     // AlignVector does not allow invariants
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
@@ -123,7 +123,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.MUL_VI, ">0"},
-	applyIf = {"AlignVector", "false"})
+        applyIf = {"AlignVector", "false"})
     // AlignVector does not allow invariants
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
@@ -138,7 +138,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.MUL_VI, ">0"},
-	applyIf = {"AlignVector", "false"})
+        applyIf = {"AlignVector", "false"})
     // AlignVector does not allow invariants
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];
@@ -153,7 +153,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0",
                   IRNode.SUB_VI, ">0"},
-	applyIf = {"AlignVector", "false"})
+        applyIf = {"AlignVector", "false"})
     // AlignVector does not allow invariants
     public int[] indexWithTwoInvariants() {
         int[] res = new int[SIZE];
