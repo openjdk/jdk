@@ -181,8 +181,8 @@
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
  *   <li>{@link java.lang.classfile.Classfile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link java.lang.classfile.Classfile.UnknownAttributesOption}
- * -- processing of unrecognized attributes (default is {@code PASS_UNKNOWN_ATTRIBUTES})</li>
+ *   <li>{@link java.lang.classfile.Classfile.AttributesProcessingOption}
+ * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
  *   <li>{@link java.lang.classfile.Classfile.ConstantPoolSharingOption}}
  * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
  *   <li>{@link java.lang.classfile.Classfile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}

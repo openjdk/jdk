@@ -58,7 +58,7 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
     int size();
 
     /**
-     * @{return an iterator over pool entries}
+     * {@return an iterator over pool entries}
      */
     @Override
     default Iterator<PoolEntry> iterator() {
