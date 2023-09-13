@@ -3839,7 +3839,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //   (e + lim0 + N) % V = 0
   //   N = (V - (e + lim0)) % V
   //   lim = lim0 + (-e - lim0) % V
-  // 
+  //
   // Case 2: scale < 0 && stride > 0 (i.e. N >= 0)
   //   (e - lim0 - N) % V = 0
   //   N = (e - lim0) % V
@@ -3983,7 +3983,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* pm_e_pm_lim0_mod_V = new AndINode(pm_e_pm_lim0, mask_V);
   _igvn.register_new_node_with_optimizer(pm_e_pm_lim0_mod_V);
   _phase->set_ctrl(pm_e_pm_lim0_mod_V, pre_ctrl);
- 
+
   // 5: compute new limit
   Node* lim = nullptr;
   if (stride < 0) {

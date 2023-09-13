@@ -167,7 +167,7 @@ public class TestAlignVector {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             Object[] gold = test.run();
-	    golds.put(name, gold);
+            golds.put(name, gold);
         }
     }
 
