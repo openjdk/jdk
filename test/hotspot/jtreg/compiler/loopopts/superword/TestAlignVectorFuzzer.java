@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
- *                                 -XX:LoopUnrollLimit=1000
+ *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
@@ -44,7 +44,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                                 -XX:LoopUnrollLimit=1000
+ *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 compiler.loopopts.superword.TestAlignVectorFuzzer
  */
@@ -58,7 +58,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:+AlignVector -XX:+VerifyAlignVector
- *                                 -XX:LoopUnrollLimit=1000
+ *                                 -XX:LoopUnrollLimit=250
  *                                 -XX:CompileCommand=VectorizeDebug,compiler.loopopts.superword.TestAlignVectorFuzzer::test*,128
  *                                 -XX:CompileCommand=printcompilation,compiler.loopopts.superword.TestAlignVectorFuzzer::*
  *                                 -XX:-TieredCompilation -Xbatch

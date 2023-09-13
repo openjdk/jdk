@@ -76,7 +76,7 @@ public class TestAlignVector {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-XX:LoopUnrollLimit=1000");
+                                   "-XX:LoopUnrollLimit=250");
     }
 
     public TestAlignVector() {
