@@ -4190,16 +4190,13 @@ void StubGenerator::generate_compiler_stubs() {
       }
     // Get addresses for avx512 sort and partition routines
     if (libsimdsort != nullptr) {
-      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "x86_64" JNI_LIB_SUFFIX, p2i(libsimdsort));
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
       snprintf(ebuf_, sizeof(ebuf_), "avx512_sort");
-      StubRoutines::_arraysort = (address)os::dll_lookup(libsimdsort, ebuf_);
+      StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_single");
-      StubRoutines::_array_partition_single = (address)os::dll_lookup(libsimdsort, ebuf_);
-
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition_dual");
-      StubRoutines::_array_partition_dual = (address)os::dll_lookup(libsimdsort, ebuf_);
+      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition");
+      StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
 
     }
   }

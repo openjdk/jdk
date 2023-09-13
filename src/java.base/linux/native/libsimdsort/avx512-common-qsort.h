@@ -436,9 +436,13 @@ void avx512_single_pivot_partition(T *arr, int64_t from_index, int64_t to_index,
 }
 
 template <typename T>
-void inline avx512_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, bool is_dual_pviot) {
-    if(is_dual_pviot) avx512_dual_pivot_partition<T>(arr, from_index, to_index, pivot_indices);
-        else avx512_single_pivot_partition<T>(arr, from_index, to_index, pivot_indices);
+void inline avx512_fast_partition(T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot1, int64_t index_pivot2) {
+    if (index_pivot1 != index_pivot2) {
+        avx512_dual_pivot_partition<T>(arr, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+    }
+    else {
+        avx512_single_pivot_partition<T>(arr, from_index, to_index, pivot_indices, index_pivot1);
+    }
 }
 
 template <typename T>
@@ -456,7 +460,7 @@ void inline insertion_sort(T *arr, int32_t from_index, int32_t to_index) {
 }
 
 template <typename T>
-void inline avx512_fastsort(T *arr, int64_t from_index, int64_t to_index, const int32_t INS_SORT_THRESHOLD) {
+void inline avx512_fast_sort(T *arr, int64_t from_index, int64_t to_index, const int32_t INS_SORT_THRESHOLD) {
     int32_t size = to_index - from_index;
 
     if (size <= INS_SORT_THRESHOLD) {

@@ -597,10 +597,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_min_strict:
   case vmIntrinsics::_max_strict:
   case vmIntrinsics::_arraycopy:
-  case vmIntrinsics::_arraySortMI:
-  case vmIntrinsics::_arraySortI:
-  case vmIntrinsics::_arrayPartitionSP:
-  case vmIntrinsics::_arrayPartitionDP:
+  case vmIntrinsics::_arraySort:
+  case vmIntrinsics::_arrayPartition:
   case vmIntrinsics::_indexOfL:
   case vmIntrinsics::_indexOfU:
   case vmIntrinsics::_indexOfUL:

@@ -293,11 +293,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySortMI:
-  case vmIntrinsics::_arraySortI:               return inline_arraysort();
-
-  case vmIntrinsics::_arrayPartitionSP:         return inline_array_partition(false /* single pivot*/);
-  case vmIntrinsics::_arrayPartitionDP:         return inline_array_partition(true /* dual pivot*/);
+  case vmIntrinsics::_arraySort:                return inline_array_sort();
+  case vmIntrinsics::_arrayPartition:           return inline_array_partition();
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5370,7 +5367,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 }
 
 //------------------------------inline_array_partition-----------------------
-bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
+bool LibraryCallKit::inline_array_partition() {
 
   address stubAddr = nullptr;
   const char *stubName;
@@ -5382,12 +5379,12 @@ bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
   Node* indexPivot1     = argument(6);
-  Node* indexPivot2     = is_dual_pivot? argument(7) : nullptr;
+  Node* indexPivot2     = argument(7);
 
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
-  stubAddr = StubRoutines::select_array_partition_function(is_dual_pivot);
+  stubAddr = StubRoutines::select_array_partition_function();
   // stub not loaded
   if (stubAddr == nullptr) {
     return false;
@@ -5412,7 +5409,7 @@ bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
   Node* elemType = intcon(bt);
 
   // Call the stub
-  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(is_dual_pivot),
+  make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_partition_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
                     obj_adr, elemType, fromIndex, toIndex, pivotIndices_adr, indexPivot1, indexPivot2);
 
@@ -5424,8 +5421,8 @@ bool LibraryCallKit::inline_array_partition(bool is_dual_pivot) {
 }
 
 
-//------------------------------inline_arraysort-----------------------
-bool LibraryCallKit::inline_arraysort() {
+//------------------------------inline_array_sort-----------------------
+bool LibraryCallKit::inline_array_sort() {
 
   address stubAddr = nullptr;
   const char *stubName;
