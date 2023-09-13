@@ -145,10 +145,6 @@ class ImmutableGregorianDate extends BaseCalendar.Date {
         return date.isNormalized();
     }
 
-    public boolean isStandardTime() {
-        return date.isStandardTime();
-    }
-
     public boolean isDaylightTime() {
         return date.isDaylightTime();
     }

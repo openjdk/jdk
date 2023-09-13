@@ -289,15 +289,7 @@ public abstract class CalendarDate implements Cloneable {
         return normalized;
     }
 
-
-    public boolean isStandardTime() {
-        return false;
-    }
-
     public boolean isDaylightTime() {
-        if (isStandardTime()) {
-            return false;
-        }
         return daylightSaving != 0;
     }
 
