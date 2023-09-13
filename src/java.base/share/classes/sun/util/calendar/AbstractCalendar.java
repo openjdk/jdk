@@ -165,16 +165,15 @@ public abstract class AbstractCalendar extends CalendarSystem {
             if (date.isNormalized()) {
                 return ms - date.getZoneOffset();
             }
-            // adjust time zone and daylight saving
-            int[] offsets = new int[2];
 
+            // adjust time zone and daylight saving
             // 1) 2:30am during starting-DST transition is
             //    intrepreted as 3:30am DT
             // 2) 5:00pm during DST is intrepreted as 5:00pm DT
             // 3) 1:30am during ending-DST transition is interpreted
             //    as 1:30am DT/0:30am ST (before transition)
-            if (zi instanceof ZoneInfo) {
-                zoneOffset = ((ZoneInfo)zi).getOffsetsByWall(ms, offsets);
+            if (zi instanceof ZoneInfo zInfo) {
+                zoneOffset = zInfo.getOffsetsByWall(ms, new int[2]);
             } else {
                 zoneOffset = zi.getOffset(ms - zi.getRawOffset());
             }
