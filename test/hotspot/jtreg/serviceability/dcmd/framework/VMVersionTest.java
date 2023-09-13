@@ -43,6 +43,7 @@ import org.testng.annotations.Test;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @library /test/lib
+ *          /vmTestbase
  * @requires vm.flagless
  * @run testng/othervm -XX:+UsePerfData VMVersionTest
  */
