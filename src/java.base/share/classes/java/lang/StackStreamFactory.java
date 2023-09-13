@@ -69,10 +69,12 @@ final class StackStreamFactory {
     // lazily add subclasses when they are loaded.
     private static final Set<Class<?>> stackWalkImplClasses = init();
 
+    // Number of elements in the buffer reserved for VM to use
+    private static final int RESERVED_ELEMENTS = 1;
+    private static final int MIN_BATCH_SIZE    = RESERVED_ELEMENTS + 2;
     private static final int SMALL_BATCH       = 8;
     private static final int BATCH_SIZE        = 32;
     private static final int LARGE_BATCH_SIZE  = 256;
-    private static final int MIN_BATCH_SIZE    = SMALL_BATCH;
 
     // These flags must match the values maintained in the VM
     @Native private static final int DEFAULT_MODE              = 0x0;
@@ -196,7 +198,7 @@ final class StackStreamFactory {
         protected abstract int batchSize(int lastBatchFrameCount);
 
         /*
-         * Returns the next batch size, always >= minimum batch size (32)
+         * Returns the next batch size, always >= minimum batch size
          *
          * Subclass may override this method if the minimum batch size is different.
          */
@@ -538,8 +540,7 @@ final class StackStreamFactory {
         protected int batchSize(int lastBatchFrameCount) {
             if (lastBatchFrameCount == 0) {
                 // First batch, use estimateDepth if not exceed the large batch size
-                // and not too small
-                int initialBatchSize = Math.max(walker.estimateDepth(), SMALL_BATCH);
+                int initialBatchSize = Math.max(walker.estimateDepth()+RESERVED_ELEMENTS, MIN_BATCH_SIZE);
                 return Math.min(initialBatchSize, LARGE_BATCH_SIZE);
             } else {
                 if (lastBatchFrameCount > BATCH_SIZE) {
@@ -747,19 +748,31 @@ final class StackStreamFactory {
             return n;
         }
 
+        /*
+         * Typically finding the caller class only needs to walk two stack frames
+         * 0: StackWalker::getCallerClass
+         * 1: API
+         * 2: caller class
+         *
+         * So start the initial batch size with the minimum size.
+         */
         @Override
         protected void initFrameBuffer() {
-            this.frameBuffer = new ClassFrameBuffer(walker, getNextBatchSize());
+            this.frameBuffer = new ClassFrameBuffer(walker, MIN_BATCH_SIZE);
         }
 
         @Override
         protected int batchSize(int lastBatchFrameCount) {
-            return MIN_BATCH_SIZE;
+            // this method is only called when the caller class is not found in
+            // the first batch. getCallerClass may be invoked via core reflection.
+            // So increase the next batch size as there may be implementation-specific
+            // frames before reaching the caller class's frame.
+            return SMALL_BATCH;
         }
 
         @Override
         protected int getNextBatchSize() {
-            return MIN_BATCH_SIZE;
+            return SMALL_BATCH;
         }
     }
 
@@ -785,7 +798,7 @@ final class StackStreamFactory {
      * Each specialized AbstractStackWalker subclass may subclass the FrameBuffer.
      */
     abstract static class FrameBuffer<F> {
-        static final int START_POS = 2;     // 0th and 1st elements are reserved
+        static final int START_POS = RESERVED_ELEMENTS;
 
         // buffers for VM to fill stack frame info
         int currentBatchSize;    // current batch size
