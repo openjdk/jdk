@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.util;
+package jdk.internal.util;
 
 import java.lang.invoke.MethodHandle;
 
@@ -33,7 +33,7 @@ import java.lang.invoke.MethodHandle;
  *
  * @since 21
  */
-sealed interface Digits permits DecimalDigits, HexDigits, OctalDigits {
+public sealed interface Digits permits DecimalDigits, HexDigits, OctalDigits {
     /**
      * Insert digits for long value in buffer from high index to low index.
      *
