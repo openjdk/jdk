@@ -31,18 +31,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Classfile;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
+import jdk.internal.access.SharedSecrets;
 
 import static java.lang.classfile.Classfile.ACC_STATIC;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Classfile;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
