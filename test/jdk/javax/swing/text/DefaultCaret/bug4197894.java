@@ -50,7 +50,7 @@ public class bug4197894 {
     public static void main(String[] args) throws Exception {
         try {
             Robot robot = new Robot();
-            robot.setAutoDelay(100);
+            robot.setAutoDelay(50);
             robot.setAutoWaitForIdle(true);
 
             SwingUtilities.invokeAndWait(bug4197894::createAndShowUI);
