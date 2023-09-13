@@ -3076,33 +3076,43 @@ C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
   }
 C2V_END
 
-C2V_VMENTRY_0(jlong, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
-                 jint bci, jlong buffer))
+C2V_VMENTRY(void, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
+                 jint bci, jlongArray oop_map_handle))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
   if (bci < 0 || bci >= method->code_size()) {
-    JVMCI_THROW_MSG_0(IllegalArgumentException,
+    JVMCI_THROW_MSG(IllegalArgumentException,
                 err_msg("bci %d is out of bounds [0 .. %d)", bci, method->code_size()));
   }
   InterpreterOopMap mask;
   OopMapCache::compute_one_oop_map(method, bci, &mask);
   if (!mask.has_valid_mask()) {
-    JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("bci %d is not valid", bci));
+    JVMCI_THROW_MSG(IllegalArgumentException, err_msg("bci %d is not valid", bci));
   }
+  if (mask.number_of_entries() == 0) {
+    return;
+  }
+
   int nlocals = method->max_locals();
-  jlong liveness = 0L;
-  // stringStream st;
-  // st.print("BitMap[%s@%d, nlocals:%d]:", method->name_and_sig_as_C_string(), bci, nlocals);
-  BitMapView bm = BitMapView((BitMap::bm_word_t*) (nlocals <= 64 ? (jlong) &liveness : buffer), nlocals);
-  for (int i = 0; i < nlocals ; i++ ) {
+  int nwords = ((nlocals - 1) / 64) + 1;
+  JVMCIPrimitiveArray oop_map = JVMCIENV->wrap(oop_map_handle);
+  int oop_map_len = JVMCIENV->get_length(oop_map);
+  if (nwords > oop_map_len) {
+    JVMCI_THROW_MSG(IllegalArgumentException,
+                err_msg("oop map too short: %d > %d", nwords, oop_map_len));
+  }
+
+  jlong* oop_map_buf = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jlong, nwords);
+  if (oop_map_buf == nullptr) {
+    JVMCI_THROW_MSG(InternalError, err_msg("could not allocate %d longs", nwords));
+  }
+
+  BitMapView oop_map_view = BitMapView((BitMap::bm_word_t*) oop_map_buf, nwords * BitsPerLong);
+  for (int i = 0; i < nlocals; i++) {
     if (mask.is_oop(i)) {
-      bm.set_bit(i);
-      // st.print(" %d", i);
+      oop_map_view.set_bit(i);
     }
   }
-  // st.print(" [liveness: 0x" JULONG_FORMAT_X "]", (julong) liveness);
-  // tty->print_raw_cr(st.as_string());
-  // tty->flush();
-  return liveness;
+  JVMCIENV->copy_longs_from((jlong*)oop_map_buf, oop_map, 0, nwords);
 C2V_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
@@ -3262,7 +3272,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
-  {CC "getLiveObjectLocalsAt",                        CC "(" HS_METHOD2 "IJ)J",                                                             FN_PTR(getLiveObjectLocalsAt)},
+  {CC "getLiveObjectLocalsAt",                        CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getLiveObjectLocalsAt)},
 };
 
 int CompilerToVM::methods_count() {

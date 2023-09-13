@@ -194,14 +194,14 @@ InterpreterOopMap::~InterpreterOopMap() {
 bool InterpreterOopMap::is_empty() const {
   bool result = _method == nullptr;
   assert(_method != nullptr || (_bci == 0 &&
-    (_mask_size == 0 || _mask_size == INT_MAX) &&
+    (_mask_size == 0 || _mask_size == USHRT_MAX) &&
     _bit_mask[0] == 0), "Should be completely empty");
   return result;
 }
 
 void InterpreterOopMap::initialize() {
   _method    = nullptr;
-  _mask_size = INT_MAX;  // This value should cause a failure quickly
+  _mask_size = USHRT_MAX;  // This value should cause a failure quickly
   _bci       = 0;
   _expression_stack_size = 0;
   _num_oops  = 0;

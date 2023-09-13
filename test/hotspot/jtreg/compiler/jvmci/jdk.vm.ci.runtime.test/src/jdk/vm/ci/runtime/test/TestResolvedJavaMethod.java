@@ -35,6 +35,7 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
@@ -103,6 +104,7 @@ import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotati
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation2;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation3;
 import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -607,85 +609,35 @@ public class TestResolvedJavaMethod extends MethodUniverse {
     }
 
     public static void methodWithManyArgs(
-        Object o1, int i1,
-        Object o2, int i2,
-        Object o3, int i3,
-        Object o4, int i4,
-        Object o5, int i5,
-        Object o6, int i6,
-        Object o7, int i7,
-        Object o8, int i8,
-        Object o9, int i9,
-        Object o10, int i10,
-        Object o11, int i11,
-        Object o12, int i12,
-        Object o13, int i13,
-        Object o14, int i14,
-        Object o15, int i15,
-        Object o16, int i16,
-        Object o17, int i17,
-        Object o18, int i18,
-        Object o19, int i19,
-        Object o20, int i20,
-        Object o21, int i21,
-        Object o22, int i22,
-        Object o23, int i23,
-        Object o24, int i24,
-        Object o25, int i25,
-        Object o26, int i26,
-        Object o27, int i27,
-        Object o28, int i28,
-        Object o29, int i29,
-        Object o30, int i30,
-        Object o31, int i31,
-        Object o32, int i32,
-        Object o33, int i33,
-        Object o34, int i34,
-        Object o35, int i35,
-        Object o36, int i36,
-        Object o37, int i37,
-        Object o38, int i38,
-        Object o39, int i39,
-        Object o40, int i40,
-        Object o41, int i41,
-        Object o42, int i42,
-        Object o43, int i43,
-        Object o44, int i44,
-        Object o45, int i45,
-        Object o46, int i46,
-        Object o47, int i47,
-        Object o48, int i48,
-        Object o49, int i49,
-        Object o50, int i50,
-        Object o51, int i51,
-        Object o52, int i52,
-        Object o53, int i53,
-        Object o54, int i54,
-        Object o55, int i55,
-        Object o56, int i56,
-        Object o57, int i57,
-        Object o58, int i58,
-        Object o59, int i59) {
-            System.out.println("" + o1 + i1);
-            System.out.println("" + o2 + i2);
-            System.out.println("" + o3 + i3);
-            System.out.println("" + o4 + i4);
-            System.out.println("" + o5 + i5);
-            System.out.println("" + o6 + i6);
-            System.out.println("" + o7 + i7);
-            System.out.println("" + o8 + i8);
-            System.out.println("" + o9 + i9);
-            System.out.println("" + o10 + i10);
-            System.out.println("" + o11 + i11);
-            System.out.println("" + o12 + i12);
-            System.out.println("" + o13 + i13);
-            System.out.println("" + o14 + i14);
-            System.out.println("" + o15 + i15);
-            System.out.println("" + o16 + i16);
-            System.out.println("" + o17 + i17);
-            System.out.println("" + o58 + i58);
-            System.out.println("" + o59 + i59);
+        Object   o0, int   i1, int  i2,  int   i3, int   i4, int   i5, int   i6, int  i7,
+           int   i8, int   i9, int  i10, int  i11, int  i12, int  i13, int  i14, int  i15,
+           int  i16, int  i17, int  i18, int  i19, int  i20, int  i21, int  i22, int  i23,
+           int  i24, int  i25, int  i26, int  i27, int  i28, int  i29, int  i30, int  i31,
+           int  i32, int  i33, int  i34, int  i35, int  i36, int  i37, int  i38, int  i39,
+           int  i40, int  i41, int  i42, int  i43, int  i44, int  i45, int  i46, int  i47,
+           int  i48, int  i49, int  i50, int  i51, int  i52, int  i53, int  i54, int  i55,
+           int  i56, int  i57, int  i58, int  i59, int  i60, int  i61, int  i62, int  i63,
+        Object  o64, int  i65, int  i66, int  i67, int  i68, int  i69, int  i70, int  i71,
+           int  i72, int  i73, int  i74, int  i75, int  i76, int  i77, int  i78, int  i79,
+           int  i80, int  i81, int  i82, int  i83, int  i84, int  i85, int  i86, int  i87,
+           int  i88, int  i89, int  i90, int  i91, int  i92, int  i93, int  i94, int  i95,
+           int  i96, int  i97, int  i98, int  i99, int i100, int i101, int i102, int i103,
+           int i104, int i105, int i106, int i107, int i108, int i109, int i110, int i111,
+           int i112, int i113, int i114, int i115, int i116, int i117, int i118, int i119,
+           int i120, int i121, int i122, int i123, int i124, int i125, int i126, int i127,
+        Object o128)
+    {
+        o0.hashCode();
+        o64.hashCode();
+        if (o128 != null) {
+            Object t1 = "tmp val";
+            t1.hashCode();
+        } else {
+            int t1 = 42 + i1;
+            String.valueOf(t1);
         }
+        o128.hashCode();
+    }
 
     private static Map<String, ResolvedJavaMethod> buildMethodMap(ResolvedJavaType type) {
         Map<String, ResolvedJavaMethod> methodMap = new HashMap<>();
@@ -716,6 +668,9 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         // Add this class so that methodWithManyArgs is processed
         allClasses.add(getClass());
 
+        boolean[] processedMethodWithManyArgs = {false};
+        final boolean debug = false;
+
         for (Class<?> c : allClasses) {
             if (c.isArray() || c.isPrimitive() || c.isHidden()) {
                 continue;
@@ -726,34 +681,33 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             for (MethodModel cm : cf.methods()) {
                 cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
                     String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
-                    ResolvedJavaMethod m = Objects.requireNonNull(methodMap.get(key));
+                    HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) Objects.requireNonNull(methodMap.get(key));
                     int maxLocals = m.getMaxLocals();
-
-                    // Requesting an oop map for a method with 0 locals must throw an exception
-                    if (maxLocals == 0) {
-                        try {
-                            m.getLiveObjectLocalsAt(0, null);
-                            throw new AssertionError("expected exception for method %s with no locals".formatted(m.format("%H.%n(%p)")));
-                        } catch(IllegalArgumentException e) {
-                            return;
-                        }
-                    }
 
                     int bci = 0;
                     for (CodeElement i : codeAttr.elementList()) {
                         if (i instanceof Instruction ins) {
-                            BitSet bigOopMap = maxLocals <= 64 ? null : new BitSet(maxLocals);
-                            long oopMap = m.getLiveObjectLocalsAt(bci, bigOopMap);
-                            if (maxLocals > 64) {
-                                Assert.assertEquals(m.toString(), oopMap, 0L);
-                                Assert.assertNotEquals(m.toString(), bigOopMap.cardinality(), 0);
+                            BitSet oopMap = m.getLiveObjectLocalsAt(bci);
+                            if (c == getClass() && m.getName().equals("methodWithManyArgs")) {
+                                if (debug) {
+                                    System.out.printf("%s@%d [%d]: %s%n", m.getName(), bci, maxLocals, oopMap);
+                                    System.out.printf("%s@%d [%d]: %s%n", m.getName(), bci, maxLocals, ins);
+                                }
+                                // Assumes stability of javac output
+                                String where = "methodWithManyArgs@" + bci;
+                                if (bci >= 21 && bci <= 27) {
+                                    Assert.assertEquals(where, "{0, 64, 128, 129}", oopMap.toString());
+                                } else {
+                                    Assert.assertEquals(where, "{0, 64, 128}", oopMap.toString());
+                                }
+                                processedMethodWithManyArgs[0] = true;
                             }
 
                             // Requesting an oop map at an invalid BCI must throw an exception
                             if (ins.sizeInBytes() > 1) {
                                 try {
-                                    m.getLiveObjectLocalsAt(bci + 1, bigOopMap);
-                                    throw new AssertionError("expected exception for illegal bci %d in %s".formatted(bci + 1, m.format("%H.%n(%p)")));
+                                    oopMap = m.getLiveObjectLocalsAt(bci + 1);
+                                    throw new AssertionError("expected exception for illegal bci %d in %s: %s".formatted(bci + 1, m.format("%H.%n(%p)"), oopMap));
                                 } catch(IllegalArgumentException e) {
                                     // expected
                                 }
@@ -764,6 +718,8 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 });
             }
         }
+
+        Assert.assertTrue(processedMethodWithManyArgs[0]);
     }
 
     private Method findTestMethod(Method apiMethod) {

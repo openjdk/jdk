@@ -470,28 +470,4 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * responsibility to ensure the same speculation log is used throughout a compilation.
      */
     SpeculationLog getSpeculationLog();
-
-    /**
-     * Computes which local variables contain live object values
-     * at the instruction denoted by {@code bci}. This is the "oop map" used
-     * by the garbage collector.
-     *
-     * If {@link #getMaxLocals()} {@code <= 64}, then the oop map is encoded
-     * in the return value. Otherwise, it is copied into {@code bigOopMap}.
-     *
-     * @param bci the index of an instruction in this method's bytecodes
-     * @param bigOopMap the bit set in which the oop map is returned for
-     *         methods whose max number of local variables is {@code > 64}. It's up
-     *         to the caller to ensure this bit set is large enough and initially has
-     *         all bits set to 0.
-     * @return the oop map for methods with 64 or less max locals otherwise 0
-     * @throws NullPointerException if {@link #getMaxLocals()} {@code > 64 && bigOopMap == null}
-     * @throws IllegalArgumentException if {@link #getMaxLocals()} {@code == 0} or if
-     *         {@code bci} is not the index of a bytecode instruction
-     * @throws UnsupportedOperationException if local variable liveness is not provided
-     *         by the current JVMCI runtime
-     */
-    default long getLiveObjectLocalsAt(int bci, BitSet bigOopMap) {
-        throw new UnsupportedOperationException();
-    }
 }
