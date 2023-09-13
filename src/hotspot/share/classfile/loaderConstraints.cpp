@@ -443,6 +443,18 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
   return nullptr;
 }
 
+// Removes a class that was added to the table then class loading subsequently failed for this class.
+void LoaderConstraintTable::remove_failed_loaded_klass(InstanceKlass* klass,
+                                                       ClassLoaderData* loader) {
+
+  Symbol* name = klass->name();
+  LoaderConstraint *p = find_loader_constraint(name, loader);
+  if (p != nullptr && p->klass() != nullptr && p->klass() == klass) {
+    log_info(class, loader, constraints)("removing klass %s failed to load", name->as_C_string());
+    p->set_klass(nullptr);
+  }
+}
+
 void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
                                                      LoaderConstraint* p1,
                                                      LoaderConstraint* p2,

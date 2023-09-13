@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public:
   // Class loader constraints
   static bool check_or_update(InstanceKlass* k, ClassLoaderData* loader, Symbol* name);
 
+  static void remove_failed_loaded_klass(InstanceKlass* k, ClassLoaderData* loader);
   static void purge_loader_constraints();
 
   static void print_table_statistics(outputStream* st);
