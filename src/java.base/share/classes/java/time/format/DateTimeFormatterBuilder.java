@@ -1957,6 +1957,10 @@ public final class DateTimeFormatterBuilder {
                 return appendLocalDate()
                         .appendLiteral('T')
                         .appendLocalTime(false, 0, 0);
+            case "yyyy-MM-dd HH:mm:ss.SSS":
+                return appendLocalDate()
+                        .appendLiteral(' ')
+                        .appendLocalTime(false, 3, 3);
             case "yyyy-MM-dd'T'HH:mm:ss.SSS":
                 return appendLocalDate()
                         .appendLiteral('T')
