@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.constantpool.AnnotationConstantValueEntry;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FloatEntry;
-import jdk.internal.classfile.constantpool.IntegerEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.AnnotationConstantValueEntry;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 

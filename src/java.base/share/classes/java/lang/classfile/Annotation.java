@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 

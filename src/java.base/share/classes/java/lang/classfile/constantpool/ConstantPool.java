@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.internal.classfile.constantpool;
+package java.lang.classfile.constantpool;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.ClassReader;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.ClassReader;
 
 /**
  * Provides read access to the constant pool and bootstrap method table of a

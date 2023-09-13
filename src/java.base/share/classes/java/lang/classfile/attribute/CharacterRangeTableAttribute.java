@@ -23,11 +23,11 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 

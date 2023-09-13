@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.TransformImpl;
 
 /**

@@ -23,14 +23,14 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.impl.ClassImpl;
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 

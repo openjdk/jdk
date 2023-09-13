@@ -31,14 +31,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
 
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.Classfile.ACC_STATIC;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributeMapper;

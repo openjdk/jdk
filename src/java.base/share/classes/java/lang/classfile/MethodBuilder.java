@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ChainedMethodBuilder;
 import jdk.internal.classfile.impl.TerminalMethodBuilder;
 import java.lang.reflect.AccessFlag;

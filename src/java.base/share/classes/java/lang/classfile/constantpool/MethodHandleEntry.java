@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.constantpool;
+package java.lang.classfile.constantpool;
 
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;

@@ -27,16 +27,16 @@
  * <h2>Specific components, transformations, and tools built on top of the
  * Classfile API</h2>
  *
- * The {@code jdk.internal.classfile.components} package contains specific
+ * The {@code java.lang.classfile.components} package contains specific
  * transformation components and utility classes helping to compose very complex
  * tasks with minimal effort.
  *
  * <h3>{@link ClassPrinter}</h3>
  * <p>
  * {@link ClassPrinter} is a helper class providing seamless export of a {@link
- * jdk.internal.classfile.ClassModel}, {@link jdk.internal.classfile.FieldModel},
- * {@link jdk.internal.classfile.MethodModel}, or {@link
- * jdk.internal.classfile.CodeModel} into human-readable structured text in
+ * java.lang.classfile.ClassModel}, {@link java.lang.classfile.FieldModel},
+ * {@link java.lang.classfile.MethodModel}, or {@link
+ * java.lang.classfile.CodeModel} into human-readable structured text in
  * JSON, XML, or YAML format, or into a tree of traversable and printable nodes.
  * <p>
  * Primary purpose of {@link ClassPrinter} is to provide human-readable class
@@ -56,10 +56,10 @@
  * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
  *
  * <h3>{@link ClassRemapper}</h3>
- * ClassRemapper is a {@link jdk.internal.classfile.ClassTransform}, {@link
- * jdk.internal.classfile.FieldTransform}, {@link
- * jdk.internal.classfile.MethodTransform} and {@link
- * jdk.internal.classfile.CodeTransform} deeply re-mapping all class references
+ * ClassRemapper is a {@link java.lang.classfile.ClassTransform}, {@link
+ * java.lang.classfile.FieldTransform}, {@link
+ * java.lang.classfile.MethodTransform} and {@link
+ * java.lang.classfile.CodeTransform} deeply re-mapping all class references
  * in any form, according to given map or map function.
  * <p>
  * The re-mapping is applied to superclass, interfaces, all kinds of descriptors
@@ -79,7 +79,7 @@
  * {@snippet lang="java" class="PackageSnippets" region="allPackageRemap"}
  *
  * <h3>{@link CodeLocalsShifter}</h3>
- * {@link CodeLocalsShifter} is a {@link jdk.internal.classfile.CodeTransform}
+ * {@link CodeLocalsShifter} is a {@link java.lang.classfile.CodeTransform}
  * shifting locals to newly allocated positions to avoid conflicts during code
  * injection. Locals pointing to the receiver or to method arguments slots are
  * never shifted. All locals pointing beyond the method arguments are re-indexed
@@ -89,17 +89,17 @@
  * {@snippet lang="java" class="PackageSnippets" region="codeLocalsShifting"}
  *
  * <h3>{@link CodeRelabeler}</h3>
- * {@link CodeRelabeler} is a {@link jdk.internal.classfile.CodeTransform}
- * replacing all occurrences of {@link jdk.internal.classfile.Label} in the
+ * {@link CodeRelabeler} is a {@link java.lang.classfile.CodeTransform}
+ * replacing all occurrences of {@link java.lang.classfile.Label} in the
  * transformed code with new instances.
- * All {@link jdk.internal.classfile.instruction.LabelTarget} instructions are
+ * All {@link java.lang.classfile.instruction.LabelTarget} instructions are
  * adjusted accordingly.
  * Relabeled code graph is identical to the original.
  * <p>
  * Primary purpose of {@link CodeRelabeler} is for repeated injections of the
  * same code blocks.
  * Repeated injection of the same code block must be relabeled, so each instance
- * of {@link jdk.internal.classfile.Label} is bound in the target bytecode
+ * of {@link java.lang.classfile.Label} is bound in the target bytecode
  * exactly once.
  * <p>
  * Sample transformation relabeling all methods:
@@ -111,4 +111,4 @@
  * instrumenting transformation:
  * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;

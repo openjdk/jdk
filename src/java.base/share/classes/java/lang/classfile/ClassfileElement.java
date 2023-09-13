@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 /**
  * Immutable model for a portion of (or the entirety of) a classfile.  Elements

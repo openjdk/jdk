@@ -22,17 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Optional;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.Util;
  * Models the {@code EnclosingMethod} attribute {@jvms 4.7.7}, which can appear
  * on classes, and indicates that the class is a local or anonymous class.
  * Delivered as a {@link ClassElement} when traversing the elements of a {@link
- * jdk.internal.classfile.ClassModel}.
+ * java.lang.classfile.ClassModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

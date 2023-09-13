@@ -22,11 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements

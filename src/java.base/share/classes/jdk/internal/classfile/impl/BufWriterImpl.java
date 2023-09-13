@@ -29,12 +29,12 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.PoolEntry;
 
 public final class BufWriterImpl implements BufWriter {
 

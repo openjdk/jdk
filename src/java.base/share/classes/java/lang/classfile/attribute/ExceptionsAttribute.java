@@ -22,15 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.MethodElement;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.Util;
  * Models the {@code Exceptions} attribute {@jvms 4.7.5}, which can appear on
  * methods, and records the exceptions declared to be thrown by this method.
  * Delivered as a {@link MethodElement} when traversing the elements of a
- * {@link jdk.internal.classfile.MethodModel}.
+ * {@link java.lang.classfile.MethodModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

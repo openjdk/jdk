@@ -23,19 +23,19 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
  * Models the {@code SourceID} attribute, which can
- * appear on classes. Delivered as a {@link jdk.internal.classfile.ClassElement} when
+ * appear on classes. Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing a {@link ClassModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.

@@ -22,9 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.constantpool;
+package java.lang.classfile.constantpool;
 
-import jdk.internal.classfile.BootstrapMethodEntry;
+import java.lang.classfile.BootstrapMethodEntry;
 
 /**
  * Models a dynamic constant pool entry, which is either {@link ConstantDynamicEntry}

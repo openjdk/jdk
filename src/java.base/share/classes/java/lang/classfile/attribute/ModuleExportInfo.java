@@ -22,19 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;

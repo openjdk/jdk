@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.impl.BufWriterImpl;
 
 /**

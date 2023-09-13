@@ -28,12 +28,12 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
-import jdk.internal.classfile.constantpool.DynamicConstantPoolEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantDynamicEntry;
+import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,15 +41,15 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
 
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.components.ClassPrinter;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import static java.lang.classfile.Classfile.*;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.attribute.CodeAttribute;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.

@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.util.Optional;
 import java.util.Set;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
 
 import jdk.internal.classfile.impl.TemporaryConstantPool;

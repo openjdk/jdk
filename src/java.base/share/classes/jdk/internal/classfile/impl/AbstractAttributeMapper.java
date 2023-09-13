@@ -24,11 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.BufWriter;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.BufWriter;
 
-import static jdk.internal.classfile.Classfile.JAVA_1_VERSION;
+import static java.lang.classfile.Classfile.JAVA_1_VERSION;
 
 public abstract class AbstractAttributeMapper<T extends Attribute<T>>
         implements AttributeMapper<T> {

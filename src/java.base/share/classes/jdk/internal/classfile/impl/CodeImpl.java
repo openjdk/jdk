@@ -30,15 +30,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.*;
 
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.Classfile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute

@@ -25,8 +25,8 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 import java.util.List;
 import java.util.Optional;

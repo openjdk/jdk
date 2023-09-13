@@ -23,13 +23,13 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.List;
 
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
 
 /**

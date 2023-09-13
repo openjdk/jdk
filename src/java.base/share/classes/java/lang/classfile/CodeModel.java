@@ -23,15 +23,15 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.List;
 import java.util.Optional;
 
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.BufferedCodeBuilder;
 import jdk.internal.classfile.impl.CodeImpl;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.ExceptionCatch;
 
 /**
  * Models the body of a method (the {@code Code} attribute).  The instructions

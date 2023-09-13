@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 
 import java.lang.constant.ClassDesc;
@@ -33,13 +33,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Util;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.CodeAttribute;
 
 /**
  * A builder for classfiles.  Builders are not created directly; they are passed

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.io.IOException;
 import java.lang.constant.ClassDesc;
@@ -31,18 +31,18 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.UnknownAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ClassfileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.attribute.CharacterRangeInfo;
-import jdk.internal.classfile.attribute.LocalVariableInfo;
-import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
+import java.lang.classfile.instruction.ExceptionCatch;
 import static java.util.Objects.requireNonNull;
 
 /**

@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.util.Optional;
 
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;

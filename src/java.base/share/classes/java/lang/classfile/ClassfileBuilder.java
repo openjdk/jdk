@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 /**
  * A builder for a classfile or portion of a classfile.  Builders are rarely

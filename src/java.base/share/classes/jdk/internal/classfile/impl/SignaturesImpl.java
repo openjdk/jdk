@@ -28,10 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Collections;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Signature.*;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.*;
 
 public final class SignaturesImpl {
 

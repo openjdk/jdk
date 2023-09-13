@@ -22,12 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ConstantDesc;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.constantpool.ConstantValueEntry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -35,8 +35,8 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models the {@code ConstantValue} attribute {@jvms 4.7.2}, which can appear on
  * fields and indicates that the field's value is a constant.  Delivered as a
- * {@link jdk.internal.classfile.FieldElement} when traversing the elements of a
- * {@link jdk.internal.classfile.FieldModel}.
+ * {@link java.lang.classfile.FieldElement} when traversing the elements of a
+ * {@link java.lang.classfile.FieldModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

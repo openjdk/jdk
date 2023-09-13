@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;
 
 import java.util.Collection;
 import java.util.Optional;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.CodeStackTrackerImpl;
 
 /**

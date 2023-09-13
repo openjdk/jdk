@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.PseudoInstruction;
-import jdk.internal.classfile.attribute.CharacterRangeTableAttribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.CharacterRangeTableAttribute;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundCharacterRange;
 
@@ -70,17 +70,17 @@ public sealed interface CharacterRange extends PseudoInstruction
     /**
      * A flags word, indicating the kind of range.  Multiple flag bits
      * may be set.  Valid flags include
-     * {@link jdk.internal.classfile.Classfile#CRT_STATEMENT},
-     * {@link jdk.internal.classfile.Classfile#CRT_BLOCK},
-     * {@link jdk.internal.classfile.Classfile#CRT_ASSIGNMENT},
-     * {@link jdk.internal.classfile.Classfile#CRT_FLOW_CONTROLLER},
-     * {@link jdk.internal.classfile.Classfile#CRT_FLOW_TARGET},
-     * {@link jdk.internal.classfile.Classfile#CRT_INVOKE},
-     * {@link jdk.internal.classfile.Classfile#CRT_CREATE},
-     * {@link jdk.internal.classfile.Classfile#CRT_BRANCH_TRUE},
-     * {@link jdk.internal.classfile.Classfile#CRT_BRANCH_FALSE}.
+     * {@link java.lang.classfile.Classfile#CRT_STATEMENT},
+     * {@link java.lang.classfile.Classfile#CRT_BLOCK},
+     * {@link java.lang.classfile.Classfile#CRT_ASSIGNMENT},
+     * {@link java.lang.classfile.Classfile#CRT_FLOW_CONTROLLER},
+     * {@link java.lang.classfile.Classfile#CRT_FLOW_TARGET},
+     * {@link java.lang.classfile.Classfile#CRT_INVOKE},
+     * {@link java.lang.classfile.Classfile#CRT_CREATE},
+     * {@link java.lang.classfile.Classfile#CRT_BRANCH_TRUE},
+     * {@link java.lang.classfile.Classfile#CRT_BRANCH_FALSE}.
      *
-     * @see jdk.internal.classfile.attribute.CharacterRangeInfo#flags()
+     * @see java.lang.classfile.attribute.CharacterRangeInfo#flags()
      *
      * @return the flags
      */

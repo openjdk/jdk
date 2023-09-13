@@ -23,20 +23,20 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.List;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
  * Models the {@code RuntimeVisibleParameterAnnotations} attribute {@jvms 4.7.18}, which
- * can appear on methods. Delivered as a {@link jdk.internal.classfile.MethodElement}
+ * can appear on methods. Delivered as a {@link java.lang.classfile.MethodElement}
  * when traversing a {@link MethodModel}.
  *
  * @apiNote The attribute does not permit multiple instances in a given location.

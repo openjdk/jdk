@@ -22,12 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 /**
  * A transformation on streams of elements. Transforms are used during

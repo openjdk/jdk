@@ -23,9 +23,9 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -34,8 +34,8 @@ import java.util.List;
 /**
  * Models the {@code RuntimeVisibleAnnotations} attribute {@jvms 4.7.16}, which
  * can appear on classes, methods, and fields. Delivered as a
- * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement}, or
- * {@link jdk.internal.classfile.MethodElement} when traversing the corresponding model type.
+ * {@link java.lang.classfile.ClassElement}, {@link java.lang.classfile.FieldElement}, or
+ * {@link java.lang.classfile.MethodElement} when traversing the corresponding model type.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

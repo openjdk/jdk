@@ -28,16 +28,16 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>

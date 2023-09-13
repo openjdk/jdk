@@ -22,32 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.attribute.CompilationIDAttribute;
-import jdk.internal.classfile.attribute.DeprecatedAttribute;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleHashesAttribute;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
-import jdk.internal.classfile.attribute.NestHostAttribute;
-import jdk.internal.classfile.attribute.NestMembersAttribute;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.attribute.SourceIDAttribute;
-import jdk.internal.classfile.attribute.SyntheticAttribute;
-import jdk.internal.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.attribute.CompilationIDAttribute;
+import java.lang.classfile.attribute.DeprecatedAttribute;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.NestMembersAttribute;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceIDAttribute;
+import java.lang.classfile.attribute.SyntheticAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements

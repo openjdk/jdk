@@ -22,15 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.instruction.CharacterRange;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.LabelTarget;
-import jdk.internal.classfile.instruction.LineNumber;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.CharacterRange;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.LabelTarget;
+import java.lang.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
 /**

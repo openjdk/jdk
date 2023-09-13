@@ -27,12 +27,12 @@ package jdk.internal.classfile.impl;
 
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>

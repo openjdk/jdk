@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.ClassfileVersion;
+import java.lang.classfile.ClassfileVersion;
 
 public final class ClassfileVersionImpl
         extends AbstractElement

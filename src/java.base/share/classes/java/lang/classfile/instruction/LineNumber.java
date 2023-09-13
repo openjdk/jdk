@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.PseudoInstruction;
-import jdk.internal.classfile.attribute.LineNumberTableAttribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.LineNumberTableAttribute;
 import jdk.internal.classfile.impl.LineNumberImpl;
 
 /**

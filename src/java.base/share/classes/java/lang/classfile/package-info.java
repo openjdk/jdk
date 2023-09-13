@@ -25,15 +25,15 @@
 
 /**
  * <h2>Classfile parsing, generation, and transformation</h2>
- * The {@code jdk.internal.classfile} package contains classes for reading, writing, and
+ * The {@code java.lang.classfile} package contains classes for reading, writing, and
  * modifying Java class files, as specified in Chapter 4 of the <a
  * href="https://docs.oracle.com/javase/specs/jvms/se17/html/index.html">Java
  * Java Virtual Machine Specification</a>.
  *
  * <h2>Reading classfiles</h2>
- * The main class for reading classfiles is {@link jdk.internal.classfile.ClassModel}; we
- * convert bytes into a {@link jdk.internal.classfile.ClassModel} with {@link
- * jdk.internal.classfile.Classfile#parse(byte[])}:
+ * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
+ * convert bytes into a {@link java.lang.classfile.ClassModel} with {@link
+ * java.lang.classfile.Classfile#parse(byte[])}:
  * <p>
  * {@snippet lang=java :
  * ClassModel cm = Classfile.of().parse(bytes);
@@ -42,29 +42,29 @@
  * There are several additional overloads of {@code parse} that let you specify
  * various processing options.
  * <p>
- * A {@link jdk.internal.classfile.ClassModel} is an immutable description of a class
+ * A {@link java.lang.classfile.ClassModel} is an immutable description of a class
  * file.  It provides accessor methods to get at class metadata (e.g., {@link
- * jdk.internal.classfile.ClassModel#thisClass()}, {@link jdk.internal.classfile.ClassModel#flags()}),
- * as well as subordinate classfile entities ({@link jdk.internal.classfile.ClassModel#fields()},
- * {@link jdk.internal.classfile.ClassModel#attributes()}). A {@link
- * jdk.internal.classfile.ClassModel} is inflated lazily; most parts of the classfile are
+ * java.lang.classfile.ClassModel#thisClass()}, {@link java.lang.classfile.ClassModel#flags()}),
+ * as well as subordinate classfile entities ({@link java.lang.classfile.ClassModel#fields()},
+ * {@link java.lang.classfile.ClassModel#attributes()}). A {@link
+ * java.lang.classfile.ClassModel} is inflated lazily; most parts of the classfile are
  * not parsed until they are actually needed.
  * <p>
  * We can enumerate the names of the fields and methods in a class by:
  * {@snippet lang="java" class="PackageSnippets" region="enumerateFieldsMethods1"}
  * <p>
- * When we enumerate the methods, we get a {@link jdk.internal.classfile.MethodModel} for each method; like a
+ * When we enumerate the methods, we get a {@link java.lang.classfile.MethodModel} for each method; like a
  * {@code ClassModel}, it gives us access to method metadata and
  * the ability to descend into subordinate entities such as the bytecodes of the
  * method body. In this way, a {@code ClassModel} is the root of a
  * tree, with children for fields, methods, and attributes, and {@code MethodModel} in
  * turn has its own children (attributes, {@code CodeModel}, etc.)
  * <p>
- * Methods like {@link jdk.internal.classfile.ClassModel#methods} allows us to traverse the class structure
+ * Methods like {@link java.lang.classfile.ClassModel#methods} allows us to traverse the class structure
  * explicitly, going straight to the parts we are interested in.  This is useful
  * for certain kinds of analysis, but if we wanted to process the whole
  * classfile, we may want something more organized.  A {@link
- * jdk.internal.classfile.ClassModel} also provides us with a view of the classfile as a
+ * java.lang.classfile.ClassModel} also provides us with a view of the classfile as a
  * series of class <em>elements</em>, which may include methods, fields, attributes,
  * and more, and which can be distinguished with pattern matching.  We could
  * rewrite the above example as:
@@ -88,24 +88,24 @@
  * <em>models</em> and <em>elements</em>.  Models represent complex structures,
  * such as classes, methods, fields, record elements, or the code body of a
  * method.  Models can be explored either via random-access navigation (such as
- * the {@link jdk.internal.classfile.ClassModel#methods()} accessor) or as a linear
+ * the {@link java.lang.classfile.ClassModel#methods()} accessor) or as a linear
  * sequence of <em>elements</em>. (Elements can in turn also be models; a {@link
- * jdk.internal.classfile.FieldModel} is also an element of a class.) For each model type
- * (e.g., {@link jdk.internal.classfile.MethodModel}), there is a corresponding element
- * type ({@link jdk.internal.classfile.MethodElement}).  Models and elements are immutable
+ * java.lang.classfile.FieldModel} is also an element of a class.) For each model type
+ * (e.g., {@link java.lang.classfile.MethodModel}), there is a corresponding element
+ * type ({@link java.lang.classfile.MethodElement}).  Models and elements are immutable
  * and are inflated lazily so creating a model does not necessarily require
  * processing its entire content.
  *
  * <h3>The constant pool</h3>
  * Much of the interesting content in a classfile lives in the <em>constant
- * pool</em>. {@link jdk.internal.classfile.ClassModel} provides a lazily-inflated,
- * read-only view of the constant pool via {@link jdk.internal.classfile.ClassModel#constantPool()}.
+ * pool</em>. {@link java.lang.classfile.ClassModel} provides a lazily-inflated,
+ * read-only view of the constant pool via {@link java.lang.classfile.ClassModel#constantPool()}.
  * Descriptions of classfile content is often exposed in the form of various
- * subtypes of {@link jdk.internal.classfile.constantpool.PoolEntry}, such as {@link
- * jdk.internal.classfile.constantpool.ClassEntry} or {@link jdk.internal.classfile.constantpool.Utf8Entry}.
+ * subtypes of {@link java.lang.classfile.constantpool.PoolEntry}, such as {@link
+ * java.lang.classfile.constantpool.ClassEntry} or {@link java.lang.classfile.constantpool.Utf8Entry}.
  * <p>
  * Constant pool entries are also exposed through models and elements; in the
- * above traversal example, the {@link jdk.internal.classfile.instruction.InvokeInstruction}
+ * above traversal example, the {@link java.lang.classfile.instruction.InvokeInstruction}
  * element exposed a method for {@code owner} that corresponds to a {@code
  * Constant_Class_info} entry in the constant pool.
  *
@@ -113,9 +113,9 @@
  * Much of the contents of a classfile is stored in attributes; attributes are
  * found on classes, methods, fields, record components, and on the {@code Code}
  * attribute.  Most attributes are surfaced as elements; for example, {@link
- * jdk.internal.classfile.attribute.SignatureAttribute} is a {@link
- * jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.MethodElement}, and {@link
- * jdk.internal.classfile.FieldElement} since it can appear in all of those places, and is
+ * java.lang.classfile.attribute.SignatureAttribute} is a {@link
+ * java.lang.classfile.ClassElement}, {@link java.lang.classfile.MethodElement}, and {@link
+ * java.lang.classfile.FieldElement} since it can appear in all of those places, and is
  * included when iterating the elements of the corresponding model.
  * <p>
  * Some attributes are not surfaced as elements; these are attributes that are
@@ -126,68 +126,68 @@
  * treated as part of the structure they are coupled to (the entries of the
  * {@code BootstrapMethods} attribute are treated as part of the constant pool;
  * line numbers and local variable metadata are modeled as elements of {@link
- * jdk.internal.classfile.CodeModel}.)
+ * java.lang.classfile.CodeModel}.)
  * <p>
  * The {@code Code} attribute, in addition to being modeled as a {@link
- * jdk.internal.classfile.MethodElement}, is also a model in its own right ({@link
- * jdk.internal.classfile.CodeModel}) due to its complex structure.
+ * java.lang.classfile.MethodElement}, is also a model in its own right ({@link
+ * java.lang.classfile.CodeModel}) due to its complex structure.
  * <p>
- * Each standard attribute has an interface (in {@code jdk.internal.classfile.attribute})
+ * Each standard attribute has an interface (in {@code java.lang.classfile.attribute})
  * which exposes the contents of the attribute and provides factories to
  * construct the attribute.  For example, the {@code Signature} attribute is
- * defined by the {@link jdk.internal.classfile.attribute.SignatureAttribute} class, and
- * provides accessors for {@link jdk.internal.classfile.attribute.SignatureAttribute#signature()}
- * as well as factories taking {@link jdk.internal.classfile.constantpool.Utf8Entry} or
+ * defined by the {@link java.lang.classfile.attribute.SignatureAttribute} class, and
+ * provides accessors for {@link java.lang.classfile.attribute.SignatureAttribute#signature()}
+ * as well as factories taking {@link java.lang.classfile.constantpool.Utf8Entry} or
  * {@link java.lang.String}.
  *
  * <h3>Custom attributes</h3>
  * Attributes are converted between their classfile form and their corresponding
- * object form via an {@link jdk.internal.classfile.AttributeMapper}.  An {@code
+ * object form via an {@link java.lang.classfile.AttributeMapper}.  An {@code
  * AttributeMapper} provides the
- * {@link jdk.internal.classfile.AttributeMapper#readAttribute(AttributedElement,
+ * {@link java.lang.classfile.AttributeMapper#readAttribute(AttributedElement,
  * ClassReader, int)} method for mapping from the classfile format
  * to an attribute instance, and the
- * {@link jdk.internal.classfile.AttributeMapper#writeAttribute(jdk.internal.classfile.BufWriter,
+ * {@link java.lang.classfile.AttributeMapper#writeAttribute(java.lang.classfile.BufWriter,
  * java.lang.Object)} method for mapping back to the classfile format.  It also
  * contains metadata including the attribute name, the set of classfile entities
  * where the attribute is applicable, and whether multiple attributes of the
  * same kind are allowed on a single entity.
  * <p>
- * There are built-in attribute mappers (in {@link jdk.internal.classfile.Attributes}) for
+ * There are built-in attribute mappers (in {@link java.lang.classfile.Attributes}) for
  * each of the attribute types defined in section {@jvms 4.7} of <cite>The Java Virtual
  * Machine Specification</cite>, as well as several common nonstandard attributes used by the
  * JDK such as {@code CharacterRangeTable}.
  * <p>
  * Unrecognized attributes are delivered as elements of type {@link
- * jdk.internal.classfile.attribute.UnknownAttribute}, which provide access only to the
+ * java.lang.classfile.attribute.UnknownAttribute}, which provide access only to the
  * {@code byte[]} contents of the attribute.
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link
- * jdk.internal.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}}
+ * java.lang.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
- * jdk.internal.classfile.CustomAttribute}.
+ * java.lang.classfile.CustomAttribute}.
  *
  * <h3>Options</h3>
  * <p>
- * {@link jdk.internal.classfile.Classfile#of(jdk.internal.classfile.Classfile.Option[])}
- * accepts a list of options.  {@link jdk.internal.classfile.Classfile.Option} is a base interface
+ * {@link java.lang.classfile.Classfile#of(java.lang.classfile.Classfile.Option[])}
+ * accepts a list of options.  {@link java.lang.classfile.Classfile.Option} is a base interface
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link jdk.internal.classfile.Classfile.StackMapsOption}
+ *   <li>{@link java.lang.classfile.Classfile.StackMapsOption}
  * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
- *   <li>{@link jdk.internal.classfile.Classfile.DebugElementsOption}
+ *   <li>{@link java.lang.classfile.Classfile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.LineNumbersOption}
+ *   <li>{@link java.lang.classfile.Classfile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link jdk.internal.classfile.Classfile.UnknownAttributesOption}
+ *   <li>{@link java.lang.classfile.Classfile.UnknownAttributesOption}
  * -- processing of unrecognized attributes (default is {@code PASS_UNKNOWN_ATTRIBUTES})</li>
- *   <li>{@link jdk.internal.classfile.Classfile.ConstantPoolSharingOption}}
+ *   <li>{@link java.lang.classfile.Classfile.ConstantPoolSharingOption}}
  * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link jdk.internal.classfile.Classfile.ClassHierarchyResolverOption#of(jdk.internal.classfile.ClassHierarchyResolver)}
+ *   <li>{@link java.lang.classfile.Classfile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
  * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link jdk.internal.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}
+ *   <li>{@link java.lang.classfile.Classfile.AttributeMapperOption#of(java.util.function.Function)}
  * -- specify format of custom attributes</li>
  * </ul>
  * <p>
@@ -202,8 +202,8 @@
  * <h2>Writing classfiles</h2>
  * Classfile generation is accomplished through <em>builders</em>.  For each
  * entity type that has a model, there is also a corresponding builder type;
- * classes are built through {@link jdk.internal.classfile.ClassBuilder}, methods through
- * {@link jdk.internal.classfile.MethodBuilder}, etc.
+ * classes are built through {@link java.lang.classfile.ClassBuilder}, methods through
+ * {@link java.lang.classfile.MethodBuilder}, etc.
  * <p>
  * Rather than creating builders directly, builders are provided as an argument
  * to a user-provided lambda.  To generate the familiar "hello world" program,
@@ -221,12 +221,12 @@
  * Builders often support multiple ways of expressing the same entity at
  * different levels of abstraction.  For example, the {@code invokevirtual}
  * instruction invoking {@code println} could have been generated with {@link
- * jdk.internal.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
+ * java.lang.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
- * jdk.internal.classfile.CodeBuilder#invokeInstruction(jdk.internal.classfile.Opcode,
+ * java.lang.classfile.CodeBuilder#invokeInstruction(java.lang.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or {@link
- * jdk.internal.classfile.CodeBuilder#with(jdk.internal.classfile.ClassfileElement)
+ * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassfileElement)
  * CodeBuilder.with}.
  * <p>
  * The convenience method {@code CodeBuilder.invokevirtual} behaves as if it calls
@@ -242,7 +242,7 @@
  * <p>
  * If a constant pool entry has a nominal representation then it provides a
  * method returning the corresponding nominal descriptor type e.g.
- * method {@link jdk.internal.classfile.constantpool.ClassEntry#asSymbol} returns
+ * method {@link java.lang.classfile.constantpool.ClassEntry#asSymbol} returns
  * {@code ClassDesc}.
  * <p>
  * Where appropriate builders provide two methods for building an element with
@@ -258,9 +258,9 @@
  * to the builder.
  * <p>
  * If we wanted to strip out methods whose names starts with "debug", we could
- * get an existing {@link jdk.internal.classfile.ClassModel}, build a new classfile that
- * provides a {@link jdk.internal.classfile.ClassBuilder}, iterate the elements of the
- * original {@link jdk.internal.classfile.ClassModel}, and pass through all of them to
+ * get an existing {@link java.lang.classfile.ClassModel}, build a new classfile that
+ * provides a {@link java.lang.classfile.ClassBuilder}, iterate the elements of the
+ * original {@link java.lang.classfile.ClassModel}, and pass through all of them to
  * the builder except the methods we want to drop:
  * {@snippet lang="java" class="PackageSnippets" region="stripDebugMethods1"}
  * <p>
@@ -292,7 +292,7 @@
  * operations can be more easily combined.  Suppose we want to redirect
  * invocations of static methods on {@code Foo} to the corresponding method on
  * {@code Bar} instead.  We could express this as a transformation on {@link
- * jdk.internal.classfile.CodeElement}:
+ * java.lang.classfile.CodeElement}:
  * {@snippet lang="java" class="PackageSnippets" region="fooToBarTransform"}
  * <p>
  * We can then <em>lift</em> this transformation on code elements into a
@@ -333,7 +333,7 @@
  * {@snippet lang="java" class="PackageSnippets" region="instrumentCallsTransform"}
  * <p>
  * Then we can compose {@code fooToBar} and {@code instrumentCalls} with {@link
- * jdk.internal.classfile.CodeTransform#andThen(jdk.internal.classfile.CodeTransform)}:
+ * java.lang.classfile.CodeTransform#andThen(java.lang.classfile.CodeTransform)}:
  * <p>
  * {@snippet lang=java :
  * var cc = Classfile.of();
@@ -356,7 +356,7 @@
  * attributes that are not transformed can be processed by bulk-copying their
  * bytes, rather than parsing them and regenerating their contents.)  If
  * constant pool sharing is not desired it can be suppressed
- * with the {@link jdk.internal.classfile.Classfile.ConstantPoolSharingOption} option.
+ * with the {@link java.lang.classfile.Classfile.ConstantPoolSharingOption} option.
  * Such suppression may be beneficial when transformation removes many elements,
  * resulting in many unreferenced constant pool entries.
  *
@@ -368,12 +368,12 @@
  * corresponding interface to describe that element, and factory methods to
  * create that element.  Some element kinds also have convenience methods on the
  * corresponding builder (e.g., {@link
- * jdk.internal.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
+ * java.lang.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc)}).
  * <p>
  * Most symbolic information in elements is represented by constant pool entries
  * (for example, the owner of a field is represented by a {@link
- * jdk.internal.classfile.constantpool.ClassEntry}.) Factories and builders also
+ * java.lang.classfile.constantpool.ClassEntry}.) Factories and builders also
  * accept nominal descriptors from {@code java.lang.constant} (e.g., {@link
  * java.lang.constant.ClassDesc}.)
  *
@@ -424,7 +424,7 @@
  *
  * Fields and methods are models with their own elements.  The elements of fields
  * and methods are fairly simple; most of the complexity of methods lives in the
- * {@link jdk.internal.classfile.CodeModel} (which models the {@code Code} attribute
+ * {@link java.lang.classfile.CodeModel} (which models the {@code Code} attribute
  * along with the code-related attributes: stack map table, local variable table,
  * line number table, etc.)
  *
@@ -441,7 +441,7 @@
  *     | ExceptionsAttribute?(List<ClassEntry> exceptions)
  * }
  *
- * {@link jdk.internal.classfile.CodeModel} is unique in that its elements are <em>ordered</em>.
+ * {@link java.lang.classfile.CodeModel} is unique in that its elements are <em>ordered</em>.
  * Elements of {@code Code} include ordinary bytecodes, as well as a number of pseudo-instructions
  * representing branch targets, line number metadata, local variable metadata, and
  * catch blocks.
@@ -485,4 +485,4 @@
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
  */
-package jdk.internal.classfile;
+package java.lang.classfile;

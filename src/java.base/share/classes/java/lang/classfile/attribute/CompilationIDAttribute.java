@@ -23,11 +23,11 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -35,8 +35,8 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 /**
  * Models the {@code CompilationID} attribute (@@@ need reference), which can
  * appear on classes and records the compilation time of the class.  Delivered
- * as a {@link jdk.internal.classfile.ClassElement} when traversing the elements of
- * a {@link jdk.internal.classfile.ClassModel}.
+ * as a {@link java.lang.classfile.ClassElement} when traversing the elements of
+ * a {@link java.lang.classfile.ClassModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

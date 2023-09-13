@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.lang.classfile.snippets;
+
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -36,28 +38,28 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 import static java.util.stream.Collectors.toSet;
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.classfile.components.CodeLocalsShifter;
-import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {

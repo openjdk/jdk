@@ -22,20 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributedElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributedElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models a single record component in the {@link jdk.internal.classfile.attribute.RecordAttribute}.
+ * Models a single record component in the {@link java.lang.classfile.attribute.RecordAttribute}.
  */
 public sealed interface RecordComponentInfo
         extends AttributedElement

@@ -23,39 +23,39 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
-import static jdk.internal.classfile.Classfile.TAT_CAST;
-import static jdk.internal.classfile.Classfile.TAT_CLASS_EXTENDS;
-import static jdk.internal.classfile.Classfile.TAT_CLASS_TYPE_PARAMETER;
-import static jdk.internal.classfile.Classfile.TAT_CLASS_TYPE_PARAMETER_BOUND;
-import static jdk.internal.classfile.Classfile.TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
-import static jdk.internal.classfile.Classfile.TAT_CONSTRUCTOR_REFERENCE;
-import static jdk.internal.classfile.Classfile.TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT;
-import static jdk.internal.classfile.Classfile.TAT_EXCEPTION_PARAMETER;
-import static jdk.internal.classfile.Classfile.TAT_FIELD;
-import static jdk.internal.classfile.Classfile.TAT_INSTANCEOF;
-import static jdk.internal.classfile.Classfile.TAT_LOCAL_VARIABLE;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_FORMAL_PARAMETER;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_INVOCATION_TYPE_ARGUMENT;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_RECEIVER;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_REFERENCE;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_REFERENCE_TYPE_ARGUMENT;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_RETURN;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_TYPE_PARAMETER;
-import static jdk.internal.classfile.Classfile.TAT_METHOD_TYPE_PARAMETER_BOUND;
-import static jdk.internal.classfile.Classfile.TAT_NEW;
-import static jdk.internal.classfile.Classfile.TAT_RESOURCE_VARIABLE;
-import static jdk.internal.classfile.Classfile.TAT_THROWS;
+import static java.lang.classfile.Classfile.TAT_CAST;
+import static java.lang.classfile.Classfile.TAT_CLASS_EXTENDS;
+import static java.lang.classfile.Classfile.TAT_CLASS_TYPE_PARAMETER;
+import static java.lang.classfile.Classfile.TAT_CLASS_TYPE_PARAMETER_BOUND;
+import static java.lang.classfile.Classfile.TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.Classfile.TAT_CONSTRUCTOR_REFERENCE;
+import static java.lang.classfile.Classfile.TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT;
+import static java.lang.classfile.Classfile.TAT_EXCEPTION_PARAMETER;
+import static java.lang.classfile.Classfile.TAT_FIELD;
+import static java.lang.classfile.Classfile.TAT_INSTANCEOF;
+import static java.lang.classfile.Classfile.TAT_LOCAL_VARIABLE;
+import static java.lang.classfile.Classfile.TAT_METHOD_FORMAL_PARAMETER;
+import static java.lang.classfile.Classfile.TAT_METHOD_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.Classfile.TAT_METHOD_RECEIVER;
+import static java.lang.classfile.Classfile.TAT_METHOD_REFERENCE;
+import static java.lang.classfile.Classfile.TAT_METHOD_REFERENCE_TYPE_ARGUMENT;
+import static java.lang.classfile.Classfile.TAT_METHOD_RETURN;
+import static java.lang.classfile.Classfile.TAT_METHOD_TYPE_PARAMETER;
+import static java.lang.classfile.Classfile.TAT_METHOD_TYPE_PARAMETER_BOUND;
+import static java.lang.classfile.Classfile.TAT_NEW;
+import static java.lang.classfile.Classfile.TAT_RESOURCE_VARIABLE;
+import static java.lang.classfile.Classfile.TAT_THROWS;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
@@ -596,7 +596,7 @@ public sealed interface TypeAnnotation
          * Exceptions attribute of the method_info structure enclosing the
          * RuntimeVisibleTypeAnnotations attribute.
          *
-         * @return the index into the list jdk.internal.classfile.attribute.ExceptionsAttribute.exceptions()
+         * @return the index into the list java.lang.classfile.attribute.ExceptionsAttribute.exceptions()
          */
         int throwsTargetIndex();
     }

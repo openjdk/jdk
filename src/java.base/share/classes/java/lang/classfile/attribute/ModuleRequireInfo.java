@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
 import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -49,10 +49,10 @@ public sealed interface ModuleRequireInfo
 
     /**
      * {@return the flags associated with this require declaration, as a bit mask}
-     * Valid flags include {@link jdk.internal.classfile.Classfile#ACC_TRANSITIVE},
-     * {@link jdk.internal.classfile.Classfile#ACC_STATIC_PHASE},
-     * {@link jdk.internal.classfile.Classfile#ACC_SYNTHETIC} and
-     * {@link jdk.internal.classfile.Classfile#ACC_MANDATED}
+     * Valid flags include {@link java.lang.classfile.Classfile#ACC_TRANSITIVE},
+     * {@link java.lang.classfile.Classfile#ACC_STATIC_PHASE},
+     * {@link java.lang.classfile.Classfile#ACC_SYNTHETIC} and
+     * {@link java.lang.classfile.Classfile#ACC_MANDATED}
      */
     int requiresFlagsMask();
 

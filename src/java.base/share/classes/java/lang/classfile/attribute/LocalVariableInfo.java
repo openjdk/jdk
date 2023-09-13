@@ -22,10 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.UnboundAttribute;
 

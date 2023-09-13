@@ -22,9 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
-import jdk.internal.classfile.Label;
+import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**

@@ -24,11 +24,11 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
@@ -67,8 +67,8 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.TypeKind.*;
+import static java.lang.classfile.Classfile.*;
+import static java.lang.classfile.TypeKind.*;
 
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR

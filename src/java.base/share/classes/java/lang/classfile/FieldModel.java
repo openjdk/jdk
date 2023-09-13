@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.util.Optional;
 
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedFieldBuilder;
 import jdk.internal.classfile.impl.FieldImpl;
 

@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl.verifier;
 
 import java.nio.ByteBuffer;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 

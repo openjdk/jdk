@@ -22,26 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.FloatEntry;
-import jdk.internal.classfile.constantpool.IntegerEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.*;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 
 import java.util.Optional;

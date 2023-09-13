@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.constantpool;
+package java.lang.classfile.constantpool;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
@@ -33,16 +33,16 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.Collection;
 import java.util.List;
 
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import jdk.internal.classfile.impl.ClassfileImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import jdk.internal.classfile.WritableElement;
+import java.lang.classfile.WritableElement;
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;

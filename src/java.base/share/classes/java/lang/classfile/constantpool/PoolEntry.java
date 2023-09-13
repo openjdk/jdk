@@ -22,9 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.constantpool;
+package java.lang.classfile.constantpool;
 
-import jdk.internal.classfile.WritableElement;
+import java.lang.classfile.WritableElement;
 
 /**
  * Models an entry in the constant pool of a classfile.

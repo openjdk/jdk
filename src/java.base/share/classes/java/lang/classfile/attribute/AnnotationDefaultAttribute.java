@@ -23,12 +23,12 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 

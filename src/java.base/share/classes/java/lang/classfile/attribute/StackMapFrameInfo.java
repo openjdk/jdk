@@ -23,16 +23,16 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.Classfile.*;
 
 /**
  * Models stack map frame of {@code StackMapTable} attribute {@jvms 4.7.4}.

@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import jdk.internal.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
 
 /**

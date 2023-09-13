@@ -23,9 +23,9 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ChainedFieldBuilder;
 import jdk.internal.classfile.impl.TerminalFieldBuilder;
 import java.lang.reflect.AccessFlag;

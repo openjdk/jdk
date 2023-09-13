@@ -22,17 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;
 
 import java.lang.constant.ClassDesc;
 import java.util.Map;
 import java.util.function.Function;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.MethodTransform;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.MethodTransform;
 import jdk.internal.classfile.impl.ClassRemapperImpl;
 
 /**

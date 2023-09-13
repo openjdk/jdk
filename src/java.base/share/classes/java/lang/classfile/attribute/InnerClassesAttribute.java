@@ -23,20 +23,20 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
  * Models the {@code InnerClasses} attribute {@jvms 4.7.6}, which can
  * appear on classes, and records which classes referenced by this classfile
- * are inner classes. Delivered as a {@link jdk.internal.classfile.ClassElement} when
- * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.
+ * are inner classes. Delivered as a {@link java.lang.classfile.ClassElement} when
+ * traversing the elements of a {@link java.lang.classfile.ClassModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
  * Subsequent occurrence of the attribute takes precedence during the attributed

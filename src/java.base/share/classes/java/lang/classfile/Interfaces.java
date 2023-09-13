@@ -22,19 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.InterfacesImpl;
 import jdk.internal.classfile.impl.Util;
 
 /**
  * Models the interfaces of a class.  Delivered as a {@link
- * jdk.internal.classfile.ClassElement} when traversing a {@link ClassModel}.
+ * java.lang.classfile.ClassElement} when traversing a {@link ClassModel}.
  */
 public sealed interface Interfaces
         extends ClassElement

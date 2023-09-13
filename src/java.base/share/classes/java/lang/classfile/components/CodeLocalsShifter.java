@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;
 
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
 
 /**

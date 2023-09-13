@@ -22,14 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
 import java.util.List;
 
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.Label;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**

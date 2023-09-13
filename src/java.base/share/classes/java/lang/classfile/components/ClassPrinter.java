@@ -22,18 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;
 
 import java.lang.constant.ConstantDesc;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CompoundElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
 
 import jdk.internal.classfile.impl.ClassPrinterImpl;
 

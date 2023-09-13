@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
@@ -30,12 +30,12 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.function.Function;
 
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;

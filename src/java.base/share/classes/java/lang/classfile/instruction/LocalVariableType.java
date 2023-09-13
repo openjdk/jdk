@@ -22,17 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.instruction;
+package java.lang.classfile.instruction;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.PseudoInstruction;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Label;
+import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.Signature;
+import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
 import jdk.internal.classfile.impl.TemporaryConstantPool;

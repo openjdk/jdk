@@ -28,10 +28,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributedElement;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CompoundElement;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributedElement;
+import java.lang.classfile.ClassfileElement;
+import java.lang.classfile.CompoundElement;
 
 public abstract sealed class AbstractUnboundModel<E extends ClassfileElement>
         extends AbstractElement

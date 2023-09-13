@@ -26,9 +26,9 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.ClassDesc;
-import jdk.internal.classfile.attribute.LocalVariableInfo;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.instruction.LocalVariable;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.LocalVariable;
 
 public final class BoundLocalVariable
         extends AbstractBoundLocalVariable

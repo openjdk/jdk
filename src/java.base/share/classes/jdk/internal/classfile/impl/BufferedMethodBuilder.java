@@ -30,18 +30,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class BufferedMethodBuilder
         implements TerminalMethodBuilder, MethodInfo {

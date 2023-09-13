@@ -22,25 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.components;
+package java.lang.classfile.components;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.Label;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.CodeRelabelerImpl;
 
 /**
  * A code relabeler is a {@link CodeTransform} replacing all occurrences
- * of {@link jdk.internal.classfile.Label} in the transformed code with new instances.
- * All {@link jdk.internal.classfile.instruction.LabelTarget} instructions are adjusted accordingly.
+ * of {@link java.lang.classfile.Label} in the transformed code with new instances.
+ * All {@link java.lang.classfile.instruction.LabelTarget} instructions are adjusted accordingly.
  * Relabeled code graph is identical to the original.
  * <p>
  * Primary purpose of CodeRelabeler is for repeated injections of the same code blocks.
  * Repeated injection of the same code block must be relabeled, so each instance of
- * {@link jdk.internal.classfile.Label} is bound in the target bytecode exactly once.
+ * {@link java.lang.classfile.Label} is bound in the target bytecode exactly once.
  */
 public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabelerImpl {
 

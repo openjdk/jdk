@@ -24,14 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
 import java.util.Optional;
 import java.util.function.Consumer;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public final class TransformingCodeBuilder implements TerminalCodeBuilder {
 

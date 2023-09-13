@@ -22,17 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
-import jdk.internal.classfile.attribute.ConstantValueAttribute;
-import jdk.internal.classfile.attribute.DeprecatedAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.attribute.SyntheticAttribute;
-import jdk.internal.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.attribute.DeprecatedAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.attribute.SyntheticAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
 
 /**
  * A {@link ClassfileElement} that can appear when traversing the elements

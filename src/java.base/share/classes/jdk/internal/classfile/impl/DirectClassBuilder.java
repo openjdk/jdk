@@ -31,20 +31,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>

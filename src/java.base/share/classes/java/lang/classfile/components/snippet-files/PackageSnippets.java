@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package java.lang.classfile.components.snippets;
+
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 
@@ -31,23 +33,23 @@ import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.InvokeInstruction;
 
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.components.ClassPrinter;
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.classfile.components.CodeLocalsShifter;
-import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 
 class PackageSnippets {
 

@@ -29,16 +29,16 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.Classfile.*;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public record ClassfileImpl(StackMapsOption stackMapsOption,
                             DebugElementsOption debugElementsOption,

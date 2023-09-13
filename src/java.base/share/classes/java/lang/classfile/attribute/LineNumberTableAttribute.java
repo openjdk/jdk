@@ -22,11 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -34,9 +34,9 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Models the {@code LineNumberTable} attribute {@jvms 4.7.12}, which can appear
  * on a {@code Code} attribute, and records the mapping between indexes into
  * the code table and line numbers in the source file.
- * Delivered as a {@link jdk.internal.classfile.instruction.LineNumber} when traversing the
- * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
- * {@link jdk.internal.classfile.Classfile.LineNumbersOption} option.
+ * Delivered as a {@link java.lang.classfile.instruction.LineNumber} when traversing the
+ * elements of a {@link java.lang.classfile.CodeModel}, according to the setting of the
+ * {@link java.lang.classfile.Classfile.LineNumbersOption} option.
  * <p>
  * The attribute permits multiple instances in a given location.
  */

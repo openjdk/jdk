@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import jdk.internal.classfile.impl.ClassfileVersionImpl;
 
 /**
  * Models the classfile version information for a class.  Delivered as a {@link
- * jdk.internal.classfile.ClassElement} when traversing the elements of a {@link
+ * java.lang.classfile.ClassElement} when traversing the elements of a {@link
  * ClassModel}.
  */
 public sealed interface ClassfileVersion

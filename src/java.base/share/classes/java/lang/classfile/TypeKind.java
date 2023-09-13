@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import java.lang.invoke.TypeDescriptor;
 

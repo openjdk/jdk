@@ -23,24 +23,24 @@
  * questions.
  */
 
-package jdk.internal.classfile.attribute;
+package java.lang.classfile.attribute;
 
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.TypeAnnotation;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.TypeAnnotation;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
  * Models the {@code RuntimeInvisibleTypeAnnotations} attribute {@jvms 4.7.21}, which
  * can appear on classes, methods, fields, and code attributes. Delivered as a
- * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement},
- * {@link jdk.internal.classfile.MethodElement}, or {@link CodeElement} when traversing
+ * {@link java.lang.classfile.ClassElement}, {@link java.lang.classfile.FieldElement},
+ * {@link java.lang.classfile.MethodElement}, or {@link CodeElement} when traversing
  * the corresponding model type.
  * <p>
  * The attribute does not permit multiple instances in a given location.

@@ -23,34 +23,34 @@
  * questions.
  */
 
-package jdk.internal.classfile;
+package java.lang.classfile;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
-import jdk.internal.classfile.instruction.ArrayLoadInstruction;
-import jdk.internal.classfile.instruction.ArrayStoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.ConvertInstruction;
-import jdk.internal.classfile.instruction.DiscontinuedInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.MonitorInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StackInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.ThrowInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.instruction.ArrayLoadInstruction;
+import java.lang.classfile.instruction.ArrayStoreInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConvertInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LookupSwitchInstruction;
+import java.lang.classfile.instruction.MonitorInstruction;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.NopInstruction;
+import java.lang.classfile.instruction.OperatorInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StackInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.TableSwitchInstruction;
+import java.lang.classfile.instruction.ThrowInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
 
 /**
  * Models an executable instruction in a method body.
