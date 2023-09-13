@@ -1719,7 +1719,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         try {
             return this.withVarargs(true);
         } catch (IllegalArgumentException ex) {
-            throw member.makeAccessException("cannot make variable arity", null);
+            throw new IllegalAccessException("cannot make variable arity: " + this + " because " + ex.getMessage());
         }
     }
 
