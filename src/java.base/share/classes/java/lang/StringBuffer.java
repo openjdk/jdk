@@ -771,7 +771,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         ObjectOutputStream.PutField fields = s.putFields();
         char[] val = new char[capacity()];
         if (isLatin1()) {
-            DecimalDigits.getCharsLatin1(value, 0, count, val, 0);
+            StringLatin1.getChars(value, 0, count, val, 0);
         } else {
             StringUTF16.getChars(value, 0, count, val, 0);
         }
