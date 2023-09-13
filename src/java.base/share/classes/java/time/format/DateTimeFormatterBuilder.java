@@ -2675,7 +2675,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * Composite printer and parser.
      */
-    static class CompositePrinterParser implements DateTimePrinterParser {
+    static sealed class CompositePrinterParser implements DateTimePrinterParser {
         private final DateTimePrinterParser[] printerParsers;
         private final boolean optional;
 
