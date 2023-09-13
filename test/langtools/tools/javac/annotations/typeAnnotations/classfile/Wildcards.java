@@ -26,7 +26,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test Wildcards

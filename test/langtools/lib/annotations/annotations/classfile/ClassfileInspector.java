@@ -28,8 +28,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /**
  * A class providing utilities for writing tests that inspect class

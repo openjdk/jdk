@@ -35,7 +35,7 @@
  * @run main Driver ResourceVariable
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.RESOURCE_VARIABLE;
+import static java.lang.classfile.TypeAnnotation.TargetType.RESOURCE_VARIABLE;
 import static java.lang.System.lineSeparator;
 
 public class ResourceVariable {

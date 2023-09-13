@@ -28,16 +28,16 @@
  * @summary Testing Classfile building module.
  * @run junit ModuleBuilderTest
  */
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleExportInfo;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModuleOpenInfo;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.ModuleRequireInfo;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
+import java.lang.classfile.Attributes;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import org.junit.jupiter.api.Test;

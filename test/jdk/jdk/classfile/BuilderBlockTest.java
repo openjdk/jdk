@@ -38,12 +38,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import helpers.ByteArrayClassLoader;
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.LabelImpl;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;

@@ -41,7 +41,7 @@ import annotations.classfile.ClassfileInspector;
 import java.io.*;
 import java.lang.annotation.*;
 
-import jdk.internal.classfile.ClassModel;
+import java.lang.classfile.ClassModel;
 
 public class SyntheticParameters extends ClassfileInspector {
 

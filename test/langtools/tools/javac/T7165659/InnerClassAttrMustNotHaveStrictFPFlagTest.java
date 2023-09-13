@@ -35,8 +35,8 @@
 
 import java.io.File;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 public class InnerClassAttrMustNotHaveStrictFPFlagTest {

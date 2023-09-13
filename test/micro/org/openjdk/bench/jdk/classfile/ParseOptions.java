@@ -24,8 +24,8 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;

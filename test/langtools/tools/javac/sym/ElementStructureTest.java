@@ -98,7 +98,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;

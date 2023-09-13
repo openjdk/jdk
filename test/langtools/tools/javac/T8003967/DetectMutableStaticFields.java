@@ -35,7 +35,7 @@
  * @run main DetectMutableStaticFields
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

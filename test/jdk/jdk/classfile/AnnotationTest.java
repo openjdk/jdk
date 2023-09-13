@@ -38,9 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import org.junit.jupiter.api.Test;
 
 import static java.util.stream.Collectors.toList;

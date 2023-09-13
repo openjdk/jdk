@@ -69,11 +69,11 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.FieldInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.FieldInstruction;
 
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.code.Attribute.TypeCompound;

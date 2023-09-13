@@ -38,9 +38,9 @@
  * @run main InnerClassesIndexTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;

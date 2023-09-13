@@ -36,8 +36,8 @@
 
 import java.util.TreeSet;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class ClassRefDupInConstantPoolTest {
     public static void main(String[] args) throws Exception {

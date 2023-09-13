@@ -34,8 +34,8 @@
 import java.io.*;
 import java.nio.file.Files;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 public class T6716452 {
     public static void main(String[] args) throws Exception {

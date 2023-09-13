@@ -39,8 +39,8 @@
  *          jdk.compiler/com.sun.tools.javac.util
  */
 // key: opt.arg.parameters
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;

@@ -38,8 +38,8 @@
  * @run main EnclosingMethodTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.File;

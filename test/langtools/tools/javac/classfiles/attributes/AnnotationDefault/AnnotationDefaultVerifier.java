@@ -21,9 +21,9 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.impl.*;
 
 import java.util.Arrays;

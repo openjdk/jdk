@@ -34,7 +34,7 @@
  * @run main ConstDebugTest
  */
 import java.nio.file.Paths;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class ConstDebugTest {
 

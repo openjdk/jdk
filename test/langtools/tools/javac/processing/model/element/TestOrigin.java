@@ -61,8 +61,8 @@ import javax.lang.model.element.ModuleElement.OpensDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.util.Elements;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;

@@ -37,8 +37,8 @@
 
 import java.io.*;
 import java.util.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 public class SyntheticClasses {
 

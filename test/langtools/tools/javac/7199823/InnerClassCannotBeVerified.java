@@ -42,7 +42,7 @@ import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import javax.tools.JavaCompiler;
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 import java.io.IOException;
 

@@ -40,8 +40,8 @@
 
 import java.nio.file.Path;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;

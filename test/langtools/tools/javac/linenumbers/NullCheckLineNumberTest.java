@@ -9,8 +9,8 @@
  *          java.base/jdk.internal.classfile.components
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;

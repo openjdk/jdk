@@ -35,7 +35,7 @@
  *          java.base/jdk.internal.classfile.impl
  * @run main ApplicableAnnotationsOnRecords
  */
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.util.Assert;
 import java.lang.annotation.*;
 import java.io.InputStream;

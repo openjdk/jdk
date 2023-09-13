@@ -42,10 +42,10 @@
 import java.nio.file.Path;
 import java.util.ArrayList;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.*;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;

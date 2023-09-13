@@ -39,8 +39,8 @@
  * @run main ModuleFlagTest
  */
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Classfile;
 import java.lang.reflect.AccessFlag;
 
 import java.io.IOException;

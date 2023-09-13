@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageLocation;
 

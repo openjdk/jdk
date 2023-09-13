@@ -38,9 +38,9 @@ import java.util.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 
 public class AnonymousClassFlags {
     public static void main(String[] args) throws Exception {

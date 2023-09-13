@@ -40,8 +40,8 @@
  *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  */
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.io.*;
 import java.util.*;
 import java.nio.file.Files;

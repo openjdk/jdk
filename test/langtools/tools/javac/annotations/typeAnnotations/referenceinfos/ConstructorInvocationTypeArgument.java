@@ -35,7 +35,7 @@
  * @run main Driver ConstructorInvocationTypeArgument
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
 
 public class ConstructorInvocationTypeArgument {
 

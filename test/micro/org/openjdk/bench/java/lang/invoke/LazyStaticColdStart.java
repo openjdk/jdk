@@ -22,7 +22,7 @@
  */
 package org.openjdk.bench.java.lang.invoke;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.Classfile.ACC_STATIC;
 
 /**
  * A benchmark ensuring that var and method handle lazy initialization are not

@@ -32,13 +32,13 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
 import helpers.ByteArrayClassLoader;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.Classfile.*;
 
 class DiscontinuedInstructionsTest {
 

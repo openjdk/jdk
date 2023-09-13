@@ -35,10 +35,10 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {

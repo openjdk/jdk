@@ -40,10 +40,10 @@
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.List;
 

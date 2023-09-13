@@ -35,9 +35,9 @@
  * @run main ByteCodeTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 
 import java.io.BufferedWriter;
 import java.io.File;

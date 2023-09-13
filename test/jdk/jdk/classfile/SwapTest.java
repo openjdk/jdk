@@ -27,8 +27,8 @@
  * @run junit SwapTest
  */
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Classfile;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 

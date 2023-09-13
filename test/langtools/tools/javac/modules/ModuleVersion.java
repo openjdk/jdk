@@ -41,8 +41,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleAttribute;
 import toolbox.JavacTask;
 import toolbox.Task.Expect;
 import toolbox.Task.OutputKind;

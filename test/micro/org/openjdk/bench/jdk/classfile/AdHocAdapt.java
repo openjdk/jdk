@@ -24,9 +24,9 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeTransform;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeTransform;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;

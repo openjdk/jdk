@@ -36,7 +36,7 @@
 
 import java.io.*;
 import java.net.URL;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class LambdaTestStrictFPFlag {
     public static void main(String[] args) throws Exception {

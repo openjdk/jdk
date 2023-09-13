@@ -31,7 +31,7 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import jdk.internal.classfile.impl.LabelContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

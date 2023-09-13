@@ -38,10 +38,10 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Objects;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.TypeCheckInstruction;
 import com.sun.tools.javac.util.Assert;
 
 public class DoubleCastTest {

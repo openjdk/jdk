@@ -24,7 +24,7 @@
 import java.lang.annotation.*;
 import java.util.ArrayList;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test

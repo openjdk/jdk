@@ -40,8 +40,8 @@
  * @run main SourceLauncherTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

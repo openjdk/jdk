@@ -33,9 +33,9 @@
  *          java.base/jdk.internal.classfile.impl
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;

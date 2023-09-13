@@ -39,8 +39,8 @@ package p.q;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 
 public class CLTest {
     public static void main(String... args) throws Exception {

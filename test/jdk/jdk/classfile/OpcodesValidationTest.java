@@ -34,12 +34,12 @@ import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.Opcode;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.junit.jupiter.api.Assertions.*;
-import static jdk.internal.classfile.Opcode.*;
+import static java.lang.classfile.Opcode.*;
 import java.util.stream.Stream;
 
 public class OpcodesValidationTest {

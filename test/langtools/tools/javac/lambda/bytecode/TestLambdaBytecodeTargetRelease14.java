@@ -40,11 +40,11 @@
  * @run main TestLambdaBytecodeTargetRelease14
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.IOException;
 import java.io.InputStream;

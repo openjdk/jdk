@@ -61,7 +61,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;

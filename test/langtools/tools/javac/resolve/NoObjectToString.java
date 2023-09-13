@@ -35,8 +35,8 @@
  */
 
 import java.io.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class NoObjectToString {
     public static void main(String... args) throws Exception {

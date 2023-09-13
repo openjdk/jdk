@@ -35,9 +35,9 @@
  * @run main LegacyOutputTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;

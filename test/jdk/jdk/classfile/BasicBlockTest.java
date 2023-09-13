@@ -30,7 +30,7 @@
  */
 import java.io.InputStream;
 import java.io.IOException;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
 class BasicBlockTest {

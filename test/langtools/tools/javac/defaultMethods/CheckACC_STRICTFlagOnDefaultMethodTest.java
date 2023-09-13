@@ -35,7 +35,7 @@
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

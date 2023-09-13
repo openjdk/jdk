@@ -54,19 +54,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.classfile.instruction.LineNumber;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 
 /**
  * CorpusTest

@@ -31,9 +31,9 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.components.ClassPrinter;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)

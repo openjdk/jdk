@@ -53,9 +53,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.constantpool.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;

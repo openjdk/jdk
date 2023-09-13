@@ -28,12 +28,12 @@
  * @summary Testing Classfile TransformExamples compilation.
  * @compile TransformExamples.java
  */
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Attribute;
 
 /**
  * TransformExamples

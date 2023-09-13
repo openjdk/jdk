@@ -23,8 +23,8 @@
 
 import java.io.*;
 import java.lang.annotation.ElementType;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test Presence

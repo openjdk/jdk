@@ -39,7 +39,7 @@
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.List;
 

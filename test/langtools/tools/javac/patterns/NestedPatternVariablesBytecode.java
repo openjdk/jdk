@@ -43,8 +43,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;

@@ -37,8 +37,8 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main PreviewTest
  */
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;

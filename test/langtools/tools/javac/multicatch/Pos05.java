@@ -34,9 +34,9 @@
  * @run main Pos05
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.ExceptionCatch;
 import java.io.*;
 
 public class Pos05 {

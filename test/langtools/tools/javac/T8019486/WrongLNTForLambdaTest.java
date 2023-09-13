@@ -44,8 +44,8 @@ import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 

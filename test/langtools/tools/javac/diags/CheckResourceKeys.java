@@ -39,8 +39,8 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 import javax.tools.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 
 /**

@@ -42,7 +42,7 @@
  * @run main BadClassfile
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symbol;

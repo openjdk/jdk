@@ -49,11 +49,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import jdk.internal.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassHierarchyResolver;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

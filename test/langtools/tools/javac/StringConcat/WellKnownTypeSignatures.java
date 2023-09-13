@@ -21,10 +21,10 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.File;
 import java.util.ArrayList;

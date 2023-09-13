@@ -36,7 +36,7 @@
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * A type-annotations on a field in an inner class not in a lambda expression

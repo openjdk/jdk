@@ -36,9 +36,9 @@
  * @run main NoUnnecessaryCast
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.io.File;
 import java.io.IOException;
 

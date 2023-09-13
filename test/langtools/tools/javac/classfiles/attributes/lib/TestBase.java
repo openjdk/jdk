@@ -33,7 +33,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;

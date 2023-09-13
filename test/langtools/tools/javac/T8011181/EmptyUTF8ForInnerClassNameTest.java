@@ -39,8 +39,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class EmptyUTF8ForInnerClassNameTest {
 

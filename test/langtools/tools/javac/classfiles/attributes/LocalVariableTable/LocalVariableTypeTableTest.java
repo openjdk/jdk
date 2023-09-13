@@ -40,7 +40,7 @@
  * @run main LocalVariableTypeTableTest
  */
 
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.IOException;

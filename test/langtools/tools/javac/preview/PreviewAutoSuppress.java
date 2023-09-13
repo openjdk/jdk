@@ -37,7 +37,7 @@
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main PreviewAutoSuppress
  */
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.InputStream;
 import java.nio.file.Files;
 import toolbox.JavacTask;

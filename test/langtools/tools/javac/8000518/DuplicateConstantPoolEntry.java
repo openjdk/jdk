@@ -36,8 +36,8 @@
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;

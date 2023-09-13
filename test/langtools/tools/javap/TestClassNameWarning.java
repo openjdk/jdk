@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import toolbox.JavacTask;
 import toolbox.JavapTask;
 import toolbox.Task;

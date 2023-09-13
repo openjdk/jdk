@@ -35,9 +35,9 @@
  * @run main CPoolRefClassContainingInlinedCts
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 

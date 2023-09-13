@@ -32,7 +32,7 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 
 /* Create an invalid classfile with version 51.0 and a static method in an interface.*/
 @SupportedAnnotationTypes("*")

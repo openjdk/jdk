@@ -39,9 +39,9 @@
  * @run main DeprecatedPackageTest
  */
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.attribute.DeprecatedAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.attribute.DeprecatedAttribute;
 
 public class DeprecatedPackageTest extends TestResult {
 

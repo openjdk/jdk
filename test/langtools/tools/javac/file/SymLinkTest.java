@@ -45,8 +45,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import toolbox.JavacTask;
 import toolbox.TestRunner;
 import toolbox.TestRunner.Test;

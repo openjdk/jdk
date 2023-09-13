@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.lang.annotation.*;
 import java.util.ArrayList;
 

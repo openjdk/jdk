@@ -42,8 +42,8 @@
 import java.util.List;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
 
 public class CheckSubtypesOfSealedTest extends TestBase {
 

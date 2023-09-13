@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;

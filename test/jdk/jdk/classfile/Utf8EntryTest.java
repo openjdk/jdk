@@ -28,12 +28,12 @@
  * @summary Testing Classfile CP Utf8Entry.
  * @run junit Utf8EntryTest
  */
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.StringEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.StringEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 import java.util.function.UnaryOperator;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-import static jdk.internal.classfile.TypeKind.VoidType;
+import static java.lang.classfile.TypeKind.VoidType;
 
 class Utf8EntryTest {
 

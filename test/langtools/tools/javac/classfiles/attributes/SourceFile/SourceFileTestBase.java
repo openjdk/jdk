@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;

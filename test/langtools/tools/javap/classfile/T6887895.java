@@ -36,8 +36,8 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.Paths;
 import java.util.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class T6887895 {
     public static void main(String[] args) throws Exception {

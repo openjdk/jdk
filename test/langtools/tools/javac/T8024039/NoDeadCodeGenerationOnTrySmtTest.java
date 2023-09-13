@@ -44,9 +44,9 @@ import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.ExceptionCatch;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 

@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.Classfile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*

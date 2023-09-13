@@ -45,7 +45,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class CheckACC_STRICTFlagOnPkgAccessClassTest {
 

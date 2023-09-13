@@ -56,9 +56,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;

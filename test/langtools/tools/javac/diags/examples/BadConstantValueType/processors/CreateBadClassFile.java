@@ -33,8 +33,8 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.attribute.ConstantValueAttribute;
 
 /* Create an invalid classfile with a static final field of type object with
  * ConstantValue of type String.

@@ -38,9 +38,9 @@
  * @run main ImplicitParameters
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import com.sun.tools.javac.code.Flags;
 import toolbox.Assert;
 import toolbox.JavacTask;

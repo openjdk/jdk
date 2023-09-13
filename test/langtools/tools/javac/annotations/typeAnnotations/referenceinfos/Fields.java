@@ -35,7 +35,7 @@
  * @run main Driver Fields
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.*;
+import static java.lang.classfile.TypeAnnotation.TargetType.*;
 
 public class Fields {
     // field types

@@ -43,9 +43,9 @@
 import java.io.IOException;
 import java.io.InputStream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
 
 import javax.tools.JavaFileObject;
 

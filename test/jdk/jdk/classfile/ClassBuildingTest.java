@@ -31,13 +31,13 @@
  * @run junit ClassBuildingTest
  */
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.components.ClassRemapper;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.components.ClassRemapper;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;

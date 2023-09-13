@@ -40,11 +40,11 @@
  * @run main RuntimeParameterAnnotationsForLambdaTest
  */
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 
 import java.util.List;
 import java.util.stream.Collectors;

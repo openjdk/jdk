@@ -33,7 +33,7 @@
  *          java.base/jdk.internal.classfile.impl
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.File;
 
 public class CombinationsTargetTest1 extends ClassfileTestHelper {

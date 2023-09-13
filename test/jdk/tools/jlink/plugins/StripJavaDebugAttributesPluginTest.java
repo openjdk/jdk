@@ -49,8 +49,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.plugins.StripJavaDebugAttributesPlugin;
 import jdk.tools.jlink.plugin.Plugin;

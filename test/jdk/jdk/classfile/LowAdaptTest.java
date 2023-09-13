@@ -37,14 +37,14 @@ import java.lang.constant.MethodTypeDesc;
 import java.net.URI;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import helpers.ByteArrayClassLoader;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import org.junit.jupiter.api.Test;
 

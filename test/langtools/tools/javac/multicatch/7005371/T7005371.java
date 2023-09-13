@@ -35,9 +35,9 @@
  * @run main T7005371
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 
 import java.io.*;
 

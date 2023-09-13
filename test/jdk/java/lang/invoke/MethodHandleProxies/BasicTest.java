@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
@@ -50,7 +50,7 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.Classfile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*

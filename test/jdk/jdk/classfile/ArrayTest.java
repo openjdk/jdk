@@ -28,15 +28,15 @@
  * @summary Testing Classfile arrays.
  * @run junit ArrayTest
  */
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

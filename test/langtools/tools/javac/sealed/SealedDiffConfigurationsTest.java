@@ -47,10 +47,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolException;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;

@@ -62,8 +62,8 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.Classfile;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
 import jdk.test.lib.util.ModuleInfoWriter;

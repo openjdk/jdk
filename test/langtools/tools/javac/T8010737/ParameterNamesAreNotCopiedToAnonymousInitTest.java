@@ -66,7 +66,7 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Names;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 public class ParameterNamesAreNotCopiedToAnonymousInitTest {
 

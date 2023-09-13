@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
 
 import javax.tools.JavaFileObject;
 import java.io.IOException;

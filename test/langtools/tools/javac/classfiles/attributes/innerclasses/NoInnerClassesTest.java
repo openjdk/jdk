@@ -38,8 +38,8 @@
  * @run main NoInnerClassesTest
  */
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
 
 import java.io.IOException;
 

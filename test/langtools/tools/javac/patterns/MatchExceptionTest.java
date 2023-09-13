@@ -40,9 +40,9 @@
 
 import java.nio.file.Path;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
 import java.util.Arrays;
 import jdk.internal.classfile.constantpool.PoolEntry;
 

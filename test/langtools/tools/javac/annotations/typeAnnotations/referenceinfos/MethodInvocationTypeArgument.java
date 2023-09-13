@@ -35,7 +35,7 @@
  * @run main Driver MethodInvocationTypeArgument
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.TypeAnnotation.TargetType.METHOD_INVOCATION_TYPE_ARGUMENT;
 import static java.lang.System.lineSeparator;
 
 public class MethodInvocationTypeArgument {

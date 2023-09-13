@@ -48,8 +48,8 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;

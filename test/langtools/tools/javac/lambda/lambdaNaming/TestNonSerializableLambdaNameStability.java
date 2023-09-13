@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.tools.StandardLocation;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 import toolbox.JavacTask;
 import toolbox.ToolBox;

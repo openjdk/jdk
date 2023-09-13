@@ -47,8 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleAttribute;
 import toolbox.JavacTask;
 import toolbox.JavapTask;
 import toolbox.Task;

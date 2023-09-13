@@ -38,8 +38,8 @@
  * @run main RecordComponentTypeTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 import java.nio.file.Path;
 import java.util.Arrays;

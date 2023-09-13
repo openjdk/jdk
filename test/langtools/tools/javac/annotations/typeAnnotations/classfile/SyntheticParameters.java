@@ -35,8 +35,8 @@
  */
 
 import annotations.classfile.ClassfileInspector;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.TypeAnnotation;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.TypeAnnotation;
 
 import java.io.*;
 import java.lang.annotation.*;

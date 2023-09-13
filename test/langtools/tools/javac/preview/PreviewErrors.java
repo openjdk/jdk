@@ -60,8 +60,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Classfile;
 import java.io.FileWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;

@@ -25,8 +25,8 @@ import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test
