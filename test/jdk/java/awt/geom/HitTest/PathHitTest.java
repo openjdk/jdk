@@ -190,16 +190,16 @@ public class PathHitTest {
         private static final String INSTRUCTIONS = """
             This test displays the results of hit testing 5 different Shape
             objects one at a time.
-    
+
             You can switch between shapes using the Choice component located
             at the bottom of the window.
-    
+
             Each square in the test represents the
             return values of the hit testing operators for that square region:
-    
+
                 yellow - not yet tested
                 translucent blue overlay - the shape being tested
-    
+
                 black - all outside
                 dark gray - rectangle intersects shape
                 light gray - rectangle intersects and center point is inside shape
@@ -208,7 +208,7 @@ public class PathHitTest {
                     rectangle is contained, but center point is not
                     rectangle is contained, but rectangle.intersects is false
                     centerpoint is contained, but rectangle.intersects is false
-    
+
             Visually inspect the results to see if they match the above table.
             Note that it is not a violation for rectangles that are entirely
             inside the path to be light gray instead of white since sometimes
