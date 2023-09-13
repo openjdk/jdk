@@ -34,11 +34,14 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -767,4 +770,44 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
         return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
+
+    /*
+     * BitSets are packed into arrays of "words."  Currently a word is
+     * a long, which consists of 64 bits, requiring 6 address bits.
+     * The choice of word size is determined purely by performance concerns.
+     */
+    private static final int ADDRESS_BITS_PER_WORD = 6;
+    private static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+    private static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
+
+    private static int wordIndex(int bitIndex) {
+        return bitIndex >> ADDRESS_BITS_PER_WORD;
+    }
+
+    @Override
+    public long getLiveObjectLocalsAt(int bci, BitSet bigOopMap) {
+        int locals = getMaxLocals();
+        if (locals == 0) {
+            throw new IllegalArgumentException("cannot compute oop map for method with no local variables");
+        }
+        if (locals > 64) {
+            int nwords = ((locals - 1) / 64) + 1;
+            Unsafe unsafe = UnsafeAccess.UNSAFE;
+            long buffer = unsafe.allocateMemory(nwords);
+            try {
+                compilerToVM().getLiveObjectLocalsAt(this, bci, buffer);
+                long liveness[] = new long[nwords];
+                for (int i = 0; i < nwords; i++) {
+                    liveness[i] = unsafe.getLong(buffer + i);
+                }
+                bigOopMap.or(BitSet.valueOf(liveness));
+            } finally {
+                unsafe.freeMemory(buffer);
+            }
+            return 0;
+        } else {
+            return compilerToVM().getLiveObjectLocalsAt(this, bci, 0);
+        }
+    }
+
 }

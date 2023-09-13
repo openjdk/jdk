@@ -1473,4 +1473,11 @@ final class CompilerToVM {
             }
         }
     }
+
+
+    long getLiveObjectLocalsAt(HotSpotResolvedJavaMethodImpl method, int bci, long buffer) {
+        return getLiveObjectLocalsAt(method, method.getMethodPointer(), bci, buffer);
+    }
+
+    native long getLiveObjectLocalsAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long buffer);
 }

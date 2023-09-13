@@ -35,6 +35,7 @@
 #include "compiler/oopMap.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
@@ -2512,7 +2513,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
   jlongArray info = (jlongArray) JNIHandles::make_local(THREAD, info_oop);
   runtime->init_JavaVM_info(info, JVMCI_CHECK_0);
   return info;
-}
+C2V_END
 
 C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm))
   if (thread == nullptr || thread->libjvmci_runtime() == nullptr) {
@@ -2777,7 +2778,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     return 0L;
   }
   return (jlong) PEER_JVMCIENV->make_global(result).as_jobject();
-}
+C2V_END
 
 C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))
   requireJVMCINativeLibrary(JVMCI_CHECK_NULL);
@@ -2790,13 +2791,13 @@ C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))
 
   JVMCIENV->destroy_global(global_handle_obj);
   return result;
-}
+C2V_END
 
 C2V_VMENTRY(void, updateHotSpotNmethod, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
   // Execute this operation for the side effect of updating the InstalledCode state
   JVMCIENV->get_nmethod(code);
-}
+C2V_END
 
 C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
@@ -2812,7 +2813,7 @@ C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle
   JVMCIPrimitiveArray result = JVMCIENV->new_byteArray(code_size, JVMCI_CHECK_NULL);
   JVMCIENV->copy_bytes_from(code_bytes, result, 0, code_size);
   return JVMCIENV->get_jbyteArray(result);
-}
+C2V_END
 
 C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   requireInHotSpot("asReflectionExecutable", JVMCI_CHECK_NULL);
@@ -2828,7 +2829,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionExecutable, (JNIEnv* env, jobject, ARGUMEN
     executable = Reflection::new_method(m, false, CHECK_NULL);
   }
   return JNIHandles::make_local(THREAD, executable);
-}
+C2V_END
 
 static InstanceKlass* check_field(Klass* klass, jint index, JVMCI_TRAPS) {
   if (!klass->is_instance_klass()) {
@@ -2850,7 +2851,7 @@ C2V_VMENTRY_NULL(jobject, asReflectionField, (JNIEnv* env, jobject, ARGUMENT_PAI
   fieldDescriptor fd(iklass, index);
   oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   return JNIHandles::make_local(THREAD, reflected);
-}
+C2V_END
 
 static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationArray* annotations_array, bool for_class,
                                               jint filter_length, jlong filter_klass_pointers,
@@ -2964,7 +2965,7 @@ C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlo
     JVMCIENV->put_object_at(result, result_index++, entry);
   }
   return JVMCIENV->get_jobjectArray(result);
-}
+C2V_END
 
 C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, ARGUMENT_PAIR(method)))
   methodHandle method(THREAD, UNPACK_PAIR(Method, method));
@@ -2975,11 +2976,11 @@ C2V_VMENTRY_0(jlong, getFailedSpeculationsAddress, (JNIEnv* env, jobject, ARGUME
     method->set_method_data(method_data);
   }
   return (jlong) method_data->get_failed_speculations_address();
-}
+C2V_END
 
 C2V_VMENTRY(void, releaseFailedSpeculations, (JNIEnv* env, jobject, jlong failed_speculations_address))
   FailedSpeculation::free_failed_speculations((FailedSpeculation**)(address) failed_speculations_address);
-}
+C2V_END
 
 C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong failed_speculations_address, jbyteArray speculation_obj))
   JVMCIPrimitiveArray speculation_handle = JVMCIENV->wrap(speculation_obj);
@@ -2987,7 +2988,7 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
   char* speculation = NEW_RESOURCE_ARRAY(char, speculation_len);
   JVMCIENV->copy_bytes_to(speculation_handle, (jbyte*) speculation, 0, speculation_len);
   return FailedSpeculation::add_failed_speculation(nullptr, (FailedSpeculation**)(address) failed_speculations_address, (address) speculation, speculation_len);
-}
+C2V_END
 
 C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
   JavaValue result(T_VOID);
@@ -2999,11 +3000,11 @@ C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
                        vmSymbols::int_void_signature(),
                        &jargs,
                        CHECK);
-}
+C2V_END
 
 C2V_VMENTRY_0(jlong, ticksNow, (JNIEnv* env, jobject))
   return CompilerEvent::ticksNow();
-}
+C2V_END
 
 C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase_name))
 #if INCLUDE_JFR
@@ -3013,14 +3014,14 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 #else
   return -1;
 #endif // !INCLUDE_JFR
-}
+C2V_END
 
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
   EventCompilerPhase event;
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
   }
-}
+C2V_END
 
 C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compileId, ARGUMENT_PAIR(caller), ARGUMENT_PAIR(callee), jboolean succeeded, jstring jmessage, jint bci))
   EventCompilerInlining event;
@@ -3030,7 +3031,7 @@ C2V_VMENTRY(void, notifyCompilerInliningEvent, (JNIEnv* env, jobject, jint compi
     JVMCIObject message = JVMCIENV->wrap(jmessage);
     CompilerEvent::InlineEvent::post(event, compileId, caller, callee, succeeded, JVMCIENV->as_utf8_string(message), bci);
   }
-}
+C2V_END
 
 C2V_VMENTRY(void, setThreadLocalObject, (JNIEnv* env, jobject, jint id, jobject value))
   requireInHotSpot("setThreadLocalObject", JVMCI_CHECK);
@@ -3040,7 +3041,7 @@ C2V_VMENTRY(void, setThreadLocalObject, (JNIEnv* env, jobject, jint id, jobject 
   }
   THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
             err_msg("%d is not a valid thread local id", id));
-}
+C2V_END
 
 C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
   requireInHotSpot("getThreadLocalObject", JVMCI_CHECK_NULL);
@@ -3049,7 +3050,7 @@ C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
   }
   THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
               err_msg("%d is not a valid thread local id", id));
-}
+C2V_END
 
 C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong value))
   requireInHotSpot("setThreadLocalLong", JVMCI_CHECK);
@@ -3061,7 +3062,7 @@ C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong valu
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               err_msg("%d is not a valid thread local id", id));
   }
-}
+C2V_END
 
 C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
   requireInHotSpot("getThreadLocalLong", JVMCI_CHECK_0);
@@ -3073,7 +3074,36 @@ C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("%d is not a valid thread local id", id));
   }
-}
+C2V_END
+
+C2V_VMENTRY_0(jlong, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
+                 jint bci, jlong buffer))
+  methodHandle method(THREAD, UNPACK_PAIR(Method, method));
+  if (bci < 0 || bci >= method->code_size()) {
+    JVMCI_THROW_MSG_0(IllegalArgumentException,
+                err_msg("bci %d is out of bounds [0 .. %d)", bci, method->code_size()));
+  }
+  InterpreterOopMap mask;
+  OopMapCache::compute_one_oop_map(method, bci, &mask);
+  if (!mask.has_valid_mask()) {
+    JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("bci %d is not valid", bci));
+  }
+  int nlocals = method->max_locals();
+  jlong liveness = 0L;
+  // stringStream st;
+  // st.print("BitMap[%s@%d, nlocals:%d]:", method->name_and_sig_as_C_string(), bci, nlocals);
+  BitMapView bm = BitMapView((BitMap::bm_word_t*) (nlocals <= 64 ? (jlong) &liveness : buffer), nlocals);
+  for (int i = 0; i < nlocals ; i++ ) {
+    if (mask.is_oop(i)) {
+      bm.set_bit(i);
+      // st.print(" %d", i);
+    }
+  }
+  // st.print(" [liveness: 0x" JULONG_FORMAT_X "]", (julong) liveness);
+  // tty->print_raw_cr(st.as_string());
+  // tty->flush();
+  return liveness;
+C2V_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -3232,6 +3262,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
+  {CC "getLiveObjectLocalsAt",                        CC "(" HS_METHOD2 "IJ)J",                                                             FN_PTR(getLiveObjectLocalsAt)},
 };
 
 int CompilerToVM::methods_count() {

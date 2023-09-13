@@ -35,6 +35,9 @@
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm
@@ -50,6 +53,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.DataInputStream;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -61,18 +65,35 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.vm.test.AnnotationTestInput;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.attribute.CodeAttribute;
+
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -565,6 +586,184 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         // Ensure NumbersDE is initialized after Annotation2 is requested
         Assert.assertNotNull(m.getAnnotationData(a2));
         Assert.assertTrue(numbersDEType.isInitialized());
+    }
+
+    private static ClassModel readClassfile(Class<?> c) throws Exception {
+        String name = c.getName();
+        final int lastDot = name.lastIndexOf('.');
+        if (lastDot != -1) {
+            name = name.substring(lastDot + 1);
+        }
+        URI uri = c.getResource(name + ".class").toURI();
+        if (uri.getScheme().equals("jar")) {
+            final String[] parts = uri.toString().split("!");
+            if (parts.length == 2) {
+                try (FileSystem fs = FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>())) {
+                    return Classfile.of().parse(fs.getPath(parts[1]));
+                }
+            }
+        }
+        return Classfile.of().parse(Paths.get(uri));
+    }
+
+    public static void methodWithManyArgs(
+        Object o1, int i1,
+        Object o2, int i2,
+        Object o3, int i3,
+        Object o4, int i4,
+        Object o5, int i5,
+        Object o6, int i6,
+        Object o7, int i7,
+        Object o8, int i8,
+        Object o9, int i9,
+        Object o10, int i10,
+        Object o11, int i11,
+        Object o12, int i12,
+        Object o13, int i13,
+        Object o14, int i14,
+        Object o15, int i15,
+        Object o16, int i16,
+        Object o17, int i17,
+        Object o18, int i18,
+        Object o19, int i19,
+        Object o20, int i20,
+        Object o21, int i21,
+        Object o22, int i22,
+        Object o23, int i23,
+        Object o24, int i24,
+        Object o25, int i25,
+        Object o26, int i26,
+        Object o27, int i27,
+        Object o28, int i28,
+        Object o29, int i29,
+        Object o30, int i30,
+        Object o31, int i31,
+        Object o32, int i32,
+        Object o33, int i33,
+        Object o34, int i34,
+        Object o35, int i35,
+        Object o36, int i36,
+        Object o37, int i37,
+        Object o38, int i38,
+        Object o39, int i39,
+        Object o40, int i40,
+        Object o41, int i41,
+        Object o42, int i42,
+        Object o43, int i43,
+        Object o44, int i44,
+        Object o45, int i45,
+        Object o46, int i46,
+        Object o47, int i47,
+        Object o48, int i48,
+        Object o49, int i49,
+        Object o50, int i50,
+        Object o51, int i51,
+        Object o52, int i52,
+        Object o53, int i53,
+        Object o54, int i54,
+        Object o55, int i55,
+        Object o56, int i56,
+        Object o57, int i57,
+        Object o58, int i58,
+        Object o59, int i59) {
+            System.out.println("" + o1 + i1);
+            System.out.println("" + o2 + i2);
+            System.out.println("" + o3 + i3);
+            System.out.println("" + o4 + i4);
+            System.out.println("" + o5 + i5);
+            System.out.println("" + o6 + i6);
+            System.out.println("" + o7 + i7);
+            System.out.println("" + o8 + i8);
+            System.out.println("" + o9 + i9);
+            System.out.println("" + o10 + i10);
+            System.out.println("" + o11 + i11);
+            System.out.println("" + o12 + i12);
+            System.out.println("" + o13 + i13);
+            System.out.println("" + o14 + i14);
+            System.out.println("" + o15 + i15);
+            System.out.println("" + o16 + i16);
+            System.out.println("" + o17 + i17);
+            System.out.println("" + o58 + i58);
+            System.out.println("" + o59 + i59);
+        }
+
+    private static Map<String, ResolvedJavaMethod> buildMethodMap(ResolvedJavaType type) {
+        Map<String, ResolvedJavaMethod> methodMap = new HashMap<>();
+        for (ResolvedJavaMethod m : type.getDeclaredMethods()) {
+            if (m.hasBytecodes()) {
+                String key = m.getName() + ":" + m.getSignature().toMethodDescriptor();
+                methodMap.put(key, m);
+            }
+        }
+        for (ResolvedJavaMethod m : type.getDeclaredConstructors()) {
+            if (m.hasBytecodes()) {
+                String key = "<init>:" + m.getSignature().toMethodDescriptor();
+                methodMap.put(key, m);
+            }
+        }
+        ResolvedJavaMethod clinit = type.getClassInitializer();
+        if (clinit != null) {
+            String key = "<clinit>:()V";
+            methodMap.put(key, clinit);
+        }
+        return methodMap;
+    }
+
+    @Test
+    public void getLiveObjectLocalsAtTest() throws Exception {
+        Collection<Class<?>> allClasses = new ArrayList<>(classes);
+
+        // Add this class so that methodWithManyArgs is processed
+        allClasses.add(getClass());
+
+        for (Class<?> c : allClasses) {
+            if (c.isArray() || c.isPrimitive() || c.isHidden()) {
+                continue;
+            }
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            Map<String, ResolvedJavaMethod> methodMap = buildMethodMap(type);
+            ClassModel cf = readClassfile(c);
+            for (MethodModel cm : cf.methods()) {
+                cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
+                    String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
+                    ResolvedJavaMethod m = Objects.requireNonNull(methodMap.get(key));
+                    int maxLocals = m.getMaxLocals();
+
+                    // Requesting an oop map for a method with 0 locals must throw an exception
+                    if (maxLocals == 0) {
+                        try {
+                            m.getLiveObjectLocalsAt(0, null);
+                            throw new AssertionError("expected exception for method %s with no locals".formatted(m.format("%H.%n(%p)")));
+                        } catch(IllegalArgumentException e) {
+                            return;
+                        }
+                    }
+
+                    int bci = 0;
+                    for (CodeElement i : codeAttr.elementList()) {
+                        if (i instanceof Instruction ins) {
+                            BitSet bigOopMap = maxLocals <= 64 ? null : new BitSet(maxLocals);
+                            long oopMap = m.getLiveObjectLocalsAt(bci, bigOopMap);
+                            if (maxLocals > 64) {
+                                Assert.assertEquals(m.toString(), oopMap, 0L);
+                                Assert.assertNotEquals(m.toString(), bigOopMap.cardinality(), 0);
+                            }
+
+                            // Requesting an oop map at an invalid BCI must throw an exception
+                            if (ins.sizeInBytes() > 1) {
+                                try {
+                                    m.getLiveObjectLocalsAt(bci + 1, bigOopMap);
+                                    throw new AssertionError("expected exception for illegal bci %d in %s".formatted(bci + 1, m.format("%H.%n(%p)")));
+                                } catch(IllegalArgumentException e) {
+                                    // expected
+                                }
+                            }
+                            bci += ins.sizeInBytes();
+                        }
+                    }
+                });
+            }
+        }
     }
 
     private Method findTestMethod(Method apiMethod) {
