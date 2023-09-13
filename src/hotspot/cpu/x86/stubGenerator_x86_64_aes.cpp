@@ -302,7 +302,6 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 //   state      = r13           | r9  (c_rarg5)
 //   subkeyHtbl = r11           | r11
 //   counter    = rsi           | r12
-//   isEncrypt  = r12           | r13
 //
 // Output:
 //   rax - number of processed bytes
@@ -323,8 +322,6 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   const Register subkeyHtbl = r11;
   const Address counter_mem(rbp, 3 * wordSize);
   const Register counter = r12;
-  const Address isEncrypt_mem(rbp, 4 * wordSize);
-  const Register isEncrypt = r13;
  #else
   const Address key_mem(rbp, 6 * wordSize);
   const Register key = rdi;
@@ -334,8 +331,6 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   const Register subkeyHtbl = r11;
   const Address counter_mem(rbp, 9 * wordSize);
   const Register counter = rsi;
-  const Address isEncrypt_mem(rbp, 10 * wordSize);
-  const Register isEncrypt = r12;
  #endif
   __ enter();
   // Save state before entering routine
@@ -353,7 +348,7 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
-  __ movptr(isEncrypt, isEncrypt_mem);
+
   // Save rbp and rsp
   __ push(rbp);
   __ movq(rbp, rsp);
@@ -361,7 +356,7 @@ address StubGenerator::generate_avx2_galoisCounterMode_AESCrypt() {
   __ andq(rsp, -64);
   __ subptr(rsp, 16 * longSize); // Create space on the stack for saving AES entries
 
-  aesgcm_avx2(in, len, ct, out, key, state, subkeyHtbl, counter, isEncrypt);
+  aesgcm_avx2(in, len, ct, out, key, state, subkeyHtbl, counter);
   __ vzeroupper();
   __ movq(rsp, rbp);
   __ pop(rbp);
@@ -3361,7 +3356,7 @@ void StubGenerator::generateHtbl_8_block_avx2(Register htbl, Register rscratch) 
 }
 
 void StubGenerator::ghash8_encrypt8_parallel(Register key, Register subkeyHtbl, XMMRegister ctr_blockx, XMMRegister aad_hashx,
-                                             Register in, Register out, Register pos, bool in_order, Register isEncrypt, Register rounds) {
+                                             Register in, Register out, Register ct, Register pos, bool in_order, Register rounds) {
 
   const XMMRegister t1 = xmm0;
   const XMMRegister t2 = xmm10;
@@ -3717,7 +3712,7 @@ void StubGenerator::ghash8_encrypt8_parallel(Register key, Register subkeyHtbl, 
   __ movdqu(Address(out, pos, Address::times_1, 16 * 6), xmm7);
   __ movdqu(Address(out, pos, Address::times_1, 16 * 7), xmm8);
 
-  __ cmpl(isEncrypt, 1);
+  __ cmpptr(ct, out);
   __ jcc(Assembler::equal, skip_reload);
   __ movdqu(xmm1, Address(in, pos, Address::times_1, 16 * 0));
   __ movdqu(xmm2, Address(in, pos, Address::times_1, 16 * 1));
@@ -3909,7 +3904,7 @@ void StubGenerator::ghash_last_8(Register subkeyHtbl) {
 }
 
 void StubGenerator::initial_blocks(XMMRegister ctr, Register rounds, Register key,
-  Register len, Register in, Register out, Register subkeyHtbl, Register isEncrypt, Register pos) {
+  Register len, Register in, Register out, Register ct, Register subkeyHtbl, Register pos) {
   const XMMRegister t1 = xmm12;
   const XMMRegister t2 = xmm13;
   const XMMRegister t3 = xmm14;
@@ -4137,7 +4132,7 @@ void StubGenerator::initial_blocks(XMMRegister ctr, Register rounds, Register ke
   __ vpxor(xmm8, xmm8, t1, Assembler::AVX_128bit);
   __ movdqu(Address(out, pos, Address::times_1, 16 * 7), xmm8);
 
-  __ cmpl(isEncrypt, 1);
+  __ cmpptr(ct, out);
   __ jcc(Assembler::equal, skip_reload);
   __ movdqu(xmm1, Address(in, pos, Address::times_1, 16 * 0));
   __ movdqu(xmm2, Address(in, pos, Address::times_1, 16 * 1));
@@ -4166,7 +4161,7 @@ void StubGenerator::initial_blocks(XMMRegister ctr, Register rounds, Register ke
 }
 
 void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register out, Register key,
-                                Register state, Register subkeyHtbl, Register counter, Register isEncrypt) {
+                                Register state, Register subkeyHtbl, Register counter) {
   const Register pos = rax;
   const Register rounds = r10;
   const XMMRegister ctr_blockx = xmm9;
@@ -4197,7 +4192,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   //Save the amount of data left to process in r14
   __ mov(r14, len);
 
-  initial_blocks(xmm9, rounds, key, r14, in, out, subkeyHtbl, isEncrypt, pos);
+  initial_blocks(xmm9, rounds, key, r14, in, out, ct, subkeyHtbl, pos);
 
   //The entire message was encrypted processed in initial and now need to be hashed
   __ cmpl(len, 0);
@@ -4216,7 +4211,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ jcc(Assembler::greater, encrypt_by_8);
 
   __ addl(r15, 8);
-  ghash8_encrypt8_parallel(key, subkeyHtbl, ctr_blockx, aad_hashx, in, out, pos, false, isEncrypt, rounds);
+  ghash8_encrypt8_parallel(key, subkeyHtbl, ctr_blockx, aad_hashx, in, out, ct, pos, false, rounds);
   __ addl(pos, 128);
   __ subl(r14, 128);
   __ cmpl(r14, 128);
@@ -4229,7 +4224,7 @@ void StubGenerator::aesgcm_avx2(Register in, Register len, Register ct, Register
   __ vpshufb(xmm9, xmm9, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
 
   __ addl(r15, 8);
-  ghash8_encrypt8_parallel(key, subkeyHtbl, ctr_blockx, aad_hashx, in, out, pos, true, isEncrypt, rounds);
+  ghash8_encrypt8_parallel(key, subkeyHtbl, ctr_blockx, aad_hashx, in, out, ct, pos, true, rounds);
 
   __ vpshufb(xmm9, xmm9, ExternalAddress(counter_shuffle_mask_addr()), Assembler::AVX_128bit, rbx /*rscratch*/);
   __ addl(pos, 128);
