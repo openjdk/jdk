@@ -45,7 +45,7 @@ public final class EventHelper {
     private static volatile System.Logger securityLogger;
     private static final VarHandle LOGGER_HANDLE;
     static {
-	System.err.println("Patch version of EventHelper loaded");
+        System.err.println("Patch version of EventHelper loaded");
         try {
             LOGGER_HANDLE =
                     MethodHandles.lookup().findStaticVarHandle(
