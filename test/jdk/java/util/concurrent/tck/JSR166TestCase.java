@@ -36,9 +36,7 @@
 
 /*
  * @test id=default
- * @summary JSR-166 tck tests, in a number of variations.
- *          The first is the conformance testing variant,
- *          while others also test implementation details.
+ * @summary Conformance testing variant of JSR-166 tck tests.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
@@ -47,6 +45,8 @@
 
 /*
  * @test id=forkjoinpool-common-parallelism
+ * @summary Test implementation details variant of JSR-166
+ *          tck tests with ForkJoinPool common parallelism.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000
@@ -66,6 +66,9 @@
 
 /*
  * @test id=others
+ * @summary Remaining test implementation details variant of
+ *          JSR-166 tck tests apart from ForkJoinPool common
+ *          parallelism.
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000
