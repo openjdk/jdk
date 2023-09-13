@@ -98,7 +98,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -136,9 +135,6 @@ public final class LocalTime
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
-    @Stable
-    static final int[] DIGITS_K = new int[1000];
-
     /**
      * The minimum supported {@code LocalTime}, '00:00'.
      * This is the time of midnight at the start of the day.
@@ -169,14 +165,6 @@ public final class LocalTime
         NOON = HOURS[12];
         MIN = HOURS[0];
         MAX = new LocalTime(23, 59, 59, 999_999_999);
-
-        for (int i = 0; i < 1000; i++) {
-            int c0 = i < 10 ? 2 : i < 100 ? 1 : 0;
-            int c1 = (i / 100) + '0';
-            int c2 = ((i / 10) % 10) + '0';
-            int c3 = i % 10 + '0';
-            DIGITS_K[i] = c0 + (c1 << 8) + (c2 << 16) + (c3 << 24);
-        }
     }
 
     /**
@@ -1704,40 +1692,44 @@ public final class LocalTime
 
         int div = nano / 1000;
         int div2 = div / 1000;
-        ByteArrayLittleEndian.setInt(
+
+        int div2_k = div2 / 100;
+        buf[off] = '.';
+        buf[off + 1] = (byte) ('0' + div2_k);
+        ByteArrayLittleEndian.setShort(
                 buf,
-                off,
-                DIGITS_K[div2] & 0xffffff00 | '.'
+                off + 2,
+                DecimalDigits.digitPair(div2 - div2_k * 100)
         );
         off += 4;
 
         int rem1 = nano - div * 1000;
-        int v;
+        int rem2;
         if (rem1 == 0) {
-            int rem2 = div - div2 * 1000;
+            rem2 = div - div2 * 1000;
             if (rem2 == 0) {
                 return;
             }
-
-            v = DIGITS_K[rem2];
         } else {
-            v = DIGITS_K[div - div2 * 1000];
+            rem2 = div - div2 * 1000;
         }
 
+        int rem2_k = rem2 / 100;
+        buf[off] = (byte) ('0' + rem2_k);
         ByteArrayLittleEndian.setShort(
                 buf,
-                off,
-                (short) (v >> 8)
+                off + 1,
+                DecimalDigits.digitPair(rem2 - rem2_k * 100)
         );
-        off += 2;
+        off += 3;
 
-        if (rem1 == 0) {
-            buf[off] = (byte) (v >> 24);
-        } else {
-            ByteArrayLittleEndian.setInt(
+        if (rem1 != 0) {
+            int rem1_k = rem1 / 100;
+            buf[off] = (byte) ('0' + rem1_k);
+            ByteArrayLittleEndian.setShort(
                     buf,
-                    off,
-                    DIGITS_K[rem1] & 0xffffff00 | (v >> 24)
+                    off + 1,
+                    DecimalDigits.digitPair(rem1 - rem1_k * 100)
             );
         }
     }
