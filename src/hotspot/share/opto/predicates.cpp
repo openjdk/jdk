@@ -77,7 +77,7 @@ Deoptimization::DeoptReason RuntimePredicate::uncommon_trap_reason(IfProjNode* i
 }
 
 bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason) {
-  if (node->is_IfProj()) {
+  if (node->is_IfProj() && !node->in(0)->is_ParsePredicate()) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
     return false;
