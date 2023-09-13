@@ -829,15 +829,20 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
 
     void appendDigit3(int i) {
         ensureCapacityInternal(count + 3);
-        int v = DecimalDigits.digitTriple(i);
+
+        int div = i / 100;
+        int rem = i - div * 100;
+        byte c0 = (byte) ('0' + div);
+        short c12 = DecimalDigits.digitPair(i - div * 100);
+
         if (isLatin1()) {
-            ByteArrayLittleEndian.setShort(value, count, (short) (v >> 8));
-            value[count + 2] = (byte) (v >> 24);
+            value[count] = c0;
+            ByteArrayLittleEndian.setShort(value, count + 1, c12);
         } else {
-            StringUTF16.putChar(value, count, (byte) (v >> 8));
-            StringUTF16.putChar(value, count + 1, (byte) (v >> 16));
-            StringUTF16.putChar(value, count + 2, (byte) (v >> 24));
+            StringUTF16.putChar(value, count, c0);
+            StringUTF16.putPair(value, count + 1, c12);
         }
+
         count += 3;
     }
 

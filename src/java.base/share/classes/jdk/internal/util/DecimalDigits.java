@@ -70,21 +70,6 @@ public final class DecimalDigits implements Digits {
             0x3039, 0x3139, 0x3239, 0x3339, 0x3439, 0x3539, 0x3639, 0x3739, 0x3839, 0x3939
     };
 
-    @Stable
-    private static final int[] DIGITS_K;
-
-    static {
-        int[] digits_k = new int[1000];
-        for (int i = 0; i < 1000; i++) {
-            int c0 = i < 10 ? 2 : i < 100 ? 1 : 0;
-            int c1 = (i / 100) + '0';
-            int c2 = ((i / 10) % 10) + '0';
-            int c3 = i % 10 + '0';
-            digits_k[i] = c0 + (c1 << 8) + (c2 << 16) + (c3 << 24);
-        }
-        DIGITS_K = digits_k;
-    }
-
     /**
      * Singleton instance of DecimalDigits.
      */
@@ -171,14 +156,5 @@ public final class DecimalDigits implements Digits {
      */
     public static short digitPair(int i) {
         return DIGITS[i];
-    }
-
-    /**
-     * For values from 0 to 999 return a short encoding a triple of ASCII-encoded digit characters in little-endian
-     * @param i value to convert
-     * @return a short encoding a triple of ASCII-encoded digit characters
-     */
-    public static int digitTriple(int i) {
-        return DIGITS_K[i];
     }
 }
