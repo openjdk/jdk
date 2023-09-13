@@ -169,7 +169,10 @@ public sealed interface ModuleAttribute
 
     /**
      * A builder for module attributes.
+     *
+     * @since 22
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {
 
