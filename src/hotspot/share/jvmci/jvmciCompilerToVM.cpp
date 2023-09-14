@@ -3105,6 +3105,9 @@ C2V_VMENTRY(void, getLiveObjectLocalsAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(me
   if (oop_map_buf == nullptr) {
     JVMCI_THROW_MSG(InternalError, err_msg("could not allocate %d longs", nwords));
   }
+  for (int i = 0; i < nwords; i++) {
+    oop_map_buf[i] = 0L;
+  }
 
   BitMapView oop_map_view = BitMapView((BitMap::bm_word_t*) oop_map_buf, nwords * BitsPerLong);
   for (int i = 0; i < nlocals; i++) {
