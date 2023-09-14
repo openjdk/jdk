@@ -28,6 +28,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;

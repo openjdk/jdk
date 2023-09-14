@@ -6314,14 +6314,14 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Implements fast-locking.
+// Implements lightweight-locking.
 // Branches to slow upon failure to lock the object, with ZF cleared.
 // Falls through upon success with ZF set.
 //
 //  - obj: the object to be locked
 //  - hdr: the header, already loaded from obj, will be destroyed
 //  - t1, t2: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1, t2);
 
@@ -6346,14 +6346,14 @@ void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register
   strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements fast-unlocking.
+// Implements lightweight-unlocking.
 // Branches to slow upon failure, with ZF cleared.
 // Falls through upon success, with ZF set.
 //
 // - obj: the object to be unlocked
 // - hdr: the (pre-loaded) header of the object
 // - t1, t2: temporary registers
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, hdr, t1, t2);
 

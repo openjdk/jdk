@@ -238,7 +238,7 @@ void StubQueue::verify() {
 
 
 void StubQueue::print() {
-  MutexLocker lock(_mutex, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker lock(_mutex, _mutex != nullptr, Mutex::_no_safepoint_check_flag);
   for (Stub* s = first(); s != nullptr; s = next(s)) {
     stub_print(s);
   }

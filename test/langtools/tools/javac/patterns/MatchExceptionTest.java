@@ -41,6 +41,7 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.util.Arrays;
+import jdk.internal.classfile.constantpool.PoolEntry;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
