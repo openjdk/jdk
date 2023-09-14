@@ -873,14 +873,15 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
  private:
   jlong _total;
   PerfCounter* _counter;
-  volatile jlong* _total_cpu_time;
+  bool _is_gc_threads;
 
  public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter) :
-      _total(0), _counter(counter), _total_cpu_time(nullptr) {}
-  
-  ThreadTotalCPUTimeClosure(PerfCounter* counter, volatile jlong* total_cpu_counter) :
-      _total(0), _counter(counter), _total_cpu_time(total_cpu_counter) {}
+  ThreadTotalCPUTimeClosure(PerfCounter* counter, bool is_gc_threads) :
+      _total(0), _counter(counter), _is_gc_threads(is_gc_threads) {}
+
+  ThreadTotalCPUTimeClosure(PerfCounter* counter) {
+    ThreadTotalCPUTimeClosure(counter, false);
+  }
 
   ~ThreadTotalCPUTimeClosure();
 

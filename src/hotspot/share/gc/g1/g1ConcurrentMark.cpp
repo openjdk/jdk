@@ -2091,7 +2091,7 @@ void G1ConcurrentMark::update_concurrent_mark_threads_cpu_time() {
   if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
     return;
   }
-  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_mark_threads_cpu_time, G1CollectedHeap::heap()->_total_cpu_time_diff);
+  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_mark_threads_cpu_time, true);
   tttc.do_thread(cm_thread());
   threads_do(&tttc);
 }

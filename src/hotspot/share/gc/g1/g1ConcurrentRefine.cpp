@@ -169,7 +169,7 @@ void G1ConcurrentRefineThreadControl::update_threads_cpu_time() {
   // reading CPU time of a terminated worker thread.
   assert_current_thread_is_primary_refinement_thread();
   assert(UsePerfData && os::is_thread_cpu_time_supported(), "Must be enabled");
-  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_refine_threads_cpu_time, G1CollectedHeap::heap()->_total_cpu_time_diff);
+  ThreadTotalCPUTimeClosure tttc(_g1_concurrent_refine_threads_cpu_time, true);
   worker_threads_do(&tttc);
 }
 

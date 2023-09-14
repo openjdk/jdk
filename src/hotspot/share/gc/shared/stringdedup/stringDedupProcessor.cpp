@@ -195,7 +195,7 @@ void StringDedup::Processor::run(JavaThread* thread) {
     _cur_stat.report_active_end();
     log_statistics();
     if (UsePerfData && os::is_thread_cpu_time_supported()) {
-      ThreadTotalCPUTimeClosure tttc(_concurrent_dedup_thread_cpu_time, _total_cpu_time_diff);
+      ThreadTotalCPUTimeClosure tttc(_concurrent_dedup_thread_cpu_time, true);
       tttc.do_thread(thread);
     }
   }
