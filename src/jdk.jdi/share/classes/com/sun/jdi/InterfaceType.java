@@ -155,6 +155,10 @@ public interface InterfaceType extends ReferenceType {
      * the single threaded invocation will not be suspended when the
      * invocation completes.
      * <p>
+     * If the target VM is disconnected during the invoke (for example, through
+     * {@link VirtualMachine#dispose}) the method invocation continues.
+     *
+     * @apiNote
      * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">Virtual threads</a>
      * are typically user-mode threads scheduled by the Java runtime rather than
      * the operating system. As such, there may be more cases with virtual threads
@@ -162,9 +166,6 @@ public interface InterfaceType extends ReferenceType {
      * For example, suspending all threads in the target VM may suspend threads that
      * support the timer mechanism for virtual threads, and thus methods such as
      * {@link Thread#sleep} may deadlock.
-     * <p>
-     * If the target VM is disconnected during the invoke (for example, through
-     * {@link VirtualMachine#dispose}) the method invocation continues.
      *
      * @param thread the thread in which to invoke.
      * @param method the {@link Method} to invoke.
