@@ -169,19 +169,16 @@ public interface ConstantPool {
          * entry. To resolve this entry, the corresponding bootstrap method has to be called first:
          *
          * <pre>
-         * lookupConstant(int index, boolean resolve) {
-         *     constant = cp.lookupConstant(index, resolve);
-         *     if constant is null {
-         *         bsmInvocation = cp.lookupBootstrapMethodInvocation(index, -1);
-         *         staticArguments = bsmInvocation.getStaticArguments();
-         *         for each argument in staticArguments {
-         *             if argument is PrimitiveArgument {
-         *                 lookupConstant(argument.asInt(), resolve);
-         *             }
-         *         }
-         *         call boostrap method with resolved arguments to get constant
+         * List<JavaConstant> args = bmi.getStaticArguments();
+         * List<JavaConstant> resolvedArgs = new ArrayList<>(args.size());
+         * for (JavaConstant c : args) {
+         *     JavaConstant r = c;
+         *     if (c instanceof PrimitiveConstant pc) {
+         *         // If needed, access corresponding BootstrapMethodInvocation using
+         *         // cp.lookupBootstrapMethodInvocation(pc.asInt(), -1)
+         *         r = cp.lookupConstant(pc.asInt(), true);
          *     }
-         *     return constant;
+         *     resolvedArgs.append(r);
          * }
          * </pre>
          *
