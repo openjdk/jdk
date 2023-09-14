@@ -142,8 +142,8 @@ class JavaThread: public Thread {
   oop           _vm_result;    // oop result is GC-preserved
   Metadata*     _vm_result_2;  // non-oop result
 
-  // Secondary super miss counter
-  uint32_t       _secondary_super_miss;
+  // Used to back off on secondary super cache updates to mitigate contention on it.
+  uint32_t       _backoff_secondary_super_miss;
 
   // See ReduceInitialCardMarks: this holds the precise space interval of
   // the most recent slow path allocation for which compiled code has
@@ -195,8 +195,6 @@ class JavaThread: public Thread {
 
   void push_jni_handle_block();
   void pop_jni_handle_block();
-
-  uint32_t secondary_super_misses() { return _secondary_super_miss; }
 
  private:
   MonitorChunk* _monitor_chunks;              // Contains the off stack monitors
@@ -744,8 +742,9 @@ private:
 
   // Misc. accessors/mutators
   static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
-  static ByteSize secondary_super_miss_offset()   { return byte_offset_of(JavaThread, _secondary_super_miss); }
 
+  // Backoff counters support
+  static ByteSize backoff_secondary_super_miss_offset() { return byte_offset_of(JavaThread, _backoff_secondary_super_miss); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }

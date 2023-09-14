@@ -1531,18 +1531,18 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   br(Assembler::NE, *L_failure);
 
-  // Success. MAYBE cache the super we found and proceed in triumph.
+  // Success. Try to cache the super we found and proceed in triumph.
 
   Label L_skip_super_cache_update;
-  if (SecondarySuperMissThreshold > 0) {
-    ldr(rscratch1, Address(rthread, JavaThread::secondary_super_miss_offset()));
+  if (SecondarySuperMissBackoff > 0) {
+    ldr(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
     sub(rscratch1, rscratch1, 1);
-    str(rscratch1, Address(rthread, JavaThread::secondary_super_miss_offset()));
+    str(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
 
-    cmp(rscratch1, (unsigned char) 0);
+    cmp(rscratch1, (u1) 0);
     br(Assembler::GT, L_skip_super_cache_update);
-    mov_immediate32(rscratch1, checked_cast<uint32_t>(SecondarySuperMissThreshold));
-    str(rscratch1, Address(rthread, JavaThread::secondary_super_miss_offset()));
+    mov_immediate32(rscratch1, checked_cast<uint32_t>(SecondarySuperMissBackoff));
+    str(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
   }
 
   str(super_klass, super_cache_addr);
