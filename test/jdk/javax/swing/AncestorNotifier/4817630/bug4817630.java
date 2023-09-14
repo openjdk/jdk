@@ -77,7 +77,7 @@ public class bug4817630 {
                     bug4817630.this.wait();
                 }
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Test failed because of "
                     + e.getLocalizedMessage());
         }
