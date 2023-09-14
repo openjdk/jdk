@@ -2021,14 +2021,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   b(fallthru);
 
   bind(hit);
-
-  if (SecondarySuperMissBackoff > 0) {
-    assert(false, "Implement this");
-    std(super_klass, target_offset, sub_klass); // save result to cache
-  } else {
-    std(super_klass, target_offset, sub_klass); // save result to cache
-  }
-
+  std(super_klass, target_offset, sub_klass); // save result to cache
   if (result_reg != noreg) { li(result_reg, 0); } // load zero result (indicates a hit)
   if (L_success != nullptr) { b(*L_success); }
   else if (result_reg == noreg) { blr(); } // return with CR0.eq if neither label nor result reg provided

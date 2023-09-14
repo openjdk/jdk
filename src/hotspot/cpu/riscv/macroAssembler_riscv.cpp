@@ -3089,13 +3089,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bne(t1, t0, *L_failure);
 
   // Success. Cache the super we found an proceed in triumph.
-
-  if (SecondarySuperMissBackoff > 0) {
-    assert(false, "Implement this");
-    sd(super_klass, super_cache_addr);
-  } else {
-    sd(super_klass, super_cache_addr);
-  }
+  sd(super_klass, super_cache_addr);
 
   if (L_success != &L_fallthrough) {
     j(*L_success);
