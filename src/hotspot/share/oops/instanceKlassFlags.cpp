@@ -32,11 +32,10 @@
 
 void InstanceKlassFlags::print_on(outputStream* st) const {
 #define IK_FLAGS_PRINT(name, ignore)          \
-  if (name()) st->print(" ##name ");
+  if (name()) st->print(#name " ");
   IK_FLAGS_DO(IK_FLAGS_PRINT)
   IK_STATUS_DO(IK_FLAGS_PRINT)
 #undef IK_FLAGS_PRINT
-  st->cr();
 }
 
 #if INCLUDE_CDS

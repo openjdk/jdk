@@ -27,6 +27,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
@@ -40,6 +41,7 @@
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks (negative test)
  * @library /test/lib
+ * @requires vm.flagless
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
@@ -165,6 +167,9 @@ public class THPsInThreadStackPreventionTest {
             "-Xmx" + heapSizeMB + "m", "-Xms" + heapSizeMB + "m", "-XX:+AlwaysPreTouch", // stabilize RSS
             "-Xss" + threadStackSizeMB + "m",
             "-XX:-CreateCoredumpOnCrash",
+            // Limits the number of JVM-internal threads, which depends on the available cores of the
+            // machine. RSS+Swap could exceed acceptableRSSLimitMB when JVM creates many internal threads.
+            "-XX:ActiveProcessorCount=2",
             // This will delay the child threads before they create guard pages, thereby greatly increasing the
             // chance of large VMA formation + hugepage coalescation; see JDK-8312182
             "-XX:+DelayThreadStartALot"
@@ -208,7 +213,7 @@ public class THPsInThreadStackPreventionTest {
 
                 // explicitly disable the no-THP-workaround:
                 finalargs.add("-XX:+UnlockDiagnosticVMOptions");
-                finalargs.add("-XX:+DisableTHPStackMitigation");
+                finalargs.add("-XX:-THPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);

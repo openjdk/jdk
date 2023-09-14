@@ -27,17 +27,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
@@ -65,18 +60,8 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
-
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_REQUIRED;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.CONSTRUCTORS;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ENUM_CONSTANTS;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.FIELDS;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.METHODS;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.NESTED_CLASSES;
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.PROPERTIES;
 
 /**
  * Generate the Class Information Page.
@@ -96,12 +81,9 @@ public class ClassWriter extends SubWriterHolderWriter {
                      "java.io.Serializable");
 
     protected final TypeElement typeElement;
-    protected final VisibleMemberTable visibleMemberTable;
 
     protected final ClassTree classTree;
-
-    private final Comparator<Element> summariesComparator;
-    private final PropertyUtils.PropertyHelper pHelper;
+    protected final PropertyUtils.PropertyHelper pHelper;
 
     /**
      * @param configuration the configuration data for the doclet
@@ -115,8 +97,6 @@ public class ClassWriter extends SubWriterHolderWriter {
         configuration.currentTypeElement = typeElement;
         this.classTree = classTree;
 
-        visibleMemberTable = configuration.getVisibleMemberTable(typeElement);
-        summariesComparator = utils.comparators.makeIndexElementComparator();
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
 
         switch (typeElement.getKind()) {
@@ -125,7 +105,13 @@ public class ClassWriter extends SubWriterHolderWriter {
         }
     }
 
-    public void build() throws DocletException {
+    @Override
+    public PropertyUtils.PropertyHelper getPropertyHelper() {
+        return pHelper;
+    }
+
+    @Override
+    public void buildPage() throws DocletException {
         buildClassDoc();
     }
 
@@ -172,7 +158,7 @@ public class ClassWriter extends SubWriterHolderWriter {
      * @param target the content to which the documentation will be added
      */
     protected void buildClassInfo(Content target) {
-        Content c = getOutputInstance();
+        Content c = new ContentBuilder();
         buildParamInfo(c);
         buildSuperInterfacesInfo(c);
         buildImplementedInterfacesInfo(c);
@@ -286,7 +272,7 @@ public class ClassWriter extends SubWriterHolderWriter {
             //package already. Otherwise, we are making duplicate copies.
             var docFilesHandler = configuration
                     .getWriterFactory()
-                    .getDocFilesHandler(containingPackage);
+                    .newDocFilesHandler(containingPackage);
             docFilesHandler.copyDocFiles();
             containingPackagesSeen.add(containingPackage);
         }
@@ -326,321 +312,31 @@ public class ClassWriter extends SubWriterHolderWriter {
      */
     protected void buildMemberSummary(Content classContent) {
         Content summariesList = getSummariesList();
-        buildSummaries(summariesList);
+
+        var f = configuration.getWriterFactory();
+        for (var k : AbstractMemberWriter.summaryKinds) {
+            var writer = f.newMemberWriter(this, k);
+            writer.buildSummary(summariesList);
+        }
+
         classContent.add(getMemberSummary(summariesList));
-    }
-
-    protected void buildSummaries(Content target) {
-        buildPropertiesSummary(target);
-        buildNestedClassesSummary(target);
-        buildEnumConstantsSummary(target);
-        buildAnnotationTypeRequiredMemberSummary(target);
-        buildAnnotationTypeOptionalMemberSummary(target);
-        buildFieldsSummary(target);
-        buildConstructorsSummary(target);
-        buildMethodsSummary(target);
-    }
-
-    /**
-     * Builds the summary for any optional members of an annotation type.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildAnnotationTypeOptionalMemberSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(ANNOTATION_TYPE_MEMBER_OPTIONAL);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getAnnotationTypeOptionalMemberWriter(this);
-        addSummary(writer, ANNOTATION_TYPE_MEMBER_OPTIONAL, false, summariesList);
-    }
-
-    /**
-     * Builds the summary for any required members of an annotation type.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildAnnotationTypeRequiredMemberSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(ANNOTATION_TYPE_MEMBER_REQUIRED);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getAnnotationTypeRequiredMemberWriter(this);
-        addSummary(writer, ANNOTATION_TYPE_MEMBER_REQUIRED, false, summariesList);
-    }
-
-    /**
-     * Builds the summary for any enum constants of an enum type.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildEnumConstantsSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(ENUM_CONSTANTS);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getEnumConstantWriter(this);
-        addSummary(writer, ENUM_CONSTANTS, false, summariesList);
-    }
-
-    /**
-     * Builds the summary for any fields.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildFieldsSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(FIELDS);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getFieldWriter(this);
-        addSummary(writer, FIELDS, true, summariesList);
-    }
-
-    /**
-     * Builds the summary for any properties.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildPropertiesSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(PROPERTIES);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getPropertyWriter(this);
-        addSummary(writer, PROPERTIES, true, summariesList);
-    }
-
-    /**
-     * Builds the summary for any nested classes.
-     *
-     * @param summariesList the list of summaries to which the summary will be added
-     */
-    protected void buildNestedClassesSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(NESTED_CLASSES);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = new NestedClassWriter(this, typeElement); // TODO: surprising omission from WriterFactory
-        addSummary(writer, NESTED_CLASSES, true, summariesList);
-    }
-
-    /**
-     * Builds the summary for any methods.
-     *
-     * @param summariesList the content to which the documentation will be added
-     */
-    protected void buildMethodsSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(METHODS);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getMethodWriter(this);
-        addSummary(writer, METHODS, true, summariesList);
-    }
-
-    /**
-     * Builds the summary for any constructors.
-     *
-     * @param summariesList the content to which the documentation will be added
-     */
-    protected void buildConstructorsSummary(Content summariesList) {
-//        MemberSummaryWriter writer = memberSummaryWriters.get(CONSTRUCTORS);
-        var writerFactory = configuration.getWriterFactory();
-        var writer = writerFactory.getConstructorWriter(this);
-        addSummary(writer, CONSTRUCTORS, false, summariesList);
-    }
-
-
-    /**
-     * Adds the summary for the documentation.
-     *
-     * @param writer               the writer for this member summary
-     * @param kind                 the kind of members to document
-     * @param showInheritedSummary true if a summary of any inherited elements should be documented
-     * @param summariesList        the list of summaries to which the summary will be added
-     */
-    private void addSummary(AbstractMemberWriter writer,
-                            VisibleMemberTable.Kind kind,
-                            boolean showInheritedSummary,
-                            Content summariesList)
-    {
-        // TODO: could infer the writer from the kind
-        // TODO: why LinkedList?
-        List<Content> summaryTreeList = new LinkedList<>();
-        buildSummary(writer, kind, summaryTreeList);
-        if (showInheritedSummary)
-            buildInheritedSummary(writer, kind, summaryTreeList);
-        if (!summaryTreeList.isEmpty()) {
-            Content member = writer.getMemberSummaryHeader(typeElement, summariesList);
-            summaryTreeList.forEach(member::add);
-            writer.addSummary(summariesList, member);
-        }
-    }
-
-    /**
-     * Build the member summary for the given members.
-     *
-     * @param writer the summary writer to write the output.
-     * @param kind the kind of  members to summarize.
-     * @param summaryTreeList the list of contents to which the documentation will be added
-     */
-    private void buildSummary(AbstractMemberWriter writer,
-                              VisibleMemberTable.Kind kind, List<Content> summaryTreeList) {
-        SortedSet<? extends Element> members = asSortedSet(visibleMemberTable.getVisibleMembers(kind));
-        if (!members.isEmpty()) {
-            for (Element member : members) {
-                final Element property = pHelper.getPropertyElement(member);
-                if (property != null && member instanceof ExecutableElement ee) {
-                    configuration.cmtUtils.updatePropertyMethodComment(ee, property);
-                }
-                if (utils.isMethod(member)) {
-                    var docFinder = utils.docFinder();
-                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
-                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
-                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
-                        return DocFinder.Result.fromOptional(optional);
-                    })).toOptional();
-                    // The fact that we use `member` for possibly unrelated tags is suspicious
-                    writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
-                } else {
-                    writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
-                }
-            }
-            summaryTreeList.add(writer.getSummaryTable(typeElement));
-        }
-    }
-
-    /**
-     * Build the inherited member summary for the given methods.
-     *
-     * @param writer the writer for this member summary.
-     * @param kind the kind of members to document.
-     * @param targets the list of contents to which the documentation will be added
-     */
-    private void buildInheritedSummary(AbstractMemberWriter writer,
-                                       VisibleMemberTable.Kind kind, List<Content> targets) {
-        SortedSet<? extends Element> inheritedMembersFromMap = asSortedSet(visibleMemberTable.getAllVisibleMembers(kind));
-
-        for (TypeElement inheritedClass : visibleMemberTable.getVisibleTypeElements()) {
-            if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
-                continue;
-            }
-            if (Objects.equals(inheritedClass, typeElement)) {
-                continue;
-            }
-            if (utils.hasHiddenTag(inheritedClass)) {
-                continue;
-            }
-
-            List<? extends Element> members = inheritedMembersFromMap.stream()
-                    .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), inheritedClass))
-                    .toList();
-
-            if (!members.isEmpty()) {
-                SortedSet<Element> inheritedMembers = new TreeSet<>(summariesComparator);
-                inheritedMembers.addAll(members);
-                Content inheritedHeader = writer.getInheritedSummaryHeader(inheritedClass);
-                Content links = writer.getInheritedSummaryLinks();
-                addSummaryFootNote(inheritedClass, inheritedMembers, links, writer);
-                inheritedHeader.add(links);
-                targets.add(inheritedHeader);
-            }
-        }
-    }
-
-    private void addSummaryFootNote(TypeElement inheritedClass, Iterable<Element> inheritedMembers,
-                                    Content links, AbstractMemberWriter writer) {
-        boolean isFirst = true;
-        for (var iterator = inheritedMembers.iterator(); iterator.hasNext(); ) {
-            var member = iterator.next();
-            TypeElement t = utils.isUndocumentedEnclosure(inheritedClass)
-                    ? typeElement : inheritedClass;
-            writer.addInheritedMemberSummary(t, member, isFirst, !iterator.hasNext(), links);
-            isFirst = false;
-        }
-    }
-
-    private SortedSet<? extends Element> asSortedSet(Collection<? extends Element> members) {
-        SortedSet<Element> out = new TreeSet<>(summariesComparator);
-        out.addAll(members);
-        return out;
     }
 
     /**
      * Build the member details contents of the page.
      *
      * @param classContent the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMemberDetails(Content classContent) throws DocletException {
+    protected void buildMemberDetails(Content classContent) {
         Content detailsList = getDetailsList();
 
-        buildEnumConstantsDetails(detailsList);
-        buildPropertyDetails(detailsList);
-        buildFieldDetails(detailsList);
-        buildConstructorDetails(detailsList);
-        buildAnnotationTypeMemberDetails(detailsList);
-        buildMethodDetails(detailsList);
+        var f = configuration.getWriterFactory();
+        for (var k : AbstractMemberWriter.detailKinds) {
+            var writer = f.newMemberWriter(this, k);
+            writer.buildDetails(detailsList);
+        }
 
         classContent.add(getMemberDetails(detailsList));
-    }
-
-    /**
-     * Build the enum constants documentation.
-     *
-     * @param detailsList the content to which the documentation will be added
-     */
-    protected void buildEnumConstantsDetails(Content detailsList) {
-        var writerFactory = configuration.getWriterFactory();
-        var enumConstantWriter = writerFactory.getEnumConstantWriter(this);
-        enumConstantWriter.build(detailsList);
-    }
-
-    /**
-     * Build the field documentation.
-     *
-     * @param detailsList the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    protected void buildFieldDetails(Content detailsList) throws DocletException {
-        var writerFactory = configuration.getWriterFactory();
-        var fieldWriter = writerFactory.getFieldWriter(this);
-        fieldWriter.build(detailsList);
-    }
-
-    /**
-     * Build the property documentation.
-     *
-     * @param detailsList the content to which the documentation will be added
-     */
-    public void buildPropertyDetails( Content detailsList) {
-        var writerFactory = configuration.getWriterFactory();
-        var propertyWriter = writerFactory.getPropertyWriter(this);
-        propertyWriter.build(detailsList);
-    }
-
-    /**
-     * Build the constructor documentation.
-     *
-     * @param detailsList the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    protected void buildConstructorDetails(Content detailsList) throws DocletException {
-        var writerFactory = configuration.getWriterFactory();
-        var constructorWriter = writerFactory.getConstructorWriter(this);
-        constructorWriter.build(detailsList);
-    }
-
-    /**
-     * Build the method documentation.
-     *
-     * @param detailsList the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
-     */
-    protected void buildMethodDetails(Content detailsList) throws DocletException {
-        var writerFactory = configuration.getWriterFactory();
-        var methodWriter = writerFactory.getMethodWriter(this);
-        methodWriter.build(detailsList);
-    }
-
-    /**
-     * Build the annotation type optional member documentation.
-     *
-     * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem building the documentation
-     */
-    protected void buildAnnotationTypeMemberDetails(Content target)
-            throws DocletException {
-        var writerFactory = configuration.getWriterFactory();
-        var annotationTypeMemberWriter = writerFactory.getAnnotationTypeMemberWriter(this);
-        annotationTypeMemberWriter.build(target);
     }
 
     /**
@@ -734,12 +430,6 @@ public class ClassWriter extends SubWriterHolderWriter {
                 }
             }
         }
-
-    }
-
-    // TODO: inline this
-    public Content getOutputInstance() {
-        return new ContentBuilder();
     }
 
     protected Content getHeader(String header) {
@@ -963,7 +653,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addImplementedInterfacesInfo(Content target) {
-        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
+        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.typeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
@@ -975,7 +665,7 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addSuperInterfacesInfo(Content target) {
         SortedSet<TypeMirror> interfaces =
-                new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
+                new TreeSet<>(comparators.typeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
         if (utils.isPlainInterface(typeElement) && !interfaces.isEmpty()) {
@@ -1005,7 +695,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addFunctionalInterfaceInfo (Content target) {
-        if (isFunctionalInterface()) {
+        if (utils.isFunctionalInterface(typeElement)) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
             dl.add(HtmlTree.DT(contents.functionalInterface));
             var dd = new HtmlTree(TagName.DD);
@@ -1014,17 +704,6 @@ public class ClassWriter extends SubWriterHolderWriter {
             target.add(dl);
         }
     }
-
-    public boolean isFunctionalInterface() {
-        List<? extends AnnotationMirror> annotationMirrors = typeElement.getAnnotationMirrors();
-        for (AnnotationMirror anno : annotationMirrors) {
-            if (utils.isFunctionalInterface(anno)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 
     protected void addClassDeprecationInfo(Content classInfo) {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(typeElement);

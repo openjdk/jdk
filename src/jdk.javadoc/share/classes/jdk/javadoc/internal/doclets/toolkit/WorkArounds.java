@@ -40,7 +40,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -56,11 +55,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
-import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -280,8 +276,8 @@ public class WorkArounds {
         NewSerializedForm(Utils utils, Elements elements, TypeElement te) {
             this.utils = utils;
             this.elements = elements;
-            methods = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
-            fields = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+            methods = new TreeSet<>(utils.comparators.generalPurposeComparator());
+            fields = new TreeSet<>(utils.comparators.generalPurposeComparator());
             if (utils.isExternalizable(te)) {
                 /* look up required public accessible methods,
                  *   writeExternal and readExternal.

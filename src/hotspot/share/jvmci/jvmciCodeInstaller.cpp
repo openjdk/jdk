@@ -396,7 +396,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
     }
     case REGISTER_PRIMITIVE:
     case REGISTER_NARROW_OOP:
-    case REGISTER_OOP: {
+    case REGISTER_OOP:
+    case REGISTER_VECTOR: {
       u2 number = stream->read_u2("register");
       VMReg hotspotRegister = get_hotspot_reg(number, JVMCI_CHECK_NULL);
       if (is_general_purpose_reg(hotspotRegister)) {
@@ -422,6 +423,8 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
           locationType = Location::normal;
         } else if (type == T_DOUBLE) {
           locationType = Location::dbl;
+        } else if (type == T_OBJECT && tag == REGISTER_VECTOR) {
+          locationType = Location::vector;
         } else {
           JVMCI_ERROR_NULL("unexpected type %s in floating point register%s", basictype_to_str(type), stream->context());
         }
@@ -434,14 +437,15 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
     }
     case STACK_SLOT_PRIMITIVE:
     case STACK_SLOT_NARROW_OOP:
-    case STACK_SLOT_OOP: {
+    case STACK_SLOT_OOP:
+    case STACK_SLOT_VECTOR: {
       jint offset = (jshort) stream->read_s2("offset");
       if (stream->read_bool("addRawFrameSize")) {
         offset += _total_frame_size;
       }
       Location::Type locationType;
       if (type == T_OBJECT) {
-        locationType = tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
+        locationType = tag == STACK_SLOT_VECTOR ? Location::vector : tag == STACK_SLOT_NARROW_OOP ? Location::narrowoop : Location::oop;
       } else if (type == T_LONG) {
         locationType = Location::lng;
       } else if (type == T_DOUBLE) {

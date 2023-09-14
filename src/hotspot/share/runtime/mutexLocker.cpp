@@ -292,8 +292,8 @@ void mutex_init() {
   }
 
 #if INCLUDE_JFR
-  MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, nosafepoint-3);
+  MUTEX_DEFN(JfrBuffer_lock                  , PaddedMutex  , event);
+  MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , stackwatermark-1);
   MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
 #endif
@@ -372,7 +372,7 @@ void mutex_init() {
 #undef MUTEX_STORAGE
 #undef MUTEX_STORAGE_NAME
 
-void MutexLocker::post_initialize() {
+void MutexLockerImpl::post_initialize() {
   // Print mutex ranks if requested.
   LogTarget(Info, vmmutex) lt;
   if (lt.is_enabled()) {

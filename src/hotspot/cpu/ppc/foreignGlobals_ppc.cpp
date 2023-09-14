@@ -47,7 +47,7 @@ bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
 }
 
 bool ForeignGlobals::is_foreign_linker_supported() {
-#ifdef ABI_ELFv2
+#ifdef LINUX
   return true;
 #else
   return false;

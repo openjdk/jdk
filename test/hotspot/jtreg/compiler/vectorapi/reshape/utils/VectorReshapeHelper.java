@@ -71,15 +71,6 @@ public class VectorReshapeHelper {
     public static final VectorSpecies<Float>   FSPEC512 =  FloatVector.SPECIES_512;
     public static final VectorSpecies<Double>  DSPEC512 = DoubleVector.SPECIES_512;
 
-    public static final String B2X_NODE  = IRNode.VECTOR_CAST_B2X;
-    public static final String S2X_NODE  = IRNode.VECTOR_CAST_S2X;
-    public static final String I2X_NODE  = IRNode.VECTOR_CAST_I2X;
-    public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
-    public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
-    public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
-    public static final String UB2X_NODE = IRNode.VECTOR_UCAST_B2X;
-    public static final String US2X_NODE = IRNode.VECTOR_UCAST_S2X;
-    public static final String UI2X_NODE = IRNode.VECTOR_UCAST_I2X;
     public static final String REINTERPRET_NODE = IRNode.VECTOR_REINTERPRET;
 
     public static void runMainHelper(Class<?> testClass, Stream<VectorSpeciesPair> testMethods, String... flags) {

@@ -53,7 +53,6 @@ class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
     jar_entry,
-    signed_jar_entry,
     dir_entry,
     non_existent_entry,
     unknown_entry
@@ -90,10 +89,6 @@ public:
   bool is_dir()           const { return _type == dir_entry; }
   bool is_modules_image() const { return _type == modules_image_entry; }
   bool is_jar()           const { return _type == jar_entry; }
-  bool is_signed()        const { return _type == signed_jar_entry; }
-  void set_is_signed() {
-    _type = signed_jar_entry;
-  }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
@@ -217,8 +212,8 @@ private:
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
-  jshort _num_module_paths;             // number of module path entries
   jshort _max_used_path_index;          // max path index referenced during CDS dump
+  int    _num_module_paths;             // number of module path entries
   bool   _verify_local;                 // BytecodeVerificationLocal setting
   bool   _verify_remote;                // BytecodeVerificationRemote setting
   bool   _has_platform_or_app_classes;  // Archive contains app classes
@@ -276,7 +271,7 @@ public:
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
   jshort app_class_paths_start_index()     const { return _app_class_paths_start_index; }
-  jshort num_module_paths()                const { return _num_module_paths; }
+  int    num_module_paths()                const { return _num_module_paths; }
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }

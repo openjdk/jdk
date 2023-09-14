@@ -954,7 +954,7 @@ LEAF(LoadIndexed, AccessIndexed)
   ciType* declared_type() const;
 
   // generic;
-  HASHING3(LoadIndexed, true, type()->tag(), array()->subst(), index()->subst())
+  HASHING3(LoadIndexed, true, elt_type(), array()->subst(), index()->subst())
 };
 
 

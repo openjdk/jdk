@@ -24,32 +24,56 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// This is a simple parser for parsing the output of
-//
-//   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
-//
-// Currently it just check the output related to JDK-8308903.
-// I.e., each oop fields in the HeapObjects must point to a valid HeapObject.
-//
-// It can be extended to check for the other parts of the map file, or perform
-// more analysis on the HeapObjects.
+/*
+
+This is a simple parser for parsing the output of
+
+   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
+
+The map file contains patterns like this for the heap objects:
+
+======================================================================
+0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String
+ - klass: 'java/lang/String' 0x0000000800010220
+ - fields (3 words):
+ - private 'hash' 'I' @12  0 (0x00000000)
+ - private final 'coder' 'B' @16  0 (0x00)
+ - private 'hashIsZero' 'Z' @17  true (0x01)
+ - injected 'flags' 'B' @18  1 (0x01)
+ - private final 'value' '[B' @20 0x00000000ffe00018 (0xffe00018) [B length: 0
+0x00000000ffe00018: @@ Object (0xffe00018) [B length: 0
+ - klass: {type array byte} 0x00000008000024d8
+======================================================================
+
+Currently this parser just check the output related to JDK-8308903.
+I.e., each oop field must point to a valid HeapObject. For example, the 'value' field
+in the String must point to a valid byte array.
+
+This parser can be extended to check for the other parts of the map file, or perform
+more analysis on the HeapObjects.
+
+*/
+
 public class CDSMapReader {
     public static class MapFile {
         ArrayList<HeapObject> heapObjects = new ArrayList<>();
         HashMap<Long, HeapObject> oopToObject = new HashMap<>();
         HashMap<Long, HeapObject> narrowOopToObject = new HashMap<>();
+        public int stringCount = 0;
 
         void add(HeapObject heapObject) {
             heapObjects.add(heapObject);
             oopToObject.put(heapObject.address.oop, heapObject);
             if (heapObject.address.narrowOop != 0) {
                 narrowOopToObject.put(heapObject.address.narrowOop, heapObject);
+            }
+            if (heapObject.className.equals("java.lang.String")) {
+                stringCount ++;
             }
         }
 
@@ -184,7 +208,6 @@ public class CDSMapReader {
             if ((m = match(line, fieldsWordsPattern)) == null) {
                 throw new RuntimeException("Expected field size info");
             }
-            // TODO: read all the array elements
             while (true) {
                 nextLine();
                 if (line == null || !line.startsWith(" - ")) {
@@ -233,6 +256,7 @@ public class CDSMapReader {
 
     public static MapFile read(String fileName) {
         mapFile = new MapFile();
+        lineCount = 0;
 
         try (BufferedReader r = new BufferedReader(new FileReader(fileName))) {
             reader = r;
@@ -254,7 +278,8 @@ public class CDSMapReader {
             throw new RuntimeException(t);
         } finally {
             System.out.println("Parsed " + lineCount + " lines in " + fileName);
-            System.out.println("Found "  + mapFile.heapObjectCount() + " heap objects");
+            System.out.println("Found " + mapFile.heapObjectCount() + " heap objects ("
+                               + mapFile.stringCount + " strings)");
             mapFile = null;
             reader = null;
             line = null;
@@ -270,8 +295,9 @@ public class CDSMapReader {
     }
 
     // Check that each oop fields in the HeapObjects must point to a valid HeapObject.
-    public static int validate(MapFile mapFile) {
-        int count = 0;
+    public static void validate(MapFile mapFile) {
+        int count1 = 0;
+        int count2 = 0;
         for (HeapObject heapObject : mapFile.heapObjects) {
             if (heapObject.fields != null) {
                 for (Field field : heapObject.fields) {
@@ -281,17 +307,32 @@ public class CDSMapReader {
                     // Is this test actually doing something?
                     //     To see how an invalidate pointer may be found, change oop in the
                     //     following line to oop+1
-                    mustContain(mapFile.oopToObject, field, oop, false);
-                    count ++;
+                    if (oop != 0) {
+                        mustContain(mapFile.oopToObject, field, oop, false);
+                        count1 ++;
+                    }
                     if (narrowOop != 0) {
                         mustContain(mapFile.narrowOopToObject, field, narrowOop, true);
-                        count ++;
+                        count2 ++;
                     }
                 }
             }
         }
-        System.out.println("Checked " + count + " oop field references");
-        return count;
+        System.out.println("Found " + count1 + " non-null oop field references (normal)");
+        System.out.println("Found " + count2 + " non-null oop field references (narrow)");
+
+        if (mapFile.heapObjectCount() > 0) {
+            // heapObjectCount() may be zero if the selected GC doesn't support heap object archiving.
+            if (mapFile.stringCount <= 0) {
+                throw new RuntimeException("CDS map file should contain at least one string");
+            }
+            if (count1 < mapFile.stringCount) {
+                throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
+                                           " objects (" + mapFile.stringCount + " strings). Each string should" +
+                                           " have one non-null oop field but we found only " + count1 +
+                                           " non-null oop field references");
+            }
+        }
     }
 
     public static void main(String args[]) {

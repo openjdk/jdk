@@ -60,7 +60,6 @@ void ShenandoahIUMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahIUBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
-  SHENANDOAH_CHECK_FLAG_SET(ShenandoahNMethodBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStackWatermarkBarrier);
 }
 

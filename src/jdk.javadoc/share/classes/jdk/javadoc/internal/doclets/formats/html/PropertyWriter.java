@@ -56,10 +56,11 @@ public class PropertyWriter extends AbstractMemberWriter {
     private ExecutableElement currentProperty;
 
     public PropertyWriter(ClassWriter writer) {
-        super(writer, writer.typeElement);
+        super(writer, writer.typeElement, VisibleMemberTable.Kind.PROPERTIES);
     }
 
-    public void build(Content target) {
+    @Override
+    public void buildDetails(Content target) {
         buildPropertyDoc(target);
     }
 
@@ -79,6 +80,8 @@ public class PropertyWriter extends AbstractMemberWriter {
                 Content propertyContent = getPropertyHeaderContent(currentProperty);
 
                 buildSignature(propertyContent);
+                buildDeprecationInfo(propertyContent);
+                buildPreviewInfo(propertyContent);
                 buildPropertyComments(propertyContent);
                 buildTagInfo(propertyContent);
 
@@ -89,31 +92,19 @@ public class PropertyWriter extends AbstractMemberWriter {
         }
     }
 
-    /**
-     * Build the signature.
-     *
-     * @param propertyContent the content to which the documentation will be added
-     */
-    protected void buildSignature(Content propertyContent) {
-        propertyContent.add(getSignature(currentProperty));
+    @Override
+    protected void buildSignature(Content target) {
+        target.add(getSignature(currentProperty));
     }
 
-    /**
-     * Build the deprecation information.
-     *
-     * @param propertyContent the content to which the documentation will be added
-     */
-    protected void buildDeprecationInfo(Content propertyContent) {
-        addDeprecated(currentProperty, propertyContent);
+    @Override
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentProperty, target);
     }
 
-    /**
-     * Build the preview information.
-     *
-     * @param propertyContent the content to which the documentation will be added
-     */
-    protected void buildPreviewInfo(Content propertyContent) {
-        addPreview(currentProperty, propertyContent);
+    @Override
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentProperty, target);
     }
 
     /**
@@ -155,9 +146,8 @@ public class PropertyWriter extends AbstractMemberWriter {
         }
     }
 
-
     @Override
-    public Content getMemberSummaryHeader(TypeElement typeElement, Content content) {
+    public Content getMemberSummaryHeader(Content content) {
         content.add(MarkerComments.START_OF_PROPERTY_SUMMARY);
         Content memberContent = new ContentBuilder();
         writer.addSummaryHeader(this, memberContent);
@@ -165,7 +155,7 @@ public class PropertyWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.propertySummary,
                 HtmlIds.PROPERTY_SUMMARY, summariesList, content);
     }
