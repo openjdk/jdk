@@ -59,14 +59,14 @@ public class Win8301247Test {
     public void test() throws IOException, InterruptedException {
         JPackageCommand cmd = JPackageCommand.helloAppImage();
 
-        if (!cmd.canRunLauncher("Not running the test")) {
-            return;
-        }
-
         // Launch the app in a way it doesn't exit to let us trap app laucnher
         // processes in the process list
         cmd.addArguments("--java-options", "-Djpackage.test.noexit=true");
         cmd.executeAndAssertImageCreated();
+
+        if (!cmd.canRunLauncher("Not running the test")) {
+            return;
+        }
 
         try ( // Launch the app in a separate thread
                 ExecutorService exec = Executors.newSingleThreadExecutor()) {
