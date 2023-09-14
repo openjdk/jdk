@@ -536,10 +536,11 @@ PerfTraceTime::~PerfTraceTime() {
 }
 
 ThreadTotalCPUTimeClosure::~ThreadTotalCPUTimeClosure() {
-    jlong net_cpu_time = _total - _counter->get_value();
-    _counter->inc(net_cpu_time);
+    // jlong net_cpu_time = _total - _counter->get_value();
+    // _counter->inc(net_cpu_time);
     if (_is_gc_threads) {
-      Universe::heap()->inc_total_cpu_time(net_cpu_time);
+      // Universe::heap()->inc_total_cpu_time(net_cpu_time);
+      Universe::heap()->inc_total_cpu_time(1);
     }
 }
 
