@@ -148,7 +148,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // A jlong to atomically track how much CPU time has been spent doing GC.
   // It is incremented using Atomic::add() to prevent race conditions, and
   // is added to `_total_cpu_time` at the end of GC.
-  volatile jlong* _total_cpu_time_diff;
+  volatile jlong _total_cpu_time_diff;
 
   // Perf counter for CPU time of parallel GC threads. Defined here in order to
   // be reused for all collectors.

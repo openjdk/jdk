@@ -876,12 +876,8 @@ class ThreadTotalCPUTimeClosure: public ThreadClosure {
   bool _is_gc_threads;
 
  public:
-  ThreadTotalCPUTimeClosure(PerfCounter* counter, bool is_gc_threads) :
+  ThreadTotalCPUTimeClosure(PerfCounter* counter, bool is_gc_threads = false) :
       _total(0), _counter(counter), _is_gc_threads(is_gc_threads) {}
-
-  ThreadTotalCPUTimeClosure(PerfCounter* counter) {
-    ThreadTotalCPUTimeClosure(counter, false);
-  }
 
   ~ThreadTotalCPUTimeClosure();
 

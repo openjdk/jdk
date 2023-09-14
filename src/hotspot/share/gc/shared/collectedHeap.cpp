@@ -162,7 +162,7 @@ void CollectedHeap::inc_total_cpu_time(jlong diff) {
 }
 
 void CollectedHeap::publish_total_cpu_time() {
-  // _total_cpu_time->inc(Atomic::load(_total_cpu_time_diff));
+  _total_cpu_time->inc(Atomic::load(&_total_cpu_time_diff));
 }
 
 void CollectedHeap::print_heap_before_gc() {
@@ -286,6 +286,8 @@ CollectedHeap::CollectedHeap() :
     _total_cpu_time =
                 PerfDataManager::create_counter(SUN_THREADS, "gc_cpu_time",
                                                 PerfData::U_Ticks, CHECK);
+    _total_cpu_time_diff = 0;
+
     _perf_parallel_worker_threads_cpu_time =
                 PerfDataManager::create_counter(SUN_THREADS_GCCPU, "parallel_gc_workers",
                                                 PerfData::U_Ticks, CHECK);
