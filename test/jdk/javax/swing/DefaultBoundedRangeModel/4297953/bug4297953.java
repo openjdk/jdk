@@ -32,7 +32,7 @@
 import javax.swing.JScrollBar;
 
 public class bug4297953 {
-    public static void main(String[] args)  {
+    public static void main(String[] args) {
         JScrollBar sb = new JScrollBar(JScrollBar.HORIZONTAL, 90, 10, 0, 100);
         sb.setMaximum(80);
         if (sb.getVisibleAmount() != 10) {
