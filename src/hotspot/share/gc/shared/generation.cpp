@@ -172,13 +172,6 @@ oop Generation::promote(oop obj, size_t obj_size) {
   return new_obj;
 }
 
-Space* Generation::space_containing(const void* p) const {
-  GenerationIsInReservedClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.sp;
-}
-
 // Some of these are mediocre general implementations.  Should be
 // overridden to get better performance.
 
