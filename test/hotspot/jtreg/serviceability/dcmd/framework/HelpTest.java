@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command help (tests all DCMD executors)
  * @library /test/lib
+ *          /vmTestbase
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.compiler
