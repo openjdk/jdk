@@ -35,6 +35,8 @@ import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.HexDigits;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
@@ -1821,6 +1823,29 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             StringUTF16.putCharsSB(this.value, count, s, off, end);
         }
         count += end - off;
+    }
+
+    final void appendHex(boolean ucase, byte[] bytes, int fromIndex, int toIndex) {
+        Preconditions.checkFromToIndex(fromIndex, toIndex, bytes.length, Preconditions.IOOBE_FORMATTER);
+
+        ensureCapacityInternal(count + (toIndex - fromIndex) * 2);
+
+        int charPos = count;
+        for (int i = fromIndex; i < toIndex; ++i) {
+            short packed = HexDigits.digitPair(bytes[i], ucase);
+            if (isLatin1()) {
+                ByteArrayLittleEndian.setShort(
+                        value,
+                        charPos,
+                        packed);
+            } else {
+                StringUTF16.putChar(value, charPos, packed & 0xff);
+                StringUTF16.putChar(value, charPos + 1, packed >> 8);
+            }
+            charPos += 2;
+        }
+
+        count = charPos;
     }
 
     /**

@@ -27,6 +27,8 @@ package java.util;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ByteArrayLittleEndian;
+import jdk.internal.util.HexDigits;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -176,6 +178,7 @@ public final class HexFormat {
     private final String prefix;
     private final String suffix;
     private final Case digitCase;
+    private final int hexBase;
 
     private enum Case {
         LOWERCASE,
@@ -196,6 +199,7 @@ public final class HexFormat {
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.suffix = Objects.requireNonNull(suffix, "suffix");
         this.digitCase = digitCase;
+        this.hexBase = (digitCase == Case.UPPERCASE ? 'A' : 'a') - 10;
     }
 
     /**
@@ -403,21 +407,38 @@ public final class HexFormat {
         int length = toIndex - fromIndex;
         if (length > 0) {
             try {
-                out.append(prefix);
-                toHexDigits(out, bytes[fromIndex]);
-                if (suffix.isEmpty() && delimiter.isEmpty() && prefix.isEmpty()) {
-                    for (int i = 1; i < length; i++) {
-                        toHexDigits(out, bytes[fromIndex + i]);
+                boolean prefixEmpty = prefix.isEmpty();
+                boolean suffixEmpty = suffix.isEmpty();
+                boolean delimiterEmpty = delimiter.isEmpty();
+                if (!prefixEmpty) {
+                    out.append(prefix);
+                }
+                if (suffixEmpty && delimiterEmpty && prefixEmpty) {
+                    if (out instanceof StringBuilder sb) {
+                        jla.appendHex(sb, digitCase == Case.UPPERCASE, bytes, fromIndex, toIndex);
+                    } else {
+                        for (int i = 0; i < length; i++) {
+                            toHexDigits(out, bytes[fromIndex + i]);
+                        }
                     }
                 } else {
+                    toHexDigits(out, bytes[fromIndex]);
                     for (int i = 1; i < length; i++) {
-                        out.append(suffix);
-                        out.append(delimiter);
-                        out.append(prefix);
+                        if (!suffixEmpty) {
+                            out.append(suffix);
+                        }
+                        if (!delimiterEmpty) {
+                            out.append(delimiter);
+                        }
+                        if (!prefixEmpty) {
+                            out.append(prefix);
+                        }
                         toHexDigits(out, bytes[fromIndex + i]);
                     }
                 }
-                out.append(suffix);
+                if (!suffixEmpty) {
+                    out.append(suffix);
+                }
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe.getMessage(), ioe);
             }
@@ -442,25 +463,33 @@ public final class HexFormat {
         if (!prefix.isEmpty() || !suffix.isEmpty()) {
             return null;
         }
+
+        boolean ucase = digitCase == Case.UPPERCASE;
         int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
             rep = new byte[checkMaxArraySize(length * 2L)];
             for (int i = 0; i < length; i++) {
-                rep[i * 2] = (byte)toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 2 + 1] = (byte)toLowHexDigit(bytes[fromIndex + i]);
+                ByteArrayLittleEndian.setShort(
+                        rep,
+                        i * 2,
+                        HexDigits.digitPair(bytes[fromIndex + i], ucase));
             }
         } else if (delimiter.length() == 1 && delimiter.charAt(0) < 256) {
             // Allocate the byte array and fill in the characters for the first byte
             // Then insert the delimiter and hexadecimal characters for each of the remaining bytes
             char sep = delimiter.charAt(0);
             rep = new byte[checkMaxArraySize(length * 3L - 1L)];
-            rep[0] = (byte) toHighHexDigit(bytes[fromIndex]);
-            rep[1] = (byte) toLowHexDigit(bytes[fromIndex]);
+            ByteArrayLittleEndian.setShort(
+                    rep,
+                    0,
+                    HexDigits.digitPair(bytes[fromIndex], ucase));
             for (int i = 1; i < length; i++) {
                 rep[i * 3 - 1] = (byte) sep;
-                rep[i * 3    ] = (byte) toHighHexDigit(bytes[fromIndex + i]);
-                rep[i * 3 + 1] = (byte) toLowHexDigit(bytes[fromIndex + i]);
+                ByteArrayLittleEndian.setShort(
+                        rep,
+                        i * 3,
+                        HexDigits.digitPair(bytes[fromIndex + i], ucase));
             }
         } else {
             // Delimiter formatting not to a single byte
@@ -635,13 +664,7 @@ public final class HexFormat {
      */
     public char toLowHexDigit(int value) {
         value = value & 0xf;
-        if (value < 10) {
-            return (char)('0' + value);
-        }
-        if (digitCase == Case.LOWERCASE) {
-            return (char)('a' - 10 + value);
-        }
-        return (char)('A' - 10 + value);
+        return (char) ((value < 10 ? '0' : hexBase) + value);
     }
 
     /**
@@ -656,13 +679,7 @@ public final class HexFormat {
      */
     public char toHighHexDigit(int value) {
         value = (value >> 4) & 0xf;
-        if (value < 10) {
-            return (char)('0' + value);
-        }
-        if (digitCase == Case.LOWERCASE) {
-            return (char)('a' - 10 + value);
-        }
-        return (char)('A' - 10 + value);
+        return (char) ((value < 10 ? '0' : hexBase) + value);
     }
 
     /**

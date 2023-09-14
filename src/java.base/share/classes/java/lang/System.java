@@ -2527,6 +2527,10 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, constant);
             }
 
+            public void appendHex(StringBuilder sb, boolean ucase, byte[] bytes, int fromIndex, int toIndex) {
+                sb.appendHex(ucase, bytes, fromIndex, toIndex);
+            }
+
             @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
             public long stringConcatCoder(char value) {
                 return StringConcatHelper.coder(value);
