@@ -678,18 +678,13 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> Stream<R> gather(Gatherer<P_OUT,?,R> gatherer) {
+    public final <R> Stream<R> gather(Gatherer<? super P_OUT, ?, R> gatherer) {
         return GathererOp.of(this, gatherer);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
-        if (collector instanceof Gatherer.ThenCollector<?,?,?,?,?,?>) {
-            var thenCollector = (Gatherer.ThenCollector<P_OUT, ?, R, ?, R, ?>) collector;
-            return gather(thenCollector.gatherer()).collect(thenCollector.collector());
-        }
-
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))

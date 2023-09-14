@@ -24,6 +24,8 @@
  */
 package java.util.stream;
 
+import jdk.internal.javac.PreviewFeature;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -1058,12 +1060,37 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <p>This is an <a href="package-summary.html#Extensibility">extension point</a>
      * for <a href="package-summary.html#StreamOps">intermediate operations</a>.
      *
+     * <p>When executed in parallel, multiple intermediate results may be
+     * instantiated, populated, and merged so as to maintain isolation of
+     * mutable data structures.  Therefore, even when executed in parallel
+     * with non-thread-safe data structures (such as {@code ArrayList}), no
+     * additional synchronization is needed for a parallel reduction.
+     *
+     * <p>Implementations are allowed, but not required, to detect consecutive
+     * invocations and compose them into a single, fused, operation. This would
+     * make the first expression below behave like the second:
+     *
+     * <pre>{@code
+     *     var stream1 = Stream.of(...).gather(gatherer1).gather(gatherer2);
+     *     var stream2 = Stream.of(...).gather(gatherer1.andThen(gatherer2));
+     * }</pre>
+     *
+     * @implSpec The implementation in this interface returns a Stream produced as if by the following:
+     * <pre>{@code
+     * StreamSupport.stream(spliterator(), isParallel()).gather(gatherer)
+     * }</pre>
+     *
+     * @implNote Implementations of this interface should provide their own
+     * implementation of this method.
+     *
+     * @see Gatherers
      * @param <R> The element type of the new stream
      * @param gatherer a gatherer
      * @return the new stream
      */
-    default <R> Stream<R> gather(Gatherer<T,?,R> gatherer) {
-        throw new UnsupportedOperationException("gather");
+    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+    default <R> Stream<R> gather(Gatherer<? super T, ?, R> gatherer) {
+        return StreamSupport.stream(spliterator(), isParallel()).gather(gatherer);
     }
 
     /**

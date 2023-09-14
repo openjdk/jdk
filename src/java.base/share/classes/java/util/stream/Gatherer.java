@@ -24,6 +24,7 @@
  */
 package java.util.stream;
 
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.util.*;
@@ -54,30 +55,23 @@ import java.util.function.Supplier;
  *     <li>performing an optional final operation ({@link #finisher()})</li>
  * </ul>
  *
- * <p>Implementations of Gatherer must not capture, retain, or expose to other threads,
- * the references to the state instance, or the downstream {@link java.util.stream.Gatherer.Sink}
- * for longer than the invocation duration of the method which they are passed to.
- *
  * <p>Each invocation to {@link #initializer()}, {@link #integrator()}, {@link #combiner()},
  * and {@link #finisher()} must return an equivalent result.
  *
- * <p>If a combiner function is supplied, then the operation can be parallelized by initializing
- * each partition in separation, invoking the integrator until it returns {@code false}, and then
- * joining each partitions state using the combiner, and then invoking the finalizer on the joined
- * state. Outputs and state later in the input sequence will be discarded if processing an earlier
- * segment short-circuits.
+ * <p>Implementations of Gatherer must not capture, retain, or expose to other threads,
+ * the references to the state instance, or the downstream {@link Downstream}
+ * for longer than the invocation duration of the method which they are passed to.
  *
- * @apiNote
- * Performing a gathering operation with a {@code Gatherer} should produce a
+ * <p>Performing a gathering operation with a {@code Gatherer} should produce a
  * result equivalent to:
  *
  * <pre>{@code
- *     Gatherer.Sink<? super R> outputSink = r -> { System.out.println(r); return true; };
+ *     Gatherer.Downstream<? super R> downstream = ...;
  *     A state = gatherer.initializer().get();
  *     for (T t : data) {
- *         gatherer.integrator().integrate(state, t, outputSink);
+ *         gatherer.integrator().integrate(state, t, downstream);
  *     }
- *     gatherer.finisher().apply(state, outputSink);
+ *     gatherer.finisher().apply(state, downstream);
  * }</pre>
  *
  * <p>However, the library is free to partition the input, perform the integrations
@@ -89,42 +83,35 @@ import java.util.function.Supplier;
  * <p>In addition to the predefined implementations in {@link Gatherers}, the
  * static factory methods {@code of(...)} and {@code ofSequential(...)}
  * can be used to construct gatherers.  For example, you could create a gatherer
- * that implements that implements the equivalent of
+ * that implements the equivalent of
  * {@link java.util.stream.Stream#map(java.util.function.Function)} with:
  *
  * <pre>{@code
- *     public static <T,R> Gatherer<T,?,R> map(Function<? super T, ? extends R> mapper) {
+ *     public static <T, R> Gatherer<T, ?, R> map(Function<? super T, ? extends R> mapper) {
  *         return Gatherer.of(
  *             (unused, element, downstream) -> // integrator
- *                 downstream.flush(mapper.apply(element)),
- *             (left, right) -> // combiner
- *                 left
+ *                 downstream.push(mapper.apply(element))
  *         );
  *     }
  * }</pre>
  *
  * <p>Gatherers are designed to be <em>composed</em>; two or more Gatherers can be
- * composed into a single Gatherer using the {@link #andThen(Gatherer)} method,
- * and a Gatherer can be composed with/prepended to a {@link Collector} using the
- * {@link #collect(Collector)} method.
+ * composed into a single Gatherer using the {@link #andThen(Gatherer)} method.
  *
  * <pre>{@code
  *     // using the implementation of `map` as seen above
- *     Gatherer<Integer,?,Integer> increment = map(i -> i + 1);
+ *     Gatherer<Integer, ?, Integer> increment = map(i -> i + 1);
  *
- *     Gatherer<Integer,?,String> intToString = map(i -> i.toString());
+ *     Gatherer<Object, ?, String> toString = map(i -> i.toString());
  *
- *     Gatherer<Integer,?,String> incrementThenToString = plusOne.andThen(intToString);
- *
- *     Collector<Integer,?,List<String>> incrementThenToStringList =
- *         incrementThenToString.collect(Collectors.toList());
+ *     Gatherer<Integer, ?, String> incrementThenToString = plusOne.andThen(intToString);
  * }</pre>
  *
  * AS an example, in order to create a gatherer to implement a sequential Prefix Scan
  * as a Gatherer, it could be done the following way:
  *
  * <pre>{@code
- *     public static <T,R> Gatherer<T,?,R> scan(
+ *     public static <T, R> Gatherer<T, ?, R> scan(
  *         Supplier<R> initial,
  *         BiFunction<? super R, ? super T, ? extends R> scanner) {
  *
@@ -135,11 +122,11 @@ import java.util.function.Supplier;
  *             }
  *         }
  *
- *         return Gatherer.<T,State,R>ofSequential(
+ *         return Gatherer.<T, State, R>ofSequential(
  *              State::new,
  *              Gatherer.Integrator.ofGreedy((state, element, downstream) -> {
  *                  state.current = scanner.apply(state.current, element);
- *                  return downstream.flush(state.current);
+ *                  return downstream.push(state.current);
  *              })
  *         );
  *     }
@@ -148,6 +135,11 @@ import java.util.function.Supplier;
  * @implSpec Libraries that implement transformation based on {@code Gatherer}, such as
  * {@link Stream#gather(Gatherer)}, must adhere to the following constraints:
  * <ul>
+ *     <li>Gatherers whose initializer is {@link #defaultInitializer()} are considered
+ *     to be stateless, and invoking their initializer is optional.</li>
+ *     <li>Gatherers whose integrator is an instance of {@link Integrator.Greedy} can
+ *     be assumed not to short-circuit, and the return value of invoking
+ *     {@link Integrator#integrate(Object, Object, Downstream)} does not need to be inspected.</li>
  *     <li>The first argument passed to the integration function, both
  *     arguments passed to the combiner function, and the argument passed to the
  *     finisher function must be the result of a previous invocation of the
@@ -162,6 +154,14 @@ import java.util.function.Supplier;
  *     <li>For parallel evaluation, the gathering implementation must manage that
  *     the input is properly partitioned, that partitions are processed in isolation,
  *     and combining happens only after integration is complete for both partitions.</li>
+ *     <li>Gatherers whose combiner is {@link #defaultCombiner()} may only be evaluated sequentially.
+ *     All other combiners allow the operation to be parallelized by initializing each partition
+ *     in separation, invoking the integrator until it returns {@code false}, and then joining each
+ *     partitions state using the combiner, and then invoking the finalizer on the joined state.
+ *     Outputs and state later in the input sequence will be discarded if processing an earlier
+ *     segment short-circuits.</li>
+ *     <li>Gatherers whose finisher is {@link #defaultFinisher()} are considered to not have
+ *     an end-of-stream hook and invoking their finisher is optional.</li>
  * </ul>
  *
  * @see Stream#gather(Gatherer)
@@ -173,105 +173,107 @@ import java.util.function.Supplier;
  * @param <R> the type of output elements from the gatherer operation
  * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
 public interface Gatherer<T, A, R> {
     /**
      * A function that produces an instance of the intermediate state used for this
      * gathering operation.
      *
-     * <p>By default, this method returns a function indicating that this Gatherer is
-     * stateless.
+     * <p>By default, this method returns {@link #defaultInitializer()}
      *
      * @return A function that produces an instance of the intermediate state used for this
      *         gathering operation
      */
     default Supplier<A> initializer() {
-        return Gatherers.initializerNotNeeded();
+        return defaultInitializer();
     };
 
     /**
      * A function which integrates provided elements, potentially using the provided
-     * intermediate state, optionally producing output to the provided downstream sink.
+     * intermediate state, optionally producing output to the provided {@link Downstream}.
      *
      * @return a function which integrates provided elements, potentially using the
-     *         provided state, optionally producing output to the provided downstream sink
+     *         provided state, optionally producing output to the provided Downstream
      */
     Integrator<A, T, R> integrator();
 
     /**
      * A function which accepts two intermediate states and combines them into one.
      *
-     * <p>By default, this method returns a function indicating that this Gatherer must
-     * not be parallelized and invoking this function will throw an {@link java.lang.UnsupportedOperationException}.
+     * <p>By default, this method returns {@link #defaultCombiner()}
      *
      * @return a function which accepts two intermediate states and combines them into one
      */
     default BinaryOperator<A> combiner() {
-        return Gatherers.combinerNotPossible();
+        return defaultCombiner();
     }
 
     /**
-     * A function which accepts the final intermediate state and a downstream handle,
+     * A function which accepts the final intermediate state and a {@link Downstream} handle,
      * allowing to perform a final action at the end of input elements.
      *
-     * <p>By default, this method returns a function indicating that this Gatherer does not
-     * need to perform any actions at the end of input elements.
+     * <p>By default, this method returns {@link #defaultFinisher()}
      *
      * @return a function which transforms the intermediate result to the final result(s) which are
      * then passed on to the supplied downstream consumer
      */
-    default BiConsumer<A, Sink<? super R>> finisher() {
-        return Gatherers.finisherNotNeeded();
+    default BiConsumer<A, Downstream<? super R>> finisher() {
+        return defaultFinisher();
     }
 
     /**
-     * A {@link Gatherer.ThenCollector} which first runs this Gatherer and feeds the output into the given Collector.
-     *
-     * <p>If the provided collector is a {@link Gatherer.ThenCollector}, the following is equivalent:
-     *
-     * <pre>{@code
-     *     var a = gatherer.collect(thenCollector);
-     *     var b = gatherer.andThen(thenCollector.gatherer).collect(thenCollector.collector);
-     * }</pre>
-     *
-     * @param collector a Collector
-     * @param <AA>      the accumulator type of the provided, and the returned, Collector
-     * @param <RR>      the result type of the provided, and the returned, Collector
-     * @return a new Collector which consists of this Gatherer and the given Collector
-     */
-    default <AA,RR> ThenCollector<T, A, R, AA, RR, ?> collect(Collector<R, AA, RR> collector) {
-        return Gatherers.ThenCollectorImpl.of(this, collector);
-    }
-
-    /**
-     * Returns a composed function that first applies this function to
-     * its input, and then applies the {@code after} function to the result.
-     * If evaluation of either function throws an exception, it is relayed to
-     * the caller of the composed function.
-     *
-     * @param <V> the type of output of the {@code after} function, and of the
-     *           composed function
-     * @param after the function to apply after this function is applied
-     * @return a composed function that first applies this function and then
-     * applies the {@code after} function
-     * @throws NullPointerException if after is null
-     *
-     * @see #compose(Function)
-     */
-
-    /**
-     * Returns a composed Gatherer which passes the output of this Gatherer
-     * as input that Gatherer.
+     * Returns a composed Gatherer which connects the output of this Gatherer
+     * to the input of that Gatherer.
      *
      * @param that the other gatherer
-     * @param <AA> The type of the initializer of that gatherer
-     * @param <RR> The type of output that gatherer has
+     * @param <AA> The type of the state of that Gatherer
+     * @param <RR> The type of output of that Gatherer
      * @throws NullPointerException if the argument is null
-     * @return returns a composed Gatherer which passes the output of this Gatherer
+     * @return returns a composed Gatherer which connects the output of this Gatherer
      *         as input that Gatherer
      */
-    default <AA, RR> Gatherer<T, ?, RR> andThen(Gatherer<R, AA, RR> that) {
+    default <AA, RR> Gatherer<T, ?, RR> andThen(Gatherer<? super R, AA, ? extends RR> that) {
         Objects.requireNonNull(that);
         return Gatherers.Composite.of(this, that);
+    }
+
+    /**
+     * Returns an initializer which is the default initializer of a Gatherer.
+     * The returned initializer identifies that the owner Gatherer is stateless.
+     *
+     * @see Gatherer#initializer()
+     * @return the instance of the default initializer
+     * @param <A> the type of the state of the returned initializer
+     */
+    static <A> Supplier<A> defaultInitializer() {
+        return Gatherers.Value.DEFAULT.initializer();
+    }
+
+    /**
+     * Returns a combiner which is the default combiner of a Gatherer.
+     * The returned combiner identifies that the owning Gatherer must only
+     * be evaluated sequentially.
+     *
+     * @see Gatherer#finisher()
+     * @return the instance of the default combiner
+     * @param <A> the type of the state of the returned combiner
+     */
+    static <A> BinaryOperator<A> defaultCombiner() {
+        return Gatherers.Value.DEFAULT.combiner();
+    }
+
+    /**
+     * Returns a finisher which is the default finisher of a Gatherer.
+     * The returned finisher identifies that the owning Gatherer performs
+     * no additional actions at the end of input.
+     *
+     * @see Gatherer#finisher()
+     * @return the instance of the default finisher
+     * @param <A> the type of the state of the returned finisher
+     * @param <R> the type of the Downstream of the returned finisher
+     */
+    static <A,R> BiConsumer<A, Downstream<? super R>> defaultFinisher() {
+        return Gatherers.Value.DEFAULT.finisher();
     }
 
     /**
@@ -284,7 +286,12 @@ public interface Gatherer<T, A, R> {
      * @return a new gatherer comprised of the supplied logic
      */
     static <T, R> Gatherer<T, Void, R> ofSequential(Integrator<Void, T, R> integrator) {
-        return of(Gatherers.initializerNotNeeded(), integrator, Gatherers.combinerNotPossible(), Gatherers.finisherNotNeeded());
+        return of(
+                defaultInitializer(),
+                integrator,
+                defaultCombiner(),
+                defaultFinisher()
+        );
     }
 
     /**
@@ -298,8 +305,13 @@ public interface Gatherer<T, A, R> {
      * @return a new gatherer comprised of the supplied logic
      */
     static <T, R> Gatherer<T, Void, R> ofSequential(Integrator<Void, T, R> integrator,
-                                                    BiConsumer<Void, Sink<? super R>> finisher) {
-        return of(Gatherers.initializerNotNeeded(), integrator, Gatherers.combinerNotPossible(), finisher);
+                                                    BiConsumer<Void, Downstream<? super R>> finisher) {
+        return of(
+                defaultInitializer(),
+                integrator,
+                defaultCombiner(),
+                finisher
+        );
     }
 
     /**
@@ -315,7 +327,12 @@ public interface Gatherer<T, A, R> {
      */
     static <T, A, R> Gatherer<T, A, R> ofSequential(Supplier<A> initializer,
                                                     Integrator<A, T, R> integrator) {
-        return of(initializer, integrator, Gatherers.combinerNotPossible(), Gatherers.finisherNotNeeded());
+        return of(
+                initializer,
+                integrator,
+                defaultCombiner(),
+                defaultFinisher()
+        );
     }
 
     /**
@@ -332,30 +349,37 @@ public interface Gatherer<T, A, R> {
      */
     static <T, A, R> Gatherer<T, A, R> ofSequential(Supplier<A> initializer,
                                                     Integrator<A, T, R> integrator,
-                                                    BiConsumer<A, Sink<? super R>> finisher) {
-        return of(initializer, integrator, Gatherers.combinerNotPossible(), finisher);
+                                                    BiConsumer<A, Downstream<? super R>> finisher) {
+        return of(
+                initializer,
+                integrator,
+                defaultCombiner(),
+                finisher
+        );
     }
 
     /**
      * Returns a stateless, parallelizable, gatherer from the supplied logic.
      *
      * @param integrator the integrator function for the new gatherer
-     * @param combiner the combiner function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
      * @throws NullPointerException if any argument is null
      * @return a new gatherer comprised of the supplied logic
      */
-    static <T, R> Gatherer<T, Void, R> of(Integrator<Void, T, R> integrator,
-                                          BinaryOperator<Void> combiner) {
-        return of(Gatherers.initializerNotNeeded(), integrator, combiner, Gatherers.finisherNotNeeded());
+    static <T, R> Gatherer<T, Void, R> of(Integrator<Void, T, R> integrator) {
+        return of(
+                defaultInitializer(),
+                integrator,
+                Gatherers.Value.DEFAULT.statelessCombiner,
+                defaultFinisher()
+        );
     }
 
     /**
      * Returns a stateless, parallelizable, gatherer from the supplied logic.
      *
      * @param integrator the integrator function for the new gatherer
-     * @param combiner the combiner function for the new gatherer
      * @param finisher the finisher function for the new gatherer
      * @param <T> the type of input elements for the new gatherer
      * @param <R> the type of results for the new gatherer
@@ -363,9 +387,13 @@ public interface Gatherer<T, A, R> {
      * @return a new gatherer comprised of the supplied logic
      */
     static <T, R> Gatherer<T, Void, R> of(Integrator<Void, T, R> integrator,
-                                          BinaryOperator<Void> combiner,
-                                          BiConsumer<Void, Sink<? super R>> finisher) {
-        return of(Gatherers.initializerNotNeeded(), integrator, combiner, finisher);
+                                          BiConsumer<Void, Downstream<? super R>> finisher) {
+        return of(
+                defaultInitializer(),
+                integrator,
+                Gatherers.Value.DEFAULT.statelessCombiner,
+                finisher
+        );
     }
 
     /**
@@ -384,7 +412,7 @@ public interface Gatherer<T, A, R> {
     static <T, A, R> Gatherer<T, A, R> of(Supplier<A> initializer,
                                           Integrator<A, T, R> integrator,
                                           BinaryOperator<A> combiner,
-                                          BiConsumer<A, Sink<? super R>> finisher) {
+                                          BiConsumer<A, Downstream<? super R>> finisher) {
         return new Gatherers.GathererImpl<>(
                 Objects.requireNonNull(initializer),
                 Objects.requireNonNull(integrator),
@@ -394,33 +422,36 @@ public interface Gatherer<T, A, R> {
     }
 
     /**
-     * A Sink represents a destination to which elements can be sent.
-     * @param <T> the type of elements to flush
+     * A Downstream is a handle to the next stage in a pipeline of operations,
+     * to which elements can be sent.
+     * @param <T> the type of elements this downstream accepts to be pushed
      */
-    interface Sink<T> {
+    @FunctionalInterface
+    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
+    interface Downstream<T> {
 
         /**
-         * Sends, if possible, the provided element to the destination represented by this sink.
+         * Pushes, if possible, the provided element to the destination represented by this Downstream.
          *
          * <p>If this method returns {@code false} then this destination does not want any more elements.
          *
          * @param element the element to send
          * @return {@code true} if more elements can be sent, and {@code false} if not.
          */
-        boolean flush(T element);
+        boolean push(T element);
 
         /**
-         * Allows for checking whether the destination represented by this sink
-         * accepts more elements sent to it.
+         * Allows for checking whether the destination represented by this Downstream
+         * is known to not want any more elements sent to it.
          *
          * @apiNote This is best-effort only, once this returns true it should
          *          never return false again for the same instance.
          *
          * By default this method returns {@code false}.
          *
-         * @return {@code true} if this Sink is known not to want any more elements sent to it, {@code false} if otherwise
+         * @return {@code true} if this Downstream is known not to want any more elements sent to it, {@code false} if otherwise
          */
-        default boolean isKnownDone() { return false; }
+        default boolean isRejecting() { return false; }
     }
 
     /**
@@ -432,17 +463,18 @@ public interface Gatherer<T, A, R> {
      * @param <R> the type of results this integrator can produce
      */
     @FunctionalInterface
+    @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
     interface Integrator<A, T, R> {
         /** Integrate is the method which given: the current state, the next element, and a downstream handle;
          * performs the main logic -- potentially inspecting and/or updating the state, optionally sending any
          * number of elements downstream -- and then returns whether more elements are to be consumed or not.
          *
-         * @param element The element to integrate
          * @param state The state to integrate into
-         * @param sink The downstream reference of this integration, returns false if doesn't want any more elements
+         * @param element The element to integrate
+         * @param downstream The downstream reference of this integration, returns false if doesn't want any more elements
          * @return {@code true} if subsequent integration is desired, {@code false} if not
          */
-        boolean integrate(A state, T element, Sink<? super R> sink);
+        boolean integrate(A state, T element, Downstream<? super R> downstream);
 
         /**
          * Factory method for converting Integrator-shaped lambdas into Integrators.
@@ -454,7 +486,7 @@ public interface Gatherer<T, A, R> {
          * @param <R> the type of results this integrator can produce
          */
         @ForceInline
-        static <A, T, R> Integrator<A, T, R>of(Integrator<A, T, R> integrator) {
+        static <A, T, R> Integrator<A, T, R> of(Integrator<A, T, R> integrator) {
             return integrator;
         }
 
@@ -468,13 +500,13 @@ public interface Gatherer<T, A, R> {
          * @param <R> the type of results this integrator can produce
          */
         @ForceInline
-        static <A, T, R> Greedy<A, T, R>ofGreedy(Greedy<A, T, R> greedy) {
+        static <A, T, R> Greedy<A, T, R> ofGreedy(Greedy<A, T, R> greedy) {
             return greedy;
         }
 
         /**
          * Greedy Integrators consume all their input, and may only relay that
-         * the downstream Sink does not want more elements.
+         * the downstream does not want more elements.
          *
          * This is used to clarify that no short-circuiting will be initiated by
          * this Integrator, and that information can then be used to optimize evaluation.
@@ -484,45 +516,7 @@ public interface Gatherer<T, A, R> {
          * @param <R> the type of results this greedy integrator can produce
          */
         @FunctionalInterface
+        @PreviewFeature(feature = PreviewFeature.Feature.GATHERERS)
         interface Greedy<A, T, R> extends Integrator<A, T, R> { }
-    }
-
-    /**
-     * Representation of the combination of a Gatherer and a Collector which can be used as a Collector.
-     *
-     * <p>If a ThenCollector is used as any Collector then it will not be able to short-circuit evaluation,
-     * and instead will discard all elements which are passed to the accumulator, which can lead to non-termination
-     * if used on infinite streams, or poor performance if used on large streams.
-     *
-     * <p>ThenCollector allows for composition of {@link java.util.stream.Gatherer} and {@link java.util.stream.Collector},
-     * where operations in the form of Gatherers can be prepended to a Collector to form a new Collector.
-     *
-     * <pre>{@code
-     *     Gatherer<Integer,?,Integer> increment = Gatherer.of((unused, element, downstream) -> downstream.flush(element + 1), (left, right) -> left);
-     *
-     *     Collector<Integer,?,List<Integer>> toIntegerList = Collectors.toList();
-     *
-     *     Collector<Integer,?,List<Integer>> incrementTwiceThenToIntegerList = increment.andThen(increment).collect(toIntegerList);
-     * }</pre>
-     *
-     * @param <T> the input type of the Gatherer, and of the ThenCollector when used as a Collector
-     * @param <A> the state type of the Gatherer
-     * @param <R> the output type of the Gatherer and the input type of the Collector
-     * @param <AA> the state type of the Collector
-     * @param <RR> the result type of the Collector, and of the ThenCollector when used as a Collector
-     * @param <AAA> the state type of the ThenCollector when used as a Collector
-     */
-    sealed interface ThenCollector<T, A, R, AA, RR, AAA> extends Collector<T, AAA, RR> permits Gatherers.ThenCollectorImpl {
-        /**
-         * Returns the {@link java.util.stream.Gatherer} associated with this ThenCollector.
-         * @return the gatherer associated with this ThenCollector
-         */
-        Gatherer<T,A,R> gatherer();
-
-        /**
-         * Returns the {@link java.util.stream.Collector} associated with this ThenCollector
-         * @return the collector associated with this ThenCollector
-         */
-        Collector<R,AA,RR> collector();
     }
 }

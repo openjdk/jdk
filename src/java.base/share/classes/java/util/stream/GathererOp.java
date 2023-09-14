@@ -46,23 +46,18 @@ import java.util.stream.Gatherer.Integrator;
  * @since 22
  */
 final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
-
-    // When this is `true`, consecutive invocations to `Stream.gather` will fuse into a single,
-    // composed, gatherer operation.
-    private final static boolean AUTOCOMPOSITION_ENABLED = true;
-
-    // When this is `true`, immediate calls to `collect` after `gather` will execute as the
-    // equivalent of a terminal operation instead of delegating to the default `collect`-implementation.
-    private final static boolean COLLECT_FASTPATH_ENABLED = true;
-
-    static <P_IN, P_OUT, R> Stream<R> of(ReferencePipeline<P_IN,P_OUT> upstream, Gatherer<P_OUT,?,R> gatherer) {
-        if (AUTOCOMPOSITION_ENABLED && upstream.getClass() == GathererOp.class) {
-            final var upStreamGathererOp = (GathererOp<P_IN,?,P_OUT>)upstream;
-            // Subsequent .gather()-invocations uses this method to pre-compose the Gatherers and package them as a single step
-            final var fusedGatherer = upStreamGathererOp.gatherer.andThen(gatherer);
-            return new GathererOp<>(upStreamGathererOp, fusedGatherer);
-        } else
-            return new GathererOp<>(upstream, gatherer);
+    @SuppressWarnings("unchecked")
+    static <P_IN, P_OUT extends T, T, A, R> Stream<R> of(ReferencePipeline<P_IN, P_OUT> upstream, Gatherer<T, A, R> gatherer) {
+        // When attaching a gather-operation onto another gather-operation, we can fuse them into one
+        if (upstream.getClass() == GathererOp.class) {
+            return new GathererOp<>(
+                    ((GathererOp<P_IN,Object,P_OUT>)upstream).gatherer.andThen(gatherer),
+                    (GathererOp<?, ?, P_IN>) upstream);
+        } else {
+            return new GathererOp<>(
+                    (ReferencePipeline<?, T>)upstream,
+                    gatherer);
+        }
     }
 
     // GathererOp.NodeBuilder is a lazy accumulator of elements with O(1) `append`, and O(8) `join` (concat).
@@ -115,16 +110,16 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         }
     }
 
-    final static class GatherSink<T,A,R> implements Sink<T>, Gatherer.Sink<R> {
-        private final Sink<R> downstream;
-        private final Gatherer<T,A,R> gatherer;
+    final static class GatherSink<T, A, R> implements Sink<T>, Gatherer.Downstream<R> {
+        private final Sink<R> sink;
+        private final Gatherer<T, A, R> gatherer;
         private final Integrator<A, T, R> integrator; // Optimization to avoid fetching the integrator for every element
         private A state;
         private boolean proceed = true; // Every GatherSink needs to presume that it can accept input initially
 
-        GatherSink(Gatherer<T,A,R> gatherer, Sink<R> downstream) {
+        GatherSink(Gatherer<T, A, R> gatherer, Sink<R> sink) {
             this.gatherer = gatherer;
-            this.downstream = downstream;
+            this.sink = sink;
             this.integrator = gatherer.integrator(); // Cache this instance for performance reasons
         }
 
@@ -132,9 +127,9 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
 
         @Override public void begin(long size) {
             final var initializer = gatherer.initializer();
-            if (initializer != Gatherers.initializerNotNeeded) // Optimization
+            if (initializer != Gatherer.defaultInitializer()) // Optimization
                 state = initializer.get();
-            downstream.begin(size);
+            sink.begin(size);
         }
 
         @Override public void accept(T t) {
@@ -148,25 +143,25 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         @Override public boolean cancellationRequested() { return cancellationRequested(proceed); }
 
         private boolean cancellationRequested(boolean knownProceed) {
-            return !(knownProceed && (!downstream.cancellationRequested() || (proceed = false)));
+            return !(knownProceed && (!sink.cancellationRequested() || (proceed = false)));
         }
 
         @Override public void end() {
             final var finisher = gatherer.finisher();
-            if (finisher != Gatherers.finisherNotNeeded) // Optimization
+            if (finisher != Gatherer.<A,R>defaultFinisher()) // Optimization
                 finisher.accept(state, this);
-            downstream.end();
+            sink.end();
             state = null; // GC assistance
         }
 
         // Gatherer.Sink contract below:
 
-        @Override public boolean isKnownDone() { return !proceed; }
+        @Override public boolean isRejecting() { return !proceed; }
 
-        @Override public boolean flush(R r) {
+        @Override public boolean push(R r) {
             var p = proceed;
             if (p)
-                downstream.accept(r);
+                sink.accept(r);
             return !cancellationRequested(p);
         }
     }
@@ -190,15 +185,17 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     final Gatherer<T,A,R> gatherer;
 
     // This constructor is used for initial .gather() invocations
-    private GathererOp(AbstractPipeline<?, T, ?> upstream, Gatherer<T, A, R> gatherer) {
+    // order of parameters is inverted from the other constructor to ensure picking the right constructor
+    private GathererOp(ReferencePipeline<?, T> upstream, Gatherer<T, A, R> gatherer) {
         super(upstream, opFlagsFor(gatherer.integrator())); // TODO change to not call integrator() more than once
         this.gatherer = gatherer;
     }
 
     // This constructor is used when fusing subsequent .gather() invocations
+    // order of parameters is inverted from the other constructor to ensure picking the right constructor
     @SuppressWarnings("unchecked")
-    private GathererOp(GathererOp<T,?,?> upstream, Gatherer<T, A, R> gatherer) {
-        super(upstream.upstream(), (AbstractPipeline<?, T, ?>) upstream, opFlagsFor(gatherer.integrator()));
+    private GathererOp(Gatherer<T, A, R> gatherer, GathererOp<?, ?, T> upstream) {
+        super((AbstractPipeline<?, T, ?>)upstream.upstream(), upstream, opFlagsFor(gatherer.integrator()));
         this.gatherer = gatherer;
     }
 
@@ -210,6 +207,10 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     }
 
     @Override boolean opIsStateful() {
+        // Currently GathererOp is always stateful, but it would be possible to return `false` if:
+        // the Gatherer's initializer is Gatherer.defaultInitiatizer(),
+        // the Gatherer's combiner is NOT Gatherer.defaultCombiner()
+        // the Gatherer's finisher is Gatherer.defaultFinisher()
         return true;
     }
 
@@ -219,10 +220,9 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     }
 
     // This is used when evaluating .gather() operations interspersed with other Stream operations (in parallel)
-    @SuppressWarnings("unchecked")
     @Override
     <I> Node<R> opEvaluateParallel(PipelineHelper<R> unused1, Spliterator<I> spliterator, IntFunction<R[]> unused2) {
-        return this.<T,A,R,NodeBuilder<R>,Node<R>>evaluate(
+        return this.<NodeBuilder<R>,Node<R>>evaluate(
                 upstream().wrapSpliterator(spliterator),
                 true,
                 gatherer,
@@ -236,33 +236,35 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
     @Override
     <P_IN> Spliterator<R> opEvaluateParallelLazy(PipelineHelper<R> helper, Spliterator<P_IN> spliterator) {
         // There's a very small subset of possible Gatherers which would be expressible as Spliterators directly,
-        // specifically STATELESS + `finisherNotNeeded` + having a `combiner` which is *NOT* `combinerNotPossible`.
+        // specifically STATELESS + `finisherNotNeeded` + having a `combiner` which is *NOT* `defaultCombiner()`.
         return opEvaluateParallel(null, spliterator, null).spliterator();
     }
 
-    // Overriding collect() is not strictly needed, but will avoid an extra collection step
-    // collect()-invocations immediately following a gather()-invocation fuses the collection
-    // with the gathering
-    @Override
-    public <CR,CA> CR collect(Collector<? super R, CA, CR> collector) {
-        if (!COLLECT_FASTPATH_ENABLED)
-            return super.collect(collector);
+    // gather-operations immediately followed by (terminal) collect-operations
+    // are fused together to avoid having to first run the gathering to completion
+    // and only after that be able to run the collection on top of the output.
+    // This is highly beneficial in the parallel case as stateful operations
+    // cannot be pipelined in the ReferencePipeline implementation.
+    // Overriding collect-operations overcomes this limitation.
 
-        if (collector.getClass() != Gatherer.ThenCollector.class) { // Implicit null-check of collector
-            return collect(gatherer, collector);
-        } else {
-            @SuppressWarnings("unchecked") final var thenCollector = (Gatherer.ThenCollector<R, ?, Object, Object, CR, CA>) collector;
-            return collect(gatherer.andThen(thenCollector.gatherer()), thenCollector.collector());
-        }
+    @Override
+    public <CR, CA> CR collect(Collector<? super R, CA, CR> collector) {
+        linkOrConsume(); // Important to make sure the same Stream cannot be consumed more than once
+        final var parallel = isParallel();
+        return evaluate(
+                upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
+                parallel,
+                gatherer,
+                collector.supplier(),
+                collector.accumulator(),
+                parallel ? collector.combiner() : null,
+                collector.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH) ? null : collector.finisher()
+        );
     }
 
-    // .collect()-invocations immediately following .gather()-invocations fuses the collection with the gathering
     @Override
     public <RR> RR collect(Supplier<RR> supplier, BiConsumer<RR, ? super R> accumulator, BiConsumer<RR, RR> combiner) {
-        if (!COLLECT_FASTPATH_ENABLED)
-            return super.collect(supplier, accumulator, combiner);
-
-        linkOrConsume();
+        linkOrConsume(); // Important to make sure the same Stream cannot be consumed more than once
         final var parallel = isParallel();
         return evaluate(
                     upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
@@ -275,47 +277,34 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
         );
     }
 
-    @ForceInline
-    private <A,R,CA,CR> CR collect(Gatherer<T,A,R> g, Collector<? super R,CA,CR> c) {
-        linkOrConsume(); // Important to make sure the same Stream cannot be consumed more than once
-        final var parallel = isParallel();
-        return evaluate(
-                upstream().wrapSpliterator(upstream().sourceSpliterator(0)),
-                parallel,
-                g,
-                c.supplier(),
-                c.accumulator(),
-                parallel ? c.combiner() : null,
-                c.characteristics().contains(Collector.Characteristics.IDENTITY_FINISH) ? null : c.finisher()
-        );
-    }
-
     // evaluate(...) is the primary execution mechanism besides opWrapSink()
     // and implements both sequential, hybrid parallel-sequential, and parallel evaluation
-    private <T,A,R,CA,CR> CR evaluate(
-                                      final Spliterator<T> spliterator,
-                                      final boolean parallel,
-                                      final Gatherer<T,A,R> gatherer,
-                                      final Supplier<CA> collectorSupplier,
-                                      final BiConsumer<CA,? super R> collectorAccumulator,
-                                      final BinaryOperator<CA> collectorCombiner,
-                                      final Function<CA,CR> collectorFinisher) {
+    private <CA, CR> CR evaluate( final Spliterator<T> spliterator,
+                                  final boolean parallel,
+                                  final Gatherer<T, A, R> gatherer,
+                                  final Supplier<CA> collectorSupplier,
+                                  final BiConsumer<CA, ? super R> collectorAccumulator,
+                                  final BinaryOperator<CA> collectorCombiner,
+                                  final Function<CA, CR> collectorFinisher) {
 
         // There are two main sections here: first the sequential, then the parallel
 
         final var initializer = gatherer.initializer();
         final var integrator = gatherer.integrator();
 
-        final boolean greedy    = integrator instanceof Integrator.Greedy<A,T,R>; // Optimization
+        final boolean greedy = integrator instanceof Integrator.Greedy<A, T, R>; // Optimization
 
-        // Sequential section starts here:
-        final class Sequential implements Consumer<T>, Gatherer.Sink<R> {
+        // Sequential evaluation section starts here.
+
+        // Sequential is the fusion of a Gatherer and a Collector which can
+        // be evaluated sequentially.
+        final class Sequential implements Consumer<T>, Gatherer.Downstream<R> {
             A state;
             CA collectorState;
             boolean proceed;
 
             Sequential() {
-                if (initializer != Gatherers.initializerNotNeeded)
+                if (initializer != Gatherer.defaultInitializer())
                     state = initializer.get();
                 collectorState = collectorSupplier.get();
                 proceed = true;
@@ -332,23 +321,30 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             }
 
             // No need to override isKnownDone() as the default is `false` and collectors can never short-circuit
-            @Override public boolean flush(R r) { collectorAccumulator.accept(collectorState, r); return true; }
+            @Override public boolean push(R r) { collectorAccumulator.accept(collectorState, r); return true; }
 
             @Override public void accept(T t) {
-                // TODO explain why code looks as it does
+                // Benchmarking has shown that, in this case, conditional writing of `proceed` is desirable
+                // and if that was not the case, then the following line would've been clearer:
+                // proceed &= integrator.integrate(state, t, this);
+
                 var ignore = integrator.integrate(state, t, this) || (!greedy && (proceed = false));
-                //proceed &= integrator.integrate(state, t, this);
             }
 
             @SuppressWarnings("unchecked")
             public CR get() {
                 final var finisher = gatherer.finisher();
-                if (finisher != Gatherers.finisherNotNeeded)
+                if (finisher != Gatherer.<A, R>defaultFinisher())
                     finisher.accept(state, this);
+                // IF collectorFinisher == null then we're dealing with IDENTITY_FINISH
                 return (collectorFinisher == null) ? (CR) collectorState : collectorFinisher.apply(collectorState);
             }
         }
 
+        // It could be considered to also go to sequential mode if the operation is non-greedy
+        // AND the combiner is Gatherer.defaultCombiner() as those operations will not
+        // benefit from upstream parallel preprocessing as is the main advantage of the Hybrid
+        // evaluation strategy.
         if (!parallel)
             return new Sequential().evaluateUsing(spliterator).get();
 
@@ -356,7 +352,8 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
 
         final var combiner = gatherer.combiner();
 
-        // The following implementation of hybrid parallel-sequential Gatherer processing borrows heavily from ForeachOrderedTask
+        // The following implementation of hybrid parallel-sequential Gatherer processing borrows heavily from ForeachOrderedTask,
+        // and adds handling of short-circuiting.
         @SuppressWarnings("serial")
         final class Hybrid extends CountedCompleter<Sequential> {
             private final long targetSize;
@@ -465,9 +462,13 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                  * triggered by the completion of task's left-predecessor in
                  * onCompletion.  Therefore there is no data race within the if
                  * block.
+                 *
+                 * IMPORTANT: Currently we only perform the processing of this
+                 * upstream data if we know the operation is greedy -- as we cannot
+                 * safely speculate on the cost/benefit ratio of parallelizing
+                 * the pre-processing of upstream data under short-circuiting.
                  */
                 if (greedy && task.getPendingCount() > 0) {
-                // was if (greedy && proceed && !cancelled.get() && task.getPendingCount() > 0) { // FIXME reconsider if it should be done for non-greedy operations
                     // Cannot complete just yet so buffer elements into a Spliterator for use when completion occurs
                     var builder = Nodes.<T>builder(rightSplit.getExactSizeIfKnown(), Nodes.castingArray());
                     rightSplit.forEachRemaining(builder); // Run the upstream into the builder
@@ -481,12 +482,15 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
                 var s = spliterator;
                 spliterator = null; // GC assistance
 
+                // Performance sensitive since each leaf-task could have a spliterator of size 1
+                // which means that all else is overhead which needs minimization.
                 if (s != null && (greedy || !cancelled.get()) && !localResult.evaluateUsing(s).proceed && !greedy)
                     cancelled.set(true);
 
                 // The completion of this task *and* the dumping of elements
                 // "happens-before" completion of the associated left-most leaf task
                 // of right subtree (if any, which can be this task's right sibling)
+                @SuppressWarnings("unchecked")
                 var leftDescendant = (Hybrid) NEXT.getAndSet(this, null); // FIXME double-check if tryComplete HB onCompletion
                 if (leftDescendant != null) {
                     leftDescendant.tryComplete();
@@ -600,7 +604,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             }
         }
 
-        if (combiner != Gatherers.combinerNotPossible)
+        if (combiner != Gatherer.defaultCombiner())
             return new Parallel(spliterator).invoke().get();
         else
             return new Hybrid(spliterator).invoke().get();
