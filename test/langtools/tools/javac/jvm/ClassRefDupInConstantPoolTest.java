@@ -47,8 +47,8 @@ public class ClassRefDupInConstantPoolTest {
 
         int duplicates = 0;
         TreeSet<String> set = new TreeSet<>();
-        for (int i = 1; i < pool.entryCount(); i += pool.entryByIndex(i).width()) {
-            if (pool.entryByIndex(i) instanceof ClassEntry ce) {
+        for (PoolEntry pe : pool) {
+            if (pe instanceof ClassEntry ce) {
                 if (!set.add(ce.asInternalName())) {
                     duplicates++;
                     System.out.println("DUPLICATE CLASS REF " + ce.asInternalName());
