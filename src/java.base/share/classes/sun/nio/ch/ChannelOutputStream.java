@@ -67,7 +67,7 @@ class ChannelOutputStream extends OutputStream {
         int pos = bb.position();
         int rem = bb.limit() - pos;
         while (rem > 0) {
-            bb.limit(pos + Integer.min(rem, ChannelInputStream.DEFAULT_BUFFER_SIZE));
+            bb.limit(pos + Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE));
             int n = ch.write(bb);
             if (n <= 0)
                 throw new IOException("no bytes written");

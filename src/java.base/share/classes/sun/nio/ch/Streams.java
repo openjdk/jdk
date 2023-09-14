@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.nio.channels.WritableByteChannel;
  * Factory methods for input/output streams based on channels.
  */
 public class Streams {
+    // Size to which buffers are clamped when reading and writing.
+    static final int DEFAULT_BUFFER_SIZE = 8192;
+
     private Streams() { }
 
     /**

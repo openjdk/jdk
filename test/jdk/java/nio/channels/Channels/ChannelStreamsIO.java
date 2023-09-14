@@ -23,35 +23,50 @@
 
 /* @test
  * @bug 8316156
- * @summary Ensure Channels.newOutputStream.write doe not overrun max memory
- * @run main/othervm -XX:MaxDirectMemorySize=5M WriteFullyMemorySize
+ * @summary Ensure Channel{In,Out}putStreams do not overrun MaxDirectMemorySize
+ * @run main/othervm -XX:MaxDirectMemorySize=5M ChannelStreamsIO
  */
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Random;
 
-public class WriteFullyMemorySize {
+import static java.nio.file.StandardOpenOption.*;
+
+public class ChannelStreamsIO {
     // this value must exceed MaxDirectMemorySize
     private static final int SIZE = 10*1024*1024;
 
     public static void main(String[] args) throws IOException {
-        byte[] b = new byte[SIZE];
+        byte[] x = new byte[SIZE];
         Random rnd = new Random(System.nanoTime());
-        rnd.nextBytes(b);
-        ByteArrayInputStream bais = new ByteArrayInputStream(b);
-        Path target = Files.createTempFile("sna", "fu");
+        rnd.nextBytes(x);
+
+        Path file = Files.createTempFile("sna", "fu");
         try {
-            Files.copy(bais, target, StandardCopyOption.REPLACE_EXISTING);
-            byte[] res = Files.readAllBytes(target);
-            if (!Arrays.equals(b, res))
-                throw new RuntimeException("Arrays are not equal");
+            try (FileChannel fc = FileChannel.open(file, CREATE, WRITE)) {
+                try (OutputStream out = Channels.newOutputStream(fc)) {
+                    out.write(x);
+                }
+            }
+            try (FileChannel fc = FileChannel.open(file, READ)) {
+                try (InputStream in = Channels.newInputStream(fc)) {
+                    byte[] y = new byte[SIZE];
+                    int n = -1;
+                    if ((n = in.read(y)) != SIZE)
+                        throw new RuntimeException("n " + n + " != " + SIZE);
+                    if (!Arrays.equals(x, y))
+                        throw new RuntimeException("Arrays are not equal");
+                }
+            }
         } finally {
-            Files.delete(target);
+            Files.delete(file);
         }
     }
 }

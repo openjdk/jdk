@@ -46,8 +46,6 @@ import jdk.internal.util.ArraysSupport;
  * @author Mark Reinhold
  */
 class ChannelInputStream extends InputStream {
-    static final int DEFAULT_BUFFER_SIZE = 8192;
-
     private final ReadableByteChannel ch;
     private ByteBuffer bb;
     private byte[] bs;       // Invoker's previous array
@@ -61,16 +59,16 @@ class ChannelInputStream extends InputStream {
     }
 
     /*
-     * Reads bytes in DEFAULT_BUFFER_SIZE chunks until all requested bytes
-     * have been read or end-of-stream is reached.
+     * Reads bytes in Streams.DEFAULT_BUFFER_SIZE chunks until all requested
+     * bytes have been read or end-of-stream is reached.
      * If the channel is selectable then it must be configured blocking.
      */
-    private int readFully(ByteBuffer bb) throws IOException {
+    private int readBytes(ByteBuffer bb) throws IOException {
         int nread = 0;
         int pos = bb.position();
         int rem = bb.limit() - pos;
         while (rem > 0) {
-            int size = Integer.min(rem, DEFAULT_BUFFER_SIZE);
+            int size = Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE);
             bb.limit(pos + size);
             int n = ch.read(bb);
             if (n < 0) {
@@ -94,10 +92,10 @@ class ChannelInputStream extends InputStream {
             synchronized (sc.blockingLock()) {
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
-                return readFully(bb);
+                return readBytes(bb);
             }
         } else {
-            return readFully(bb);
+            return readBytes(bb);
         }
     }
 
@@ -168,7 +166,7 @@ class ChannelInputStream extends InputStream {
             capacity = Math.max(ArraysSupport.newLength(capacity,
                                                         1,         // min growth
                                                         capacity), // pref growth
-                                DEFAULT_BUFFER_SIZE);
+                                Streams.DEFAULT_BUFFER_SIZE);
             buf = Arrays.copyOf(buf, capacity);
             buf[nread++] = (byte)n;
         }
