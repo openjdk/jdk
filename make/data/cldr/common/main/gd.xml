@@ -10432,14 +10432,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal} {given2}</namePattern>
+			<namePattern>{surname}, {given-informal} {given2-informal-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
 			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal} {given2}</namePattern>
-			<namePattern alt="1">{surname-core}, {given-informal} {given2} {surname-prefix}</namePattern>
+			<namePattern>{surname}, {given-informal} {given2-informal-initial}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given">Calum</nameField>

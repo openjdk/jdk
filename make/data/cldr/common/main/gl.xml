@@ -6542,20 +6542,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname-core} {surname2}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern alt="1">{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
 			<namePattern>{surname-core} {surname2}, {given} {given2-initial} {surname-prefix}</namePattern>
-			<namePattern alt="1">{surname-core} {surname2}, {given} {given2} {surname-prefix}</namePattern>
+			<namePattern alt="1">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname-core} {surname2}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern alt="1">{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
 			<namePattern>{surname-core} {surname2}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
-			<namePattern alt="1">{surname-core} {surname2}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+			<namePattern alt="1">{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname-core} {surname2}, {given-informal} {surname-prefix}</namePattern>
+			<namePattern alt="1">{surname-core}, {given-informal} {surname-prefix}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given">Uxía</nameField>
