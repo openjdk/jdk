@@ -64,7 +64,7 @@ public class bug4827074 extends Panel {
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
             ObjectInputStream in = new ObjectInputStream(bais);
             _ii = (ImageIcon)in.readObject();
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
         return _ii;
