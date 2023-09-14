@@ -897,7 +897,7 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
     size_t const total_code_roots_scanned = p->sum_thread_work_items(G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::CodeRootsScannedNMethods) +
                                             p->sum_thread_work_items(G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::CodeRootsScannedNMethods);
 
-    if (total_code_roots_scanned > G1NumCodeRootsCostSampleThreshold) {
+    if (total_code_roots_scanned >= G1NumCodeRootsCostSampleThreshold) {
       double avg_time_code_root_scan = average_time_ms(G1GCPhaseTimes::CodeRoots) +
                                        average_time_ms(G1GCPhaseTimes::OptCodeRoots);
 
