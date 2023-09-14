@@ -24,7 +24,15 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 
 import java.util.Optional;
@@ -99,6 +107,16 @@ public sealed interface ClassReader extends ConstantPool
     PoolEntry readEntry(int offset);
 
     /**
+     * {@return the constant pool entry of a given type whose index is given
+     * at the specified offset within the classfile}
+     * @param offset the offset of the index within the classfile
+     * @param cls the entry type
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the entry is not of the given type
+     */
+    <T extends PoolEntry> T readEntry(int offset, Class<T> cls);
+
+    /**
      * {@return the constant pool entry whose index is given at the specified
      * offset within the classfile, or null if the index at the specified
      * offset is zero}
@@ -158,96 +176,6 @@ public sealed interface ClassReader extends ConstantPool
      *         a class entry
      */
     ClassEntry readClassEntry(int offset);
-
-    /**
-     * {@return the constant value entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a constant value entry
-     */
-    ConstantValueEntry readConstantValueEntry(int offset);
-
-    /**
-     * {@return the integer entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         an integer entry
-     */
-    IntegerEntry readIntegerEntry(int offset);
-
-    /**
-     * {@return the double entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a double entry
-     */
-    DoubleEntry readDoubleEntry(int offset);
-
-    /**
-     * {@return the long entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a long entry
-     */
-    LongEntry readLongEntry(int offset);
-
-    /**
-     * {@return the float entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a float entry
-     */
-    FloatEntry readFloatEntry(int offset);
-
-    /**
-     * {@return the field reference entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a field reference entry
-     */
-    FieldRefEntry readFieldRefEntry(int offset);
-
-    /**
-     * {@return the member reference entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         a member reference entry
-     */
-    MemberRefEntry readMemberRefEntry(int offset);
-
-    /**
-     * {@return the interface method reference entry whose index is given at the
-     * specified offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         an interface method reference entry
-     */
-    InterfaceMethodRefEntry readInterfaceMethodRefEntry(int offset);
-
-    /**
-     * {@return the invoke dynamic entry whose index is given at the specified
-     * offset within the classfile}
-     * @param offset the offset of the index within the classfile
-     * @throws ConstantPoolException if the index is out of range of the
-     *         constant pool size, or zero, or the index does not correspond to
-     *         an invoke dynamic entry
-     */
-    InvokeDynamicEntry readInvokeDynamicEntry(int offset);
 
     /**
      * {@return the name-and-type entry whose index is given at the specified
