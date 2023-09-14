@@ -414,13 +414,12 @@ public:
 
   void do_work(uint worker_id) override {
     RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-    const size_t buffer_capacity = _rdcqs->buffer_capacity();
     BufferNode* next = Atomic::load(&_nodes);
     while (next != nullptr) {
       BufferNode* node = next;
       next = Atomic::cmpxchg(&_nodes, node, node->next());
       if (next == node) {
-        cl.apply_to_buffer(node, buffer_capacity, worker_id);
+        cl.apply_to_buffer(node, worker_id);
         next = node->next();
       }
     }

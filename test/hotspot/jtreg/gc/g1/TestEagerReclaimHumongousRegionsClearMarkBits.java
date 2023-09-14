@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ class ObjectWithSomeRefs {
 }
 
 class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
-    public static final long MAX_MILLIS_FOR_RUN = 50 * 1000; // The maximum runtime for the actual test.
+    public static final long MAX_NANOS_FOR_RUN = 50L * 1_000_000_000L; // The maximum runtime for the actual test.
 
     public static final int M = 1024*1024;
 
@@ -93,11 +93,11 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsReclaimRegionFast {
 
         Object ref_from_stack = large1;
 
-        long start_millis = System.currentTimeMillis();
+        long start_nanos = System.nanoTime();
 
         for (int i = 0; i < 20; i++) {
-            long current_millis = System.currentTimeMillis();
-            if ((current_millis - start_millis) > MAX_MILLIS_FOR_RUN) {
+            long current_nanos = System.nanoTime();
+            if ((current_nanos - start_nanos) > MAX_NANOS_FOR_RUN) {
               System.out.println("Finishing test because maximum runtime exceeded");
               break;
             }

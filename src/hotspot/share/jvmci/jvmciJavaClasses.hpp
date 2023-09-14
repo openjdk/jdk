@@ -131,7 +131,10 @@
     object_field(VMIntrinsicMethod, name, "Ljava/lang/String;")                                               \
     object_field(VMIntrinsicMethod, descriptor, "Ljava/lang/String;")                                         \
     int_field(VMIntrinsicMethod, id)                                                                          \
-    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")        \
+    boolean_field(VMIntrinsicMethod, isAvailable)                                                             \
+    boolean_field(VMIntrinsicMethod, c1Supported)                                                             \
+    boolean_field(VMIntrinsicMethod, c2Supported)                                                             \
+    jvmci_constructor(VMIntrinsicMethod, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IZZZ)V")     \
   end_class                                                                                                   \
   start_class(HotSpotCompilationRequestResult, jdk_vm_ci_hotspot_HotSpotCompilationRequestResult)             \
     object_field(HotSpotCompilationRequestResult, failureMessage, "Ljava/lang/String;")                       \

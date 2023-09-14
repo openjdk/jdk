@@ -1270,6 +1270,7 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   if (s1->Opcode() != s2->Opcode()) return false;
   if (s1->req() != s2->req()) return false;
   if (!same_velt_type(s1, s2)) return false;
+  if (s1->is_Bool() && s1->as_Bool()->_test._test != s2->as_Bool()->_test._test) return false;
   Node* s1_ctrl = s1->in(0);
   Node* s2_ctrl = s2->in(0);
   // If the control nodes are equivalent, no further checks are required to test for isomorphism.
@@ -2655,6 +2656,14 @@ bool SuperWord::output() {
                "CMove bool should be one of: eq,ne,ge,ge,lt,le");
         Node_List* p_bol = my_pack(bol);
         assert(p_bol != nullptr, "CMove must have matching Bool pack");
+
+#ifdef ASSERT
+        for (uint j = 0; j < p_bol->size(); j++) {
+          Node* m = p_bol->at(j);
+          assert(m->as_Bool()->_test._test == bol_test,
+                 "all bool nodes must have same test");
+        }
+#endif
 
         CmpNode* cmp = bol->in(1)->as_Cmp();
         assert(cmp != nullptr, "must have cmp above CMove");

@@ -60,16 +60,34 @@ public class CheckAttributeReader<R> {
 
     public final CheckAttributeString readUserPostfix(String node) {
         if (IRNode.isCompositeIRNode(node)) {
-            String irNode = IRNode.getIRNodeAccessString(node);
-            int nextIndex = iterator.nextIndex();
-            TestFormat.checkNoReport(iterator.hasNext(), "Must provide additional value at index " +
-                                                         nextIndex + " right after " + irNode);
-            CheckAttributeString userPostfix = new CheckAttributeString(iterator.next());
-            TestFormat.checkNoReport(userPostfix.isValidUserPostfix(), "Provided empty string for composite node " +
-                                                                       irNode + " at index " + nextIndex);
-            return userPostfix;
+            return readUserPostfixForCompositeIRNode(node);
+        } else if (IRNode.isVectorIRNode(node)) {
+            return readUserPostfixForVectorIRNode(node);
         } else {
             return CheckAttributeString.invalid();
         }
+    }
+
+    private final CheckAttributeString readUserPostfixForCompositeIRNode(String node) {
+        String irNode = IRNode.getIRNodeAccessString(node);
+        int nextIndex = iterator.nextIndex();
+        TestFormat.checkNoReport(iterator.hasNext(), "Must provide additional value at index " +
+                                                     nextIndex + " right after " + irNode);
+        CheckAttributeString userPostfix = new CheckAttributeString(iterator.next());
+        TestFormat.checkNoReport(userPostfix.isValidUserPostfix(), "Provided empty string for composite node " +
+                                                                   irNode + " at index " + nextIndex);
+        return userPostfix;
+    }
+
+    private final CheckAttributeString readUserPostfixForVectorIRNode(String node) {
+        if (iterator.hasNext()) {
+            String maybeVectorType = iterator.next();
+            if (IRNode.isVectorSize(maybeVectorType)) {
+                return new CheckAttributeString(maybeVectorType);
+            }
+            // If we do not find that pattern, then revert the iterator once
+            iterator.previous();
+        }
+        return CheckAttributeString.invalid();
     }
 }
