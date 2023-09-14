@@ -43,7 +43,7 @@
  */
 
 /*
- * @test id=security-manager-allow
+ * @test id=security-manager
  * @summary Conformance testing variant of JSR-166 tck tests
  *          with java security manager set to allow.
  * @build *
