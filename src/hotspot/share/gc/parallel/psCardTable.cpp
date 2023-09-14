@@ -35,6 +35,9 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/align.hpp"
 
+size_t PSCardTable::stripe_size_in_words;
+size_t PSCardTable::large_obj_arr_min_words;
+
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
 class CheckForUnmarkedOops : public BasicOopIterateClosure {
@@ -189,12 +192,22 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
   while (obj_addr < end) {
     oop obj = cast_to_oop(obj_addr);
     assert(oopDesc::is_oop(obj), "inv");
-    assert(!obj->is_objArray() || obj->size() < large_obj_arr_min_words(), "inv");
+    assert(!obj->is_objArray() || obj->size() < large_obj_arr_min_words, "inv");
     prefetch_write(obj_addr);
     pm->push_contents(obj);
     obj_addr += obj->size();
   }
   pm->drain_stacks_cond_depth();
+}
+
+void PSCardTable::prepare_scavenge(int active_workers, size_t old_gen_used_words) {
+  const int stripe_count_per_worker = 100;
+  int stripe_count = active_workers * stripe_count_per_worker;
+  size_t sz = MAX2(old_gen_used_words / stripe_count, 128 * (size_t)_card_size_in_words);
+  stripe_size_in_words = align_up(sz, _card_size_in_words);
+  large_obj_arr_min_words = 2 * stripe_size_in_words + 1;
+  log_trace(gc, scavenge)("stripe count:%d stripe size:" SIZE_FORMAT "K",
+                          stripe_count, (stripe_size_in_words * HeapWordSize) / K);
 }
 
 // We get passed the space_top value to prevent us from traversing into
@@ -244,7 +257,6 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
-  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
   HeapWord* cur_stripe_addr = sp->bottom() + stripe_index * stripe_size_in_words;
@@ -295,7 +307,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       size_t obj_sz = cast_to_oop(obj_addr)->size();
       HeapWord* obj_end_addr = obj_addr + obj_sz;
       // Scan the elements of a large array to the stripe end.
-      if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray()) {
+      if (obj_sz >= large_obj_arr_min_words && cast_to_oop(obj_addr)->is_objArray()) {
         if (first_obj_addr >= cur_stripe_end_addr) {
           // Nothing to scan according to constraints given above.
           // We reach here only for the last stripe below space_top where
@@ -383,14 +395,12 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
                                               HeapWord* stripe_addr,
                                               HeapWord* stripe_end_addr,
                                               HeapWord* space_top) {
-  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
-
   HeapWord* large_arr_addr = start_array->object_start(stripe_addr);
 
   size_t arr_sz;
   if (large_arr_addr == nullptr ||
       !cast_to_oop(large_arr_addr)->is_objArray() ||
-      (arr_sz = cast_to_oop(large_arr_addr)->size()) < large_obj_arr_min_words())
+      (arr_sz = cast_to_oop(large_arr_addr)->size()) < large_obj_arr_min_words)
     return;
 
   objArrayOop large_arr = objArrayOop(cast_to_oop(large_arr_addr));
@@ -398,7 +408,7 @@ void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
 
   if (arr_end_addr <= stripe_end_addr) {
     // The end chunk is scanned together with the chunk in the previous stripe.
-    assert(large_obj_arr_min_words() > 2 * stripe_size_in_words, "2nd last chunk must cover stripe");
+    assert(large_obj_arr_min_words > 2 * stripe_size_in_words, "2nd last chunk must cover stripe");
     return;
   }
 

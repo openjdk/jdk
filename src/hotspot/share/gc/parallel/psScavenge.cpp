@@ -301,6 +301,8 @@ public:
       _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
     assert(_old_gen != nullptr, "Sanity");
+    PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
+    card_table->prepare_scavenge(active_workers, old_gen->object_space()->used_in_words());
   }
 
   virtual void work(uint worker_id) {

@@ -42,8 +42,8 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
-  static const size_t num_cards_in_stripe = 128;
-  static size_t large_obj_arr_min_words() { return 2 * num_cards_in_stripe * _card_size_in_words + 1; }
+  static size_t stripe_size_in_words;
+  static size_t large_obj_arr_min_words;
 
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
@@ -66,6 +66,7 @@ class PSCardTable: public CardTable {
   static CardValue verify_card_val()     { return verify_card; }
 
   // Scavenge support
+  void prepare_scavenge(int active_workers, size_t old_gen_used_words);
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   MutableSpace* sp,
                                   HeapWord* space_top,
