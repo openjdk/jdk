@@ -217,7 +217,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -236,7 +236,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -263,7 +263,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.LABELS;
                 }
             };
@@ -282,7 +282,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -302,7 +302,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -321,7 +321,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -340,7 +340,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.STATELESS;
                 }
             };
@@ -360,7 +360,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -379,7 +379,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -405,7 +405,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -429,7 +429,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.LABELS;
                 }
             };
@@ -456,7 +456,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.LABELS;
                 }
             };
@@ -483,7 +483,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.LABELS;
                 }
             };
@@ -507,7 +507,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -552,7 +552,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -578,7 +578,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -597,7 +597,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -616,7 +616,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -635,7 +635,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.STATELESS;
                 }
             };
@@ -654,7 +654,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -673,7 +673,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -692,7 +692,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -711,7 +711,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -736,7 +736,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -755,7 +755,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -777,7 +777,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -796,7 +796,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.UNSTABLE;
                 }
             };
@@ -815,7 +815,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -837,7 +837,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -856,7 +856,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.UNSTABLE;
                 }
             };
@@ -875,7 +875,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -894,7 +894,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.STATELESS;
                 }
             };
@@ -913,7 +913,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -932,7 +932,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.CP_REFS;
                 }
             };
@@ -951,7 +951,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.LABELS;
                 }
             };
@@ -971,7 +971,7 @@ public class Attributes {
                 }
 
                 @Override
-                public AttributeMapper.AttributeStability attributeStability() {
+                public AttributeMapper.AttributeStability stability() {
                     return AttributeStability.STATELESS;
                 }
             };

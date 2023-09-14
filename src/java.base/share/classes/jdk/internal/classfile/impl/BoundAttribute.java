@@ -173,7 +173,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     }
 
                     @Override
-                    public AttributeMapper.AttributeStability attributeStability() {
+                    public AttributeMapper.AttributeStability stability() {
                         return AttributeStability.UNKNOWN;
                     }
                 };

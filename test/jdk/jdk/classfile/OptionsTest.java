@@ -103,7 +103,7 @@ class OptionsTest {
         }
 
         @Override
-        public AttributeMapper.AttributeStability attributeStability() {
+        public AttributeMapper.AttributeStability stability() {
             return AttributeMapper.AttributeStability.STATELESS;
         }
     };
@@ -126,7 +126,7 @@ class OptionsTest {
 
     void testNoUnstable(Path path, ClassfileElement e) {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
-                assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().attributeStability().ordinal(),
+                assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
         if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassfileElement)ee));
     }
