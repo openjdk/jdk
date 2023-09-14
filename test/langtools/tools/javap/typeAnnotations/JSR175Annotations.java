@@ -63,7 +63,7 @@ public class JSR175Annotations {
     }
 
     // test the result of AttributedElement.findAttribute according to expectations
-    <T extends jdk.internal.classfile.Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
+    <T extends java.lang.classfile.Attribute<T>> void test(AttributedElement m, AttributeMapper<T> attr_name) {
         Attribute<T> attr_instance = m.findAttribute(attr_name).orElse(null);
         if (attr_instance != null) {
             switch (attr_instance) {

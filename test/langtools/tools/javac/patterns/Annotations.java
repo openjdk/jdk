@@ -32,7 +32,7 @@
  *          java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @compile Annotations.java
- * @compile -processor Annotations -proc:only Annotations.java
+ * @compile -J--enable-preview -processor Annotations -proc:only Annotations.java
  * @run main Annotations
  */
 

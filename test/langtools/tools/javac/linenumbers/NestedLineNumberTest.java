@@ -21,8 +21,8 @@ public class NestedLineNumberTest {
         }
 
         int line = lines.get(0).lineNumber();
-        if (line != 54) {
-            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 54, line));
+        if (line != 50) {
+            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 50, line));
         }
     }
 

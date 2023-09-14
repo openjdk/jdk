@@ -36,13 +36,13 @@ public class NullCheckLineNumberTest {
     public static void main(String[] args) throws Exception {
         List<Entry> actualEntries = findEntries();
         List<Entry> expectedEntries = List.of(
-                new SimpleEntry<>(29, 0),
-                new SimpleEntry<>(30, 4),
-                new SimpleEntry<>(32, 9),
-                new SimpleEntry<>(33, 16),
-                new SimpleEntry<>(34, 32),
-                new SimpleEntry<>(35, 46),
-                new SimpleEntry<>(36, 52)
+                new SimpleEntry<>(25, 0),
+                new SimpleEntry<>(26, 4),
+                new SimpleEntry<>(28, 9),
+                new SimpleEntry<>(29, 16),
+                new SimpleEntry<>(30, 32),
+                new SimpleEntry<>(31, 46),
+                new SimpleEntry<>(32, 52)
         );
         if (!Objects.equals(actualEntries, expectedEntries)) {
             error(String.format("Unexpected LineNumberTable: %s", actualEntries.toString()));
@@ -53,8 +53,8 @@ public class NullCheckLineNumberTest {
         } catch (NullPointerException npe) {
             if (Arrays.stream(npe.getStackTrace())
                       .noneMatch(se -> se.getFileName().contains("NullCheckLineNumberTest") &&
-                                       se.getLineNumber() == 34)) {
-                throw new AssertionError("Should go through line 34!");
+                                       se.getLineNumber() == 30)) {
+                throw new AssertionError("Should go through line 30!");
             }
         }
     }
