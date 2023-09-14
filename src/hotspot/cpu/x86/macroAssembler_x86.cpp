@@ -4615,8 +4615,20 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
         jccb(Assembler::notEqual, *L_failure);
   else  jcc(Assembler::notEqual, *L_failure);
 
-  // Success.  Cache the super we found and proceed in triumph.
+  // Success. Try to cache the super we found and proceed in triumph.
+
+  Label L_skip_super_cache_update;
+#ifdef _LP64
+  if (SecondarySuperMissBackoff > 0) {
+    subl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), 1);
+    jccb(Assembler::greaterEqual, L_skip_super_cache_update);
+    uint32_t max = checked_cast<uint32_t>(SecondarySuperMissBackoff);
+    movl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), max);
+  }
+#endif
+
   movptr(super_cache_addr, super_klass);
+  bind(L_skip_super_cache_update);
 
   if (L_success != &L_fallthrough) {
     jmp(*L_success);

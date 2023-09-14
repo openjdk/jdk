@@ -1541,7 +1541,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
     cmp(rscratch1, (u1) 0);
     br(Assembler::GT, L_skip_super_cache_update);
-    mov_immediate32(rscratch1, checked_cast<uint32_t>(SecondarySuperMissBackoff));
+    uint32_t max = checked_cast<uint32_t>(SecondarySuperMissBackoff);
+    mov_immediate32(rscratch1, max);
     str(rscratch1, Address(rthread, JavaThread::backoff_secondary_super_miss_offset()));
   }
 
