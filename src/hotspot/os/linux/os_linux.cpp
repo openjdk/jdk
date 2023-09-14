@@ -2882,6 +2882,11 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MADV_HUGEPAGE 14
 #endif
 
+// Define MADV_POPULATE_WRITE here so we can build HotSpot on old systems.
+#ifndef MADV_POPULATE_WRITE
+  #define MADV_POPULATE_WRITE 23
+#endif
+
 // Note that the value for MAP_FIXED_NOREPLACE differs between architectures, but all architectures
 // supported by OpenJDK share the same flag value.
 #define MAP_FIXED_NOREPLACE_value 0x100000
@@ -2938,6 +2943,32 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   // allow that in any case.
   if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
     commit_memory(addr, bytes, alignment_hint, !ExecMem);
+  }
+}
+
+static void warn_fail_pretouch_memory(void *start, void *end, size_t page_size,
+				      int err) {
+  warning("INFO: os::pretouch_memory(" PTR_FORMAT ", " PTR_FORMAT ", "
+          SIZE_FORMAT ") failed; error='%s' (errno=%d)",
+	  p2i(start), p2i(end), page_size,
+          os::strerror(err), err);
+}
+
+void os::pd_pretouch_memory(void *start, void *end, size_t page_size) {
+  char *cur = static_cast<char *>(start);
+  // Use madvise to pretouch on Linux first, and fallback to the generic method
+  // if unsupported. THP can form right after madvise rather than being
+  // assembled later.
+  if (::madvise(cur, static_cast<char *>(end) - cur, MADV_POPULATE_WRITE) == -1) {
+    int err = errno;
+    if (err == EINVAL) { // Not supported
+      // When using THP we need to always pre-touch using small pages as the OS
+      // will initially always use small pages.
+      page_size = UseTransparentHugePages ? (size_t)os::vm_page_size() : page_size;
+      pretouch_memory_fallback(start, end, page_size);
+    } else {
+      warn_fail_pretouch_memory(start, end, page_size, err);
+    }
   }
 }
 

@@ -1623,6 +1623,10 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
+void os::pd_pretouch_memory(void *start, void *end, size_t page_size) {
+  pretouch_memory_fallback(start, end, page_size);
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 

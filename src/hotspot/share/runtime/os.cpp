@@ -2114,16 +2114,21 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     // We're doing concurrent-safe touch and memory state has page
     // granularity, so we can touch anywhere in a page.  Touch at the
     // beginning of each page to simplify iteration.
-    char* cur = static_cast<char*>(align_down(start, page_size));
-    void* last = align_down(static_cast<char*>(end) - 1, page_size);
-    assert(cur <= last, "invariant");
-    // Iterate from first page through last (inclusive), being careful to
+    void* aligned_start = align_down(start, page_size);
+    void* aligned_end = align_up(end, page_size);
+    assert(aligned_start < aligned_end, "invariant");
+    // Iterate from first page to the aligned end (exclusive), being careful to
     // avoid overflow if the last page abuts the end of the address range.
-    for ( ; true; cur += page_size) {
-      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-      if (cur >= last) break;
-    }
+    pd_pretouch_memory(aligned_start, aligned_end, page_size);
   }
+}
+
+void os::pretouch_memory_fallback(void *start, void *end, size_t page_size) {
+  char *cur = static_cast<char *>(start);
+  do {
+    Atomic::add(reinterpret_cast<int *>(cur), 0, memory_order_relaxed);
+    cur += page_size;
+  } while (cur < end);
 }
 
 char* os::map_memory_to_file(size_t bytes, int file_desc) {
