@@ -2956,15 +2956,78 @@ void java_lang_StackTraceElement::decode(const methodHandle& method, int bci,
 }
 #endif // INCLUDE_JVMCI
 
+// java_lang_ClassFrameInfo
+
+int java_lang_ClassFrameInfo::_classOrMemberName_offset;
+int java_lang_ClassFrameInfo::_flags_offset;
+
+#define CLASSFRAMEINFO_FIELDS_DO(macro) \
+  macro(_classOrMemberName_offset, k, "classOrMemberName", object_signature,  false); \
+  macro(_flags_offset,             k, vmSymbols::flags_name(), int_signature, false)
+
+void java_lang_ClassFrameInfo::compute_offsets() {
+  InstanceKlass* k = vmClasses::ClassFrameInfo_klass();
+  CLASSFRAMEINFO_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_ClassFrameInfo::serialize_offsets(SerializeClosure* f) {
+  CLASSFRAMEINFO_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+static int get_flags(const methodHandle& m) {
+  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  if (m->is_initializer()) {
+    flags |= java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR;
+  } else {
+    flags |= java_lang_invoke_MemberName::MN_IS_METHOD;
+  }
+  if (m->caller_sensitive()) {
+    flags |= java_lang_invoke_MemberName::MN_CALLER_SENSITIVE;
+  }
+  if (m->is_hidden()) {
+    flags |= java_lang_invoke_MemberName::MN_HIDDEN_MEMBER;
+  }
+  assert((flags & 0xFF000000) == 0, "unexpected flags");
+  return flags;
+}
+
+oop java_lang_ClassFrameInfo::classOrMemberName(oop obj) {
+  return obj->obj_field(_classOrMemberName_offset);
+}
+
+int java_lang_ClassFrameInfo::flags(oop obj) {
+  return obj->int_field(_flags_offset);
+}
+
+void java_lang_ClassFrameInfo::init_class(Handle stackFrame, const methodHandle& m) {
+  stackFrame->obj_field_put(_classOrMemberName_offset, m->method_holder()->java_mirror());
+  // flags is initialized when ClassFrameInfo object is constructed and retain the value
+  int flags = java_lang_ClassFrameInfo::flags(stackFrame()) | get_flags(m);
+  stackFrame->int_field_put(_flags_offset, flags);
+}
+
+void java_lang_ClassFrameInfo::init_method(Handle stackFrame, const methodHandle& m, TRAPS) {
+  oop rmethod_name = java_lang_invoke_ResolvedMethodName::find_resolved_method(m, CHECK);
+  stackFrame->obj_field_put(_classOrMemberName_offset, rmethod_name);
+  // flags is initialized when ClassFrameInfo object is constructed and retain the value
+  int flags = java_lang_ClassFrameInfo::flags(stackFrame()) | get_flags(m);
+  stackFrame->int_field_put(_flags_offset, flags);
+}
+
+
 // java_lang_StackFrameInfo
 
-int java_lang_StackFrameInfo::_memberName_offset;
+int java_lang_StackFrameInfo::_type_offset;
+int java_lang_StackFrameInfo::_name_offset;
 int java_lang_StackFrameInfo::_bci_offset;
 int java_lang_StackFrameInfo::_version_offset;
 int java_lang_StackFrameInfo::_contScope_offset;
 
 #define STACKFRAMEINFO_FIELDS_DO(macro) \
-  macro(_memberName_offset, k, "memberName", object_signature,            false); \
+  macro(_type_offset,       k, "type",       object_signature,            false); \
+  macro(_name_offset,       k, "name",       string_signature,            false); \
   macro(_bci_offset,        k, "bci",        int_signature,               false); \
   macro(_contScope_offset,  k, "contScope",  continuationscope_signature, false)
 
@@ -2981,23 +3044,18 @@ void java_lang_StackFrameInfo::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-Method* java_lang_StackFrameInfo::get_method(Handle stackFrame, InstanceKlass* holder, TRAPS) {
-  HandleMark hm(THREAD);
-  Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
-  Method* method = (Method*)java_lang_invoke_MemberName::vmtarget(mname());
-  // we should expand MemberName::name when Throwable uses StackTrace
-  // MethodHandles::expand_MemberName(mname, MethodHandles::_suppress_defc|MethodHandles::_suppress_type, CHECK_NULL);
+Method* java_lang_StackFrameInfo::get_method(oop obj) {
+  oop m = java_lang_ClassFrameInfo::classOrMemberName(obj);
+  Method* method = java_lang_invoke_ResolvedMethodName::vmtarget(m);
   return method;
 }
 
 void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci, oop cont, TRAPS) {
   // set Method* or mid/cpref
   HandleMark hm(THREAD);
-  Handle mname(THREAD, stackFrame->obj_field(_memberName_offset));
-  Handle cont_h (THREAD, cont);
-  InstanceKlass* ik = method->method_holder();
-  CallInfo info(method(), ik, CHECK);
-  MethodHandles::init_method_MemberName(mname, info);
+  Handle cont_h(THREAD, cont);
+  java_lang_ClassFrameInfo::init_method(stackFrame, method, CHECK);
+
   // set bci
   java_lang_StackFrameInfo::set_bci(stackFrame(), bci);
   // method may be redefined; store the version
@@ -3012,28 +3070,42 @@ void java_lang_StackFrameInfo::set_method_and_bci(Handle stackFrame, const metho
 void java_lang_StackFrameInfo::to_stack_trace_element(Handle stackFrame, Handle stack_trace_element, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
-  Handle mname(THREAD, stackFrame->obj_field(java_lang_StackFrameInfo::_memberName_offset));
-  Klass* clazz = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
-  InstanceKlass* holder = InstanceKlass::cast(clazz);
-  Method* method = java_lang_StackFrameInfo::get_method(stackFrame, holder, CHECK);
 
+  Method* method = java_lang_StackFrameInfo::get_method(stackFrame());
+  InstanceKlass* holder = method->method_holder();
   short version = stackFrame->short_field(_version_offset);
   int bci = stackFrame->int_field(_bci_offset);
   Symbol* name = method->name();
   java_lang_StackTraceElement::fill_in(stack_trace_element, holder, methodHandle(THREAD, method), version, bci, name, CHECK);
 }
 
-void java_lang_StackFrameInfo::set_version(oop element, short value) {
-  element->short_field_put(_version_offset, value);
+oop java_lang_StackFrameInfo::type(oop obj) {
+  return obj->obj_field(_type_offset);
 }
 
-void java_lang_StackFrameInfo::set_bci(oop element, int value) {
+void java_lang_StackFrameInfo::set_type(oop obj, oop value) {
+  obj->obj_field_put(_type_offset, value);
+}
+
+oop java_lang_StackFrameInfo::name(oop obj) {
+  return obj->obj_field(_name_offset);
+}
+
+void java_lang_StackFrameInfo::set_name(oop obj, oop value) {
+  obj->obj_field_put(_name_offset, value);
+}
+
+void java_lang_StackFrameInfo::set_version(oop obj, short value) {
+  obj->short_field_put(_version_offset, value);
+}
+
+void java_lang_StackFrameInfo::set_bci(oop obj, int value) {
   assert(value >= 0 && value < max_jushort, "must be a valid bci value");
-  element->int_field_put(_bci_offset, value);
+  obj->int_field_put(_bci_offset, value);
 }
 
-void java_lang_StackFrameInfo::set_contScope(oop element, oop value) {
-  element->obj_field_put(_contScope_offset, value);
+void java_lang_StackFrameInfo::set_contScope(oop obj, oop value) {
+  obj->obj_field_put(_contScope_offset, value);
 }
 
 int java_lang_LiveStackFrameInfo::_monitors_offset;
@@ -3058,20 +3130,20 @@ void java_lang_LiveStackFrameInfo::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
-void java_lang_LiveStackFrameInfo::set_monitors(oop element, oop value) {
-  element->obj_field_put(_monitors_offset, value);
+void java_lang_LiveStackFrameInfo::set_monitors(oop obj, oop value) {
+  obj->obj_field_put(_monitors_offset, value);
 }
 
-void java_lang_LiveStackFrameInfo::set_locals(oop element, oop value) {
-  element->obj_field_put(_locals_offset, value);
+void java_lang_LiveStackFrameInfo::set_locals(oop obj, oop value) {
+  obj->obj_field_put(_locals_offset, value);
 }
 
-void java_lang_LiveStackFrameInfo::set_operands(oop element, oop value) {
-  element->obj_field_put(_operands_offset, value);
+void java_lang_LiveStackFrameInfo::set_operands(oop obj, oop value) {
+  obj->obj_field_put(_operands_offset, value);
 }
 
-void java_lang_LiveStackFrameInfo::set_mode(oop element, int value) {
-  element->int_field_put(_mode_offset, value);
+void java_lang_LiveStackFrameInfo::set_mode(oop obj, int value) {
+  obj->int_field_put(_mode_offset, value);
 }
 
 
@@ -3947,14 +4019,19 @@ void java_lang_invoke_MemberName::serialize_offsets(SerializeClosure* f) {
 }
 #endif
 
+#define RESOLVEDMETHOD_FIELDS_DO(macro) \
+  macro(_vmholder_offset, k, "vmholder", class_signature, false)
+
 void java_lang_invoke_ResolvedMethodName::compute_offsets() {
   InstanceKlass* k = vmClasses::ResolvedMethodName_klass();
   assert(k != nullptr, "jdk mismatch");
+  RESOLVEDMETHOD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
   RESOLVEDMETHOD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_invoke_ResolvedMethodName::serialize_offsets(SerializeClosure* f) {
+  RESOLVEDMETHOD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
   RESOLVEDMETHOD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
@@ -5217,6 +5294,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_reflect_Parameter) \
   f(java_lang_Module) \
   f(java_lang_StackTraceElement) \
+  f(java_lang_ClassFrameInfo) \
   f(java_lang_StackFrameInfo) \
   f(java_lang_LiveStackFrameInfo) \
   f(jdk_internal_vm_ContinuationScope) \

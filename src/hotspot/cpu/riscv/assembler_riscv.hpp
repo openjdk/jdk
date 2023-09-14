@@ -2791,7 +2791,7 @@ public:
     if (shamt != 0) {                                                                        \
       _slli(Rd, Rs1, shamt);                                                                 \
     } else {                                                                                 \
-      if (Rd != Rs1) {                                                                        \
+      if (Rd != Rs1) {                                                                       \
         addi(Rd, Rs1, 0);                                                                    \
       }                                                                                      \
     }                                                                                        \
@@ -2812,7 +2812,7 @@ public:
     if (shamt != 0) {                                                                        \
       NORMAL_NAME(Rd, Rs1, shamt);                                                           \
     } else {                                                                                 \
-      if (Rd != Rs1) {                                                                        \
+      if (Rd != Rs1) {                                                                       \
         addi(Rd, Rs1, 0);                                                                    \
       }                                                                                      \
     }                                                                                        \

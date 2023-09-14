@@ -1229,6 +1229,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
         blocking = false;
       }
 
+      // In libjvmci, JVMCI initialization should not deadlock with other threads
       if (!UseJVMCINativeLibrary) {
         // Don't allow blocking compiles if inside a class initializer or while performing class loading
         vframeStream vfst(JavaThread::cast(thread));
@@ -1240,12 +1241,12 @@ void CompileBroker::compile_method_base(const methodHandle& method,
             break;
           }
         }
-      }
 
-      // Don't allow blocking compilation requests to JVMCI
-      // if JVMCI itself is not yet initialized
-      if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
-        blocking = false;
+        // Don't allow blocking compilation requests to JVMCI
+        // if JVMCI itself is not yet initialized
+        if (!JVMCI::is_compiler_initialized() && compiler(comp_level)->is_jvmci()) {
+          blocking = false;
+        }
       }
 
       // Don't allow blocking compilation requests if we are in JVMCIRuntime::shutdown
@@ -1320,6 +1321,13 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   assert(comp != nullptr, "Ensure we have a compiler");
 
+#if INCLUDE_JVMCI
+  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
+    // JVMCI compilation is not yet initializable.
+    return nullptr;
+  }
+#endif
+
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
   nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
@@ -1347,12 +1355,6 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (comp == nullptr || compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return nullptr;
   }
-
-#if INCLUDE_JVMCI
-  if (comp->is_jvmci() && !JVMCI::can_initialize_JVMCI()) {
-    return nullptr;
-  }
-#endif
 
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
@@ -2813,29 +2815,33 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
                                     !Compile_lock->owned_by_self();
   bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
                                     !CodeCache_lock->owned_by_self();
-  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : nullptr) : nullptr;
-  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : nullptr) : nullptr;
-  Mutex*   function_lock_1 = allFun ? nullptr : (should_take_Compile_lock   ? Compile_lock    : nullptr);
-  Monitor* function_lock_2 = allFun ? nullptr : (should_take_CodeCache_lock ? CodeCache_lock  : nullptr);
+  bool take_global_lock_1   =  allFun && should_take_Compile_lock;
+  bool take_global_lock_2   =  allFun && should_take_CodeCache_lock;
+  bool take_function_lock_1 = !allFun && should_take_Compile_lock;
+  bool take_function_lock_2 = !allFun && should_take_CodeCache_lock;
+  bool take_global_locks    = take_global_lock_1 || take_global_lock_2;
+  bool take_function_locks  = take_function_lock_1 || take_function_lock_2;
+
   ts_global.update(); // record starting point
-  MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
-  MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+
+  ConditionalMutexLocker mu1(Compile_lock, take_global_lock_1, Mutex::_safepoint_check_flag);
+  ConditionalMutexLocker mu2(CodeCache_lock, take_global_lock_2, Mutex::_no_safepoint_check_flag);
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
   }
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
-    MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    ConditionalMutexLocker mu11(Compile_lock, take_function_lock_1,  Mutex::_safepoint_check_flag);
+    ConditionalMutexLocker mu22(CodeCache_lock, take_function_lock_2, Mutex::_no_safepoint_check_flag);
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }
@@ -2856,7 +2862,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
   if (discard) CodeCache::discard(out);
 
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());

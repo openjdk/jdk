@@ -301,7 +301,7 @@ public:
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
                                  TRAPS);
-
+private:
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
                                    int comp_level,
@@ -311,6 +311,7 @@ public:
                                    DirectiveSet* directive,
                                    TRAPS);
 
+public:
   // Acquire any needed locks and assign a compile id
   static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 
