@@ -2502,7 +2502,7 @@ encode %{
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       Label slow;
-      __ fast_lock(oop, disp_hdr, tmp, t0, slow);
+      __ lightweight_lock(oop, disp_hdr, tmp, t0, slow);
 
       // Indicate success on completion.
       __ mv(flag, zr);
@@ -2593,7 +2593,7 @@ encode %{
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       Label slow;
-      __ fast_unlock(oop, tmp, box, disp_hdr, slow);
+      __ lightweight_unlock(oop, tmp, box, disp_hdr, slow);
 
       // Indicate success on completion.
       __ mv(flag, zr);
