@@ -109,6 +109,7 @@ public sealed interface ClassReader extends ConstantPool
     /**
      * {@return the constant pool entry of a given type whose index is given
      * at the specified offset within the classfile}
+     * @param <T> the entry type
      * @param offset the offset of the index within the classfile
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the

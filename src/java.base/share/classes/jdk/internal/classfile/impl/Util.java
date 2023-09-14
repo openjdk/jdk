@@ -41,9 +41,6 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Classfile;
 
 import static java.lang.classfile.Classfile.ACC_STATIC;
 
