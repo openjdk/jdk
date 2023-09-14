@@ -40,6 +40,14 @@
  * @build *
  * @modules java.management
  * @run junit/othervm/timeout=1000 JSR166TestCase
+ */
+
+/*
+ * @test id=security-manager-allow
+ * @summary Conformance testing variant of JSR-166 tck tests
+ *          with java security manager set to allow.
+ * @build *
+ * @modules java.management
  * @run junit/othervm/timeout=1000 -Djava.security.manager=allow JSR166TestCase
  */
 
