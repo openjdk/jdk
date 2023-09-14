@@ -3079,7 +3079,12 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
 
   BIND(match);
 
-  z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  if (SecondarySuperMissBackoff > 0) {
+    assert(false, "Implement this");
+    z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  } else {
+    z_stg(Rsuperklass, sc_offset, Rsubklass); // Save result to cache.
+  }
 
   final_jmp(*L_success);
 
