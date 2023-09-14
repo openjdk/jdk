@@ -3491,13 +3491,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
 
             final boolean negative = intCompact < 0;
-            int size = jla.stringSize(intCompact);
+            int size = DecimalDigits.stringSize(intCompact);
 
             byte[] buf;
             int off = 0;
             if (scale < 0) {
                 buf = new byte[size - scale];
-                jla.getChars(intCompact, off + size, buf);
+                DecimalDigits.getCharsLatin1(intCompact, off + size, buf);
                 Arrays.fill(buf, off + size, buf.length, (byte) '0');
             } else {
                 int insertionPoint = size - (negative ? 1 : 0) - scale;
@@ -3513,15 +3513,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     for (int i = 0; i < -insertionPoint; i++) {
                         buf[off + i + 2] = '0';
                     }
-                    jla.getChars(Math.abs(intCompact), buf.length, buf);
+                    DecimalDigits.getCharsLatin1(Math.abs(intCompact), buf.length, buf);
                 } else {
                     long power = MathUtils.pow10(scale);
                     long div = intCompact / power;
                     buf = new byte[size + 1];
                     int divOff = off + size - scale;
-                    jla.getChars(div, divOff, buf);
+                    DecimalDigits.getCharsLatin1(div, divOff, buf);
                     buf[divOff] = '.';
-                    jla.getChars(Math.abs(intCompact - div * power), buf.length, buf);
+                    DecimalDigits.getCharsLatin1(Math.abs(intCompact - div * power), buf.length, buf);
                 }
             }
 
@@ -4241,12 +4241,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (scale == 2) {
                 long highInt = intCompact / 100;
                 boolean negative = intCompact < 0 & highInt == 0;
-                int highIntSize = jla.stringSize(highInt) + (negative ? 1 : 0);
+                int highIntSize = DecimalDigits.stringSize(highInt) + (negative ? 1 : 0);
                 byte[] buf = new byte[highIntSize + 3];
                 if (negative) {
                     buf[0] = '-';
                 }
-                jla.getChars(highInt, highIntSize, buf);
+                DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
                 buf[highIntSize] = '.';
                 ByteArrayLittleEndian.setShort(
                         buf,
@@ -4270,7 +4270,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long intCompactAbs;
         boolean negative = intCompact < 0;
 
-        int coeffLen = jla.stringSize(Math.abs(intCompact));
+        int coeffLen = DecimalDigits.stringSize(Math.abs(intCompact));
         long adjusted = -(long)scale + (coeffLen -1);
 
         byte[] buf;
@@ -4292,15 +4292,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long div = intCompact / power;
                 rem = Math.abs(intCompact - div * power);
                 off += coeffLen - scale + (negative ? 1 : 0);
-                jla.getChars(div, off, buf);
+                DecimalDigits.getCharsLatin1(div, off, buf);
 
-                pad = scale - jla.stringSize(rem);
+                pad = scale - DecimalDigits.stringSize(rem);
             }
             buf[off] = '.';
             for (int i = 0; i < pad; ++i) {
                 buf[off + i + 1] = '0';
             }
-            jla.getChars(rem, buf.length, buf);
+            DecimalDigits.getCharsLatin1(rem, buf.length, buf);
         } else {
             buf = layoutCharsCompact(sci, coeffLen, adjusted, negative, intCompact);
         }
@@ -4324,7 +4324,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         int off = 0;
         if (sci) {
             if (coeffLen > 1) {
-                int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                 buf = new byte[coeffLen + adjustedSize + (negative ? 2 : 1)];
                 if (negative) {
                     buf[0] = '-';
@@ -4333,16 +4333,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long power = MathUtils.pow10(coeffLen - 1);
                 long div = intCompactAbs / power;
                 long rem = intCompactAbs - div * power;
-                int remSize = jla.stringSize(rem);
+                int remSize = DecimalDigits.stringSize(rem);
                 buf[off] = (byte) (div + '0');
                 buf[off + 1] = '.';
                 for (int i = 0, end = coeffLen - remSize - 1; i < end; ++i) {
                     buf[off + 2 + i] = '0';
                 }
-                jla.getChars(rem, off + coeffLen + 1, buf);
+                DecimalDigits.getCharsLatin1(rem, off + coeffLen + 1, buf);
                 off += coeffLen + 1;
             } else {
-                int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                 buf = new byte[adjustedSize + (negative ? 2 : 1)];
                 if (negative) {
                     buf[0] = '-';
@@ -4358,7 +4358,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             adjusted -= sig;             // now a multiple of 3
             sig++;
 
-            int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+            int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
             if (intCompactAbs == 0) {
                 switch (sig) {
                     case 1: {
@@ -4369,7 +4369,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                     case 2: {
                         adjusted += 3;
-                        adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                        adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                         buf = new byte[adjustedSize + 4];
                         buf[0] = '0';
                         buf[1] = '.';
@@ -4380,7 +4380,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                     case 3: {
                         adjusted += 3;
-                        adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                        adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                         buf = new byte[adjustedSize + 3];
                         buf[0] = '0';
                         buf[1] = '.';
@@ -4397,7 +4397,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     buf[0] = '-';
                     off = 1;
                 }
-                jla.getChars(intCompactAbs, off + coeffLen, buf);
+                DecimalDigits.getCharsLatin1(intCompactAbs, off + coeffLen, buf);
                 off += coeffLen;
                 for (int i = sig - coeffLen; i > 0; i--) {
                     buf[off++] = '0';
@@ -4412,12 +4412,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long power = MathUtils.pow10(coeffLen - sig);
                 long div = intCompactAbs / power;
                 long rem = intCompactAbs - div * power;
-                jla.getChars(div, off + sig, buf);
+                DecimalDigits.getCharsLatin1(div, off + sig, buf);
                 buf[off + sig] = '.';
-                for (int i = sig, pad = coeffLen - jla.stringSize(rem) - sig + 1; i < pad; ++i) {
+                for (int i = sig, pad = coeffLen - DecimalDigits.stringSize(rem) - sig + 1; i < pad; ++i) {
                     buf[off + sig + i] = '0';
                 }
-                jla.getChars(rem, off + coeffLen + 1, buf);
+                DecimalDigits.getCharsLatin1(rem, off + coeffLen + 1, buf);
                 off += coeffLen + 1;
             }
         }
@@ -4430,7 +4430,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 buf[off] = '-';
                 adjusted = -adjusted;
             }
-            jla.getChars(adjusted, buf.length, buf);
+            DecimalDigits.getCharsLatin1(adjusted, buf.length, buf);
         }
         return buf;
     }
@@ -4485,7 +4485,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         } else {
             if (sci) {                       // Scientific notation
                 if (coeffLen > 1) {
-                    int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                    int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                     buf = new byte[coeffLen + adjustedSize + 1 + (negative ? 1 : 0)];
                     if (negative) {
                         buf[0] = '-';
@@ -4496,7 +4496,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     System.arraycopy(coeff, 1, buf, off + 2, coeffLen - 1);
                     off += coeffLen + 1;
                 } else {
-                    int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                    int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                     buf = new byte[adjustedSize + (negative ? 2 : 1)];
                     if (negative) {
                         buf[0] = '-';
@@ -4512,7 +4512,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 adjusted -= sig;             // now a multiple of 3
                 sig++;
 
-                int adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                int adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                 if (signum == 0) {
                     switch (sig) {
                         case 1: {
@@ -4523,7 +4523,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         }
                         case 2: {
                             adjusted += 3;
-                            adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                            adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                             buf = new byte[adjustedSize + 4];
                             buf[0] = '0';
                             buf[1] = '.';
@@ -4534,7 +4534,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         }
                         case 3: {
                             adjusted += 3;
-                            adjustedSize = adjusted != 0 ? jla.stringSize(Math.abs(adjusted)) + 2 : 0;
+                            adjustedSize = adjusted != 0 ? DecimalDigits.stringSize(Math.abs(adjusted)) + 2 : 0;
                             buf = new byte[adjustedSize + 3];
                             buf[0] = '0';
                             buf[1] = '.';
@@ -4578,7 +4578,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     buf[off] = '-';
                     adjusted = -adjusted;
                 }
-                jla.getChars(adjusted, buf.length, buf);
+                DecimalDigits.getCharsLatin1(adjusted, buf.length, buf);
             }
         }
 

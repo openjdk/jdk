@@ -2483,14 +2483,6 @@ public final class System {
                 return String.getBytesNoRepl(s, cs);
             }
 
-            public int stringSize(long i) {
-                return Long.stringSize(i);
-            }
-
-            public void getChars(long i, int index, byte[] buf) {
-                StringLatin1.getChars(i, index, buf);
-            }
-
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
                 return String.newStringUTF8NoRepl(bytes, off, len, true);
             }

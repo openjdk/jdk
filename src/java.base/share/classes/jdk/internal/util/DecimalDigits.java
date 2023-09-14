@@ -131,22 +131,7 @@ public final class DecimalDigits implements Digits {
 
     @Override
     public int size(long value) {
-        boolean negative = value < 0;
-        int sign = negative ? 1 : 0;
-
-        if (!negative) {
-            value = -value;
-        }
-
-        long precision = -10;
-        for (int i = 1; i < 19; i++) {
-            if (value > precision)
-                return i + sign;
-
-            precision = 10 * precision;
-        }
-
-        return 19 + sign;
+        return stringSize(value);
     }
 
     /**
@@ -156,5 +141,91 @@ public final class DecimalDigits implements Digits {
      */
     public static short digitPair(int i) {
         return DIGITS[i];
+    }
+
+
+    /**
+     * Returns the string representation size for a given long value.
+     *
+     * @param x long value
+     * @return string size
+     *
+     * @implNote There are other ways to compute this: e.g. binary search,
+     * but values are biased heavily towards zero, and therefore linear search
+     * wins. The iteration results are also routinely inlined in the generated
+     * code after loop unrolling.
+     */
+    public static int stringSize(long x) {
+        int d = 1;
+        if (x >= 0) {
+            d = 0;
+            x = -x;
+        }
+        long p = -10;
+        for (int i = 1; i < 19; i++) {
+            if (x > p)
+                return i + d;
+            p = 10 * p;
+        }
+        return 19 + d;
+    }
+
+    /**
+     * Places characters representing the long i into the
+     * character array buf. The characters are placed into
+     * the buffer backwards starting with the least significant
+     * digit at the specified index (exclusive), and working
+     * backwards from there. <strong>Caller must ensure buf has enough capacity for the value to be written!</strong>
+     *
+     * @implNote This method converts positive inputs into negative
+     * values, to cover the Long.MIN_VALUE case. Converting otherwise
+     * (negative to positive) will expose -Long.MIN_VALUE that overflows
+     * long.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
+     */
+    public static int getCharsLatin1(long i, int index, byte[] buf) {
+        // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
+        long q;
+        int charPos = index;
+
+        boolean negative = (i < 0);
+        if (!negative) {
+            i = -i;
+        }
+
+        // Get 2 digits/iteration using longs until quotient fits into an int
+        while (i <= Integer.MIN_VALUE) {
+            q = i / 100;
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[(int)((q * 100) - i)]);
+            i = q;
+        }
+
+        // Get 2 digits/iteration using ints
+        int q2;
+        int i2 = (int)i;
+        while (i2 <= -100) {
+            q2 = i2 / 100;
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[(q2 * 100) - i2]);
+            i2 = q2;
+        }
+
+        // We know there are at most two digits left at this point.
+        if (i2 < -9) {
+            charPos -= 2;
+            ByteArrayLittleEndian.setShort(buf, charPos, DIGITS[-i2]);
+        } else {
+            buf[--charPos] = (byte)('0' - i2);
+        }
+
+        if (negative) {
+            buf[--charPos] = (byte)'-';
+        }
+        return charPos;
     }
 }

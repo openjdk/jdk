@@ -334,28 +334,6 @@ public interface JavaLangAccess {
     byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
-     * Returns the string representation size for a given long value.
-     *
-     * @param x long value
-     * @return string size
-     *
-     */
-    int stringSize(long i);
-
-    /**
-     * Places characters representing the long i into the
-     * character array buf. The characters are placed into
-     * the buffer backwards starting with the least significant
-     * digit at the specified index (exclusive), and working
-     * backwards from there.
-     *
-     * @param i     value to convert
-     * @param index next index, after the least significant digit
-     * @param buf   target buffer, Latin1-encoded
-     */
-    void getChars(long i, int index, byte[] buf);
-
-    /**
      * Returns a new string by decoding from the given utf8 bytes array.
      *
      * @param off the index of the first byte to decode

@@ -49,6 +49,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -4185,7 +4186,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         long digit = digitGroups[numGroups - 1];
         if (radix == 10) {
-            padWithZeros(buf, digits - (jla.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
+            padWithZeros(buf, digits - (DecimalDigits.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
             buf.append(digit);
         } else {
             // Get string version of first digit group
@@ -4204,7 +4205,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // Prepend (any) leading zeros for this digit group
             if (radix == 10) {
                 digit = digitGroups[i];
-                int numLeadingZeros = digitsPerLong[10] - jla.stringSize(digit);
+                int numLeadingZeros = digitsPerLong[10] - DecimalDigits.stringSize(digit);
                 if (numLeadingZeros != 0) {
                     buf.append(ZEROS, 0, numLeadingZeros);
                 }
@@ -4246,14 +4247,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         long digit = digitGroups[numGroups - 1];
-        padWithZeros(buf, digits - (jla.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
+        padWithZeros(buf, digits - (DecimalDigits.stringSize(digit) + (numGroups - 1) * digitsPerLong[10]));
         buf.append(digit);
 
         // Append remaining digit groups each padded with leading zeros
         for (int i = numGroups - 2; i >= 0; i--) {
             // Prepend (any) leading zeros for this digit group
             digit = digitGroups[i];
-            int numLeadingZeros = digitsPerLong[10] - jla.stringSize(digit);
+            int numLeadingZeros = digitsPerLong[10] - DecimalDigits.stringSize(digit);
             if (numLeadingZeros != 0) {
                 buf.append(ZEROS, 0, numLeadingZeros);
             }
@@ -4278,7 +4279,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // Get string version of first digit group
         long digit = digitGroups[numGroups - 1];
-        int digitSize = jla.stringSize(digit);
+        int digitSize = DecimalDigits.stringSize(digit);
 
         final int digitsPerLong = 18;
         int bufSize = digitSize + (negative ? 1 : 0) + digitsPerLong * (numGroups - 1);
@@ -4291,19 +4292,19 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         }
 
         // Put first digit group into result buffer
-        jla.getChars(digit, digitSize + off, buf);
+        DecimalDigits.getCharsLatin1(digit, digitSize + off, buf);
         off += digitSize;
 
         // Append remaining digit groups each padded with leading zeros
         for (int i = numGroups - 2; i >= 0; i--) {
             // Prepend (any) leading zeros for this digit group
             digit = digitGroups[i];
-            digitSize = jla.stringSize(digit);
+            digitSize = DecimalDigits.stringSize(digit);
             int numLeadingZeros = digitsPerLong - digitSize;
             for (int j = 0; j < numLeadingZeros; j++) {
                 buf[off + j] = '0';
             }
-            jla.getChars(digit, digitsPerLong + off, buf);
+            DecimalDigits.getCharsLatin1(digit, digitsPerLong + off, buf);
             off += digitsPerLong;
         }
 
