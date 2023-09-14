@@ -4617,18 +4617,27 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Success. Try to cache the super we found and proceed in triumph.
 
-  Label L_skip_super_cache_update;
 #ifdef _LP64
   if (SecondarySuperMissBackoff > 0) {
+    Label L_skip;
+
     subl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), 1);
-    jccb(Assembler::greaterEqual, L_skip_super_cache_update);
+    jccb(Assembler::greaterEqual, L_skip);
     uint32_t max = checked_cast<uint32_t>(SecondarySuperMissBackoff);
     movl(Address(r15_thread, JavaThread::backoff_secondary_super_miss_offset()), max);
-  }
-#endif
 
-  movptr(super_cache_addr, super_klass);
-  bind(L_skip_super_cache_update);
+    movptr(super_cache_addr, super_klass);
+
+    bind(L_skip);
+
+    // The operations above destroys condition codes set by scan.
+    // This is the success path, restore them ourselves.
+    cmpptr(rax, rax); // set ZF=1
+  } else
+#endif
+  {
+    movptr(super_cache_addr, super_klass);
+  }
 
   if (L_success != &L_fallthrough) {
     jmp(*L_success);
