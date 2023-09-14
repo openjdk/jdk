@@ -35,7 +35,7 @@ import java.awt.Robot;
  * @test
  * @bug 4394287
  * @key headful
- * @summary paint pending on hw component move
+ * @summary Paint pending on heavyweight component move
  */
 
 // Subclass of Frame, creates two buttons: one that moves the Frame by
