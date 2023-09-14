@@ -58,12 +58,11 @@ G1NUMA* G1NUMA::create() {
 }
 
   // Returns memory node ids
-const int* G1NUMA::node_ids() const {
+const uint* G1NUMA::node_ids() const {
   return _node_ids;
 }
 
-uint G1NUMA::index_of_node_id(int node_id) const {
-  assert(node_id >= 0, "invalid node id %d", node_id);
+uint G1NUMA::index_of_node_id(uint node_id) const {
   assert(node_id < _len_node_id_to_index_map, "invalid node id %d", node_id);
   uint node_index = _node_id_to_index_map[node_id];
   assert(node_index != G1NUMA::UnknownNodeIndex,
@@ -80,7 +79,7 @@ G1NUMA::G1NUMA() :
 void G1NUMA::initialize_without_numa() {
   // If NUMA is not enabled or supported, initialize as having a single node.
   _num_active_node_ids = 1;
-  _node_ids = NEW_C_HEAP_ARRAY(int, _num_active_node_ids, mtGC);
+  _node_ids = NEW_C_HEAP_ARRAY(uint, _num_active_node_ids, mtGC);
   _node_ids[0] = 0;
   // Map index 0 to node 0
   _len_node_id_to_index_map = 1;
@@ -98,10 +97,10 @@ void G1NUMA::initialize(bool use_numa) {
   size_t num_node_ids = os::numa_get_groups_num();
 
   // Create an array of active node ids.
-  _node_ids = NEW_C_HEAP_ARRAY(int, num_node_ids, mtGC);
-  _num_active_node_ids = (uint)os::numa_get_leaf_groups(_node_ids, num_node_ids);
+  _node_ids = NEW_C_HEAP_ARRAY(uint, num_node_ids, mtGC);
+  _num_active_node_ids = checked_cast<uint>(os::numa_get_leaf_groups(reinterpret_cast<int*>(_node_ids), num_node_ids));
 
-  int max_node_id = 0;
+  uint max_node_id = 0;
   for (uint i = 0; i < _num_active_node_ids; i++) {
     max_node_id = MAX2(max_node_id, _node_ids[i]);
   }
@@ -111,7 +110,7 @@ void G1NUMA::initialize(bool use_numa) {
   _node_id_to_index_map = NEW_C_HEAP_ARRAY(uint, _len_node_id_to_index_map, mtGC);
 
   // Set all indices with unknown node id.
-  for (int i = 0; i < _len_node_id_to_index_map; i++) {
+  for (uint i = 0; i < _len_node_id_to_index_map; i++) {
     _node_id_to_index_map[i] = G1NUMA::UnknownNodeIndex;
   }
 
@@ -125,8 +124,8 @@ void G1NUMA::initialize(bool use_numa) {
 
 G1NUMA::~G1NUMA() {
   delete _stats;
-  FREE_C_HEAP_ARRAY(int, _node_id_to_index_map);
-  FREE_C_HEAP_ARRAY(int, _node_ids);
+  FREE_C_HEAP_ARRAY(uint, _node_id_to_index_map);
+  FREE_C_HEAP_ARRAY(uint, _node_ids);
 }
 
 void G1NUMA::set_region_info(size_t region_size, size_t page_size) {
@@ -159,7 +158,7 @@ uint G1NUMA::preferred_node_index_for_index(uint region_index) const {
   }
 }
 
-int G1NUMA::numa_id(int index) const {
+uint G1NUMA::numa_id(uint index) const {
   assert(index < _len_node_id_to_index_map, "Index %d out of range: [0,%d)",
          index, _len_node_id_to_index_map);
   return _node_ids[index];
@@ -170,7 +169,7 @@ uint G1NUMA::index_of_address(HeapWord *address) const {
   if (numa_id == -1) {
     return UnknownNodeIndex;
   } else {
-    return index_of_node_id(numa_id);
+    return index_of_node_id(checked_cast<uint>(numa_id));
   }
 }
 
@@ -218,9 +217,9 @@ void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes,
   assert(is_aligned(aligned_address, page_size()), "Given address (" PTR_FORMAT ") should be aligned.", p2i(aligned_address));
   assert(is_aligned(size_in_bytes, page_size()), "Given size (" SIZE_FORMAT ") should be aligned.", size_in_bytes);
 
-  log_trace(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be NUMA id (%d)",
+  log_trace(gc, heap, numa)("Request memory [" PTR_FORMAT ", " PTR_FORMAT ") to be NUMA id (%u)",
                             p2i(aligned_address), p2i((char*)aligned_address + size_in_bytes), _node_ids[node_index]);
-  os::numa_make_local((char*)aligned_address, size_in_bytes, _node_ids[node_index]);
+  os::numa_make_local((char*)aligned_address, size_in_bytes, checked_cast<int>(_node_ids[node_index]));
 }
 
 uint G1NUMA::max_search_depth() const {
@@ -279,9 +278,9 @@ G1NodeIndexCheckClosure::G1NodeIndexCheckClosure(const char* desc, G1NUMA* numa,
 
 G1NodeIndexCheckClosure::~G1NodeIndexCheckClosure() {
   _ls->print("%s: NUMA region verification (id: matched/mismatched/total): ", _desc);
-  const int* numa_ids = _numa->node_ids();
+  const uint* numa_ids = _numa->node_ids();
   for (uint i = 0; i < _numa->num_active_nodes(); i++) {
-    _ls->print("%d: %u/%u/%u ", numa_ids[i], _matched[i], _mismatched[i], _total[i]);
+    _ls->print("%u: %u/%u/%u ", numa_ids[i], _matched[i], _mismatched[i], _total[i]);
   }
 
   FREE_C_HEAP_ARRAY(uint, _matched);

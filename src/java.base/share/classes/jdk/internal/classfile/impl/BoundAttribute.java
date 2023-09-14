@@ -26,6 +26,7 @@
 package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -121,15 +122,16 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         for (int i = 0; p < end; i++, p += 2) {
             entries[i] = classReader.readEntry(p);
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(entries);
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(entries);
     }
 
     public static List<Attribute<?>> readAttributes(AttributedElement enclosing, ClassReader reader, int pos,
                                                                   Function<Utf8Entry, AttributeMapper<?>> customAttributes) {
         int size = reader.readU2(pos);
-        var filled = new Object[size];
+        var filled = new ArrayList<Attribute<?>>(size);
         int p = pos + 2;
         int cfLen = reader.classfileLength();
+        var apo = ((ClassReaderImpl)reader).context().attributesProcessingOption();
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
@@ -143,8 +145,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 mapper = customAttributes.apply(name);
             }
             if (mapper != null) {
-                filled[i] = mapper.readAttribute(enclosing, reader, p);
-            } else if (((ClassReaderImpl)reader).context().unknownAttributesOption() == Classfile.UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES) {
+                filled.add((Attribute)mapper.readAttribute(enclosing, reader, p));
+            } else {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public String name() {
@@ -159,54 +161,33 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
                     @Override
                     public void writeAttribute(BufWriter buf, UnknownAttribute attr) {
-                        throw new UnsupportedOperationException("Write of unknown attribute " + name() + " not supported");
+                        buf.writeIndex(name);
+                        var cont = attr.contents();
+                        buf.writeInt(cont.length);
+                        buf.writeBytes(cont);
                     }
 
                     @Override
                     public boolean allowMultiple() {
                         return true;
                     }
+
+                    @Override
+                    public AttributeMapper.AttributeStability stability() {
+                        return AttributeStability.UNKNOWN;
+                    }
                 };
-                filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
+                filled.add(new BoundUnknownAttribute(reader, fakeMapper, p));
             }
             p += len;
         }
-        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(filled);
+        return Collections.unmodifiableList(filled);
     }
 
     public static final class BoundUnknownAttribute extends BoundAttribute<UnknownAttribute>
             implements UnknownAttribute {
         public BoundUnknownAttribute(ClassReader cf, AttributeMapper<UnknownAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-        }
-
-        @Override
-        public void writeTo(DirectClassBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(DirectMethodBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(DirectFieldBuilder builder) {
-            checkWriteSupported(builder::canWriteDirect);
-            super.writeTo(builder);
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            checkWriteSupported(buf::canWriteDirect);
-            super.writeTo(buf);
-        }
-
-        private void checkWriteSupported(Function<ConstantPool, Boolean> condition) {
-            if (!condition.apply(classReader))
-                throw new UnsupportedOperationException("Write of unknown attribute " + attributeName() + " not supported to alien constant pool");
         }
     }
 

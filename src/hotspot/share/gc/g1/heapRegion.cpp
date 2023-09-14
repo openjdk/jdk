@@ -427,7 +427,7 @@ void HeapRegion::print_on(outputStream* st) const {
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
-      st->print("|%d", numa->numa_id(node_index()));
+      st->print("|%u", numa->numa_id(node_index()));
     } else {
       st->print("|-");
     }

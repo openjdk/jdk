@@ -339,7 +339,7 @@ G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
   if (ResizePLAB) {
     // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
     // expected number of refills.
-    double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
+    double const ExpectedNumberOfRefills = (100 - G1LastPLABAverageOccupancy) / TargetPLABWastePct;
     // Add some padding to the threshold to not boost exactly when the targeted refills
     // were reached.
     // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries

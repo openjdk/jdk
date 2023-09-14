@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,7 +28,6 @@ import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
@@ -50,6 +49,8 @@ import java.io.CharConversionException;
 import java.io.IOException;
 import java.util.Locale;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.AttributeList;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
@@ -78,7 +79,7 @@ import org.xml.sax.helpers.LocatorImpl;
  * @author Arnaud Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @LastModified: Sep 2019
+ * @LastModified: July 2023
  */
 @SuppressWarnings("deprecation")
 public abstract class AbstractSAXParser
@@ -1669,11 +1670,11 @@ public abstract class AbstractSAXParser
                 }
             }
 
-            //
-            // Default handling
-            //
-
-            fConfiguration.setFeature(featureId, state);
+            // Handle security setting
+            if (!securityManager.setLimit(featureId, JdkProperty.State.APIPROPERTY, state)) {
+                //fall back to the default configuration
+                fConfiguration.setFeature(featureId, state);
+            }
         }
         catch (XMLConfigurationException e) {
             String identifier = e.getIdentifier();

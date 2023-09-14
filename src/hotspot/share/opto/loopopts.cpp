@@ -138,6 +138,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         x = y;
       } else {
         y = _igvn.hash_find(x);
+        if (y == nullptr) {
+          y = similar_subtype_check(x, region->in(i));
+        }
         if (y) {
           wins++;
           x = y;
@@ -213,6 +216,30 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
 
   return phi;
+}
+
+// Subtype checks that carry profile data don't common so look for a replacement by following edges
+Node* PhaseIdealLoop::similar_subtype_check(const Node* x, Node* r_in) {
+  if (x->is_SubTypeCheck()) {
+    Node* in1 = x->in(1);
+    for (DUIterator_Fast imax, i = in1->fast_outs(imax); i < imax; i++) {
+      Node* u = in1->fast_out(i);
+      if (u != x && u->is_SubTypeCheck() && u->in(1) == x->in(1) && u->in(2) == x->in(2)) {
+        for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+          Node* bol = u->fast_out(j);
+          for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+            Node* iff = bol->fast_out(k);
+            // Only dominating subtype checks are interesting: otherwise we risk replacing a subtype check by another with
+            // unrelated profile
+            if (iff->is_If() && is_dominator(iff, r_in)) {
+              return u;
+            }
+          }
+        }
+      }
+    }
+  }
+  return nullptr;
 }
 
 // Return true if 'n' is a Div or Mod node (without zero check If node which was removed earlier) with a loop phi divisor
@@ -1228,7 +1255,7 @@ bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
 
   Node* region = n->in(0);
   Node* dom = idom(region);
-  if (!dom->is_If() || dom->in(1) != n->in(1)) {
+  if (!dom->is_If() ||  !n->as_If()->same_condition(dom, &_igvn)) {
     return false;
   }
   IfNode* dom_if = dom->as_If();
@@ -1415,15 +1442,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     Node *bol = n->in(1);
     uint max = bol->outcnt();
     // Check for same test used more than once?
-    if (max > 1 && bol->is_Bool()) {
+    if (bol->is_Bool() && (max > 1 || bol->in(1)->is_SubTypeCheck())) {
       // Search up IDOMs to see if this IF is dominated.
-      Node *cutoff = get_ctrl(bol);
+      Node* cmp = bol->in(1);
+      Node *cutoff = cmp->is_SubTypeCheck() ? dom_lca(get_ctrl(cmp->in(1)), get_ctrl(cmp->in(2))) : get_ctrl(bol);
 
       // Now search up IDOMs till cutoff, looking for a dominating test
       Node *prevdom = n;
       Node *dom = idom(prevdom);
       while (dom != cutoff) {
-        if (dom->req() > 1 && dom->in(1) == bol && prevdom->in(0) == dom &&
+        if (dom->req() > 1 && n->as_If()->same_condition(dom, &_igvn) && prevdom->in(0) == dom &&
             safe_for_if_replacement(dom)) {
           // It's invalid to move control dependent data nodes in the inner
           // strip-mined loop, because:
@@ -1479,6 +1507,12 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
   if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
     Node *n_ctrl = n->in(0);
     IfNode* dom_if = idom(n_ctrl)->as_If();
+    if (n->in(1) != dom_if->in(1)) {
+      assert(n->in(1)->in(1)->is_SubTypeCheck() &&
+             (n->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr ||
+              dom_if->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr), "only for subtype checks with profile data attached");
+      _igvn.replace_input_of(n, 1, dom_if->in(1));
+    }
     ProjNode* dom_proj_true = dom_if->proj_out(1);
     ProjNode* dom_proj_false = dom_if->proj_out(0);
 
@@ -4238,6 +4272,12 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
       if (ctrl != nullptr || get_ctrl(vector_input) != cl) {
         DEBUG_ONLY( current->dump(1); )
         assert(false, "reduction has ctrl or bad vector_input");
+        break; // Chain traversal fails.
+      }
+
+      assert(current->vect_type() != nullptr, "must have vector type");
+      if (current->vect_type() != last_ur->vect_type()) {
+        // Reductions do not have the same vector type (length and element type).
         break; // Chain traversal fails.
       }
 
