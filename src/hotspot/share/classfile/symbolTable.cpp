@@ -374,7 +374,11 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(Symbol* value, bool* is_dead) {
+  // Note: When equals() returns "true", the symbol's refcount is incremented. This is
+  // needed to ensure that the symbol is kept alive before equals() returns to the caller,
+  // so that another thread cannot clean the symbol up concurrently. The caller is
+  // responsible for decrementing the refcount, when the symbol is no longer needed.
+  bool equals(Symbol* value) {
     assert(value != nullptr, "expected valid value");
     Symbol *sym = value;
     if (sym->equals(_str, _len)) {
@@ -383,13 +387,14 @@ public:
         return true;
       } else {
         assert(sym->refcount() == 0, "expected dead symbol");
-        *is_dead = true;
         return false;
       }
     } else {
-      *is_dead = (sym->refcount() == 0);
       return false;
     }
+  }
+  bool is_dead(Symbol* value) {
+    return value->refcount() == 0;
   }
 };
 

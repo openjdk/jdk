@@ -26,7 +26,12 @@
  * @bug 8222949
  * @summary add condy support to javac's pool API
  * @library /tools/javac/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
@@ -40,6 +45,7 @@
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.*;
@@ -47,14 +53,10 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.BootstrapMethods_attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Instruction;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.ConstantInstruction;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
@@ -73,6 +75,8 @@ import combo.ComboParameter;
 import combo.ComboTestHelper;
 import combo.ComboInstance;
 import combo.ComboTask.Result;
+
+import static java.lang.invoke.MethodHandleInfo.REF_invokeStatic;
 
 public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
 
@@ -172,10 +176,10 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()){
-            ClassFile cf = ClassFile.read(is);
-            Method testMethod = null;
-            for (Method m : cf.methods) {
-                if (m.getName(cf.constant_pool).equals("test")) {
+            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            MethodModel testMethod = null;
+            for (MethodModel m : cf.methods()) {
+                if (m.methodName().equalsString("test")) {
                     testMethod = m;
                     break;
                 }
@@ -184,90 +188,79 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
                 fail("Test method not found");
                 return;
             }
-            Code_attribute ea =
-                    (Code_attribute)testMethod.attributes.get(Attribute.Code);
-            if (testMethod == null) {
+            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
             }
 
-            int bsmIdx = -1;
+            BootstrapMethodEntry bootstrapMethodEntry = null;
 
-            for (Instruction i : ea.getInstructions()) {
-                if (i.getMnemonic().equals("ldc")) {
-                    CONSTANT_Dynamic_info condyInfo = (CONSTANT_Dynamic_info)cf.constant_pool.get(i.getByte(1));
-                    bsmIdx = condyInfo.bootstrap_method_attr_index;
-                    System.out.println("condyInfo.getNameAndTypeInfo().getType() " + condyInfo.getNameAndTypeInfo().getType());
-                    if (!condyInfo.getNameAndTypeInfo().getType().equals(type.bytecodeTypeStr)) {
-                        fail("type mismatch for CONSTANT_Dynamic_info");
+            for (CodeElement i : ea.elementList()) {
+                if (i instanceof ConstantInstruction.LoadConstantInstruction lci) {
+                    ConstantDynamicEntry condyInfo = (ConstantDynamicEntry)lci.constantEntry();
+                    bootstrapMethodEntry = condyInfo.bootstrap();
+                    System.out.println("condyInfo.getNameAndTypeInfo().getType() " + condyInfo.type().stringValue());
+                    if (!condyInfo.type().equalsString(type.bytecodeTypeStr)) {
+                        fail("type mismatch for ConstantDynamicEntry");
                         return;
                     }
                 }
             }
 
 
-            if (bsmIdx == -1) {
+            if (bootstrapMethodEntry == null) {
                 fail("Missing constantdynamic in generated code");
                 return;
             }
 
-            BootstrapMethods_attribute bsm_attr =
-                    (BootstrapMethods_attribute)cf
-                    .getAttribute(Attribute.BootstrapMethods);
-            if (bsm_attr.bootstrap_method_specifiers.length != 1) {
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            if (bsm_attr.bootstrapMethods().size() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
                 return;
             }
-            BootstrapMethods_attribute.BootstrapMethodSpecifier bsm_spec =
-                    bsm_attr.bootstrap_method_specifiers[0];
+            BootstrapMethodEntry bsm_spec =
+                    bsm_attr.bootstrapMethods().getFirst();
 
-            CONSTANT_MethodHandle_info bsm_handle =
-                    (CONSTANT_MethodHandle_info)cf.constant_pool
-                    .get(bsm_spec.bootstrap_method_ref);
+            MethodHandleEntry bsm_handle = bsm_spec.bootstrapMethod();
 
-            if (bsm_handle.reference_kind != RefKind.REF_invokeStatic) {
+            if (bsm_handle.kind() != REF_invokeStatic) {
                 fail("Bad kind on boostrap method handle");
                 return;
             }
 
-            CONSTANT_Methodref_info bsm_ref =
-                    (CONSTANT_Methodref_info)cf.constant_pool
-                    .get(bsm_handle.reference_index);
+            MemberRefEntry bsm_ref = bsm_handle.reference();
 
-            if (!bsm_ref.getClassInfo().getName().equals("Test")) {
+            if (!bsm_ref.owner().name().equalsString("Test")) {
                 fail("Bad owner of boostrap method");
                 return;
             }
 
-            if (!bsm_ref.getNameAndTypeInfo().getName().equals("bsm")) {
+            if (!bsm_ref.name().equalsString("bsm")) {
                 fail("Bad boostrap method name");
                 return;
             }
 
-            if (!bsm_ref.getNameAndTypeInfo()
-                    .getType().equals(asBSMSignatureString())) {
+            if (!bsm_ref.type().equalsString(asBSMSignatureString())) {
                 fail("Bad boostrap method type" +
-                        bsm_ref.getNameAndTypeInfo().getType() + " " +
+                        bsm_ref.type() + " " +
                         asBSMSignatureString());
                 return;
             }
 
-            LineNumberTable_attribute lnt =
-                    (LineNumberTable_attribute)ea.attributes.get(Attribute.LineNumberTable);
+            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
 
             if (lnt == null) {
                 fail("No LineNumberTable attribute");
                 return;
             }
-            if (lnt.line_number_table_length != 2) {
+            if (lnt.lineNumbers().size() != 2) {
                 fail("Wrong number of entries in LineNumberTable");
-                return;
             }
         } catch (Exception e) {
             e.printStackTrace();
             fail("error reading classfile: " + res.compilationInfo());
-            return;
         }
     }
 

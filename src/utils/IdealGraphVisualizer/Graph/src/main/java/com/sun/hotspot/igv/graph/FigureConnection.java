@@ -156,5 +156,17 @@ public class FigureConnection implements Connection {
         return true;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FigureConnection)) {
+            return false;
+        }
+
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
+                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
+                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
+    }
+
 }
 

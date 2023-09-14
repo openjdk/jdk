@@ -93,6 +93,7 @@
 #include "services/memoryService.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/exceptions.hpp"
@@ -584,12 +585,12 @@ WB_END
 WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1NUMA* numa = G1NUMA::numa();
-    int num_node_ids = (int)numa->num_active_nodes();
-    const int* node_ids = numa->node_ids();
+    int num_node_ids = checked_cast<int>(numa->num_active_nodes());
+    const uint* node_ids = numa->node_ids();
 
     typeArrayOop result = oopFactory::new_intArray(num_node_ids, CHECK_NULL);
     for (int i = 0; i < num_node_ids; i++) {
-      result->int_at_put(i, (jint)node_ids[i]);
+      result->int_at_put(i, checked_cast<jint>(node_ids[i]));
     }
     return (jintArray) JNIHandles::make_local(THREAD, result);
   }
@@ -1382,12 +1383,12 @@ WB_ENTRY(void, WB_SetBooleanVMFlag(JNIEnv* env, jobject o, jstring name, jboolea
 WB_END
 
 WB_ENTRY(void, WB_SetIntVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
-  int result = value;
+  int result = checked_cast<int>(value);
   SetVMFlag <JVM_FLAG_TYPE(int)> (thread, env, name, &result);
 WB_END
 
 WB_ENTRY(void, WB_SetUintVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
-  uint result = value;
+  uint result = checked_cast<uint>(value);
   SetVMFlag <JVM_FLAG_TYPE(uint)> (thread, env, name, &result);
 WB_END
 

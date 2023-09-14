@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
-                .setStylesheets(configuration.getMainStylesheet(), List.of()) // avoid reference to default stylesheet
+                .setStylesheets(configuration.getMainStylesheet(), List.of(), List.of())
                 .addDefaultScript(false);
 
         String title = (options.windowTitle().length() > 0)
