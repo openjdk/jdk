@@ -1986,7 +1986,7 @@ int java_lang_VirtualThread::state(oop vthread) {
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
   JavaThreadStatus status = JavaThreadStatus::NEW;
-  switch (state & ~(TIMED | SUSPENDED)) {
+  switch (state & ~SUSPENDED) {
     case NEW :
       status = JavaThreadStatus::NEW;
       break;
@@ -1994,12 +1994,17 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
     case RUNNABLE :
     case RUNNING :
     case PARKING :
+    case TIMED_PARKING:
     case YIELDING :
       status = JavaThreadStatus::RUNNABLE;
       break;
     case PARKED :
     case PINNED :
-      status = ((state & TIMED) != 0) ? JavaThreadStatus::PARKED_TIMED : JavaThreadStatus::PARKED;
+      status = JavaThreadStatus::PARKED;
+      break;
+    case TIMED_PARKED:
+    case TIMED_PINNED:
+      status = JavaThreadStatus::PARKED_TIMED;
       break;
     case TERMINATED :
       status = JavaThreadStatus::TERMINATED;

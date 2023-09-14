@@ -86,40 +86,52 @@ final class VirtualThread extends BaseVirtualThread {
     private volatile int state;
 
     /*
-     * Virtual thread state and transitions:
+     * Virtual thread state transitions:
      *
-     *      NEW -> STARTED         // Thread.start
+     *      NEW -> STARTED         // Thread.start, schedule to run
      *  STARTED -> TERMINATED      // failed to start
      *  STARTED -> RUNNING         // first run
+     *  RUNNING -> TERMINATED      // done
      *
-     *  RUNNING -> PARKING         // Thread attempts to park
-     *  PARKING -> PARKED          // cont.yield successful, thread is parked
-     *  PARKING -> PINNED          // cont.yield failed, thread is pinned
+     *  RUNNING -> PARKING         // Thread parking with LockSupport.park
+     *  PARKING -> PARKED          // cont.yield successful, parked indefinitely
+     *  PARKING -> PINNED          // cont.yield failed, parked indefinitely on carrier
+     *   PARKED -> RUNNABLE        // unparked, schedule to continue
+     *   PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
-     *   PARKED -> RUNNABLE        // unpark or interrupted
-     *   PINNED -> RUNNABLE        // unpark or interrupted
+     *       RUNNING -> TIMED_PARKING   // Thread parking with LockSupport.parkNanos
+     * TIMED_PARKING -> TIMED_PARKED    // cont.yield successful, timed-parked
+     * TIMED_PARKING -> TIMED_PINNED    // cont.yield failed, timed-parked on carrier
+     *  TIMED_PARKED -> RUNNABLE        // unparked, schedule to continue
+     *  TIMED_PINNED -> RUNNING         // unparked, continue execution on same carrier
      *
      * RUNNABLE -> RUNNING         // continue execution
-     *
+
      *  RUNNING -> YIELDING        // Thread.yield
      * YIELDING -> RUNNABLE        // yield successful
      * YIELDING -> RUNNING         // yield failed
-     *
-     *  RUNNING -> TERMINATED      // done
      */
     private static final int NEW      = 0;
     private static final int STARTED  = 1;
     private static final int RUNNABLE = 2;     // runnable-unmounted
     private static final int RUNNING  = 3;     // runnable-mounted
+
+    // untimed parking
     private static final int PARKING  = 4;
     private static final int PARKED   = 5;     // unmounted
     private static final int PINNED   = 6;     // mounted
-    private static final int YIELDING = 7;     // Thread.yield
+
+    // timed parking
+    private static final int TIMED_PARKING = 7;
+    private static final int TIMED_PARKED  = 8;
+    private static final int TIMED_PINNED  = 9;
+
+    private static final int YIELDING   = 10;  // Thread.yield
+
     private static final int TERMINATED = 99;  // final state
 
-    // additional state bits
-    private static final int TIMED     = 1 << 8;  // timed parked
-    private static final int SUSPENDED = 1 << 9;  // suspended when unmounted
+    // can be suspended from scheduling when unmounted
+    private static final int SUSPENDED = 1 << 8;
 
     // parking permit
     private volatile boolean parkPermit;
@@ -433,12 +445,11 @@ final class VirtualThread extends BaseVirtualThread {
      * If yielding due to Thread.yield then it just submits the task to continue.
      */
     private void afterYield() {
-        int s = state();
-        boolean parking = (s & ~TIMED) == PARKING;
-        assert (parking || s == YIELDING) && (carrierThread == null);
+        assert carrierThread == null;
 
-        if (parking) {
-            int newState = PARKED | (s & TIMED);
+        int s = state();
+        if (s == PARKING || s == TIMED_PARKING) {
+            int newState = (s == PARKING) ? PARKED : TIMED_PARKED;
             setState(newState);
 
             // notify JVMTI that unmount has completed, thread is parked
@@ -446,7 +457,7 @@ final class VirtualThread extends BaseVirtualThread {
 
             // may have been unparked while parking
             if (parkPermit && compareAndSetState(newState, RUNNABLE)) {
-                // lazy submit to continue on the current carrier if possible
+                // lazy submit to continue on the current thread as carrier if possible
                 if (currentThread() instanceof CarrierThread ct) {
                     lazySubmitRunContinuation(ct.getPool());
                 } else {
@@ -466,6 +477,8 @@ final class VirtualThread extends BaseVirtualThread {
             } else {
                 submitRunContinuation();
             }
+        } else {
+            assert false;
         }
     }
 
@@ -608,13 +621,13 @@ final class VirtualThread extends BaseVirtualThread {
 
             boolean yielded = false;
             Future<?> unparker = scheduleUnpark(this::unpark, nanos);
-            setState(PARKING | TIMED);
+            setState(TIMED_PARKING);
             try {
                 yielded = yieldContinuation();  // may throw
             } finally {
                 assert (Thread.currentThread() == this) && (yielded == (state() == RUNNING));
                 if (!yielded) {
-                    assert state() == (PARKING | TIMED);
+                    assert state() == TIMED_PARKING;
                     setState(RUNNING);
                 }
                 cancel(unparker);
@@ -646,7 +659,7 @@ final class VirtualThread extends BaseVirtualThread {
             event = null;
         }
 
-        setState(PINNED | ((timed ? TIMED : 0)));
+        setState(timed ? TIMED_PINNED : PINNED);
         try {
             if (!parkPermit) {
                 if (!timed) {
@@ -714,8 +727,8 @@ final class VirtualThread extends BaseVirtualThread {
         Thread currentThread = Thread.currentThread();
         if (!getAndSetParkPermit(true) && currentThread != this) {
             int s = state();
-
-            if ((s & ~TIMED) == PARKED && compareAndSetState(s, RUNNABLE)) {
+            boolean parked = (s == PARKED) || (s == TIMED_PARKED);
+            if (parked && compareAndSetState(s, RUNNABLE)) {
                 if (currentThread instanceof VirtualThread vthread) {
                     vthread.switchToCarrierThread();
                     try {
@@ -726,11 +739,11 @@ final class VirtualThread extends BaseVirtualThread {
                 } else {
                     submitRunContinuation();
                 }
-            } else if ((s & ~TIMED) == PINNED) {
+            } else if ((s == PINNED) || (s == TIMED_PINNED)) {
                 // unpark carrier thread when pinned.
                 synchronized (carrierThreadAccessLock()) {
                     Thread carrier = carrierThread;
-                    if (carrier != null && (state() & ~TIMED) == PINNED) {
+                    if (carrier != null && ((s = state()) == PINNED || s == TIMED_PINNED)) {
                         U.unpark(carrier);
                     }
                 }
@@ -868,7 +881,7 @@ final class VirtualThread extends BaseVirtualThread {
     @Override
     Thread.State threadState() {
         int s = state();
-        switch (s & ~(TIMED | SUSPENDED)) {
+        switch (s & ~SUSPENDED) {
             case NEW:
                 return Thread.State.NEW;
             case STARTED:
@@ -892,12 +905,16 @@ final class VirtualThread extends BaseVirtualThread {
                 // runnable, mounted
                 return Thread.State.RUNNABLE;
             case PARKING:
+            case TIMED_PARKING:
             case YIELDING:
                 // runnable, mounted, not yet waiting
                 return Thread.State.RUNNABLE;
             case PARKED:
             case PINNED:
-                return (s & TIMED) != 0 ? State.TIMED_WAITING : State.WAITING;
+                return State.WAITING;
+            case TIMED_PARKED:
+            case TIMED_PINNED:
+                return State.TIMED_WAITING;
             case TERMINATED:
                 return Thread.State.TERMINATED;
             default:
@@ -936,8 +953,8 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private StackTraceElement[] tryGetStackTrace() {
         int initialState = state();
-        return switch (initialState & ~TIMED) {
-            case RUNNABLE, PARKED -> {
+        return switch (initialState) {
+            case RUNNABLE, PARKED, TIMED_PARKED -> {
                 int suspendedState = initialState | SUSPENDED;
                 if (compareAndSetState(initialState, suspendedState)) {
                     try {
