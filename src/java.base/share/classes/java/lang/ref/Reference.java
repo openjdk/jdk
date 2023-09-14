@@ -484,8 +484,8 @@ public abstract sealed class Reference<T>
      * Clears this reference object and adds it to the queue with which
      * it is registered, if any.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to a reference
-     * being <b><i>successfully</i></b> enqueued
+     * <p>Memory consistency effects: Actions in a thread prior to calling
+     * {@code enqueue} <b><i>successfully</i></b>
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
      * or {@link ReferenceQueue#remove}.
