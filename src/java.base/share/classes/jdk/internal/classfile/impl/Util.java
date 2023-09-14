@@ -59,7 +59,7 @@ public class Util {
     public static boolean isAttributeAllowed(final Attribute<?> attr,
                                              final Classfile.AttributesProcessingOption processingOption) {
         return attr instanceof BoundAttribute
-                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().attributeStability().ordinal() > processingOption.ordinal()
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
                 : true;
     }
 

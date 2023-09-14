@@ -122,5 +122,5 @@ public interface AttributeMapper<A> {
     /**
      * {@return attribute stability indicator}
      */
-    AttributeStability attributeStability();
+    AttributeStability stability();
 }
