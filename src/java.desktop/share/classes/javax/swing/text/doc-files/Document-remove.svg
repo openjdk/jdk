@@ -45,9 +45,6 @@
             stroke: red;
             stroke-width: 1px;
         }
-        rect, line {
-            shape-rendering: crispEdges;
-        }
         text {
             font-family: Arial, 'DejaVu Sans', sans-serif;
             font-size: 13px;
@@ -83,55 +80,55 @@
     <text x="1" y="16" class="left bold">Before Remove</text>
 
     <g id="the">
-        <rect x="3" y="25" width="20" height="20"/>
+        <rect x="3.5" y="25.5" width="20" height="20"/>
         <text x="13" y="35">T</text>
-        <rect x="27" y="25" width="20" height="20"/>
+        <rect x="27.5" y="25.5" width="20" height="20"/>
         <text x="37" y="35">h</text>
-        <rect x="51" y="25" width="20" height="20"/>
+        <rect x="51.5" y="25.5" width="20" height="20"/>
         <text x="61" y="35">e</text>
-        <rect x="75" y="25" width="20" height="20"/>
+        <rect x="75.5" y="25.5" width="20" height="20"/>
         <text x="85" y="35"> </text>
     </g>
 
     <g id="quick">
-        <rect x="99" y="25" width="20" height="20" class="filled"/>
+        <rect x="99.5" y="25.5" width="20" height="20"/>
         <text x="109" y="35">q</text>
-        <rect x="123" y="25" width="20" height="20" class="filled"/>
+        <rect x="123.5" y="25.5" width="20" height="20"/>
         <text x="133" y="35">u</text>
-        <rect x="147" y="25" width="20" height="20" class="filled"/>
+        <rect x="147.5" y="25.5" width="20" height="20"/>
         <text x="157" y="35">i</text>
-        <rect x="171" y="25" width="20" height="20" class="filled"/>
+        <rect x="171.5" y="25.5" width="20" height="20"/>
         <text x="181" y="35">c</text>
-        <rect x="195" y="25" width="20" height="20" class="filled"/>
+        <rect x="195.5" y="25.5" width="20" height="20"/>
         <text x="205" y="35">k</text>
-        <rect x="219" y="25" width="20" height="20" class="filled"/>
+        <rect x="219.5" y="25.5" width="20" height="20"/>
         <text x="229" y="35"> </text>
     </g>
 
     <g id="brownFox">
-        <rect x="243" y="25" width="20" height="20"/>
+        <rect x="243.5" y="25.5" width="20" height="20"/>
         <text x="253" y="35">b</text>
-        <rect x="267" y="25" width="20" height="20"/>
+        <rect x="267.5" y="25.5" width="20" height="20"/>
         <text x="277" y="35">r</text>
-        <rect x="291" y="25" width="20" height="20"/>
+        <rect x="291.5" y="25.5" width="20" height="20"/>
         <text x="301" y="35">o</text>
-        <rect x="315" y="25" width="20" height="20"/>
+        <rect x="315.5" y="25.5" width="20" height="20"/>
         <text x="325" y="35">w</text>
-        <rect x="339" y="25" width="20" height="20"/>
+        <rect x="339.5" y="25.5" width="20" height="20"/>
         <text x="349" y="35">n</text>
-        <rect x="363" y="25" width="20" height="20"/>
+        <rect x="363.5" y="25.5" width="20" height="20"/>
         <text x="373" y="35"> </text>
-        <rect x="387" y="25" width="20" height="20"/>
+        <rect x="387.5" y="25.5" width="20" height="20"/>
         <text x="397" y="35">f</text>
-        <rect x="411" y="25" width="20" height="20"/>
+        <rect x="411.5" y="25.5" width="20" height="20"/>
         <text x="421" y="35">o</text>
-        <rect x="435" y="25" width="20" height="20"/>
+        <rect x="435.5" y="25.5" width="20" height="20"/>
         <text x="445" y="35">x</text>
     </g>
 
-    <line x1="97" y1="22" x2="97" y2="55"/>
+    <line x1="97.5" y1="22" x2="97.5" y2="55"/>
     <text x="97" y="57" class="top">4</text>
-    <line x1="241" y1="22" x2="241" y2="55"/>
+    <line x1="241.5" y1="22" x2="241.5" y2="55"/>
     <text x="241" y="57" class="top">10</text>
 
     <text x="1" y="110" class="left bold">After Remove</text>
@@ -147,10 +144,10 @@
             xlink:href="#brownFox"
     />
 
-    <path d="M  97,71 L 97,114" marker-end="url(#arrow)"/>
+    <path d="M  97.5,71 L 97.5,114" marker-end="url(#arrow)"/>
     <path d="M 241,71 L 99,114" marker-end="url(#arrow)"/>
 
-    <line x1="97" y1="116" x2="97" y2="149"/>
+    <line x1="97.5" y1="116" x2="97.5" y2="149"/>
     <text x="97" y="151" class="top">4</text>
 
 </svg>
