@@ -1264,6 +1264,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /**
          * Validate the Zip64 Extra block fields
+         * @param cenPos The CEN offset for the current Entry
          * @param startingOffset Extra Field starting offset within the CEN
          * @param extraFieldLen Length of this Extra field
          * @throws ZipException  If an error occurs validating the Zip64 Extra
@@ -1319,10 +1320,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /**
          * Validate the Zip64 Extended Information Extra Field (0x0001) block
-         * size and that the uncompressed size and compressed size field
-         * values are not negative.
-         * Note:  As we do not use the LOC offset or Starting disk number
-         * field value we will not validate them
+         * size; that the uncompressed size, compressed size field and LOC
+         * offset fields are not negative. Also make sure the field exists if
+         * the CEN header field is set to 0xFFFFFFFF.
+         * Note:  As we do not use the Starting disk number field,
+         * we will not validate its value
          * @param off the starting offset for the Zip64 field value
          * @param blockSize the size of the Zip64 Extended Extra Field
          * @param csize CEN header compressed size value
@@ -1351,30 +1353,39 @@ public class ZipFile implements ZipConstants, Closeable {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
             // Check the uncompressed size is not negative
-            // Note we do not need to check blockSize is >= 8 as
-            // we know its length is at least 8 from the call to
-            // isZip64ExtBlockSizeValid()
-            if ((size == ZIP64_MAGICVAL)) {
-                if (get64(cen, off) < 0) {
-                    zerror("Invalid zip64 extra block size value");
+            if (size == ZIP64_MAGICVAL) {
+                if ( blockSize >= Long.BYTES) {
+                    if (get64(cen, off) < 0) {
+                        zerror("Invalid zip64 extra block size value");
+                    }
+                    off += Long.BYTES;
+                    blockSize -= Long.BYTES;
+                } else {
+                    zerror("Invalid Zip64 extra block, missing size");
                 }
             }
             // Check the compressed size is not negative
             if (csize == ZIP64_MAGICVAL) {
-                if (blockSize >= 16) {
-                    if (get64(cen, off + 8) < 0) {
+                if (blockSize >= Long.BYTES) {
+                    if (get64(cen, off) < 0) {
                         zerror("Invalid zip64 extra block compressed size value");
                     }
+                    off += Long.BYTES;
+                    blockSize -= Long.BYTES;
                 } else {
                     zerror("Invalid Zip64 extra block, missing compressed size");
                 }
             }
             // Check the LOC offset is not negative
             if (locoff == ZIP64_MAGICVAL) {
-                if (blockSize >= 24) {
-                    if (get64(cen, off + 16) < 0) {
+                if (blockSize >= Long.BYTES) {
+                    if (get64(cen, off) < 0) {
                         zerror("Invalid zip64 extra block LOC OFFSET value");
                     }
+                    // Note: We do not need to adjust the following fields as
+                    // this is the last field we are leveraging
+                    // off += Long.BYTES;
+                    // blockSize -= Long.BYTES;
                 } else {
                     zerror("Invalid Zip64 extra block, missing LOC offset value");
                 }
