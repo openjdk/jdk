@@ -177,6 +177,7 @@ void DowncallStubGenerator::add_offsets_to_oops(GrowableArray<VMStorage>& java_r
 }
 
 void DowncallStubGenerator::runtime_call(address target) const {
+  __ vzeroupper();
   __ mov(r12, rsp); // remember sp
   __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
   __ andptr(rsp, -16); // align stack as required by ABI
@@ -337,7 +338,6 @@ void DowncallStubGenerator::generate() {
 
   if (_captured_state_mask != 0) {
     __ block_comment("{ save thread local");
-    __ vzeroupper();
 
     if (should_save_return_value) {
       out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
@@ -399,7 +399,6 @@ void DowncallStubGenerator::generate() {
   if (_needs_transition) {
     __ block_comment("{ L_safepoint_poll_slow_path");
     __ bind(L_safepoint_poll_slow_path);
-    __ vzeroupper();
 
     if (should_save_return_value) {
       out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
@@ -419,7 +418,6 @@ void DowncallStubGenerator::generate() {
 
     __ block_comment("{ L_reguard");
     __ bind(L_reguard);
-    __ vzeroupper();
 
     if (should_save_return_value) {
       out_reg_spiller.generate_spill(_masm, spill_rsp_offset);
