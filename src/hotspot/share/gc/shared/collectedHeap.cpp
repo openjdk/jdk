@@ -284,7 +284,7 @@ CollectedHeap::CollectedHeap() :
                              80, GCCause::to_string(_gc_lastcause), CHECK);
 
     _total_cpu_time =
-                PerfDataManager::create_counter(SUN_THREADS, "gc_cpu_time",
+                PerfDataManager::create_counter(SUN_THREADS, "total_gc_cpu_time",
                                                 PerfData::U_Ticks, CHECK);
     _total_cpu_time_diff = 0;
 

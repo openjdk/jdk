@@ -14,6 +14,8 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestGcCounters {
 
     private static final String[] VM_ARGS = new String[] { "-XX:+UsePerfData" };
+    private static final String SUN_THREADS = "sun.threads";
+    private static final String SUN_THREADS_GCCPU = "sun.threads.gc_cpu_time";
 
     public static void main(String[] args) throws Exception {
         testGcCpuCountersExist();
@@ -28,11 +30,11 @@ public class TestGcCounters {
                 new String[] {"PerfCounter.print"});
 
         output.shouldHaveExitValue(0);
-        output.shouldContain("sun.threads.gc_cpu_time");
-        output.shouldContain("sun.threads.gc_cpu_time.g1_conc_mark");
-        output.shouldContain("sun.threads.gc_cpu_time.g1_conc_refine");
-        output.shouldContain("sun.threads.gc_cpu_time.parallel_gc_workers");
-        output.shouldContain("sun.threads.gc_cpu_time.vm");
+        output.shouldContain(SUN_THREADS + ".total_gc_cpu_time");
+        output.shouldContain(SUN_THREADS_GCCPU + ".g1_conc_mark");
+        output.shouldContain(SUN_THREADS_GCCPU + ".g1_conc_refine");
+        output.shouldContain(SUN_THREADS_GCCPU + ".parallel_gc_workers");
+        output.shouldContain(SUN_THREADS_GCCPU + ".vm");
     }
 }
 
