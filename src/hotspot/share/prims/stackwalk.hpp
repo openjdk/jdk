@@ -90,7 +90,7 @@ private:
   bool                  _need_method_info;
 
 public:
-  JavaFrameStream(JavaThread* thread, jlong mode, Handle cont_scope, Handle cont);
+  JavaFrameStream(JavaThread* thread, jint mode, Handle cont_scope, Handle cont);
 
   const RegisterMap* reg_map() override { return _vfst.reg_map(); };
 
@@ -142,37 +142,32 @@ public:
 
 class StackWalk : public AllStatic {
 private:
-  static int fill_in_frames(jlong mode, BaseFrameStream& stream,
+  static int fill_in_frames(jint mode, BaseFrameStream& stream,
                             int max_nframes, int start_index,
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
-  static inline bool get_caller_class(jlong mode) {
-    return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
-  }
-  static inline bool skip_hidden_frames(jlong mode) {
+  static inline bool skip_hidden_frames(jint mode) {
     return (mode & JVM_STACKWALK_SHOW_HIDDEN_FRAMES) == 0;
   }
-  static inline bool live_frame_info(jlong mode) {
+  static inline bool live_frame_info(jint mode) {
     return (mode & JVM_STACKWALK_FILL_LIVE_STACK_FRAMES) != 0;
   }
 
 public:
-  static inline bool need_method_info(jlong mode) {
-    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
+  static inline bool need_method_info(jint mode) {
+    return (mode & JVM_STACKWALK_CLASS_INFO_ONLY) == 0;
   }
-  static inline bool use_frames_array(jlong mode) {
-    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
-  }
-  static oop walk(Handle stackStream, jlong mode, int skip_frames, Handle cont_scope, Handle cont,
+
+  static oop walk(Handle stackStream, jint mode, int skip_frames, Handle cont_scope, Handle cont,
                   int frame_count, int start_index, objArrayHandle frames_array,
                   TRAPS);
 
   static oop fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
-                             jlong mode, int skip_frames, int frame_count,
+                             jint mode, int skip_frames, int frame_count,
                              int start_index, objArrayHandle frames_array, TRAPS);
 
-  static jint fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
+  static jint fetchNextBatch(Handle stackStream, jint mode, jlong magic,
                              int frame_count, int start_index,
                              objArrayHandle frames_array, TRAPS);
 

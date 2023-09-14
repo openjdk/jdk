@@ -311,7 +311,6 @@ class Generation: public CHeapObj<mtGC> {
   virtual void adjust_pointers();
   // Mark sweep support phase4
   virtual void compact();
-  virtual void post_compact() { ShouldNotReachHere(); }
 #endif
 
   // Accessing "marks".
