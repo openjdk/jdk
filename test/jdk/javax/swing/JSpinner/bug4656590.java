@@ -107,11 +107,11 @@ public class bug4656590 {
             }
             System.out.println("Test Passed!");
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
                     frame.dispose();
-                });
-            }
+                }
+            });
         }
     }
 }

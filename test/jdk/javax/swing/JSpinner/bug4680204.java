@@ -105,11 +105,11 @@ public class bug4680204 {
                 throw new RuntimeException("The tooltip text is not correctly set for JSpinner");
             }
         } finally {
-            if (frame != null) {
-                SwingUtilities.invokeAndWait(() -> {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
                     frame.dispose();
-                });
-            }
+                }
+            });
         }
         System.out.println("Test Passed!");
     }
