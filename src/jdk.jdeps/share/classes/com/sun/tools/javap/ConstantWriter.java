@@ -59,9 +59,9 @@ public class ConstantWriter extends BasicWriter {
     protected void writeConstantPool(ConstantPool constant_pool) {
         println("Constant pool:");
         indent(+1);
-        int width = String.valueOf(constant_pool.entryCount()).length() + 1;
+        int width = String.valueOf(constant_pool.size()).length() + 1;
         int cpx = 1;
-        while (cpx < constant_pool.entryCount()) {
+        while (cpx < constant_pool.size()) {
             print(String.format("%" + width + "s", ("#" + cpx)));
             try {
                 var cpInfo = constant_pool.entryByIndex(cpx);
