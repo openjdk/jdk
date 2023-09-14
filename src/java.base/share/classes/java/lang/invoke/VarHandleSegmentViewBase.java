@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.foreign.Utils;
+
 /**
  * Base class for memory segment var handle view implementations.
  */
@@ -54,6 +56,6 @@ abstract sealed class VarHandleSegmentViewBase extends VarHandle permits
     }
 
     static IllegalArgumentException newIllegalArgumentExceptionForMisalignedAccess(long address) {
-        return new IllegalArgumentException("Misaligned access at address: " + address);
+        return new IllegalArgumentException("Misaligned access at address: " + Utils.toHexString(address));
     }
 }
