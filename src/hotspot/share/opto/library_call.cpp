@@ -2906,7 +2906,6 @@ bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const ch
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
-    Node* vt_oop = _gvn.transform(argument(0)); // this argument - VirtualThread oop
     Node* thread = ideal.thread();
     Node* jt_addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_VTMS_transition_offset()));
     Node* vt_addr = basic_plus_adr(vt_oop, java_lang_Thread::is_in_VTMS_transition_offset());
