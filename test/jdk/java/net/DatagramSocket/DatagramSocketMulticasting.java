@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
  *        jdk.test.lib.net.IPSupport
- * @run main/othervm DatagramSocketMulticasting
- * @run main/othervm -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
- * @run main/othervm -Djdk.usePlainDatagramSocketImpl=true DatagramSocketMulticasting
- * @run main/othervm -Djdk.usePlainDatagramSocketImpl=true -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
+ * @run junit/othervm DatagramSocketMulticasting
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
+ * @run junit/othervm -Djdk.usePlainDatagramSocketImpl=true DatagramSocketMulticasting
+ * @run junit/othervm -Djdk.usePlainDatagramSocketImpl=true -Djava.net.preferIPv4Stack=true DatagramSocketMulticasting
  */
 
 import java.io.IOException;
@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import org.junit.jupiter.api.Test;
 
 import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.INET6;
@@ -59,11 +60,16 @@ import static java.net.StandardSocketOptions.IP_MULTICAST_TTL;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static jdk.test.lib.NetworkConfiguration.isSameInterface;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 public class DatagramSocketMulticasting {
     static final ProtocolFamily UNSPEC = () -> "UNSPEC";
+    static final int MAX_TRIES = 3;
 
-    public static void main(String[] args) throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @Test
+    public void main() throws IOException {
+        assumeTrue(IPSupport.currentConfigurationIsValid(), "Invalid networking configuration");
 
         // IPv4 and IPv6 interfaces that support multicasting
         NetworkConfiguration config = NetworkConfiguration.probe();
@@ -134,13 +140,13 @@ public class DatagramSocketMulticasting {
         System.out.format("testJoinGroup2: local socket address: %s%n", s.getLocalSocketAddress());
 
         // check network interface not set
-        assertTrue(s.getOption(IP_MULTICAST_IF) == null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // join on default interface
         s.joinGroup(new InetSocketAddress(group, 0), null);
 
         // join should not change the outgoing multicast interface
-        assertTrue(s.getOption(IP_MULTICAST_IF) == null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // already a member (exception not specified)
         assertThrows(SocketException.class,
@@ -157,7 +163,7 @@ public class DatagramSocketMulticasting {
         s.joinGroup(new InetSocketAddress(group, 0), ni);
 
         // join should not change the outgoing multicast interface
-        assertTrue(s.getOption(IP_MULTICAST_IF) == null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // already a member (exception not specified)
         assertThrows(SocketException.class,
@@ -234,7 +240,7 @@ public class DatagramSocketMulticasting {
     static void testNetworkInterface(DatagramSocket s,
                                      NetworkInterface ni) throws IOException {
         // default value
-        assertTrue(s.getOption(IP_MULTICAST_IF) == null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // setOption(IP_MULTICAST_IF)
         s.setOption(IP_MULTICAST_IF, ni);
@@ -253,12 +259,12 @@ public class DatagramSocketMulticasting {
      */
     static void testTimeToLive(DatagramSocket s) throws IOException {
         // should be 1 by default
-        assertTrue(s.getOption(IP_MULTICAST_TTL) == 1);
+        assertEquals(1, s.getOption(IP_MULTICAST_TTL));
 
         // setOption(IP_MULTICAST_TTL)
         for (int ttl = 0; ttl <= 2; ttl++) {
             s.setOption(IP_MULTICAST_TTL, ttl);
-            assertTrue(s.getOption(IP_MULTICAST_TTL) == ttl);
+            assertEquals(ttl, s.getOption(IP_MULTICAST_TTL));
         }
 
         // bad values for IP_MULTICAST_TTL
@@ -275,15 +281,15 @@ public class DatagramSocketMulticasting {
      */
     static void testLoopbackMode(DatagramSocket s) throws IOException {
         // should be enabled by default
-        assertTrue(s.getOption(IP_MULTICAST_LOOP) == true);
+        assertTrue(s.getOption(IP_MULTICAST_LOOP));
 
         // setLoopbackMode
 
         // setOption(IP_MULTICAST_LOOP)
         s.setOption(IP_MULTICAST_LOOP, false);   // disable
-        assertTrue(s.getOption(IP_MULTICAST_LOOP) == false);
+        assertFalse(s.getOption(IP_MULTICAST_LOOP));
         s.setOption(IP_MULTICAST_LOOP, true);  // enable
-        assertTrue(s.getOption(IP_MULTICAST_LOOP) == true);
+        assertTrue(s.getOption(IP_MULTICAST_LOOP));
 
         // bad values for IP_MULTICAST_LOOP
         assertThrows(IllegalArgumentException.class,
@@ -300,23 +306,37 @@ public class DatagramSocketMulticasting {
         System.out.println("testSendReceive");
 
         // outgoing multicast interface needs to be set
-        assertTrue(s.getOption(IP_MULTICAST_IF) != null);
+        assertNotNull(s.getOption(IP_MULTICAST_IF));
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
-        byte[] message = "hello".getBytes("UTF-8");
+        String message = "testSendReceive";
+        byte[] messageBytes = message.getBytes("UTF-8");
 
         // send message to multicast group
-        DatagramPacket p = new DatagramPacket(message, message.length);
+        DatagramPacket p = new DatagramPacket(messageBytes, messageBytes.length);
         p.setSocketAddress(target);
         s.send(p);
 
-        // receive message
+        // receive message with retry in case of stray messages
         s.setSoTimeout(0);
-        p = new DatagramPacket(new byte[1024], 100);
-        s.receive(p);
+        for (int i = 1; i <= MAX_TRIES; i++) {
+            p = new DatagramPacket(new byte[1024], 100);
+            s.receive(p);
+            String messageReceived = new String(p.getData(), 0, p.getLength(), "UTF-8");
 
-        assertTrue(p.getLength() == message.length);
-        assertTrue(p.getPort() == s.getLocalPort());
+            System.out.format(
+                    "TestSendReceive iteration [%s], Received DatagramPacket [%s] from [%s]%n",
+                    i, messageReceived, s.getLocalSocketAddress());
+
+            if (s.getLocalPort() == p.getPort()) {
+                assertEquals(message, messageReceived,
+                        String.format("expected message %s, instead received %s%n",
+                                message, messageReceived));
+                break;
+            }
+
+            assertNotEquals(MAX_TRIES, i, "testSendReceive: too many retries");
+        }
     }
 
     /**
@@ -328,11 +348,11 @@ public class DatagramSocketMulticasting {
         System.out.println("testSendNoReceive");
 
         // outgoing multicast interface needs to be set
-        assertTrue(s.getOption(IP_MULTICAST_IF) != null);
+        assertNotNull(s.getOption(IP_MULTICAST_IF));
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
         long nano = System.nanoTime();
-        String text = nano + ": hello";
+        String text = nano + ": testSendNoReceive";
         byte[] message = text.getBytes("UTF-8");
 
         // send datagram to multicast group
@@ -349,30 +369,12 @@ public class DatagramSocketMulticasting {
                 if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
                     throw new RuntimeException("message shouldn't have been received");
                 } else {
-                    System.out.format("Received unexpected message from %s%n", p.getSocketAddress());
+                    String messageReceived = new String(p.getData(), 0, p.getLength(), "UTF-8");
+                    System.out.format("Received unexpected message %s from %s%n",
+                            messageReceived, p.getSocketAddress());
                 }
             } catch (SocketTimeoutException expected) {
                 break;
-            }
-        }
-    }
-
-
-    static void assertTrue(boolean e) {
-        if (!e) throw new RuntimeException();
-    }
-
-    interface ThrowableRunnable {
-        void run() throws Exception;
-    }
-
-    static void assertThrows(Class<?> exceptionClass, ThrowableRunnable task) {
-        try {
-            task.run();
-            throw new RuntimeException("Exception not thrown");
-        } catch (Exception e) {
-            if (!exceptionClass.isInstance(e)) {
-                throw new RuntimeException("expected: " + exceptionClass + ", actual: " + e);
             }
         }
     }
