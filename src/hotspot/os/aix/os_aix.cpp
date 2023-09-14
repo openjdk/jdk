@@ -3059,10 +3059,10 @@ int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
   int ret = -1;
   size_t libpathlen = strlen(env);
   char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) +1, mtServiceability);
+  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
   char *saveptr, *token;
   strcpy(libpath, env);
-  for( token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr) ) {
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
     sprintf(combined, "%s/%s", token, path);
     if (0 == (ret = stat64x(combined, stat)))
       break;

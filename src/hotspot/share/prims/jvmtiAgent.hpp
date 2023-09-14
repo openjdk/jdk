@@ -44,8 +44,8 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   void* _os_lib;
   const char* _os_lib_path;
 #ifdef AIX
-  long _inode;
-  long _device;
+  unsigned long _inode;
+  unsigned long _device;
 #endif
   const void* _jplis;
   bool _loaded;
@@ -85,10 +85,10 @@ class JvmtiAgent : public CHeapObj<mtServiceability> {
   const Ticks& initialization_time() const;
   const Tickspan& initialization_duration() const;
 #ifdef AIX
-  void set_inode(long inode);
-  void set_device(long device);
-  long inode() const;
-  long device() const;
+  void set_inode(unsigned long inode);
+  void set_device(unsigned long device);
+  unsigned long inode() const;
+  unsigned long device() const;
 #endif
 
   bool load(outputStream* st = nullptr);

@@ -79,7 +79,7 @@ class JvmtiAgentList : AllStatic {
   static bool is_static_lib_loaded(const char* name);
   static bool is_dynamic_lib_loaded(void* os_lib);
 #ifdef AIX
-  static bool is_dynamic_lib_loaded(long device, long inode);
+  static bool is_dynamic_lib_loaded(unsigned long device, unsigned long inode);
 #endif
 
   static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);

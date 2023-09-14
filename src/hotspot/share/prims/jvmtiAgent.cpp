@@ -123,19 +123,19 @@ const char* JvmtiAgent::os_lib_path() const {
 }
 
 #ifdef AIX
-void JvmtiAgent::set_inode(long inode) {
+void JvmtiAgent::set_inode(unsigned long inode) {
   _inode = inode;
 }
 
-void JvmtiAgent::set_device(long device) {
+void JvmtiAgent::set_device(unsigned long device) {
   _device = device;
 }
 
-long JvmtiAgent::inode() const {
+unsigned long JvmtiAgent::inode() const {
   return _inode;
 }
 
-long JvmtiAgent::device() const {
+unsigned long JvmtiAgent::device() const {
   return _device;
 }
 #endif
@@ -302,8 +302,7 @@ static void save_library_signature(JvmtiAgent* agent, const char* name) {
   if (0 == os::Aix::stat64x_via_LIBPATH(name, &libstat)) {
     agent->set_inode(libstat.st_ino);
     agent->set_device(libstat.st_dev);
-  }
-  else {
+  } else {
     assert(false, "stat64x failed");
   }
 }
