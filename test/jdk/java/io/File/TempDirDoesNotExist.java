@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Produce warning when user specified java.io.tmpdir directory doesn't exist
  */
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -47,16 +47,24 @@ public class TempDirDoesNotExist {
 
         for (String arg : args) {
             if (arg.equals("io")) {
+                File file = null;
                 try {
-                    File.createTempFile("prefix", ".suffix");
+                    file = File.createTempFile("prefix", ".suffix");
                 } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    if (file != null && file.exists())
+                        file.delete();
                 }
             } else if (arg.equals("nio")) {
+                Path path = null;
                 try {
-                    Files.createTempFile("prefix", ".suffix");
+                    path = Files.createTempFile("prefix", ".suffix");
                 } catch (Exception e) {
                     e.printStackTrace();
+                } finally {
+                    if (path != null)
+                        Files.deleteIfExists(path);
                 }
             } else {
                 throw new Exception("unknown case: " + arg);
