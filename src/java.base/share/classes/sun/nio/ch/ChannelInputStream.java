@@ -59,29 +59,17 @@ class ChannelInputStream extends InputStream {
     }
 
     /*
-     * Reads bytes in Streams.DEFAULT_BUFFER_SIZE chunks until all requested
-     * bytes have been read or end-of-stream is reached.
+     * Reads at most Streams.DEFAULT_BUFFER_SIZE bytes into the given buffer.
      * If the channel is selectable then it must be configured blocking.
      */
     private int readBytes(ByteBuffer bb) throws IOException {
-        int nread = 0;
         int pos = bb.position();
         int rem = bb.limit() - pos;
-        while (rem > 0) {
-            int size = Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE);
-            bb.limit(pos + size);
-            int n = ch.read(bb);
-            if (n < 0) {
-                // EOF
-                if (nread == 0)
-                    nread = -1;
-                break;
-            }
-            nread += n;
-            pos += n;
-            rem -=n;
-        }
-        return nread;
+        if (rem <= 0)
+            return 0;
+
+        bb.limit(pos + Integer.min(rem, Streams.DEFAULT_BUFFER_SIZE));
+        return ch.read(bb);
     }
 
     /**

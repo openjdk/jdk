@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test;
 
 public class ChannelStreamsIO {
     // this value must exceed MaxDirectMemorySize
-    private static final int SIZE = 10*1024*1024;
+    private static final int SIZE = 10_000_000;
 
     static byte[] src;
     static Path path;
@@ -91,9 +91,12 @@ public class ChannelStreamsIO {
              InputStream in = Channels.newInputStream(fc)) {
             out.write(src);
             byte[] dst = new byte[SIZE];
+            int nread = 0;
             int n = -1;
-            if ((n = in.read(dst)) != SIZE)
-                throw new RuntimeException(n + " != " + SIZE);
+            while ((n = in.read(dst, nread, SIZE - nread)) > 0)
+                nread += n;
+            if (nread != SIZE)
+                throw new RuntimeException(nread + " != " + SIZE);
             if (!Arrays.equals(src, dst))
                 throw new RuntimeException("Arrays are not equal");
         } catch (OutOfMemoryError oome) {
