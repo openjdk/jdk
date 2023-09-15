@@ -107,6 +107,7 @@ public:
   int nb_extra_types() const {
     return _extra_types == nullptr ? 0 : _extra_types->cnt();
   }
+  
   const Type* extra_type_at(int i) const {
     return _extra_types->field_at(i);
   }
