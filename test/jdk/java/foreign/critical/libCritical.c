@@ -52,8 +52,9 @@ EXPORT void do_upcall(void(*f)(void)) {
     f();
 }
 
-EXPORT void test_critical(int* arr, int num) {
-    for (int i = 0; i < num; i++) {
-        arr[i]++;
+// copy bytes into heap array
+EXPORT void test_allow_heap(unsigned char* heapArr, unsigned char* nativeArr, int numBytes) {
+    for (int i = 0; i < numBytes; i++) {
+        heapArr[i] = nativeArr[i];
     }
 }

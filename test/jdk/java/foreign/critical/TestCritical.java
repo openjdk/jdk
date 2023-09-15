@@ -27,6 +27,7 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestCritical
  */
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
@@ -35,9 +36,12 @@ import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.util.function.IntFunction;
 
 import static org.testng.Assert.assertEquals;
 
@@ -78,14 +82,35 @@ public class TestCritical extends NativeTestHelper {
         }
     }
 
-    @Test
-    public void testCritical() throws Throwable {
-        MethodHandle handle = downcallHandle("test_critical", FunctionDescriptor.ofVoid(C_POINTER, C_INT), Linker.Option.critical(true));
-        int[] ints = { 0, 1, 2 };
-        MemorySegment segment = MemorySegment.ofArray(ints);
-        handle.invokeExact(segment, 3);
-        for (int i = 0; i < ints.length; i++) {
-            assertEquals(ints[i], i + 1);
+    record AllowHeapCase(IntFunction<MemorySegment> newArray, ValueLayout elementLayout) {}
+
+    @Test(dataProvider = "allowHeapCases")
+    public void testAllowHeap(AllowHeapCase testCase) throws Throwable {
+        MethodHandle handle = downcallHandle("test_allow_heap", FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_LONG_LONG), Linker.Option.critical(true));
+        int elementCount = 10;
+        MemorySegment heapSegment = testCase.newArray().apply(elementCount);
+        SequenceLayout sequence = MemoryLayout.sequenceLayout(elementCount, testCase.elementLayout());
+
+        try (Arena arena = Arena.ofConfined()) {
+            TestValue tv = genTestValue(sequence, arena);
+
+            handle.invoke(heapSegment, tv.value(), sequence.byteSize());
+
+            // check that writes went through to array
+            tv.check().accept(heapSegment);
         }
+    }
+
+    @DataProvider
+    public Object[][] allowHeapCases() {
+        return new Object[][] {
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new byte[i]), ValueLayout.JAVA_BYTE) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new short[i]), ValueLayout.JAVA_SHORT) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new char[i]), ValueLayout.JAVA_CHAR) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new int[i]), ValueLayout.JAVA_INT) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new long[i]), ValueLayout.JAVA_LONG) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new float[i]), ValueLayout.JAVA_FLOAT) },
+            { new AllowHeapCase(i -> MemorySegment.ofArray(new double[i]), ValueLayout.JAVA_DOUBLE) },
+        };
     }
 }

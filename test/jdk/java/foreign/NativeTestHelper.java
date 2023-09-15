@@ -237,6 +237,9 @@ public class NativeTestHelper {
         } else if (layout instanceof ValueLayout.OfShort) {
             short value = (short) random.nextInt();
             return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfChar) {
+            char value = (char) random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
         } else if (layout instanceof ValueLayout.OfInt) {
             int value = random.nextInt();
             return new TestValue(value, actual -> assertEquals(actual, value));
