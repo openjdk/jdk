@@ -54,40 +54,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * @since 1.7 * 14
  */
 
-/**
- * Represents a function that accepts an array and sorts a specified range
- * of the array into ascending order.
- */
-@FunctionalInterface
-interface SortOperation<A> {
-    /**
-     * Sorts the specified range of the array.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    void sort(A a, int low, int high);
-}
-
-/**
- * Represents a function that accepts an array and partitions a specified range
- * of the array based on the pivots provided.
- */
-@FunctionalInterface
-interface PartitionOperation<A> {
-     /**
-     * Partitions the specified range of the array.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     * @param indexPivot1 the index of pivot1, the first pivot
-     * @param indexPivot2 the index of pivot2, the second pivot
-     */
-    int[] partition(A a, int low, int high, int indexPivot1, int indexPivot2);
-}
-
 
 final class DualPivotQuicksort {
 
@@ -162,6 +128,22 @@ final class DualPivotQuicksort {
     private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
 
     /**
+     * Represents a function that accepts an array and sorts a specified range
+     * of the array into ascending order.
+     */
+    @FunctionalInterface
+    private static interface SortOperation<A> {
+        /**
+         * Sorts the specified range of the array.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        void sort(A a, int low, int high);
+    }
+
+    /**
      * Sorts the specified array into ascending numerical order using
      * mixed insertion sort.The intrinsic is free to choose its own
      * sorting algorithm.
@@ -176,8 +158,27 @@ final class DualPivotQuicksort {
      * @param so the method reference for the fallback implementation
      */
     @IntrinsicCandidate
+    @ForceInline
     private static <A> void arraySort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
         so.sort(array, low, high);
+    }
+
+    /**
+     * Represents a function that accepts an array and partitions a specified range
+     * of the array based on the pivots provided.
+     */
+    @FunctionalInterface
+    interface PartitionOperation<A> {
+        /**
+         * Partitions the specified range of the array.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         * @param indexPivot1 the index of pivot1, the first pivot
+         * @param indexPivot2 the index of pivot2, the second pivot
+         */
+        int[] partition(A a, int low, int high, int indexPivot1, int indexPivot2);
     }
 
     /**
@@ -199,7 +200,6 @@ final class DualPivotQuicksort {
     private static <A> int[] arrayPartition(Class<?> elemType, A array, long offset, int low, int high, int indexPivot1, int indexPivot2, PartitionOperation<A> po) {
         return po.partition(array, low, high, indexPivot1, indexPivot2);
     }
-
 
     /**
      * Calculates the double depth of parallel merging.
@@ -501,7 +501,7 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(int[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("both the pivot indices must be same");
+        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;
@@ -1305,7 +1305,7 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(long[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("both the pivot indices must be same");
+        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;
@@ -2897,7 +2897,7 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(float[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("both the pivot indices must be same");
+        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
         int end = high - 1;
         int lower = low;
         int upper = end;
@@ -3753,7 +3753,7 @@ final class DualPivotQuicksort {
      */
     @ForceInline
     private static int[] partitionSinglePivot(double[] a, int low, int high, int indexPivot1, int indexPivot2) {
-        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("both the pivot indices must be same");
+        if (indexPivot1 != indexPivot2) throw new IllegalArgumentException("Both the pivot indices must be same");
 
         int end = high - 1;
         int lower = low;
