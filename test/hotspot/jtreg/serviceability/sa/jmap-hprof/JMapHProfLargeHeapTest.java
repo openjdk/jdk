@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class JMapHProfLargeHeapTest {
     private static void testHProfFileFormat(String vmArgs, long heapSize,
             String expectedFormat) throws Exception, IOException,
             InterruptedException, FileNotFoundException {
-        ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder procBuilder = ProcessTools.createTestJvm(
                 "--add-exports=java.management/sun.management=ALL-UNNAMED", vmArgs, "JMapHProfLargeHeapProc", String.valueOf(heapSize));
         procBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process largeHeapProc = procBuilder.start();
