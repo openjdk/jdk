@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245654
+ * @bug 8245654 8256895
  * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath CertignaCA OCSP
@@ -182,6 +182,10 @@ public class CertignaCA {
             "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
+
+        // Added to test for JDK-8256895
+        System.setProperty("jdk.security.certpath.ocspNonce", "true");
+
         // OCSP check by default
         boolean ocspEnabled = args.length < 1 || !"CRL".equalsIgnoreCase(args[0]);
 

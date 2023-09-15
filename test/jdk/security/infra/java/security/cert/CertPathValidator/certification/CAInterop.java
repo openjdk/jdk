@@ -173,6 +173,176 @@
  */
 
 /*
+ * @test id=godaddyrootg2ca
+ * @bug 8196141
+ * @summary Interoperability tests with GoDaddy CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop godaddyrootg2ca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop godaddyrootg2ca CRL
+ */
+
+/*
+ * @test id=starfieldrootg2ca
+ * @bug 8196141
+ * @summary Interoperability tests with Starfield CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop starfieldrootg2ca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop starfieldrootg2ca CRL
+ */
+
+/*
+ * @test id=globalsigneccrootcar4
+ * @bug 8307134
+ * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop globalsigneccrootcar4 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop globalsigneccrootcar4 CRL
+ */
+
+/*
+ * @test id=gtsrootcar1
+ * @bug 8307134
+ * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar1 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootcar1 CRL
+ */
+
+/*
+ * @test id=gtsrootcar2
+ * @bug 8307134
+ * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootcar2 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootcar2 CRL
+ */
+
+/*
+ * @test id=gtsrootecccar3
+ * @bug 8307134
+ * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootecccar3 CRL
+ */
+
+/*
+ * @test id=gtsrootecccar4
+ * @bug 8307134
+ * @summary Interoperability tests with Google's GlobalSign R4 and GTS Root certificates
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop gtsrootecccar4 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop gtsrootecccar4 CRL
+ */
+
+/*
+ * @test id=microsoftecc2017
+ * @bug 8304760
+ * @summary Interoperability tests with Microsoft TLS root CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop microsoftecc2017 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop microsoftecc2017 CRL
+ */
+
+/*
+ * @test id=microsoftrsa2017
+ * @bug 8304760
+ * @summary Interoperability tests with Microsoft TLS root CAs
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop microsoftrsa2017 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop microsoftrsa2017 CRL
+ */
+
+/*
+ * @test id=quovadisrootca1g3
+ * @bug 8189131
+ * @summary Interoperability tests with QuoVadis Root CA1 G3 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop quovadisrootca1g3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop quovadisrootca1g3 CRL
+ */
+
+/*
+ * @test id=quovadisrootca2g3
+ * @bug 8189131
+ * @summary Interoperability tests with QuoVadis Root CA2 G3 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop quovadisrootca2g3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop quovadisrootca2g3 CRL
+ */
+
+/*
+ * @test id=quovadisrootca3g3
+ * @bug 8189131
+ * @summary Interoperability tests with QuoVadis Root CA3 G3 CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop quovadisrootca3g3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop quovadisrootca3g3 CRL
+ */
+
+/*
+ * @test id=sslrootrsaca
+ * @bug 8243320
+ * @summary Interoperability tests with SSL.com's RSA CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop sslrootrsaca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop sslrootrsaca CRL
+ */
+
+/*
+ * @test id=sslrootevrsaca
+ * @bug 8243320
+ * @summary Interoperability tests with SSL.com's EV RSA CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop sslrootevrsaca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop sslrootevrsaca CRL
+ */
+
+/*
+ * @test id=sslrooteccca
+ * @bug 8243320
+ * @summary Interoperability tests with SSL.com's ECC CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop sslrooteccca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop sslrooteccca CRL
+ */
+
+/*
+ * @test id=teliasonerarootcav1
+ * @bug 8210432
+ * @summary Interoperability tests with TeliaSonera Root CA v1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop teliasonerarootcav1 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop teliasonerarootcav1 CRL
+ */
+
+/*
+ * @test id=twcaglobalrootca
+ * @bug 8305975
+ * @summary Interoperability tests with TWCA Global Root CA from TAIWAN-CA
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop twcaglobalrootca OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop twcaglobalrootca CRL
+ */
+
+/*
  * @test id=certignarootca
  * @bug 8314960
  * @summary Interoperability tests with Certigna Root CAs from Dhimyotis
@@ -181,70 +351,132 @@
  * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certignarootca OCSP
  * @run main/othervm -Djava.security.debug=certpath CAInterop certignarootca CRL
  */
+
+/**
+ * Collection of certificate validation tests for interoperability with external CAs
+ */
 public class CAInterop {
 
     /**
      * Returns the test configuration for CA
      *
      * @param alias from the cacerts file without [jdk]
-     * @return CATestTuple
+     * @return CATestURLs
      */
-    private CATestTuple getTestURLs(String alias) {
+    private CATestURLs getTestURLs(String alias) {
         return switch (alias) {
             case "actalisauthenticationrootca" ->
-                    new CATestTuple("https://ssltest-active.actalis.it",
+                    new CATestURLs("https://ssltest-active.actalis.it",
                             "https://ssltest-revoked.actalis.it");
 
             case "amazonrootca1" ->
-                    new CATestTuple("https://valid.rootca1.demo.amazontrust.com",
+                    new CATestURLs("https://valid.rootca1.demo.amazontrust.com",
                     "https://revoked.rootca1.demo.amazontrust.com");
             case "amazonrootca2" ->
-                    new CATestTuple("https://valid.rootca2.demo.amazontrust.com",
+                    new CATestURLs("https://valid.rootca2.demo.amazontrust.com",
                     "https://revoked.rootca2.demo.amazontrust.com");
             case "amazonrootca3" ->
-                    new CATestTuple("https://valid.rootca3.demo.amazontrust.com",
+                    new CATestURLs("https://valid.rootca3.demo.amazontrust.com",
                     "https://revoked.rootca3.demo.amazontrust.com");
             case "amazonrootca4" ->
-                    new CATestTuple("https://valid.rootca4.demo.amazontrust.com",
+                    new CATestURLs("https://valid.rootca4.demo.amazontrust.com",
                     "https://revoked.rootca4.demo.amazontrust.com");
 
             case "buypassclass2ca" ->
-                    new CATestTuple("https://valid.business.ca22.ssl.buypass.no",
+                    new CATestURLs("https://valid.business.ca22.ssl.buypass.no",
                     "https://revoked.business.ca22.ssl.buypass.no");
             case "buypassclass3ca" ->
-                    new CATestTuple("https://valid.qcevident.ca23.ssl.buypass.no",
+                    new CATestURLs("https://valid.qcevident.ca23.ssl.buypass.no",
                     "https://revoked.qcevident.ca23.ssl.buypass.no");
 
             case "comodorsaca" ->
-                    new CATestTuple("https://comodorsacertificationauthority-ev.comodoca.com",
+                    new CATestURLs("https://comodorsacertificationauthority-ev.comodoca.com",
                     "https://comodorsacertificationauthority-ev.comodoca.com:444");
             case "comodoeccca" ->
-                    new CATestTuple("https://comodoecccertificationauthority-ev.comodoca.com",
+                    new CATestURLs("https://comodoecccertificationauthority-ev.comodoca.com",
                     "https://comodoecccertificationauthority-ev.comodoca.com:444");
             case "usertrustrsaca" ->
-                    new CATestTuple("https://usertrustrsacertificationauthority-ev.comodoca.com",
+                    new CATestURLs("https://usertrustrsacertificationauthority-ev.comodoca.com",
                     "https://usertrustrsacertificationauthority-ev.comodoca.com:444");
             case "usertrusteccca" ->
-                    new CATestTuple("https://usertrustecccertificationauthority-ev.comodoca.com",
+                    new CATestURLs("https://usertrustecccertificationauthority-ev.comodoca.com",
                     "https://usertrustecccertificationauthority-ev.comodoca.com:444");
 
             case "letsencryptisrgx1" ->
-                    new CATestTuple("https://valid-isrgrootx1.letsencrypt.org",
+                    new CATestURLs("https://valid-isrgrootx1.letsencrypt.org",
                             "https://revoked-isrgrootx1.letsencrypt.org");
 
             case "globalsignrootcar6" ->
-                    new CATestTuple("https://valid.r6.roots.globalsign.com",
+                    new CATestURLs("https://valid.r6.roots.globalsign.com",
                             "https://revoked.r6.roots.globalsign.com");
 
             case "entrustrootcaec1" ->
-                    new CATestTuple("https://validec.entrust.net",
+                    new CATestURLs("https://validec.entrust.net",
                             "https://revokedec.entrust.net");
             case "entrustrootcag4" ->
-                    new CATestTuple("https://validg4.entrust.net",
+                    new CATestURLs("https://validg4.entrust.net",
                             "https://revokedg4.entrust.net");
 
+            case "godaddyrootg2ca" ->
+                    new CATestURLs("https://valid.gdig2.catest.godaddy.com",
+                    "https://revoked.gdig2.catest.godaddy.com");
+            case "starfieldrootg2ca" ->
+                    new CATestURLs("https://valid.sfig2.catest.starfieldtech.com",
+                    "https://revoked.sfig2.catest.starfieldtech.com");
+
+            case "globalsigneccrootcar4" ->
+                    new CATestURLs("https://good.gsr4.demo.pki.goog",
+                    "https://revoked.gsr4.demo.pki.goog");
+            case "gtsrootcar1" ->
+                    new CATestURLs("https://good.gtsr1.demo.pki.goog",
+                    "https://revoked.gtsr1.demo.pki.goog");
+            case "gtsrootcar2" ->
+                    new CATestURLs("https://good.gtsr2.demo.pki.goog",
+                    "https://revoked.gtsr2.demo.pki.goog");
+            case "gtsrootecccar3" ->
+                    new CATestURLs("https://good.gtsr3.demo.pki.goog",
+                    "https://revoked.gtsr3.demo.pki.goog");
+            case "gtsrootecccar4" ->
+                    new CATestURLs("https://good.gtsr4.demo.pki.goog",
+                    "https://revoked.gtsr4.demo.pki.goog");
+
+            case "microsoftecc2017" ->
+                    new CATestURLs("https://acteccroot2017.pki.microsoft.com",
+                    "https://rvkeccroot2017.pki.microsoft.com");
+            case "microsoftrsa2017" ->
+                    new CATestURLs("https://actrsaroot2017.pki.microsoft.com",
+                    "https://rvkrsaroot2017.pki.microsoft.com");
+
+            case "quovadisrootca1g3" ->
+                    new CATestURLs("https://quovadis-root-ca-1-g3.chain-demos.digicert.com",
+                    "https://quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com");
+            case "quovadisrootca2g3" ->
+                    new CATestURLs("https://quovadis-root-ca-2-g3.chain-demos.digicert.com",
+                    "https://quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com");
+            case "quovadisrootca3g3" ->
+                    new CATestURLs("https://quovadis-root-ca-3-g3.chain-demos.digicert.com",
+                    "https://quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com");
+
+            case "sslrootrsaca" ->
+                    new CATestURLs("https://test-dv-rsa.ssl.com",
+                    "https://revoked-rsa-dv.ssl.com");
+            case "sslrootevrsaca" ->
+                    new CATestURLs("https://test-ev-rsa.ssl.com",
+                    "https://revoked-rsa-ev.ssl.com");
+            case "sslrooteccca" ->
+                    new CATestURLs("https://test-dv-ecc.ssl.com",
+                    "https://revoked-ecc-dv.ssl.com");
+
+            case "teliasonerarootcav1" ->
+                    new CATestURLs("https://juolukka.cover.sonera.net:10443",
+                            "https://juolukka.cover.sonera.net:10444");
+
+            case "twcaglobalrootca" ->
+                    new CATestURLs("https://evssldemo6.twca.com.tw",
+                            "https://evssldemo7.twca.com.tw");
+
             case "certignarootca" ->
-                    new CATestTuple("https://valid.servicesca.dhimyotis.com",
+                    new CATestURLs("https://valid.servicesca.dhimyotis.com",
                             "https://revoked.servicesca.dhimyotis.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
@@ -259,18 +491,18 @@ public class CAInterop {
         String caAlias = args[0];
 
         CAInterop caInterop = new CAInterop(args[1]);
-        CATestTuple caTestTuple = caInterop.getTestURLs(caAlias);
+        CATestURLs caTestURLs = caInterop.getTestURLs(caAlias);
 
         caInterop.validate(caAlias + " [jdk]",
-                caTestTuple.getVALID_URL(),
-                caTestTuple.getREVOKED_URL());
+                caTestURLs.getVALID_URL(),
+                caTestURLs.getREVOKED_URL());
     }
 
-    static class CATestTuple {
+    static class CATestURLs {
         final String VALID_URL;
         final String REVOKED_URL;
 
-        public CATestTuple(String validURL,
+        public CATestURLs(String validURL,
                            String revokedURL) {
             VALID_URL = validURL;
             REVOKED_URL = revokedURL;
