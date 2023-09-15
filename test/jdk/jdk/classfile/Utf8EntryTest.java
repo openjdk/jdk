@@ -185,8 +185,7 @@ class Utf8EntryTest {
     }
 
     static StringEntry obtainStringEntry(ConstantPool cp) {
-        for (int i = 1; i < cp.entryCount(); i++) {
-            PoolEntry entry = cp.entryByIndex(i);
+        for (PoolEntry entry : cp) {
             if (entry instanceof StringEntry se) {
                 return se;
             }

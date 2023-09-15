@@ -228,9 +228,6 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Ensure parsability
-  void ensure_parsability(bool retire_tlabs) override;
-
   // Total number of full collections completed.
   unsigned int total_full_collections_completed() {
     assert(_full_collections_completed <= _total_full_collections,

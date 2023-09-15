@@ -291,10 +291,6 @@ class Generation: public CHeapObj<mtGC> {
   // Save the high water marks for the used space in a generation.
   virtual void record_spaces_top() {}
 
-  // Some generations may need to be "fixed-up" after some allocation
-  // activity to make them parsable again. The default is to do nothing.
-  virtual void ensure_parsability() {}
-
   // Generations may keep statistics about collection. This method
   // updates those statistics. current_generation is the generation
   // that was most recently collected. This allows the generation to
