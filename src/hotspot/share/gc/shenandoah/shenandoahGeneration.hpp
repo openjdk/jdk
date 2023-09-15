@@ -124,6 +124,7 @@ private:
   virtual size_t free_unaffiliated_regions() const;
   size_t used() const override { return _used; }
   size_t available() const override;
+  size_t available_with_reserve() const;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
